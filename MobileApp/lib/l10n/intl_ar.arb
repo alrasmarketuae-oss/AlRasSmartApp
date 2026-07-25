@@ -695,7 +695,7 @@
   "searchResults": "نتائج البحث",
   "noSearchResults": "لم يتم العثور على منتجات لبحثك.",
   "suggestedNames": "أسماء مقترحة",
-  "analyzingImage": "جاري تحليل الصورة...",
+  "analyzingImage": "جاري التعرف على المنتج...",
   "analyzingImageHint": "يقوم الذكاء الاصطناعي بتحديد المنتج من صورتك.",
   "aiIdentifiedProduct": "تعرّف نظام الذكاء الاصطناعي لدينا على منتجك باسم: {name}",
   "@aiIdentifiedProduct": {

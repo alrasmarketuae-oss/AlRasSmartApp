@@ -22,6 +22,8 @@ services:
       ImageEmbedding__ClipServiceUrl: "http://clip:8088"
       ImageEmbedding__EmbeddingDimensions: "512"
       ImageEmbedding__MaxConcurrentIndexingJobs: "2"
+      EmailSettings__PublicBaseUrl: "https://api.alrasmarketapp.com"
+      CloudflareR2__PublicBaseUrl: "https://cdn.alrasmarketapp.com"
     depends_on:
       - redis
       - qdrant

@@ -430,9 +430,8 @@ class MyListingProductModel {
           '',
       createdLanguage: createdLang ?? 'en',
       categoryName: () {
-        final localized = LocalizedProductText.pickForLanguage(
+        final localized = LocalizedProductText.pick(
           json: json,
-          language: createdLang,
           arKeys: const ['categoryNameAr', 'CategoryNameAr'],
           enKeys: const [
             'categoryNameEn',

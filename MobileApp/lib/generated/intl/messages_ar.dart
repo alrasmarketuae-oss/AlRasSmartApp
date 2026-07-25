@@ -204,7 +204,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "تحتفظ شركة ميرج سبايس بحق تعديل هذه الشروط والأحكام في أي وقت، ويتم نشر التحديثات داخل التطبيق، ويعتبر استمرار استخدام التطبيق موافقة ضمنية على التعديلات.",
     ),
     "analyzingImage": MessageLookupByLibrary.simpleMessage(
-      "جاري تحليل الصورة...",
+      "جاري التعرف على المنتج...",
     ),
     "analyzingImageHint": MessageLookupByLibrary.simpleMessage(
       "يقوم الذكاء الاصطناعي بتحديد المنتج من صورتك.",

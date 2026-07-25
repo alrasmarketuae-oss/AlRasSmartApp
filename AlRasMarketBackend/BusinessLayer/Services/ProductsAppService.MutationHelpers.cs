@@ -826,9 +826,9 @@ public partial class ProductsAppService
 
     /// <summary>
     /// Arabic edit forms may POST localized display text into NameEn/DescriptionEn.
-    /// Restore the stored English value when the payload matches the Arabic translation
-    /// (or is Arabic while the DB value is Latin) so packaging/unit edits don't look
-    /// like name changes and don't falsely force admin reapproval.
+    /// When the payload matches the existing Arabic translation (or the stored English),
+    /// keep the stored English so price/qty-only edits do not look like name changes.
+    /// Real Arabic or English edits must be persisted as submitted.
     /// </summary>
     private async Task SanitizeOwnerEditLocalizedFieldsAsync(
         Product product,
@@ -885,19 +885,14 @@ public partial class ProductsAppService
             return submitted;
         }
 
+        // Unchanged localized display (or already English) → keep stored English.
         if (TextEquals(submitted, translationAr)
             || TextEquals(submitted, canonicalEn))
         {
             return canonicalEn;
         }
 
-        // Submitted Arabic while the catalog value is English → keep English.
-        if (DetectLanguageHintIsArabic(submitted)
-            && !DetectLanguageHintIsArabic(canonicalEn))
-        {
-            return canonicalEn;
-        }
-
+        // Real edit in Arabic or English — persist as submitted.
         return submitted;
     }
 

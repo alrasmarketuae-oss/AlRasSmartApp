@@ -1,3 +1,5 @@
+import 'package:alrasmarket/core/utils/utc_date_time.dart';
+
 class ChatSupportSessionModel {
   const ChatSupportSessionModel({
     required this.agentUserId,
@@ -19,14 +21,13 @@ class ChatSupportSessionModel {
     Map<String, dynamic> json, {
     bool? forceActive,
   }) {
-    final assigned = DateTime.tryParse(
-          (json['assignedAtUtc'] ?? json['AssignedAtUtc'] ?? '').toString(),
+    final assigned = UtcDateTime.parseAsUtc(
+          (json['assignedAtUtc'] ?? json['AssignedAtUtc'])?.toString(),
         ) ??
         DateTime.now().toUtc();
-    final releasedRaw = json['releasedAtUtc'] ?? json['ReleasedAtUtc'];
-    final released = releasedRaw == null
-        ? null
-        : DateTime.tryParse(releasedRaw.toString());
+    final released = UtcDateTime.parseAsUtc(
+      (json['releasedAtUtc'] ?? json['ReleasedAtUtc'])?.toString(),
+    );
     final activeFlag = json['isActive'] as bool? ??
         json['IsActive'] as bool? ??
         released == null;

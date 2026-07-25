@@ -7,21 +7,21 @@ import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/serveses/catalog_sync_service.dart';
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
+import 'package:alrasmarket/features/company/data/datasource/product_remote_data_source.dart';
+import 'package:alrasmarket/features/company/data/repository/product_repository.dart';
+import 'package:alrasmarket/features/company/domain/repository/base_product_repository.dart';
 import 'package:alrasmarket/features/company/domain/usecases/create_ad_usecases.dart';
 import 'package:alrasmarket/features/company/presentation/helpers/create_ad_form_mapper.dart';
-import 'package:alrasmarket/features/company/presentation/services/create_ad_publish_foreground.dart';
 import 'package:alrasmarket/features/company/presentation/services/create_ad_publish_job.dart';
 import 'package:alrasmarket/features/company/presentation/services/create_ad_publish_store.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 /// Disk-backed sequential queue for create-ad media compress + upload.
 ///
 /// Product create happens on the UI first. This queue attaches media afterward
-/// on the **main isolate** (FFmpeg works here) while a FG notification shows
-/// progress and helps keep the process alive.
+/// on the main isolate (no Android Foreground Service).
 class CreateAdPublishQueue {
   CreateAdPublishQueue._();
 
@@ -29,8 +29,7 @@ class CreateAdPublishQueue {
 
   bool _processing = false;
 
-  /// Persist job + start FG keepalive, then start media work without blocking
-  /// the Publish button beyond disk/FG start.
+  /// Persist job then start media work without blocking the Publish button.
   Future<void> enqueue(CreateAdPublishJob job) async {
     await CreateAdPublishStore.instance.enqueue(job);
     debugPrint(
@@ -39,24 +38,14 @@ class CreateAdPublishQueue {
       'images=${job.imagePaths.length}, video=${job.rawVideoPath != null})',
     );
 
-    try {
-      await CreateAdPublishForeground.ensureStarted();
-    } catch (e) {
-      debugPrint('[CreateAdPublishQueue] FG start skipped: $e');
-    }
-
-    // Prefer main-isolate drain (plugins). Do not await — UI navigates away.
+    // Do not await — UI navigates away while upload continues in-app.
     unawaited(drainFromDisk());
   }
 
   Future<void> restoreAndResume() async {
     final pending = await CreateAdPublishStore.instance.count();
-    if (pending == 0) {
-      await CreateAdPublishForeground.stopIfIdle();
-      return;
-    }
+    if (pending == 0) return;
     debugPrint('[CreateAdPublishQueue] restoring $pending job(s)');
-    await CreateAdPublishForeground.ensureStarted();
     unawaited(drainFromDisk());
   }
 
@@ -92,12 +81,43 @@ class CreateAdPublishQueue {
     } finally {
       _processing = false;
       await CreateAdPublishStore.instance.releaseProcessingLock();
-      await CreateAdPublishForeground.stopIfIdle();
     }
   }
 
-  Future<void> _notify(String text) =>
-      CreateAdPublishForeground.updateProgress(text);
+  Future<void> _notify(String text) async {
+    debugPrint('[CreateAdPublishQueue] $text');
+  }
+
+  void _ensureUploadDependencies() {
+    if (!sl.isRegistered<BaseProductRemoteDataSource>()) {
+      sl.registerLazySingleton<BaseProductRemoteDataSource>(
+        () => ProductRemoteDataSource(),
+      );
+    }
+    if (!sl.isRegistered<BaseProductRepository>()) {
+      sl.registerLazySingleton<BaseProductRepository>(
+        () => ProductRepository(remote: sl()),
+      );
+    }
+    if (!sl.isRegistered<CreateProductUseCase>()) {
+      sl.registerLazySingleton(() => CreateProductUseCase(sl()));
+    }
+    if (!sl.isRegistered<UpdateProductUseCase>()) {
+      sl.registerLazySingleton(() => UpdateProductUseCase(sl()));
+    }
+    if (!sl.isRegistered<UploadProductImagesUseCase>()) {
+      sl.registerLazySingleton(() => UploadProductImagesUseCase(sl()));
+    }
+    if (!sl.isRegistered<UploadProductDocumentsUseCase>()) {
+      sl.registerLazySingleton(() => UploadProductDocumentsUseCase(sl()));
+    }
+    if (!sl.isRegistered<UploadProductVideoUseCase>()) {
+      sl.registerLazySingleton(() => UploadProductVideoUseCase(sl()));
+    }
+    if (!sl.isRegistered<SubmitProductForAdminReviewUseCase>()) {
+      sl.registerLazySingleton(() => SubmitProductForAdminReviewUseCase(sl()));
+    }
+  }
 
   Future<bool> _process(CreateAdPublishJob job) async {
     debugPrint('[CreateAdPublishQueue] processing ${job.id}');
@@ -105,7 +125,7 @@ class CreateAdPublishQueue {
         CreateAdPublishStore.instance.heartbeatProcessingLock();
 
     try {
-      CreateAdPublishForeground.registerMinimalUploadDependencies();
+      _ensureUploadDependencies();
       var working = job;
 
       var productId = working.createdProductId;
@@ -342,12 +362,6 @@ class CreateAdPublishQueue {
 
   void _reportError(String message) {
     showUiError(message);
-    try {
-      FlutterForegroundTask.sendDataToMain({
-        'type': 'error',
-        'message': message,
-      });
-    } catch (_) {}
   }
 
   void showUiError(String message) {

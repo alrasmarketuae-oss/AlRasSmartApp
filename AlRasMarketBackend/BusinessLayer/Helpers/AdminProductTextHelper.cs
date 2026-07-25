@@ -46,19 +46,19 @@ public static class AdminProductTextHelper
     }
 
     public static string ResolveName(ProductFieldTranslations? tr, string? legacyNameEn) =>
-        Prefer(tr?.NameEn, tr?.NameAr, legacyNameEn);
+        Prefer(legacyNameEn, tr?.NameEn, tr?.NameAr);
 
     public static string? ResolveDescription(ProductFieldTranslations? tr, string? legacyDescriptionEn) =>
-        PreferOrNull(tr?.DescriptionEn, tr?.DescriptionAr, legacyDescriptionEn);
+        PreferOrNull(legacyDescriptionEn, tr?.DescriptionEn, tr?.DescriptionAr);
 
     public static string? ResolveRetailDescription(ProductFieldTranslations? tr, string? legacy) =>
-        PreferOrNull(tr?.RetailDescriptionEn, tr?.RetailDescriptionAr, legacy);
+        PreferOrNull(legacy, tr?.RetailDescriptionEn, tr?.RetailDescriptionAr);
 
     public static string? ResolveSupplierNotes(ProductFieldTranslations? tr, string? legacy) =>
-        PreferOrNull(tr?.SupplierNotesEn, tr?.SupplierNotesAr, legacy);
+        PreferOrNull(legacy, tr?.SupplierNotesEn, tr?.SupplierNotesAr);
 
     public static string ResolveShippingDescription(ProductFieldTranslations? tr, string? legacy) =>
-        Prefer(tr?.ShippingDescriptionEn, tr?.ShippingDescriptionAr, legacy);
+        Prefer(legacy, tr?.ShippingDescriptionEn, tr?.ShippingDescriptionAr);
 
     public static void ApplyToOrderDto(
         AdminOrderListItemDto dto,

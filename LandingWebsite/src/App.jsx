@@ -6,6 +6,7 @@ import EncryptedMessages from './pages/EncryptedMessages'
 import Home from './pages/Home'
 import Terms from './pages/Terms'
 import ModelTraining from './pages/ModelTraining'
+import DeleteAccount from './pages/DeleteAccount'
 import Contact from './pages/Contact'
 
 function AppShell() {
@@ -28,6 +29,7 @@ function AppShell() {
           <Route path="/" element={<Home lang={lang} />} />
           <Route path="/terms" element={<Terms lang={lang} />} />
           <Route path="/model-training" element={<ModelTraining lang={lang} />} />
+          <Route path="/delete-account" element={<DeleteAccount lang={lang} />} />
           <Route path="/encrypted-messages" element={<EncryptedMessages lang={lang} />} />
           <Route path="/contact" element={<Contact lang={lang} />} />
         </Routes>

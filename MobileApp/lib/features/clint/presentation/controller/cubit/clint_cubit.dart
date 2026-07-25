@@ -558,9 +558,10 @@ class ClintCubit extends Cubit<ClintStates> {
 
       final data = response?.data;
       List<dynamic> rawItems = const [];
+      List<String> apiSuggestedNames = const [];
       if (data is Map<String, dynamic>) {
-        searchSuggestedNames = (data['suggestedNames'] as List<dynamic>? ?? [])
-            .map((item) => item.toString())
+        apiSuggestedNames = (data['suggestedNames'] as List<dynamic>? ?? [])
+            .map((item) => item.toString().trim())
             .where((item) => item.isNotEmpty)
             .toList();
 
@@ -586,6 +587,25 @@ class ClintCubit extends Cubit<ClintStates> {
           .map(_mapPublicProductToListingJson)
           .map(MyListingProductModel.fromJson)
           .toList();
+
+      // Prefer localized product names for the current UI language.
+      final localizedNames = products
+          .map((product) => product.productName.trim())
+          .where((name) => name.isNotEmpty)
+          .toSet()
+          .take(8)
+          .toList();
+      searchSuggestedNames = localizedNames.isNotEmpty
+          ? localizedNames
+          : [
+              LocalizedProductText.pickUiLabel(apiSuggestedNames),
+              ...apiSuggestedNames.skip(1),
+            ]
+              .map((name) => name.trim())
+              .where((name) => name.isNotEmpty)
+              .toSet()
+              .take(8)
+              .toList();
 
       productSearchResults = products;
       isLoadingSearch = false;
@@ -642,7 +662,22 @@ class ClintCubit extends Cubit<ClintStates> {
 
       final products = entry.toProductModels();
       productSearchResults = products;
-      searchSuggestedNames = entry.suggestedNames;
+      searchSuggestedNames = products.isNotEmpty
+          ? products
+              .map((product) => product.productName.trim())
+              .where((name) => name.isNotEmpty)
+              .toSet()
+              .take(8)
+              .toList()
+          : [
+              LocalizedProductText.pickUiLabel(entry.suggestedNames),
+              ...entry.suggestedNames.skip(1),
+            ]
+              .map((name) => name.trim())
+              .where((name) => name.isNotEmpty)
+              .toSet()
+              .take(8)
+              .toList();
       searchAiAssist = null;
       searchQuery = entry.label;
       isImageSearch = entry.type == SearchHistoryType.image;
@@ -651,7 +686,7 @@ class ClintCubit extends Cubit<ClintStates> {
         ProductSearchSuccessState(
           products: products,
           query: entry.label,
-          suggestedNames: entry.suggestedNames,
+          suggestedNames: searchSuggestedNames,
           fromImage: entry.type == SearchHistoryType.image,
         ),
       );

@@ -206,6 +206,9 @@ class ShippingGradientActionCard extends StatelessWidget {
     required this.icon,
     required this.colors,
     required this.onTap,
+    this.titleColor,
+    this.subtitleColor,
+    this.iconColor,
   });
 
   final String title;
@@ -213,9 +216,16 @@ class ShippingGradientActionCard extends StatelessWidget {
   final IconData icon;
   final List<Color> colors;
   final VoidCallback onTap;
+  final Color? titleColor;
+  final Color? subtitleColor;
+  final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {
+    final resolvedTitleColor = titleColor ?? const Color(0xFF1A2B4A);
+    final resolvedSubtitleColor = subtitleColor ?? const Color(0xFF3D4F6F);
+    final resolvedIconColor = iconColor ?? resolvedTitleColor;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -226,6 +236,14 @@ class ShippingGradientActionCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14.r),
             gradient: LinearGradient(colors: colors),
+            border: Border.all(color: resolvedTitleColor.withValues(alpha: 0.18)),
+            boxShadow: [
+              BoxShadow(
+                color: resolvedTitleColor.withValues(alpha: 0.12),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Row(
             children: [
@@ -233,10 +251,10 @@ class ShippingGradientActionCard extends StatelessWidget {
                 width: 44.w,
                 height: 44.w,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.85),
+                  color: Colors.white.withValues(alpha: 0.92),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: colors.first, size: 24.sp),
+                child: Icon(icon, color: resolvedIconColor, size: 24.sp),
               ),
               SizedBox(width: 12.w),
               Expanded(
@@ -247,8 +265,8 @@ class ShippingGradientActionCard extends StatelessWidget {
                       title,
                       style: TextStyle(
                         fontSize: 15.sp,
-                        fontWeight: FontWeight.bold,
-                        color: colors.first,
+                        fontWeight: FontWeight.w800,
+                        color: resolvedTitleColor,
                       ),
                     ),
                     SizedBox(height: 4.h),
@@ -256,7 +274,9 @@ class ShippingGradientActionCard extends StatelessWidget {
                       subtitle,
                       style: TextStyle(
                         fontSize: 12.sp,
-                        color: const Color(0xff555555),
+                        fontWeight: FontWeight.w600,
+                        color: resolvedSubtitleColor,
+                        height: 1.35,
                       ),
                     ),
                   ],

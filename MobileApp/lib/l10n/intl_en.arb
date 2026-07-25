@@ -695,7 +695,7 @@
   "searchResults": "Search Results",
   "noSearchResults": "No products found for your search.",
   "suggestedNames": "Suggested names",
-  "analyzingImage": "Analyzing image...",
+  "analyzingImage": "Identifying the product...",
   "analyzingImageHint": "Our AI is identifying the product from your photo.",
   "aiIdentifiedProduct": "Our AI recognition system identified your product as {name}.",
   "@aiIdentifiedProduct": {

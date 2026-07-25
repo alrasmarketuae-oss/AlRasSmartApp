@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.Json;
 using BusinessLayer.Caching;
 using BusinessLayer.Helpers;
@@ -856,11 +855,11 @@ public sealed partial class ChatAppService(
             });
 
     private static string? FormatUtc(DateTime? value) =>
-        value?.ToString("o", CultureInfo.InvariantCulture);
+        value.HasValue ? UtcDateTimeHelper.FormatApiDateTime(value.Value) : null;
 
     private static string FormatRelativeTime(DateTime utcNow, DateTime sentAtUtc)
     {
-        var diff = utcNow - sentAtUtc;
+        var diff = UtcDateTimeHelper.AsUtc(utcNow) - UtcDateTimeHelper.AsUtc(sentAtUtc);
 
         if (diff.TotalSeconds < 60)
         {

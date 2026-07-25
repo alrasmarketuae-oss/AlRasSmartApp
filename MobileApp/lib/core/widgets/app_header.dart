@@ -1,6 +1,7 @@
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/serveses/cached_constants.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
+import 'package:alrasmarket/core/utils/string_display_format.dart';
 import 'package:alrasmarket/core/widgets/header_notification_bell.dart';
 import 'package:alrasmarket/core/widgets/profile_avatar.dart';
 import 'package:alrasmarket/generated/l10n.dart';
@@ -13,7 +14,8 @@ class AppHeader extends StatelessWidget {
 
   static String displayName(String? raw, {required String fallback}) {
     final value = raw?.trim() ?? '';
-    return value.isEmpty ? fallback : value;
+    if (value.isEmpty) return fallback;
+    return value.capitalizeFirst();
   }
 
   String? _accountSubtitle(S s) {

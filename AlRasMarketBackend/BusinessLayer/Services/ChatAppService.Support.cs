@@ -1,5 +1,6 @@
 using BusinessLayer.Caching;
 using BusinessLayer.Constants;
+using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using DataLayer.Interfaces;
 using DataLayer.Models;
@@ -318,7 +319,7 @@ public sealed partial class ChatAppService
             agent?.FullName,
             isAssignedToMe,
             isLockedByOtherAgent,
-            assignment.AssignedAtUtc.ToString("O"),
+            UtcDateTimeHelper.FormatApiDateTime(assignment.AssignedAtUtc),
             isNewAssignment);
     }
 
@@ -390,8 +391,10 @@ public sealed partial class ChatAppService
             .Select(assignment => new ChatSupportSessionDto(
                 assignment.AgentUserId.ToString("D"),
                 agentNames.GetValueOrDefault(assignment.AgentUserId) ?? assignment.AgentUserId.ToString("D"),
-                assignment.AssignedAtUtc.ToString("O"),
-                assignment.ReleasedAtUtc?.ToString("O"),
+                UtcDateTimeHelper.FormatApiDateTime(assignment.AssignedAtUtc),
+                assignment.ReleasedAtUtc is null
+                    ? null
+                    : UtcDateTimeHelper.FormatApiDateTime(assignment.ReleasedAtUtc.Value),
                 assignment.ReleasedAtUtc is null))
             .ToList();
     }

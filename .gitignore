@@ -51,3 +51,9 @@ MobileApp/ios/.symlinks/
 *.log
 **/.turbo/
 **/.cache/
+
+# Signing secrets (never commit)
+key.properties
+*.jks
+*.keystore
+upload-keystore.jks

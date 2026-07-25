@@ -103,27 +103,33 @@ class _ProductSearchResultsViewState extends State<ProductSearchResultsView> {
     return SafeArea(
       child: Scaffold(
         backgroundColor: const Color(0xFFF4F7FA),
-        body: Column(
-          children: [
-            SearchHeader(
-              title: s.searchResults,
-              initialQuery: widget.initialQuery,
-            ),
-            Expanded(
-              child: BlocBuilder<ClintCubit, ClintStates>(
-                buildWhen: (previous, current) =>
-                    current is ProductSearchLoadingState ||
-                    current is ProductSearchSuccessState ||
-                    current is ProductSearchErrorState,
-                builder: (context, state) {
-                  final cubit = context.read<ClintCubit>();
-                  final fromImage = _isImageSearchContext ||
-                      cubit.isImageSearch ||
-                      (state is ProductSearchLoadingState && state.fromImage) ||
-                      (state is ProductSearchSuccessState && state.fromImage);
+        body: BlocBuilder<ClintCubit, ClintStates>(
+          buildWhen: (previous, current) =>
+              current is ProductSearchLoadingState ||
+              current is ProductSearchSuccessState ||
+              current is ProductSearchErrorState,
+          builder: (context, state) {
+            final cubit = context.read<ClintCubit>();
+            final fromImage = _isImageSearchContext ||
+                cubit.isImageSearch ||
+                (state is ProductSearchLoadingState && state.fromImage) ||
+                (state is ProductSearchSuccessState && state.fromImage);
+            final isLoading = state is ProductSearchLoadingState ||
+                cubit.isLoadingSearch;
+            final headerTitle = fromImage && isLoading
+                ? s.analyzingImage
+                : s.searchResults;
 
-                  if (state is ProductSearchLoadingState ||
-                      cubit.isLoadingSearch) {
+            return Column(
+              children: [
+                SearchHeader(
+                  title: headerTitle,
+                  initialQuery: widget.initialQuery,
+                ),
+                Expanded(
+                  child: Builder(
+                    builder: (context) {
+                  if (isLoading) {
                     if (fromImage) {
                       return _AnalyzingImageState(
                         imagePath: widget.imagePath,
@@ -202,10 +208,12 @@ class _ProductSearchResultsViewState extends State<ProductSearchResultsView> {
                       ),
                     ],
                   );
-                },
-              ),
-            ),
-          ],
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -260,42 +268,68 @@ class __AnalyzingImageStateState extends State<_AnalyzingImageState>
 
   @override
   Widget build(BuildContext context) {
+    final s = S.of(context);
     final path = widget.imagePath?.trim();
     final hasImage = path != null && path.isNotEmpty;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(24.w, 12.h, 24.w, 24.h),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16.r),
-        child: AspectRatio(
-          aspectRatio: 3 / 4,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              if (hasImage)
-                Image.file(
-                  File(path),
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, error, stackTrace) => _fallbackBg(),
-                )
-              else
-                _fallbackBg(),
-              // Soft dark veil so white dots read clearly.
-              const ColoredBox(color: Color(0x33000000)),
-              AnimatedBuilder(
-                animation: _controller,
-                builder: (context, _) {
-                  return CustomPaint(
-                    painter: _WhiteScanDotsPainter(
-                      dots: _dots,
-                      t: _controller.value,
-                    ),
-                  );
-                },
+      child: Column(
+        children: [
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16.r),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (hasImage)
+                    Image.file(
+                      File(path),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, error, stackTrace) => _fallbackBg(),
+                    )
+                  else
+                    _fallbackBg(),
+                  // Soft dark veil so white dots read clearly.
+                  const ColoredBox(color: Color(0x33000000)),
+                  AnimatedBuilder(
+                    animation: _controller,
+                    builder: (context, _) {
+                      return CustomPaint(
+                        painter: _WhiteScanDotsPainter(
+                          dots: _dots,
+                          t: _controller.value,
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+          SizedBox(height: 16.h),
+          Text(
+            s.analyzingImage,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF1E3A5F),
+              fontFamily: 'Inter',
+            ),
+          ),
+          SizedBox(height: 6.h),
+          Text(
+            s.analyzingImageHint,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13.sp,
+              height: 1.35,
+              color: const Color(0xFF64748B),
+              fontFamily: 'Inter',
+            ),
+          ),
+        ],
       ),
     );
   }

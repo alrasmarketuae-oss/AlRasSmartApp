@@ -26,6 +26,7 @@ export default function Footer({ lang }) {
             <a href="/#features" className="hover:text-white">{nav.features}</a>
             <a href="/#download" className="hover:text-white">{nav.download}</a>
             <Link to="/terms" className="hover:text-white">{nav.terms}</Link>
+            <Link to="/delete-account" className="hover:text-white">{nav.deleteAccount}</Link>
             <Link to="/model-training" className="hover:text-white">{nav.modelTraining}</Link>
             <Link to="/encrypted-messages" className="hover:text-white">{nav.encryptedChat}</Link>
             <Link to="/contact" className="hover:text-white">{nav.contact}</Link>

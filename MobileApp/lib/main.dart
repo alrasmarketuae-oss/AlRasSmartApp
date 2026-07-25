@@ -9,7 +9,6 @@ import 'package:alrasmarket/core/services/app_push_notification_service.dart';
 import 'package:alrasmarket/core/services/fcm_token_service.dart';
 import 'package:alrasmarket/core/services/dio_helper.dart';
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
-import 'package:alrasmarket/features/company/presentation/services/create_ad_publish_foreground.dart';
 import 'package:alrasmarket/features/company/presentation/services/create_ad_publish_queue.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_cubit.dart';
 import 'package:alrasmarket/core/media/image_picker_config.dart';
@@ -29,9 +28,6 @@ void main() async {
 
   // Initialize Services Locator
   ServicesLocator().init();
-
-  await CreateAdPublishForeground.init();
-  CreateAdPublishForeground.listenForTaskData();
 
   await ProductSearchIndexService.instance.init();
 

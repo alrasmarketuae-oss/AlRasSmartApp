@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/services/api_constants.dart';
+import 'package:alrasmarket/core/utils/utc_date_time.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_message_type.dart';
 
 class ChatMessageModel {
@@ -105,9 +106,10 @@ class ChatMessageModel {
       toUserId: (json['toUserId'] ?? json['toId'] ?? '').toString(),
       messageType: ChatMessageType.fromApi(json['messageType']),
       content: (json['content'] ?? json['message'] ?? '').toString(),
-      sentAtUtc:
-          DateTime.tryParse((json['sentAtUtc'] ?? json['sentAt']).toString()) ??
-              DateTime.now().toUtc(),
+      sentAtUtc: UtcDateTime.parseAsUtc(
+            (json['sentAtUtc'] ?? json['sentAt'])?.toString(),
+          ) ??
+          DateTime.now().toUtc(),
       relativeTime: json['relativeTime']?.toString(),
       isEdited: json['isEdited'] as bool? ?? false,
       isSeen: isSeen,

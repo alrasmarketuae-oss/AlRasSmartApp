@@ -5,6 +5,7 @@ import 'package:dio/io.dart';
 import 'package:flutter/foundation.dart';
 
 import 'api_constants.dart';
+import '../helper/cach_helper.dart';
 import '../serveses/cached_constants.dart' as cache;
 
 class DioHelper {
@@ -12,6 +13,23 @@ class DioHelper {
   String i = ApiConstants.baseUrl;
 
   static String? _resolveToken(String? token) => token ?? cache.token;
+
+  static String _preferredLanguage() {
+    final raw = CachHelper.getData('languageCode')?.toString() ??
+        CachHelper.getData('locale')?.toString() ??
+        'en';
+    return raw.trim().toLowerCase().startsWith('ar') ? 'ar' : 'en';
+  }
+
+  static Map<String, dynamic> _authHeaders({String? token}) {
+    final language = _preferredLanguage();
+    return {
+      'x-auth-token': _resolveToken(token),
+      'Authorization': 'Bearer ${_resolveToken(token)}',
+      'X-Preferred-Language': language,
+      'Accept-Language': language,
+    };
+  }
 
   static init() {
     dio = Dio(
@@ -46,8 +64,7 @@ class DioHelper {
   }) async {
     dio!.options.headers = {
       'Content-Type': 'application/json',
-      "x-auth-token": _resolveToken(token),
-      'Authorization': 'Bearer ${_resolveToken(token)}',
+      ..._authHeaders(token: token),
     };
     //print("0000${url}");
     final x = await dio?.get(url, data: data, queryParameters: query);
@@ -63,8 +80,7 @@ class DioHelper {
   }) async {
     dio!.options.headers = {
       'Content-Type': 'application/json',
-      "x-auth-token": _resolveToken(token),
-      'Authorization': 'Bearer ${_resolveToken(token)}',
+      ..._authHeaders(token: token),
     };
     print("0000post  ${url}");
     final x = await dio?.post(url, queryParameters: query, data: data);
@@ -81,8 +97,7 @@ class DioHelper {
   }) async {
     dio!.options.headers = {
       'Content-Type': 'application/json',
-      "x-auth-token": _resolveToken(token),
-      'Authorization': 'Bearer ${_resolveToken(token)}',
+      ..._authHeaders(token: token),
     };
     final x = await dio?.put(url, queryParameters: query, data: data);
     return x;
@@ -96,8 +111,7 @@ class DioHelper {
   }) async {
     dio!.options.headers = {
       'Content-Type': 'application/json',
-      'x-auth-token': _resolveToken(token),
-      'Authorization': 'Bearer ${_resolveToken(token)}',
+      ..._authHeaders(token: token),
     };
     final x = await dio?.patch(url, queryParameters: query, data: data);
     return x;
@@ -111,8 +125,7 @@ class DioHelper {
     ProgressCallback? onSendProgress,
   }) async {
     dio!.options.headers = {
-      'x-auth-token': _resolveToken(token),
-      'Authorization': 'Bearer ${_resolveToken(token)}',
+      ..._authHeaders(token: token),
     };
     try {
       return await dio?.put(
@@ -140,8 +153,7 @@ class DioHelper {
     debugPrint('[Upload] URL: $url');
 
     dio!.options.headers = {
-      'x-auth-token': _resolveToken(token),
-      'Authorization': 'Bearer ${_resolveToken(token)}',
+      ..._authHeaders(token: token),
     };
     try {
       final x = await dio?.post(
@@ -179,8 +191,7 @@ class DioHelper {
   }) async {
     dio!.options.headers = {
       'Content-Type': 'application/json',
-      "x-auth-token": _resolveToken(token),
-      'Authorization': 'Bearer ${_resolveToken(token)}',
+      ..._authHeaders(token: token),
     };
     final x = await dio?.delete(url, data: data, queryParameters: query);
     return x;

@@ -209,7 +209,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Merge Spice reserves the right to modify these terms and conditions at any time; updates will be published in the app, and continued use implies acceptance.",
     ),
     "analyzingImage": MessageLookupByLibrary.simpleMessage(
-      "Analyzing image...",
+      "Identifying the product...",
     ),
     "analyzingImageHint": MessageLookupByLibrary.simpleMessage(
       "Our AI is identifying the product from your photo.",

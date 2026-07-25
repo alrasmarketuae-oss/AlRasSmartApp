@@ -5166,10 +5166,10 @@ class S {
     );
   }
 
-  /// `Analyzing image...`
+  /// `Identifying the product...`
   String get analyzingImage {
     return Intl.message(
-      'Analyzing image...',
+      'Identifying the product...',
       name: 'analyzingImage',
       desc: '',
       args: [],

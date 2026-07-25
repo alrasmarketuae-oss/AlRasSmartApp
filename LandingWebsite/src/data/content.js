@@ -1,6 +1,6 @@
 export const content = {
   ar: {
-    nav: { home: 'الرئيسية', features: 'المميزات', download: 'تحميل', terms: 'الشروط والخصوصية', modelTraining: 'تدريب النموذج', contact: 'تواصل معنا', encryptedChat: 'تشفير المحادثات' },
+    nav: { home: 'الرئيسية', features: 'المميزات', download: 'تحميل', terms: 'الشروط والخصوصية', modelTraining: 'تدريب النموذج', deleteAccount: 'حذف الحساب', contact: 'تواصل معنا', encryptedChat: 'تشفير المحادثات' },
     hero: {
       badge: 'منصة تجارة الجملة بين الشركات',
       title: 'سوق الراس',
@@ -62,6 +62,16 @@ export const content = {
       badge: 'البحث بالصور',
       heading: 'كيف يتدرب نموذجنا',
       termsHint: 'مرتبط أيضاً ببنود ملكية الصور في',
+    },
+    deleteAccountPage: {
+      badge: 'خصوصية الحساب',
+      heading: 'حذف حسابي',
+      emailCta: 'أرسل طلب حذف بالبريد',
+      contactCta: 'تواصل معنا',
+      googlePlayNote:
+        'هذه الصفحة مخصّصة لمتطلبات Google Play: رابط عام يشرح كيف يحذف المستخدم حسابه، وما البيانات التي تُحذف، والبدائل إن تعذّر استخدام التطبيق.',
+      supportLabel: 'بريد طلبات حذف الحساب',
+      urlHint: 'رابط الصفحة لإدخاله في Google Play Console (Data safety / Account deletion):',
     },
     encryptedMessagesPage: {
       badge: 'أمان المحادثات',
@@ -127,7 +137,7 @@ export const content = {
     },
   },
   en: {
-    nav: { home: 'Home', features: 'Features', download: 'Download', terms: 'Terms & Privacy', modelTraining: 'Model training', contact: 'Contact', encryptedChat: 'Encrypted chat' },
+    nav: { home: 'Home', features: 'Features', download: 'Download', terms: 'Terms & Privacy', modelTraining: 'Model training', deleteAccount: 'Delete account', contact: 'Contact', encryptedChat: 'Encrypted chat' },
     hero: {
       badge: 'B2B wholesale marketplace',
       title: 'Al Ras Market',
@@ -189,6 +199,16 @@ export const content = {
       badge: 'Image search',
       heading: 'How our model is trained',
       termsHint: 'Also linked to image-ownership clauses in',
+    },
+    deleteAccountPage: {
+      badge: 'Account privacy',
+      heading: 'Delete my account',
+      emailCta: 'Email a deletion request',
+      contactCta: 'Contact us',
+      googlePlayNote:
+        'This page is for Google Play requirements: a public URL explaining how users delete their account, what data is deleted, and alternatives if the app is unavailable.',
+      supportLabel: 'Account deletion support email',
+      urlHint: 'Page path to submit in Google Play Console (Data safety / Account deletion):',
     },
     encryptedMessagesPage: {
       badge: 'Chat security',
