@@ -1,0 +1,76 @@
+# Deploy Al Ras backend to Contabo VPS
+# Usage (PowerShell):
+#   .\deploy\deploy-to-vps.ps1
+#   .\deploy\deploy-to-vps.ps1 -Services api
+#   .\deploy\deploy-to-vps.ps1 -Services "api,clip"
+
+param(
+    [string]$HostName = "169.58.68.26",
+    [string]$User = "alrasmarket",
+    [string]$RemotePath = "/opt/alrasmarket/app",
+    [string]$IdentityFile = "$env:USERPROFILE\.ssh\id_ed25519",
+    [string]$KeyPassphrase = "Alrasmarketuae",
+    # Comma-separated: api,clip,nginx,redis,qdrant — empty = full stack
+    [string]$Services = "api"
+)
+
+$ErrorActionPreference = "Stop"
+$Root = Split-Path -Parent $PSScriptRoot
+if (-not (Test-Path (Join-Path $Root "docker-compose.yml"))) {
+    throw "Run from repo: expected docker-compose.yml under $Root"
+}
+
+$ask = Join-Path $env:TEMP "ssh-askpass-alras.cmd"
+Set-Content -Path $ask -Value "@echo off`r`necho $KeyPassphrase" -Encoding ASCII
+$env:SSH_ASKPASS = $ask
+$env:SSH_ASKPASS_REQUIRE = "force"
+$env:DISPLAY = "1"
+
+$sshArgs = @(
+    "-i", $IdentityFile,
+    "-o", "IdentitiesOnly=yes",
+    "-o", "PreferredAuthentications=publickey",
+    "-o", "StrictHostKeyChecking=accept-new"
+)
+
+$tar = Join-Path $env:TEMP "alras-backend-deploy.tar.gz"
+if (Test-Path $tar) { Remove-Item $tar -Force }
+
+Write-Host "==> Packing backend..." -ForegroundColor Cyan
+Push-Location $Root
+tar -czf $tar `
+    --exclude=bin --exclude=obj --exclude=.vs --exclude=.git `
+    --exclude=scripts/tmp-world-data --exclude=.nuget-cache `
+    --exclude=deploy/certbot `
+    .
+Pop-Location
+Write-Host "    Archive: $([math]::Round((Get-Item $tar).Length / 1MB, 1)) MB"
+
+Write-Host "==> Uploading to ${User}@${HostName}:$RemotePath ..." -ForegroundColor Cyan
+scp @sshArgs $tar "${User}@${HostName}:${RemotePath}/backend.tar.gz"
+if ($LASTEXITCODE -ne 0) { throw "scp failed" }
+
+$serviceList = if ([string]::IsNullOrWhiteSpace($Services)) { "" } else { $Services.Replace(",", " ") }
+$remoteCmd = @"
+set -e
+cd '$RemotePath'
+tar -xzf backend.tar.gz
+rm -f backend.tar.gz
+mkdir -p deploy/certbot/conf deploy/certbot/www
+echo '==> Building & restarting...'
+if [ -n '$serviceList' ]; then
+  docker compose up -d --build --no-deps $serviceList
+else
+  docker compose up -d --build
+fi
+docker compose ps
+echo DONE
+"@
+
+Write-Host "==> Remote build..." -ForegroundColor Cyan
+ssh @sshArgs "${User}@${HostName}" $remoteCmd
+if ($LASTEXITCODE -ne 0) { throw "remote deploy failed" }
+
+Remove-Item $tar -Force -ErrorAction SilentlyContinue
+Write-Host "==> Deploy finished." -ForegroundColor Green
+Write-Host "Health: http://${HostName}/api/health"

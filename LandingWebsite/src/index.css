@@ -1,0 +1,44 @@
+@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Cairo", "Segoe UI", Tahoma, Arial, system-ui, sans-serif;
+  --color-brand-blue: #0066cc;
+  --color-brand-red: #d0091e;
+  --color-brand-navy: #0b1f3a;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: #f8fafc;
+  color: #0f172a;
+  text-rendering: optimizeLegibility;
+}
+
+html[lang="ar"] body {
+  font-family: "Cairo", "Segoe UI", Tahoma, Arial, sans-serif;
+}
+
+.ltr-token {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #0066cc 0%, #d0091e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.hero-glow {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(0, 102, 204, 0.18), transparent 40%),
+    radial-gradient(circle at 80% 10%, rgba(208, 9, 30, 0.14), transparent 35%),
+    radial-gradient(circle at 50% 80%, rgba(0, 102, 204, 0.1), transparent 45%);
+}

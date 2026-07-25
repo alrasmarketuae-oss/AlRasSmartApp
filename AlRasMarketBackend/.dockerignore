@@ -1,0 +1,11 @@
+# Keep local secrets / large caches out of image context where possible
+**/bin/
+**/obj/
+.vs/
+.git/
+.nuget-cache/
+**/node_modules/
+deploy/certbot/
+.env
+**/*.md
+scripts/tmp-world-data/

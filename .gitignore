@@ -1,0 +1,53 @@
+# Secrets / local notes — never commit
+info.TXT
+cdn info.TXT
+depolyAndMonitoring
+**/appsettings.json
+**/appsettings.Development.json
+**/appsettings.Production.json
+!**/**/appsettings.Example.json
+**/.env
+**/.env.*
+!**/.env.example
+**/google-services.json
+**/GoogleService-Info.plist
+**/*firebase*adminsdk*.json
+**/serviceAccount*.json
+
+# IDE / OS
+.vscode/
+.idea/
+.vs/
+*.suo
+*.user
+.DS_Store
+Thumbs.db
+
+# Dependencies & build
+**/node_modules/
+**/dist/
+**/build/
+**/.dart_tool/
+**/.flutter-plugins-dependencies
+**/.pub-cache/
+**/coverage/
+**/bin/
+**/obj/
+**/.nuget-cache/
+**/publish/
+**/*.apk
+**/*.aab
+**/*.ipa
+
+# Flutter / Android extras
+MobileApp/.gradle-home/
+MobileApp/.gradle-home-build/
+MobileApp/android/.gradle/
+MobileApp/android/local.properties
+MobileApp/ios/Pods/
+MobileApp/ios/.symlinks/
+
+# Logs & caches
+*.log
+**/.turbo/
+**/.cache/

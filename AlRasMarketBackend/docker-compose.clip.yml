@@ -1,0 +1,15 @@
+services:
+  clip:
+    build: ./clip-service
+    ports:
+      - "8088:8088"
+    environment:
+      CLIP_MODEL: sentence-transformers/clip-ViT-B-32-multilingual-v1
+      CLIP_IMAGE_MODEL: sentence-transformers/clip-ViT-B-32
+    restart: unless-stopped
+    # Uncomment if you have a GPU:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - capabilities: [gpu]

@@ -1,0 +1,226 @@
+import 'package:alrasmarket/core/error/failure.dart';
+import 'package:alrasmarket/features/company/data/models/create_ad_product_request.dart';
+import 'package:alrasmarket/features/company/data/models/create_product_response.dart';
+import 'package:alrasmarket/features/company/data/models/my_listings_response.dart';
+import 'package:alrasmarket/features/company/data/models/update_listing_status_request.dart';
+import 'package:alrasmarket/features/company/domain/repository/base_product_repository.dart';
+import 'package:dartz/dartz.dart';
+
+class CreateProductUseCase {
+  CreateProductUseCase(this._repository);
+
+  final BaseProductRepository _repository;
+
+  Future<Either<Failure, CreateProductResponse>> call({
+    required CreateAdProductRequest request,
+    required String token,
+  }) {
+    return _repository.createProduct(request: request, token: token);
+  }
+}
+
+class GetMyListingsUseCase {
+  GetMyListingsUseCase(this._repository);
+
+  final BaseProductRepository _repository;
+
+  Future<Either<Failure, MyListingsResponse>> call({required String token}) {
+    return _repository.getMyListings(token: token);
+  }
+}
+
+class DeleteProductUseCase {
+  DeleteProductUseCase(this._repository);
+
+  final BaseProductRepository _repository;
+
+  Future<Either<Failure, void>> call({
+    required String productId,
+    required String token,
+  }) {
+    return _repository.deleteProduct(productId: productId, token: token);
+  }
+}
+
+class UpdateProductUseCase {
+  UpdateProductUseCase(this._repository);
+
+  final BaseProductRepository _repository;
+
+  Future<Either<Failure, CreateProductResponse>> call({
+    required String productId,
+    required CreateAdProductRequest request,
+    required String token,
+  }) {
+    return _repository.updateProduct(
+      productId: productId,
+      request: request,
+      token: token,
+    );
+  }
+}
+
+class UpdateProductListingStatusUseCase {
+  UpdateProductListingStatusUseCase(this._repository);
+
+  final BaseProductRepository _repository;
+
+  Future<Either<Failure, void>> call({
+    required String productId,
+    required bool isActive,
+    required String token,
+  }) {
+    return _repository.updateProductListingStatus(
+      productId: productId,
+      request: UpdateListingStatusRequest(isActive: isActive),
+      token: token,
+    );
+  }
+}
+
+class MarkProductSoldOutUseCase {
+  MarkProductSoldOutUseCase(this._repository);
+
+  final BaseProductRepository _repository;
+
+  Future<Either<Failure, void>> call({
+    required String productId,
+    required String token,
+  }) {
+    return _repository.markProductSoldOut(
+      productId: productId,
+      token: token,
+    );
+  }
+}
+
+class UploadProductImagesUseCase {
+  UploadProductImagesUseCase(this._repository);
+
+  final BaseProductRepository _repository;
+
+  Future<Either<Failure, List<String>>> call({
+    required String productId,
+    required List<String> filePaths,
+    required String token,
+  }) async {
+    final uploadedPaths = <String>[];
+    for (final filePath in filePaths) {
+      final uploadEither = await _repository.uploadProductImage(
+        productId: productId,
+        filePath: filePath,
+        token: token,
+      );
+      final stopFailure = uploadEither.fold<Failure?>(
+        (failure) => failure,
+        (path) {
+          uploadedPaths.add(path);
+          return null;
+        },
+      );
+      if (stopFailure != null) return Left(stopFailure);
+    }
+    return Right(uploadedPaths);
+  }
+}
+
+class DeleteProductImagesByPathUseCase {
+  DeleteProductImagesByPathUseCase(this._repository);
+
+  final BaseProductRepository _repository;
+
+  Future<Either<Failure, void>> call({
+    required String productId,
+    required List<String> imagePaths,
+    required String token,
+  }) async {
+    for (final path in imagePaths) {
+      if (path.trim().isEmpty) continue;
+
+      final result = await _repository.deleteProductImageByPath(
+        productId: productId,
+        imagePath: path,
+        token: token,
+      );
+      final error = result.fold<Failure?>((f) => f, (_) => null);
+      if (error == null) continue;
+
+      // Already removed on server — do not block the rest of the edit.
+      final message = error.message.toLowerCase();
+      if (message.contains('not found') ||
+          message.contains('404') ||
+          message.contains('image path is required')) {
+        continue;
+      }
+      return Left(error);
+    }
+    return const Right(null);
+  }
+}
+
+class UploadProductDocumentsUseCase {
+  UploadProductDocumentsUseCase(this._repository);
+
+  final BaseProductRepository _repository;
+
+  Future<Either<Failure, List<String>>> call({
+    required String productId,
+    required List<String> filePaths,
+    required String token,
+  }) async {
+    final uploadedPaths = <String>[];
+    for (final filePath in filePaths) {
+      final uploadEither = await _repository.uploadProductDocument(
+        productId: productId,
+        filePath: filePath,
+        token: token,
+      );
+      final stopFailure = uploadEither.fold<Failure?>(
+        (failure) => failure,
+        (path) {
+          uploadedPaths.add(path);
+          return null;
+        },
+      );
+      if (stopFailure != null) return Left(stopFailure);
+    }
+    return Right(uploadedPaths);
+  }
+}
+
+class UploadProductVideoUseCase {
+  UploadProductVideoUseCase(this._repository);
+
+  final BaseProductRepository _repository;
+
+  Future<Either<Failure, String>> call({
+    required String productId,
+    required String filePath,
+    required int videoDurationSeconds,
+    required String token,
+  }) {
+    return _repository.uploadProductVideo(
+      productId: productId,
+      filePath: filePath,
+      videoDurationSeconds: videoDurationSeconds,
+      token: token,
+    );
+  }
+}
+
+/// After media uploads — notifies admin dashboard that the ad is ready to review.
+class SubmitProductForAdminReviewUseCase {
+  SubmitProductForAdminReviewUseCase(this._repository);
+
+  final BaseProductRepository _repository;
+
+  Future<Either<Failure, void>> call({
+    required String productId,
+    required String token,
+  }) {
+    return _repository.submitProductForAdminReview(
+      productId: productId,
+      token: token,
+    );
+  }
+}

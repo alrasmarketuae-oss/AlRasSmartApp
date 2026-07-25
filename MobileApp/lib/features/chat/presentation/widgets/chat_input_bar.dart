@@ -1,0 +1,263 @@
+import 'dart:convert';
+
+import 'package:alrasmarket/core/theme/colors.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
+
+class ChatInputBar extends StatefulWidget {
+  const ChatInputBar({
+    super.key,
+    required this.onSendText,
+    required this.onSendImage,
+    required this.onSendVoice,
+    required this.onSendFile,
+    required this.onSendVideo,
+    required this.onSendLocation,
+    this.isSending = false,
+  });
+
+  final ValueChanged<String> onSendText;
+  final ValueChanged<String> onSendImage;
+  final ValueChanged<String> onSendVoice;
+  final void Function(String path, String name) onSendFile;
+  final ValueChanged<String> onSendVideo;
+  final ValueChanged<String> onSendLocation;
+  final bool isSending;
+
+  @override
+  State<ChatInputBar> createState() => _ChatInputBarState();
+}
+
+class _ChatInputBarState extends State<ChatInputBar> {
+  final TextEditingController _controller = TextEditingController();
+  final AudioRecorder _recorder = AudioRecorder();
+  bool _isRecording = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _recorder.dispose();
+    super.dispose();
+  }
+
+  void _sendText() {
+    final text = _controller.text.trim();
+    if (text.isEmpty || widget.isSending) return;
+    _controller.clear();
+    widget.onSendText(text);
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    if (widget.isSending) return;
+    final picker = ImagePicker();
+    final file = await picker.pickImage(source: source, imageQuality: 80);
+    if (file != null) {
+      widget.onSendImage(file.path);
+    }
+  }
+
+  Future<void> _pickVideo() async {
+    if (widget.isSending) return;
+    final picker = ImagePicker();
+    final file = await picker.pickVideo(source: ImageSource.gallery);
+    if (file != null) {
+      widget.onSendVideo(file.path);
+    }
+  }
+
+  Future<void> _pickFile() async {
+    if (widget.isSending) return;
+    final result = await FilePicker.pickFiles();
+    if (result != null && result.files.single.path != null) {
+      final path = result.files.single.path!;
+      final name = result.files.single.name;
+      widget.onSendFile(path, name);
+    }
+  }
+
+  Future<void> _shareLocation() async {
+    if (widget.isSending) return;
+
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Location permission denied')),
+        );
+      }
+      return;
+    }
+
+    final position = await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+      ),
+    );
+    final payload = jsonEncode({
+      'lat': position.latitude,
+      'lng': position.longitude,
+      'label': 'My location',
+    });
+    widget.onSendLocation(payload);
+  }
+
+  Future<void> _toggleRecording() async {
+    if (widget.isSending) return;
+
+    if (_isRecording) {
+      final path = await _recorder.stop();
+      setState(() => _isRecording = false);
+      if (path != null) {
+        widget.onSendVoice(path);
+      }
+      return;
+    }
+
+    if (!await _recorder.hasPermission()) return;
+
+    final dir = await getTemporaryDirectory();
+    final filePath =
+        '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+
+    await _recorder.start(
+      const RecordConfig(encoder: AudioEncoder.aacLc),
+      path: filePath,
+    );
+    setState(() => _isRecording = true);
+  }
+
+  void _showAttachmentOptions() {
+    showModalBottomSheet<void>(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Gallery'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Camera'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.videocam_outlined),
+              title: const Text('Video'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickVideo();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.location_on_outlined),
+              title: const Text('Location'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _shareLocation();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.attach_file),
+              title: const Text('File'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickFile();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 10.h,
+        left: 10.w,
+        right: 10.w,
+        top: 10.h,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: widget.isSending ? null : _showAttachmentOptions,
+            icon: Icon(Icons.attach_file, color: LightColor.defaultColor),
+          ),
+          Expanded(
+            child: TextField(
+              controller: _controller,
+              enabled: !widget.isSending,
+              decoration: InputDecoration(
+                hintText: 'Type a message...',
+                filled: true,
+                fillColor: const Color(0xFFF4F7FA),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24.r),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+              ),
+              textInputAction: TextInputAction.send,
+              onSubmitted: (_) => _sendText(),
+            ),
+          ),
+          SizedBox(width: 4.w),
+          GestureDetector(
+            onTap: _toggleRecording,
+            child: Container(
+              padding: EdgeInsets.all(10.w),
+              decoration: BoxDecoration(
+                color: _isRecording ? Colors.red : LightColor.defaultColor,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                _isRecording ? Icons.stop : Icons.mic,
+                color: Colors.white,
+                size: 22.sp,
+              ),
+            ),
+          ),
+          SizedBox(width: 4.w),
+          IconButton(
+            onPressed: widget.isSending ? null : _sendText,
+            icon: Icon(Icons.send, color: LightColor.defaultColor),
+          ),
+        ],
+      ),
+    );
+  }
+}

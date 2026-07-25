@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "592516755028",
+    "project_id": "alras-market",
+    "storage_bucket": "alras-market.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:592516755028:android:79dbb13330e6708fd107c1",
+        "android_client_info": {
+          "package_name": "com.mergespice.alrasmarket"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB0KQuiP9N1jftf5WRRzR6C2pd9eTc5IGs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

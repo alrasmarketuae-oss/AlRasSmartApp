@@ -1,0 +1,474 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../../core/cache/api_cache_store.dart';
+import '../../../core/helper/cach_helper.dart';
+import '../../../core/serveses/app_chat_listener_service.dart';
+import '../../../core/serveses/cached_constants.dart';
+import '../../../core/services/api_constants.dart';
+import '../../../core/services/dio_helper.dart';
+import '../../features/chat/data/utils/chat_e2e_crypto.dart';
+
+/// Centralized authentication service for managing user authentication state
+class AuthService {
+  static AuthService? _instance;
+  static AuthService get instance => _instance ??= AuthService._();
+
+  AuthService._();
+
+  static const _secureStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
+
+  /// In-memory copy of the chat key passphrase (login password / chat PIN).
+  String? _chatKeyPassphrase;
+
+  /// Bumped whenever profile image changes so UI can refresh cached avatars.
+  final ValueNotifier<int> profileImageRevision = ValueNotifier(0);
+
+  String? get currentProfileImageUrl {
+    final path = userImagePath?.trim();
+    if (path == null || path.isEmpty) return null;
+    final resolved = ApiConstants.resolveMediaUrl(path);
+    if (resolved.isEmpty) return null;
+    return '$resolved?v=${profileImageRevision.value}';
+  }
+
+  /// Check if user is authenticated
+  bool get isAuthenticated => token != null && token!.isNotEmpty;
+
+  /// Guest browsing (no token) — category catalog home, no prices.
+  bool get isGuest => !isAuthenticated;
+
+  /// Get current user ID (personId)
+  String? get currentUserID => id;
+
+  /// Get current user token
+  String? get currentToken => token;
+
+  /// Get current user name (fullName)
+  String? get currentUserName => name;
+
+  /// Get current user email
+  String? get currentUserEmail => email;
+
+  /// Get current user phone number
+  String? get currentUserPhone => phone;
+
+  String? phone;
+
+  /// Get current user role name
+  String? get currentUserRoleName => roleName;
+  String? get currentUserImagePath => userImagePath;
+
+  String? get currentUserRoleId => roleId;
+  bool get currentUserIsApproved => isApproved ?? false;
+  bool get currentUserIsCustomer => isCustomer ?? false;
+  bool get currentUserIsCompanyAccount => isCompanyAccount == true;
+
+  /// Person account (IsCustomer=false, not a company account).
+  /// Guests are not personal customers — they browse category catalog only.
+  bool get isPersonalCustomerAccount =>
+      isAuthenticated && isCompanyAccount != true;
+
+  /// UAE mobile numbers start with +971 / 971.
+  bool get isUaePhoneNumber {
+    final raw = (phone ?? '').replaceAll(RegExp(r'[\s\-]'), '');
+    if (raw.isEmpty) return false;
+    final digits = raw.replaceAll(RegExp(r'[^\d]'), '');
+    return digits.startsWith('971') || raw.startsWith('+971');
+  }
+
+  /// Company buyer account (IsCustomer=true on login).
+  bool get isCompanyCustomerAccount =>
+      isCompanyAccount == true && currentUserIsCustomer;
+
+  /// Supplier / seller company account (IsCustomer=false, company account).
+  bool get isSupplierAccount =>
+      isCompanyAccount == true && !currentUserIsCustomer;
+
+  /// Initialize authentication service - loads cached data
+  Future<void> initializeAuth() async {
+    try {
+      // Load cached authentication data
+      // Map personId to id
+      final personId = CachHelper.getData('personId');
+      id = personId?.toString();
+
+      token = CachHelper.getData('token')?.toString();
+
+      // Map fullName to name
+      final fullName = CachHelper.getData('fullName');
+      name = fullName?.toString();
+
+      email = CachHelper.getData('email')?.toString();
+      phone = CachHelper.getData('phone')?.toString();
+      userImagePath = CachHelper.getData('userImagePath')?.toString();
+      final revision = CachHelper.getData('userImageRevision');
+      profileImageRevision.value = revision is int
+          ? revision
+          : int.tryParse(revision?.toString() ?? '') ?? 0;
+      final isApprovedData = CachHelper.getData('isApproved') as bool?;
+      isApproved = isApprovedData;
+      final isCustomerData = CachHelper.getData('isCustomer') as bool?;
+      isCustomer = isCustomerData;
+      final isVerifiedData = CachHelper.getData('isVerified') as bool?;
+      isVerified = isVerifiedData;
+      final isCompanyAccountData =
+          CachHelper.getData('isCompanyAccount') as bool?;
+      isCompanyAccount = isCompanyAccountData;
+      final isShippingCompanyAccountData =
+          CachHelper.getData('isShippingCompanyAccount') as bool?;
+      isShippingCompanyAccount = isShippingCompanyAccountData;
+
+      final role = CachHelper.getData('role');
+      roleName = role?.toString();
+      final rId = CachHelper.getData('roleId')?.toString();
+      roleId = rId;
+
+      // Load language settings
+      lang = CachHelper.getData('languageCode')?.toString() ?? 'ar';
+      isArabic = lang == 'ar';
+
+      debugPrint(
+        'AuthService initialized - id: $id, name: $name, email: $email, roleName: $roleName, isApproved: $isApproved, isCustomer: $isCustomer, isVerified: $isVerified',
+      );
+    } catch (e) {
+      debugPrint('Error initializing auth: $e');
+    }
+  }
+
+  /// Save authentication data after successful login
+  /// Uses only: token, personId, email, fullName, role
+  Future<void> saveAuthData({
+    required String personId,
+    required String authToken,
+    String? userEmail,
+    String? fullName,
+    String? userRole,
+    required String userRoleId,
+    bool? companyWaiting,
+    bool? approved,
+    bool? isCustomerAcount,
+    bool? verified,
+    bool? companyAccount,
+    bool? shippingCompanyAccount,
+    String? userPhone,
+    String? imagePath,
+    bool clearSessionToken = false,
+  }) async {
+    debugPrint(
+      'Saving auth data - personId: $personId, email: $userEmail, fullName: $fullName, role: $userRole, roleId: $userRoleId, token: $authToken',
+    );
+
+    try {
+      // Save personId (mapped to 'personId' in cache, 'id' in cached_constants)
+      if (personId.isNotEmpty) {
+        await CachHelper.saveData(key: 'personId', value: personId);
+        id = personId;
+      }
+
+      if (authToken.isNotEmpty) {
+        await CachHelper.saveData(key: 'token', value: authToken);
+        token = authToken;
+      } else if (clearSessionToken) {
+        await CachHelper.removeData('token');
+        token = null;
+        await AppChatListenerService.instance.stop();
+      }
+
+      // Save email
+      if (userEmail != null) {
+        await CachHelper.saveData(key: 'email', value: userEmail);
+        // Update global email variable from cached_constants
+        email = userEmail;
+      }
+
+      // Save fullName (mapped to 'fullName' in cache, 'name' in cached_constants)
+      if (fullName != null) {
+        await CachHelper.saveData(key: 'fullName', value: fullName);
+        name = fullName;
+      }
+
+      // Save role (mapped to 'role' in cache, 'roleName' in cached_constants)
+      if (userRole != null) {
+        await CachHelper.saveData(key: 'role', value: userRole);
+        roleName = userRole;
+      }
+
+      await CachHelper.saveData(key: 'roleId', value: userRoleId);
+      roleId = userRoleId;
+
+      if (companyWaiting != null) {
+        await CachHelper.saveData(
+          key: 'isCompanyWaiting',
+          value: companyWaiting,
+        );
+      }
+      if (approved != null) {
+        await CachHelper.saveData(key: 'isApproved', value: approved);
+        isApproved = approved;
+      }
+      // Always persist customer flag (default false) so MyAds gating stays reliable.
+      final resolvedIsCustomer = isCustomerAcount ?? false;
+      await CachHelper.saveData(key: 'isCustomer', value: resolvedIsCustomer);
+      isCustomer = resolvedIsCustomer;
+      if (verified != null) {
+        await CachHelper.saveData(key: 'isVerified', value: verified);
+        isVerified = verified;
+      }
+      if (companyAccount != null) {
+        await CachHelper.saveData(
+          key: 'isCompanyAccount',
+          value: companyAccount,
+        );
+        isCompanyAccount = companyAccount;
+      }
+      if (shippingCompanyAccount != null) {
+        await CachHelper.saveData(
+          key: 'isShippingCompanyAccount',
+          value: shippingCompanyAccount,
+        );
+        isShippingCompanyAccount = shippingCompanyAccount;
+      }
+      if (userPhone != null && userPhone.isNotEmpty) {
+        await savePhone(userPhone);
+      }
+      if (imagePath != null) {
+        await saveProfileImagePath(imagePath);
+      }
+    } catch (e) {
+      debugPrint('Error saving auth data: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> setCompanyWaiting(bool waiting) async {
+    await CachHelper.saveData(key: 'isCompanyWaiting', value: waiting);
+  }
+
+  Future<void> savePhone(String userPhone) async {
+    await CachHelper.saveData(key: 'phone', value: userPhone);
+    phone = userPhone;
+  }
+
+  Future<void> saveProfileImagePath(String path) async {
+    await CachHelper.saveData(key: 'userImagePath', value: path);
+    userImagePath = path;
+    profileImageRevision.value++;
+    await CachHelper.saveData(
+      key: 'userImageRevision',
+      value: profileImageRevision.value,
+    );
+  }
+
+  /// Update user profile data
+  /// Uses only: email, fullName, role
+  Future<void> updateProfileData({
+    String? userEmail,
+    String? fullName,
+    String? userRole,
+    String? imagePath,
+  }) async {
+    try {
+      if (userEmail != null) {
+        await CachHelper.saveData(key: 'email', value: userEmail);
+        // Update global email variable from cached_constants
+        email = userEmail;
+      }
+      if (fullName != null) {
+        await CachHelper.saveData(key: 'fullName', value: fullName);
+        name = fullName;
+      }
+      if (userRole != null) {
+        await CachHelper.saveData(key: 'role', value: userRole);
+        roleName = userRole;
+      }
+      if (imagePath != null) {
+        await saveProfileImagePath(imagePath);
+      }
+    } catch (e) {
+      debugPrint('Error updating profile data: $e');
+      rethrow;
+    }
+  }
+
+  /// Check if a route requires authentication
+  bool requiresAuthentication(String? routeName) {
+    const protectedRoutes = [
+      '/homeView',
+      '/ProfileView',
+      '/EditProfileView',
+      '/SettingsView',
+      '/ManageAdsView',
+      '/PostAdsView',
+    ];
+    return protectedRoutes.contains(routeName);
+  }
+
+  /// Check if a route requires admin privileges
+  bool requiresAdmin(String? routeName) {
+    const adminRoutes = ['/admin-dashboard', '/ManageAdsView'];
+    return adminRoutes.contains(routeName);
+  }
+
+  /// Password / PIN used only client-side to wrap/unwrap the chat private key.
+  Future<void> setChatKeyPassphrase(String passphrase) async {
+    final trimmed = passphrase.trim();
+    if (trimmed.isEmpty) return;
+    _chatKeyPassphrase = trimmed;
+    final uid = id;
+    if (uid != null && uid.isNotEmpty) {
+      await _secureStorage.write(
+        key: 'chat_key_passphrase_${uid.toLowerCase()}',
+        value: trimmed,
+      );
+    }
+  }
+
+  /// Builds the wrap secret from password (hashed) or email — never prompted.
+  Future<void> setChatKeyWrapFromCredentials({
+    String? password,
+    String? email,
+    String? userId,
+  }) async {
+    final secret = ChatE2eCrypto.deriveWrapSecret(
+      password: password,
+      email: email ?? currentUserEmail,
+      userId: userId ?? id,
+    );
+    if (secret == null || secret.isEmpty) return;
+    await setChatKeyPassphrase(secret);
+  }
+
+  /// Secrets to try for unwrap: password-hash (if cached), then email-hash.
+  Future<List<String>> resolveChatKeyWrapSecrets() async {
+    final secrets = <String>[];
+    final cached = await getChatKeyPassphrase();
+    if (cached != null && cached.isNotEmpty) {
+      secrets.add(cached);
+    }
+    final emailSecret = ChatE2eCrypto.deriveWrapSecret(
+      email: currentUserEmail,
+      userId: id,
+    );
+    if (emailSecret != null &&
+        emailSecret.isNotEmpty &&
+        !secrets.contains(emailSecret)) {
+      secrets.add(emailSecret);
+    }
+    // Persist email secret so next app launch still works for social logins.
+    if (cached == null && emailSecret != null) {
+      await setChatKeyPassphrase(emailSecret);
+    }
+    return secrets;
+  }
+
+  Future<String?> getChatKeyPassphrase() async {
+    if (_chatKeyPassphrase != null && _chatKeyPassphrase!.isNotEmpty) {
+      return _chatKeyPassphrase;
+    }
+    final uid = id;
+    if (uid == null || uid.isEmpty) return null;
+    _chatKeyPassphrase = await _secureStorage.read(
+      key: 'chat_key_passphrase_${uid.toLowerCase()}',
+    );
+    return _chatKeyPassphrase;
+  }
+
+  Future<void> clearChatKeyPassphrase() async {
+    final uid = id;
+    _chatKeyPassphrase = null;
+    if (uid != null && uid.isNotEmpty) {
+      await _secureStorage.delete(
+        key: 'chat_key_passphrase_${uid.toLowerCase()}',
+      );
+    }
+  }
+
+  /// Clear all authentication data
+  Future<void> clearAuthData() async {
+    await clearChatKeyPassphrase();
+    id = null;
+    token = null;
+    name = null;
+    email = null;
+    roleName = null;
+    roleId = null;
+    isApproved = null;
+    isCustomer = null;
+    isVerified = null;
+    isCompanyAccount = null;
+    phone = null;
+    userImagePath = null;
+    profileImageRevision.value = 0;
+
+    // Remove only the auth-related keys
+    await CachHelper.removeData('personId');
+    await CachHelper.removeData('token');
+    await CachHelper.removeData('email');
+    await CachHelper.removeData('fullName');
+    await CachHelper.removeData('role');
+    await CachHelper.removeData('roleId');
+    await CachHelper.removeData('isCompanyWaiting');
+    await CachHelper.removeData('isApproved');
+    await CachHelper.removeData('isCustomer');
+    await CachHelper.removeData('isVerified');
+    await CachHelper.removeData('isCompanyAccount');
+    await CachHelper.removeData('phone');
+    await CachHelper.removeData('userImagePath');
+    await CachHelper.removeData('userImageRevision');
+
+    debugPrint('Auth data cleared');
+  }
+
+  // Logout
+  Future<void> logout() async {
+    await _clearFcmTokenOnServer();
+    await AppChatListenerService.instance.stop();
+    await ApiCacheStore.instance.invalidateUserData();
+    await clearAuthData();
+    debugPrint('User logged out');
+  }
+
+  Future<void> _clearFcmTokenOnServer() async {
+    final token = currentToken;
+    if (token == null || token.trim().isEmpty) return;
+    try {
+      await DioHelper.postData(
+        url: ApiConstants.clearFcmTokenEndPoint,
+        data: const {},
+        token: token,
+      );
+    } catch (e) {
+      debugPrint('clearFcmToken skipped: $e');
+    }
+  }
+
+  /// Validates cached session against the API (rejected/suspended users).
+  Future<bool> validateSession() async {
+    if (!isAuthenticated) return true;
+
+    try {
+      final response = await DioHelper.getData(
+        url: ApiConstants.userProfileEndPoint,
+        token: currentToken,
+      );
+      final status = response?.statusCode ?? 0;
+      if (status == 401 || status == 403) {
+        await clearAuthData();
+        return false;
+      }
+      if (status == 200 && response?.data is Map) {
+        final data = response!.data as Map;
+        if (data['isRejected'] == true || data['IsRejected'] == true) {
+          await clearAuthData();
+          return false;
+        }
+      }
+      return true;
+    } catch (e) {
+      debugPrint('Session validation skipped: $e');
+      return true;
+    }
+  }
+}

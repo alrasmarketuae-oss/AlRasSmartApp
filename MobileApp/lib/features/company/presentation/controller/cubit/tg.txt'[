@@ -1,0 +1,4 @@
+لما اعمل لوجن و انتقل ل @lib/features/company/presentation/views/home_layout.dart ال navigation at @home_layout.dart (36-40) بيعلق ويفضبل ثابت في 
+
+/**لما اعمل لوجن و انتقل ل @lib/features/company/presentation/views/home_layout.dart ال navigation at @home_layout.dart (36-40) بيعلق ويفضبل ثابت في   context.read<CompanyCubit>().setTab(index),  و في ال و هنا  
+  @profile_view.dart (350-351)  خلي ال index = 0 td ho  */
