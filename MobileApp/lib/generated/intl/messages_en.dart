@@ -628,11 +628,17 @@ class MessageLookup extends MessageLookupByLibrary {
     "howCanIPlaceAnOrder": MessageLookupByLibrary.simpleMessage(
       "How can I place an order?",
     ),
+    "howCanIPlaceAnOrderAnswer": MessageLookupByLibrary.simpleMessage(
+      "Browse products, open the item you want, then tap Add to Cart. Go to Cart, review your items, choose shipping if needed, and complete checkout.",
+    ),
     "howCanWeHelpYou": MessageLookupByLibrary.simpleMessage(
       "How can we help you?",
     ),
     "howDoITrackMyOrder": MessageLookupByLibrary.simpleMessage(
       "How do I track my order?",
+    ),
+    "howDoITrackMyOrderAnswer": MessageLookupByLibrary.simpleMessage(
+      "Open My Orders from your profile, select the order, then tap Track Order to follow its current status.",
     ),
     "imageSelectedFromGallery": MessageLookupByLibrary.simpleMessage(
       "Image selected from gallery",
@@ -1417,6 +1423,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "welcomeTo": MessageLookupByLibrary.simpleMessage("Welcome to"),
     "whatPaymentMethodsAreAvailable": MessageLookupByLibrary.simpleMessage(
       "What payment methods are available?",
+    ),
+    "whatPaymentMethodsAreAvailableAnswer": MessageLookupByLibrary.simpleMessage(
+      "You can pay online with Visa or Mastercard, or choose Cash on Delivery when available at checkout.",
     ),
     "wholeBlackPepper": MessageLookupByLibrary.simpleMessage(
       "Whole Black Pepper",

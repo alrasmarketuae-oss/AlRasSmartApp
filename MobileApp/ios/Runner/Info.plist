@@ -50,6 +50,13 @@
 		<true/>
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
+		<key>LSApplicationQueriesSchemes</key>
+		<array>
+			<string>tel</string>
+			<string>mailto</string>
+			<string>https</string>
+			<string>http</string>
+		</array>
 		<key>NSMicrophoneUsageDescription</key>
 		<string>We need microphone access to send voice messages in support chat.</string>
 		<key>NSCameraUsageDescription</key>

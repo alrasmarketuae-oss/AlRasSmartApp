@@ -10,9 +10,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class TechnicalSupportView extends StatelessWidget {
   const TechnicalSupportView({super.key});
+
+  static const String _supportPhoneDisplay = '+971 4 228 5598';
+  static const String _supportPhoneTel = '+97142285598';
+  static const String _supportEmail = 'support@alrasmarketapp.com';
 
   @override
   Widget build(BuildContext context) {
@@ -48,8 +53,7 @@ class TechnicalSupportView extends StatelessWidget {
                             Row(
                               children: [
                                 SvgPicture.asset(
-                                  AppAssets
-                                      .clockIcon, // أيقونة الساعة الخاصة بك
+                                  AppAssets.clockIcon,
                                   width: 20,
                                   height: 20,
                                 ),
@@ -66,7 +70,6 @@ class TechnicalSupportView extends StatelessWidget {
                               ],
                             ),
                             const SizedBox(height: 12),
-                            // سطر السبت - الخميس
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -89,7 +92,6 @@ class TechnicalSupportView extends StatelessWidget {
                               ],
                             ),
                             const SizedBox(height: 8),
-                            // سطر الجمعة
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -115,8 +117,6 @@ class TechnicalSupportView extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 12),
-
-                      // 2. كارت المحادثة المباشرة (Live Chat)
                       CallCard(
                         icon: AppAssets.profileMessageIcon,
                         title: S.of(context).liveChat,
@@ -125,32 +125,23 @@ class TechnicalSupportView extends StatelessWidget {
                         onTap: () => context.push(AppRoutes.kSupportChatView),
                       ),
                       const SizedBox(height: 12),
-
-                      // 3. كارت الاتصال الهاتفي (Phone Call)
                       CallCard(
                         icon: AppAssets.profilePhoneIcon,
                         title: S.of(context).phoneCall,
-                        subtitle: '+971 50 123 4567',
+                        subtitle: _supportPhoneDisplay,
                         buttonText: S.of(context).callNow,
-                        onTap: () {
-                          // أضف هنا أكشن الاتصال
-                        },
+                        onTap: () => _launchSupportPhone(context),
                       ),
                       const SizedBox(height: 12),
-
-                      // 4. كارت البريد الإلكتروني (Email)
                       CallCard(
                         icon: AppAssets.profileMail1Icon,
                         title: S.of(context).email,
-                        subtitle: 'support@alrasmarket.com',
+                        subtitle: _supportEmail,
                         buttonText: S.of(context).sendEmail,
-                        onTap: () {
-            
-                        },
+                        onTap: () => _launchSupportEmail(context),
                       ),
                       const SizedBox(height: 12),
                       _buildFrequentlyAskedQuestionsWidget(context),
-                     
                       const SizedBox(height: 12),
                     ],
                   ),
@@ -162,6 +153,26 @@ class TechnicalSupportView extends StatelessWidget {
       },
     );
   }
+
+  Future<void> _launchSupportPhone(BuildContext context) async {
+    final uri = Uri(scheme: 'tel', path: _supportPhoneTel);
+    final opened = await launchUrl(uri);
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open phone dialer.')),
+      );
+    }
+  }
+
+  Future<void> _launchSupportEmail(BuildContext context) async {
+    final uri = Uri.parse('mailto:$_supportEmail');
+    final opened = await launchUrl(uri);
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open email app.')),
+      );
+    }
+  }
 }
 
 Widget _buildTechnicalSupportWidget(BuildContext context) {
@@ -170,22 +181,21 @@ Widget _buildTechnicalSupportWidget(BuildContext context) {
     decoration: BoxDecoration(
       borderRadius: BorderRadius.circular(12),
       gradient: const LinearGradient(
-        begin: Alignment.topLeft, // بداية التدرج من فوق شمال
+        begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          Color(0xFF0066CC), // الأزرق
-          Color(0xFFD0091E), // الأحمر
+          Color(0xFF0066CC),
+          Color(0xFFD0091E),
         ],
       ),
     ),
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // الدائرة البيضاء الشفافة اللي جواها الأيقونة
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            shape: BoxShape.circle, // بدل الرقم الضخم، خيناها دائرة صريحة
+            shape: BoxShape.circle,
             color: Colors.white.withOpacity(0.2),
           ),
           child: SizedBox(
@@ -200,8 +210,6 @@ Widget _buildTechnicalSupportWidget(BuildContext context) {
           ),
         ),
         const SizedBox(height: 16),
-
-        // النص الأول
         Text(
           S.of(context).howCanWeHelpYou,
           textAlign: TextAlign.center,
@@ -214,8 +222,6 @@ Widget _buildTechnicalSupportWidget(BuildContext context) {
           ),
         ),
         const SizedBox(height: 16),
-
-        // النص الثاني
         Text(
           S.of(context).theSupportTeamIsAlwaysHereToAssistYou,
           textAlign: TextAlign.center,
@@ -233,8 +239,10 @@ Widget _buildTechnicalSupportWidget(BuildContext context) {
 }
 
 Widget _buildFrequentlyAskedQuestionsWidget(BuildContext context) {
+  final s = S.of(context);
+
   return Container(
-    width: double.infinity, // عشان ياخد العرض بالكامل بشكل متناسق
+    width: double.infinity,
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
       color: Colors.white,
@@ -248,69 +256,82 @@ Widget _buildFrequentlyAskedQuestionsWidget(BuildContext context) {
       ],
     ),
     child: Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start, // محاذاة النصوص لتبدأ من اليسار بالتساوي
+      crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // عنوان القسم الرئيسي
-         Text(
-          S.of(context).frequentlyAskedQuestions,
+        Text(
+          s.frequentlyAskedQuestions,
           style: TextStyle(
             color: Color(0xFF333333),
             fontFamily: 'Inter',
             fontSize: 16,
-            fontWeight: FontWeight.w600, // خليناه بولد خفيف عشان يظهر كعنوان
+            fontWeight: FontWeight.w600,
             height: 1.5,
           ),
         ),
-        const SizedBox(height: 16),
-
-        // السؤال الأول
-         Text(
-          S.of(context).howCanIPlaceAnOrder,
-          style: TextStyle(
-            color: Color(0xFF6B7280),
-            fontFamily: 'Inter',
-            fontSize: 14,
-            height: 1.5,
-          ),
+        const SizedBox(height: 8),
+        _FaqItem(
+          question: s.howCanIPlaceAnOrder,
+          answer: s.howCanIPlaceAnOrderAnswer,
         ),
-        const Padding(
-          padding: EdgeInsets.symmetric(
-            vertical: 12,
-          ), // مسافة متناسقة حول الفاصل بدل الـ 20 الكبيرة
-          child: Divider(
-            color: Color(0xFFE5E7EB),
-            thickness: 1,
-          ), // لون رمادي خفيف ومريح للعين
+        const Divider(color: Color(0xFFE5E7EB), thickness: 1),
+        _FaqItem(
+          question: s.whatPaymentMethodsAreAvailable,
+          answer: s.whatPaymentMethodsAreAvailableAnswer,
         ),
-
-        // السؤال الثاني
-         Text(
-          S.of(context).whatPaymentMethodsAreAvailable,
-          style: TextStyle(
-            color: Color(0xFF6B7280),
-            fontFamily: 'Inter',
-            fontSize: 14,
-            height: 1.5,
-          ),
-        ),
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 12),
-          child: Divider(color: Color(0xFFE5E7EB), thickness: 1),
-        ),
-
-        // السؤال الثالث
-         Text(
-          S.of(context).howDoITrackMyOrder,
-          style: TextStyle(
-            color: Color(0xFF6B7280),
-            fontFamily: 'Inter',
-            fontSize: 14,
-            height: 1.5,
-          ),
+        const Divider(color: Color(0xFFE5E7EB), thickness: 1),
+        _FaqItem(
+          question: s.howDoITrackMyOrder,
+          answer: s.howDoITrackMyOrderAnswer,
         ),
       ],
     ),
   );
+}
+
+class _FaqItem extends StatelessWidget {
+  const _FaqItem({
+    required this.question,
+    required this.answer,
+  });
+
+  final String question;
+  final String answer;
+
+  @override
+  Widget build(BuildContext context) {
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        tilePadding: EdgeInsets.zero,
+        childrenPadding: const EdgeInsets.only(bottom: 12),
+        expandedCrossAxisAlignment: CrossAxisAlignment.start,
+        iconColor: const Color(0xFF6B7280),
+        collapsedIconColor: const Color(0xFF6B7280),
+        title: Text(
+          question,
+          style: const TextStyle(
+            color: Color(0xFF6B7280),
+            fontFamily: 'Inter',
+            fontSize: 14,
+            height: 1.5,
+          ),
+        ),
+        children: [
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(
+              answer,
+              style: const TextStyle(
+                color: Color(0xFF333333),
+                fontFamily: 'Inter',
+                fontSize: 14,
+                height: 1.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

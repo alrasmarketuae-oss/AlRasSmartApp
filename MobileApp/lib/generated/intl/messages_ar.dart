@@ -631,11 +631,17 @@ class MessageLookup extends MessageLookupByLibrary {
     "howCanIPlaceAnOrder": MessageLookupByLibrary.simpleMessage(
       "كيف يمكنني طلب المنتج؟",
     ),
+    "howCanIPlaceAnOrderAnswer": MessageLookupByLibrary.simpleMessage(
+      "تصفح المنتجات وافتح المنتج الذي تريده ثم اضغط إضافة إلى السلة. بعد ذلك انتقل إلى السلة، راجع الطلب، اختر الشحن إن لزم، وأكمل عملية الدفع.",
+    ),
     "howCanWeHelpYou": MessageLookupByLibrary.simpleMessage(
       "كيف يمكننا مساعدتك؟",
     ),
     "howDoITrackMyOrder": MessageLookupByLibrary.simpleMessage(
       "كيف يمكنني تتبع طلبي؟",
+    ),
+    "howDoITrackMyOrderAnswer": MessageLookupByLibrary.simpleMessage(
+      "من الملف الشخصي افتح طلباتي، اختر الطلب، ثم اضغط تتبع الطلب لمتابعة حالته الحالية.",
     ),
     "imageSelectedFromGallery": MessageLookupByLibrary.simpleMessage(
       "صورة محددة من المعرض",
@@ -1400,6 +1406,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "welcomeTo": MessageLookupByLibrary.simpleMessage("مرحبا بك في"),
     "whatPaymentMethodsAreAvailable": MessageLookupByLibrary.simpleMessage(
       "أي طرق الدفع متاحة؟",
+    ),
+    "whatPaymentMethodsAreAvailableAnswer": MessageLookupByLibrary.simpleMessage(
+      "يمكنك الدفع إلكترونياً عبر Visa أو Mastercard، أو اختيار الدفع عند الاستلام عند توفره أثناء إتمام الطلب.",
     ),
     "wholeBlackPepper": MessageLookupByLibrary.simpleMessage("بذور أسود كاملة"),
     "wholesalePrice": MessageLookupByLibrary.simpleMessage("سعر الجملة"),

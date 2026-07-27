@@ -2759,6 +2759,16 @@ class S {
     );
   }
 
+  /// `Browse products, open the item you want, then tap Add to Cart. Go to Cart, review your items, choose shipping if needed, and complete checkout.`
+  String get howCanIPlaceAnOrderAnswer {
+    return Intl.message(
+      'Browse products, open the item you want, then tap Add to Cart. Go to Cart, review your items, choose shipping if needed, and complete checkout.',
+      name: 'howCanIPlaceAnOrderAnswer',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `What payment methods are available?`
   String get whatPaymentMethodsAreAvailable {
     return Intl.message(
@@ -2769,11 +2779,31 @@ class S {
     );
   }
 
+  /// `You can pay online with Visa or Mastercard, or choose Cash on Delivery when available at checkout.`
+  String get whatPaymentMethodsAreAvailableAnswer {
+    return Intl.message(
+      'You can pay online with Visa or Mastercard, or choose Cash on Delivery when available at checkout.',
+      name: 'whatPaymentMethodsAreAvailableAnswer',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `How do I track my order?`
   String get howDoITrackMyOrder {
     return Intl.message(
       'How do I track my order?',
       name: 'howDoITrackMyOrder',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Open My Orders from your profile, select the order, then tap Track Order to follow its current status.`
+  String get howDoITrackMyOrderAnswer {
+    return Intl.message(
+      'Open My Orders from your profile, select the order, then tap Track Order to follow its current status.',
+      name: 'howDoITrackMyOrderAnswer',
       desc: '',
       args: [],
     );
