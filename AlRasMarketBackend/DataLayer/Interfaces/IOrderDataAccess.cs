@@ -102,4 +102,15 @@ public interface IOrderDataAccess
     Task AddInboxNotificationAsync(Notification notification, CancellationToken cancellationToken = default);
     Task<Guid> GetOrCreateNotificationRouteIdAsync(string name, CancellationToken cancellationToken = default);
     Task<byte> GetOrCreateNotificationTypeIdAsync(string name, CancellationToken cancellationToken = default);
+
+    Task<AdminOrderStatsRow> GetAdminOrderStatsAsync(CancellationToken cancellationToken = default);
+    Task<Order?> GetAdminVisibleOrderWithDetailDetailsAsync(
+        long orderId,
+        CancellationToken cancellationToken = default);
+    Task<PendingPayment?> GetPendingPaymentByOrderIdAsync(
+        long orderId,
+        CancellationToken cancellationToken = default);
+    Task<(List<Order> Orders, int TotalCount)> GetAdminOrdersPageAsync(
+        AdminOrdersPageFilter filter,
+        CancellationToken cancellationToken = default);
 }

@@ -3,13 +3,12 @@ using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using DataLayer.Interfaces;
 using DataLayer.Models;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
 namespace BusinessLayer.Services;
 
 public class AdminOrdersAppService(
-    IRasAlSouqDbContext dbContext,
+    IOrderDataAccess orderData,
     IOrdersAppService ordersAppService,
     IContentTranslationService contentTranslationService,
     IAdminRealtimeNotificationService adminRealtimeNotificationService,
@@ -22,33 +21,21 @@ public class AdminOrdersAppService(
 
     public async Task<AdminOrderStatsDto> GetOrderStatsAsync(CancellationToken cancellationToken = default)
     {
-        var utcNow = DateTime.UtcNow;
-        var monthStart = new DateTime(utcNow.Year, utcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-        var prevMonthStart = monthStart.AddMonths(-1);
-
-        var visibleOrders = AdminOrderVisibilityHelper.WhereVisibleInAdminDashboard(dbContext.Orders);
-
-        var totalOrders = await visibleOrders.CountAsync(cancellationToken);
-        var ordersThisMonth = await visibleOrders.CountAsync(x => x.CreatedAt >= monthStart, cancellationToken);
-        var ordersLastMonth = await visibleOrders.CountAsync(
-            x => x.CreatedAt >= prevMonthStart && x.CreatedAt < monthStart,
-            cancellationToken);
+        var stats = await orderData.GetAdminOrderStatsAsync(cancellationToken);
 
         return new AdminOrderStatsDto
         {
-            TotalOrders = totalOrders,
-            TotalOrdersChangePercent = AdminMappings.PercentChange(ordersThisMonth, ordersLastMonth),
-            OrderedCount = await visibleOrders.CountAsync(x => x.StatusId == OrderStatusCodes.Ordered, cancellationToken),
-            ShippingCount = await visibleOrders.CountAsync(x => x.StatusId == OrderStatusCodes.Shipping, cancellationToken),
-            DeliveredCount = await visibleOrders.CountAsync(x => x.StatusId == OrderStatusCodes.Delivered, cancellationToken),
+            TotalOrders = stats.TotalOrders,
+            TotalOrdersChangePercent = AdminMappings.PercentChange(stats.OrdersThisMonth, stats.OrdersLastMonth),
+            OrderedCount = stats.OrderedCount,
+            ShippingCount = stats.ShippingCount,
+            DeliveredCount = stats.DeliveredCount,
         };
     }
 
     public async Task<AdminOrderListItemDto> GetOrderByIdAsync(long orderId, CancellationToken cancellationToken = default)
     {
-        var order = await AdminOrderVisibilityHelper.WhereVisibleInAdminDashboard(
-                AdminOrderMapper.WithAdminDetailDetails(dbContext.Orders))
-            .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken)
+        var order = await orderData.GetAdminVisibleOrderWithDetailDetailsAsync(orderId, cancellationToken)
             ?? throw new KeyNotFoundException("Order not found.");
 
         var commissionSettings = await commissionSettingsProvider.GetAsync(cancellationToken);
@@ -84,9 +71,7 @@ public class AdminOrdersAppService(
             return;
         }
 
-        var pendingPayment = await dbContext.PendingPayments
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.OrderId == orderId, cancellationToken);
+        var pendingPayment = await orderData.GetPendingPaymentByOrderIdAsync(orderId, cancellationToken);
         if (pendingPayment is null)
         {
             return;
@@ -126,122 +111,28 @@ public class AdminOrdersAppService(
         page = page < 1 ? 1 : page;
         pageSize = pageSize is < 1 or > 100 ? 20 : pageSize;
 
-        var query = AdminOrderVisibilityHelper.WhereVisibleInAdminDashboard(
-            dbContext.Orders.AsNoTracking());
-
-        if (statusId.HasValue)
+        Guid? parsedProductId = null;
+        if (!string.IsNullOrWhiteSpace(productId) && Guid.TryParse(productId.Trim(), out var guid))
         {
-            query = query.Where(x => x.StatusId == statusId.Value);
+            parsedProductId = guid;
         }
 
-        query = ApplyOrderChannelFilter(query, orderChannel);
-
-        if (productTypeId.HasValue)
-        {
-            query = query.Where(x => x.Product != null && x.Product.ProductTypeId == productTypeId.Value);
-        }
-
-        if (excludeProductTypeId.HasValue)
-        {
-            query = query.Where(x => x.Product == null || x.Product.ProductTypeId != excludeProductTypeId.Value);
-        }
-
-        if (!string.IsNullOrWhiteSpace(productId) && Guid.TryParse(productId.Trim(), out var parsedProductId))
-        {
-            query = query.Where(x => x.ProductId == parsedProductId);
-        }
-
-        var review = (offerReview ?? string.Empty).Trim().ToLowerInvariant();
-        query = review switch
-        {
-            "awaitingadmin" or "new" or "pendingadmin" => query.Where(x =>
-                !x.IsAdminApproved
-                && x.StatusId == OrderStatusCodes.Ordered
-                && x.Product != null
-                && x.Product.ProductTypeId == ProductTypeCodes.Requests),
-            "awaitingseller" or "pendingseller" => query.Where(x =>
-                x.IsAdminApproved
-                && !x.IsApproved
-                && x.StatusId == OrderStatusCodes.AwaitingSellerApproval
-                && x.Product != null
-                && x.Product.ProductTypeId == ProductTypeCodes.Requests),
-            "sellerapproved" or "accepted" => query.Where(x =>
-                x.IsApproved
-                && x.StatusId != OrderStatusCodes.Cancelled
-                && x.Product != null
-                && x.Product.ProductTypeId == ProductTypeCodes.Requests),
-            _ => query
-        };
-
-        if (createdFrom.HasValue)
-        {
-            var from = DateTime.SpecifyKind(createdFrom.Value.Date, DateTimeKind.Utc);
-            query = query.Where(x => x.CreatedAt >= from);
-        }
-
-        if (createdTo.HasValue)
-        {
-            var to = DateTime.SpecifyKind(createdTo.Value.Date.AddDays(1), DateTimeKind.Utc);
-            query = query.Where(x => x.CreatedAt < to);
-        }
-
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var term = search.Trim().ToLowerInvariant();
-            if (long.TryParse(term, out var orderId))
+        var (orders, totalCount) = await orderData.GetAdminOrdersPageAsync(
+            new AdminOrdersPageFilter
             {
-                query = query.Where(x => x.Id == orderId);
-            }
-            else
-            {
-                query = query.Where(x =>
-                    (x.FromUser != null && x.FromUser.FullName.ToLower().Contains(term)) ||
-                    (x.FromUser != null && x.FromUser.Email.ToLower().Contains(term)) ||
-                    (x.ToUser != null && x.ToUser.FullName.ToLower().Contains(term)) ||
-                    (x.ToUser != null && x.ToUser.Email.ToLower().Contains(term)) ||
-                    (x.Product != null && x.Product.NameEn != null && x.Product.NameEn.ToLower().Contains(term)) ||
-                    (x.Product != null && dbContext.ContentTranslations.Any(t =>
-                        t.ProductId == x.ProductId
-                        && t.Scope == ContentTranslationScopes.Product
-                        && t.Field == ContentTranslationFields.Name
-                        && ((t.TextEn != null && t.TextEn.ToLower().Contains(term))
-                            || (t.TextAr != null && t.TextAr.ToLower().Contains(term))))) ||
-                    (x.Notes != null && x.Notes.ToLower().Contains(term)));
-            }
-        }
-
-        var totalCount = await query.CountAsync(cancellationToken);
-
-        // Page IDs first (no collection Includes) so newest orders stay on top.
-        // Including images/videos before Skip/Take can scramble order via cartesian joins.
-        var orderIds = await query
-            .OrderByDescending(x => x.CreatedAt)
-            .ThenByDescending(x => x.Id)
-            .Select(x => x.Id)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
-
-        List<Order> orders;
-        if (orderIds.Count == 0)
-        {
-            orders = [];
-        }
-        else
-        {
-            var loaded = await AdminOrderMapper.WithAdminListDetails(dbContext.Orders.AsNoTracking())
-                .AsSplitQuery()
-                .Where(x => orderIds.Contains(x.Id))
-                .ToListAsync(cancellationToken);
-
-            var orderIndex = orderIds
-                .Select((id, index) => (id, index))
-                .ToDictionary(x => x.id, x => x.index);
-
-            orders = loaded
-                .OrderBy(x => orderIndex[x.Id])
-                .ToList();
-        }
+                Page = page,
+                PageSize = pageSize,
+                StatusId = statusId,
+                ProductTypeId = productTypeId,
+                ExcludeProductTypeId = excludeProductTypeId,
+                ProductId = parsedProductId,
+                Search = search,
+                CreatedFrom = createdFrom,
+                CreatedTo = createdTo,
+                OfferReview = offerReview,
+                OrderChannel = orderChannel,
+            },
+            cancellationToken);
 
         var commissionSettings = await commissionSettingsProvider.GetAsync(cancellationToken);
         var categoryCommissions = await categoryCommissionProvider.GetAsync(cancellationToken);
@@ -482,33 +373,5 @@ public class AdminOrdersAppService(
             summary,
             details,
             cancellationToken);
-    }
-
-    /// <summary>
-    /// Splits catalog orders into sidebar pages: retail / booking / offers / categories.
-    /// </summary>
-    private static IQueryable<Order> ApplyOrderChannelFilter(IQueryable<Order> query, string? orderChannel)
-    {
-        var channel = (orderChannel ?? string.Empty).Trim().ToLowerInvariant();
-        return channel switch
-        {
-            "retail" => query.Where(x =>
-                x.Product != null
-                && (x.IsRetailPurchase
-                    || (x.Product.ProductTypeId == ProductTypeCodes.Retail
-                        && (x.Product.CategoryId == null || x.Product.CategoryId == 0)))),
-            "categories" or "category" or "wholesale" => query.Where(x =>
-                x.Product != null
-                && x.Product.CategoryId != null
-                && x.Product.CategoryId > 0
-                && !x.IsRetailPurchase
-                && (x.Product.ProductTypeId == null
-                    || x.Product.ProductTypeId == ProductTypeCodes.Retail)),
-            "booking" => query.Where(x =>
-                x.Product != null && x.Product.ProductTypeId == ProductTypeCodes.Booking),
-            "offers" or "offer" => query.Where(x =>
-                x.Product != null && x.Product.ProductTypeId == ProductTypeCodes.Offers),
-            _ => query
-        };
     }
 }

@@ -510,4 +510,177 @@ public sealed class OrderDataAccess(IRasAlSouqDbContext dbContext) : IOrderDataA
         await dbContext.SaveChangesAsync(cancellationToken);
         return type.Id;
     }
+
+    public async Task<AdminOrderStatsRow> GetAdminOrderStatsAsync(CancellationToken cancellationToken = default)
+    {
+        var utcNow = DateTime.UtcNow;
+        var monthStart = new DateTime(utcNow.Year, utcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var prevMonthStart = monthStart.AddMonths(-1);
+
+        var visibleOrders = OrderQueryHelpers.WhereVisibleInAdminDashboard(dbContext.Orders);
+
+        var totalOrders = await visibleOrders.CountAsync(cancellationToken);
+        var ordersThisMonth = await visibleOrders.CountAsync(x => x.CreatedAt >= monthStart, cancellationToken);
+        var ordersLastMonth = await visibleOrders.CountAsync(
+            x => x.CreatedAt >= prevMonthStart && x.CreatedAt < monthStart,
+            cancellationToken);
+
+        return new AdminOrderStatsRow
+        {
+            TotalOrders = totalOrders,
+            OrdersThisMonth = ordersThisMonth,
+            OrdersLastMonth = ordersLastMonth,
+            OrderedCount = await visibleOrders.CountAsync(
+                x => x.StatusId == OrderCatalogCodes.StatusOrdered,
+                cancellationToken),
+            ShippingCount = await visibleOrders.CountAsync(
+                x => x.StatusId == OrderCatalogCodes.StatusShipping,
+                cancellationToken),
+            DeliveredCount = await visibleOrders.CountAsync(
+                x => x.StatusId == OrderCatalogCodes.StatusDelivered,
+                cancellationToken),
+        };
+    }
+
+    public Task<Order?> GetAdminVisibleOrderWithDetailDetailsAsync(
+        long orderId,
+        CancellationToken cancellationToken = default) =>
+        OrderQueryHelpers.WhereVisibleInAdminDashboard(
+                OrderQueryHelpers.WithDetailDetails(dbContext.Orders))
+            .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken);
+
+    public Task<PendingPayment?> GetPendingPaymentByOrderIdAsync(
+        long orderId,
+        CancellationToken cancellationToken = default) =>
+        dbContext.PendingPayments
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.OrderId == orderId, cancellationToken);
+
+    public async Task<(List<Order> Orders, int TotalCount)> GetAdminOrdersPageAsync(
+        AdminOrdersPageFilter filter,
+        CancellationToken cancellationToken = default)
+    {
+        var page = filter.Page < 1 ? 1 : filter.Page;
+        var pageSize = filter.PageSize is < 1 or > 100 ? 20 : filter.PageSize;
+
+        var query = OrderQueryHelpers.WhereVisibleInAdminDashboard(
+            dbContext.Orders.AsNoTracking());
+
+        if (filter.StatusId.HasValue)
+        {
+            query = query.Where(x => x.StatusId == filter.StatusId.Value);
+        }
+
+        query = OrderQueryHelpers.ApplyOrderChannelFilter(query, filter.OrderChannel);
+
+        if (filter.ProductTypeId.HasValue)
+        {
+            query = query.Where(x => x.Product != null && x.Product.ProductTypeId == filter.ProductTypeId.Value);
+        }
+
+        if (filter.ExcludeProductTypeId.HasValue)
+        {
+            query = query.Where(x =>
+                x.Product == null || x.Product.ProductTypeId != filter.ExcludeProductTypeId.Value);
+        }
+
+        if (filter.ProductId.HasValue)
+        {
+            query = query.Where(x => x.ProductId == filter.ProductId.Value);
+        }
+
+        var review = (filter.OfferReview ?? string.Empty).Trim().ToLowerInvariant();
+        query = review switch
+        {
+            "awaitingadmin" or "new" or "pendingadmin" => query.Where(x =>
+                !x.IsAdminApproved
+                && x.StatusId == OrderCatalogCodes.StatusOrdered
+                && x.Product != null
+                && x.Product.ProductTypeId == OrderCatalogCodes.TypeRequests),
+            "awaitingseller" or "pendingseller" => query.Where(x =>
+                x.IsAdminApproved
+                && !x.IsApproved
+                && x.StatusId == OrderCatalogCodes.StatusAwaitingSellerApproval
+                && x.Product != null
+                && x.Product.ProductTypeId == OrderCatalogCodes.TypeRequests),
+            "sellerapproved" or "accepted" => query.Where(x =>
+                x.IsApproved
+                && x.StatusId != OrderCatalogCodes.StatusCancelled
+                && x.Product != null
+                && x.Product.ProductTypeId == OrderCatalogCodes.TypeRequests),
+            _ => query
+        };
+
+        if (filter.CreatedFrom.HasValue)
+        {
+            var from = DateTime.SpecifyKind(filter.CreatedFrom.Value.Date, DateTimeKind.Utc);
+            query = query.Where(x => x.CreatedAt >= from);
+        }
+
+        if (filter.CreatedTo.HasValue)
+        {
+            var to = DateTime.SpecifyKind(filter.CreatedTo.Value.Date.AddDays(1), DateTimeKind.Utc);
+            query = query.Where(x => x.CreatedAt < to);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.Search))
+        {
+            var term = filter.Search.Trim().ToLowerInvariant();
+            if (long.TryParse(term, out var orderId))
+            {
+                query = query.Where(x => x.Id == orderId);
+            }
+            else
+            {
+                query = query.Where(x =>
+                    (x.FromUser != null && x.FromUser.FullName.ToLower().Contains(term)) ||
+                    (x.FromUser != null && x.FromUser.Email.ToLower().Contains(term)) ||
+                    (x.ToUser != null && x.ToUser.FullName.ToLower().Contains(term)) ||
+                    (x.ToUser != null && x.ToUser.Email.ToLower().Contains(term)) ||
+                    (x.Product != null && x.Product.NameEn != null && x.Product.NameEn.ToLower().Contains(term)) ||
+                    (x.Product != null && dbContext.ContentTranslations.Any(t =>
+                        t.ProductId == x.ProductId
+                        && t.Scope == ContentTranslationScopes.Product
+                        && t.Field == ContentTranslationFields.Name
+                        && ((t.TextEn != null && t.TextEn.ToLower().Contains(term))
+                            || (t.TextAr != null && t.TextAr.ToLower().Contains(term))))) ||
+                    (x.Notes != null && x.Notes.ToLower().Contains(term)));
+            }
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        // Page IDs first (no collection Includes) so newest orders stay on top.
+        // Including images/videos before Skip/Take can scramble order via cartesian joins.
+        var orderIds = await query
+            .OrderByDescending(x => x.CreatedAt)
+            .ThenByDescending(x => x.Id)
+            .Select(x => x.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        List<Order> orders;
+        if (orderIds.Count == 0)
+        {
+            orders = [];
+        }
+        else
+        {
+            var loaded = await OrderQueryHelpers.WithListDetails(dbContext.Orders.AsNoTracking())
+                .AsSplitQuery()
+                .Where(x => orderIds.Contains(x.Id))
+                .ToListAsync(cancellationToken);
+
+            var orderIndex = orderIds
+                .Select((id, index) => (id, index))
+                .ToDictionary(x => x.id, x => x.index);
+
+            orders = loaded
+                .OrderBy(x => orderIndex[x.Id])
+                .ToList();
+        }
+
+        return (orders, totalCount);
+    }
 }
