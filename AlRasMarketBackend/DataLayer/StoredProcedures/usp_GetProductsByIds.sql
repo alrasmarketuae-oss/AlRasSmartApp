@@ -1,3 +1,19 @@
+-- Must create the TVP before the procedure.
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.types
+    WHERE is_table_type = 1
+      AND name = N'ProductIdListType'
+      AND schema_id = SCHEMA_ID(N'dbo')
+)
+BEGIN
+    CREATE TYPE dbo.ProductIdListType AS TABLE
+    (
+        ProductId uniqueidentifier NOT NULL
+    );
+END
+GO
+
 CREATE OR ALTER PROCEDURE dbo.usp_GetProductsByIds
 (
     @ProductIds dbo.ProductIdListType READONLY

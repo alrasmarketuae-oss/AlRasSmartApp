@@ -141,14 +141,34 @@ public sealed class ProductAdoRepository(
         productCodeParam.Size = 16;
         command.Parameters.Add(productCodeParam);
 
-        var rows = await command.ExecuteNonQueryAsync(cancellationToken);
-        if (rows < 1)
+        try
         {
+            // With SET NOCOUNT ON, ExecuteNonQuery often returns -1 even on success.
+            // Success is determined by the OUTPUT ProductCode from usp_InsertProduct.
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "usp_InsertProduct failed for product {ProductId} owner {OwnerId}",
+                product.ProductId,
+                product.OwnerId);
+            throw;
+        }
+
+        var rawCode = productCodeParam.Value is null or DBNull
+            ? null
+            : Convert.ToString(productCodeParam.Value);
+        if (string.IsNullOrWhiteSpace(rawCode))
+        {
+            logger.LogError(
+                "usp_InsertProduct returned empty ProductCode for product {ProductId}",
+                product.ProductId);
             throw new InvalidOperationException("Product could not be saved to the database.");
         }
 
-        var rawCode = productCodeParam.Value as string;
-        return rawCode ?? throw new InvalidOperationException("SP did not return ProductCode.");
+        return rawCode;
     }
 
     public async Task<List<DbPublicProductRow>> GetProductsByIdsAsync(

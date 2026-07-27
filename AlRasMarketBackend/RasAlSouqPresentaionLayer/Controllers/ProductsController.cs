@@ -14,10 +14,14 @@ namespace RasAlSouqPresentaionLayer.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class ProductsController(IProductsAppService productsAppService, IWebHostEnvironment environment) : ControllerBase
+public class ProductsController(
+    IProductsAppService productsAppService,
+    IWebHostEnvironment environment,
+    ILogger<ProductsController> logger) : ControllerBase
 {
     private readonly IProductsAppService _productsAppService = productsAppService;
     private readonly IWebHostEnvironment _environment = environment;
+    private readonly ILogger<ProductsController> _logger = logger;
 
     /// <summary>
     /// Returns all products and shipping posts owned by the authenticated user.
@@ -362,23 +366,33 @@ public class ProductsController(IProductsAppService productsAppService, IWebHost
         }
         catch (ArgumentException ex)
         {
+            _logger.LogWarning(ex, "Create product validation failed for user {UserId}", userId);
             return BadRequest(new { message = ex.Message });
         }
         catch (KeyNotFoundException ex)
         {
+            _logger.LogWarning(ex, "Create product not found for user {UserId}", userId);
             return NotFound(new { message = ex.Message });
         }
-        catch (UnauthorizedAccessException)
+        catch (UnauthorizedAccessException ex)
         {
+            _logger.LogWarning(ex, "Create product forbidden for user {UserId}", userId);
             return Forbid();
         }
         catch (InvalidOperationException ex)
         {
+            _logger.LogError(ex, "Create product failed (InvalidOperation) for user {UserId}", userId);
             return BadRequest(new { message = ex.Message });
         }
         catch (DbUpdateException ex)
         {
+            _logger.LogError(ex, "Create product DB update failed for user {UserId}", userId);
             return BadRequest(new { message = $"Product could not be saved: {ex.InnerException?.Message ?? ex.Message}" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Create product unexpected failure for user {UserId}", userId);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Product could not be saved." });
         }
     }
 
