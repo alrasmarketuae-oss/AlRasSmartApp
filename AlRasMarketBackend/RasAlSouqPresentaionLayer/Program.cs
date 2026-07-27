@@ -112,6 +112,7 @@ builder.Services.AddScoped<INotificationsAppService, NotificationsAppService>();
 builder.Services.AddScoped<IProductAssetsAppService, ProductAssetsAppService>();
 builder.Services.AddScoped<ProductAdoRepository>();
 builder.Services.AddScoped<IProductDataAccess, ProductDataAccess>();
+builder.Services.AddScoped<IOrderDataAccess, OrderDataAccess>();
 builder.Services.AddScoped<IProductsAppService, ProductsAppService>();
 builder.Services.AddHttpClient<IOpenAiVisionService, OpenAiVisionService>(client =>
 {

@@ -3,7 +3,6 @@ using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using DataLayer.Interfaces;
 using DataLayer.Models;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,17 +24,10 @@ public partial class OrdersAppService
             throw new ArgumentException("Invalid order status.");
         }
 
-        var order = await dbContext.Orders
-            .Include(x => x.Product!)
-            .ThenInclude(x => x!.ProductType)
-            .Include(x => x.Product!)
-            .ThenInclude(x => x!.Unit)
-            .Include(x => x.Product!)
-            .ThenInclude(x => x!.RetailUnit)
-            .FirstOrDefaultAsync(x => x.Id == input.OrderId, cancellationToken)
+        var order = await orderData.GetOrderWithProductForStatusAsync(input.OrderId, cancellationToken)
             ?? throw new KeyNotFoundException("Order not found.");
 
-        var user = await dbContext.Users.FindAsync([userId], cancellationToken)
+        var user = await orderData.GetUserByIdAsync(userId, cancellationToken: cancellationToken)
             ?? throw new KeyNotFoundException("User not found.");
 
         if (!OrderStatusCodes.CanTransition(
@@ -121,11 +113,10 @@ public partial class OrdersAppService
                 RequestOfferStatusLabels.ApplyAwaitingSeller(order);
             }
 
-            await dbContext.SaveChangesAsync(cancellationToken);
+            await orderData.SaveChangesAsync(cancellationToken);
             ProductsAppService.InvalidateListingCaches();
 
-            var orderForModerationNotify = await AdminOrderMapper.WithAdminListDetails(dbContext.Orders)
-                .FirstOrDefaultAsync(x => x.Id == input.OrderId, cancellationToken)
+            var orderForModerationNotify = await orderData.GetOrderWithListDetailsAsync(input.OrderId, cancellationToken)
                 ?? order;
             await NotifyAdvertiserOfAdminApprovedOrderAsync(orderForModerationNotify, cancellationToken);
             await PublishOrderRealtimeAsync(orderForModerationNotify, cancellationToken);
@@ -197,7 +188,7 @@ public partial class OrdersAppService
             }
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await orderData.SaveChangesAsync(cancellationToken);
 
         if (input.StatusId == OrderStatusCodes.Approved
             && (ProductTypeCodes.IsRequests(order.Product?.ProductTypeId)
@@ -221,8 +212,7 @@ public partial class OrdersAppService
             refundMessage = await TryRefundCancelledOnlineOrderAsync(order.Id, cancellationToken);
         }
 
-        var orderForNotification = await AdminOrderMapper.WithAdminListDetails(dbContext.Orders)
-            .FirstOrDefaultAsync(x => x.Id == input.OrderId, cancellationToken)
+        var orderForNotification = await orderData.GetOrderWithListDetailsAsync(input.OrderId, cancellationToken)
             ?? order;
 
         await NotifyBuyerOrderStatusAsync(orderForNotification, userId, cancellationToken);

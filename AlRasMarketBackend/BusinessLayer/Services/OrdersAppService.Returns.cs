@@ -3,7 +3,6 @@ using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using DataLayer.Interfaces;
 using DataLayer.Models;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,10 +27,7 @@ public partial class OrdersAppService
             throw new ArgumentException("Return reason is required.");
         }
 
-        var order = await dbContext.Orders
-            .Include(x => x.Product!)
-            .ThenInclude(x => x!.ProductType)
-            .FirstOrDefaultAsync(x => x.Id == input.OrderId, cancellationToken)
+        var order = await orderData.GetOrderWithProductForReturnAsync(input.OrderId, cancellationToken)
             ?? throw new KeyNotFoundException("Order not found.");
 
         if (order.FromUserId != userId)
@@ -71,7 +67,7 @@ public partial class OrdersAppService
         // Overwrite "Received"/custom labels so admin UI shows Return requested.
         RequestOfferStatusLabels.ApplyReturnRequested(order, order.FromUserId);
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await orderData.SaveChangesAsync(cancellationToken);
 
         await NotifyReturnRequestedPartiesAsync(order, cancellationToken);
         try
@@ -102,16 +98,10 @@ public partial class OrdersAppService
             throw new ArgumentException("Response is required when rejecting a return.");
         }
 
-        _ = await dbContext.Users.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == adminId, cancellationToken)
+        _ = await orderData.GetUserByIdAsNoTrackingAsync(adminId, cancellationToken)
             ?? throw new KeyNotFoundException("Admin user not found.");
 
-        var order = await dbContext.Orders
-            .Include(x => x.Product!)
-            .ThenInclude(x => x!.Unit)
-            .Include(x => x.Product!)
-            .ThenInclude(x => x!.RetailUnit)
-            .FirstOrDefaultAsync(x => x.Id == input.OrderId, cancellationToken)
+        var order = await orderData.GetOrderWithProductForReturnResponseAsync(input.OrderId, cancellationToken)
             ?? throw new KeyNotFoundException("Order not found.");
 
         if (order.StatusId != OrderStatusCodes.ReturnRequested)
@@ -143,12 +133,9 @@ public partial class OrdersAppService
             RequestOfferStatusLabels.ApplyDelivered(order, adminId);
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await orderData.SaveChangesAsync(cancellationToken);
 
-        var orderForNotify = await dbContext.Orders
-            .Include(x => x.Product)
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == order.Id, cancellationToken)
+        var orderForNotify = await orderData.GetOrderWithProductAsNoTrackingAsync(order.Id, cancellationToken)
             ?? order;
 
         if (input.Approved)
@@ -182,12 +169,10 @@ public partial class OrdersAppService
             throw new ArgumentException("Invalid admin user id.");
         }
 
-        _ = await dbContext.Users.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == adminId, cancellationToken)
+        _ = await orderData.GetUserByIdAsNoTrackingAsync(adminId, cancellationToken)
             ?? throw new KeyNotFoundException("Admin user not found.");
 
-        var order = await AdminOrderMapper.WithAdminListDetails(dbContext.Orders)
-            .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken)
+        var order = await orderData.GetOrderWithListDetailsAsync(orderId, cancellationToken)
             ?? throw new KeyNotFoundException("Order not found.");
 
         // Cart / pure retail is seller-first. Category hybrids (ProductTypeId=Retail + CategoryId)
@@ -213,7 +198,7 @@ public partial class OrdersAppService
             RequestOfferStatusLabels.ApplyAwaitingSeller(order);
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await orderData.SaveChangesAsync(cancellationToken);
         ProductsAppService.InvalidateListingCaches();
 
         await NotifyAdvertiserOfAdminApprovedOrderAsync(order, cancellationToken);
@@ -244,12 +229,10 @@ public partial class OrdersAppService
             throw new ArgumentException("Invalid admin user id.");
         }
 
-        _ = await dbContext.Users.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == adminId, cancellationToken)
+        _ = await orderData.GetUserByIdAsNoTrackingAsync(adminId, cancellationToken)
             ?? throw new KeyNotFoundException("Admin user not found.");
 
-        var order = await AdminOrderMapper.WithAdminListDetails(dbContext.Orders)
-            .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken)
+        var order = await orderData.GetOrderWithListDetailsAsync(orderId, cancellationToken)
             ?? throw new KeyNotFoundException("Order not found.");
 
         if (ProductTypeCodes.IsRetailOrder(order)
@@ -267,7 +250,7 @@ public partial class OrdersAppService
             RequestOfferStatusLabels.ApplyRejectedByAdmin(order);
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await orderData.SaveChangesAsync(cancellationToken);
 
         if (order.Product?.ProductTypeId == ProductTypeCodes.Requests)
         {
@@ -306,8 +289,7 @@ public partial class OrdersAppService
             throw new ArgumentException("Invalid admin user id.");
         }
 
-        _ = await dbContext.Users.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == adminId, cancellationToken)
+        _ = await orderData.GetUserByIdAsNoTrackingAsync(adminId, cancellationToken)
             ?? throw new KeyNotFoundException("Admin user not found.");
 
         var nameEn = statusNameEn?.Trim() ?? string.Empty;
@@ -336,8 +318,7 @@ public partial class OrdersAppService
             throw new ArgumentException("Status names must be at most 200 characters.");
         }
 
-        var order = await AdminOrderMapper.WithAdminDetailDetails(dbContext.Orders)
-            .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken)
+        var order = await orderData.GetOrderWithDetailDetailsAsync(orderId, cancellationToken)
             ?? throw new KeyNotFoundException("Order not found.");
 
         if (!ProductTypeCodes.UsesAdminCustomStatus(order.Product))
@@ -360,7 +341,7 @@ public partial class OrdersAppService
         }
 
         RequestOfferStatusLabels.Apply(order, nameEn, nameAr, adminId);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await orderData.SaveChangesAsync(cancellationToken);
 
         await NotifyOrderPartiesCustomStatusAsync(order, adminId, cancellationToken);
 
@@ -394,12 +375,10 @@ public partial class OrdersAppService
             throw new ArgumentException("Invalid admin user id.");
         }
 
-        _ = await dbContext.Users.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == adminId, cancellationToken)
+        _ = await orderData.GetUserByIdAsNoTrackingAsync(adminId, cancellationToken)
             ?? throw new KeyNotFoundException("Admin user not found.");
 
-        var order = await AdminOrderMapper.WithAdminDetailDetails(dbContext.Orders)
-            .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken)
+        var order = await orderData.GetOrderWithDetailDetailsAsync(orderId, cancellationToken)
             ?? throw new KeyNotFoundException("Order not found.");
 
         if (!ProductTypeCodes.UsesAdminCustomStatus(order.Product))
@@ -423,7 +402,7 @@ public partial class OrdersAppService
         // Delivered (5) is the canonical terminal status (legacy Received/7 is collapsed to 5).
         order.StatusId = OrderStatusCodes.Delivered;
         RequestOfferStatusLabels.ApplyReceived(order, adminId);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await orderData.SaveChangesAsync(cancellationToken);
 
         await NotifyOrderPartiesCustomStatusAsync(order, adminId, cancellationToken);
 
@@ -503,12 +482,7 @@ public partial class OrdersAppService
         byte? productTypeId,
         CancellationToken cancellationToken)
     {
-        var query = dbContext.Orders.Where(o =>
-            o.ProductId == productId
-            && !o.IsApproved
-            && o.StatusId == OrderStatusCodes.AwaitingSellerApproval);
-
-        return await query.CountAsync(cancellationToken);
+        return await orderData.CountPendingSellerActionsAsync(productId, cancellationToken);
     }
 
     private async Task<List<string>> SaveReturnMediaAsync(

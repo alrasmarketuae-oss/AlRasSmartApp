@@ -3,7 +3,6 @@ using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using DataLayer.Interfaces;
 using DataLayer.Models;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,42 +28,13 @@ public partial class OrdersAppService
         page = page < 1 ? 1 : page;
         pageSize = pageSize is < 1 or > 100 ? 20 : pageSize;
 
-        // "My Orders" is orders created by this user, excluding offers on Request ads
-        // (those appear under My Offers / Account).
-        var query = AdminOrderMapper.WithAdminListDetails(dbContext.Orders)
-            .Where(x => x.FromUserId == parsedUserId
-                && (x.Product == null || x.Product.ProductTypeId != ProductTypeCodes.Requests));
-
-        if (statusId.HasValue)
-        {
-            query = query.Where(x => x.StatusId == statusId.Value);
-        }
-
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var term = search.Trim().ToLowerInvariant();
-            if (long.TryParse(term, out var orderId))
-            {
-                query = query.Where(x => x.Id == orderId);
-            }
-            else
-            {
-                query = query.Where(x =>
-                    (x.FromUser != null && x.FromUser.FullName.ToLower().Contains(term)) ||
-                    (x.FromUser != null && x.FromUser.Email.ToLower().Contains(term)) ||
-                    (x.ToUser != null && x.ToUser.FullName.ToLower().Contains(term)) ||
-                    (x.ToUser != null && x.ToUser.Email.ToLower().Contains(term)) ||
-                    (x.Product != null && x.Product.NameEn != null && x.Product.NameEn.ToLower().Contains(term)) ||
-                    (x.Notes != null && x.Notes.ToLower().Contains(term)));
-            }
-        }
-
-        var totalCount = await query.CountAsync(cancellationToken);
-        var orders = await query
-            .OrderByDescending(x => x.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
+        var (orders, totalCount) = await orderData.GetMyOrdersPageAsync(
+            parsedUserId,
+            page,
+            pageSize,
+            statusId,
+            search,
+            cancellationToken);
 
         var commissionSettings = await commissionSettingsProvider.GetAsync(cancellationToken);
         var categoryCommissions = await categoryCommissionProvider.GetAsync(cancellationToken);
@@ -115,39 +85,13 @@ public partial class OrdersAppService
         page = page < 1 ? 1 : page;
         pageSize = pageSize is < 1 or > 100 ? 20 : pageSize;
 
-        var query = AdminOrderMapper.WithAdminListDetails(dbContext.Orders)
-            .Where(x => x.FromUserId == parsedUserId
-                && x.Product != null
-                && x.Product.ProductTypeId == ProductTypeCodes.Requests);
-
-        if (statusId.HasValue)
-        {
-            query = query.Where(x => x.StatusId == statusId.Value);
-        }
-
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var term = search.Trim().ToLowerInvariant();
-            if (long.TryParse(term, out var orderId))
-            {
-                query = query.Where(x => x.Id == orderId);
-            }
-            else
-            {
-                query = query.Where(x =>
-                    (x.ToUser != null && x.ToUser.FullName.ToLower().Contains(term)) ||
-                    (x.ToUser != null && x.ToUser.Email.ToLower().Contains(term)) ||
-                    (x.Product != null && x.Product.NameEn != null && x.Product.NameEn.ToLower().Contains(term)) ||
-                    (x.Notes != null && x.Notes.ToLower().Contains(term)));
-            }
-        }
-
-        var totalCount = await query.CountAsync(cancellationToken);
-        var orders = await query
-            .OrderByDescending(x => x.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
+        var (orders, totalCount) = await orderData.GetMyOffersPageAsync(
+            parsedUserId,
+            page,
+            pageSize,
+            statusId,
+            search,
+            cancellationToken);
 
         var commissionSettings = await commissionSettingsProvider.GetAsync(cancellationToken);
         var categoryCommissions = await categoryCommissionProvider.GetAsync(cancellationToken);
@@ -187,8 +131,7 @@ public partial class OrdersAppService
             throw new ArgumentException("Invalid user id.");
         }
 
-        var order = await AdminOrderMapper.WithAdminDetailDetails(dbContext.Orders)
-            .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken)
+        var order = await orderData.GetOrderWithDetailDetailsAsync(orderId, cancellationToken)
             ?? throw new KeyNotFoundException("Order not found.");
 
         await EnsureUserCanAccessOrderAsync(parsedUserId, order, cancellationToken);
@@ -238,9 +181,7 @@ public partial class OrdersAppService
             throw new ArgumentException("Invalid product id.");
         }
 
-        var product = await dbContext.Products
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.ProductId == parsedProductId, cancellationToken)
+        var product = await orderData.GetProductAsNoTrackingAsync(parsedProductId, cancellationToken)
             ?? throw new KeyNotFoundException("Product not found.");
 
         if (product.ProductTypeId != ProductTypeCodes.Requests)
@@ -253,48 +194,17 @@ public partial class OrdersAppService
         page = page < 1 ? 1 : page;
         pageSize = pageSize is < 1 or > 100 ? 20 : pageSize;
 
-        var viewer = await dbContext.Users
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == parsedUserId, cancellationToken);
+        var viewer = await orderData.GetUserByIdAsNoTrackingAsync(parsedUserId, cancellationToken);
         var isAdminViewer = viewer?.RoleId == 1;
 
-        var query = AdminOrderMapper.WithAdminListDetails(dbContext.Orders)
-            .Where(x => x.ProductId == parsedProductId);
-
-        if (!isAdminViewer)
-        {
-            query = query.Where(x => x.IsAdminApproved);
-        }
-
-        if (statusId.HasValue)
-        {
-            query = query.Where(x => x.StatusId == statusId.Value);
-        }
-
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var term = search.Trim().ToLowerInvariant();
-            if (long.TryParse(term, out var orderId))
-            {
-                query = query.Where(x => x.Id == orderId);
-            }
-            else
-            {
-                query = query.Where(x =>
-                    (x.FromUser != null && x.FromUser.FullName.ToLower().Contains(term)) ||
-                    (x.FromUser != null && x.FromUser.Email.ToLower().Contains(term)) ||
-                    (x.ToUser != null && x.ToUser.FullName.ToLower().Contains(term)) ||
-                    (x.ToUser != null && x.ToUser.Email.ToLower().Contains(term)) ||
-                    (x.Notes != null && x.Notes.ToLower().Contains(term)));
-            }
-        }
-
-        var totalCount = await query.CountAsync(cancellationToken);
-        var orders = await query
-            .OrderByDescending(x => x.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
+        var (orders, totalCount) = await orderData.GetOffersForRequestPageAsync(
+            parsedProductId,
+            isAdminViewer,
+            page,
+            pageSize,
+            statusId,
+            search,
+            cancellationToken);
 
         var commissionSettings = await commissionSettingsProvider.GetAsync(cancellationToken);
         var categoryCommissions = await categoryCommissionProvider.GetAsync(cancellationToken);
@@ -341,39 +251,24 @@ public partial class OrdersAppService
         page = page < 1 ? 1 : page;
         pageSize = pageSize is < 1 or > 100 ? 20 : pageSize;
 
-        // Retail: visible immediately (seller-first, no admin gate).
-        // Booking/Category/Offers/Requests: visible when IsAdminApproved
-        // (created true when no notes/media; false until admin approves).
-        var query = AdminOrderMapper.WithAdminListDetails(dbContext.Orders)
-            .Where(x =>
-                (x.ToUserId == parsedUserId
-                 || (x.Product != null && x.Product.OwnerId == parsedUserId))
-                && (
-                    x.Product == null
-                    || x.Product.ProductTypeId == ProductTypeCodes.Retail
-                    || x.IsAdminApproved));
-
+        Guid? parsedProductId = null;
         if (!string.IsNullOrWhiteSpace(productId))
         {
-            if (!Guid.TryParse(productId, out var parsedProductId))
+            if (!Guid.TryParse(productId, out var productFilterId))
             {
                 throw new ArgumentException("Invalid product id.");
             }
 
-            query = query.Where(x => x.ProductId == parsedProductId);
+            parsedProductId = productFilterId;
         }
 
-        if (statusId.HasValue)
-        {
-            query = query.Where(x => x.StatusId == statusId.Value);
-        }
-
-        var totalCount = await query.CountAsync(cancellationToken);
-        var orders = await query
-            .OrderByDescending(x => x.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
+        var (orders, totalCount) = await orderData.GetMyOffersOnMyRequestsPageAsync(
+            parsedUserId,
+            page,
+            pageSize,
+            parsedProductId,
+            statusId,
+            cancellationToken);
 
         var commissionSettings = await commissionSettingsProvider.GetAsync(cancellationToken);
         var categoryCommissions = await categoryCommissionProvider.GetAsync(cancellationToken);

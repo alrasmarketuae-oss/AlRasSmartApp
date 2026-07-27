@@ -4,7 +4,6 @@ using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using DataLayer.Interfaces;
 using DataLayer.Models;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,11 +21,7 @@ public partial class OrdersAppService
         }
 
         var productIds = orders.Select(x => x.ProductId).Distinct().ToList();
-        var productMeta = await dbContext.Products
-            .AsNoTracking()
-            .Where(x => productIds.Contains(x.ProductId))
-            .Select(x => new { x.ProductId, x.NameEn, x.ProductTypeId, x.CategoryId, x.OwnerId })
-            .ToListAsync(cancellationToken);
+        var productMeta = await orderData.GetProductNotifyMetaByIdsAsync(productIds, cancellationToken);
 
         var productNames = productMeta.ToDictionary(x => x.ProductId, x => x.NameEn);
         var productTypes = productMeta.ToDictionary(x => x.ProductId, x => x.ProductTypeId);
@@ -39,23 +34,13 @@ public partial class OrdersAppService
                 : o.ToUserId)
             .Distinct()
             .ToList();
-        var sellers = await dbContext.Users
-            .AsNoTracking()
-            .Where(x => sellerIds.Contains(x.Id))
-            .Select(x => new { x.Id, x.Email, x.FcmToken, x.PreferredLanguage })
-            .ToListAsync(cancellationToken);
+        var sellers = await orderData.GetUsersNotifyByIdsAsync(sellerIds, cancellationToken);
 
-        var admins = await dbContext.Users
-            .AsNoTracking()
-            .Where(x => x.RoleId == 1 && x.FcmToken != null && x.FcmToken != "")
-            .Select(x => new { x.FcmToken, x.PreferredLanguage })
-            .ToListAsync(cancellationToken);
+        var admins = await orderData.GetAdminFcmRecipientsAsync(cancellationToken);
 
         var orderGroupId = orders.First().OrderGroupId?.ToString() ?? orders.First().Id.ToString();
         var buyerId = orders.First().FromUserId;
-        var buyer = await dbContext.Users
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == buyerId, cancellationToken);
+        var buyer = await orderData.GetUserNotifyByIdAsync(buyerId, cancellationToken);
 
         if (buyer is not null)
         {
@@ -241,9 +226,7 @@ public partial class OrdersAppService
         Guid fromUserId,
         CancellationToken cancellationToken)
     {
-        var buyer = await dbContext.Users
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == order.FromUserId, cancellationToken);
+        var buyer = await orderData.GetUserNotifyByIdAsync(order.FromUserId, cancellationToken);
 
         if (buyer is null)
         {
@@ -287,9 +270,7 @@ public partial class OrdersAppService
 
     private async Task NotifyBuyerRefundProcessedAsync(Order order, CancellationToken cancellationToken)
     {
-        var buyer = await dbContext.Users
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == order.FromUserId, cancellationToken);
+        var buyer = await orderData.GetUserNotifyByIdAsync(order.FromUserId, cancellationToken);
 
         if (buyer is null)
         {
@@ -318,20 +299,12 @@ public partial class OrdersAppService
 
     private async Task NotifyAdminOfVisibleOrderAsync(Order order, CancellationToken cancellationToken)
     {
-        var admins = await dbContext.Users
-            .AsNoTracking()
-            .Where(x => x.RoleId == 1 && x.FcmToken != null && x.FcmToken != "")
-            .Select(x => new { x.FcmToken, x.PreferredLanguage })
-            .ToListAsync(cancellationToken);
+        var admins = await orderData.GetAdminFcmRecipientsAsync(cancellationToken);
 
         var productName = order.Product?.NameEn?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(productName))
         {
-            productName = await dbContext.Products
-                .AsNoTracking()
-                .Where(x => x.ProductId == order.ProductId)
-                .Select(x => x.NameEn)
-                .FirstOrDefaultAsync(cancellationToken) ?? string.Empty;
+            productName = await orderData.GetProductNameEnAsync(order.ProductId, cancellationToken) ?? string.Empty;
         }
 
         var quantityLabel = FormatAdminOrderQuantityLabel(order);
@@ -418,11 +391,7 @@ public partial class OrdersAppService
             .Distinct()
             .ToList();
 
-        var parties = await dbContext.Users
-            .AsNoTracking()
-            .Where(x => partyIds.Contains(x.Id))
-            .Select(x => new { x.Id, x.Email, x.FcmToken, x.PreferredLanguage })
-            .ToListAsync(cancellationToken);
+        var parties = await orderData.GetUsersByIdsAsync(partyIds, cancellationToken);
 
         foreach (var party in parties)
         {
@@ -468,9 +437,7 @@ public partial class OrdersAppService
     private async Task NotifyAdvertiserOfAdminApprovedOrderAsync(Order order, CancellationToken cancellationToken)
     {
         var advertiserId = order.Product?.OwnerId ?? order.ToUserId;
-        var advertiser = await dbContext.Users
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == advertiserId, cancellationToken);
+        var advertiser = await orderData.GetUserNotifyByIdAsync(advertiserId, cancellationToken);
 
         if (advertiser is null)
         {
@@ -516,11 +483,7 @@ public partial class OrdersAppService
 
     private async Task NotifyAdminSellerApprovedOrderAsync(Order order, CancellationToken cancellationToken)
     {
-        var admins = await dbContext.Users
-            .AsNoTracking()
-            .Where(x => x.RoleId == 1 && x.FcmToken != null && x.FcmToken != "")
-            .Select(x => new { x.FcmToken, x.PreferredLanguage })
-            .ToListAsync(cancellationToken);
+        var admins = await orderData.GetAdminFcmRecipientsAsync(cancellationToken);
 
         var productName = order.Product?.NameEn?.Trim() ?? string.Empty;
         foreach (var admin in admins.GroupBy(x => x.FcmToken!).Select(g => g.First()))
@@ -564,11 +527,7 @@ public partial class OrdersAppService
     {
         var productName = order.Product?.NameEn ?? "product";
 
-        var admins = await dbContext.Users
-            .AsNoTracking()
-            .Where(x => x.RoleId == 1)
-            .Select(x => new { x.Id, x.FcmToken, x.PreferredLanguage, x.Email })
-            .ToListAsync(cancellationToken);
+        var admins = await orderData.GetAdminNotifyRecipientsAsync(cancellationToken);
 
         foreach (var admin in admins)
         {
@@ -585,9 +544,7 @@ public partial class OrdersAppService
                 cancellationToken: cancellationToken);
         }
 
-        var supplier = await dbContext.Users
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == order.ToUserId, cancellationToken);
+        var supplier = await orderData.GetUserNotifyByIdAsync(order.ToUserId, cancellationToken);
         if (supplier is not null)
         {
             await SendUserAlertAsync(
@@ -617,9 +574,7 @@ public partial class OrdersAppService
         var productName = order.Product?.NameEn ?? "product";
         var isOnline = order.PaymentMethod == (byte)PaymentMethod.Online;
 
-        var buyer = await dbContext.Users
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == order.FromUserId, cancellationToken);
+        var buyer = await orderData.GetUserNotifyByIdAsync(order.FromUserId, cancellationToken);
         if (buyer is not null)
         {
             await SendUserAlertAsync(
@@ -637,9 +592,7 @@ public partial class OrdersAppService
                 cancellationToken: cancellationToken);
         }
 
-        var supplier = await dbContext.Users
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == order.ToUserId, cancellationToken);
+        var supplier = await orderData.GetUserNotifyByIdAsync(order.ToUserId, cancellationToken);
         if (supplier is not null)
         {
             await SendUserAlertAsync(
@@ -666,9 +619,7 @@ public partial class OrdersAppService
         Guid adminUserId,
         CancellationToken cancellationToken)
     {
-        var buyer = await dbContext.Users
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == order.FromUserId, cancellationToken);
+        var buyer = await orderData.GetUserNotifyByIdAsync(order.FromUserId, cancellationToken);
         if (buyer is null)
         {
             return;
@@ -726,7 +677,7 @@ public partial class OrdersAppService
         var routeId = await GetOrCreateNotificationRouteIdAsync(routeName, cancellationToken);
         var typeId = await GetOrCreateNotificationTypeIdAsync(notificationTypeName, cancellationToken);
 
-        await dbContext.Notifications.AddAsync(new Notification
+        await orderData.AddInboxNotificationAsync(new Notification
         {
             Id = Guid.NewGuid(),
             Title = titleEnStore,
@@ -741,7 +692,7 @@ public partial class OrdersAppService
             IsRead = false,
             CreatedAt = DateTime.UtcNow,
         }, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await orderData.SaveChangesAsync(cancellationToken);
 
         NotificationCacheVersions.Bump(toUserId);
 
@@ -800,36 +751,14 @@ public partial class OrdersAppService
         string name,
         CancellationToken cancellationToken)
     {
-        var existing = await dbContext.NotificationRoutes
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Name == name, cancellationToken);
-        if (existing is not null)
-        {
-            return existing.Id;
-        }
-
-        var route = new NotificationRoute { Id = Guid.NewGuid(), Name = name };
-        await dbContext.NotificationRoutes.AddAsync(route, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return route.Id;
+        return await orderData.GetOrCreateNotificationRouteIdAsync(name, cancellationToken);
     }
 
     private async Task<byte> GetOrCreateNotificationTypeIdAsync(
         string name,
         CancellationToken cancellationToken)
     {
-        var existing = await dbContext.NotificationTypes
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Name == name, cancellationToken);
-        if (existing is not null)
-        {
-            return existing.Id;
-        }
-
-        var type = new NotificationType { Name = name };
-        await dbContext.NotificationTypes.AddAsync(type, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return type.Id;
+        return await orderData.GetOrCreateNotificationTypeIdAsync(name, cancellationToken);
     }
 
 }

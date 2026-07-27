@@ -2,7 +2,6 @@ using BusinessLayer.Dtos;
 using BusinessLayer.Interfaces;
 using DataLayer.Interfaces;
 using DataLayer.Models;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,9 +18,7 @@ public partial class OrdersAppService
             throw new ArgumentException("Invalid user id.");
         }
 
-        var order = await dbContext.Orders
-            .Include(x => x.Videos)
-            .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken)
+        var order = await orderData.GetOrderWithVideosAsync(orderId, cancellationToken)
             ?? throw new KeyNotFoundException("Order not found.");
 
         await EnsureUserCanAccessOrderAsync(parsedUserId, order, cancellationToken);
@@ -51,7 +48,7 @@ public partial class OrdersAppService
             throw new ArgumentException("Video file is required.");
         }
 
-        var order = await dbContext.Orders.FindAsync([input.OrderId], cancellationToken)
+        var order = await orderData.GetOrderByIdTrackedAsync(input.OrderId, cancellationToken)
             ?? throw new KeyNotFoundException("Order not found.");
 
         await EnsureUserCanAccessOrderAsync(userId, order, cancellationToken);
@@ -76,8 +73,8 @@ public partial class OrdersAppService
             UploadedByUserId = userId
         };
 
-        await dbContext.OrderVideos.AddAsync(entity, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await orderData.AddOrderVideoAsync(entity, cancellationToken);
+        await orderData.SaveChangesAsync(cancellationToken);
 
         return new
         {
@@ -96,15 +93,13 @@ public partial class OrdersAppService
             throw new ArgumentException("Invalid user id.");
         }
 
-        var video = await dbContext.OrderVideos
-            .Include(x => x.Order)
-            .FirstOrDefaultAsync(x => x.Id == videoId && x.OrderId == orderId, cancellationToken)
+        var video = await orderData.GetOrderVideoWithOrderAsync(videoId, orderId, cancellationToken)
             ?? throw new KeyNotFoundException("Order video not found.");
 
         await EnsureUserCanAccessOrderAsync(parsedUserId, video.Order!, cancellationToken);
 
-        dbContext.OrderVideos.Remove(video);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        orderData.RemoveOrderVideo(video);
+        await orderData.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<object> UploadOrderImageAsync(UploadOrderImageInput input, CancellationToken cancellationToken = default)
@@ -119,14 +114,13 @@ public partial class OrdersAppService
             throw new ArgumentException("Image file is required.");
         }
 
-        var order = await dbContext.Orders.FindAsync([input.OrderId], cancellationToken)
+        var order = await orderData.GetOrderByIdTrackedAsync(input.OrderId, cancellationToken)
             ?? throw new KeyNotFoundException("Order not found.");
 
         await EnsureUserCanAccessOrderAsync(userId, order, cancellationToken);
 
         const int maxOrderImages = 15;
-        var existingImageCount = await dbContext.OrderImages
-            .CountAsync(x => x.OrderId == order.Id, cancellationToken);
+        var existingImageCount = await orderData.CountOrderImagesAsync(order.Id, cancellationToken);
         if (existingImageCount >= maxOrderImages)
         {
             throw new InvalidOperationException("An order can have at most 15 images.");
@@ -152,8 +146,8 @@ public partial class OrdersAppService
             UploadedByUserId = userId
         };
 
-        await dbContext.OrderImages.AddAsync(entity, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await orderData.AddOrderImageAsync(entity, cancellationToken);
+        await orderData.SaveChangesAsync(cancellationToken);
 
         return new
         {
@@ -172,15 +166,13 @@ public partial class OrdersAppService
             throw new ArgumentException("Invalid user id.");
         }
 
-        var image = await dbContext.OrderImages
-            .Include(x => x.Order)
-            .FirstOrDefaultAsync(x => x.Id == imageId && x.OrderId == orderId, cancellationToken)
+        var image = await orderData.GetOrderImageWithOrderAsync(imageId, orderId, cancellationToken)
             ?? throw new KeyNotFoundException("Order image not found.");
 
         await EnsureUserCanAccessOrderAsync(parsedUserId, image.Order!, cancellationToken);
 
-        dbContext.OrderImages.Remove(image);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        orderData.RemoveOrderImage(image);
+        await orderData.SaveChangesAsync(cancellationToken);
     }
 
 }

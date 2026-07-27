@@ -3,7 +3,6 @@ using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using DataLayer.Interfaces;
 using DataLayer.Models;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -376,11 +375,7 @@ public partial class OrdersAppService
         var ownerId = order.Product?.OwnerId;
         if (ownerId is null && order.ProductId != Guid.Empty)
         {
-            ownerId = await dbContext.Products
-                .AsNoTracking()
-                .Where(x => x.ProductId == order.ProductId)
-                .Select(x => x.OwnerId)
-                .FirstOrDefaultAsync(cancellationToken);
+            ownerId = await orderData.GetProductOwnerIdAsync(order.ProductId, cancellationToken);
         }
 
         if (ownerId == userId)
@@ -388,7 +383,7 @@ public partial class OrdersAppService
             return;
         }
 
-        var user = await dbContext.Users.FindAsync([userId], cancellationToken);
+        var user = await orderData.GetUserByIdAsync(userId, cancellationToken: cancellationToken);
         if (user?.RoleId == 1)
         {
             return;
@@ -404,7 +399,7 @@ public partial class OrdersAppService
             return;
         }
 
-        var user = await dbContext.Users.FindAsync([userId], cancellationToken);
+        var user = await orderData.GetUserByIdAsync(userId, cancellationToken: cancellationToken);
         if (user?.RoleId == 1)
         {
             return;
@@ -441,11 +436,7 @@ public partial class OrdersAppService
 
     private async Task<Product> ResolveProductByIdAsync(Guid productId, CancellationToken cancellationToken)
     {
-        return await dbContext.Products
-            .Include(x => x.ProductType)
-            .Include(x => x.Unit)
-            .Include(x => x.RetailUnit)
-            .FirstOrDefaultAsync(x => x.ProductId == productId, cancellationToken)
+        return await orderData.GetProductForOrderAsync(productId, cancellationToken)
             ?? throw new KeyNotFoundException($"Product '{productId}' was not found.");
     }
 
@@ -592,8 +583,9 @@ public partial class OrdersAppService
 
         if (input.AddressId.HasValue && input.AddressId.Value != Guid.Empty)
         {
-            var address = await dbContext.Addresses.FirstOrDefaultAsync(
-                    x => x.Id == input.AddressId.Value && x.UserId == userId,
+            var address = await orderData.GetAddressForUserAsync(
+                    input.AddressId.Value,
+                    userId,
                     cancellationToken)
                 ?? throw new KeyNotFoundException("Address not found.");
 
@@ -621,10 +613,10 @@ public partial class OrdersAppService
             var city = staticReferenceCache.FindCityByName(input.CityName);
             if (city is not null)
             {
-                var address = await dbContext.Addresses.FirstOrDefaultAsync(
-                    x => x.UserId == userId
-                        && x.CityId == city.Id
-                        && x.AddressLine1.ToLower() == input.AddressLine!.Trim().ToLower(),
+                var address = await orderData.GetAddressByUserCityLineAsync(
+                    userId,
+                    city.Id,
+                    input.AddressLine!.Trim().ToLower(),
                     cancellationToken);
 
                 if (address is not null)

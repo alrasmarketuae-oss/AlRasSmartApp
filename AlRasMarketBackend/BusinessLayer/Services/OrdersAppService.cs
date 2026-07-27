@@ -3,7 +3,6 @@ using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using DataLayer.Interfaces;
 using DataLayer.Models;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,7 +11,7 @@ using Microsoft.Extensions.Logging;
 namespace BusinessLayer.Services;
 
 public partial class OrdersAppService(
-    IRasAlSouqDbContext dbContext,
+    IOrderDataAccess orderData,
     IMemoryCache cache,
     IFcmNotificationService fcmNotificationService,
     IConfiguration configuration,
@@ -82,7 +81,7 @@ public partial class OrdersAppService(
             throw new InvalidOperationException("Online payment is not available right now.");
         }
 
-        var fromUser = await dbContext.Users.FindAsync([fromUserId], cancellationToken)
+        var fromUser = await orderData.GetUserByIdAsync(fromUserId, cancellationToken: cancellationToken)
             ?? throw new KeyNotFoundException("Authenticated user not found.");
 
         if (product.OwnerId is null)
@@ -107,7 +106,7 @@ public partial class OrdersAppService(
 
       
 
-        var toUser = await dbContext.Users.FindAsync([toUserId], cancellationToken)
+        var toUser = await orderData.GetUserByIdAsync(toUserId, cancellationToken: cancellationToken)
             ?? throw new KeyNotFoundException("Supplier user not found.");
 
         // DEV: تعطيل التحقق من SupplierEmail.
@@ -283,8 +282,8 @@ public partial class OrdersAppService(
             });
         }
 
-        await dbContext.Orders.AddAsync(order, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await orderData.AddOrderAsync(order, cancellationToken);
+        await orderData.SaveChangesAsync(cancellationToken);
         await TryTranslateOrderNotesAsync(order.Id, notes, cancellationToken);
         logger.LogInformation(
             "Order {OrderId} created for product {ProductId} with UnitId={UnitId} UnitName={UnitName} (submitted '{SubmittedUnit}')",

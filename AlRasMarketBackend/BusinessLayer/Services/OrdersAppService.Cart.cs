@@ -3,7 +3,6 @@ using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using DataLayer.Interfaces;
 using DataLayer.Models;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,19 +30,7 @@ public partial class OrdersAppService
             userId,
             cancellationToken);
 
-        var cart = await dbContext.Carts
-            .Include(x => x.CartItems)
-            .ThenInclude(x => x.Product!)
-            .ThenInclude(x => x!.ProductType)
-            .Include(x => x.CartItems)
-            .ThenInclude(x => x.Product!)
-            .ThenInclude(x => x!.Unit)
-            .Include(x => x.CartItems)
-            .ThenInclude(x => x.Product!)
-            .ThenInclude(x => x!.RetailUnit)
-            .Include(x => x.CartItems)
-            .ThenInclude(x => x.Unit)
-            .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
+        var cart = await orderData.GetCartForCheckoutAsync(userId, cancellationToken);
 
         if (cart is null || cart.CartItems.Count == 0)
         {
@@ -183,8 +170,8 @@ public partial class OrdersAppService
                 });
             }
 
-            await dbContext.PendingOrders.AddAsync(pendingOrder, cancellationToken);
-            await dbContext.SaveChangesAsync(cancellationToken);
+            await orderData.AddPendingOrderAsync(pendingOrder, cancellationToken);
+            await orderData.SaveChangesAsync(cancellationToken);
 
             return new
             {
@@ -239,9 +226,7 @@ public partial class OrdersAppService
 
     public async Task<Guid> CreateOrdersFromPendingOrderAsync(Guid pendingOrderId, CancellationToken cancellationToken = default)
     {
-        var pendingOrder = await dbContext.PendingOrders
-            .Include(x => x.Items)
-            .FirstOrDefaultAsync(x => x.Id == pendingOrderId, cancellationToken)
+        var pendingOrder = await orderData.GetPendingOrderWithItemsAsync(pendingOrderId, cancellationToken)
             ?? throw new KeyNotFoundException("Pending order not found.");
 
         if (!pendingOrder.IsPaymentCompleted)
@@ -291,11 +276,9 @@ public partial class OrdersAppService
             cancellationToken);
 
         pendingOrder.FinalOrderGroupId = orderGroupId;
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await orderData.SaveChangesAsync(cancellationToken);
 
-        var cart = await dbContext.Carts
-            .Include(x => x.CartItems)
-            .FirstOrDefaultAsync(x => x.UserId == pendingOrder.FromUserId, cancellationToken);
+        var cart = await orderData.GetCartWithItemsAsync(pendingOrder.FromUserId, cancellationToken);
         if (cart is not null)
         {
             await ClearCartAsync(pendingOrder.FromUserId, cart, cancellationToken);
@@ -325,12 +308,7 @@ public partial class OrdersAppService
         var shippingAllocations = VatHelper.AllocateVat(lineSubtotals, cartShipping);
 
         var productIds = lines.Select(x => x.ProductId).Distinct().ToList();
-        var products = await dbContext.Products
-            .AsNoTracking()
-            .Include(x => x.Unit)
-            .Include(x => x.RetailUnit)
-            .Where(x => productIds.Contains(x.ProductId))
-            .ToDictionaryAsync(x => x.ProductId, cancellationToken);
+        var products = await orderData.GetProductsByIdsWithUnitsAsync(productIds, cancellationToken);
 
         foreach (var (line, index) in lines.Select((line, index) => (line, index)))
         {
@@ -369,11 +347,11 @@ public partial class OrdersAppService
 
             RequestOfferStatusLabels.ApplyAwaitingSeller(order);
 
-            await dbContext.Orders.AddAsync(order, cancellationToken);
+            await orderData.AddOrderAsync(order, cancellationToken);
             created.Add(order);
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await orderData.SaveChangesAsync(cancellationToken);
 
         if (!string.IsNullOrWhiteSpace(notes))
         {
@@ -430,9 +408,9 @@ public partial class OrdersAppService
 
     private async Task ClearCartAsync(Guid userId, Cart cart, CancellationToken cancellationToken)
     {
-        dbContext.CartItems.RemoveRange(cart.CartItems);
+        orderData.RemoveCartItems(cart.CartItems);
         cart.UpdatedAt = DateTime.UtcNow;
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await orderData.SaveChangesAsync(cancellationToken);
         cache.Remove($"cart:v8:{userId:N}");
         cache.Remove($"cart:v7:{userId:N}");
     }

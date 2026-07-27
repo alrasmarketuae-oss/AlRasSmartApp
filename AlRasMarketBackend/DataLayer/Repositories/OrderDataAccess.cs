@@ -1,0 +1,513 @@
+using DataLayer.Helpers;
+using DataLayer.Interfaces;
+using DataLayer.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace DataLayer.Repositories;
+
+public sealed class OrderDataAccess(IRasAlSouqDbContext dbContext) : IOrderDataAccess
+{
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
+        dbContext.SaveChangesAsync(cancellationToken);
+
+    public async Task AddOrderAsync(Order order, CancellationToken cancellationToken = default)
+    {
+        await dbContext.Orders.AddAsync(order, cancellationToken);
+    }
+
+    public async Task AddPendingOrderAsync(PendingOrder pendingOrder, CancellationToken cancellationToken = default)
+    {
+        await dbContext.PendingOrders.AddAsync(pendingOrder, cancellationToken);
+    }
+
+    public async Task AddOrderVideoAsync(OrderVideo orderVideo, CancellationToken cancellationToken = default)
+    {
+        await dbContext.OrderVideos.AddAsync(orderVideo, cancellationToken);
+    }
+
+    public async Task AddOrderImageAsync(OrderImage orderImage, CancellationToken cancellationToken = default)
+    {
+        await dbContext.OrderImages.AddAsync(orderImage, cancellationToken);
+    }
+
+    public void RemoveOrderVideo(OrderVideo orderVideo) =>
+        dbContext.OrderVideos.Remove(orderVideo);
+
+    public void RemoveOrderImage(OrderImage orderImage) =>
+        dbContext.OrderImages.Remove(orderImage);
+
+    public void RemoveCartItems(IEnumerable<CartItem> cartItems) =>
+        dbContext.CartItems.RemoveRange(cartItems);
+
+    public async Task<User?> GetUserByIdAsync(
+        Guid userId,
+        bool tracked = true,
+        CancellationToken cancellationToken = default)
+    {
+        if (tracked)
+        {
+            return await dbContext.Users.FindAsync([userId], cancellationToken);
+        }
+
+        return await GetUserByIdAsNoTrackingAsync(userId, cancellationToken);
+    }
+
+    public Task<User?> GetUserByIdAsNoTrackingAsync(Guid userId, CancellationToken cancellationToken = default) =>
+        dbContext.Users.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
+
+    public Task<Product?> GetProductForOrderAsync(Guid productId, CancellationToken cancellationToken = default) =>
+        dbContext.Products
+            .Include(x => x.ProductType)
+            .Include(x => x.Unit)
+            .Include(x => x.RetailUnit)
+            .FirstOrDefaultAsync(x => x.ProductId == productId, cancellationToken);
+
+    public Task<Dictionary<Guid, Product>> GetProductsByIdsWithUnitsAsync(
+        IReadOnlyList<Guid> productIds,
+        CancellationToken cancellationToken = default) =>
+        dbContext.Products
+            .AsNoTracking()
+            .Include(x => x.Unit)
+            .Include(x => x.RetailUnit)
+            .Where(x => productIds.Contains(x.ProductId))
+            .ToDictionaryAsync(x => x.ProductId, cancellationToken);
+
+    public async Task<Order?> GetOrderByIdTrackedAsync(long orderId, CancellationToken cancellationToken = default) =>
+        await dbContext.Orders.FindAsync([orderId], cancellationToken);
+
+    public Task<Order?> GetOrderWithProductForStatusAsync(long orderId, CancellationToken cancellationToken = default) =>
+        dbContext.Orders
+            .Include(x => x.Product!)
+            .ThenInclude(x => x!.ProductType)
+            .Include(x => x.Product!)
+            .ThenInclude(x => x!.Unit)
+            .Include(x => x.Product!)
+            .ThenInclude(x => x!.RetailUnit)
+            .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken);
+
+    public Task<Order?> GetOrderWithProductForReturnAsync(long orderId, CancellationToken cancellationToken = default) =>
+        dbContext.Orders
+            .Include(x => x.Product!)
+            .ThenInclude(x => x!.ProductType)
+            .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken);
+
+    public Task<Order?> GetOrderWithProductForReturnResponseAsync(long orderId, CancellationToken cancellationToken = default) =>
+        dbContext.Orders
+            .Include(x => x.Product!)
+            .ThenInclude(x => x!.Unit)
+            .Include(x => x.Product!)
+            .ThenInclude(x => x!.RetailUnit)
+            .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken);
+
+    public Task<Order?> GetOrderWithVideosAsync(long orderId, CancellationToken cancellationToken = default) =>
+        dbContext.Orders
+            .Include(x => x.Videos)
+            .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken);
+
+    public Task<OrderVideo?> GetOrderVideoWithOrderAsync(
+        long videoId,
+        long orderId,
+        CancellationToken cancellationToken = default) =>
+        dbContext.OrderVideos
+            .Include(x => x.Order)
+            .FirstOrDefaultAsync(x => x.Id == videoId && x.OrderId == orderId, cancellationToken);
+
+    public Task<OrderImage?> GetOrderImageWithOrderAsync(
+        long imageId,
+        long orderId,
+        CancellationToken cancellationToken = default) =>
+        dbContext.OrderImages
+            .Include(x => x.Order)
+            .FirstOrDefaultAsync(x => x.Id == imageId && x.OrderId == orderId, cancellationToken);
+
+    public Task<int> CountOrderImagesAsync(long orderId, CancellationToken cancellationToken = default) =>
+        dbContext.OrderImages.CountAsync(x => x.OrderId == orderId, cancellationToken);
+
+    public Task<Order?> GetOrderWithListDetailsAsync(long orderId, CancellationToken cancellationToken = default) =>
+        OrderQueryHelpers.WithListDetails(dbContext.Orders)
+            .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken);
+
+    public Task<Order?> GetOrderWithDetailDetailsAsync(long orderId, CancellationToken cancellationToken = default) =>
+        OrderQueryHelpers.WithDetailDetails(dbContext.Orders)
+            .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken);
+
+    public Task<Order?> GetOrderWithProductAsNoTrackingAsync(long orderId, CancellationToken cancellationToken = default) =>
+        dbContext.Orders
+            .Include(x => x.Product)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken);
+
+    public Task<Cart?> GetCartForCheckoutAsync(Guid userId, CancellationToken cancellationToken = default) =>
+        dbContext.Carts
+            .Include(x => x.CartItems)
+            .ThenInclude(x => x.Product!)
+            .ThenInclude(x => x!.ProductType)
+            .Include(x => x.CartItems)
+            .ThenInclude(x => x.Product!)
+            .ThenInclude(x => x!.Unit)
+            .Include(x => x.CartItems)
+            .ThenInclude(x => x.Product!)
+            .ThenInclude(x => x!.RetailUnit)
+            .Include(x => x.CartItems)
+            .ThenInclude(x => x.Unit)
+            .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
+
+    public Task<Cart?> GetCartWithItemsAsync(Guid userId, CancellationToken cancellationToken = default) =>
+        dbContext.Carts
+            .Include(x => x.CartItems)
+            .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
+
+    public Task<PendingOrder?> GetPendingOrderWithItemsAsync(Guid pendingOrderId, CancellationToken cancellationToken = default) =>
+        dbContext.PendingOrders
+            .Include(x => x.Items)
+            .FirstOrDefaultAsync(x => x.Id == pendingOrderId, cancellationToken);
+
+    public Task<Address?> GetAddressForUserAsync(
+        Guid addressId,
+        Guid userId,
+        CancellationToken cancellationToken = default) =>
+        dbContext.Addresses.FirstOrDefaultAsync(
+            x => x.Id == addressId && x.UserId == userId,
+            cancellationToken);
+
+    public Task<Address?> GetAddressByUserCityLineAsync(
+        Guid userId,
+        Guid cityId,
+        string addressLine1Lower,
+        CancellationToken cancellationToken = default) =>
+        dbContext.Addresses.FirstOrDefaultAsync(
+            x => x.UserId == userId
+                && x.CityId == cityId
+                && x.AddressLine1.ToLower() == addressLine1Lower,
+            cancellationToken);
+
+    public Task<Guid?> GetProductOwnerIdAsync(Guid productId, CancellationToken cancellationToken = default) =>
+        dbContext.Products
+            .AsNoTracking()
+            .Where(x => x.ProductId == productId)
+            .Select(x => x.OwnerId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+    public Task<Product?> GetProductAsNoTrackingAsync(Guid productId, CancellationToken cancellationToken = default) =>
+        dbContext.Products
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.ProductId == productId, cancellationToken);
+
+    public Task<int> CountPendingSellerActionsAsync(Guid productId, CancellationToken cancellationToken = default) =>
+        dbContext.Orders.CountAsync(
+            o => o.ProductId == productId
+                && !o.IsApproved
+                && o.StatusId == OrderCatalogCodes.StatusAwaitingSellerApproval,
+            cancellationToken);
+
+    public async Task<(List<Order> Orders, int TotalCount)> GetMyOrdersPageAsync(
+        Guid userId,
+        int page,
+        int pageSize,
+        byte? statusId,
+        string? search,
+        CancellationToken cancellationToken = default)
+    {
+        // "My Orders" is orders created by this user, excluding offers on Request ads
+        // (those appear under My Offers / Account).
+        var query = OrderQueryHelpers.WithListDetails(dbContext.Orders)
+            .Where(x => x.FromUserId == userId
+                && (x.Product == null || x.Product.ProductTypeId != OrderCatalogCodes.TypeRequests));
+
+        if (statusId.HasValue)
+        {
+            query = query.Where(x => x.StatusId == statusId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim().ToLowerInvariant();
+            if (long.TryParse(term, out var orderId))
+            {
+                query = query.Where(x => x.Id == orderId);
+            }
+            else
+            {
+                query = query.Where(x =>
+                    (x.FromUser != null && x.FromUser.FullName.ToLower().Contains(term)) ||
+                    (x.FromUser != null && x.FromUser.Email.ToLower().Contains(term)) ||
+                    (x.ToUser != null && x.ToUser.FullName.ToLower().Contains(term)) ||
+                    (x.ToUser != null && x.ToUser.Email.ToLower().Contains(term)) ||
+                    (x.Product != null && x.Product.NameEn != null && x.Product.NameEn.ToLower().Contains(term)) ||
+                    (x.Notes != null && x.Notes.ToLower().Contains(term)));
+            }
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var orders = await query
+            .OrderByDescending(x => x.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (orders, totalCount);
+    }
+
+    public async Task<(List<Order> Orders, int TotalCount)> GetMyOffersPageAsync(
+        Guid userId,
+        int page,
+        int pageSize,
+        byte? statusId,
+        string? search,
+        CancellationToken cancellationToken = default)
+    {
+        var query = OrderQueryHelpers.WithListDetails(dbContext.Orders)
+            .Where(x => x.FromUserId == userId
+                && x.Product != null
+                && x.Product.ProductTypeId == OrderCatalogCodes.TypeRequests);
+
+        if (statusId.HasValue)
+        {
+            query = query.Where(x => x.StatusId == statusId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim().ToLowerInvariant();
+            if (long.TryParse(term, out var orderId))
+            {
+                query = query.Where(x => x.Id == orderId);
+            }
+            else
+            {
+                query = query.Where(x =>
+                    (x.ToUser != null && x.ToUser.FullName.ToLower().Contains(term)) ||
+                    (x.ToUser != null && x.ToUser.Email.ToLower().Contains(term)) ||
+                    (x.Product != null && x.Product.NameEn != null && x.Product.NameEn.ToLower().Contains(term)) ||
+                    (x.Notes != null && x.Notes.ToLower().Contains(term)));
+            }
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var orders = await query
+            .OrderByDescending(x => x.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (orders, totalCount);
+    }
+
+    public async Task<(List<Order> Orders, int TotalCount)> GetOffersForRequestPageAsync(
+        Guid productId,
+        bool isAdminViewer,
+        int page,
+        int pageSize,
+        byte? statusId,
+        string? search,
+        CancellationToken cancellationToken = default)
+    {
+        var query = OrderQueryHelpers.WithListDetails(dbContext.Orders)
+            .Where(x => x.ProductId == productId);
+
+        if (!isAdminViewer)
+        {
+            query = query.Where(x => x.IsAdminApproved);
+        }
+
+        if (statusId.HasValue)
+        {
+            query = query.Where(x => x.StatusId == statusId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim().ToLowerInvariant();
+            if (long.TryParse(term, out var orderId))
+            {
+                query = query.Where(x => x.Id == orderId);
+            }
+            else
+            {
+                query = query.Where(x =>
+                    (x.FromUser != null && x.FromUser.FullName.ToLower().Contains(term)) ||
+                    (x.FromUser != null && x.FromUser.Email.ToLower().Contains(term)) ||
+                    (x.ToUser != null && x.ToUser.FullName.ToLower().Contains(term)) ||
+                    (x.ToUser != null && x.ToUser.Email.ToLower().Contains(term)) ||
+                    (x.Notes != null && x.Notes.ToLower().Contains(term)));
+            }
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var orders = await query
+            .OrderByDescending(x => x.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (orders, totalCount);
+    }
+
+    public async Task<(List<Order> Orders, int TotalCount)> GetMyOffersOnMyRequestsPageAsync(
+        Guid userId,
+        int page,
+        int pageSize,
+        Guid? productId,
+        byte? statusId,
+        CancellationToken cancellationToken = default)
+    {
+        // Retail: visible immediately (seller-first, no admin gate).
+        // Booking/Category/Offers/Requests: visible when IsAdminApproved
+        // (created true when no notes/media; false until admin approves).
+        var query = OrderQueryHelpers.WithListDetails(dbContext.Orders)
+            .Where(x =>
+                (x.ToUserId == userId
+                 || (x.Product != null && x.Product.OwnerId == userId))
+                && (
+                    x.Product == null
+                    || x.Product.ProductTypeId == OrderCatalogCodes.TypeRetail
+                    || x.IsAdminApproved));
+
+        if (productId.HasValue)
+        {
+            query = query.Where(x => x.ProductId == productId.Value);
+        }
+
+        if (statusId.HasValue)
+        {
+            query = query.Where(x => x.StatusId == statusId.Value);
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var orders = await query
+            .OrderByDescending(x => x.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (orders, totalCount);
+    }
+
+    public Task<List<OrderProductNotifyMeta>> GetProductNotifyMetaByIdsAsync(
+        IReadOnlyList<Guid> productIds,
+        CancellationToken cancellationToken = default) =>
+        dbContext.Products
+            .AsNoTracking()
+            .Where(x => productIds.Contains(x.ProductId))
+            .Select(x => new OrderProductNotifyMeta
+            {
+                ProductId = x.ProductId,
+                NameEn = x.NameEn,
+                ProductTypeId = x.ProductTypeId,
+                CategoryId = x.CategoryId,
+                OwnerId = x.OwnerId
+            })
+            .ToListAsync(cancellationToken);
+
+    public Task<List<OrderNotifyUserRow>> GetUsersNotifyByIdsAsync(
+        IReadOnlyList<Guid> userIds,
+        CancellationToken cancellationToken = default) =>
+        dbContext.Users
+            .AsNoTracking()
+            .Where(x => userIds.Contains(x.Id))
+            .Select(x => new OrderNotifyUserRow
+            {
+                Id = x.Id,
+                Email = x.Email,
+                FcmToken = x.FcmToken,
+                PreferredLanguage = x.PreferredLanguage,
+                RoleId = x.RoleId
+            })
+            .ToListAsync(cancellationToken);
+
+    public Task<List<OrderNotifyUserRow>> GetAdminFcmRecipientsAsync(CancellationToken cancellationToken = default) =>
+        dbContext.Users
+            .AsNoTracking()
+            .Where(x => x.RoleId == 1 && x.FcmToken != null && x.FcmToken != "")
+            .Select(x => new OrderNotifyUserRow
+            {
+                Id = x.Id,
+                Email = x.Email,
+                FcmToken = x.FcmToken,
+                PreferredLanguage = x.PreferredLanguage,
+                RoleId = x.RoleId
+            })
+            .ToListAsync(cancellationToken);
+
+    public Task<List<OrderNotifyUserRow>> GetAdminNotifyRecipientsAsync(CancellationToken cancellationToken = default) =>
+        dbContext.Users
+            .AsNoTracking()
+            .Where(x => x.RoleId == 1)
+            .Select(x => new OrderNotifyUserRow
+            {
+                Id = x.Id,
+                Email = x.Email,
+                FcmToken = x.FcmToken,
+                PreferredLanguage = x.PreferredLanguage,
+                RoleId = x.RoleId
+            })
+            .ToListAsync(cancellationToken);
+
+    public Task<OrderNotifyUserRow?> GetUserNotifyByIdAsync(Guid userId, CancellationToken cancellationToken = default) =>
+        dbContext.Users
+            .AsNoTracking()
+            .Where(x => x.Id == userId)
+            .Select(x => new OrderNotifyUserRow
+            {
+                Id = x.Id,
+                Email = x.Email,
+                FcmToken = x.FcmToken,
+                PreferredLanguage = x.PreferredLanguage,
+                RoleId = x.RoleId
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+    public Task<string?> GetProductNameEnAsync(Guid productId, CancellationToken cancellationToken = default) =>
+        dbContext.Products
+            .AsNoTracking()
+            .Where(x => x.ProductId == productId)
+            .Select(x => x.NameEn)
+            .FirstOrDefaultAsync(cancellationToken);
+
+    public Task<List<OrderNotifyUserRow>> GetUsersByIdsAsync(
+        IReadOnlyList<Guid> userIds,
+        CancellationToken cancellationToken = default) =>
+        GetUsersNotifyByIdsAsync(userIds, cancellationToken);
+
+    public async Task AddInboxNotificationAsync(Notification notification, CancellationToken cancellationToken = default)
+    {
+        await dbContext.Notifications.AddAsync(notification, cancellationToken);
+    }
+
+    public async Task<Guid> GetOrCreateNotificationRouteIdAsync(
+        string name,
+        CancellationToken cancellationToken = default)
+    {
+        var existing = await dbContext.NotificationRoutes
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Name == name, cancellationToken);
+        if (existing is not null)
+        {
+            return existing.Id;
+        }
+
+        var route = new NotificationRoute { Id = Guid.NewGuid(), Name = name };
+        await dbContext.NotificationRoutes.AddAsync(route, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return route.Id;
+    }
+
+    public async Task<byte> GetOrCreateNotificationTypeIdAsync(
+        string name,
+        CancellationToken cancellationToken = default)
+    {
+        var existing = await dbContext.NotificationTypes
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Name == name, cancellationToken);
+        if (existing is not null)
+        {
+            return existing.Id;
+        }
+
+        var type = new NotificationType { Name = name };
+        await dbContext.NotificationTypes.AddAsync(type, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return type.Id;
+    }
+}
