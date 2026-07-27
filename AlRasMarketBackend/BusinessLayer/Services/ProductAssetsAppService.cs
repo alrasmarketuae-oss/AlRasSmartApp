@@ -73,7 +73,17 @@ public class ProductAssetsAppService(
         };
 
         await dbContext.ProductImages.AddAsync(entity, cancellationToken);
-        var markedAsEdit = await MarkOwnerMediaChangedForReviewAsync(product, cancellationToken);
+        // Admin edits apply live — do not send the listing back to pending review.
+        var markedAsEdit = false;
+        if (!input.AllowAdminAccess)
+        {
+            markedAsEdit = await MarkOwnerMediaChangedForReviewAsync(product, cancellationToken);
+        }
+        else
+        {
+            product.UpdatedAt = UtcDateTimeHelper.UtcNow;
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
         ProductsAppService.InvalidateListingCaches(product.OwnerId);
 
@@ -131,20 +141,28 @@ public class ProductAssetsAppService(
                 cancellationToken);
 
         var markedAsEdit = false;
-        if (product is not null && ShouldTreatMediaChangeAsOwnerEdit(product))
+        if (product is not null && !allowAdminAccess && ShouldTreatMediaChangeAsOwnerEdit(product))
         {
             await EnsurePendingEditSnapshotAsync(product, cancellationToken);
         }
 
         var pending = PendingProductChangeHelper.TryParse(product?.PendingProductChanges);
         // Keep previous images on disk until admin accepts/rejects the edit.
-        var keepFileForPendingEdit = PendingProductChangeHelper.PathExistsInSnapshot(pending, path);
+        var keepFileForPendingEdit = !allowAdminAccess
+            && PendingProductChangeHelper.PathExistsInSnapshot(pending, path);
 
         dbContext.ProductImages.Remove(image);
 
         if (product is not null)
         {
-            markedAsEdit = await MarkOwnerMediaChangedForReviewAsync(product, cancellationToken);
+            if (!allowAdminAccess)
+            {
+                markedAsEdit = await MarkOwnerMediaChangedForReviewAsync(product, cancellationToken);
+            }
+            else
+            {
+                product.UpdatedAt = UtcDateTimeHelper.UtcNow;
+            }
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -535,7 +553,15 @@ public class ProductAssetsAppService(
             await dbContext.ProductVideos.AddAsync(entity, cancellationToken);
         }
 
-        await MarkOwnerMediaChangedForReviewAsync(product, cancellationToken);
+        if (!input.AllowAdminAccess)
+        {
+            await MarkOwnerMediaChangedForReviewAsync(product, cancellationToken);
+        }
+        else
+        {
+            product.UpdatedAt = UtcDateTimeHelper.UtcNow;
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
         ProductsAppService.InvalidateListingCaches(product.OwnerId);
 

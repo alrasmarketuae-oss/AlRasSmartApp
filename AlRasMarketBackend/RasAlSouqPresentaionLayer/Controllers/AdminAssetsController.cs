@@ -1,27 +1,24 @@
 using BusinessLayer.Constants;
 using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
-using BusinessLayer.Options;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
-using Microsoft.Extensions.Options;
 using RasAlSouqPresentaionLayer.Authorization;
 
 namespace RasAlSouqPresentaionLayer.Controllers;
 
 /// <summary>
 /// Serves media assets through the API pipeline (CORS + auth) so the admin
-/// dashboard can canvas/fetch images. Prefers CDN redirect when configured.
+/// dashboard can canvas/fetch images (blur/download). Always streams bytes —
+/// never redirects to the public CDN (CDN has no CORS for the dashboard origin).
 /// </summary>
 [Route("api/admin/assets")]
 [ApiController]
 [Authorize(Roles = "Admin,Employee")]
 [RequireAdminPermission(AdminPermissions.ProductsView)]
 public class AdminAssetsController(
-    IMediaStorageService mediaStorage,
-    IMediaUrlResolver mediaUrlResolver,
-    IOptions<CloudflareR2Options> r2Options) : ControllerBase
+    IMediaStorageService mediaStorage) : ControllerBase
 {
     private static readonly HashSet<string> AllowedFolders = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -61,16 +58,6 @@ public class AdminAssetsController(
         }
 
         var normalized = "/" + relative;
-        var options = r2Options.Value;
-        if (options.IsConfigured && !string.IsNullOrWhiteSpace(options.PublicBaseUrl))
-        {
-            var publicUrl = mediaUrlResolver.ToPublicUrl(normalized);
-            if (publicUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-            {
-                return Redirect(publicUrl);
-            }
-        }
-
         var stream = await mediaStorage.OpenReadAsync(normalized, cancellationToken);
         if (stream is null)
         {

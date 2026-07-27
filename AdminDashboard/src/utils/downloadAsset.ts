@@ -23,21 +23,14 @@ export function toAssetRelativePath(urlOrPath: string): string {
   return trimmed.replace(/\\/g, '/').replace(/^\/+/, '')
 }
 
-/** Load an asset for download/blur. Prefer public CDN, then authenticated admin proxy. */
+/**
+ * Load an asset for download/blur via the authenticated API proxy.
+ * Do not fetch the public CDN directly — R2/CDN does not send CORS headers
+ * for the admin dashboard origin (browser reports a CORS error on save).
+ */
 export async function fetchAdminAssetBlob(urlOrPath: string): Promise<Blob> {
-  const absolute = resolveAssetUrl(urlOrPath)
-  if (absolute.startsWith('http://') || absolute.startsWith('https://')) {
-    try {
-      const direct = await fetch(absolute, { method: 'GET', cache: 'no-store', mode: 'cors' })
-      if (direct.ok) {
-        return direct.blob()
-      }
-    } catch {
-      // Fall through to authenticated admin proxy.
-    }
-  }
-
-  const relativePath = toAssetRelativePath(urlOrPath)
+  const relativePath =
+    toAssetRelativePath(urlOrPath) || toAssetRelativePath(resolveAssetUrl(urlOrPath))
   if (!relativePath) {
     throw new Error('Invalid asset path')
   }
@@ -49,9 +42,14 @@ export async function fetchAdminAssetBlob(urlOrPath: string): Promise<Blob> {
       method: 'GET',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       cache: 'no-store',
-      redirect: 'follow',
+      // Manual: a CDN redirect would drop Authorization and hit CORS again.
+      redirect: 'manual',
     },
   )
+
+  if (response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400)) {
+    throw new Error(`Download redirected unexpectedly (${response.status})`)
+  }
 
   if (!response.ok) {
     throw new Error(`Download failed (${response.status})`)
