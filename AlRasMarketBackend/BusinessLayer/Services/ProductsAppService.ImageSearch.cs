@@ -4,7 +4,6 @@ using BusinessLayer.Interfaces;
 using DataLayer.Helpers;
 using DataLayer.Interfaces;
 using DataLayer.Models;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace BusinessLayer.Services;
@@ -72,14 +71,8 @@ public partial class ProductsAppService
         }
 
         var productIds = hits.Select(x => x.ProductId).ToList();
-        var nameTranslations = await dbContext.ContentTranslations.AsNoTracking()
-            .Where(t =>
-                t.Scope == ContentTranslationScopes.Product
-                && t.ProductId != null
-                && productIds.Contains(t.ProductId.Value)
-                && t.Field == ContentTranslationFields.Name)
-            .Select(t => new { ProductId = t.ProductId!.Value, t.TextAr, t.TextEn })
-            .ToListAsync(cancellationToken)
+        var nameTranslations = await productData
+            .GetProductNameTranslationsByProductIdsAsync(productIds, cancellationToken)
             .ConfigureAwait(false);
 
         var namesByProduct = nameTranslations
@@ -139,13 +132,11 @@ public partial class ProductsAppService
     /// Whole-word OR match: any of <paramref name="words"/> (e.g. singular + plural) against
     /// product name / name translations only — one candidate+filter pass.
     /// </summary>
-    private async Task<List<PublicProductQueryRow>> SearchCatalogByProductNameAnyAsync(
+    private async Task<List<ProductPublicRow>> SearchCatalogByProductNameAnyAsync(
         IReadOnlyList<string> words,
         int take,
         CancellationToken cancellationToken)
     {
-        var productsQuery = ApplyPublicProductFilter(dbContext.Products.AsNoTracking());
-
         var uniqueWords = words
             .SelectMany(w =>
             {
@@ -164,90 +155,8 @@ public partial class ProductsAppService
             return [];
         }
 
-        HashSet<Guid> candidateIds = [];
-        foreach (var word in uniqueWords)
-        {
-            var containsPattern = ToSqlLikePattern(word);
-
-            var fromProducts = await productsQuery
-                .Where(x => EF.Functions.Like(x.NameEn ?? string.Empty, containsPattern))
-                .Select(x => x.ProductId)
-                .ToListAsync(cancellationToken)
-                .ConfigureAwait(false);
-
-            var fromNameTranslations = await (
-                    from t in dbContext.ContentTranslations.AsNoTracking()
-                    join p in productsQuery on t.ProductId equals p.ProductId
-                    where t.Scope == ContentTranslationScopes.Product
-                          && t.ProductId != null
-                          && t.Field == ContentTranslationFields.Name
-                          && (EF.Functions.Like(t.TextAr ?? string.Empty, containsPattern)
-                              || EF.Functions.Like(t.TextEn ?? string.Empty, containsPattern))
-                    select t.ProductId!.Value)
-                .Distinct()
-                .ToListAsync(cancellationToken)
-                .ConfigureAwait(false);
-
-            foreach (var id in fromProducts.Concat(fromNameTranslations))
-            {
-                candidateIds.Add(id);
-            }
-        }
-
-        if (candidateIds.Count == 0)
-        {
-            return [];
-        }
-
-        var candidateRows = await productsQuery
-            .Where(x => candidateIds.Contains(x.ProductId))
-            .Select(x => new { x.ProductId, x.NameEn })
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
-
-        var nameTranslationRows = await dbContext.ContentTranslations.AsNoTracking()
-            .Where(t =>
-                t.Scope == ContentTranslationScopes.Product
-                && t.ProductId != null
-                && candidateIds.Contains(t.ProductId.Value)
-                && t.Field == ContentTranslationFields.Name)
-            .Select(t => new { ProductId = t.ProductId!.Value, t.TextAr, t.TextEn })
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
-
-        var translationsByProduct = nameTranslationRows
-            .GroupBy(t => t.ProductId)
-            .ToDictionary(g => g.Key, g => g.ToList());
-
-        var wholeWordIds = new HashSet<Guid>();
-        foreach (var row in candidateRows)
-        {
-            translationsByProduct.TryGetValue(row.ProductId, out var trs);
-            var haystacks = new List<string?> { row.NameEn };
-            if (trs is not null)
-            {
-                foreach (var tr in trs)
-                {
-                    haystacks.Add(tr.TextAr);
-                    haystacks.Add(tr.TextEn);
-                }
-            }
-
-            if (uniqueWords.Any(word => haystacks.Any(h => ContainsWholeWord(h, word))))
-            {
-                wholeWordIds.Add(row.ProductId);
-            }
-        }
-
-        if (wholeWordIds.Count == 0)
-        {
-            return [];
-        }
-
-        return await SelectPublicProductRows(productsQuery.Where(x => wholeWordIds.Contains(x.ProductId)))
-            .OrderByDescending(x => x.CreatedAt)
-            .Take(take)
-            .ToListAsync(cancellationToken)
+        return await productData
+            .SearchPublicProductsByNameAnyAsync(uniqueWords, take, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -292,68 +201,9 @@ public partial class ProductsAppService
                         .Select(x => x.ProductId)
                         .ToList();
 
-                    var publicRows = await productAdoRepository
+                    var rows = await productData
                         .GetProductsByIdsAsync(orderedIds, cancellationToken)
                         .ConfigureAwait(false);
-
-                    var rows = publicRows
-                        .Select(r => new PublicProductQueryRow
-                        {
-                            ProductId = r.ProductId,
-                            ProductCode = r.ProductCode,
-                            NameEn = r.NameEn,
-                            USDPrice = r.USDPrice,
-                            OwnerId = r.OwnerId,
-                            Quantity = r.Quantity,
-                            DescriptionEn = r.DescriptionEn,
-                            MinimumOrderQuantity = r.MinimumOrderQuantity,
-                            MaximumOrderQuantity = r.MaximumOrderQuantity,
-                            Status = r.Status,
-                            IsApproved = r.IsApproved,
-                            DiscountPercentage = r.DiscountPercentage,
-                            DiscountDays = r.DiscountDays,
-                            ShippingDescriptionEn = r.ShippingDescriptionEn,
-                            ShippingDuration = r.ShippingDuration,
-                            OfferDuration = r.OfferDuration,
-                            SupplierNotesEn = r.SupplierNotesEn,
-                            Packaging = r.Packaging,
-                            PackagingDetails = r.PackagingDetails,
-                            RetailPackaging = r.RetailPackaging,
-                            RetailPackagingDetails = r.RetailPackagingDetails,
-                            RetailDescriptionEn = r.RetailDescriptionEn,
-                            Negotiable = r.Negotiable,
-                            IsFeatured = r.IsFeatured,
-                            ViewsCount = r.ViewsCount,
-                            VideoPath = r.VideoPath,
-                            VideoDurationSeconds = r.VideoDurationSeconds,
-                            IsVideoMuted = r.IsVideoMuted,
-                            CreatedAt = r.CreatedAt,
-                            CategoryName = r.CategoryName,
-                            CategoryNameAr = r.CategoryNameAr,
-                            ProductTypeName = r.ProductTypeName,
-                            UnitName = r.UnitName,
-                            OriginCountryName = r.OriginCountryName,
-                            OriginCountryNameAr = r.OriginCountryNameAr,
-                            DestinationCountryName = r.DestinationCountryName,
-                            DestinationCountryNameAr = r.DestinationCountryNameAr,
-                            LoadingPortName = r.LoadingPortName,
-                            LoadingPortNameAr = r.LoadingPortNameAr,
-                            ArrivalPortName = r.ArrivalPortName,
-                            ArrivalPortNameAr = r.ArrivalPortNameAr,
-                            CategoryId = r.CategoryId,
-                            Currency = r.Currency,
-                            ProductTypeId = r.ProductTypeId,
-                            AddressId = r.AddressId,
-                            RetailPrice = r.RetailPrice,
-                            RetailUnitId = r.RetailUnitId,
-                            RetailQuantity = r.RetailQuantity,
-                            RetailUnitName = r.RetailUnitName,
-                            RequestTypeId = r.RequestTypeId,
-                            RequestTypeName = r.RequestTypeName,
-                            BookingPriceTypeId = r.BookingPriceTypeId,
-                            BookingPriceTypeName = r.BookingPriceTypeName
-                        })
-                        .ToList();
 
                     var byId = rows.ToDictionary(x => x.ProductId);
                     var ranked = orderedIds

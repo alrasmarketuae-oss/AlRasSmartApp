@@ -1,4 +1,3 @@
-using System.Data;
 using BusinessLayer.Dtos;
 using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
@@ -7,129 +6,13 @@ using DataLayer.Interfaces;
 using DataLayer.Models;
 using DataLayer.Seeding;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace BusinessLayer.Services;
 public partial class ProductsAppService
 {
-    private sealed class PublicProductQueryRow
-    {
-        public Guid ProductId { get; set; }
-        public string? ProductCode { get; set; }
-        public string? NameEn { get; set; }
-        public decimal USDPrice { get; set; }
-        public Guid? OwnerId { get; set; }
-        public long Quantity { get; set; }
-        public string? DescriptionEn { get; set; }
-        public int? MinimumOrderQuantity { get; set; }
-        public int? MaximumOrderQuantity { get; set; }
-        public byte? Status { get; set; }
-        public bool? IsApproved { get; set; }
-        public byte? DiscountPercentage { get; set; }
-        public short? DiscountDays { get; set; }
-        public string? ShippingDescriptionEn { get; set; }
-        public string? ShippingDuration { get; set; }
-        public string? OfferDuration { get; set; }
-        public string? SupplierNotesEn { get; set; }
-        public byte? Packaging { get; set; }
-        public string? PackagingDetails { get; set; }
-        public byte? RetailPackaging { get; set; }
-        public string? RetailPackagingDetails { get; set; }
-        public string? RetailDescriptionEn { get; set; }
-        public bool? Negotiable { get; set; }
-        public bool IsFeatured { get; set; }
-        public long ViewsCount { get; set; }
-        public string? VideoPath { get; set; }
-        public byte? VideoDurationSeconds { get; set; }
-        public bool IsVideoMuted { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public string? CategoryName { get; set; }
-        public string? CategoryNameAr { get; set; }
-        public string? ProductTypeName { get; set; }
-        public string? UnitName { get; set; }
-        public string? OriginCountryName { get; set; }
-        public string? OriginCountryNameAr { get; set; }
-        public string? DestinationCountryName { get; set; }
-        public string? DestinationCountryNameAr { get; set; }
-        public string? LoadingPortName { get; set; }
-        public string? LoadingPortNameAr { get; set; }
-        public string? ArrivalPortName { get; set; }
-        public string? ArrivalPortNameAr { get; set; }
-        public byte? CategoryId { get; set; }
-        public string Currency { get; set; } = "AED";
-        public byte? ProductTypeId { get; set; }
-        public Guid? AddressId { get; set; }
-        public decimal? RetailPrice { get; set; }
-        public byte? RetailUnitId { get; set; }
-        public long? RetailQuantity { get; set; }
-        public string? RetailUnitName { get; set; }
-        public byte? RequestTypeId { get; set; }
-        public string? RequestTypeName { get; set; }
-        public byte? BookingPriceTypeId { get; set; }
-        public string? BookingPriceTypeName { get; set; }
-    }
-
-    private static IQueryable<PublicProductQueryRow> SelectPublicProductRows(IQueryable<Product> source) =>
-        source.Select(x => new PublicProductQueryRow
-        {
-            ProductId = x.ProductId,
-            ProductCode = x.ProductCode,
-            NameEn = x.NameEn,
-            USDPrice = x.USDPrice,
-            OwnerId = x.OwnerId,
-            Quantity = x.Quantity,
-            DescriptionEn = x.DescriptionEn,
-            MinimumOrderQuantity = x.MinimumOrderQuantity,
-            MaximumOrderQuantity = x.MaximumOrderQuantity,
-            Status = x.Status,
-            IsApproved = x.IsApproved,
-            DiscountPercentage = x.DiscountPercentage,
-            DiscountDays = x.DiscountDays,
-            ShippingDescriptionEn = x.ShippingDescriptionEn,
-            ShippingDuration = x.ShippingDuration,
-            OfferDuration = x.OfferDuration,
-            SupplierNotesEn = x.SupplierNotesEn,
-            Packaging = x.Packaging,
-            PackagingDetails = x.PackagingDetails,
-            RetailPackaging = x.RetailPackaging,
-            RetailPackagingDetails = x.RetailPackagingDetails,
-            RetailDescriptionEn = x.RetailDescriptionEn,
-            Negotiable = x.Negotiable,
-            IsFeatured = x.IsFeatured,
-            ViewsCount = x.ViewsCount,
-            VideoPath = x.VideoPath,
-            VideoDurationSeconds = x.VideoDurationSeconds,
-            IsVideoMuted = x.IsVideoMuted,
-            CreatedAt = x.CreatedAt,
-            CategoryName = x.Category != null ? x.Category.NameEn : null,
-            CategoryNameAr = x.Category != null ? x.Category.NameAr : null,
-            ProductTypeName = x.ProductType != null ? x.ProductType.TypeNameEn : null,
-            UnitName = x.Unit != null ? x.Unit.UnitNameEn : null,
-            OriginCountryName = x.OriginCountry != null ? x.OriginCountry.CountryNameEn : null,
-            OriginCountryNameAr = x.OriginCountry != null ? x.OriginCountry.CountryNameAr : null,
-            DestinationCountryName = x.DestinationCountry != null ? x.DestinationCountry.CountryNameEn : null,
-            DestinationCountryNameAr = x.DestinationCountry != null ? x.DestinationCountry.CountryNameAr : null,
-            LoadingPortName = x.LoadingPort != null ? x.LoadingPort.PortNameEn : null,
-            LoadingPortNameAr = x.LoadingPort != null ? x.LoadingPort.PortNameAr : null,
-            ArrivalPortName = x.ArrivalPort != null ? x.ArrivalPort.PortNameEn : null,
-            ArrivalPortNameAr = x.ArrivalPort != null ? x.ArrivalPort.PortNameAr : null,
-            CategoryId = x.CategoryId,
-            Currency = x.Currency,
-            ProductTypeId = x.ProductTypeId,
-            AddressId = x.AddressId,
-            RetailPrice = x.RetailPrice,
-            RetailUnitId = x.RetailUnitId,
-            RetailQuantity = x.RetailQuantity,
-            RetailUnitName = x.RetailUnit != null ? x.RetailUnit.UnitNameEn : null,
-            RequestTypeId = x.RequestTypeId,
-            RequestTypeName = x.RequestType != null ? x.RequestType.NameEn : null,
-            BookingPriceTypeId = x.BookingPriceTypeId,
-            BookingPriceTypeName = x.BookingPriceType != null ? x.BookingPriceType.NameEn : null
-        });
-
     private async Task<object> BuildPublicProductListPageAsync(
-        IReadOnlyList<PublicProductQueryRow> products,
+        IReadOnlyList<ProductPublicRow> products,
         int totalCount,
         int page,
         int pageSize,
@@ -155,7 +38,7 @@ public partial class ProductsAppService
     }
 
     private async Task<List<object>> BuildPublicProductListItemsAsync(
-        IReadOnlyList<PublicProductQueryRow> products,
+        IReadOnlyList<ProductPublicRow> products,
         CancellationToken cancellationToken,
         bool projectRetailAsPrimary = false,
         bool includeRetailFields = true)
@@ -168,54 +51,26 @@ public partial class ProductsAppService
         var productIds = products.Select(p => p.ProductId).ToList();
         var addressLookup = await LoadAddressTextLookupAsync(products.Select(p => p.AddressId), cancellationToken);
 
-        var imagesLookup = await dbContext.ProductImages
-            .AsNoTracking()
-            .Where(pi => productIds.Contains(pi.ProductId))
-            .OrderBy(pi => pi.Id)
-            .Select(pi => new
-            {
-                pi.ProductId,
-                pi.ImagePath
-            })
-            .ToListAsync(cancellationToken);
-
+        var imagesLookup = await productData.GetProductImagePathsByProductIdsAsync(productIds, cancellationToken);
         var imagesDict = imagesLookup
             .GroupBy(x => x.ProductId)
             .ToDictionary(
                 g => g.Key,
-                g => g.Select(x => x.ImagePath).ToList());
+                g => g.Select(x => x.Path).ToList());
 
-        var documentsLookup = await dbContext.ProductDocuments
-            .AsNoTracking()
-            .Where(pd => productIds.Contains(pd.ProductId))
-            .OrderBy(pd => pd.Id)
-            .Select(pd => new
-            {
-                pd.ProductId,
-                pd.DocumentPath
-            })
-            .ToListAsync(cancellationToken);
-
+        var documentsLookup = await productData.GetProductDocumentPathsByProductIdsAsync(productIds, cancellationToken);
         var documentsDict = documentsLookup
             .GroupBy(x => x.ProductId)
             .ToDictionary(
                 g => g.Key,
-                g => g.Select(x => x.DocumentPath).ToList());
+                g => g.Select(x => x.Path).ToList());
 
-        var extraVideosLookup = productIds.Count == 0
-            ? []
-            : await dbContext.ProductVideos
-                .AsNoTracking()
-                .Where(v => productIds.Contains(v.ProductId))
-                .OrderBy(v => v.Id)
-                .Select(v => new { v.ProductId, v.VideoPath })
-                .ToListAsync(cancellationToken);
-
+        var extraVideosLookup = await productData.GetProductVideoPathsByProductIdsAsync(productIds, cancellationToken);
         var extraVideosDict = extraVideosLookup
             .GroupBy(x => x.ProductId)
             .ToDictionary(
                 g => g.Key,
-                g => g.Select(x => x.VideoPath).ToList());
+                g => g.Select(x => x.Path).ToList());
 
         var translations = await contentTranslationService.GetProductTranslationsAsync(
             productIds,
@@ -229,12 +84,7 @@ public partial class ProductsAppService
             .Distinct()
             .ToList();
 
-        var categoryLookup = categoryIds.Count == 0
-            ? new Dictionary<byte, Category>()
-            : await dbContext.Categories
-                .AsNoTracking()
-                .Where(c => categoryIds.Contains(c.CategoryId))
-                .ToDictionaryAsync(c => c.CategoryId, cancellationToken);
+        var categoryLookup = await productData.GetCategoriesByIdsAsync(categoryIds, cancellationToken);
 
         return products.Select(x =>
         {
@@ -507,35 +357,6 @@ public partial class ProductsAppService
         }
 
         return (page, pageSize);
-    }
-
-    private static IQueryable<Product> ApplyPublicProductFilter(IQueryable<Product> query)
-    {
-        var utcNow = UtcDateTimeHelper.UtcNow;
-        return query.Where(x =>
-            (x.Status == ProductStatusCodes.Active
-                || (x.Status == ProductStatusCodes.UnderReview && x.IsApproved == true))
-            && (x.DisplayExpiresAtUtc == null || x.DisplayExpiresAtUtc > utcNow)
-            && (x.ProductTypeId != ProductTypeCodes.Requests || x.Quantity > 0));
-    }
-
-    /// <summary>
-    /// Home feed and category browsing: approved category listings only.
-    /// Includes hybrids (CategoryId + Retail dual-list). Excludes pure service
-    /// types (Retail/Booking/Offers/Requests without a category).
-    /// </summary>
-    private static IQueryable<Product> ApplyHomeCatalogProductFilter(IQueryable<Product> query)
-    {
-        return query.Where(x =>
-            x.CategoryId.HasValue
-            && x.CategoryId.Value > 0
-            && (x.ProductTypeId == null || x.ProductTypeId == ProductTypeCodes.Retail)
-            && x.IsApproved == true
-            && x.Status != ProductStatusCodes.Rejected
-            && (x.ProductTypeId != ProductTypeCodes.Requests || x.Quantity > 0)
-            && (x.Status == ProductStatusCodes.Active
-                || x.Status == ProductStatusCodes.Paused
-                || (x.Status == ProductStatusCodes.UnderReview && x.IsApproved == true)));
     }
 
 }

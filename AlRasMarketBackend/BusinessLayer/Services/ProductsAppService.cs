@@ -1,19 +1,18 @@
 using BusinessLayer.Caching;
-using BusinessLayer.DataAccess;
 using BusinessLayer.Dtos;
 using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using DataLayer.Interfaces;
 using DataLayer.Models;
-using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace BusinessLayer.Services;
 
 public partial class ProductsAppService(
-    IRasAlSouqDbContext dbContext,
+    IProductDataAccess productData,
     ITieredCache tieredCache,
     ProductCacheVersions productCacheVersions,
     IOpenAiVisionService openAiVisionService,
@@ -27,8 +26,7 @@ public partial class ProductsAppService(
     IMediaStorageService mediaStorage,
     IImageEmbeddingService imageEmbeddingService,
     IProductImageVectorIndex productImageVectorIndex,
-    Microsoft.Extensions.Options.IOptions<BusinessLayer.Options.ImageEmbeddingOptions> imageEmbeddingOptions,
-    ProductAdoRepository productAdoRepository) : IProductsAppService
+    Microsoft.Extensions.Options.IOptions<BusinessLayer.Options.ImageEmbeddingOptions> imageEmbeddingOptions) : IProductsAppService
 {
     private const string AllProductsCacheKey = "products:all:v14";
     private const string ProductsByTypeCachePrefix = "products:by-type:v14:";
@@ -147,7 +145,7 @@ public partial class ProductsAppService(
 
         ApplyRetailPricingToProduct(product, input, refs, categoryId, productTypeId);
 
-        product.ProductCode = await productAdoRepository.InsertProductAsync(product, cancellationToken);
+        product.ProductCode = await productData.InsertProductAsync(product, cancellationToken);
 
         logger.LogInformation(
             "Product created {ProductId} for owner {OwnerId} name={NameEn}",
@@ -256,12 +254,8 @@ public partial class ProductsAppService(
 
                 var queue = scope.ServiceProvider.GetRequiredService<IProductImageIndexingQueue>();
                 var imageIds = await scope.ServiceProvider
-                    .GetRequiredService<IRasAlSouqDbContext>()
-                    .ProductImages
-                    .AsNoTracking()
-                    .Where(x => x.ProductId == productId)
-                    .Select(x => x.Id)
-                    .ToListAsync();
+                    .GetRequiredService<IProductDataAccess>()
+                    .GetProductImageIdsByProductIdAsync(productId);
                 foreach (var imageId in imageIds)
                 {
                     await queue.EnqueueAsync(imageId);
@@ -289,7 +283,7 @@ public partial class ProductsAppService(
         ValidateCatalogClassification(categoryId, refs.ProductType?.Id);
         ValidateRetailPricing(input, categoryId, refs.ProductType?.Id, refs);
 
-        var product = await dbContext.Products.FirstOrDefaultAsync(x => x.ProductId == productId, cancellationToken)
+        var product = await productData.GetProductByIdTrackedAsync(productId, cancellationToken)
             ?? throw new KeyNotFoundException("Product not found.");
 
         if (!input.AllowAdminUpdate && product.OwnerId != ownerId)
@@ -341,31 +335,14 @@ public partial class ProductsAppService(
                 product.PendingProductChanges);
             if (!keepExistingSnapshot)
             {
-                var existingImages = await dbContext.ProductImages
-                    .AsNoTracking()
-                    .Where(x => x.ProductId == productId)
-                    .OrderBy(x => x.Id)
-                    .Select(x => x.ImagePath)
-                    .ToListAsync(cancellationToken);
-                var existingDocuments = await dbContext.ProductDocuments
-                    .AsNoTracking()
-                    .Where(x => x.ProductId == productId)
-                    .OrderBy(x => x.Id)
-                    .Select(x => x.DocumentPath)
-                    .ToListAsync(cancellationToken);
-                var existingExtraVideos = await dbContext.ProductVideos
-                    .AsNoTracking()
-                    .Where(x => x.ProductId == productId)
-                    .OrderBy(x => x.Id)
-                    .Select(x => x.VideoPath)
-                    .ToListAsync(cancellationToken);
+                var media = await productData.GetProductMediaPathsForSnapshotAsync(productId, cancellationToken);
 
                 // Copy scalar values now — before any field assignment below.
                 var snapshot = PendingProductChangeHelper.Capture(
                     product,
-                    existingImages,
-                    existingDocuments,
-                    existingExtraVideos);
+                    media.ImagePaths,
+                    media.DocumentPaths,
+                    media.ExtraVideoPaths);
                 product.PendingProductChanges = PendingProductChangeHelper.Serialize(snapshot);
             }
         }
@@ -551,7 +528,7 @@ public partial class ProductsAppService(
         product.AddressId = addressId;
         product.UpdatedAt = UtcDateTimeHelper.UtcNow;
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await productData.SaveChangesAsync(cancellationToken);
         // OpenAI translation must not block update response.
         // CLIP reindex runs once after translation (inside QueueTranslateProductFields).
         QueueTranslateProductFields(product);
@@ -562,9 +539,7 @@ public partial class ProductsAppService(
             // Alert + live counts already run inside Notify*; do not await on the publish path.
             QueueAdminAdAlert(product, isEdit: true);
 
-            var owner = await dbContext.Users
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == ownerId, cancellationToken);
+            var owner = await productData.GetUserByIdAsync(ownerId, tracked: false, cancellationToken);
             var productName = string.IsNullOrWhiteSpace(product.NameEn) ? string.Empty : product.NameEn.Trim();
             var notificationEn = NotificationMessages.AdResubmittedForReview("en", productName);
             var notificationAr = NotificationMessages.AdResubmittedForReview("ar", productName);
@@ -609,8 +584,7 @@ public partial class ProductsAppService(
 
         var ownerGuid = await EnsureCompanyOwnerAsync(ownerId, cancellationToken);
 
-        var product = await dbContext.Products
-            .FirstOrDefaultAsync(x => x.ProductId == parsedProductId, cancellationToken)
+        var product = await productData.GetProductByIdTrackedAsync(parsedProductId, cancellationToken)
             ?? throw new KeyNotFoundException("Product not found.");
 
         if (product.OwnerId != ownerGuid)
@@ -662,7 +636,7 @@ public partial class ProductsAppService(
             product.Status = ProductStatusCodes.UnderReview;
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await productData.SaveChangesAsync(cancellationToken);
         InvalidateProductCaches(product.OwnerId);
 
         // Same admin alert/counts as before — off the HTTP critical path.
@@ -695,13 +669,8 @@ public partial class ProductsAppService(
             {
                 await using var scope = scopeFactory.CreateAsyncScope();
                 var queue = scope.ServiceProvider.GetRequiredService<IProductImageIndexingQueue>();
-                var db = scope.ServiceProvider.GetRequiredService<IRasAlSouqDbContext>();
-                var imageIds = await db.ProductImages
-                    .AsNoTracking()
-                    .Where(x => x.ProductId == productId)
-                    .OrderBy(x => x.Id)
-                    .Select(x => x.Id)
-                    .ToListAsync()
+                var db = scope.ServiceProvider.GetRequiredService<IProductDataAccess>();
+                var imageIds = await db.GetProductImageIdsByProductIdAsync(productId)
                     .ConfigureAwait(false);
 
                 foreach (var imageId in imageIds)
@@ -733,11 +702,7 @@ public partial class ProductsAppService(
             throw new ArgumentException("Invalid user id.");
         }
 
-        var product = await dbContext.Products
-            .Include(x => x.ProductImages)
-            .Include(x => x.ProductDocuments)
-            .Include(x => x.ProductVideos)
-            .FirstOrDefaultAsync(x => x.ProductId == productId, cancellationToken)
+        var product = await productData.GetProductWithMediaForDeleteAsync(productId, cancellationToken)
             ?? throw new KeyNotFoundException("Product not found.");
 
         if (!input.AllowAdminDelete)
@@ -747,61 +712,10 @@ public partial class ProductsAppService(
 
         await DeleteProductOrdersAndDependentsAsync(productId, input.WebRootPath, cancellationToken);
 
-        var imageIds = product.ProductImages.Select(x => x.Id).ToList();
-        var imagePaths = product.ProductImages.Select(x => x.ImagePath).ToList();
-        var documentPaths = product.ProductDocuments.Select(x => x.DocumentPath).ToList();
-        var videoPaths = ProductVideoPathsHelper.ResolveAll(product);
-
-        var cartItems = await dbContext.CartItems
-            .Where(x => x.ProductId == productId)
-            .ToListAsync(cancellationToken);
-        if (cartItems.Count > 0)
-        {
-            dbContext.CartItems.RemoveRange(cartItems);
-        }
-
-        var offerIds = await dbContext.Offers
-            .Where(x => x.ProductId == productId)
-            .Select(x => x.Id)
-            .ToListAsync(cancellationToken);
-        if (offerIds.Count > 0)
-        {
-            await RemoveDeletionRangeAsync(
-                dbContext.OfferOnRequestImages.Where(x => offerIds.Contains(x.OfferId)),
-                cancellationToken);
-            await RemoveDeletionRangeAsync(
-                dbContext.OfferOnRequestDocuments.Where(x => offerIds.Contains(x.OfferId)),
-                cancellationToken);
-            await RemoveDeletionRangeAsync(
-                dbContext.Offers.Where(x => offerIds.Contains(x.Id)),
-                cancellationToken);
-        }
-
-        var negotiableOffers = await dbContext.OffersOnNegotiable
-            .Where(x => x.ProductId == productId)
-            .ToListAsync(cancellationToken);
-        if (negotiableOffers.Count > 0)
-        {
-            dbContext.OffersOnNegotiable.RemoveRange(negotiableOffers);
-        }
-
-        if (product.ProductImages.Count > 0)
-        {
-            dbContext.ProductImages.RemoveRange(product.ProductImages);
-        }
-
-        if (product.ProductDocuments.Count > 0)
-        {
-            dbContext.ProductDocuments.RemoveRange(product.ProductDocuments);
-        }
-
-        dbContext.Products.Remove(product);
-
-        var ownerIdForCache = product.OwnerId;
-
+        ProductDeleteCascadeResult cascade;
         try
         {
-            await dbContext.SaveChangesAsync(cancellationToken);
+            cascade = await productData.DeleteProductCascadeAsync(product, cancellationToken);
         }
         catch (DbUpdateException ex)
         {
@@ -810,13 +724,18 @@ public partial class ProductsAppService(
                 ex);
         }
 
-        InvalidateProductCaches(ownerIdForCache);
+        InvalidateProductCaches(cascade.OwnerId);
 
-        await DeleteProductPhysicalAssetsAsync(productId, videoPaths, imagePaths, documentPaths, cancellationToken);
+        await DeleteProductPhysicalAssetsAsync(
+            productId,
+            cascade.VideoPaths,
+            cascade.ImagePaths,
+            cascade.DocumentPaths,
+            cancellationToken);
 
         try
         {
-            foreach (var imageId in imageIds)
+            foreach (var imageId in cascade.ImageIds)
             {
                 await productImageVectorIndex.DeleteByProductImageIdAsync(imageId, cancellationToken);
             }
@@ -845,7 +764,7 @@ public partial class ProductsAppService(
 
         var ownerId = await EnsureCompanyOwnerAsync(input.OwnerId, cancellationToken);
 
-        var product = await dbContext.Products.FirstOrDefaultAsync(x => x.ProductId == productId, cancellationToken)
+        var product = await productData.GetProductByIdTrackedAsync(productId, cancellationToken)
             ?? throw new KeyNotFoundException("Product not found.");
 
         if (product.OwnerId != ownerId)
@@ -886,7 +805,7 @@ public partial class ProductsAppService(
         }
 
         product.UpdatedAt = UtcDateTimeHelper.UtcNow;
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await productData.SaveChangesAsync(cancellationToken);
         InvalidateProductCaches(ownerId);
 
         var statusName = ProductStatusCodes.ToDisplayName(product.Status, product.IsApproved);
@@ -916,7 +835,7 @@ public partial class ProductsAppService(
 
         var owner = await EnsureCompanyOwnerAsync(ownerId, cancellationToken);
 
-        var product = await dbContext.Products.FirstOrDefaultAsync(x => x.ProductId == parsedId, cancellationToken)
+        var product = await productData.GetProductByIdTrackedAsync(parsedId, cancellationToken)
             ?? throw new KeyNotFoundException("Product not found.");
 
         if (product.OwnerId != owner)
@@ -936,7 +855,7 @@ public partial class ProductsAppService(
 
         product.Quantity = 0;
         product.UpdatedAt = UtcDateTimeHelper.UtcNow;
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await productData.SaveChangesAsync(cancellationToken);
         InvalidateProductCaches(owner);
 
         return new

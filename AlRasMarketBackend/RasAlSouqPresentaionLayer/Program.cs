@@ -17,7 +17,6 @@ using BusinessLayer.Services;
 using BusinessLayer.TokenService;
 using BusinessLayer.Caching;
 using BusinessLayer.Options;
-using BusinessLayer.DataAccess;
 using BusinessLayer.Services.Storage;
 using RasAlSouqPresentaionLayer.Services;
 using DataLayer.Interfaces;
@@ -111,8 +110,9 @@ builder.Services.AddScoped<ICompanyImagesAppService, CompanyImagesAppService>();
 builder.Services.AddScoped<ICompanyLicenceAppService, CompanyLicenceAppService>();
 builder.Services.AddScoped<INotificationsAppService, NotificationsAppService>();
 builder.Services.AddScoped<IProductAssetsAppService, ProductAssetsAppService>();
-builder.Services.AddScoped<IProductsAppService, ProductsAppService>();
 builder.Services.AddScoped<ProductAdoRepository>();
+builder.Services.AddScoped<IProductDataAccess, ProductDataAccess>();
+builder.Services.AddScoped<IProductsAppService, ProductsAppService>();
 builder.Services.AddHttpClient<IOpenAiVisionService, OpenAiVisionService>(client =>
 {
     client.Timeout = TimeSpan.FromSeconds(45);

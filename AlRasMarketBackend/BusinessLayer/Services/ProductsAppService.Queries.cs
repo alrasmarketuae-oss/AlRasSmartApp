@@ -4,7 +4,6 @@ using BusinessLayer.Interfaces;
 using DataLayer.Helpers;
 using DataLayer.Interfaces;
 using DataLayer.Models;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace BusinessLayer.Services;
@@ -24,18 +23,7 @@ public partial class ProductsAppService
 
         var skip = (page - 1) * pageSize;
 
-        var baseQuery = ApplyHomeCatalogProductFilter(dbContext.Products.AsNoTracking());
-        var totalCount = await baseQuery.CountAsync(cancellationToken);
-
-        var products = await SelectPublicProductRows(baseQuery)
-            .OrderByDescending(x => x.CreatedAt)
-            .Skip(skip)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
-
-        products = products
-            .Where(x => x.CategoryId.HasValue && x.CategoryId.Value > 0)
-            .ToList();
+        var (products, totalCount) = await productData.GetHomeCatalogPageAsync(skip, pageSize, cancellationToken);
 
         var result = await BuildPublicProductListPageAsync(
             products,
@@ -67,14 +55,11 @@ public partial class ProductsAppService
                 return codeCached;
             }
 
-            var codeQuery = ApplyPublicProductFilter(dbContext.Products.AsNoTracking())
-                .Where(x => x.ProductCode == productCode);
-
-            var codeProducts = await SelectPublicProductRows(codeQuery)
-                .OrderByDescending(x => x.CreatedAt)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync(cancellationToken);
+            var codeProducts = await productData.GetPublicProductsByCodeAsync(
+                productCode,
+                (page - 1) * pageSize,
+                pageSize,
+                cancellationToken);
 
             var codeResult = await BuildPublicProductListPageAsync(
                 codeProducts,
@@ -130,14 +115,12 @@ public partial class ProductsAppService
         return result;
     }
 
-    private async Task<(List<PublicProductQueryRow> Products, int TotalCount)> SearchCatalogByTextAsync(
+    private async Task<(List<ProductPublicRow> Products, int TotalCount)> SearchCatalogByTextAsync(
         string queryText,
         int page,
         int pageSize,
         CancellationToken cancellationToken)
     {
-        var skip = (page - 1) * pageSize;
-        var productsQuery = ApplyPublicProductFilter(dbContext.Products.AsNoTracking());
         var tokens = queryText
             .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Where(t => !IsSearchStopToken(t))
@@ -148,9 +131,9 @@ public partial class ProductsAppService
             return ([], 0);
         }
 
+        var tokenWordGroups = new List<IReadOnlyList<string>>();
         foreach (var token in tokens)
         {
-            // Synonyms are OR'd; multiple query tokens are AND'd via successive filters.
             var words = new List<string> { token };
             words.AddRange(ResolveSearchSynonyms(token));
             var uniqueWords = words
@@ -159,145 +142,19 @@ public partial class ProductsAppService
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Take(6)
                 .ToList();
-
-            // 1) Broad SQL candidate fetch (substring LIKE only to shrink the set).
-            //    Never return these as final hits — step 2 enforces whole-word.
-            //    Do NOT use localList.Any(...) inside EF Where (matches every product).
-            HashSet<Guid> candidateIds = [];
-            foreach (var word in uniqueWords)
-            {
-                var containsPattern = ToSqlLikePattern(word);
-
-                var fromProducts = await productsQuery
-                    .Where(x =>
-                        EF.Functions.Like(x.NameEn ?? string.Empty, containsPattern)
-                        || EF.Functions.Like(x.ProductCode ?? string.Empty, ToExactLikePattern(word))
-                        || (x.Category != null && (
-                            EF.Functions.Like(x.Category.NameEn ?? string.Empty, containsPattern)
-                            || EF.Functions.Like(x.Category.NameAr ?? string.Empty, containsPattern)))
-                        || (x.ProductType != null
-                            && EF.Functions.Like(x.ProductType.TypeNameEn ?? string.Empty, containsPattern))
-                        || EF.Functions.Like(x.DescriptionEn ?? string.Empty, containsPattern)
-                        || EF.Functions.Like(x.RetailDescriptionEn ?? string.Empty, containsPattern)
-                        || EF.Functions.Like(x.SupplierNotesEn ?? string.Empty, containsPattern)
-                        || EF.Functions.Like(x.ShippingDescriptionEn ?? string.Empty, containsPattern))
-                    .Select(x => x.ProductId)
-                    .ToListAsync(cancellationToken)
-                    .ConfigureAwait(false);
-
-                var fromTranslations = await (
-                        from t in dbContext.ContentTranslations.AsNoTracking()
-                        join p in productsQuery on t.ProductId equals p.ProductId
-                        where t.Scope == ContentTranslationScopes.Product
-                              && t.ProductId != null
-                              && (t.Field == ContentTranslationFields.Name
-                                  || t.Field == ContentTranslationFields.Description
-                                  || t.Field == ContentTranslationFields.RetailDescription
-                                  || t.Field == ContentTranslationFields.SupplierNotes
-                                  || t.Field == ContentTranslationFields.ShippingDescription)
-                              && (EF.Functions.Like(t.TextAr ?? string.Empty, containsPattern)
-                                  || EF.Functions.Like(t.TextEn ?? string.Empty, containsPattern))
-                        select t.ProductId!.Value)
-                    .Distinct()
-                    .ToListAsync(cancellationToken)
-                    .ConfigureAwait(false);
-
-                foreach (var id in fromProducts.Concat(fromTranslations))
-                {
-                    candidateIds.Add(id);
-                }
-            }
-
-            if (candidateIds.Count == 0)
+            if (uniqueWords.Count == 0)
             {
                 return ([], 0);
             }
 
-            // 2) Whole-word only (C#) — "فاخر"∈"شوكو فاخر"; "كو"/"كوك"∉"كوكو".
-            var candidateRows = await productsQuery
-                .Where(x => candidateIds.Contains(x.ProductId))
-                .Select(x => new
-                {
-                    x.ProductId,
-                    x.NameEn,
-                    x.ProductCode,
-                    x.DescriptionEn,
-                    x.RetailDescriptionEn,
-                    x.SupplierNotesEn,
-                    x.ShippingDescriptionEn,
-                    CategoryNameEn = x.Category != null ? x.Category.NameEn : null,
-                    CategoryNameAr = x.Category != null ? x.Category.NameAr : null,
-                    ProductTypeName = x.ProductType != null ? x.ProductType.TypeNameEn : null
-                })
-                .ToListAsync(cancellationToken)
-                .ConfigureAwait(false);
-
-            var translationRows = await dbContext.ContentTranslations.AsNoTracking()
-                .Where(t =>
-                    t.Scope == ContentTranslationScopes.Product
-                    && t.ProductId != null
-                    && candidateIds.Contains(t.ProductId.Value)
-                    && (t.Field == ContentTranslationFields.Name
-                        || t.Field == ContentTranslationFields.Description
-                        || t.Field == ContentTranslationFields.RetailDescription
-                        || t.Field == ContentTranslationFields.SupplierNotes
-                        || t.Field == ContentTranslationFields.ShippingDescription))
-                .Select(t => new { ProductId = t.ProductId!.Value, t.TextAr, t.TextEn })
-                .ToListAsync(cancellationToken)
-                .ConfigureAwait(false);
-
-            var translationsByProduct = translationRows
-                .GroupBy(t => t.ProductId)
-                .ToDictionary(g => g.Key, g => g.ToList());
-
-            var wholeWordIds = new HashSet<Guid>();
-            foreach (var row in candidateRows)
-            {
-                translationsByProduct.TryGetValue(row.ProductId, out var trs);
-                var haystacks = new List<string?>
-                {
-                    row.NameEn,
-                    row.ProductCode,
-                    row.DescriptionEn,
-                    row.RetailDescriptionEn,
-                    row.SupplierNotesEn,
-                    row.ShippingDescriptionEn,
-                    row.CategoryNameEn,
-                    row.CategoryNameAr,
-                    row.ProductTypeName
-                };
-                if (trs is not null)
-                {
-                    foreach (var tr in trs)
-                    {
-                        haystacks.Add(tr.TextAr);
-                        haystacks.Add(tr.TextEn);
-                    }
-                }
-
-                // Keep only products where a search word is a full token (never letter substring).
-                if (uniqueWords.Any(word => haystacks.Any(h => ContainsWholeWord(h, word))))
-                {
-                    wholeWordIds.Add(row.ProductId);
-                }
-            }
-
-            if (wholeWordIds.Count == 0)
-            {
-                return ([], 0);
-            }
-
-            productsQuery = productsQuery.Where(x => wholeWordIds.Contains(x.ProductId));
+            tokenWordGroups.Add(uniqueWords);
         }
 
-        var totalCount = await productsQuery.CountAsync(cancellationToken);
-        var products = await SelectPublicProductRows(productsQuery)
-            .OrderByDescending(x => x.CreatedAt)
-            .Skip(skip)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
-
-        return (products, totalCount);
+        return await productData.SearchPublicCatalogByTokenWordsAsync(
+            tokenWordGroups,
+            page,
+            pageSize,
+            cancellationToken);
     }
 
     private async Task<object?> TryApplyAiSearchAssistAsync(
@@ -428,58 +285,12 @@ public partial class ProductsAppService
     /// Lenient name search for AI spelling assist: substring match on NameEn and
     /// name translations only (no whole-word gate). Used after strict search returns 0.
     /// </summary>
-    private async Task<(List<PublicProductQueryRow> Products, int TotalCount)> SearchCatalogByNameLooseAsync(
+    private Task<(List<ProductPublicRow> Products, int TotalCount)> SearchCatalogByNameLooseAsync(
         string queryText,
         int page,
         int pageSize,
-        CancellationToken cancellationToken)
-    {
-        var q = (queryText ?? string.Empty).Trim();
-        if (q.Length < 2)
-        {
-            return ([], 0);
-        }
-
-        var skip = (page - 1) * pageSize;
-        var productsQuery = ApplyPublicProductFilter(dbContext.Products.AsNoTracking());
-        var containsPattern = ToSqlLikePattern(q);
-
-        var fromProducts = await productsQuery
-            .Where(x => EF.Functions.Like(x.NameEn ?? string.Empty, containsPattern))
-            .Select(x => x.ProductId)
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
-
-        var fromTranslations = await (
-                from t in dbContext.ContentTranslations.AsNoTracking()
-                join p in productsQuery on t.ProductId equals p.ProductId
-                where t.Scope == ContentTranslationScopes.Product
-                      && t.ProductId != null
-                      && t.Field == ContentTranslationFields.Name
-                      && (EF.Functions.Like(t.TextAr ?? string.Empty, containsPattern)
-                          || EF.Functions.Like(t.TextEn ?? string.Empty, containsPattern))
-                select t.ProductId!.Value)
-            .Distinct()
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
-
-        var ids = fromProducts.Concat(fromTranslations).Distinct().ToList();
-        if (ids.Count == 0)
-        {
-            return ([], 0);
-        }
-
-        var matchedQuery = productsQuery.Where(x => ids.Contains(x.ProductId));
-        var totalCount = await matchedQuery.CountAsync(cancellationToken).ConfigureAwait(false);
-        var products = await SelectPublicProductRows(matchedQuery)
-            .OrderByDescending(x => x.CreatedAt)
-            .Skip(skip)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
-
-        return (products, totalCount);
-    }
+        CancellationToken cancellationToken) =>
+        productData.SearchPublicCatalogByNameLooseAsync(queryText, page, pageSize, cancellationToken);
 
     private Task<object> BuildAiAssistedEmptySearchAsync(
         string originalQuery,
@@ -531,11 +342,7 @@ public partial class ProductsAppService
             if (Guid.TryParse(searcherUserId, out var parsedUserId))
             {
                 userId = parsedUserId;
-                var user = await dbContext.Users.AsNoTracking()
-                    .Where(x => x.Id == parsedUserId)
-                    .Select(x => new { x.FullName, x.Email, x.PhoneNumber })
-                    .FirstOrDefaultAsync(cancellationToken);
-
+                var user = await productData.GetUserByIdAsync(parsedUserId, tracked: false, cancellationToken);
                 if (user is not null)
                 {
                     displayName = string.IsNullOrWhiteSpace(user.FullName) ? null : user.FullName.Trim();
@@ -544,32 +351,17 @@ public partial class ProductsAppService
                 }
             }
 
-            var since = DateTime.UtcNow.AddHours(-1);
-            var duplicateExists = await dbContext.MissedProductSearches.AsNoTracking()
-                .AnyAsync(
-                    x => x.QueryText == queryText
-                         && x.UserId == userId
-                         && x.CreatedAtUtc >= since,
-                    cancellationToken);
-
-            if (duplicateExists)
-            {
-                return;
-            }
-
-            dbContext.MissedProductSearches.Add(new MissedProductSearch
-            {
-                Id = Guid.NewGuid(),
-                QueryText = queryText.Length > 200 ? queryText[..200] : queryText,
-                UserId = userId,
-                UserDisplayName = displayName,
-                UserEmail = email,
-                UserPhone = phone,
-                CreatedAtUtc = DateTime.UtcNow,
-                Notes = notes is { Length: > 500 } ? notes[..500] : notes
-            });
-
-            await dbContext.SaveChangesAsync(cancellationToken);
+            await productData.TryAddMissedProductSearchAsync(
+                new MissedProductSearchInsert
+                {
+                    Query = queryText,
+                    UserId = userId,
+                    UserDisplayName = displayName,
+                    UserEmail = email,
+                    UserPhone = phone,
+                    Notes = notes
+                },
+                cancellationToken);
             MissedProductSearchAppService.InvalidateListCache();
         }
         catch (Exception ex)
@@ -594,10 +386,7 @@ public partial class ProductsAppService
             return cached;
         }
 
-        var product = await SelectPublicProductRows(
-                ApplyPublicProductFilter(dbContext.Products.AsNoTracking())
-                    .Where(x => x.ProductCode == normalizedCode))
-            .FirstOrDefaultAsync(cancellationToken)
+        var product = await productData.GetPublicProductByCodeExactAsync(normalizedCode, cancellationToken)
             ?? throw new KeyNotFoundException("Product not found.");
 
         var items = await BuildPublicProductListItemsAsync([product], cancellationToken);
@@ -630,10 +419,7 @@ public partial class ProductsAppService
             return cached;
         }
 
-        var product = await SelectPublicProductRows(
-                ApplyPublicProductFilter(dbContext.Products.AsNoTracking())
-                    .Where(x => x.ProductId == parsedId))
-            .FirstOrDefaultAsync(cancellationToken)
+        var product = await productData.GetPublicProductByIdAsync(parsedId, cancellationToken)
             ?? throw new KeyNotFoundException("Product not found.");
 
         // Wholesale/home: category hybrids keep base price. Retail feed: project
@@ -671,44 +457,12 @@ public partial class ProductsAppService
             return cached;
         }
 
-        var names = await ApplyPublicProductFilter(dbContext.Products.AsNoTracking())
-            .Where(x => !string.IsNullOrWhiteSpace(x.NameEn))
-            .Select(x => x.NameEn!.Trim())
-            .Distinct()
-            .ToListAsync(cancellationToken);
-
-        var translatedNameRows = await (
-                from t in dbContext.ContentTranslations.AsNoTracking()
-                join p in ApplyPublicProductFilter(dbContext.Products.AsNoTracking())
-                    on t.ProductId equals p.ProductId
-                where t.Scope == ContentTranslationScopes.Product
-                      && t.Field == ContentTranslationFields.Name
-                select new { t.TextAr, t.TextEn })
-            .ToListAsync(cancellationToken);
-
-        var translatedNames = translatedNameRows
-            .SelectMany(x => new[] { x.TextAr, x.TextEn })
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Select(x => x!.Trim());
-
-        names = names
-            .Concat(translatedNames)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        var codes = await ApplyPublicProductFilter(dbContext.Products.AsNoTracking())
-            .Where(x => !string.IsNullOrWhiteSpace(x.ProductCode))
-            .Select(x => x.ProductCode!.Trim())
-            .Distinct()
-            .OrderBy(x => x)
-            .ToListAsync(cancellationToken);
-
+        var index = await productData.GetSearchNameIndexAsync(cancellationToken);
         var result = new
         {
-            totalCount = names.Count + codes.Count,
-            names,
-            productCodes = codes,
+            totalCount = index.Names.Count + index.ProductCodes.Count,
+            names = index.Names,
+            productCodes = index.ProductCodes,
         };
 
         await SetProductCacheAsync(cacheKey, result, TimeSpan.FromMinutes(30), cancellationToken);
@@ -733,47 +487,16 @@ public partial class ProductsAppService
             return cached;
         }
 
-        var productType = await dbContext.ProductTypes
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.TypeNameEn.ToLower() == normalizedType, cancellationToken)
+        var productType = await productData.GetProductTypeByNameAsync(normalizedType, cancellationToken)
             ?? throw new KeyNotFoundException($"Product type '{input.ProductTypeName}' was not found.");
 
         var isRetailType = ProductTypeCodes.IsRetail(productType.Id);
-
-        IQueryable<Product> productsQuery;
-        if (isRetailType)
-        {
-            // Retail: include pure retail AND category hybrids (CategoryId + ProductTypeId=1).
-            // Do NOT require CategoryId == null — that hid dual-listed products.
-            productsQuery = dbContext.Products.AsNoTracking()
-                .Where(x =>
-                    x.ProductTypeId == ProductTypeCodes.Retail
-                    && x.Status != ProductStatusCodes.Rejected
-                    && (x.Status == ProductStatusCodes.Active
-                        || x.Status == ProductStatusCodes.Paused
-                        || (x.Status == ProductStatusCodes.UnderReview && x.IsApproved == true)));
-        }
-        else
-        {
-            // Offers / Booking / Requests only — not dual category listings.
-            productsQuery = dbContext.Products.AsNoTracking()
-                .Where(x =>
-                    x.ProductTypeId == productType.Id
-                    && x.CategoryId == null
-                    && x.Status != ProductStatusCodes.Rejected
-                    && (x.Status == ProductStatusCodes.Active
-                        || x.Status == ProductStatusCodes.Paused
-                        || (x.Status == ProductStatusCodes.UnderReview && x.IsApproved == true))
-                    && (x.ProductTypeId != ProductTypeCodes.Requests || x.Quantity > 0));
-        }
-
-        var totalCount = await productsQuery.CountAsync(cancellationToken);
-
-        var products = await SelectPublicProductRows(productsQuery)
-            .OrderByDescending(x => x.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
+        var (products, totalCount) = await productData.GetProductsByTypePageAsync(
+            productType.Id,
+            isRetailType,
+            (page - 1) * pageSize,
+            pageSize,
+            cancellationToken);
 
         var items = await BuildPublicProductListItemsAsync(
             products,
@@ -812,21 +535,14 @@ public partial class ProductsAppService
             return cached;
         }
 
-        var category = await dbContext.Categories
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.CategoryId == input.CategoryId, cancellationToken)
+        var category = await productData.GetCategoryByIdAsync(input.CategoryId, cancellationToken)
             ?? throw new KeyNotFoundException($"Category '{input.CategoryId}' was not found.");
 
-        var productsQuery = ApplyHomeCatalogProductFilter(dbContext.Products.AsNoTracking())
-            .Where(x => x.CategoryId == category.CategoryId);
-
-        var totalCount = await productsQuery.CountAsync(cancellationToken);
-
-        var products = await SelectPublicProductRows(productsQuery)
-            .OrderByDescending(x => x.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
+        var (products, totalCount) = await productData.GetProductsByCategoryPageAsync(
+            category.CategoryId,
+            (page - 1) * pageSize,
+            pageSize,
+            cancellationToken);
 
         var items = await BuildPublicProductListItemsAsync(
             products,
@@ -861,16 +577,10 @@ public partial class ProductsAppService
             return cached;
         }
 
-        var featuredQuery = ApplyPublicProductFilter(dbContext.Products.AsNoTracking())
-            .Where(x => x.IsFeatured);
-
-        var totalCount = await featuredQuery.CountAsync(cancellationToken);
-
-        var products = await SelectPublicProductRows(featuredQuery)
-            .OrderByDescending(x => x.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
+        var (products, totalCount) = await productData.GetFeaturedProductsPageAsync(
+            (page - 1) * pageSize,
+            pageSize,
+            cancellationToken);
 
         var result = await BuildPublicProductListPageAsync(
             products,
@@ -890,11 +600,11 @@ public partial class ProductsAppService
             throw new ArgumentException("Invalid product id.");
         }
 
-        var product = await dbContext.Products.FirstOrDefaultAsync(x => x.ProductId == parsedProductId, cancellationToken)
+        var product = await productData.GetProductByIdTrackedAsync(parsedProductId, cancellationToken)
             ?? throw new KeyNotFoundException("Product not found.");
 
         product.ViewsCount += 1;
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await productData.SaveChangesAsync(cancellationToken);
 
         productCacheVersions.BumpListViews();
 

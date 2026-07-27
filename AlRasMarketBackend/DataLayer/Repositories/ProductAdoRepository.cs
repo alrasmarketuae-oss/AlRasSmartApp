@@ -6,7 +6,7 @@ using DataLayer.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace BusinessLayer.DataAccess;
+namespace DataLayer.Repositories;
 
 public sealed class ProductAdoRepository(
     IRasAlSouqDbContext dbContext,

@@ -7,7 +7,6 @@ using DataLayer.Interfaces;
 using DataLayer.Models;
 using DataLayer.Seeding;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace BusinessLayer.Services;
@@ -139,7 +138,7 @@ public partial class ProductsAppService
             throw new ArgumentException("Invalid owner id.");
         }
 
-        var owner = await dbContext.Users.FindAsync([ownerId], cancellationToken)
+        var owner = await productData.GetUserByIdAsync(ownerId, tracked: true, cancellationToken)
             ?? throw new KeyNotFoundException("Owner user not found.");
 
         if (owner.RoleId != 2)
@@ -165,10 +164,7 @@ public partial class ProductsAppService
         byte? categoryId,
         CancellationToken cancellationToken)
     {
-        var phone = await dbContext.Users.AsNoTracking()
-            .Where(x => x.Id == ownerId)
-            .Select(x => x.PhoneNumber)
-            .FirstOrDefaultAsync(cancellationToken);
+        var phone = await productData.GetUserPhoneByIdAsync(ownerId, cancellationToken);
 
         if (IsUaePhoneNumber(phone))
         {
@@ -199,7 +195,7 @@ public partial class ProductsAppService
         Product product,
         CancellationToken cancellationToken)
     {
-        var user = await dbContext.Users.FindAsync([userId], cancellationToken)
+        var user = await productData.GetUserByIdAsync(userId, tracked: true, cancellationToken)
             ?? throw new KeyNotFoundException("User not found.");
 
         if (user.RoleId == 1)
@@ -221,52 +217,8 @@ public partial class ProductsAppService
         CancellationToken cancellationToken)
     {
         _ = webRootPath;
-        var orderIds = await dbContext.Orders
-            .AsNoTracking()
-            .Where(x => x.ProductId == productId)
-            .Select(x => x.Id)
-            .ToListAsync(cancellationToken);
-
-        if (orderIds.Count > 0)
-        {
-            var orderImagePaths = await dbContext.OrderImages
-                .AsNoTracking()
-                .Where(x => orderIds.Contains(x.OrderId))
-                .Select(x => x.ImagePath)
-                .ToListAsync(cancellationToken);
-
-            var orderVideoPaths = await dbContext.OrderVideos
-                .AsNoTracking()
-                .Where(x => orderIds.Contains(x.OrderId))
-                .Select(x => x.VideoPath)
-                .ToListAsync(cancellationToken);
-
-            await RemoveDeletionRangeAsync(
-                dbContext.InternationalShipments.Where(x => orderIds.Contains(x.OrderId)),
-                cancellationToken);
-            await RemoveDeletionRangeAsync(
-                dbContext.PendingPayments.Where(x => orderIds.Contains(x.OrderId)),
-                cancellationToken);
-            await RemoveDeletionRangeAsync(
-                dbContext.OrderVideos.Where(x => orderIds.Contains(x.OrderId)),
-                cancellationToken);
-            await RemoveDeletionRangeAsync(
-                dbContext.OrderImages.Where(x => orderIds.Contains(x.OrderId)),
-                cancellationToken);
-            // Order FK on ContentTranslations is NO ACTION (SQL Server cascade-path limit).
-            await RemoveDeletionRangeAsync(
-                dbContext.ContentTranslations.Where(x => x.OrderId != null && orderIds.Contains(x.OrderId.Value)),
-                cancellationToken);
-            await RemoveDeletionRangeAsync(
-                dbContext.Orders.Where(x => orderIds.Contains(x.Id)),
-                cancellationToken);
-
-            await DeleteOrderPhysicalAssetsAsync(orderImagePaths, orderVideoPaths, cancellationToken);
-        }
-
-        await RemoveDeletionRangeAsync(
-            dbContext.PendingOrderItems.Where(x => x.ProductId == productId),
-            cancellationToken);
+        var media = await productData.DeleteProductOrdersAndDependentsAsync(productId, cancellationToken);
+        await DeleteOrderPhysicalAssetsAsync(media.OrderImagePaths, media.OrderVideoPaths, cancellationToken);
     }
 
     private async Task DeleteOrderPhysicalAssetsAsync(
@@ -283,25 +235,6 @@ public partial class ProductsAppService
         {
             await mediaStorage.DeleteAsync(path, cancellationToken);
         }
-    }
-
-    private async Task RemoveDeletionRangeAsync<TEntity>(
-        IQueryable<TEntity> query,
-        CancellationToken cancellationToken)
-        where TEntity : class
-    {
-        var items = await query.ToListAsync(cancellationToken);
-        if (items.Count == 0)
-        {
-            return;
-        }
-
-        if (dbContext is not DbContext efContext)
-        {
-            throw new InvalidOperationException("Database context must support entity removal.");
-        }
-
-        efContext.Set<TEntity>().RemoveRange(items);
     }
 
     private async Task DeleteProductPhysicalAssetsAsync(

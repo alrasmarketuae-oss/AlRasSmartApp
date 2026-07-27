@@ -8,7 +8,6 @@ using DataLayer.Interfaces;
 using DataLayer.Models;
 using DataLayer.Seeding;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace BusinessLayer.Services;
@@ -364,29 +363,8 @@ public partial class ProductsAppService
 
     private async Task ExpireDueListingsAsync(CancellationToken cancellationToken)
     {
-        await ExpireDueOfferDiscountsAsync(cancellationToken);
-
-        var utcNow = UtcDateTimeHelper.UtcNow;
-        var expired = await dbContext.Products
-            .Where(x =>
-                x.ProductTypeId != ProductTypeCodes.Offers
-                && x.Status == ProductStatusCodes.Active
-                && x.DisplayExpiresAtUtc != null
-                && x.DisplayExpiresAtUtc <= utcNow)
-            .ToListAsync(cancellationToken);
-
-        if (expired.Count == 0)
-        {
-            return;
-        }
-
-        foreach (var product in expired)
-        {
-            product.Status = ProductStatusCodes.Paused;
-            product.UpdatedAt = utcNow;
-        }
-
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await productData.ExpireDueOfferDiscountsAsync(cancellationToken);
+        await productData.ExpireDueNonOfferListingsAsync(cancellationToken);
         InvalidateListingCaches();
     }
 
@@ -394,55 +372,8 @@ public partial class ProductsAppService
     /// When an offer discount window ends, restore full price and clear discount fields.
     /// The listing stays active until the owner or admin deletes it.
     /// </summary>
-    private async Task ExpireDueOfferDiscountsAsync(CancellationToken cancellationToken)
-    {
-        var utcNow = UtcDateTimeHelper.UtcNow;
-        var candidates = await dbContext.Products
-            .Where(x =>
-                x.ProductTypeId == ProductTypeCodes.Offers
-                && x.DiscountPercentage != null
-                && x.DiscountPercentage > 0
-                && x.DiscountDays != null
-                && x.DiscountDays > 0)
-            .ToListAsync(cancellationToken);
-
-        if (candidates.Count == 0)
-        {
-            return;
-        }
-
-        var changed = false;
-        foreach (var product in candidates)
-        {
-            var endsAt = UtcDateTimeHelper.AsUtc(product.CreatedAt).AddDays(product.DiscountDays!.Value);
-            if (utcNow < endsAt)
-            {
-                continue;
-            }
-
-            var factor = 1m - (product.DiscountPercentage!.Value / 100m);
-            if (factor > 0)
-            {
-                product.USDPrice = decimal.Round(
-                    product.USDPrice / factor,
-                    2,
-                    MidpointRounding.AwayFromZero);
-            }
-
-            product.DiscountPercentage = null;
-            product.DiscountDays = null;
-            product.UpdatedAt = utcNow;
-            changed = true;
-        }
-
-        if (!changed)
-        {
-            return;
-        }
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-        InvalidateListingCaches();
-    }
+    private Task ExpireDueOfferDiscountsAsync(CancellationToken cancellationToken) =>
+        productData.ExpireDueOfferDiscountsAsync(cancellationToken);
 
     private async Task ApplyAdDisplayExpiryAsync(Product product, CancellationToken cancellationToken)
     {
@@ -452,14 +383,7 @@ public partial class ProductsAppService
             return;
         }
 
-        var durationDays = await GetAdDisplayDurationDaysAsync(cancellationToken);
+        var durationDays = await productData.GetAdDisplayDurationDaysAsync(cancellationToken) ?? 0;
         product.DisplayExpiresAtUtc = UtcDateTimeHelper.ComputeAdExpiresAtUtc(UtcDateTimeHelper.UtcNow, durationDays);
     }
-
-    private async Task<int> GetAdDisplayDurationDaysAsync(CancellationToken cancellationToken) =>
-        await dbContext.SystemSettings
-            .AsNoTracking()
-            .Where(x => x.Id == 1)
-            .Select(x => x.AdDisplayDurationDays)
-            .FirstOrDefaultAsync(cancellationToken);
 }

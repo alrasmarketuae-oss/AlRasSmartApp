@@ -1,8 +1,8 @@
 using BusinessLayer.Caching;
 using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
+using DataLayer.Interfaces;
 using DataLayer.Models;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -48,13 +48,13 @@ public partial class ProductsAppService
                 using var scope = scopeFactory.CreateScope();
                 var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
                 var fcmService = scope.ServiceProvider.GetRequiredService<IFcmNotificationService>();
-                var db = scope.ServiceProvider.GetRequiredService<DataLayer.Interfaces.IRasAlSouqDbContext>();
+                var db = scope.ServiceProvider.GetRequiredService<IProductDataAccess>();
 
                 try
                 {
-                    var routeId = await GetOrCreateNotificationRouteIdAsync(db, "product-detail", CancellationToken.None);
-                    var typeId = await GetOrCreateNotificationTypeIdAsync(db, fcmType, CancellationToken.None);
-                    await db.Notifications.AddAsync(new Notification
+                    var routeId = await db.GetOrCreateNotificationRouteIdAsync("product-detail", CancellationToken.None);
+                    var typeId = await db.GetOrCreateNotificationTypeIdAsync(fcmType, CancellationToken.None);
+                    await db.AddInboxNotificationAsync(new Notification
                     {
                         Id = Guid.NewGuid(),
                         Title = storeTitleEn,
@@ -69,7 +69,6 @@ public partial class ProductsAppService
                         IsRead = false,
                         CreatedAt = DateTime.UtcNow,
                     });
-                    await db.SaveChangesAsync();
                     NotificationCacheVersions.Bump(ownerId);
                 }
                 catch (Exception ex)
@@ -123,43 +122,5 @@ public partial class ProductsAppService
         }
 
         return trimmed[..(maxLen - 1)] + "…";
-    }
-
-    private static async Task<Guid> GetOrCreateNotificationRouteIdAsync(
-        DataLayer.Interfaces.IRasAlSouqDbContext db,
-        string name,
-        CancellationToken cancellationToken)
-    {
-        var existing = await db.NotificationRoutes
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Name == name, cancellationToken);
-        if (existing is not null)
-        {
-            return existing.Id;
-        }
-
-        var route = new NotificationRoute { Id = Guid.NewGuid(), Name = name };
-        await db.NotificationRoutes.AddAsync(route, cancellationToken);
-        await db.SaveChangesAsync(cancellationToken);
-        return route.Id;
-    }
-
-    private static async Task<byte> GetOrCreateNotificationTypeIdAsync(
-        DataLayer.Interfaces.IRasAlSouqDbContext db,
-        string name,
-        CancellationToken cancellationToken)
-    {
-        var existing = await db.NotificationTypes
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Name == name, cancellationToken);
-        if (existing is not null)
-        {
-            return existing.Id;
-        }
-
-        var type = new NotificationType { Name = name };
-        await db.NotificationTypes.AddAsync(type, cancellationToken);
-        await db.SaveChangesAsync(cancellationToken);
-        return type.Id;
     }
 }

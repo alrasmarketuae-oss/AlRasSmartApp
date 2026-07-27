@@ -5,9 +5,7 @@ using BusinessLayer.Interfaces;
 using DataLayer.Helpers;
 using DataLayer.Interfaces;
 using DataLayer.Models;
-using DataLayer.Seeding;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace BusinessLayer.Services;
@@ -28,9 +26,10 @@ public partial class ProductsAppService
             throw new ArgumentException("Invalid address id.");
         }
 
-        var belongsToOwner = await dbContext.Addresses
-            .AsNoTracking()
-            .AnyAsync(x => x.Id == parsedAddressId && x.UserId == ownerId, cancellationToken);
+        var belongsToOwner = await productData.AddressBelongsToUserAsync(
+            parsedAddressId,
+            ownerId,
+            cancellationToken);
 
         if (!belongsToOwner)
         {
@@ -47,10 +46,7 @@ public partial class ProductsAppService
         ProductType? productType = null;
         if (!string.IsNullOrWhiteSpace(input.ProductTypeName))
         {
-            productType = await dbContext.ProductTypes
-                .FirstOrDefaultAsync(
-                    x => x.TypeNameEn.ToLower() == input.ProductTypeName.Trim().ToLower(),
-                    cancellationToken)
+            productType = await productData.GetProductTypeByNameAsync(input.ProductTypeName, cancellationToken)
                 ?? throw new KeyNotFoundException($"Product type '{input.ProductTypeName}' was not found.");
         }
 
@@ -113,17 +109,13 @@ public partial class ProductsAppService
         {
             if (input.RequestTypeId.HasValue)
             {
-                requestType = await dbContext.RequestTypes
-                    .FirstOrDefaultAsync(x => x.Id == input.RequestTypeId.Value, cancellationToken)
+                requestType = await productData.GetRequestTypeByIdAsync(input.RequestTypeId.Value, cancellationToken)
                     ?? throw new KeyNotFoundException($"Request type id '{input.RequestTypeId}' was not found.");
             }
             else if (!string.IsNullOrWhiteSpace(input.RequestTypeName))
             {
                 var requestTypeName = NormalizeRequestTypeName(input.RequestTypeName);
-                requestType = await dbContext.RequestTypes
-                    .FirstOrDefaultAsync(
-                        x => x.NameEn.ToLower() == requestTypeName,
-                        cancellationToken)
+                requestType = await productData.GetRequestTypeByNameAsync(requestTypeName, cancellationToken)
                     ?? throw new KeyNotFoundException($"Request type '{input.RequestTypeName}' was not found.");
             }
             else if (requiresPriceType)
@@ -144,16 +136,16 @@ public partial class ProductsAppService
         {
             if (input.BookingPriceTypeId.HasValue)
             {
-                bookingPriceType = await dbContext.BookingPriceTypes
-                    .FirstOrDefaultAsync(x => x.Id == input.BookingPriceTypeId.Value, cancellationToken)
+                bookingPriceType = await productData.GetBookingPriceTypeByIdAsync(
+                        input.BookingPriceTypeId.Value,
+                        cancellationToken)
                     ?? throw new KeyNotFoundException($"Booking price type id '{input.BookingPriceTypeId}' was not found.");
             }
             else
             {
                 var bookingPriceTypeName = NormalizeBookingPriceTypeName(input.BookingPriceTypeName!);
-                bookingPriceType = await dbContext.BookingPriceTypes
-                    .FirstOrDefaultAsync(
-                        x => x.NameEn.ToLower() == bookingPriceTypeName,
+                bookingPriceType = await productData.GetBookingPriceTypeByNameAsync(
+                        bookingPriceTypeName,
                         cancellationToken)
                     ?? throw new KeyNotFoundException($"Booking price type '{input.BookingPriceTypeName}' was not found.");
             }
@@ -251,20 +243,8 @@ public partial class ProductsAppService
         return videoPath;
     }
 
-    private async Task<string> AllocateProductCodeAsync(CancellationToken cancellationToken)
-    {
-        var connection = ((DbContext)dbContext).Database.GetDbConnection();
-        if (connection.State != ConnectionState.Open)
-        {
-            await connection.OpenAsync(cancellationToken);
-        }
-
-        await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT NEXT VALUE FOR dbo.ProductCodeSeq;";
-        var raw = await command.ExecuteScalarAsync(cancellationToken);
-        var sequenceValue = Convert.ToInt64(raw);
-        return ProductCodeGenerator.FromSequenceValue(sequenceValue);
-    }
+    private Task<string> AllocateProductCodeAsync(CancellationToken cancellationToken) =>
+        productData.AllocateProductCodeAsync(cancellationToken);
 
     private static object BuildProductMutationResponse(
         Product product,
@@ -355,7 +335,7 @@ public partial class ProductsAppService
     /// When DiscountDays have elapsed, restore the pre-discount price and clear offer flags.
     /// </summary>
     private static (decimal UnitPrice, byte? DiscountPercentage, short? DiscountDays) ResolveOfferPricing(
-        PublicProductQueryRow product)
+        ProductPublicRow product)
     {
         return ResolveOfferPricing(
             product.USDPrice,
@@ -433,11 +413,7 @@ public partial class ProductsAppService
 
         await staticReferenceCache.EnsureLoadedAsync(cancellationToken);
 
-        var rows = await dbContext.Addresses
-            .AsNoTracking()
-            .Where(x => ids.Contains(x.Id))
-            .Select(x => new { x.Id, x.AddressLine1, x.AddressLine2, x.CityId })
-            .ToListAsync(cancellationToken);
+        var rows = await productData.GetAddressDisplayRowsByIdsAsync(ids, cancellationToken);
 
         return rows.ToDictionary(
             x => x.Id,

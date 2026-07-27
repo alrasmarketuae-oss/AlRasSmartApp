@@ -5,7 +5,6 @@ using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using DataLayer.Interfaces;
 using DataLayer.Models;
-using Microsoft.EntityFrameworkCore;
 
 namespace BusinessLayer.Services;
 public partial class ProductsAppService
@@ -33,113 +32,28 @@ public partial class ProductsAppService
             return fromCache;
         }
 
-        var owner = await dbContext.Users
-            .AsNoTracking()
-            .Where(x => x.Id == parsedOwnerId)
-            .Select(x => new { x.FullName })
-            .FirstOrDefaultAsync(cancellationToken)
+        var ownerName = await productData.GetUserDisplayNameAsync(parsedOwnerId, cancellationToken)
             ?? throw new KeyNotFoundException("User not found.");
 
-        var rawProducts = await dbContext.Products
-            .AsNoTracking()
-            .Where(x => x.OwnerId == parsedOwnerId)
-            .OrderByDescending(x => x.CreatedAt)
-            .Select(x => new
-            {
-                x.ProductId,
-                x.ProductCode,
-                x.NameEn,
-                x.CreatedLanguage,
-                CategoryName = x.Category != null ? x.Category.NameEn : null,
-                CategoryNameAr = x.Category != null ? x.Category.NameAr : null,
-                CategoryImagePath = x.Category != null ? x.Category.ImgPath : null,
-                ProductTypeName = x.ProductType != null ? x.ProductType.TypeNameEn : null,
-                x.DescriptionEn,
-                x.USDPrice,
-                x.ProductTypeId,
-                x.CategoryId,
-                x.Currency,
-                x.Quantity,
-                UnitName = x.Unit != null ? x.Unit.UnitNameEn : null,
-                x.RetailPrice,
-                RetailUnitName = x.RetailUnit != null ? x.RetailUnit.UnitNameEn : null,
-                x.RetailUnitId,
-                x.RetailQuantity,
-                x.RetailPackaging,
-                x.RetailPackagingDetails,
-                x.RetailDescriptionEn,
-                x.RequestTypeId,
-                RequestTypeName = x.RequestType != null ? x.RequestType.NameEn : null,
-                x.BookingPriceTypeId,
-                BookingPriceTypeName = x.BookingPriceType != null ? x.BookingPriceType.NameEn : null,
-                x.MinimumOrderQuantity,
-                x.MaximumOrderQuantity,
-                x.Status,
-                x.IsApproved,
-                x.DiscountPercentage,
-                x.DiscountDays,
-                x.ShippingDescriptionEn,
-                x.ShippingDuration,
-                x.OfferDuration,
-                x.SupplierNotesEn,
-                x.Packaging,
-                x.PackagingDetails,
-                x.Negotiable,
-                x.IsFeatured,
-                x.ViewsCount,
-                x.VideoPath,
-                x.VideoDurationSeconds,
-                x.IsVideoMuted,
-                OriginCountryName = x.OriginCountry != null ? x.OriginCountry.CountryNameEn : null,
-                OriginCountryNameAr = x.OriginCountry != null ? x.OriginCountry.CountryNameAr : null,
-                DestinationCountryName = x.DestinationCountry != null ? x.DestinationCountry.CountryNameEn : null,
-                DestinationCountryNameAr = x.DestinationCountry != null ? x.DestinationCountry.CountryNameAr : null,
-                LoadingPortName = x.LoadingPort != null ? x.LoadingPort.PortNameEn : null,
-                LoadingPortNameAr = x.LoadingPort != null ? x.LoadingPort.PortNameAr : null,
-                ArrivalPortName = x.ArrivalPort != null ? x.ArrivalPort.PortNameEn : null,
-                ArrivalPortNameAr = x.ArrivalPort != null ? x.ArrivalPort.PortNameAr : null,
-                x.CreatedAt,
-                x.UpdatedAt,
-                x.AddressId,
-                Images = x.ProductImages.OrderBy(pi => pi.Id).Select(pi => pi.ImagePath).ToList(),
-                Documents = x.ProductDocuments.OrderBy(pd => pd.Id).Select(pd => pd.DocumentPath).ToList()
-            })
-            .ToListAsync(cancellationToken);
+        var rawProducts = await productData.GetOwnerListingsAsync(parsedOwnerId, cancellationToken);
 
         var addressLookup = await LoadAddressTextLookupAsync(rawProducts.Select(x => x.AddressId), cancellationToken);
         var usdToAedRate = GetUsdToAedRate();
 
         var productIds = rawProducts.Select(x => x.ProductId).ToList();
-        var pendingOffersByProduct = await (
-            from o in dbContext.Orders.AsNoTracking()
-            join p in dbContext.Products.AsNoTracking() on o.ProductId equals p.ProductId
-            where productIds.Contains(o.ProductId)
-                && !o.IsApproved
-                && (
-                    o.StatusId == OrderStatusCodes.AwaitingSellerApproval
-                    || (p.ProductTypeId == ProductTypeCodes.Retail
-                        && !o.IsAdminApproved
-                        && (o.StatusId == OrderStatusCodes.Ordered
-                            || o.StatusId == OrderStatusCodes.Paid)))
-            group o by o.ProductId
-            into g
-            select new { ProductId = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.ProductId, x => x.Count, cancellationToken);
+        var pendingOffersByProduct = await productData.GetPendingOfferCountsByProductIdsAsync(
+            productIds,
+            ProductTypeCodes.Retail,
+            OrderStatusCodes.AwaitingSellerApproval,
+            cancellationToken);
 
-        var extraVideosLookup = productIds.Count == 0
-            ? []
-            : await dbContext.ProductVideos
-                .AsNoTracking()
-                .Where(v => productIds.Contains(v.ProductId))
-                .OrderBy(v => v.Id)
-                .Select(v => new { v.ProductId, v.VideoPath })
-                .ToListAsync(cancellationToken);
+        var extraVideosLookup = await productData.GetProductVideoPathsByProductIdsAsync(productIds, cancellationToken);
 
         var extraVideosDict = extraVideosLookup
             .GroupBy(x => x.ProductId)
             .ToDictionary(
                 g => g.Key,
-                g => g.Select(x => x.VideoPath).ToList());
+                g => g.Select(x => x.Path).ToList());
 
         var translations = await contentTranslationService.GetProductTranslationsAsync(
             productIds,
@@ -334,31 +248,14 @@ public partial class ProductsAppService
         };
         }).ToList();
 
-        var rawShippingPosts = await dbContext.InternationalShippingPosts
-            .AsNoTracking()
-            .Where(x => x.PublisherUserId == parsedOwnerId)
-            .OrderByDescending(x => x.CreatedAt)
-            .Select(x => new
-            {
-                FromCountryName = x.FromCountry != null ? x.FromCountry.CountryNameEn : null,
-                FromPortName = x.FromPort != null ? x.FromPort.PortNameEn : null,
-                ToCountryName = x.ToCountry != null ? x.ToCountry.CountryNameEn : null,
-                ToPortName = x.ToPort != null ? x.ToPort.PortNameEn : null,
-                x.PriceUsd,
-                x.ShippingCostUsd,
-                x.Container20ftPriceUsd,
-                x.Container40ftPriceUsd,
-                x.PhoneNumber,
-                x.CreatedAt
-            })
-            .ToListAsync(cancellationToken);
+        var rawShippingPosts = await productData.GetOwnerShippingPostsAsync(parsedOwnerId, cancellationToken);
 
         var shippingPosts = rawShippingPosts.Select(x => new MyShippingPostListingDto
         {
-            FromCountryName = x.FromCountryName ?? string.Empty,
-            FromPortName = x.FromPortName ?? string.Empty,
-            ToCountryName = x.ToCountryName ?? string.Empty,
-            ToPortName = x.ToPortName ?? string.Empty,
+            FromCountryName = x.FromCountry?.CountryNameEn ?? string.Empty,
+            FromPortName = x.FromPort?.PortNameEn ?? string.Empty,
+            ToCountryName = x.ToCountry?.CountryNameEn ?? string.Empty,
+            ToPortName = x.ToPort?.PortNameEn ?? string.Empty,
             PriceUsd = x.PriceUsd.ToString("0.##"),
             ShippingCostUsd = x.ShippingCostUsd.ToString("0.##"),
             Container20ftPriceUsd = x.Container20ftPriceUsd.ToString("0.##"),
@@ -369,7 +266,7 @@ public partial class ProductsAppService
 
         var response = new MyListingsResponse
         {
-            OwnerName = owner.FullName,
+            OwnerName = ownerName,
             ProductCount = products.Count.ToString(),
             ShippingPostCount = shippingPosts.Count.ToString(),
             ProductsShippingHelp =

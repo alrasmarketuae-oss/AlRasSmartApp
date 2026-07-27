@@ -7,7 +7,6 @@ using DataLayer.Interfaces;
 using DataLayer.Models;
 using DataLayer.Seeding;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace BusinessLayer.Services;
@@ -40,15 +39,11 @@ public partial class ProductsAppService
         if (!string.IsNullOrWhiteSpace(productTypeCandidate))
         {
             var normalizedType = productTypeCandidate.ToLowerInvariant();
-            var isProductType = await dbContext.ProductTypes
-                .AsNoTracking()
-                .AnyAsync(x => x.TypeNameEn.ToLower() == normalizedType, cancellationToken);
+            var isProductType = await productData.ProductTypeExistsByNameAsync(productTypeCandidate, cancellationToken);
 
             if (!isProductType)
             {
-                var isCategoryName = await dbContext.Categories
-                    .AsNoTracking()
-                    .AnyAsync(x => x.NameEn.ToLower() == normalizedType, cancellationToken);
+                var isCategoryName = await productData.CategoryExistsByNameAsync(productTypeCandidate, cancellationToken);
 
                 if (isCategoryName)
                 {
@@ -57,9 +52,7 @@ public partial class ProductsAppService
                 }
                 else if (byte.TryParse(productTypeCandidate, out var maybeCategoryId) && maybeCategoryId > 0)
                 {
-                    var categoryExists = await dbContext.Categories
-                        .AsNoTracking()
-                        .AnyAsync(x => x.CategoryId == maybeCategoryId, cancellationToken);
+                    var categoryExists = await productData.CategoryExistsByIdAsync(maybeCategoryId, cancellationToken);
 
                     if (categoryExists)
                     {
@@ -126,9 +119,7 @@ public partial class ProductsAppService
 
         if (idText != null && byte.TryParse(idText, out var parsedId) && parsedId > 0)
         {
-            var byId = await dbContext.Categories
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.CategoryId == parsedId, cancellationToken);
+            var byId = await productData.GetCategoryByIdAsync(parsedId, cancellationToken);
 
             if (byId != null)
             {
@@ -138,11 +129,7 @@ public partial class ProductsAppService
             var canonical = CanonicalCategories.Seed.FirstOrDefault(x => x.CategoryId == parsedId);
             if (canonical != null)
             {
-                var byCanonicalName = await dbContext.Categories
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(
-                        x => x.NameEn.ToLower() == canonical.NameEn.ToLower(),
-                        cancellationToken);
+                var byCanonicalName = await productData.GetCategoryByNameAsync(canonical.NameEn, cancellationToken);
 
                 if (byCanonicalName != null)
                 {
@@ -156,9 +143,7 @@ public partial class ProductsAppService
         var lookupName = nameText ?? (idText != null && !byte.TryParse(idText, out _) ? idText : null);
         if (!string.IsNullOrWhiteSpace(lookupName))
         {
-            var byName = await dbContext.Categories
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.NameEn.ToLower() == lookupName.ToLower(), cancellationToken);
+            var byName = await productData.GetCategoryByNameAsync(lookupName, cancellationToken);
 
             if (byName != null)
             {
@@ -458,16 +443,7 @@ public partial class ProductsAppService
         Guid productId,
         CancellationToken cancellationToken)
     {
-        var rows = await dbContext.ContentTranslations
-            .AsNoTracking()
-            .Where(t =>
-                t.ProductId == productId
-                && t.Scope == ContentTranslationScopes.Product
-                && (t.Field == ContentTranslationFields.Name
-                    || t.Field == ContentTranslationFields.Description
-                    || t.Field == ContentTranslationFields.RetailDescription))
-            .Select(t => new { t.Field, t.TextAr, t.TextEn })
-            .ToListAsync(cancellationToken);
+        var rows = await productData.GetProductEditTranslationHintsAsync(productId, cancellationToken);
 
         string? arFor(string field) =>
             rows.FirstOrDefault(r => r.Field == field)?.TextAr;
@@ -835,16 +811,7 @@ public partial class ProductsAppService
         CreateProductInput input,
         CancellationToken cancellationToken)
     {
-        var rows = await dbContext.ContentTranslations
-            .AsNoTracking()
-            .Where(t =>
-                t.ProductId == product.ProductId
-                && t.Scope == ContentTranslationScopes.Product
-                && (t.Field == ContentTranslationFields.Name
-                    || t.Field == ContentTranslationFields.Description
-                    || t.Field == ContentTranslationFields.RetailDescription))
-            .Select(t => new { t.Field, t.TextAr, t.TextEn })
-            .ToListAsync(cancellationToken);
+        var rows = await productData.GetProductEditTranslationHintsAsync(product.ProductId, cancellationToken);
 
         string? arFor(string field) =>
             rows.FirstOrDefault(r => r.Field == field)?.TextAr;
