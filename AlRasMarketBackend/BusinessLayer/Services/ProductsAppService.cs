@@ -1,4 +1,5 @@
 using BusinessLayer.Caching;
+using BusinessLayer.DataAccess;
 using BusinessLayer.Dtos;
 using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
@@ -26,7 +27,8 @@ public partial class ProductsAppService(
     IMediaStorageService mediaStorage,
     IImageEmbeddingService imageEmbeddingService,
     IProductImageVectorIndex productImageVectorIndex,
-    Microsoft.Extensions.Options.IOptions<BusinessLayer.Options.ImageEmbeddingOptions> imageEmbeddingOptions) : IProductsAppService
+    Microsoft.Extensions.Options.IOptions<BusinessLayer.Options.ImageEmbeddingOptions> imageEmbeddingOptions,
+    ProductAdoRepository productAdoRepository) : IProductsAppService
 {
     private const string AllProductsCacheKey = "products:all:v14";
     private const string ProductsByTypeCachePrefix = "products:by-type:v14:";
@@ -140,18 +142,12 @@ public partial class ProductsAppService(
             AddressId = addressId,
             RequestTypeId = refs.RequestType?.Id,
             BookingPriceTypeId = refs.BookingPriceType?.Id,
-            ProductCode = await AllocateProductCodeAsync(cancellationToken),
             CreatedAt = UtcDateTimeHelper.UtcNow
         };
 
         ApplyRetailPricingToProduct(product, input, refs, categoryId, productTypeId);
 
-        await dbContext.Products.AddAsync(product, cancellationToken);
-        var rowsAffected = await dbContext.SaveChangesAsync(cancellationToken);
-        if (rowsAffected < 1)
-        {
-            throw new InvalidOperationException("Product could not be saved to the database.");
-        }
+        product.ProductCode = await productAdoRepository.InsertProductAsync(product, cancellationToken);
 
         logger.LogInformation(
             "Product created {ProductId} for owner {OwnerId} name={NameEn}",

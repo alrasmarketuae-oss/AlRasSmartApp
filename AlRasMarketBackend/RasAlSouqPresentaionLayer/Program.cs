@@ -17,6 +17,7 @@ using BusinessLayer.Services;
 using BusinessLayer.TokenService;
 using BusinessLayer.Caching;
 using BusinessLayer.Options;
+using BusinessLayer.DataAccess;
 using BusinessLayer.Services.Storage;
 using RasAlSouqPresentaionLayer.Services;
 using DataLayer.Interfaces;
@@ -111,6 +112,7 @@ builder.Services.AddScoped<ICompanyLicenceAppService, CompanyLicenceAppService>(
 builder.Services.AddScoped<INotificationsAppService, NotificationsAppService>();
 builder.Services.AddScoped<IProductAssetsAppService, ProductAssetsAppService>();
 builder.Services.AddScoped<IProductsAppService, ProductsAppService>();
+builder.Services.AddScoped<ProductAdoRepository>();
 builder.Services.AddHttpClient<IOpenAiVisionService, OpenAiVisionService>(client =>
 {
     client.Timeout = TimeSpan.FromSeconds(45);
@@ -379,6 +381,7 @@ await using (var scope = app.Services.CreateAsyncScope())
     await ProductReadyForAdminReviewSchemaMigrator.EnsureAsync(db);
     await PendingProductChangesSchemaMigrator.EnsureAsync(db);
     await ProductCodeSchemaMigrator.EnsureAsync(db);
+    await ProductStoredProceduresSchemaMigrator.EnsureAsync(db);
     await OrderSchemaMigrator.EnsureAsync(db);
     await CartSchemaMigrator.EnsureAsync(db);
     await UserSchemaMigrator.EnsureAsync(db);

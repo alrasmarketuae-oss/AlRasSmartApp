@@ -292,10 +292,68 @@ public partial class ProductsAppService
                         .Select(x => x.ProductId)
                         .ToList();
 
-                    var rows = await SelectPublicProductRows(
-                            dbContext.Products.AsNoTracking().Where(p => orderedIds.Contains(p.ProductId)))
-                        .ToListAsync(cancellationToken)
+                    var publicRows = await productAdoRepository
+                        .GetProductsByIdsAsync(orderedIds, cancellationToken)
                         .ConfigureAwait(false);
+
+                    var rows = publicRows
+                        .Select(r => new PublicProductQueryRow
+                        {
+                            ProductId = r.ProductId,
+                            ProductCode = r.ProductCode,
+                            NameEn = r.NameEn,
+                            USDPrice = r.USDPrice,
+                            OwnerId = r.OwnerId,
+                            Quantity = r.Quantity,
+                            DescriptionEn = r.DescriptionEn,
+                            MinimumOrderQuantity = r.MinimumOrderQuantity,
+                            MaximumOrderQuantity = r.MaximumOrderQuantity,
+                            Status = r.Status,
+                            IsApproved = r.IsApproved,
+                            DiscountPercentage = r.DiscountPercentage,
+                            DiscountDays = r.DiscountDays,
+                            ShippingDescriptionEn = r.ShippingDescriptionEn,
+                            ShippingDuration = r.ShippingDuration,
+                            OfferDuration = r.OfferDuration,
+                            SupplierNotesEn = r.SupplierNotesEn,
+                            Packaging = r.Packaging,
+                            PackagingDetails = r.PackagingDetails,
+                            RetailPackaging = r.RetailPackaging,
+                            RetailPackagingDetails = r.RetailPackagingDetails,
+                            RetailDescriptionEn = r.RetailDescriptionEn,
+                            Negotiable = r.Negotiable,
+                            IsFeatured = r.IsFeatured,
+                            ViewsCount = r.ViewsCount,
+                            VideoPath = r.VideoPath,
+                            VideoDurationSeconds = r.VideoDurationSeconds,
+                            IsVideoMuted = r.IsVideoMuted,
+                            CreatedAt = r.CreatedAt,
+                            CategoryName = r.CategoryName,
+                            CategoryNameAr = r.CategoryNameAr,
+                            ProductTypeName = r.ProductTypeName,
+                            UnitName = r.UnitName,
+                            OriginCountryName = r.OriginCountryName,
+                            OriginCountryNameAr = r.OriginCountryNameAr,
+                            DestinationCountryName = r.DestinationCountryName,
+                            DestinationCountryNameAr = r.DestinationCountryNameAr,
+                            LoadingPortName = r.LoadingPortName,
+                            LoadingPortNameAr = r.LoadingPortNameAr,
+                            ArrivalPortName = r.ArrivalPortName,
+                            ArrivalPortNameAr = r.ArrivalPortNameAr,
+                            CategoryId = r.CategoryId,
+                            Currency = r.Currency,
+                            ProductTypeId = r.ProductTypeId,
+                            AddressId = r.AddressId,
+                            RetailPrice = r.RetailPrice,
+                            RetailUnitId = r.RetailUnitId,
+                            RetailQuantity = r.RetailQuantity,
+                            RetailUnitName = r.RetailUnitName,
+                            RequestTypeId = r.RequestTypeId,
+                            RequestTypeName = r.RequestTypeName,
+                            BookingPriceTypeId = r.BookingPriceTypeId,
+                            BookingPriceTypeName = r.BookingPriceTypeName
+                        })
+                        .ToList();
 
                     var byId = rows.ToDictionary(x => x.ProductId);
                     var ranked = orderedIds
