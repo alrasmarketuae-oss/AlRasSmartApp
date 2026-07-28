@@ -38,4 +38,6 @@ public class User
     public ICollection<Address> Addresses { get; set; } = new List<Address>();
     public ICollection<CompanyImage> CompanyImages { get; set; } = new List<CompanyImage>();
     public ICollection<Cart> Carts { get; set; } = new List<Cart>();
+    public ICollection<UserIban> UserIbans { get; set; } = new List<UserIban>();
+    public ICollection<WithdrawalRequest> WithdrawalRequests { get; set; } = new List<WithdrawalRequest>();
 }

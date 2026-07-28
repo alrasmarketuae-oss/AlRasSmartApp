@@ -22,6 +22,8 @@ export const PERMISSIONS = {
   settingsManage: 'settings.manage',
   searchAccess: 'search.access',
   auditView: 'audit.view',
+  financeView: 'finance.view',
+  financeManage: 'finance.manage',
 } as const
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
@@ -63,6 +65,7 @@ export function getDefaultRoute(): string {
     { permission: PERMISSIONS.usersView, path: '/users' },
     { permission: PERMISSIONS.usersProfileEdits, path: '/users?profileEdits=1' },
     { permission: PERMISSIONS.auditView, path: '/audit-logs' },
+    { permission: PERMISSIONS.financeView, path: '/finance' },
     { permission: PERMISSIONS.searchAccess, path: '/missed-searches' },
     { permission: PERMISSIONS.notificationsView, path: '/notifications' },
     { permission: PERMISSIONS.settingsView, path: '/settings' },

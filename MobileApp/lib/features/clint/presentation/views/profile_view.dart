@@ -421,6 +421,27 @@ class _ProfileViewState extends State<ProfileView> {
                                   ),
                                   if (AuthService
                                       .instance
+                                      .isSupplierAccount) ...[
+                                    SizedBox(height: 13.h),
+                                    _accountItem(
+                                      S.of(context).myBalance,
+                                      AppAssets.profileBadgePercentIcon,
+                                      onTap: () {
+                                        context.push(
+                                          AppRoutes.kSupplierBalanceView,
+                                        );
+                                      },
+                                    ),
+                                    SizedBox(height: 13.h),
+                                    _accountItem(
+                                      S.of(context).myAds,
+                                      AppAssets.profileAdsIcon,
+                                      onTap: () {
+                                        context.push(AppRoutes.kMyAdsView);
+                                      },
+                                    ),
+                                  ] else if (AuthService
+                                      .instance
                                       .currentUserIsCompanyAccount) ...[
                                     SizedBox(height: 13.h),
                                     _accountItem(

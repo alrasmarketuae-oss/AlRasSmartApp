@@ -845,5 +845,18 @@
   "retailPriceLabel": "Retail price",
   "retailPricingInfoTitle": "Retail pricing",
   "retailPricingInfoBody": "If you add a retail price, this product will appear in its category with the wholesale price, and also in Retail with a separate retail price, unit, and quantity. Buyers can place orders from either channel. Make sure retail rates and fields are valid.",
-  "gotIt": "Got it"
+  "gotIt": "Got it",
+  "myBalance": "My Balance",
+  "accountStatement": "Account statement",
+  "currentBalance": "Current balance",
+  "balanceDeposit": "Deposit",
+  "balanceWithdrawal": "Withdrawal",
+  "noBalanceTransactions": "No balance transactions yet.",
+  "balanceOrderLabel": "Order #{orderId}",
+  "@balanceOrderLabel": {
+    "placeholders": {
+      "orderId": { "type": "String" }
+    }
+  },
+  "failedToLoadBalance": "Failed to load balance statement."
 }

@@ -9,7 +9,8 @@ namespace BusinessLayer.Services;
 public class ProfileAppService(
     IRasAlSouqDbContext dbContext,
     IAdminRealtimeNotificationService adminRealtimeNotificationService,
-    IMediaStorageService mediaStorage) : IProfileAppService
+    IMediaStorageService mediaStorage,
+    ISupplierBalanceService supplierBalanceService) : IProfileAppService
 {
     public async Task<object> GetMyProfileAsync(string userId, CancellationToken cancellationToken = default)
     {
@@ -24,7 +25,7 @@ public class ProfileAppService(
             .FirstOrDefaultAsync(x => x.Id == parsedUserId, cancellationToken)
             ?? throw new KeyNotFoundException("User not found.");
 
-        return MapProfile(user);
+        return await MapProfileAsync(user, cancellationToken);
     }
 
     public async Task<object> UpdateMyProfileAsync(
@@ -166,7 +167,7 @@ public class ProfileAppService(
             await adminRealtimeNotificationService.NotifyProfileEditAsync(user, cancellationToken);
         }
 
-        return MapProfile(user);
+        return await MapProfileAsync(user, cancellationToken);
     }
 
     public async Task<object> UploadMyProfileImageAsync(
@@ -204,12 +205,21 @@ public class ProfileAppService(
             await mediaStorage.DeleteAsync(previousPath, cancellationToken);
         }
 
-        return MapProfile(user);
+        return await MapProfileAsync(user, cancellationToken);
     }
 
-    private static object MapProfile(DataLayer.Models.User user)
+    private async Task<object> MapProfileAsync(
+        DataLayer.Models.User user,
+        CancellationToken cancellationToken)
     {
         var pending = PendingCompanyProfileChangeHelper.TryParse(user.PendingProfileChanges);
+        var isCompanyAccount = user.RoleId == RoleIds.Seller;
+        decimal? balance = null;
+        if (isCompanyAccount)
+        {
+            balance = await supplierBalanceService.GetBalanceAsync(user.Id, cancellationToken);
+        }
+
         return new
         {
             id = user.Id,
@@ -226,7 +236,7 @@ public class ProfileAppService(
             taxNumber = user.TaxNumber,
             website = user.Website,
             licenseNumber = user.LicenseNumber,
-            isCompanyAccount = user.RoleId == RoleIds.Seller,
+            isCompanyAccount = isCompanyAccount,
             isShippingCompanyAccount = user.RoleId == RoleIds.ShippingCompany,
             isCustomer = user.IsCustomer ?? false,
             isApproved = user.IsApproved,
@@ -234,7 +244,8 @@ public class ProfileAppService(
             isRejected = user.IsRejected,
             rejectionReason = user.RejectionReason,
             hasPendingProfileChanges = pending?.HasAnyChange == true,
-            pendingProfileChanges = pending
+            pendingProfileChanges = pending,
+            balance
         };
     }
 }

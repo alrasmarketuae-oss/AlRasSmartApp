@@ -159,9 +159,39 @@ public class AccountDeletionAppService(
                     || (orderIds.Count > 0 && orderIds.Contains(x.OrderId))),
                 cancellationToken);
 
+            // 4b) Ledger + translations that Restrict on Order/User (must clear before Orders/Users)
+            await RemoveRangeAsync(
+                dbContext.WithdrawalRequests.Where(x => x.UserId == userId || x.CompletedByAdminUserId == userId),
+                cancellationToken);
+
+            await RemoveRangeAsync(
+                dbContext.UserIbans.Where(x => x.UserId == userId),
+                cancellationToken);
+
+            await RemoveRangeAsync(
+                dbContext.Balances.Where(x =>
+                    x.UserId == userId
+                    || (orderIds.Count > 0 && x.OrderId != null && orderIds.Contains(x.OrderId.Value))),
+                cancellationToken);
+
+            if (orderIds.Count > 0 || ownedProductIds.Count > 0)
+            {
+                await RemoveRangeAsync(
+                    dbContext.ContentTranslations.Where(x =>
+                        (orderIds.Count > 0 && x.OrderId != null && orderIds.Contains(x.OrderId.Value))
+                        || (ownedProductIds.Count > 0
+                            && x.ProductId != null
+                            && ownedProductIds.Contains(x.ProductId.Value))),
+                    cancellationToken);
+            }
+
             // 5) Orders and order children (must run before PendingOrders / Products)
             if (orderIds.Count > 0)
             {
+                await RemoveRangeAsync(
+                    dbContext.OrderStatusHistories.Where(x => orderIds.Contains(x.OrderId)),
+                    cancellationToken);
+
                 await RemoveRangeAsync(
                     dbContext.PendingPayments.Where(x => orderIds.Contains(x.OrderId)),
                     cancellationToken);
@@ -287,6 +317,19 @@ public class AccountDeletionAppService(
                 dbContext.UserAdminPermissions.Where(x => x.UserId == userId),
                 cancellationToken);
 
+            await RemoveRangeAsync(
+                dbContext.ChatUserKeys.Where(x => x.UserId == userId),
+                cancellationToken);
+
+            await RemoveRangeAsync(
+                dbContext.MissedProductSearches.Where(x => x.UserId == userId),
+                cancellationToken);
+
+            // Admin audit rows Restrict on ActorUserId — remove before Users delete.
+            await RemoveRangeAsync(
+                dbContext.AdminAuditLogs.Where(x => x.ActorUserId == userId),
+                cancellationToken);
+
             if (!string.IsNullOrWhiteSpace(user.Email))
             {
                 var normalizedEmail = user.Email.Trim().ToLowerInvariant();
@@ -302,6 +345,8 @@ public class AccountDeletionAppService(
             dbContext.Users.Remove(user);
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
+
+            BusinessLayer.Caching.SupplierBalanceCacheVersions.Bump(userId);
         }
         catch
         {

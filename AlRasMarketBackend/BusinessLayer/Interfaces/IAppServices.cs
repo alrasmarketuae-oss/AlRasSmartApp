@@ -66,6 +66,26 @@ public interface IProfileAppService
         CancellationToken cancellationToken = default);
 }
 
+public interface IUserIbanAppService
+{
+    Task<object> GetMyIbansAsync(string userId, CancellationToken cancellationToken = default);
+    Task<object> AddMyIbanAsync(string userId, CreateUserIbanRequest input, CancellationToken cancellationToken = default);
+}
+
+public interface IWithdrawalRequestsAppService
+{
+    Task<object> GetMyWithdrawalRequestsAsync(string userId, CancellationToken cancellationToken = default);
+    Task<object> CreateMyWithdrawalRequestAsync(string userId, CreateWithdrawalRequestInput input, CancellationToken cancellationToken = default);
+}
+
+public interface IAdminFinanceAppService
+{
+    Task<object> GetWithdrawalRequestsAsync(AdminGetWithdrawalRequestsInput input, CancellationToken cancellationToken = default);
+    Task<object> GetCompanyFinanceProfileAsync(string userId, CancellationToken cancellationToken = default);
+    Task<object> GetCompanyBalanceStatementAsync(string userId, int page, int pageSize, CancellationToken cancellationToken = default);
+    Task<object> MarkWithdrawalPaidAsync(string adminUserId, string withdrawalRequestId, AdminMarkWithdrawalPaidInput input, CancellationToken cancellationToken = default);
+}
+
 public sealed class UpdateProfileInput
 {
     public string? FullName { get; set; }

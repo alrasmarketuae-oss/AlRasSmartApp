@@ -93,6 +93,10 @@ builder.Services.AddScoped<IOrderRealtimeNotificationService, RasAlSouqPresentai
 builder.Services.AddScoped<IAdminNotificationsAppService, AdminNotificationsAppService>();
 builder.Services.AddSingleton<IAdminPushNotificationQueue, AdminPushNotificationQueue>();
 builder.Services.AddHostedService<AdminPushNotificationWorker>();
+builder.Services.AddSingleton<IProductBackgroundEventQueue, ProductBackgroundEventQueue>();
+builder.Services.AddSingleton<IProductTranslationQueue, ProductTranslationQueue>();
+builder.Services.AddHostedService<ProductCreatedEventWorker>();
+builder.Services.AddHostedService<ProductTranslationWorker>();
 builder.Services.AddSingleton<IProductImageIndexingQueue, ProductImageIndexingQueue>();
 builder.Services.AddScoped<IProductImageVectorIndexingProcessor, ProductImageVectorIndexingProcessor>();
 builder.Services.AddHostedService<ProductImageIndexingWorker>();
@@ -113,6 +117,11 @@ builder.Services.AddScoped<IProductAssetsAppService, ProductAssetsAppService>();
 builder.Services.AddScoped<ProductAdoRepository>();
 builder.Services.AddScoped<IProductDataAccess, ProductDataAccess>();
 builder.Services.AddScoped<IOrderDataAccess, OrderDataAccess>();
+builder.Services.AddScoped<IBalanceDataAccess, BalanceDataAccess>();
+builder.Services.AddScoped<ISupplierBalanceService, SupplierBalanceService>();
+builder.Services.AddScoped<IUserIbanAppService, UserIbanAppService>();
+builder.Services.AddScoped<IWithdrawalRequestsAppService, WithdrawalRequestsAppService>();
+builder.Services.AddScoped<IAdminFinanceAppService, AdminFinanceAppService>();
 builder.Services.AddScoped<IProductsAppService, ProductsAppService>();
 builder.Services.AddHttpClient<IOpenAiVisionService, OpenAiVisionService>(client =>
 {
@@ -410,6 +419,9 @@ await using (var scope = app.Services.CreateAsyncScope())
     await PortNameArSchemaMigrator.EnsureAsync(db);
     await NotificationSchemaMigrator.EnsureAsync(db);
     await NotificationBilingualSchemaMigrator.EnsureAsync(db);
+    await BalanceSchemaMigrator.EnsureAsync(db);
+    await UserIbanSchemaMigrator.EnsureAsync(db);
+    await WithdrawalRequestSchemaMigrator.EnsureAsync(db);
     CategoriesListCache.Bump();
     ProductsAppService.InvalidateProductListCaches();
 

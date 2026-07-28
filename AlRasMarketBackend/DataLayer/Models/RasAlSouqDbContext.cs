@@ -58,6 +58,9 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
     public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
     public DbSet<MissedProductSearch> MissedProductSearches => Set<MissedProductSearch>();
     public DbSet<ContentTranslation> ContentTranslations => Set<ContentTranslation>();
+    public DbSet<Balance> Balances => Set<Balance>();
+    public DbSet<UserIban> UserIbans => Set<UserIban>();
+    public DbSet<WithdrawalRequest> WithdrawalRequests => Set<WithdrawalRequest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -146,6 +149,57 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.HasIndex(x => x.CreatedAtUtc);
             entity.HasIndex(x => x.QueryText);
             entity.HasIndex(x => new { x.UserId, x.CreatedAtUtc });
+        });
+
+        modelBuilder.Entity<Balance>(entity =>
+        {
+            entity.ToTable("Balances");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).HasMaxLength(64);
+            entity.Property(x => x.BalanceAmount).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.ReasonEn).HasMaxLength(300);
+            entity.Property(x => x.ReasonAr).HasMaxLength(300);
+            entity.Property(x => x.CreatedAtUtc).HasColumnType("datetime2");
+            // User: NO ACTION — SQL Server rejects CASCADE (Users→Products→Orders→Balances).
+            // Order: CASCADE so order cleanup removes ledger rows automatically.
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Order).WithMany().HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(x => new { x.UserId, x.CreatedAtUtc });
+            entity.HasIndex(x => new { x.OrderId, x.EntryType })
+                .IsUnique()
+                .HasFilter("[OrderId] IS NOT NULL");
+        });
+
+        modelBuilder.Entity<UserIban>(entity =>
+        {
+            entity.ToTable("UserIbans");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Iban).HasMaxLength(34).IsUnicode(false).IsRequired();
+            entity.Property(x => x.AccountHolderName).HasMaxLength(150);
+            entity.Property(x => x.BankName).HasMaxLength(150);
+            entity.Property(x => x.CreatedAtUtc).HasColumnType("datetime2");
+            entity.HasOne(x => x.User).WithMany(x => x.UserIbans).HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(x => new { x.UserId, x.Iban }).IsUnique();
+            entity.HasIndex(x => new { x.UserId, x.IsDefault });
+        });
+
+        modelBuilder.Entity<WithdrawalRequest>(entity =>
+        {
+            entity.ToTable("WithdrawalRequests");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).HasMaxLength(64);
+            entity.Property(x => x.Amount).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.Notes).HasMaxLength(500);
+            entity.Property(x => x.IbanSnapshot).HasMaxLength(34).IsUnicode(false).IsRequired();
+            entity.Property(x => x.AccountHolderNameSnapshot).HasMaxLength(150);
+            entity.Property(x => x.BankNameSnapshot).HasMaxLength(150);
+            entity.Property(x => x.RequestedAtUtc).HasColumnType("datetime2");
+            entity.Property(x => x.CompletedAtUtc).HasColumnType("datetime2");
+            entity.HasOne(x => x.User).WithMany(x => x.WithdrawalRequests).HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(x => x.UserIban).WithMany(x => x.WithdrawalRequests).HasForeignKey(x => x.UserIbanId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.CompletedByAdminUser).WithMany().HasForeignKey(x => x.CompletedByAdminUserId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(x => new { x.UserId, x.RequestedAtUtc });
+            entity.HasIndex(x => new { x.StatusId, x.RequestedAtUtc });
         });
 
         modelBuilder.Entity<ContentTranslation>(entity =>

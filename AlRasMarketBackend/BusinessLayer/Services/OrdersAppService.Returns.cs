@@ -141,6 +141,7 @@ public partial class OrdersAppService
         if (input.Approved)
         {
             await NotifyReturnApprovedAsync(orderForNotify, adminId, cancellationToken);
+            await supplierBalanceService.TryDebitRetailReturnAsync(orderForNotify, cancellationToken);
         }
         else
         {
@@ -404,6 +405,7 @@ public partial class OrdersAppService
         RequestOfferStatusLabels.ApplyReceived(order, adminId);
         await orderData.SaveChangesAsync(cancellationToken);
 
+        await supplierBalanceService.TryCreditRetailOrderOnReceivedAsync(order, cancellationToken);
         await NotifyOrderPartiesCustomStatusAsync(order, adminId, cancellationToken);
 
         var commissionSettings = await commissionSettingsProvider.GetAsync(cancellationToken);

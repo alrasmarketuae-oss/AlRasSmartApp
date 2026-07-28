@@ -24,6 +24,8 @@ public static class AdminPermissions
     public const string ProductsAdEdits = "products.ad_edits";
     public const string OrdersReqsOffers = "orders.reqs_offers";
     public const string AuditView = "audit.view";
+    public const string FinanceView = "finance.view";
+    public const string FinanceManage = "finance.manage";
 
     public const byte EmployeeRoleId = 4;
 
@@ -50,6 +52,8 @@ public static class AdminPermissions
         SettingsManage,
         SearchAccess,
         AuditView,
+        FinanceView,
+        FinanceManage,
     ];
 
     public static bool IsValidKey(string key) =>

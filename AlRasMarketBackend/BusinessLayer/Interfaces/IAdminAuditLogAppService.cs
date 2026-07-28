@@ -61,6 +61,7 @@ public static class AdminAuditActions
     public const string OrderRefund = "order.refund";
     public const string UserSetActive = "user.set_active";
     public const string NotificationSend = "notification.send";
+    public const string FinanceWithdrawalPaid = "finance.withdrawal_paid";
 }
 
 public static class AdminAuditEntityTypes
@@ -75,4 +76,5 @@ public static class AdminAuditEntityTypes
     public const string User = "User";
     public const string Notification = "Notification";
     public const string Banner = "Banner";
+    public const string WithdrawalRequest = "WithdrawalRequest";
 }

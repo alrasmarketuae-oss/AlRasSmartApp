@@ -240,6 +240,7 @@ public sealed class AdminEmployeesAppService(
         if (set.Contains(AdminPermissions.ShippingManage)) set.Add(AdminPermissions.ShippingView);
         if (set.Contains(AdminPermissions.NotificationsSend)) set.Add(AdminPermissions.NotificationsView);
         if (set.Contains(AdminPermissions.SettingsManage)) set.Add(AdminPermissions.SettingsView);
+        if (set.Contains(AdminPermissions.FinanceManage)) set.Add(AdminPermissions.FinanceView);
 
         return set.ToList();
     }
@@ -299,6 +300,9 @@ internal static class AdminPermissionCatalog
         new("notifications.send", "إرسال الإشعارات", "Send notifications", "pages", "صفحات اللوحة", "Dashboard pages"),
 
         new("audit.view", "صفحة سجل الأحداث", "Audit logs page", "pages", "صفحات اللوحة", "Dashboard pages"),
+
+        new("finance.view", "صفحة المعاملات المالية", "Finance page", "pages", "صفحات اللوحة", "Dashboard pages"),
+        new("finance.manage", "إدارة طلبات السحب والتحويل", "Manage withdrawals & payouts", "pages", "صفحات اللوحة", "Dashboard pages"),
 
         new("settings.view", "صفحة الإعدادات", "Settings page", "pages", "صفحات اللوحة", "Dashboard pages"),
         new("settings.manage", "تعديل الإعدادات", "Manage settings", "pages", "صفحات اللوحة", "Dashboard pages"),

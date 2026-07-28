@@ -112,7 +112,7 @@ public class CreateProductInput
 {
     public string OwnerId { get; set; } = string.Empty;
     public string? NameEn { get; set; }
-    /// <summary>App UI language when authoring (<c>en</c> / <c>ar</c>). Set on create only.</summary>
+    /// <summary>App UI language when authoring (<c>en</c> / <c>ar</c>). Set on create only, it uses at profile account to retuen the ad to the user with the listed language.</summary>
     public string? CreatedLanguage { get; set; }
     public decimal USDPrice { get; set; }
     public string? Currency { get; set; }

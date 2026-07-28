@@ -285,6 +285,12 @@ public partial class OrdersAppService
         }
 
         await NotifyOrderPartiesAsync(createdOrders, cancellationToken);
+
+        foreach (var order in createdOrders)
+        {
+            await supplierBalanceService.TryCreditRetailOrderAsync(order, cancellationToken);
+        }
+
         return orderGroupId;
     }
 

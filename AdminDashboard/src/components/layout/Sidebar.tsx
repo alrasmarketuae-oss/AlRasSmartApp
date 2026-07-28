@@ -19,6 +19,7 @@ import {
   IconShipping,
   IconUsers,
   IconBell,
+  IconWallet,
   IconLogout,
 } from '../icons'
 
@@ -113,6 +114,7 @@ const navItems: Array<{
   { to: '/shipping', labelKey: 'nav.shipping', icon: IconShipping, countKey: 'shipping', badgeTone: 'sky', permission: PERMISSIONS.shippingView },
   { to: '/chat', labelKey: 'nav.chat', icon: IconChat, countKey: 'chat', badgeTone: 'red', permission: PERMISSIONS.chatAccess },
   { to: '/notifications', labelKey: 'nav.notifications', icon: IconBell, permission: PERMISSIONS.notificationsView },
+  { to: '/finance', labelKey: 'Finance', icon: IconWallet, permission: PERMISSIONS.financeView },
   { to: '/missed-searches', labelKey: 'nav.missedSearches', icon: IconAds, permission: PERMISSIONS.searchAccess },
   { to: '/audit-logs', labelKey: 'nav.auditLogs', icon: IconOrders, permission: PERMISSIONS.auditView },
   { to: '/employees', labelKey: 'nav.employees', icon: IconUsers, superAdminOnly: true },
@@ -200,7 +202,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               }
             >
               <Icon className={`h-[22px] w-[22px] shrink-0 ${iconClass}`} />
-              <span className="flex-1 text-start leading-none">{t(labelKey)}</span>
+              <span className="flex-1 text-start leading-none">{labelKey.startsWith('nav.') ? t(labelKey) : labelKey}</span>
               {countKey ? (
                 <NavBadge count={navCounts[countKey]} active={active} tone={badgeTone} />
               ) : null}

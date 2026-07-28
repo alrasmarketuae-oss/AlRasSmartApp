@@ -56,5 +56,8 @@ public interface IRasAlSouqDbContext
     DbSet<AdminAuditLog> AdminAuditLogs { get; }
     DbSet<MissedProductSearch> MissedProductSearches { get; }
     DbSet<ContentTranslation> ContentTranslations { get; }
+    DbSet<Balance> Balances { get; }
+    DbSet<UserIban> UserIbans { get; }
+    DbSet<WithdrawalRequest> WithdrawalRequests { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

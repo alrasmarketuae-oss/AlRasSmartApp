@@ -81,6 +81,15 @@ export function IconBell({ className = 'h-5 w-5' }: IconProps) {
   )
 }
 
+export function IconWallet({ className = 'h-5 w-5' }: IconProps) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 7.5A2.25 2.25 0 0 1 6 5.25h10.5A2.25 2.25 0 0 1 18.75 7.5v1.125h-3.375a2.625 2.625 0 0 0 0 5.25h3.375V15A2.25 2.25 0 0 1 16.5 17.25H6A2.25 2.25 0 0 1 3.75 15V7.5Z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M18 8.625h1.125A1.125 1.125 0 0 1 20.25 9.75v3a1.125 1.125 0 0 1-1.125 1.125H18a2.625 2.625 0 1 1 0-5.25Z" />
+    </svg>
+  )
+}
+
 export function IconSettings({ className = 'h-5 w-5' }: IconProps) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>

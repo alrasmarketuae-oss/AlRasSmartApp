@@ -348,6 +348,7 @@ public class ProductsController(
     [RequestSizeLimit(50 * 1024 * 1024)]
     public async Task<IActionResult> Create([FromForm] CreateProductRequest request, CancellationToken cancellationToken = default)
     {
+        //get the user id from token
         var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrWhiteSpace(userId))
         {

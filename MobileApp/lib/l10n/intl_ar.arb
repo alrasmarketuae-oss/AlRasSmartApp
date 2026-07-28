@@ -845,5 +845,18 @@
   "retailPriceLabel": "سعر التجزئة",
   "retailPricingInfoTitle": "تسعير التجزئة",
   "retailPricingInfoBody": "عند إضافة سعر تجزئة، سيظهر المنتج في فئته بسعر الجملة، وأيضاً في التجزئة بسعر ووحدة وكمية منفصلة. يمكن استقبال الطلبات من أي من القناتين. يُرجى التأكد من صحة أسعار وحقول التجزئة.",
-  "gotIt": "حسناً"
+  "gotIt": "حسناً",
+  "myBalance": "رصيدي",
+  "accountStatement": "كشف الحساب",
+  "currentBalance": "الرصيد الحالي",
+  "balanceDeposit": "إيداع",
+  "balanceWithdrawal": "سحب",
+  "noBalanceTransactions": "لا توجد حركات رصيد بعد.",
+  "balanceOrderLabel": "طلب رقم {orderId}",
+  "@balanceOrderLabel": {
+    "placeholders": {
+      "orderId": { "type": "String" }
+    }
+  },
+  "failedToLoadBalance": "تعذر تحميل كشف الرصيد."
 }

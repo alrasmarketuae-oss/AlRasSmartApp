@@ -20,6 +20,7 @@ public partial class ProductsAppService(
     ICommissionSettingsProvider commissionSettingsProvider,
     ICategoryCommissionProvider categoryCommissionProvider,
     IStaticReferenceCache staticReferenceCache,
+    IProductBackgroundEventQueue productBackgroundEventQueue,
     IConfiguration configuration,
     IServiceScopeFactory scopeFactory,
     ILogger<ProductsAppService> logger,
@@ -81,6 +82,7 @@ public partial class ProductsAppService(
 
     public async Task<object> CreateAsync(CreateProductInput input, CancellationToken cancellationToken = default)
     {
+       //first call to the database
         var ownerId = await EnsureCompanyOwnerAsync(input.OwnerId, cancellationToken);
         await NormalizeProductCreateFieldsAsync(input, cancellationToken);
         ValidateProductForm(input);
@@ -147,14 +149,10 @@ public partial class ProductsAppService(
 
         product.ProductCode = await productData.InsertProductAsync(product, cancellationToken);
 
-        logger.LogInformation(
-            "Product created {ProductId} for owner {OwnerId} name={NameEn}",
-            product.ProductId,
-            ownerId,
-            product.NameEn);
+       
 
         // OpenAI translation must not block create response.
-        QueueTranslateProductFields(product);
+        await QueueTranslateProductFieldsAsync(product, cancellationToken);
 
         InvalidateProductCaches(ownerId);
 
@@ -215,57 +213,18 @@ public partial class ProductsAppService(
     /// Runs AI bilingual translation in the background, then CLIP-reindexes
     /// product images once (with EN+AR catalog text).
     /// </summary>
-    private void QueueTranslateProductFields(Product product)
+    private ValueTask QueueTranslateProductFieldsAsync(Product product, CancellationToken cancellationToken)
     {
-        var productId = product.ProductId;
-        var name = product.NameEn;
-        var description = product.DescriptionEn;
-        var retailDescription = product.RetailDescriptionEn;
-        var supplierNotes = product.SupplierNotesEn;
-        var shippingDescription = product.ShippingDescriptionEn;
-
-        _ = Task.Run(async () =>
-        {
-            await using var scope = scopeFactory.CreateAsyncScope();
-            try
-            {
-                var translator = scope.ServiceProvider.GetRequiredService<IContentTranslationService>();
-                await translator.UpsertProductFieldsAsync(
-                    productId,
-                    name,
-                    description,
-                    retailDescription,
-                    supplierNotes,
-                    shippingDescription);
-                InvalidateListingCaches();
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "Background product translation failed for {ProductId}", productId);
-            }
-
-            // Single CLIP reindex after translation attempt (success or fail).
-            try
-            {
-                if (!imageEmbeddingOptions.Value.Enabled)
-                {
-                    return;
-                }
-
-                var queue = scope.ServiceProvider.GetRequiredService<IProductImageIndexingQueue>();
-                var imageIds = await scope.ServiceProvider
-                    .GetRequiredService<IProductDataAccess>()
-                    .GetProductImageIdsByProductIdAsync(productId);
-                foreach (var imageId in imageIds)
-                {
-                    await queue.EnqueueAsync(imageId);
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "CLIP reindex after translation failed for {ProductId}", productId);
-            }
-        });
+        return productBackgroundEventQueue.EnqueueAsync(
+            new ProductBackgroundWorkItem(
+                product.ProductId,
+                product.NameEn,
+                product.DescriptionEn,
+                product.RetailDescriptionEn,
+                product.SupplierNotesEn,
+                product.ShippingDescriptionEn,
+                product.IsReadyForAdminReview || product.IsApproved == true),
+            cancellationToken);
     }
 
     public async Task<object> UpdateAsync(UpdateProductInput input, CancellationToken cancellationToken = default)
@@ -531,7 +490,7 @@ public partial class ProductsAppService(
         await productData.SaveChangesAsync(cancellationToken);
         // OpenAI translation must not block update response.
         // CLIP reindex runs once after translation (inside QueueTranslateProductFields).
-        QueueTranslateProductFields(product);
+        await QueueTranslateProductFieldsAsync(product, cancellationToken);
         InvalidateProductCaches(ownerId);
 
         if (requiresAdminReapproval)

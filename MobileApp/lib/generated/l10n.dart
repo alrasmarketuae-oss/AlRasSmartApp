@@ -5995,6 +5995,76 @@ class S {
   String get gotIt {
     return Intl.message('Got it', name: 'gotIt', desc: '', args: []);
   }
+
+  /// `My Balance`
+  String get myBalance {
+    return Intl.message('My Balance', name: 'myBalance', desc: '', args: []);
+  }
+
+  /// `Account statement`
+  String get accountStatement {
+    return Intl.message(
+      'Account statement',
+      name: 'accountStatement',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Current balance`
+  String get currentBalance {
+    return Intl.message(
+      'Current balance',
+      name: 'currentBalance',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Deposit`
+  String get balanceDeposit {
+    return Intl.message('Deposit', name: 'balanceDeposit', desc: '', args: []);
+  }
+
+  /// `Withdrawal`
+  String get balanceWithdrawal {
+    return Intl.message(
+      'Withdrawal',
+      name: 'balanceWithdrawal',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No balance transactions yet.`
+  String get noBalanceTransactions {
+    return Intl.message(
+      'No balance transactions yet.',
+      name: 'noBalanceTransactions',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Order #{orderId}`
+  String balanceOrderLabel(String orderId) {
+    return Intl.message(
+      'Order #$orderId',
+      name: 'balanceOrderLabel',
+      desc: '',
+      args: [orderId],
+    );
+  }
+
+  /// `Failed to load balance statement.`
+  String get failedToLoadBalance {
+    return Intl.message(
+      'Failed to load balance statement.',
+      name: 'failedToLoadBalance',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

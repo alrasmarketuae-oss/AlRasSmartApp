@@ -23,7 +23,8 @@ public partial class OrdersAppService(
     IContentTranslationService contentTranslationService,
     IServiceProvider serviceProvider,
     ILogger<OrdersAppService> logger,
-    IMediaStorageService mediaStorage) : IOrdersAppService
+    IMediaStorageService mediaStorage,
+    ISupplierBalanceService supplierBalanceService) : IOrdersAppService
 {
     public async Task<object> PlaceBookingOrderAsync(CreateDirectOrderInput input, CancellationToken cancellationToken = default)
     {
