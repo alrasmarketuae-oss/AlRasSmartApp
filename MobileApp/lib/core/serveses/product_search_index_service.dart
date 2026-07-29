@@ -22,14 +22,15 @@ class ProductSearchIndexService {
   int get totalCount => _names.length;
 
   Future<void> init() async {
+    // Disk only at startup — network refresh must not block native splash.
     await _loadFromDisk();
-    await _refreshFromNetwork();
     if (_names.isEmpty) {
       await _loadFallbackFromProductCaches();
     }
     debugPrint(
       'ProductSearchIndexService ready=$_ready count=${_names.length}',
     );
+    unawaited(refresh());
   }
 
   /// Rebuild search index after catalog mutations.

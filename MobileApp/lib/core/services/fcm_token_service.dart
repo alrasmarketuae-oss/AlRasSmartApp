@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:alrasmarket/core/services/app_push_notification_service.dart';
@@ -14,8 +15,9 @@ class FcmTokenService {
   String? _cachedToken;
   bool _initialized = false;
 
-  /// Firebase init + token listeners only. Do NOT request Android notification
-  /// permission here — Activity is not ready during [main] before [runApp].
+  /// Firebase init + token listeners only. Do NOT request notification
+  /// permission or await APNs token here — that blocks the native splash
+  /// (especially on iOS when a session is restored) until [runApp].
   Future<void> initialize() async {
     if (_initialized) return;
 
@@ -23,14 +25,8 @@ class FcmTokenService {
       if (Firebase.apps.isEmpty) {
         await Firebase.initializeApp(
           options: DefaultFirebaseOptions.currentPlatform,
-        );
+        ).timeout(const Duration(seconds: 8));
       }
-
-      if (Platform.isIOS) {
-        await _requestIosPermission();
-      }
-
-      _cachedToken = await _fetchToken();
 
       FirebaseMessaging.instance.onTokenRefresh.listen((token) {
         _cachedToken = token;
@@ -38,10 +34,21 @@ class FcmTokenService {
       });
 
       _initialized = true;
-      debugPrint('FcmTokenService initialized. token=$_cachedToken');
+      // Warm token in background — never block first frame / splash dismiss.
+      unawaited(_warmToken());
+      debugPrint('FcmTokenService initialized (token deferred).');
     } catch (e, stackTrace) {
       debugPrint('FcmTokenService initialize failed: $e');
       debugPrint('$stackTrace');
+    }
+  }
+
+  Future<void> _warmToken() async {
+    try {
+      _cachedToken = await _fetchToken().timeout(const Duration(seconds: 8));
+      debugPrint('FcmTokenService warm token=$_cachedToken');
+    } catch (e) {
+      debugPrint('FcmTokenService warm token skipped: $e');
     }
   }
 
@@ -54,7 +61,11 @@ class FcmTokenService {
 
     if (Platform.isIOS) {
       await _requestIosPermission();
-      _cachedToken = await _fetchToken();
+      try {
+        _cachedToken = await _fetchToken().timeout(const Duration(seconds: 8));
+      } catch (_) {
+        _cachedToken = null;
+      }
       return true;
     }
 
@@ -63,7 +74,11 @@ class FcmTokenService {
     final granted =
         await AppPushNotificationService.instance
             .requestAndroidNotificationPermission();
-    _cachedToken = await _fetchToken();
+    try {
+      _cachedToken = await _fetchToken().timeout(const Duration(seconds: 8));
+    } catch (_) {
+      _cachedToken = null;
+    }
     return granted;
   }
 

@@ -65,6 +65,10 @@
 		<string>We need photo library access to send images in support chat.</string>
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>We need your location to fill your address quickly.</string>
+		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+		<string>We need your location to fill your address quickly while you use the app.</string>
+		<key>NSLocationAlwaysUsageDescription</key>
+		<string>We need your location to fill your address quickly while you use the app.</string>
 		<key>GIDClientID</key>
 		<string>592516755028-8482cm2q52e83uv9h8t9a2oh6jjtoaab.apps.googleusercontent.com</string>
 		<key>CFBundleURLTypes</key>

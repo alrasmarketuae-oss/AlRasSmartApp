@@ -1319,11 +1319,25 @@ class ClintCubit extends Cubit<ClintStates> {
         homeProductsError = null;
         emit(FetchHomeProductsLoadingState());
       }
-      await fetchProductsByType(
-        ServiceProductType.retail,
-        forceRefresh: forceRefresh,
-      );
-      _syncHomeProductsFromRetailBucket();
+      try {
+        await fetchProductsByType(
+          ServiceProductType.retail,
+          forceRefresh: forceRefresh,
+        );
+      } finally {
+        _syncHomeProductsFromRetailBucket();
+        // Never leave the home feed stuck in loading (iOS splash / blank home).
+        if (isLoadingHomeProducts) {
+          isLoadingHomeProducts = false;
+          if (homeProducts.isNotEmpty) {
+            emit(FetchHomeProductsSuccessState(List.from(homeProducts)));
+          } else if (homeProductsError != null) {
+            emit(FetchHomeProductsErrorState(homeProductsError!));
+          } else {
+            emit(FetchHomeProductsSuccessState(const []));
+          }
+        }
+      }
       return;
     }
     await fetchHomeProducts(forceRefresh: forceRefresh);

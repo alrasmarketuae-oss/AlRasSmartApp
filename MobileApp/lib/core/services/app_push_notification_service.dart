@@ -77,9 +77,15 @@ class AppPushNotificationService {
     FirebaseMessaging.onMessage.listen(_onForegroundMessage);
     FirebaseMessaging.onMessageOpenedApp.listen(_onNotificationOpened);
 
-    final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
-    if (initialMessage != null) {
-      _pendingNavigationData = initialMessage.data;
+    try {
+      final initialMessage = await FirebaseMessaging.instance
+          .getInitialMessage()
+          .timeout(const Duration(seconds: 3));
+      if (initialMessage != null) {
+        _pendingNavigationData = initialMessage.data;
+      }
+    } catch (e) {
+      debugPrint('getInitialMessage skipped: $e');
     }
 
     _initialized = true;
