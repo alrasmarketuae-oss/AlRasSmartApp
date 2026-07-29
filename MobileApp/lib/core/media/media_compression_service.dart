@@ -107,15 +107,22 @@ class MediaCompressionService {
 
     var completed = 0;
     final inFlight = <int, double>{};
+    var lastFraction = 0.0;
 
-    void emitFraction() {
+    void emitFraction({bool force = false}) {
       final activeSum = inFlight.values.fold<double>(0, (a, b) => a + b);
       final fraction = ((completed + activeSum) / total).clamp(0.0, 1.0);
+      // Never let the bar bounce backwards (parallel workers / FFmpeg noise).
+      if (!force && fraction + 0.0001 < lastFraction) {
+        onProgress?.call(completed, total);
+        return;
+      }
+      lastFraction = fraction;
       onFraction?.call(fraction);
       onProgress?.call(completed, total);
     }
 
-    emitFraction();
+    emitFraction(force: true);
 
     Future<void> runPool(List<int> indexes, int concurrency) async {
       if (indexes.isEmpty) return;
@@ -130,10 +137,14 @@ class MediaCompressionService {
           inFlight[index] = 0.02;
           emitFraction();
 
+          var fileLast = 0.02;
           final prepared = await prepareAdMedia(
             path,
             onProgress: (fileProgress) {
-              inFlight[index] = fileProgress.clamp(0.0, 0.99);
+              final next = fileProgress.clamp(0.0, 0.99);
+              if (next + 0.0001 < fileLast) return;
+              fileLast = next;
+              inFlight[index] = next;
               emitFraction();
             },
           );

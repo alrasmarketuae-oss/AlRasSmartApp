@@ -359,6 +359,15 @@ class VideoCompressor {
   }) async {
     final durationMs = durationSec * 1000;
     final completer = Completer<bool>();
+    // FFmpeg statistics can jump backwards between packets — keep UI monotonic.
+    var lastEmitted = progressStart;
+
+    void emitProgress(double value) {
+      final clamped = value.clamp(progressStart, progressEnd.clamp(0.0, 0.99));
+      if (clamped + 0.0001 < lastEmitted) return;
+      lastEmitted = clamped;
+      onProgress?.call(clamped);
+    }
 
     await FFmpegKit.executeWithArgumentsAsync(
       arguments,
@@ -376,7 +385,7 @@ class VideoCompressor {
             (statistics.getTime() / durationMs).clamp(0.0, 1.0);
         final overall =
             progressStart + sessionProgress * (progressEnd - progressStart);
-        onProgress?.call(overall.clamp(0.0, 0.99));
+        emitProgress(overall);
       },
     );
 

@@ -108,6 +108,8 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
   /// Local paths already persisted + compressed — safe to upload as-is.
   final Set<String> _uploadReadyLocalPaths = {};
   int _activeMediaPrepJobs = 0;
+  /// Highest compression progress shown; prevents 75%↔80% flicker.
+  double _mediaProgressFloor = 0;
 
   static CreateAdCubit get(BuildContext context) =>
       context.read<CreateAdCubit>();
@@ -1942,11 +1944,17 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     required List<String> rawPaths,
     required bool forDocuments,
   }) async {
+    final wasBusy = _activeMediaPrepJobs > 0;
     _activeMediaPrepJobs++;
+    if (!wasBusy) {
+      _mediaProgressFloor = 0;
+    }
     emit(
       state.copyWith(
         isCompressingMedia: true,
-        mediaCompressionProgress: 0,
+        // Don't yank the bar back to 0% when another compress job is already running.
+        mediaCompressionProgress:
+            wasBusy ? state.mediaCompressionProgress : 0,
         mediaCompressionLabel: S.current.adUploadProgressCompressingImages,
       ),
     );
@@ -1993,9 +2001,12 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
         emitList: (paths) => emit(state.copyWith(productImages: paths)),
       );
 
-      final toCompress = state.productImages
+      // Only compress THIS pick's files — never re-compress paths already
+      // handled by a parallel prep job (that caused 75%↔80% progress fighting).
+      final toCompress = persistedByRaw.values
           .where(
             (p) =>
+                p.isNotEmpty &&
                 !CreateAdFormMapper.isRemoteAssetPath(p) &&
                 !_uploadReadyLocalPaths.contains(p) &&
                 (MediaCompressionService.isImagePath(p) ||
@@ -2009,6 +2020,9 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
         toCompress,
         onFraction: (fraction) {
           if (isClosed) return;
+          // Monotonic across overlapping compress jobs / FFmpeg noise.
+          if (fraction + 0.0001 < _mediaProgressFloor) return;
+          _mediaProgressFloor = fraction;
           emit(
             state.copyWith(
               isCompressingMedia: true,
@@ -2050,7 +2064,9 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
       emit(
         state.copyWith(
           productImages: updated,
-          mediaCompressionProgress: 1,
+          mediaCompressionProgress: _activeMediaPrepJobs <= 1
+              ? 1
+              : state.mediaCompressionProgress,
         ),
       );
 
@@ -2071,6 +2087,7 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
       _activeMediaPrepJobs =
           (_activeMediaPrepJobs - 1).clamp(0, 1000);
       if (!isClosed && _activeMediaPrepJobs == 0) {
+        _mediaProgressFloor = 0;
         emit(
           state.copyWith(
             isCompressingMedia: false,
