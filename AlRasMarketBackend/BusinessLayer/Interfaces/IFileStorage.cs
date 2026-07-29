@@ -17,4 +17,13 @@ public interface IFileStorage
     Task<bool> ExistsAsync(string relativePath, CancellationToken cancellationToken = default);
 
     Task<Stream?> OpenReadAsync(string relativePath, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Client direct PUT URL when the provider supports it (R2/S3). Returns null for local storage.
+    /// </summary>
+    Task<string?> TryCreatePresignedPutUrlAsync(
+        string relativePath,
+        string contentType,
+        TimeSpan expiry,
+        CancellationToken cancellationToken = default);
 }

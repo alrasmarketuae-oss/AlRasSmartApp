@@ -63,4 +63,11 @@ public sealed class CompositeFileStorage(
 
         return await fallback.OpenReadAsync(relativePath, cancellationToken);
     }
+
+    public Task<string?> TryCreatePresignedPutUrlAsync(
+        string relativePath,
+        string contentType,
+        TimeSpan expiry,
+        CancellationToken cancellationToken = default) =>
+        primary.TryCreatePresignedPutUrlAsync(relativePath, contentType, expiry, cancellationToken);
 }

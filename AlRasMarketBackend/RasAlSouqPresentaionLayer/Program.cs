@@ -93,13 +93,7 @@ builder.Services.AddScoped<IOrderRealtimeNotificationService, RasAlSouqPresentai
 builder.Services.AddScoped<IAdminNotificationsAppService, AdminNotificationsAppService>();
 builder.Services.AddSingleton<IAdminPushNotificationQueue, AdminPushNotificationQueue>();
 builder.Services.AddHostedService<AdminPushNotificationWorker>();
-builder.Services.AddSingleton<IProductBackgroundEventQueue, ProductBackgroundEventQueue>();
-builder.Services.AddSingleton<IProductTranslationQueue, ProductTranslationQueue>();
-builder.Services.AddHostedService<ProductCreatedEventWorker>();
-builder.Services.AddHostedService<ProductTranslationWorker>();
-builder.Services.AddSingleton<IProductImageIndexingQueue, ProductImageIndexingQueue>();
 builder.Services.AddScoped<IProductImageVectorIndexingProcessor, ProductImageVectorIndexingProcessor>();
-builder.Services.AddHostedService<ProductImageIndexingWorker>();
 builder.Services.AddScoped<IAdminProductsAppService, AdminProductsAppService>();
 builder.Services.AddScoped<IAdminSettingsAppService, AdminSettingsAppService>();
 builder.Services.AddScoped<IInternalDomesticShippingAppService, InternalDomesticShippingAppService>();
@@ -162,12 +156,13 @@ builder.Services.Configure<RedisOptions>(builder.Configuration.GetSection(RedisO
 
 var redisConfig = builder.Configuration.GetSection(RedisOptions.SectionName).Get<RedisOptions>()
     ?? new RedisOptions();
+IConnectionMultiplexer? redisMultiplexer = null;
 if (redisConfig.Enabled && !string.IsNullOrWhiteSpace(redisConfig.ConnectionString))
 {
     try
     {
-        var multiplexer = ConnectionMultiplexer.Connect(redisConfig.ConnectionString);
-        builder.Services.AddSingleton<IConnectionMultiplexer>(multiplexer);
+        redisMultiplexer = ConnectionMultiplexer.Connect(redisConfig.ConnectionString);
+        builder.Services.AddSingleton<IConnectionMultiplexer>(redisMultiplexer);
         Console.WriteLine($"Redis connected ({redisConfig.ConnectionString}).");
     }
     catch (Exception ex)
@@ -175,6 +170,27 @@ if (redisConfig.Enabled && !string.IsNullOrWhiteSpace(redisConfig.ConnectionStri
         Console.WriteLine($"Redis unavailable — product cache uses memory only. ({ex.Message})");
     }
 }
+
+var useRedisStreams = redisMultiplexer is not null;
+if (useRedisStreams)
+{
+    // Durable event bus: Create Ad XADDs translation/CLIP work; workers XREADGROUP + XACK.
+    builder.Services.AddSingleton<IProductTranslationQueue, RedisStreamProductTranslationQueue>();
+    builder.Services.AddSingleton<IProductBackgroundEventQueue, DirectProductBackgroundEventQueue>();
+    builder.Services.AddSingleton<IProductImageIndexingQueue, RedisStreamProductImageIndexingQueue>();
+    Console.WriteLine("Product background queues: Redis Streams (translate + CLIP).");
+}
+else
+{
+    builder.Services.AddSingleton<IProductBackgroundEventQueue, ProductBackgroundEventQueue>();
+    builder.Services.AddSingleton<IProductTranslationQueue, ProductTranslationQueue>();
+    builder.Services.AddSingleton<IProductImageIndexingQueue, ProductImageIndexingQueue>();
+    builder.Services.AddHostedService<ProductCreatedEventWorker>();
+    Console.WriteLine("Product background queues: in-process Channels (Redis Streams unavailable).");
+}
+
+builder.Services.AddHostedService<ProductTranslationWorker>();
+builder.Services.AddHostedService<ProductImageIndexingWorker>();
 
 builder.Services.AddSingleton<ProductCacheVersions>(sp =>
     new ProductCacheVersions(

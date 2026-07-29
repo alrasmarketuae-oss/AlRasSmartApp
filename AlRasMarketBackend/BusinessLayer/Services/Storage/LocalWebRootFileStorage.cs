@@ -56,4 +56,11 @@ public sealed class LocalWebRootFileStorage(IWebHostEnvironment environment) : I
         Stream stream = File.OpenRead(fullPath);
         return Task.FromResult<Stream?>(stream);
     }
+
+    public Task<string?> TryCreatePresignedPutUrlAsync(
+        string relativePath,
+        string contentType,
+        TimeSpan expiry,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult<string?>(null);
 }

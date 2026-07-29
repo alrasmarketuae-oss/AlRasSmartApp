@@ -35,4 +35,11 @@ public interface IMediaStorageService
     Task<Stream?> OpenReadAsync(string relativePath, CancellationToken cancellationToken = default);
 
     Task<bool> ExistsAsync(string relativePath, CancellationToken cancellationToken = default);
+
+    /// <summary>Null when direct client upload (presigned PUT) is unavailable.</summary>
+    Task<string?> TryCreatePresignedPutUrlAsync(
+        string relativePath,
+        string contentType,
+        TimeSpan expiry,
+        CancellationToken cancellationToken = default);
 }

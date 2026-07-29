@@ -86,10 +86,10 @@ public sealed class ProductImageIndexingWorker(
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            long productImageId;
+            QueuedWorkItem<long> message;
             try
             {
-                productImageId = await queue.DequeueAsync(stoppingToken).ConfigureAwait(false);
+                message = await queue.DequeueAsync(stoppingToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -109,7 +109,8 @@ public sealed class ProductImageIndexingWorker(
             {
                 using var scope = scopeFactory.CreateScope();
                 var processor = scope.ServiceProvider.GetRequiredService<IProductImageVectorIndexingProcessor>();
-                await processor.IndexProductImageAsync(productImageId, stoppingToken).ConfigureAwait(false);
+                await processor.IndexProductImageAsync(message.Payload, stoppingToken).ConfigureAwait(false);
+                await queue.AcknowledgeAsync(message.MessageId, stoppingToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -117,7 +118,7 @@ public sealed class ProductImageIndexingWorker(
                     ex,
                     "Product image indexing worker {WorkerId}: failed job for image {ImageId}.",
                     workerId,
-                    productImageId);
+                    message.Payload);
             }
         }
     }

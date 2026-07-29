@@ -269,6 +269,12 @@ public interface IProductAssetsAppService
     Task<object> UploadImageAsync(UploadProductImageInput input, CancellationToken cancellationToken = default);
     Task<object> UploadDocumentAsync(UploadProductDocumentInput input, CancellationToken cancellationToken = default);
     Task<object> UploadVideoAsync(UploadProductVideoInput input, CancellationToken cancellationToken = default);
+    Task<object> PresignImageUploadAsync(PresignProductImageInput input, CancellationToken cancellationToken = default);
+    Task<object> ConfirmImageUploadAsync(ConfirmProductImageInput input, CancellationToken cancellationToken = default);
+    Task<object> PresignDocumentUploadAsync(PresignProductDocumentInput input, CancellationToken cancellationToken = default);
+    Task<object> ConfirmDocumentUploadAsync(ConfirmProductDocumentInput input, CancellationToken cancellationToken = default);
+    Task<object> PresignVideoUploadAsync(PresignProductVideoInput input, CancellationToken cancellationToken = default);
+    Task<object> ConfirmVideoUploadAsync(ConfirmProductVideoInput input, CancellationToken cancellationToken = default);
     Task<object> UploadOfferStagingImageAsync(UploadStagingAssetInput input, CancellationToken cancellationToken = default);
     Task<object> UploadOfferStagingDocumentAsync(UploadStagingAssetInput input, CancellationToken cancellationToken = default);
     Task<object> UploadOfferStagingVideoAsync(UploadStagingAssetInput input, CancellationToken cancellationToken = default);

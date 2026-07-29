@@ -109,6 +109,35 @@ public sealed class CloudflareR2FileStorage : IFileStorage, IDisposable
         }
     }
 
+    public Task<string?> TryCreatePresignedPutUrlAsync(
+        string relativePath,
+        string contentType,
+        TimeSpan expiry,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var key = ToObjectKey(relativePath);
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return Task.FromResult<string?>(null);
+        }
+
+        var seconds = Math.Clamp((int)expiry.TotalSeconds, 60, 3600);
+        var request = new GetPreSignedUrlRequest
+        {
+            BucketName = _options.BucketName,
+            Key = key,
+            Verb = HttpVerb.PUT,
+            Expires = DateTime.UtcNow.AddSeconds(seconds),
+            ContentType = string.IsNullOrWhiteSpace(contentType)
+                ? "application/octet-stream"
+                : contentType
+        };
+
+        var url = _client.GetPreSignedURL(request);
+        return Task.FromResult<string?>(url);
+    }
+
     public void Dispose() => _client.Dispose();
 
     private static string ToObjectKey(string relativePath)

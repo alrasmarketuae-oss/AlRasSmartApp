@@ -22,16 +22,17 @@ public sealed class ProductTranslationWorker(
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            ProductBackgroundWorkItem workItem;
+            QueuedWorkItem<ProductBackgroundWorkItem> message;
             try
             {
-                workItem = await translationQueue.DequeueAsync(stoppingToken).ConfigureAwait(false);
+                message = await translationQueue.DequeueAsync(stoppingToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
                 break;
             }
 
+            var workItem = message.Payload;
             await using var scope = scopeFactory.CreateAsyncScope();
             try
             {
@@ -50,23 +51,30 @@ public sealed class ProductTranslationWorker(
                 logger.LogWarning(ex, "Background product translation failed for {ProductId}", workItem.ProductId);
             }
 
-            if (!workItem.QueueImageEmbeddingAfterTranslation || !imageEmbeddingOptions.Value.Enabled)
+            if (workItem.QueueImageEmbeddingAfterTranslation && imageEmbeddingOptions.Value.Enabled)
             {
-                continue;
+                try
+                {
+                    var productData = scope.ServiceProvider.GetRequiredService<IProductDataAccess>();
+                    var imageIds = await productData.GetProductImageIdsByProductIdAsync(workItem.ProductId).ConfigureAwait(false);
+                    foreach (var imageId in imageIds)
+                    {
+                        await imageIndexingQueue.EnqueueAsync(imageId, stoppingToken).ConfigureAwait(false);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "CLIP reindex after translation failed for {ProductId}", workItem.ProductId);
+                }
             }
 
             try
             {
-                var productData = scope.ServiceProvider.GetRequiredService<IProductDataAccess>();
-                var imageIds = await productData.GetProductImageIdsByProductIdAsync(workItem.ProductId).ConfigureAwait(false);
-                foreach (var imageId in imageIds)
-                {
-                    await imageIndexingQueue.EnqueueAsync(imageId, stoppingToken).ConfigureAwait(false);
-                }
+                await translationQueue.AcknowledgeAsync(message.MessageId, stoppingToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "CLIP reindex after translation failed for {ProductId}", workItem.ProductId);
+                logger.LogWarning(ex, "Failed to ACK translation message {MessageId}", message.MessageId);
             }
         }
     }

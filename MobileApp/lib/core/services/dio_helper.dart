@@ -182,6 +182,44 @@ class DioHelper {
 
   }
 
+  /// Direct PUT to an absolute URL (e.g. Cloudflare R2 presigned). No API auth headers.
+  static Future<Response?> putBytesToAbsoluteUrl({
+    required String url,
+    required File file,
+    required String contentType,
+    ProgressCallback? onSendProgress,
+  }) async {
+    final length = await file.length();
+    final client = Dio(
+      BaseOptions(
+        connectTimeout: const Duration(seconds: 30),
+        sendTimeout: const Duration(minutes: 10),
+        receiveTimeout: const Duration(minutes: 2),
+        validateStatus: (status) => status != null && status < 500,
+      ),
+    );
+
+    try {
+      return await client.put(
+        url,
+        data: file.openRead(),
+        onSendProgress: onSendProgress,
+        options: Options(
+          headers: {
+            Headers.contentTypeHeader: contentType,
+            Headers.contentLengthHeader: length,
+          },
+          contentType: contentType,
+        ),
+      );
+    } on DioException catch (e) {
+      debugPrint('Direct PUT failed (${e.response?.statusCode}): ${e.message}');
+      return e.response;
+    } finally {
+      client.close();
+    }
+  }
+
   static Future<Response?>? deleteData({
     required String url,
     Map<String, dynamic>? query,

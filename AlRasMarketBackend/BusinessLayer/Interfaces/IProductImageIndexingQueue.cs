@@ -4,7 +4,9 @@ public interface IProductImageIndexingQueue
 {
     ValueTask EnqueueAsync(long productImageId, CancellationToken cancellationToken = default);
 
-    ValueTask<long> DequeueAsync(CancellationToken cancellationToken);
+    ValueTask<QueuedWorkItem<long>> DequeueAsync(CancellationToken cancellationToken);
+
+    ValueTask AcknowledgeAsync(string messageId, CancellationToken cancellationToken = default);
 }
 
 public interface IProductImageVectorIndexingProcessor

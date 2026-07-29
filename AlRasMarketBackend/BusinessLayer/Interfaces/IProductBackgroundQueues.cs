@@ -9,14 +9,19 @@ public sealed record ProductBackgroundWorkItem(
     string? ShippingDescriptionEn,
     bool QueueImageEmbeddingAfterTranslation);
 
+/// <summary>Dequeued message from an in-process or Redis Stream queue.</summary>
+public sealed record QueuedWorkItem<T>(string MessageId, T Payload);
+
 public interface IProductBackgroundEventQueue
 {
     ValueTask EnqueueAsync(ProductBackgroundWorkItem workItem, CancellationToken cancellationToken = default);
-    ValueTask<ProductBackgroundWorkItem> DequeueAsync(CancellationToken cancellationToken);
+    ValueTask<QueuedWorkItem<ProductBackgroundWorkItem>> DequeueAsync(CancellationToken cancellationToken);
+    ValueTask AcknowledgeAsync(string messageId, CancellationToken cancellationToken = default);
 }
 
 public interface IProductTranslationQueue
 {
     ValueTask EnqueueAsync(ProductBackgroundWorkItem workItem, CancellationToken cancellationToken = default);
-    ValueTask<ProductBackgroundWorkItem> DequeueAsync(CancellationToken cancellationToken);
+    ValueTask<QueuedWorkItem<ProductBackgroundWorkItem>> DequeueAsync(CancellationToken cancellationToken);
+    ValueTask AcknowledgeAsync(string messageId, CancellationToken cancellationToken = default);
 }

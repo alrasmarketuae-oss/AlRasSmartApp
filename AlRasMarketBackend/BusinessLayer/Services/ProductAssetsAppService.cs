@@ -17,13 +17,17 @@ public class ProductAssetsAppService(
     IProductImageIndexingQueue productImageIndexingQueue,
     IProductImageVectorIndex productImageVectorIndex,
     IOptions<ImageEmbeddingOptions> embeddingOptions,
+    IOptions<CloudflareR2Options> r2Options,
     IServiceScopeFactory scopeFactory,
     ILogger<ProductAssetsAppService> logger) : IProductAssetsAppService
 {
     private readonly ImageEmbeddingOptions _embeddingOptions = embeddingOptions.Value;
+    private readonly CloudflareR2Options _r2Options = r2Options.Value;
 
     private const string ProductImagesFolder = "product-images";
     private const string ProductDocumentsFolder = "product-documents";
+    private const string ProductVideosFolder = "product-videos";
+    private const int MaxProductImages = 15;
 
     public async Task<object> UploadImageAsync(UploadProductImageInput input, CancellationToken cancellationToken = default)
     {
@@ -32,32 +36,8 @@ public class ProductAssetsAppService(
             throw new ArgumentException("File is required.");
         }
 
-        if (!Guid.TryParse(input.ProductId, out var productId))
-        {
-            throw new ArgumentException("Invalid product id.");
-        }
-
-        var product = await dbContext.Products.FindAsync([productId], cancellationToken)
-            ?? throw new KeyNotFoundException("Product not found.");
-
-        // DEV: التحقق من الملكية معطّل — أي مستخدم مسجّل يرفع على أي منتج.
-        // PRODUCTION: أزل التعليق عن الكود التالي:
-        /*
-        if (!Guid.TryParse(input.OwnerId, out var ownerId))
-        {
-            throw new ArgumentException("Invalid owner id.");
-        }
-
-        await EnsureProductAssetAccessAsync(product, ownerId, input.AllowAdminAccess, cancellationToken);
-        */
-
-        const int maxProductImages = 15;
-        var existingImageCount = await dbContext.ProductImages
-            .CountAsync(x => x.ProductId == productId, cancellationToken);
-        if (existingImageCount >= maxProductImages)
-        {
-            throw new InvalidOperationException("A product can have at most 15 images.");
-        }
+        var (productId, product) = await LoadProductForImageUploadAsync(input.ProductId, cancellationToken);
+        await EnsureImageSlotAvailableAsync(productId, cancellationToken);
 
         var fileName = $"{Guid.NewGuid():N}.jpg";
         var imagePath = await mediaStorage.SaveCompressedJpegAsync(
@@ -66,6 +46,88 @@ public class ProductAssetsAppService(
             fileName,
             ImageCompressionOptions.ProductUploadFast,
             cancellationToken: cancellationToken);
+
+        return await CompleteImageRegistrationAsync(
+            product,
+            productId,
+            imagePath,
+            input.AllowAdminAccess,
+            cancellationToken);
+    }
+
+    public async Task<object> PresignImageUploadAsync(
+        PresignProductImageInput input,
+        CancellationToken cancellationToken = default)
+    {
+        var (productId, _) = await LoadProductForImageUploadAsync(input.ProductId, cancellationToken);
+        await EnsureImageSlotAvailableAsync(productId, cancellationToken);
+
+        var fileName = $"{Guid.NewGuid():N}.jpg";
+        var path = WebRootFileHelper.BuildRelativePath(ProductImagesFolder, fileName);
+        return await BuildPresignResponseAsync(path, "image/jpeg", cancellationToken);
+    }
+
+    public async Task<object> ConfirmImageUploadAsync(
+        ConfirmProductImageInput input,
+        CancellationToken cancellationToken = default)
+    {
+        var (productId, product) = await LoadProductForImageUploadAsync(input.ProductId, cancellationToken);
+        var imagePath = RequireStoredPathInFolder(input.Path, ProductImagesFolder, allowedExtensions: [".jpg", ".jpeg"]);
+
+        var existing = await dbContext.ProductImages
+            .FirstOrDefaultAsync(
+                x => x.ProductId == productId && x.ImagePath == imagePath,
+                cancellationToken);
+        if (existing is not null)
+        {
+            return new { existing.Id, existing.ProductId, Path = existing.ImagePath };
+        }
+
+        await EnsureObjectExistsAsync(imagePath, cancellationToken);
+        await EnsureImageSlotAvailableAsync(productId, cancellationToken);
+
+        return await CompleteImageRegistrationAsync(
+            product,
+            productId,
+            imagePath,
+            input.AllowAdminAccess,
+            cancellationToken);
+    }
+
+    private async Task<(Guid ProductId, Product Product)> LoadProductForImageUploadAsync(
+        string productIdRaw,
+        CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(productIdRaw, out var productId))
+        {
+            throw new ArgumentException("Invalid product id.");
+        }
+
+        var product = await dbContext.Products.FindAsync([productId], cancellationToken)
+            ?? throw new KeyNotFoundException("Product not found.");
+
+        // DEV: التحقق من الملكية معطّل — أي مستخدم مسجّل يرفع على أي منتج.
+        // PRODUCTION: أزل التعليق عن الكود التالي في UploadImageAsync الأصلي.
+        return (productId, product);
+    }
+
+    private async Task EnsureImageSlotAvailableAsync(Guid productId, CancellationToken cancellationToken)
+    {
+        var existingImageCount = await dbContext.ProductImages
+            .CountAsync(x => x.ProductId == productId, cancellationToken);
+        if (existingImageCount >= MaxProductImages)
+        {
+            throw new InvalidOperationException("A product can have at most 15 images.");
+        }
+    }
+
+    private async Task<object> CompleteImageRegistrationAsync(
+        Product product,
+        Guid productId,
+        string imagePath,
+        bool allowAdminAccess,
+        CancellationToken cancellationToken)
+    {
         var entity = new ProductImage
         {
             ProductId = productId,
@@ -75,7 +137,7 @@ public class ProductAssetsAppService(
         await dbContext.ProductImages.AddAsync(entity, cancellationToken);
         // Admin edits apply live — do not send the listing back to pending review.
         var markedAsEdit = false;
-        if (!input.AllowAdminAccess)
+        if (!allowAdminAccess)
         {
             markedAsEdit = await MarkOwnerMediaChangedForReviewAsync(product, cancellationToken);
         }
@@ -91,7 +153,7 @@ public class ProductAssetsAppService(
         // embedding. New ads are indexed after SubmitForAdminReview; already-live ads enqueue
         // here without awaiting the workers.
         if (_embeddingOptions.Enabled
-            && (product.IsReadyForAdminReview || product.IsApproved == true || input.AllowAdminAccess))
+            && (product.IsReadyForAdminReview || product.IsApproved == true || allowAdminAccess))
         {
             QueueImageIndexing(entity.Id);
         }
@@ -455,17 +517,6 @@ public class ProductAssetsAppService(
         var product = await dbContext.Products.FindAsync([productId], cancellationToken)
             ?? throw new KeyNotFoundException("Product not found.");
 
-        // DEV: التحقق من الملكية معطّل — أي مستخدم مسجّل يرفع على أي منتج.
-        // PRODUCTION: أزل التعليق عن الكود التالي:
-        /*
-        if (!Guid.TryParse(input.OwnerId, out var ownerId))
-        {
-            throw new ArgumentException("Invalid owner id.");
-        }
-
-        await EnsureProductAssetAccessAsync(product, ownerId, input.AllowAdminAccess, cancellationToken);
-        */
-
         var extension = Path.GetExtension(input.File.FileName);
         if (string.IsNullOrWhiteSpace(extension))
         {
@@ -478,6 +529,69 @@ public class ProductAssetsAppService(
             ProductDocumentsFolder,
             fileName,
             cancellationToken: cancellationToken);
+
+        return await CompleteDocumentRegistrationAsync(product, productId, documentPath, cancellationToken);
+    }
+
+    public async Task<object> PresignDocumentUploadAsync(
+        PresignProductDocumentInput input,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(input.ProductId, out var productId))
+        {
+            throw new ArgumentException("Invalid product id.");
+        }
+
+        _ = await dbContext.Products.FindAsync([productId], cancellationToken)
+            ?? throw new KeyNotFoundException("Product not found.");
+
+        var extension = Path.GetExtension(input.FileName ?? string.Empty);
+        if (string.IsNullOrWhiteSpace(extension))
+        {
+            extension = ".pdf";
+        }
+
+        var fileName = $"{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
+        var path = WebRootFileHelper.BuildRelativePath(ProductDocumentsFolder, fileName);
+        var contentType = string.IsNullOrWhiteSpace(input.ContentType)
+            ? GuessDocumentContentType(extension)
+            : input.ContentType!.Trim();
+        return await BuildPresignResponseAsync(path, contentType, cancellationToken);
+    }
+
+    public async Task<object> ConfirmDocumentUploadAsync(
+        ConfirmProductDocumentInput input,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(input.ProductId, out var productId))
+        {
+            throw new ArgumentException("Invalid product id.");
+        }
+
+        var product = await dbContext.Products.FindAsync([productId], cancellationToken)
+            ?? throw new KeyNotFoundException("Product not found.");
+
+        var documentPath = RequireStoredPathInFolder(input.Path, ProductDocumentsFolder, allowedExtensions: null);
+
+        var existing = await dbContext.ProductDocuments
+            .FirstOrDefaultAsync(
+                x => x.ProductId == productId && x.DocumentPath == documentPath,
+                cancellationToken);
+        if (existing is not null)
+        {
+            return new { existing.Id, existing.ProductId, Path = existing.DocumentPath };
+        }
+
+        await EnsureObjectExistsAsync(documentPath, cancellationToken);
+        return await CompleteDocumentRegistrationAsync(product, productId, documentPath, cancellationToken);
+    }
+
+    private async Task<object> CompleteDocumentRegistrationAsync(
+        Product product,
+        Guid productId,
+        string documentPath,
+        CancellationToken cancellationToken)
+    {
         var entity = new ProductDocument
         {
             ProductId = productId,
@@ -500,16 +614,11 @@ public class ProductAssetsAppService(
             throw new ArgumentException("File is required.");
         }
 
+        ValidateVideoDuration(input.VideoDurationSeconds);
+
         if (!Guid.TryParse(input.ProductId, out var productId))
         {
             throw new ArgumentException("Invalid product id.");
-        }
-
-        if (!input.VideoDurationSeconds.HasValue
-            || input.VideoDurationSeconds.Value <= 0
-            || input.VideoDurationSeconds.Value > 180)
-        {
-            throw new ArgumentException("VideoDurationSeconds must be between 1 and 180.");
         }
 
         var product = await dbContext.Products
@@ -517,30 +626,112 @@ public class ProductAssetsAppService(
             .FirstOrDefaultAsync(x => x.ProductId == productId, cancellationToken)
             ?? throw new KeyNotFoundException("Product not found.");
 
-        var existingCount = ProductVideoPathsHelper.ResolveAll(product).Count;
-        if (existingCount >= ProductVideoPathsHelper.MaxProductVideos)
-        {
-            throw new InvalidOperationException(
-                $"A product can have at most {ProductVideoPathsHelper.MaxProductVideos} videos.");
-        }
+        EnsureVideoSlotAvailable(product);
 
         var extension = Path.GetExtension(input.File.FileName).ToLowerInvariant();
-        var allowed = new[] { ".mp4", ".mov", ".webm", ".m4v" };
-        if (!allowed.Contains(extension))
-        {
-            throw new ArgumentException("Unsupported video format. Allowed: .mp4, .mov, .webm, .m4v");
-        }
+        EnsureAllowedVideoExtension(extension);
 
         var fileName = $"video-{Guid.NewGuid():N}{extension}";
         var videoPath = await mediaStorage.SaveFormFileAsync(
             input.File,
-            "product-videos",
+            ProductVideosFolder,
             fileName,
             cancellationToken: cancellationToken);
+
+        return await CompleteVideoRegistrationAsync(
+            product,
+            productId,
+            videoPath,
+            input.VideoDurationSeconds!.Value,
+            input.AllowAdminAccess,
+            cancellationToken);
+    }
+
+    public async Task<object> PresignVideoUploadAsync(
+        PresignProductVideoInput input,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateVideoDuration(input.VideoDurationSeconds);
+
+        if (!Guid.TryParse(input.ProductId, out var productId))
+        {
+            throw new ArgumentException("Invalid product id.");
+        }
+
+        var product = await dbContext.Products
+            .Include(x => x.ProductVideos)
+            .FirstOrDefaultAsync(x => x.ProductId == productId, cancellationToken)
+            ?? throw new KeyNotFoundException("Product not found.");
+
+        EnsureVideoSlotAvailable(product);
+
+        var extension = Path.GetExtension(input.FileName ?? string.Empty).ToLowerInvariant();
+        EnsureAllowedVideoExtension(extension);
+
+        var fileName = $"video-{Guid.NewGuid():N}{extension}";
+        var path = WebRootFileHelper.BuildRelativePath(ProductVideosFolder, fileName);
+        var contentType = string.IsNullOrWhiteSpace(input.ContentType)
+            ? GuessVideoContentType(extension)
+            : input.ContentType!.Trim();
+        return await BuildPresignResponseAsync(path, contentType, cancellationToken);
+    }
+
+    public async Task<object> ConfirmVideoUploadAsync(
+        ConfirmProductVideoInput input,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateVideoDuration(input.VideoDurationSeconds);
+
+        if (!Guid.TryParse(input.ProductId, out var productId))
+        {
+            throw new ArgumentException("Invalid product id.");
+        }
+
+        var product = await dbContext.Products
+            .Include(x => x.ProductVideos)
+            .FirstOrDefaultAsync(x => x.ProductId == productId, cancellationToken)
+            ?? throw new KeyNotFoundException("Product not found.");
+
+        var videoPath = RequireStoredPathInFolder(
+            input.Path,
+            ProductVideosFolder,
+            allowedExtensions: [".mp4", ".mov", ".webm", ".m4v"]);
+
+        var alreadyPrimary = string.Equals(
+            NormalizeAssetPath(product.VideoPath),
+            videoPath,
+            StringComparison.OrdinalIgnoreCase);
+        var alreadyExtra = product.ProductVideos.Any(v =>
+            string.Equals(NormalizeAssetPath(v.VideoPath), videoPath, StringComparison.OrdinalIgnoreCase));
+        if (alreadyPrimary || alreadyExtra)
+        {
+            return new { path = videoPath };
+        }
+
+        await EnsureObjectExistsAsync(videoPath, cancellationToken);
+        EnsureVideoSlotAvailable(product);
+
+        return await CompleteVideoRegistrationAsync(
+            product,
+            productId,
+            videoPath,
+            input.VideoDurationSeconds!.Value,
+            input.AllowAdminAccess,
+            cancellationToken);
+    }
+
+    private async Task<object> CompleteVideoRegistrationAsync(
+        Product product,
+        Guid productId,
+        string videoPath,
+        byte videoDurationSeconds,
+        bool allowAdminAccess,
+        CancellationToken cancellationToken)
+    {
         if (string.IsNullOrWhiteSpace(product.VideoPath))
         {
             product.VideoPath = videoPath;
-            product.VideoDurationSeconds = input.VideoDurationSeconds;
+            product.VideoDurationSeconds = videoDurationSeconds;
         }
         else
         {
@@ -548,12 +739,12 @@ public class ProductAssetsAppService(
             {
                 ProductId = productId,
                 VideoPath = videoPath,
-                VideoDurationSeconds = input.VideoDurationSeconds,
+                VideoDurationSeconds = videoDurationSeconds,
             };
             await dbContext.ProductVideos.AddAsync(entity, cancellationToken);
         }
 
-        if (!input.AllowAdminAccess)
+        if (!allowAdminAccess)
         {
             await MarkOwnerMediaChangedForReviewAsync(product, cancellationToken);
         }
@@ -567,6 +758,137 @@ public class ProductAssetsAppService(
 
         return new { path = videoPath };
     }
+
+    private static void ValidateVideoDuration(byte? videoDurationSeconds)
+    {
+        if (!videoDurationSeconds.HasValue
+            || videoDurationSeconds.Value <= 0
+            || videoDurationSeconds.Value > 180)
+        {
+            throw new ArgumentException("VideoDurationSeconds must be between 1 and 180.");
+        }
+    }
+
+    private static void EnsureVideoSlotAvailable(Product product)
+    {
+        var existingCount = ProductVideoPathsHelper.ResolveAll(product).Count;
+        if (existingCount >= ProductVideoPathsHelper.MaxProductVideos)
+        {
+            throw new InvalidOperationException(
+                $"A product can have at most {ProductVideoPathsHelper.MaxProductVideos} videos.");
+        }
+    }
+
+    private static void EnsureAllowedVideoExtension(string extension)
+    {
+        var allowed = new[] { ".mp4", ".mov", ".webm", ".m4v" };
+        if (!allowed.Contains(extension))
+        {
+            throw new ArgumentException("Unsupported video format. Allowed: .mp4, .mov, .webm, .m4v");
+        }
+    }
+
+    private async Task<object> BuildPresignResponseAsync(
+        string path,
+        string contentType,
+        CancellationToken cancellationToken)
+    {
+        if (!_r2Options.IsConfigured)
+        {
+            throw new InvalidOperationException("Direct client upload is not available.");
+        }
+
+        var expirySeconds = Math.Clamp(_r2Options.PresignedPutExpirySeconds, 60, 3600);
+        var uploadUrl = await mediaStorage.TryCreatePresignedPutUrlAsync(
+            path,
+            contentType,
+            TimeSpan.FromSeconds(expirySeconds),
+            cancellationToken);
+
+        if (string.IsNullOrWhiteSpace(uploadUrl))
+        {
+            throw new InvalidOperationException("Direct client upload is not available.");
+        }
+
+        return new
+        {
+            uploadUrl,
+            path,
+            contentType,
+            requiredHeaders = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Content-Type"] = contentType
+            }
+        };
+    }
+
+    private async Task EnsureObjectExistsAsync(string relativePath, CancellationToken cancellationToken)
+    {
+        if (!await mediaStorage.ExistsAsync(relativePath, cancellationToken))
+        {
+            throw new ArgumentException("Uploaded file not found in storage. Complete the client upload first.");
+        }
+    }
+
+    private static string RequireStoredPathInFolder(
+        string? rawPath,
+        string folder,
+        string[]? allowedExtensions)
+    {
+        var path = WebRootFileHelper.NormalizeStoredPath(rawPath);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            throw new ArgumentException("Path is required.");
+        }
+
+        var prefix = $"/{folder.Trim('/')}/";
+        if (!path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException($"Path must be under {prefix}.");
+        }
+
+        var fileName = Path.GetFileName(path);
+        if (string.IsNullOrWhiteSpace(fileName)
+            || fileName.Contains("..", StringComparison.Ordinal)
+            || path.Count(c => c == '/') != 2)
+        {
+            throw new ArgumentException("Invalid storage path.");
+        }
+
+        if (allowedExtensions is { Length: > 0 })
+        {
+            var ext = Path.GetExtension(fileName).ToLowerInvariant();
+            if (!allowedExtensions.Contains(ext))
+            {
+                throw new ArgumentException($"Unsupported file extension '{ext}'.");
+            }
+        }
+
+        return path;
+    }
+
+    private static string GuessDocumentContentType(string extension) =>
+        extension.ToLowerInvariant() switch
+        {
+            ".pdf" => "application/pdf",
+            ".doc" => "application/msword",
+            ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            ".xls" => "application/vnd.ms-excel",
+            ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            ".png" => "image/png",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            _ => "application/octet-stream"
+        };
+
+    private static string GuessVideoContentType(string extension) =>
+        extension.ToLowerInvariant() switch
+        {
+            ".mp4" => "video/mp4",
+            ".mov" => "video/quicktime",
+            ".webm" => "video/webm",
+            ".m4v" => "video/x-m4v",
+            _ => "application/octet-stream"
+        };
 
     public async Task<object> UploadOfferStagingImageAsync(
         UploadStagingAssetInput input,

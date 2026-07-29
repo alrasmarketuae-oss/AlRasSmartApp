@@ -1,4 +1,5 @@
 using BusinessLayer.Interfaces;
+using BusinessLayer.Services;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -11,14 +12,21 @@ public sealed class ProductCreatedEventWorker(
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        if (eventQueue is DirectProductBackgroundEventQueue)
+        {
+            logger.LogInformation(
+                "Product created event worker idle — events enqueue directly to the translation stream.");
+            return;
+        }
+
         logger.LogInformation("Product created event worker started.");
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            ProductBackgroundWorkItem workItem;
+            QueuedWorkItem<ProductBackgroundWorkItem> message;
             try
             {
-                workItem = await eventQueue.DequeueAsync(stoppingToken).ConfigureAwait(false);
+                message = await eventQueue.DequeueAsync(stoppingToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -27,11 +35,12 @@ public sealed class ProductCreatedEventWorker(
 
             try
             {
-                await translationQueue.EnqueueAsync(workItem, stoppingToken).ConfigureAwait(false);
+                await translationQueue.EnqueueAsync(message.Payload, stoppingToken).ConfigureAwait(false);
+                await eventQueue.AcknowledgeAsync(message.MessageId, stoppingToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to dispatch product background event for {ProductId}", workItem.ProductId);
+                logger.LogError(ex, "Failed to dispatch product background event for {ProductId}", message.Payload.ProductId);
             }
         }
     }

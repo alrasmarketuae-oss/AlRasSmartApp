@@ -326,10 +326,26 @@ class ProductRemoteDataSource implements BaseProductRemoteDataSource {
     required String filePath,
     required String token,
   }) async {
-    return _uploadAsset(
-      endPoint: ApiConstants.productImageUploadEndPoint(productId),
+    final direct = await _tryDirectUpload(
+      productId: productId,
       filePath: filePath,
       token: token,
+      assetKind: _DirectAssetKind.image,
+    );
+    if (direct != null) {
+      return direct;
+    }
+
+    // TEMP TEST: multipart fallback disabled — must upload via R2 presign.
+    // return _uploadAsset(
+    //   endPoint: ApiConstants.productImageUploadEndPoint(productId),
+    //   filePath: filePath,
+    //   token: token,
+    // );
+    return const Left(
+      ServerFailure(
+        'Direct R2 upload failed and multipart fallback is disabled.',
+      ),
     );
   }
 
@@ -377,10 +393,26 @@ class ProductRemoteDataSource implements BaseProductRemoteDataSource {
     required String filePath,
     required String token,
   }) async {
-    return _uploadAsset(
-      endPoint: ApiConstants.productDocumentUploadEndPoint(productId),
+    final direct = await _tryDirectUpload(
+      productId: productId,
       filePath: filePath,
       token: token,
+      assetKind: _DirectAssetKind.document,
+    );
+    if (direct != null) {
+      return direct;
+    }
+
+    // TEMP TEST: multipart fallback disabled — must upload via R2 presign.
+    // return _uploadAsset(
+    //   endPoint: ApiConstants.productDocumentUploadEndPoint(productId),
+    //   filePath: filePath,
+    //   token: token,
+    // );
+    return const Left(
+      ServerFailure(
+        'Direct R2 upload failed and multipart fallback is disabled.',
+      ),
     );
   }
 
@@ -391,6 +423,19 @@ class ProductRemoteDataSource implements BaseProductRemoteDataSource {
     required int videoDurationSeconds,
     required String token,
   }) async {
+    final direct = await _tryDirectUpload(
+      productId: productId,
+      filePath: filePath,
+      token: token,
+      assetKind: _DirectAssetKind.video,
+      videoDurationSeconds: videoDurationSeconds,
+    );
+    if (direct != null) {
+      return direct;
+    }
+
+    // TEMP TEST: multipart fallback disabled — must upload via R2 presign.
+    /*
     try {
       final file = File(filePath);
       if (!await file.exists()) {
@@ -442,6 +487,171 @@ class ProductRemoteDataSource implements BaseProductRemoteDataSource {
     } catch (e) {
       return Left(NetworkFailure(e.toString()));
     }
+    */
+    return const Left(
+      ServerFailure(
+        'Direct R2 upload failed and multipart fallback is disabled.',
+      ),
+    );
+  }
+
+  /// Returns null when direct upload is unavailable (fallback to multipart).
+  /// Returns Left/Right when the direct path was attempted.
+  Future<Either<Failure, String>?> _tryDirectUpload({
+    required String productId,
+    required String filePath,
+    required String token,
+    required _DirectAssetKind assetKind,
+    int? videoDurationSeconds,
+  }) async {
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) {
+        return Left(
+          ServerFailure(
+            'File not found at upload time: $filePath. '
+            'Please re-select the media and try again.',
+          ),
+        );
+      }
+
+      final fileName = file.path.split(Platform.pathSeparator).last;
+      final contentType = _guessContentType(fileName, assetKind);
+
+      final String presignUrl;
+      final Object? presignBody;
+      final String confirmUrl;
+      final Map<String, dynamic> confirmBody;
+
+      switch (assetKind) {
+        case _DirectAssetKind.image:
+          presignUrl = ApiConstants.productImagePresignEndPoint(productId);
+          presignBody = <String, dynamic>{};
+          confirmUrl = ApiConstants.productImageConfirmEndPoint(productId);
+          confirmBody = {};
+          break;
+        case _DirectAssetKind.document:
+          presignUrl = ApiConstants.productDocumentPresignEndPoint(productId);
+          presignBody = {
+            'fileName': fileName,
+            'contentType': contentType,
+          };
+          confirmUrl = ApiConstants.productDocumentConfirmEndPoint(productId);
+          confirmBody = {};
+          break;
+        case _DirectAssetKind.video:
+          presignUrl = ApiConstants.productVideoPresignEndPoint(productId);
+          presignBody = {
+            'fileName': fileName,
+            'contentType': contentType,
+            'videoDurationSeconds': videoDurationSeconds,
+          };
+          confirmUrl = ApiConstants.productVideoConfirmEndPoint(productId);
+          confirmBody = {
+            'videoDurationSeconds': videoDurationSeconds,
+          };
+          break;
+      }
+
+      final presignResponse = await DioHelper.postData(
+        url: presignUrl,
+        data: presignBody,
+        token: token,
+      );
+      final presignStatus = presignResponse?.statusCode ?? 0;
+      if (presignStatus == 503 ||
+          presignStatus == 404 ||
+          (presignStatus >= 400 &&
+              _extractMessage(presignResponse?.data)
+                      ?.toLowerCase()
+                      .contains('not available') ==
+                  true)) {
+        // R2 direct upload unavailable — caller falls back to multipart.
+        return null;
+      }
+      if (presignStatus < 200 || presignStatus >= 300) {
+        // Soft-fail to multipart for unexpected presign errors.
+        debugPrint(
+          'Presign failed ($presignStatus): ${presignResponse?.data} — falling back to multipart',
+        );
+        return null;
+      }
+
+      final data = presignResponse?.data;
+      if (data is! Map) {
+        return null;
+      }
+
+      final uploadUrl = data['uploadUrl']?.toString() ?? data['UploadUrl']?.toString();
+      final path = data['path']?.toString() ?? data['Path']?.toString();
+      final signedContentType =
+          data['contentType']?.toString() ?? data['ContentType']?.toString() ?? contentType;
+
+      if (uploadUrl == null ||
+          uploadUrl.isEmpty ||
+          path == null ||
+          path.isEmpty) {
+        return null;
+      }
+
+      final putResponse = await DioHelper.putBytesToAbsoluteUrl(
+        url: uploadUrl,
+        file: file,
+        contentType: signedContentType,
+      );
+      final putStatus = putResponse?.statusCode ?? 0;
+      if (putStatus < 200 || putStatus >= 300) {
+        debugPrint('Direct PUT failed ($putStatus) — falling back to multipart');
+        return null;
+      }
+
+      confirmBody['path'] = path;
+      final confirmResponse = await DioHelper.postData(
+        url: confirmUrl,
+        data: confirmBody,
+        token: token,
+      );
+      final confirmStatus = confirmResponse?.statusCode ?? 0;
+      if (confirmStatus < 200 || confirmStatus >= 300) {
+        return Left(
+          ServerFailure(
+            _extractMessage(confirmResponse?.data) ??
+                confirmResponse?.statusMessage ??
+                'Confirm upload failed ($confirmStatus)',
+          ),
+        );
+      }
+
+      final confirmedPath = _extractUploadedPath(confirmResponse?.data) ?? path;
+      return Right(confirmedPath);
+    } on DioException catch (e) {
+      debugPrint('Direct upload error: ${e.message} — falling back to multipart');
+      return null;
+    } catch (e) {
+      debugPrint('Direct upload error: $e — falling back to multipart');
+      return null;
+    }
+  }
+
+  static String _guessContentType(String fileName, _DirectAssetKind kind) {
+    final lower = fileName.toLowerCase();
+    if (kind == _DirectAssetKind.image) {
+      return 'image/jpeg';
+    }
+    if (kind == _DirectAssetKind.video) {
+      if (lower.endsWith('.mov')) return 'video/quicktime';
+      if (lower.endsWith('.webm')) return 'video/webm';
+      if (lower.endsWith('.m4v')) return 'video/x-m4v';
+      return 'video/mp4';
+    }
+    if (lower.endsWith('.pdf')) return 'application/pdf';
+    if (lower.endsWith('.doc')) return 'application/msword';
+    if (lower.endsWith('.docx')) {
+      return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    }
+    if (lower.endsWith('.png')) return 'image/png';
+    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+    return 'application/octet-stream';
   }
 
   Future<Either<Failure, String>> _uploadAsset({
@@ -561,3 +771,5 @@ class ProductRemoteDataSource implements BaseProductRemoteDataSource {
     return value;
   }
 }
+
+enum _DirectAssetKind { image, document, video }

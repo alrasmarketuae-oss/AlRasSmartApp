@@ -18,14 +18,19 @@ public class ProductAssetsController(IProductAssetsAppService productAssetsAppSe
     private readonly IWebHostEnvironment _environment = environment;
 
     /// <summary>
-    /// Uploads one image file for a product.
-    /// DEV: any authenticated user. PRODUCTION: owner or admin only (see commented blocks).
+    /// TEMP TEST: multipart upload disabled — media must go mobile → R2 (presign + confirm).
     /// </summary>
     [HttpPost("{productId}/images/upload")]
     [Consumes("multipart/form-data")]
     [RequestSizeLimit(10 * 1024 * 1024)]
-    public async Task<IActionResult> UploadProductImage([FromRoute] string productId, [FromForm] UploadProductAssetRequest request, CancellationToken cancellationToken = default)
+    public Task<IActionResult> UploadProductImage([FromRoute] string productId, [FromForm] UploadProductAssetRequest request, CancellationToken cancellationToken = default)
     {
+        // DISABLED for direct-upload verification — uncomment body below to restore multipart fallback.
+        return Task.FromResult<IActionResult>(StatusCode(
+            StatusCodes.Status410Gone,
+            new { message = "Multipart upload disabled. Use presign + direct R2 PUT + confirm." }));
+
+        /*
         var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
         if (string.IsNullOrWhiteSpace(userId))
@@ -42,8 +47,6 @@ public class ProductAssetsController(IProductAssetsAppService productAssetsAppSe
                 OwnerId = userId,
                 File = request.File,
                 WebRootPath = root,
-                // PRODUCTION: فعّل السطر التالي عند إرجاع التحقق من الملكية في ProductAssetsAppService
-                // AllowAdminAccess = User.IsInRole("Admin"),
             }, cancellationToken);
 
             return Ok(result);
@@ -52,17 +55,97 @@ public class ProductAssetsController(IProductAssetsAppService productAssetsAppSe
         {
             return BadRequest(new { message = ex.Message });
         }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
         catch (KeyNotFoundException ex)
         {
             return NotFound(new { message = ex.Message });
         }
-        // PRODUCTION: أزل التعليق عند تفعيل UnauthorizedAccessException في الـ service
-        /*
-        catch (UnauthorizedAccessException ex)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
-        }
         */
+    }
+
+    /// <summary>
+    /// Issues a short-lived R2 PUT URL so the mobile client uploads bytes directly.
+    /// Falls back to multipart /images/upload when R2 is not configured.
+    /// </summary>
+    [HttpPost("{productId}/images/presign")]
+    public async Task<IActionResult> PresignProductImage(
+        [FromRoute] string productId,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            var result = await _productAssetsAppService.PresignImageUploadAsync(
+                new PresignProductImageInput
+                {
+                    ProductId = productId,
+                    OwnerId = userId,
+                },
+                cancellationToken);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Registers a product image after the client finished PUT to the presigned URL.
+    /// Same DB / CLIP / review side effects as multipart upload.
+    /// </summary>
+    [HttpPost("{productId}/images/confirm")]
+    public async Task<IActionResult> ConfirmProductImage(
+        [FromRoute] string productId,
+        [FromBody] ConfirmProductAssetRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            var result = await _productAssetsAppService.ConfirmImageUploadAsync(
+                new ConfirmProductImageInput
+                {
+                    ProductId = productId,
+                    OwnerId = userId,
+                    Path = request.Path ?? string.Empty,
+                },
+                cancellationToken);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
     }
 
     /// <summary>
@@ -102,14 +185,18 @@ public class ProductAssetsController(IProductAssetsAppService productAssetsAppSe
     }
 
     /// <summary>
-    /// Uploads one document file for a product.
-    /// DEV: any authenticated user. PRODUCTION: owner or admin only (see commented blocks).
+    /// TEMP TEST: multipart upload disabled — media must go mobile → R2 (presign + confirm).
     /// </summary>
     [HttpPost("{productId}/documents/upload")]
     [Consumes("multipart/form-data")]
     [RequestSizeLimit(20 * 1024 * 1024)]
-    public async Task<IActionResult> UploadProductDocument([FromRoute] string productId, [FromForm] UploadProductAssetRequest request, CancellationToken cancellationToken = default)
+    public Task<IActionResult> UploadProductDocument([FromRoute] string productId, [FromForm] UploadProductAssetRequest request, CancellationToken cancellationToken = default)
     {
+        return Task.FromResult<IActionResult>(StatusCode(
+            StatusCodes.Status410Gone,
+            new { message = "Multipart upload disabled. Use presign + direct R2 PUT + confirm." }));
+
+        /*
         var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrWhiteSpace(userId))
         {
@@ -125,8 +212,6 @@ public class ProductAssetsController(IProductAssetsAppService productAssetsAppSe
                 OwnerId = userId,
                 File = request.File,
                 WebRootPath = root,
-                // PRODUCTION: فعّل السطر التالي عند إرجاع التحقق من الملكية في ProductAssetsAppService
-                // AllowAdminAccess = User.IsInRole("Admin"),
             }, cancellationToken);
 
             return Ok(result);
@@ -139,26 +224,98 @@ public class ProductAssetsController(IProductAssetsAppService productAssetsAppSe
         {
             return NotFound(new { message = ex.Message });
         }
-        // PRODUCTION: أزل التعليق عند تفعيل UnauthorizedAccessException في الـ service
-        /*
-        catch (UnauthorizedAccessException ex)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
-        }
         */
     }
 
+    [HttpPost("{productId}/documents/presign")]
+    public async Task<IActionResult> PresignProductDocument(
+        [FromRoute] string productId,
+        [FromBody] PresignProductAssetRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            var result = await _productAssetsAppService.PresignDocumentUploadAsync(
+                new PresignProductDocumentInput
+                {
+                    ProductId = productId,
+                    OwnerId = userId,
+                    FileName = request.FileName,
+                    ContentType = request.ContentType,
+                },
+                cancellationToken);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("{productId}/documents/confirm")]
+    public async Task<IActionResult> ConfirmProductDocument(
+        [FromRoute] string productId,
+        [FromBody] ConfirmProductAssetRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            var result = await _productAssetsAppService.ConfirmDocumentUploadAsync(
+                new ConfirmProductDocumentInput
+                {
+                    ProductId = productId,
+                    OwnerId = userId,
+                    Path = request.Path ?? string.Empty,
+                },
+                cancellationToken);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
     /// <summary>
-    /// Uploads one video file for a product (supports multiple videos per listing).
+    /// TEMP TEST: multipart upload disabled — media must go mobile → R2 (presign + confirm).
     /// </summary>
     [HttpPost("{productId}/videos/upload")]
     [Consumes("multipart/form-data")]
     [RequestSizeLimit(110 * 1024 * 1024)]
-    public async Task<IActionResult> UploadProductVideo(
+    public Task<IActionResult> UploadProductVideo(
         [FromRoute] string productId,
         [FromForm] UploadProductVideoRequest request,
         CancellationToken cancellationToken = default)
     {
+        return Task.FromResult<IActionResult>(StatusCode(
+            StatusCodes.Status410Gone,
+            new { message = "Multipart upload disabled. Use presign + direct R2 PUT + confirm." }));
+
+        /*
         var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrWhiteSpace(userId))
         {
@@ -191,6 +348,86 @@ public class ProductAssetsController(IProductAssetsAppService productAssetsAppSe
         {
             return NotFound(new { message = ex.Message });
         }
+        */
+    }
+
+    [HttpPost("{productId}/videos/presign")]
+    public async Task<IActionResult> PresignProductVideo(
+        [FromRoute] string productId,
+        [FromBody] PresignProductVideoBodyRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            var result = await _productAssetsAppService.PresignVideoUploadAsync(
+                new PresignProductVideoInput
+                {
+                    ProductId = productId,
+                    OwnerId = userId,
+                    FileName = request.FileName,
+                    ContentType = request.ContentType,
+                    VideoDurationSeconds = request.VideoDurationSeconds,
+                },
+                cancellationToken);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("{productId}/videos/confirm")]
+    public async Task<IActionResult> ConfirmProductVideo(
+        [FromRoute] string productId,
+        [FromBody] ConfirmProductVideoBodyRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            var result = await _productAssetsAppService.ConfirmVideoUploadAsync(
+                new ConfirmProductVideoInput
+                {
+                    ProductId = productId,
+                    OwnerId = userId,
+                    Path = request.Path ?? string.Empty,
+                    VideoDurationSeconds = request.VideoDurationSeconds,
+                },
+                cancellationToken);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
     }
 }
 
@@ -202,5 +439,29 @@ public sealed class UploadProductAssetRequest
 public sealed class UploadProductVideoRequest
 {
     public IFormFile? File { get; set; }
+    public byte? VideoDurationSeconds { get; set; }
+}
+
+public sealed class PresignProductAssetRequest
+{
+    public string? FileName { get; set; }
+    public string? ContentType { get; set; }
+}
+
+public sealed class PresignProductVideoBodyRequest
+{
+    public string? FileName { get; set; }
+    public string? ContentType { get; set; }
+    public byte? VideoDurationSeconds { get; set; }
+}
+
+public sealed class ConfirmProductAssetRequest
+{
+    public string? Path { get; set; }
+}
+
+public sealed class ConfirmProductVideoBodyRequest
+{
+    public string? Path { get; set; }
     public byte? VideoDurationSeconds { get; set; }
 }

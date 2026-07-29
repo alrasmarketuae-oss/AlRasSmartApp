@@ -160,12 +160,24 @@ class ApiConstants {
       '/Products/$productId/increase-view';
   static String productImageUploadEndPoint(String productId) =>
       '/ProductAssets/$productId/images/upload';
+  static String productImagePresignEndPoint(String productId) =>
+      '/ProductAssets/$productId/images/presign';
+  static String productImageConfirmEndPoint(String productId) =>
+      '/ProductAssets/$productId/images/confirm';
   static String productImageDeleteByPathEndPoint(String productId) =>
       '/ProductAssets/$productId/images';
   static String productDocumentUploadEndPoint(String productId) =>
       '/ProductAssets/$productId/documents/upload';
+  static String productDocumentPresignEndPoint(String productId) =>
+      '/ProductAssets/$productId/documents/presign';
+  static String productDocumentConfirmEndPoint(String productId) =>
+      '/ProductAssets/$productId/documents/confirm';
   static String productVideoUploadEndPoint(String productId) =>
       '/ProductAssets/$productId/videos/upload';
+  static String productVideoPresignEndPoint(String productId) =>
+      '/ProductAssets/$productId/videos/presign';
+  static String productVideoConfirmEndPoint(String productId) =>
+      '/ProductAssets/$productId/videos/confirm';
 
   static String ordersEndPoint = '/Orders';
   static String myOrdersEndPoint = '/Orders/myOrders';

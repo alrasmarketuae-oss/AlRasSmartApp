@@ -101,6 +101,57 @@ public sealed class UploadProductVideoInput
     public bool AllowAdminAccess { get; set; }
 }
 
+public sealed class PresignProductImageInput
+{
+    public string ProductId { get; set; } = string.Empty;
+    public string OwnerId { get; set; } = string.Empty;
+    public bool AllowAdminAccess { get; set; }
+}
+
+public sealed class PresignProductDocumentInput
+{
+    public string ProductId { get; set; } = string.Empty;
+    public string OwnerId { get; set; } = string.Empty;
+    public string? FileName { get; set; }
+    public string? ContentType { get; set; }
+    public bool AllowAdminAccess { get; set; }
+}
+
+public sealed class PresignProductVideoInput
+{
+    public string ProductId { get; set; } = string.Empty;
+    public string OwnerId { get; set; } = string.Empty;
+    public string? FileName { get; set; }
+    public string? ContentType { get; set; }
+    public byte? VideoDurationSeconds { get; set; }
+    public bool AllowAdminAccess { get; set; }
+}
+
+public sealed class ConfirmProductImageInput
+{
+    public string ProductId { get; set; } = string.Empty;
+    public string OwnerId { get; set; } = string.Empty;
+    public string Path { get; set; } = string.Empty;
+    public bool AllowAdminAccess { get; set; }
+}
+
+public sealed class ConfirmProductDocumentInput
+{
+    public string ProductId { get; set; } = string.Empty;
+    public string OwnerId { get; set; } = string.Empty;
+    public string Path { get; set; } = string.Empty;
+    public bool AllowAdminAccess { get; set; }
+}
+
+public sealed class ConfirmProductVideoInput
+{
+    public string ProductId { get; set; } = string.Empty;
+    public string OwnerId { get; set; } = string.Empty;
+    public string Path { get; set; } = string.Empty;
+    public byte? VideoDurationSeconds { get; set; }
+    public bool AllowAdminAccess { get; set; }
+}
+
 public sealed class UploadCompanyLicenceInput
 {
     public string UserId { get; set; } = string.Empty;

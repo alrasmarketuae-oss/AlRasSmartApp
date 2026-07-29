@@ -90,4 +90,11 @@ public sealed class MediaStorageService(IFileStorage fileStorage) : IMediaStorag
 
     public Task<bool> ExistsAsync(string relativePath, CancellationToken cancellationToken = default) =>
         fileStorage.ExistsAsync(relativePath, cancellationToken);
+
+    public Task<string?> TryCreatePresignedPutUrlAsync(
+        string relativePath,
+        string contentType,
+        TimeSpan expiry,
+        CancellationToken cancellationToken = default) =>
+        fileStorage.TryCreatePresignedPutUrlAsync(relativePath, contentType, expiry, cancellationToken);
 }

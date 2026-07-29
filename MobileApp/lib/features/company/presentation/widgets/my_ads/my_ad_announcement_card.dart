@@ -110,6 +110,7 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
 
   @override
   Widget build(BuildContext context) {
+    final s = S.of(context);
     final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
     final compact = widget.compact;
     final displayTypeName = widget.preferRetailPricing
@@ -118,8 +119,8 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
             ? CreateAdType.categories.label
             : product.productTypeName;
     final typeStyle = _typeBadgeStyle(displayTypeName);
-    final listingBadge = _listingStatusBadge(product.status);
-    final listingIcon = _listingIconBadge(product.status);
+    final listingBadge = _listingStatusBadge(product.statusCanonical, s);
+    final listingIcon = _listingIconBadge(product.statusCanonical);
     final adType = CreateAdType.fromLabel(
           product.productTypeNameEn.trim().isNotEmpty
               ? product.productTypeNameEn
@@ -152,7 +153,7 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
     final pauseLabel = isAr ? 'إيقاف' : 'Pause';
     final publishLabel = S.of(context).publish;
     final canToggleStatus =
-        !product.status.toLowerCase().contains('review');
+        !product.statusCanonical.toLowerCase().contains('review');
 
     final content = Padding(
       padding: EdgeInsets.fromLTRB(padH, padV, padH, padV),
@@ -692,29 +693,38 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
         && item.supplierNotes.trim().isNotEmpty;
   }
 
-  _BadgeStyle _listingStatusBadge(String status) {
-    final value = status.trim();
+  _BadgeStyle _listingStatusBadge(String statusCanonical, S s) {
+    final value = statusCanonical.trim();
     final lower = value.toLowerCase();
 
     if (lower == 'active') {
       return _BadgeStyle(
-        label: value,
+        label: s.listingActive,
         background: const Color(0xFFDCFAE6),
         foreground: const Color(0xFF17B26A),
       );
     }
     if (lower.contains('paused') || lower.contains('inactive')) {
       return _BadgeStyle(
-        label: value.isEmpty ? 'Paused' : value,
+        label: s.listingPaused,
         background: const Color(0xFFF2F2F2),
         foreground: LightColor.greyTextColor,
       );
     }
     if (lower.contains('review')) {
       return _BadgeStyle(
-        label: value.isEmpty ? 'Under Review' : value,
+        label: s.underReviewAds,
         background: const Color(0xFFFFFAEB),
         foreground: const Color(0xFFFDB022),
+      );
+    }
+    if (lower.contains('sold') ||
+        lower.contains('out') ||
+        lower.contains('stock')) {
+      return _BadgeStyle(
+        label: s.soldOut,
+        background: const Color(0xFFFFEBEE),
+        foreground: const Color(0xFFE53935),
       );
     }
     return _BadgeStyle(
@@ -724,8 +734,8 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
     );
   }
 
-  String _listingIconBadge(String status) {
-    final value = status.trim();
+  String _listingIconBadge(String statusCanonical) {
+    final value = statusCanonical.trim();
     final lower = value.toLowerCase();
 
     if (lower == 'active') {

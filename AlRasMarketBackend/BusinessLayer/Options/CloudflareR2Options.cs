@@ -21,6 +21,9 @@ public sealed class CloudflareR2Options
     /// </summary>
     public string? PublicBaseUrl { get; set; }
 
+    /// <summary>How long mobile may use a presigned PUT URL (default 15 minutes).</summary>
+    public int PresignedPutExpirySeconds { get; set; } = 900;
+
     public bool IsConfigured =>
         Enabled
         && !string.IsNullOrWhiteSpace(BucketName)
