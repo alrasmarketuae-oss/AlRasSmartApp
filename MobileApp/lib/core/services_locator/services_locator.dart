@@ -216,6 +216,7 @@ class ServicesLocator {
     sl.registerLazySingleton(() => UploadProductDocumentsUseCase(sl()));
     sl.registerLazySingleton(() => UploadProductVideoUseCase(sl()));
     sl.registerLazySingleton(() => SubmitProductForAdminReviewUseCase(sl()));
+    sl.registerLazySingleton(() => ProductDraftOpsUseCase(sl()));
     sl.registerFactory(
       () => CreateAdCubit(
         getGeoPortsByCountryUseCase: sl(),
@@ -227,6 +228,7 @@ class ServicesLocator {
         uploadProductDocumentsUseCase: sl(),
         uploadProductVideoUseCase: sl(),
         submitProductForAdminReviewUseCase: sl(),
+        productDraftOpsUseCase: sl(),
       ),
     );
     //! Features - User (Home, Banners, Category, Cart, MyAccount)

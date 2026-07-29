@@ -93,6 +93,7 @@ builder.Services.AddScoped<IOrderRealtimeNotificationService, RasAlSouqPresentai
 builder.Services.AddScoped<IAdminNotificationsAppService, AdminNotificationsAppService>();
 builder.Services.AddSingleton<IAdminPushNotificationQueue, AdminPushNotificationQueue>();
 builder.Services.AddHostedService<AdminPushNotificationWorker>();
+builder.Services.AddHostedService<BusinessLayer.Services.DraftMediaCleanupWorker>();
 builder.Services.AddScoped<IProductImageVectorIndexingProcessor, ProductImageVectorIndexingProcessor>();
 builder.Services.AddScoped<IAdminProductsAppService, AdminProductsAppService>();
 builder.Services.AddScoped<IAdminSettingsAppService, AdminSettingsAppService>();

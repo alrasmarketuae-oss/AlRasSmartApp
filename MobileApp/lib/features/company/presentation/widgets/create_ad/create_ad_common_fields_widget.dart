@@ -8,7 +8,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class CreateAdCommonFieldsWidget extends StatelessWidget {
-  const CreateAdCommonFieldsWidget({super.key});
+  const CreateAdCommonFieldsWidget({
+    super.key,
+    this.mediaFirst = false,
+    this.showMedia = true,
+    this.showSpecs = true,
+  });
+
+  /// When true, media appears before specs/packing (used at top of the form).
+  final bool mediaFirst;
+
+  /// When false, only specs/packing are rendered (media already shown elsewhere).
+  final bool showMedia;
+
+  /// When false, only media is rendered.
+  final bool showSpecs;
 
   @override
   Widget build(BuildContext context) {
@@ -26,25 +40,40 @@ class CreateAdCommonFieldsWidget extends StatelessWidget {
         final isCategories =
             state.selectedType == CreateAdType.categories.label;
 
+        final media = showMedia
+            ? CreateAdProductImagesWidget(
+                productImages: state.productImages,
+                onPickTap: () => cubit.pickProductImages(context),
+                onRemove: cubit.removeProductImage,
+                isCompressingMedia: state.isCompressingMedia,
+                mediaCompressionProgress: state.mediaCompressionProgress,
+                mediaCompressionLabel: state.mediaCompressionLabel,
+              )
+            : null;
+
         // Categories: wholesale specs/packing live in the wholesale block above.
-        // Other ad types keep specs + packing here.
+        final specs = showSpecs && !isCategories
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SpecificationsInputWidget(
+                    controller: cubit.specificationsController,
+                  ),
+                  const CreateAdPackingSection(),
+                ],
+              )
+            : null;
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (!isCategories) ...[
-              SpecificationsInputWidget(
-                controller: cubit.specificationsController,
-              ),
-              const CreateAdPackingSection(),
+            if (mediaFirst) ...[
+              if (media != null) media,
+              if (specs != null) specs,
+            ] else ...[
+              if (specs != null) specs,
+              if (media != null) media,
             ],
-            CreateAdProductImagesWidget(
-              productImages: state.productImages,
-              onPickTap: () => cubit.pickProductImages(context),
-              onRemove: cubit.removeProductImage,
-              isCompressingMedia: state.isCompressingMedia,
-              mediaCompressionProgress: state.mediaCompressionProgress,
-              mediaCompressionLabel: state.mediaCompressionLabel,
-            ),
           ],
         );
       },

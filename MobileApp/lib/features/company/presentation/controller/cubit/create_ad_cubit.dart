@@ -41,6 +41,7 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     required UploadProductDocumentsUseCase uploadProductDocumentsUseCase,
     required UploadProductVideoUseCase uploadProductVideoUseCase,
     required SubmitProductForAdminReviewUseCase submitProductForAdminReviewUseCase,
+    required ProductDraftOpsUseCase productDraftOpsUseCase,
   }) : _getGeoPortsByCountryUseCase = getGeoPortsByCountryUseCase,
        _getCategoriesUseCase = getCategoriesUseCase,
        _createProductUseCase = createProductUseCase,
@@ -50,6 +51,7 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
        _uploadProductDocumentsUseCase = uploadProductDocumentsUseCase,
        _uploadProductVideoUseCase = uploadProductVideoUseCase,
        _submitProductForAdminReviewUseCase = submitProductForAdminReviewUseCase,
+       _draftOps = productDraftOpsUseCase,
        super(const CreateAdFormState()) {
     fetchCategories();
     _applyNonUaeBookingDefault();
@@ -80,6 +82,14 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
   final UploadProductDocumentsUseCase _uploadProductDocumentsUseCase;
   final UploadProductVideoUseCase _uploadProductVideoUseCase;
   final SubmitProductForAdminReviewUseCase _submitProductForAdminReviewUseCase;
+  final ProductDraftOpsUseCase _draftOps;
+
+  /// Maps local compressed path → R2 draft relative path.
+  /// Populated after compression; consumed on submit (confirm) and on close (delete).
+  final Map<String, String> _draftRemoteByLocal = {};
+
+  /// Draft paths that have been confirmed (attached to a product) — not deleted on close.
+  final Set<String> _confirmedDraftPaths = {};
 
   final List<String> _pendingRemoteImageDeletes = [];
   String? _initialRemoteVideoPath;
@@ -730,6 +740,16 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     final updated = List<String>.from(state.productImages);
     if (index < 0 || index >= updated.length) return;
     final removed = updated.removeAt(index);
+
+    // If this local path has an unconfirmed draft on R2, delete it now.
+    final draftPath = _draftRemoteByLocal.remove(removed);
+    if (draftPath != null && !_confirmedDraftPaths.contains(draftPath)) {
+      final token = AuthService.instance.currentToken;
+      if (token != null && token.isNotEmpty) {
+        unawaited(_draftOps.deleteDraft(draftPath: draftPath, token: token));
+      }
+    }
+
     if (CreateAdFormMapper.isRemoteAssetPath(removed) &&
         !CreateAdFormMapper.isVideoPath(removed)) {
       final normalized =
@@ -1144,7 +1164,7 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
         return;
       }
 
-      // 2) Images — already compressed after pick when possible.
+      // 2) Images — use draft path if already uploaded, otherwise full upload.
       if (hasImages) {
         _emitPublishStep(CreateAdPublishStep.preparingImages);
         if (isClosed) return;
@@ -1158,17 +1178,13 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
         }
 
         _emitPublishStep(CreateAdPublishStep.uploadingImages);
-        final imagesResult = await _uploadProductImagesUseCase(
+        final imageAttachError = await _attachImagesAfterCreate(
           productId: createdProductId,
-          filePaths: compressedImagePaths,
+          compressedPaths: compressedImagePaths,
           token: token,
         );
-        final imagesError = imagesResult.fold<String?>(
-          (failure) => failure.message,
-          (_) => null,
-        );
-        if (imagesError != null) {
-          _emitSubmitFailure(imagesError);
+        if (imageAttachError != null) {
+          _emitSubmitFailure(imageAttachError);
           return;
         }
       }
@@ -1419,6 +1435,8 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     _pendingEditCategoryLabel = null;
     _uploadReadyLocalPaths.clear();
     _activeMediaPrepJobs = 0;
+    _draftRemoteByLocal.clear();
+    _confirmedDraftPaths.clear();
     formKey = GlobalKey<FormState>();
 
     emit(
@@ -1482,16 +1500,12 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
           productDocuments: skipDocs ? const [] : state.productDocuments,
         );
     if (imagePaths.isNotEmpty) {
-      final imagesResult = await _uploadProductImagesUseCase(
+      final imageAttachError = await _attachImagesAfterCreate(
         productId: productId,
-        filePaths: imagePaths,
+        compressedPaths: imagePaths,
         token: token,
       );
-      final imagesError = imagesResult.fold<String?>(
-        (failure) => failure.message,
-        (_) => null,
-      );
-      if (imagesError != null) return imagesError;
+      if (imageAttachError != null) return imageAttachError;
     }
 
     if (skipDocs) return null;
@@ -1806,6 +1820,52 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     onUpdate(updated);
   }
 
+  /// Attaches images to a newly created product.
+  /// For each compressed path: if a draft is already on R2 → confirm it (no re-upload);
+  /// otherwise → full presign + PUT + confirm via uploadProductImagesUseCase.
+  Future<String?> _attachImagesAfterCreate({
+    required String productId,
+    required List<String> compressedPaths,
+    required String token,
+  }) async {
+    final draftPaths = <String>[];
+    final fallbackPaths = <String>[];
+
+    for (final path in compressedPaths) {
+      final draftRemote = _draftRemoteByLocal[path];
+      if (draftRemote != null && draftRemote.isNotEmpty) {
+        draftPaths.add(path);
+      } else {
+        fallbackPaths.add(path);
+      }
+    }
+
+    // Confirm already-uploaded drafts.
+    for (final localPath in draftPaths) {
+      final draftRemote = _draftRemoteByLocal[localPath]!;
+      final confirmResult = await _draftOps.confirmDraftImage(
+        productId: productId,
+        draftPath: draftRemote,
+        token: token,
+      );
+      final error = confirmResult.fold<String?>((f) => f.message, (_) => null);
+      if (error != null) return error;
+      _confirmedDraftPaths.add(draftRemote);
+    }
+
+    // Full upload for images that didn't get a draft slot.
+    if (fallbackPaths.isNotEmpty) {
+      final result = await _uploadProductImagesUseCase(
+        productId: productId,
+        filePaths: fallbackPaths,
+        token: token,
+      );
+      return result.fold<String?>((f) => f.message, (_) => null);
+    }
+
+    return null;
+  }
+
   Future<String?> _uploadLocalVideos({
     required String productId,
     required List<String> localVideoPaths,
@@ -1976,6 +2036,18 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
           mediaCompressionProgress: 1,
         ),
       );
+
+      // After compression: fire-and-forget draft uploads to R2 for newly compressed paths.
+      // Videos are excluded here — they are compressed + uploaded in _uploadLocalVideos on submit.
+      final token = AuthService.instance.currentToken;
+      if (token != null && token.isNotEmpty) {
+        for (final compressedPath in bySource.values) {
+          if (!CreateAdFormMapper.isVideoPath(compressedPath) &&
+              !_draftRemoteByLocal.containsKey(compressedPath)) {
+            unawaited(_uploadSingleImageDraft(compressedPath, token));
+          }
+        }
+      }
     } finally {
       _activeMediaPrepJobs =
           (_activeMediaPrepJobs - 1).clamp(0, 1000);
@@ -2066,6 +2138,45 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     shippingDurationController.dispose();
     originCountryController.dispose();
     destinationCountryController.dispose();
+    _deletePendingDraftsOnAbandon();
     return super.close();
+  }
+
+  /// Uploads a single compressed image to R2 as a draft and stores the mapping.
+  /// Fire-and-forget — failures are silent (full upload fallback on publish).
+  Future<void> _uploadSingleImageDraft(String localPath, String token) async {
+    if (_draftRemoteByLocal.containsKey(localPath)) return;
+    try {
+      final result = await _draftOps.uploadDraftImage(
+        filePath: localPath,
+        token: token,
+      );
+      result.fold(
+        (failure) => debugPrint('[Draft] Image upload failed: ${failure.message}'),
+        (remotePath) {
+          if (!isClosed) {
+            _draftRemoteByLocal[localPath] = remotePath;
+          }
+        },
+      );
+    } catch (e) {
+      debugPrint('[Draft] Image upload error: $e');
+    }
+  }
+
+  /// Deletes any draft R2 objects that were never confirmed to a product.
+  /// Called on cubit close (user left the form without publishing).
+  void _deletePendingDraftsOnAbandon() {
+    final token = AuthService.instance.currentToken;
+    if (token == null || token.isEmpty) return;
+
+    for (final entry in _draftRemoteByLocal.entries) {
+      final draftPath = entry.value;
+      if (!_confirmedDraftPaths.contains(draftPath)) {
+        unawaited(_draftOps.deleteDraft(draftPath: draftPath, token: token));
+      }
+    }
+    _draftRemoteByLocal.clear();
+    _confirmedDraftPaths.clear();
   }
 }

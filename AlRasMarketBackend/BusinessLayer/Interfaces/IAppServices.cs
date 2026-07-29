@@ -287,6 +287,23 @@ public interface IProductAssetsAppService
         string? webRootPath,
         bool allowAdminAccess,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Issues a short-lived presigned PUT URL for a draft image (no product required).
+    /// Path: product-images/drafts/{userId}/{guid}.jpg
+    /// </summary>
+    Task<object> PresignDraftImageUploadAsync(PresignDraftImageInput input, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Issues a short-lived presigned PUT URL for a draft video (no product required).
+    /// Path: product-videos/drafts/{userId}/{guid}{ext}
+    /// </summary>
+    Task<object> PresignDraftVideoUploadAsync(PresignDraftVideoInput input, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes a draft object. Only allowed when the path contains /drafts/{userId}/.
+    /// </summary>
+    Task DeleteDraftAsync(DeleteDraftInput input, CancellationToken cancellationToken = default);
 }
 
 public interface ICompanyLicenceAppService

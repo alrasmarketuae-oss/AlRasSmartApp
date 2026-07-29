@@ -152,6 +152,24 @@ public sealed class ConfirmProductVideoInput
     public bool AllowAdminAccess { get; set; }
 }
 
+public sealed class PresignDraftImageInput
+{
+    public string OwnerId { get; set; } = string.Empty;
+}
+
+public sealed class PresignDraftVideoInput
+{
+    public string OwnerId { get; set; } = string.Empty;
+    public string? FileName { get; set; }
+    public string? ContentType { get; set; }
+}
+
+public sealed class DeleteDraftInput
+{
+    public string OwnerId { get; set; } = string.Empty;
+    public string Path { get; set; } = string.Empty;
+}
+
 public sealed class UploadCompanyLicenceInput
 {
     public string UserId { get; set; } = string.Empty;

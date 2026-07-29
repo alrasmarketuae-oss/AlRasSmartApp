@@ -67,4 +67,32 @@ abstract class BaseProductRepository {
     required int videoDurationSeconds,
     required String token,
   });
+
+  Future<Either<Failure, String>> draftPresignAndPutImage({
+    required String filePath,
+    required String token,
+  });
+
+  Future<Either<Failure, String>> draftPresignAndPutVideo({
+    required String filePath,
+    required String token,
+  });
+
+  Future<Either<Failure, void>> deleteDraft({
+    required String draftPath,
+    required String token,
+  });
+
+  Future<Either<Failure, void>> confirmDraftImage({
+    required String productId,
+    required String draftPath,
+    required String token,
+  });
+
+  Future<Either<Failure, void>> confirmDraftVideo({
+    required String productId,
+    required String draftPath,
+    required int videoDurationSeconds,
+    required String token,
+  });
 }

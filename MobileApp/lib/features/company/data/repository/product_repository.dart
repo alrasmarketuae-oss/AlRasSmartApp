@@ -133,4 +133,56 @@ class ProductRepository implements BaseProductRepository {
       token: token,
     );
   }
+
+  @override
+  Future<Either<Failure, String>> draftPresignAndPutImage({
+    required String filePath,
+    required String token,
+  }) {
+    return _remote.draftPresignAndPutImage(filePath: filePath, token: token);
+  }
+
+  @override
+  Future<Either<Failure, String>> draftPresignAndPutVideo({
+    required String filePath,
+    required String token,
+  }) {
+    return _remote.draftPresignAndPutVideo(filePath: filePath, token: token);
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteDraft({
+    required String draftPath,
+    required String token,
+  }) {
+    return _remote.deleteDraft(draftPath: draftPath, token: token);
+  }
+
+  @override
+  Future<Either<Failure, void>> confirmDraftImage({
+    required String productId,
+    required String draftPath,
+    required String token,
+  }) {
+    return _remote.confirmDraftImage(
+      productId: productId,
+      draftPath: draftPath,
+      token: token,
+    );
+  }
+
+  @override
+  Future<Either<Failure, void>> confirmDraftVideo({
+    required String productId,
+    required String draftPath,
+    required int videoDurationSeconds,
+    required String token,
+  }) {
+    return _remote.confirmDraftVideo(
+      productId: productId,
+      draftPath: draftPath,
+      videoDurationSeconds: videoDurationSeconds,
+      token: token,
+    );
+  }
 }

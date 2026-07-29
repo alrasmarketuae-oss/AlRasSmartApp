@@ -224,3 +224,64 @@ class SubmitProductForAdminReviewUseCase {
     );
   }
 }
+
+/// Bundles all draft (pre-product) R2 upload operations into a single injectable.
+///
+/// Draft images/videos are uploaded immediately after the user picks media —
+/// before the product record is created — so bytes are already in R2 by the
+/// time the user taps Publish. On publish, confirm endpoints attach the already-
+/// uploaded objects to the new product. Abandoned drafts are deleted on remove
+/// or cubit close.
+class ProductDraftOpsUseCase {
+  ProductDraftOpsUseCase(this._repository);
+
+  final BaseProductRepository _repository;
+
+  Future<Either<Failure, String>> uploadDraftImage({
+    required String filePath,
+    required String token,
+  }) {
+    return _repository.draftPresignAndPutImage(filePath: filePath, token: token);
+  }
+
+  Future<Either<Failure, String>> uploadDraftVideo({
+    required String filePath,
+    required String token,
+  }) {
+    return _repository.draftPresignAndPutVideo(filePath: filePath, token: token);
+  }
+
+  /// Fire-and-forget — always returns void, never throws.
+  Future<void> deleteDraft({
+    required String draftPath,
+    required String token,
+  }) async {
+    await _repository.deleteDraft(draftPath: draftPath, token: token);
+  }
+
+  Future<Either<Failure, void>> confirmDraftImage({
+    required String productId,
+    required String draftPath,
+    required String token,
+  }) {
+    return _repository.confirmDraftImage(
+      productId: productId,
+      draftPath: draftPath,
+      token: token,
+    );
+  }
+
+  Future<Either<Failure, void>> confirmDraftVideo({
+    required String productId,
+    required String draftPath,
+    required int videoDurationSeconds,
+    required String token,
+  }) {
+    return _repository.confirmDraftVideo(
+      productId: productId,
+      draftPath: draftPath,
+      videoDurationSeconds: videoDurationSeconds,
+      token: token,
+    );
+  }
+}

@@ -72,6 +72,41 @@ abstract class BaseProductRemoteDataSource {
     required int videoDurationSeconds,
     required String token,
   });
+
+  /// Presigns + PUTs an image directly to R2 under a draft path (no productId needed).
+  /// Returns the draft relative path on success.
+  Future<Either<Failure, String>> draftPresignAndPutImage({
+    required String filePath,
+    required String token,
+  });
+
+  /// Presigns + PUTs a video directly to R2 under a draft path (no productId needed).
+  /// Returns the draft relative path on success.
+  Future<Either<Failure, String>> draftPresignAndPutVideo({
+    required String filePath,
+    required String token,
+  });
+
+  /// Deletes a draft object via DELETE /api/ProductAssets/draft.
+  Future<Either<Failure, void>> deleteDraft({
+    required String draftPath,
+    required String token,
+  });
+
+  /// Calls the confirm endpoint for an already-uploaded draft image.
+  Future<Either<Failure, void>> confirmDraftImage({
+    required String productId,
+    required String draftPath,
+    required String token,
+  });
+
+  /// Calls the confirm endpoint for an already-uploaded draft video.
+  Future<Either<Failure, void>> confirmDraftVideo({
+    required String productId,
+    required String draftPath,
+    required int videoDurationSeconds,
+    required String token,
+  });
 }
 
 class ProductRemoteDataSource implements BaseProductRemoteDataSource {
@@ -493,6 +528,217 @@ class ProductRemoteDataSource implements BaseProductRemoteDataSource {
         'Direct R2 upload failed and multipart fallback is disabled.',
       ),
     );
+  }
+
+  @override
+  Future<Either<Failure, String>> draftPresignAndPutImage({
+    required String filePath,
+    required String token,
+  }) async {
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) {
+        return Left(ServerFailure('File not found: $filePath'));
+      }
+
+      final presignResponse = await DioHelper.postData(
+        url: ApiConstants.productDraftImagePresignEndPoint,
+        data: const <String, dynamic>{},
+        token: token,
+      );
+      final presignStatus = presignResponse?.statusCode ?? 0;
+      if (presignStatus < 200 || presignStatus >= 300) {
+        return Left(
+          ServerFailure(
+            _extractMessage(presignResponse?.data) ??
+                'Draft presign failed ($presignStatus)',
+          ),
+        );
+      }
+
+      final data = presignResponse?.data;
+      if (data is! Map) {
+        return const Left(ServerFailure('Invalid draft presign response'));
+      }
+
+      final uploadUrl = data['uploadUrl']?.toString() ?? data['UploadUrl']?.toString();
+      final path = data['path']?.toString() ?? data['Path']?.toString();
+      final contentType =
+          data['contentType']?.toString() ?? data['ContentType']?.toString() ?? 'image/jpeg';
+
+      if (uploadUrl == null || uploadUrl.isEmpty || path == null || path.isEmpty) {
+        return const Left(ServerFailure('Draft presign response missing URL or path'));
+      }
+
+      final putResponse = await DioHelper.putBytesToAbsoluteUrl(
+        url: uploadUrl,
+        file: file,
+        contentType: contentType,
+      );
+      final putStatus = putResponse?.statusCode ?? 0;
+      if (putStatus < 200 || putStatus >= 300) {
+        return Left(ServerFailure('Draft PUT failed ($putStatus)'));
+      }
+
+      return Right(path);
+    } on DioException catch (e) {
+      return Left(ServerFailure(_extractMessage(e.response?.data) ?? e.message ?? 'Draft upload error'));
+    } catch (e) {
+      return Left(NetworkFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> draftPresignAndPutVideo({
+    required String filePath,
+    required String token,
+  }) async {
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) {
+        return Left(ServerFailure('File not found: $filePath'));
+      }
+
+      final fileName = file.path.split(Platform.pathSeparator).last;
+      final contentType = _guessContentType(fileName, _DirectAssetKind.video);
+
+      final presignResponse = await DioHelper.postData(
+        url: ApiConstants.productDraftVideoPresignEndPoint,
+        data: {
+          'fileName': fileName,
+          'contentType': contentType,
+        },
+        token: token,
+      );
+      final presignStatus = presignResponse?.statusCode ?? 0;
+      if (presignStatus < 200 || presignStatus >= 300) {
+        return Left(
+          ServerFailure(
+            _extractMessage(presignResponse?.data) ??
+                'Draft video presign failed ($presignStatus)',
+          ),
+        );
+      }
+
+      final data = presignResponse?.data;
+      if (data is! Map) {
+        return const Left(ServerFailure('Invalid draft video presign response'));
+      }
+
+      final uploadUrl = data['uploadUrl']?.toString() ?? data['UploadUrl']?.toString();
+      final path = data['path']?.toString() ?? data['Path']?.toString();
+      final signedContentType =
+          data['contentType']?.toString() ?? data['ContentType']?.toString() ?? contentType;
+
+      if (uploadUrl == null || uploadUrl.isEmpty || path == null || path.isEmpty) {
+        return const Left(ServerFailure('Draft video presign response missing URL or path'));
+      }
+
+      final putResponse = await DioHelper.putBytesToAbsoluteUrl(
+        url: uploadUrl,
+        file: file,
+        contentType: signedContentType,
+      );
+      final putStatus = putResponse?.statusCode ?? 0;
+      if (putStatus < 200 || putStatus >= 300) {
+        return Left(ServerFailure('Draft video PUT failed ($putStatus)'));
+      }
+
+      return Right(path);
+    } on DioException catch (e) {
+      return Left(ServerFailure(_extractMessage(e.response?.data) ?? e.message ?? 'Draft video upload error'));
+    } catch (e) {
+      return Left(NetworkFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteDraft({
+    required String draftPath,
+    required String token,
+  }) async {
+    try {
+      if (draftPath.trim().isEmpty) return const Right(null);
+
+      final response = await DioHelper.deleteData(
+        url: ApiConstants.productDraftDeleteEndPoint,
+        data: {'path': draftPath},
+        token: token,
+      );
+      final status = response?.statusCode ?? 0;
+      if (status < 200 || status >= 300) {
+        debugPrint('[Draft] Delete failed ($status): ${response?.data}');
+      }
+      return const Right(null);
+    } on DioException catch (e) {
+      debugPrint('[Draft] Delete error: ${e.message}');
+      return const Right(null);
+    } catch (e) {
+      debugPrint('[Draft] Delete error: $e');
+      return const Right(null);
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> confirmDraftImage({
+    required String productId,
+    required String draftPath,
+    required String token,
+  }) async {
+    try {
+      final confirmResponse = await DioHelper.postData(
+        url: ApiConstants.productImageConfirmEndPoint(productId),
+        data: {'path': draftPath},
+        token: token,
+      );
+      final status = confirmResponse?.statusCode ?? 0;
+      if (status < 200 || status >= 300) {
+        return Left(
+          ServerFailure(
+            _extractMessage(confirmResponse?.data) ??
+                'Confirm draft image failed ($status)',
+          ),
+        );
+      }
+      return const Right(null);
+    } on DioException catch (e) {
+      return Left(ServerFailure(_extractMessage(e.response?.data) ?? e.message ?? 'Confirm error'));
+    } catch (e) {
+      return Left(NetworkFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> confirmDraftVideo({
+    required String productId,
+    required String draftPath,
+    required int videoDurationSeconds,
+    required String token,
+  }) async {
+    try {
+      final confirmResponse = await DioHelper.postData(
+        url: ApiConstants.productVideoConfirmEndPoint(productId),
+        data: {
+          'path': draftPath,
+          'videoDurationSeconds': videoDurationSeconds,
+        },
+        token: token,
+      );
+      final status = confirmResponse?.statusCode ?? 0;
+      if (status < 200 || status >= 300) {
+        return Left(
+          ServerFailure(
+            _extractMessage(confirmResponse?.data) ??
+                'Confirm draft video failed ($status)',
+          ),
+        );
+      }
+      return const Right(null);
+    } on DioException catch (e) {
+      return Left(ServerFailure(_extractMessage(e.response?.data) ?? e.message ?? 'Confirm video error'));
+    } catch (e) {
+      return Left(NetworkFailure(e.toString()));
+    }
   }
 
   /// Returns null when direct upload is unavailable (fallback to multipart).

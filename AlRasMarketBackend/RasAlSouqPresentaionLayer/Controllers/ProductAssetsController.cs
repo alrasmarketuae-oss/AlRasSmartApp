@@ -391,6 +391,108 @@ public class ProductAssetsController(IProductAssetsAppService productAssetsAppSe
         }
     }
 
+    /// <summary>
+    /// Issues a presigned PUT URL for a draft image (before the product exists).
+    /// Path: product-images/drafts/{userId}/{guid}.jpg
+    /// </summary>
+    [HttpPost("draft/images/presign")]
+    public async Task<IActionResult> PresignDraftImage(CancellationToken cancellationToken = default)
+    {
+        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            var result = await _productAssetsAppService.PresignDraftImageUploadAsync(
+                new PresignDraftImageInput { OwnerId = userId },
+                cancellationToken);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Issues a presigned PUT URL for a draft video (before the product exists).
+    /// Path: product-videos/drafts/{userId}/{guid}{ext}
+    /// </summary>
+    [HttpPost("draft/videos/presign")]
+    public async Task<IActionResult> PresignDraftVideo(
+        [FromBody] PresignDraftVideoBodyRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            var result = await _productAssetsAppService.PresignDraftVideoUploadAsync(
+                new PresignDraftVideoInput
+                {
+                    OwnerId = userId,
+                    FileName = request.FileName,
+                    ContentType = request.ContentType,
+                },
+                cancellationToken);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Deletes a draft R2 object. Only objects under product-*/drafts/{callerUserId}/ are allowed.
+    /// </summary>
+    [HttpDelete("draft")]
+    public async Task<IActionResult> DeleteDraft(
+        [FromBody] DeleteDraftRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            await _productAssetsAppService.DeleteDraftAsync(
+                new DeleteDraftInput
+                {
+                    OwnerId = userId,
+                    Path = request.Path ?? string.Empty,
+                },
+                cancellationToken);
+            return Ok(new { message = "Draft deleted." });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+    }
+
     [HttpPost("{productId}/videos/confirm")]
     public async Task<IActionResult> ConfirmProductVideo(
         [FromRoute] string productId,
@@ -464,4 +566,15 @@ public sealed class ConfirmProductVideoBodyRequest
 {
     public string? Path { get; set; }
     public byte? VideoDurationSeconds { get; set; }
+}
+
+public sealed class PresignDraftVideoBodyRequest
+{
+    public string? FileName { get; set; }
+    public string? ContentType { get; set; }
+}
+
+public sealed class DeleteDraftRequest
+{
+    public string? Path { get; set; }
 }

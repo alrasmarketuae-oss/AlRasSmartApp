@@ -847,10 +847,22 @@ public class ProductAssetsAppService(
             throw new ArgumentException($"Path must be under {prefix}.");
         }
 
+        // Reject path traversal anywhere in the path.
+        if (path.Contains("..", StringComparison.Ordinal))
+        {
+            throw new ArgumentException("Invalid storage path.");
+        }
+
+        var slashCount = path.Count(c => c == '/');
+        // Allow direct paths (/folder/file.ext = 2 slashes) and
+        // draft sub-paths (/folder/drafts/userId/file.ext = 4 slashes).
+        if (slashCount < 2 || slashCount > 4)
+        {
+            throw new ArgumentException("Invalid storage path.");
+        }
+
         var fileName = Path.GetFileName(path);
-        if (string.IsNullOrWhiteSpace(fileName)
-            || fileName.Contains("..", StringComparison.Ordinal)
-            || path.Count(c => c == '/') != 2)
+        if (string.IsNullOrWhiteSpace(fileName))
         {
             throw new ArgumentException("Invalid storage path.");
         }
@@ -957,6 +969,94 @@ public class ProductAssetsAppService(
             fileName,
             cancellationToken: cancellationToken);
         return new { path = videoPath };
+    }
+
+    private const string DraftSubFolder = "drafts";
+
+    public async Task<object> PresignDraftImageUploadAsync(
+        PresignDraftImageInput input,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = SanitizePathSegment(input.OwnerId);
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            throw new ArgumentException("Invalid user id.");
+        }
+
+        var fileName = $"{Guid.NewGuid():N}.jpg";
+        var path = WebRootFileHelper.BuildRelativePath(
+            $"{ProductImagesFolder}/{DraftSubFolder}/{userId}",
+            fileName);
+        return await BuildPresignResponseAsync(path, "image/jpeg", cancellationToken);
+    }
+
+    public async Task<object> PresignDraftVideoUploadAsync(
+        PresignDraftVideoInput input,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = SanitizePathSegment(input.OwnerId);
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            throw new ArgumentException("Invalid user id.");
+        }
+
+        var extension = Path.GetExtension(input.FileName ?? string.Empty).ToLowerInvariant();
+        EnsureAllowedVideoExtension(extension);
+
+        var fileName = $"video-{Guid.NewGuid():N}{extension}";
+        var path = WebRootFileHelper.BuildRelativePath(
+            $"{ProductVideosFolder}/{DraftSubFolder}/{userId}",
+            fileName);
+        var contentType = string.IsNullOrWhiteSpace(input.ContentType)
+            ? GuessVideoContentType(extension)
+            : input.ContentType!.Trim();
+        return await BuildPresignResponseAsync(path, contentType, cancellationToken);
+    }
+
+    public async Task DeleteDraftAsync(
+        DeleteDraftInput input,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = SanitizePathSegment(input.OwnerId);
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            throw new ArgumentException("Invalid user id.");
+        }
+
+        var path = WebRootFileHelper.NormalizeStoredPath(input.Path);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            throw new ArgumentException("Path is required.");
+        }
+
+        if (path.Contains("..", StringComparison.Ordinal))
+        {
+            throw new UnauthorizedAccessException("Invalid path.");
+        }
+
+        // Security: only allow deleting objects under /product-*/drafts/{userId}/
+        var allowedImagePrefix = $"/{ProductImagesFolder}/{DraftSubFolder}/{userId}/";
+        var allowedVideoPrefix = $"/{ProductVideosFolder}/{DraftSubFolder}/{userId}/";
+        if (!path.StartsWith(allowedImagePrefix, StringComparison.OrdinalIgnoreCase)
+            && !path.StartsWith(allowedVideoPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new UnauthorizedAccessException(
+                "Only draft objects owned by you can be deleted via this endpoint.");
+        }
+
+        await mediaStorage.DeleteAsync(path, cancellationToken);
+    }
+
+    /// <summary>
+    /// Strips characters not valid in a storage path segment (keeps alphanumerics and hyphens).
+    /// </summary>
+    private static string SanitizePathSegment(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return string.Empty;
+        return new string(
+            raw.Trim()
+               .Where(c => char.IsLetterOrDigit(c) || c == '-')
+               .ToArray());
     }
 
     // PRODUCTION: أزل التعليق عن الدالة كاملة عند تفعيل التحقق من الملكية.

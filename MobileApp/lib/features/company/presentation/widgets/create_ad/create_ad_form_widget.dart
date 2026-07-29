@@ -32,6 +32,13 @@ class CreateAdFormWidget extends StatelessWidget {
             key: ValueKey('create-ad-form-${state.formRevision}'),
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Media first: pick photos/videos before the name so R2 upload
+              // can run while the user fills the rest of the form.
+              CreateAdCommonFieldsWidget(
+                key: ValueKey('common-fields-${state.formRevision}'),
+                mediaFirst: true,
+                showSpecs: false,
+              ),
               CreateAdSectionCard(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -136,9 +143,6 @@ class CreateAdFormWidget extends StatelessWidget {
                   );
                 },
               ),
-              CreateAdCommonFieldsWidget(
-                key: ValueKey('common-fields-${state.formRevision}'),
-              ),
               BlocBuilder<CreateAdCubit, CreateAdFormState>(
                 buildWhen: (previous, current) =>
                     previous.formRevision != current.formRevision ||
@@ -158,6 +162,12 @@ class CreateAdFormWidget extends StatelessWidget {
                     onDeliveryDateSelected: cubit.setRequiredDeliveryDate,
                   );
                 },
+              ),
+              // Specs / packing after name & type (media already shown at top).
+              CreateAdCommonFieldsWidget(
+                key: ValueKey('common-fields-specs-${state.formRevision}'),
+                mediaFirst: false,
+                showMedia: false,
               ),
               SizedBox(height: 8.h),
               const CreateAdPublishButtonWidget(),

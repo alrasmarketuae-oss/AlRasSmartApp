@@ -179,6 +179,12 @@ class ApiConstants {
   static String productVideoConfirmEndPoint(String productId) =>
       '/ProductAssets/$productId/videos/confirm';
 
+  static const String productDraftImagePresignEndPoint =
+      '/ProductAssets/draft/images/presign';
+  static const String productDraftVideoPresignEndPoint =
+      '/ProductAssets/draft/videos/presign';
+  static const String productDraftDeleteEndPoint = '/ProductAssets/draft';
+
   static String ordersEndPoint = '/Orders';
   static String myOrdersEndPoint = '/Orders/myOrders';
   static String myOffersEndPoint = '/Orders/myOffers';

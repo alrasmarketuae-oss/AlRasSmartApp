@@ -297,7 +297,11 @@ class AdRequestOrderInfoCard extends StatelessWidget {
                 if (specifications.isNotEmpty) ...[
                   SizedBox(height: 24.h),
                   _FieldBlock(
-                    label: s.requiredSpecifications,
+                    // "Required Specification" is for Requests only.
+                    // Category / other ads use the normal Specifications label.
+                    label: product.isRequestProduct
+                        ? s.requiredSpecifications
+                        : s.specifications,
                     value: specifications,
                     fontFamily: fontFamily,
                     valueSize: 13.sp,

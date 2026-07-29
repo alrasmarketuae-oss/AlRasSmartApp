@@ -28,13 +28,17 @@ class ProductMediaPreviewScreen extends StatefulWidget {
     if (items.isEmpty) return Future.value();
     final safeIndex = initialIndex.clamp(0, items.length - 1);
     return Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        fullscreenDialog: true,
-        builder: (_) => ProductMediaPreviewScreen(
+      PageRouteBuilder<void>(
+        opaque: false,
+        barrierColor: Colors.black,
+        pageBuilder: (_, __, ___) => ProductMediaPreviewScreen(
           items: items,
           initialIndex: safeIndex,
           isVideoMuted: isVideoMuted,
         ),
+        transitionsBuilder: (_, animation, __, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
       ),
     );
   }
@@ -53,6 +57,8 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
   bool _isVideoInitializing = false;
   bool _videoFailed = false;
   late final bool _isVideoMuted;
+  double _dragOffsetY = 0;
+  double _dismissOpacity = 1;
 
   @override
   void initState() {
@@ -167,96 +173,124 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
     }
   }
 
+  void _onVerticalDragUpdate(DragUpdateDetails details) {
+    final dy = details.delta.dy;
+    if (dy == 0) return;
+    setState(() {
+      _dragOffsetY = (_dragOffsetY + dy).clamp(0, 400);
+      _dismissOpacity = (1 - (_dragOffsetY / 280)).clamp(0.35, 1);
+    });
+  }
+
+  void _onVerticalDragEnd(DragEndDetails details) {
+    final velocity = details.primaryVelocity ?? 0;
+    if (_dragOffsetY > 120 || velocity > 900) {
+      _close();
+      return;
+    }
+    setState(() {
+      _dragOffsetY = 0;
+      _dismissOpacity = 1;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          PageView.builder(
-            controller: _pageController,
-            itemCount: widget.items.length,
-            onPageChanged: _onPageChanged,
-            itemBuilder: (context, index) {
-              final item = widget.items[index];
-              if (item.isVideo) {
-                return _VideoPreviewBody(
-                  key: ValueKey(item.url),
-                  controller: index == _currentIndex ? _videoController : null,
-                  isInitializing:
-                      index == _currentIndex && _isVideoInitializing,
-                  failed: index == _currentIndex && _videoFailed,
-                  onRetry: index == _currentIndex
-                      ? () => _initVideoForIndex(index)
-                      : null,
-                  onTogglePlayPause: _togglePlayPause,
-                );
-              }
+      backgroundColor: Colors.black.withValues(alpha: _dismissOpacity),
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onVerticalDragUpdate: _onVerticalDragUpdate,
+        onVerticalDragEnd: _onVerticalDragEnd,
+        child: Transform.translate(
+          offset: Offset(0, _dragOffsetY),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              PageView.builder(
+                controller: _pageController,
+                itemCount: widget.items.length,
+                onPageChanged: _onPageChanged,
+                itemBuilder: (context, index) {
+                  final item = widget.items[index];
+                  if (item.isVideo) {
+                    return _VideoPreviewBody(
+                      key: ValueKey(item.url),
+                      controller:
+                          index == _currentIndex ? _videoController : null,
+                      isInitializing:
+                          index == _currentIndex && _isVideoInitializing,
+                      failed: index == _currentIndex && _videoFailed,
+                      onRetry: index == _currentIndex
+                          ? () => _initVideoForIndex(index)
+                          : null,
+                      onTogglePlayPause: _togglePlayPause,
+                    );
+                  }
 
-              return InteractiveViewer(
-                minScale: 0.8,
-                maxScale: 4,
-                child: Center(
-                  child: _isLocalPath(item.url)
-                      ? Image.file(
-                          File(item.url),
-                          fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => Icon(
-                            Icons.broken_image_outlined,
-                            color: Colors.white54,
-                            size: 64.sp,
+                  return InteractiveViewer(
+                    minScale: 0.8,
+                    maxScale: 4,
+                    child: Center(
+                      child: _isLocalPath(item.url)
+                          ? Image.file(
+                              File(item.url),
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) =>
+                                  const SizedBox.shrink(),
+                            )
+                          : CachedAppImage(
+                              imageUrl: item.url,
+                              fit: BoxFit.contain,
+                              placeholder: const Center(
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                ),
+                              ),
+                              // Never flash a broken-image icon over ads media.
+                              errorWidget: const Center(
+                                child: CircularProgressIndicator(
+                                  color: Colors.white54,
+                                ),
+                              ),
+                            ),
+                    ),
+                  );
+                },
+              ),
+              SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                  child: Row(
+                    children: [
+                      _CloseMediaButton(onPressed: _close),
+                      const Spacer(),
+                      if (widget.items.length > 1)
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 10.w,
+                            vertical: 6.h,
                           ),
-                        )
-                      : CachedAppImage(
-                          imageUrl: item.url,
-                          fit: BoxFit.contain,
-                          placeholder: const Center(
-                            child: CircularProgressIndicator(
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.55),
+                            borderRadius: BorderRadius.circular(20.r),
+                          ),
+                          child: Text(
+                            '${_currentIndex + 1}/${widget.items.length}',
+                            style: TextStyle(
                               color: Colors.white,
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                          errorWidget: Icon(
-                            Icons.broken_image_outlined,
-                            color: Colors.white54,
-                            size: 64.sp,
-                          ),
                         ),
+                    ],
+                  ),
                 ),
-              );
-            },
-          ),
-          SafeArea(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-              child: Row(
-                children: [
-                  _CloseMediaButton(onPressed: _close),
-                  const Spacer(),
-                  if (widget.items.length > 1)
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 10.w,
-                        vertical: 6.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.55),
-                        borderRadius: BorderRadius.circular(20.r),
-                      ),
-                      child: Text(
-                        '${_currentIndex + 1}/${widget.items.length}',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                ],
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -344,19 +378,14 @@ class _VideoPreviewBodyState extends State<_VideoPreviewBody> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.videocam_off_outlined, color: Colors.white54, size: 48.sp),
-            SizedBox(height: 12.h),
-            Text(
-              s.videoPlaybackFailed,
-              style: TextStyle(color: Colors.white70, fontSize: 14.sp),
-            ),
-            if (widget.onRetry != null) ...[
-              SizedBox(height: 12.h),
+            if (widget.onRetry != null)
               TextButton(
                 onPressed: widget.onRetry,
-                child: Text(s.retry, style: const TextStyle(color: Colors.white)),
+                child: Text(
+                  s.retry,
+                  style: const TextStyle(color: Colors.white),
+                ),
               ),
-            ],
           ],
         ),
       );
