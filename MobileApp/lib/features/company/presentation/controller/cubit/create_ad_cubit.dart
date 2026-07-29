@@ -1900,6 +1900,23 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
       }
 
       _emitPublishStep(CreateAdPublishStep.uploadingVideo);
+
+      // Prefer confirming an already-uploaded draft video (no re-upload).
+      final draftRemote = _draftRemoteByLocal[compressedVideo];
+      if (draftRemote != null && draftRemote.isNotEmpty) {
+        final confirmResult = await _draftOps.confirmDraftVideo(
+          productId: productId,
+          draftPath: draftRemote,
+          videoDurationSeconds: videoDurationSeconds,
+          token: token,
+        );
+        final confirmError =
+            confirmResult.fold<String?>((f) => f.message, (_) => null);
+        if (confirmError != null) return confirmError;
+        _confirmedDraftPaths.add(draftRemote);
+        continue;
+      }
+
       final uploadResult = await _uploadProductVideoUseCase(
         productId: productId,
         filePath: compressedVideo,
@@ -2037,13 +2054,15 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
         ),
       );
 
-      // After compression: fire-and-forget draft uploads to R2 for newly compressed paths.
-      // Videos are excluded here — they are compressed + uploaded in _uploadLocalVideos on submit.
+      // After compression: fire-and-forget draft uploads to R2 for newly compressed paths
+      // (images + videos) so upload overlaps with filling the rest of the form.
       final token = AuthService.instance.currentToken;
       if (token != null && token.isNotEmpty) {
         for (final compressedPath in bySource.values) {
-          if (!CreateAdFormMapper.isVideoPath(compressedPath) &&
-              !_draftRemoteByLocal.containsKey(compressedPath)) {
+          if (_draftRemoteByLocal.containsKey(compressedPath)) continue;
+          if (CreateAdFormMapper.isVideoPath(compressedPath)) {
+            unawaited(_uploadSingleVideoDraft(compressedPath, token));
+          } else {
             unawaited(_uploadSingleImageDraft(compressedPath, token));
           }
         }
@@ -2161,6 +2180,28 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
       );
     } catch (e) {
       debugPrint('[Draft] Image upload error: $e');
+    }
+  }
+
+  /// Uploads a single compressed video to R2 as a draft and stores the mapping.
+  Future<void> _uploadSingleVideoDraft(String localPath, String token) async {
+    if (_draftRemoteByLocal.containsKey(localPath)) return;
+    try {
+      final result = await _draftOps.uploadDraftVideo(
+        filePath: localPath,
+        token: token,
+      );
+      result.fold(
+        (failure) =>
+            debugPrint('[Draft] Video upload failed: ${failure.message}'),
+        (remotePath) {
+          if (!isClosed) {
+            _draftRemoteByLocal[localPath] = remotePath;
+          }
+        },
+      );
+    } catch (e) {
+      debugPrint('[Draft] Video upload error: $e');
     }
   }
 
