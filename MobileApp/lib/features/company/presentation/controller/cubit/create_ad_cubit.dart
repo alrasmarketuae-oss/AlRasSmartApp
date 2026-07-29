@@ -1437,6 +1437,7 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     _pendingEditCategoryLabel = null;
     _uploadReadyLocalPaths.clear();
     _activeMediaPrepJobs = 0;
+    _mediaProgressFloor = 0;
     _draftRemoteByLocal.clear();
     _confirmedDraftPaths.clear();
     formKey = GlobalKey<FormState>();
