@@ -32,27 +32,25 @@ class ShippingHomeLayout extends StatelessWidget {
       builder: (context, state) {
         final cubit = ShippingCompanyCubit.get(context);
         final companyName = cubit.dashboard?.companyName ?? S.of(context).shippingCompany;
-        return SafeArea(
-          child: ScrollAwareBottomNavScaffold(
-            tabIndex: cubit.currentIndex,
-            body: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                ShippingMainHeader(companyName: companyName),
-                Expanded(
-                  child: IndexedStack(
-                    index: cubit.currentIndex,
-                    children: _screens,
-                  ),
+        return ScrollAwareBottomNavScaffold(
+          tabIndex: cubit.currentIndex,
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ShippingMainHeader(companyName: companyName),
+              Expanded(
+                child: IndexedStack(
+                  index: cubit.currentIndex,
+                  children: _screens,
                 ),
-              ],
-            ),
-            bottomNavigationBar: ShippingBottomNavBar(
-              currentIndex: cubit.currentIndex,
-              onTap: (index) =>
-                  context.read<ShippingCompanyCubit>().setTab(index),
-              context: context,
-            ),
+              ),
+            ],
+          ),
+          bottomNavigationBar: ShippingBottomNavBar(
+            currentIndex: cubit.currentIndex,
+            onTap: (index) =>
+                context.read<ShippingCompanyCubit>().setTab(index),
+            context: context,
           ),
         );
       },

@@ -99,6 +99,10 @@
 		</array>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<key>UIViewControllerBasedStatusBarAppearance</key>
+		<true/>
+		<key>UIStatusBarStyle</key>
+		<string>UIStatusBarStyleDarkContent</string>
 		<!-- App Transport Security: require TLS 1.2+ for API/CDN (match Cloudflare Minimum TLS). -->
 		<key>NSAppTransportSecurity</key>
 		<dict>

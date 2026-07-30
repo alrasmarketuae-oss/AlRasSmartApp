@@ -39,28 +39,26 @@ class _PersonHomeLayoutState extends State<PersonHomeLayout> {
           MyOrdersView(),
           ProfileView(),
         ];
-        return SafeArea(
-          child: ScrollAwareBottomNavScaffold(
-            tabIndex: cubit.currentIndex,
-            body: IndexedStack(
-              index: cubit.currentIndex,
-              children: screens,
-            ),
-            bottomNavigationBar: ListenableBuilder(
-              listenable: NotificationsService.instance,
-              builder: (context, _) {
-                return UserBottomNavBar(
-                  currentIndex: cubit.currentIndex,
-                  onTap: (index) =>
-                      context.read<PersonCubit>().setTab(index),
-                  context: context,
-                  isPerson: true,
-                  showMyAds: false,
-                  unreadBadgeCount:
-                      NotificationsService.instance.unreadCount,
-                );
-              },
-            ),
+        return ScrollAwareBottomNavScaffold(
+          tabIndex: cubit.currentIndex,
+          body: IndexedStack(
+            index: cubit.currentIndex,
+            children: screens,
+          ),
+          bottomNavigationBar: ListenableBuilder(
+            listenable: NotificationsService.instance,
+            builder: (context, _) {
+              return UserBottomNavBar(
+                currentIndex: cubit.currentIndex,
+                onTap: (index) =>
+                    context.read<PersonCubit>().setTab(index),
+                context: context,
+                isPerson: true,
+                showMyAds: false,
+                unreadBadgeCount:
+                    NotificationsService.instance.unreadCount,
+              );
+            },
           ),
         );
       },

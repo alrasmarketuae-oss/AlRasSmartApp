@@ -48,24 +48,22 @@ class _CompanyHomeLayoutState extends State<CompanyHomeLayout> {
         final currentIndex = cubit.currentIndex >= screens.length
             ? screens.length - 1
             : cubit.currentIndex;
-        return SafeArea(
-          child: ScrollAwareBottomNavScaffold(
-            tabIndex: currentIndex,
-            body: IndexedStack(index: currentIndex, children: screens),
-            bottomNavigationBar: ListenableBuilder(
-              listenable: NotificationsService.instance,
-              builder: (context, _) {
-                return CompanyBottomNavBar(
-                  currentIndex: currentIndex,
-                  onTap: (index) =>
-                      context.read<CompanyCubit>().setTab(index),
-                  context: context,
-                  showMyAds: showMyAds,
-                  unreadBadgeCount:
-                      NotificationsService.instance.unreadCount,
-                );
-              },
-            ),
+        return ScrollAwareBottomNavScaffold(
+          tabIndex: currentIndex,
+          body: IndexedStack(index: currentIndex, children: screens),
+          bottomNavigationBar: ListenableBuilder(
+            listenable: NotificationsService.instance,
+            builder: (context, _) {
+              return CompanyBottomNavBar(
+                currentIndex: currentIndex,
+                onTap: (index) =>
+                    context.read<CompanyCubit>().setTab(index),
+                context: context,
+                showMyAds: showMyAds,
+                unreadBadgeCount:
+                    NotificationsService.instance.unreadCount,
+              );
+            },
           ),
         );
       },

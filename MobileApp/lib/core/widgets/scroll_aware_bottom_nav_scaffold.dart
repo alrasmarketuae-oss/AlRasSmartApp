@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 
 /// Hides [bottomNavigationBar] when scrolling down and shows it when scrolling up.
 class ScrollAwareBottomNavScaffold extends StatefulWidget {
@@ -22,6 +23,16 @@ class ScrollAwareBottomNavScaffold extends StatefulWidget {
 class _ScrollAwareBottomNavScaffoldState
     extends State<ScrollAwareBottomNavScaffold> {
   bool _isBottomNavVisible = true;
+
+  static const _scaffoldBg = Color(0xffF2F7FF);
+  static const _statusBarStyle = SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    // iOS: light background → dark (black) status icons.
+    statusBarBrightness: Brightness.light,
+    statusBarIconBrightness: Brightness.dark,
+    systemNavigationBarColor: Colors.white,
+    systemNavigationBarIconBrightness: Brightness.dark,
+  );
 
   @override
   void didUpdateWidget(covariant ScrollAwareBottomNavScaffold oldWidget) {
@@ -67,18 +78,31 @@ class _ScrollAwareBottomNavScaffoldState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: NotificationListener<ScrollNotification>(
-        onNotification: _onScrollNotification,
-        child: widget.body,
-      ),
-      bottomNavigationBar: ClipRect(
-        child: AnimatedAlign(
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeInOut,
-          alignment: Alignment.topCenter,
-          heightFactor: _isBottomNavVisible ? 1 : 0,
-          child: widget.bottomNavigationBar,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: _statusBarStyle,
+      child: Scaffold(
+        backgroundColor: _scaffoldBg,
+        body: SafeArea(
+          bottom: false,
+          child: NotificationListener<ScrollNotification>(
+            onNotification: _onScrollNotification,
+            child: widget.body,
+          ),
+        ),
+        bottomNavigationBar: ColoredBox(
+          color: Colors.white,
+          child: SafeArea(
+            top: false,
+            child: ClipRect(
+              child: AnimatedAlign(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOut,
+                alignment: Alignment.topCenter,
+                heightFactor: _isBottomNavVisible ? 1 : 0,
+                child: widget.bottomNavigationBar,
+              ),
+            ),
+          ),
         ),
       ),
     );

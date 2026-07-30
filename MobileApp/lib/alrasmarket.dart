@@ -14,6 +14,7 @@ import 'package:alrasmarket/features/person/presentation/controller/cubit/person
 import 'package:alrasmarket/features/shipping_company/presentation/controller/cubit/shipping_company_cubit.dart';
 import 'generated/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -111,7 +112,16 @@ class _AlRasMarketState extends State<AlRasMarket> with WidgetsBindingObserver {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     AppPushNotificationService.instance.handlePendingNavigation();
                   });
-                  return child ?? const SizedBox.shrink();
+                  return AnnotatedRegion<SystemUiOverlayStyle>(
+                    value: const SystemUiOverlayStyle(
+                      statusBarColor: Colors.transparent,
+                      statusBarBrightness: Brightness.light,
+                      statusBarIconBrightness: Brightness.dark,
+                      systemNavigationBarColor: Colors.white,
+                      systemNavigationBarIconBrightness: Brightness.dark,
+                    ),
+                    child: child ?? const SizedBox.shrink(),
+                  );
                 },
               );
             },
