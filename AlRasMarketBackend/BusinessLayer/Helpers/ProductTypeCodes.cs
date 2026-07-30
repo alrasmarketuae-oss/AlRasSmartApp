@@ -22,6 +22,13 @@ public static class ProductTypeCodes
         && (!productTypeId.HasValue || productTypeId == Retail);
 
     /// <summary>
+    /// Hybrid listing: both CategoryId and ProductTypeId are set (typically Retail dual-list).
+    /// Search should surface these as two cards — retail channel + category channel.
+    /// </summary>
+    public static bool IsHybridDualListing(byte? categoryId, byte? productTypeId) =>
+        categoryId is > 0 && productTypeId.HasValue;
+
+    /// <summary>
     /// Product type id for wholesale/category commission. Hybrids store ProductTypeId = Retail,
     /// but wholesale markup must use category rates (pass null so category commission wins).
     /// </summary>

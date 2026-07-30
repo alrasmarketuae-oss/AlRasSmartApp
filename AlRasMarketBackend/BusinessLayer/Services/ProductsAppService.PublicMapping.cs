@@ -18,13 +18,15 @@ public partial class ProductsAppService
         int pageSize,
         CancellationToken cancellationToken,
         bool projectRetailAsPrimary = false,
-        bool includeRetailFields = true)
+        bool includeRetailFields = true,
+        bool expandHybridSearchChannels = false)
     {
         var items = await BuildPublicProductListItemsAsync(
             products,
             cancellationToken,
             projectRetailAsPrimary: projectRetailAsPrimary,
-            includeRetailFields: includeRetailFields);
+            includeRetailFields: includeRetailFields,
+            expandHybridSearchChannels: expandHybridSearchChannels);
 
         return new
         {
@@ -41,7 +43,8 @@ public partial class ProductsAppService
         IReadOnlyList<ProductPublicRow> products,
         CancellationToken cancellationToken,
         bool projectRetailAsPrimary = false,
-        bool includeRetailFields = true)
+        bool includeRetailFields = true,
+        bool expandHybridSearchChannels = false)
     {
         if (products.Count == 0)
         {
@@ -86,8 +89,29 @@ public partial class ProductsAppService
 
         var categoryLookup = await productData.GetCategoriesByIdsAsync(categoryIds, cancellationToken);
 
-        return products.Select(x =>
+        // Search/image: hybrid (CategoryId + ProductTypeId) → retail card + category card.
+        var projections = new List<(ProductPublicRow Row, bool ProjectRetail, bool IncludeRetail, string? Channel)>();
+        foreach (var product in products)
         {
+            if (expandHybridSearchChannels
+                && ProductTypeCodes.IsHybridDualListing(product.CategoryId, product.ProductTypeId))
+            {
+                projections.Add((product, ProjectRetail: true, IncludeRetail: true, Channel: "retail"));
+                projections.Add((product, ProjectRetail: false, IncludeRetail: false, Channel: "category"));
+            }
+            else
+            {
+                projections.Add((product, projectRetailAsPrimary, includeRetailFields, null));
+            }
+        }
+
+        return projections.Select(entry =>
+        {
+            var x = entry.Row;
+            var projectRetail = entry.ProjectRetail;
+            var includeRetail = entry.IncludeRetail;
+            var listingChannel = entry.Channel;
+
             var (unitPrice, discountPercentage, discountDays) = ResolveOfferPricing(x);
             var hasRetailPricing = ProductTypeCodes.HasRetailPricing(
                 x.CategoryId,
@@ -119,7 +143,7 @@ public partial class ProductsAppService
                     usdToAedRate);
             }
 
-            var useRetailPrimary = projectRetailAsPrimary && hasRetailPricing && retailPriced is not null;
+            var useRetailPrimary = projectRetail && hasRetailPricing && retailPriced is not null;
             var priced = useRetailPrimary ? retailPriced!.Value : wholesalePriced;
             var displayQuantity = useRetailPrimary ? (x.RetailQuantity ?? 0) : x.Quantity;
 
@@ -129,7 +153,7 @@ public partial class ProductsAppService
 
             // Home / category browse: hybrids keep wholesale as primary and hide
             // retail payload + service ProductTypeId so the client treats them as catalog.
-            var isHomeCatalogShape = !includeRetailFields
+            var isHomeCatalogShape = !includeRetail
                 && ProductTypeCodes.IsCategoryProduct(x.CategoryId, x.ProductTypeId);
             var responseProductTypeId = useRetailPrimary
                 ? ProductTypeCodes.Retail
@@ -143,8 +167,8 @@ public partial class ProductsAppService
 
             var wholesaleUnitNameEn = x.UnitName;
             var wholesaleUnitNameAr = CatalogLocalizationHelper.UnitNameAr(x.UnitName);
-            var retailUnitNameEn = includeRetailFields ? x.RetailUnitName : null;
-            var retailUnitNameAr = includeRetailFields
+            var retailUnitNameEn = includeRetail ? x.RetailUnitName : null;
+            var retailUnitNameAr = includeRetail
                 ? CatalogLocalizationHelper.UnitNameAr(x.RetailUnitName)
                 : null;
             var displayUnitNameEn = useRetailPrimary ? retailUnitNameEn : wholesaleUnitNameEn;
@@ -169,10 +193,10 @@ public partial class ProductsAppService
             var descriptionAr = FirstNonEmpty(
                 tr?.DescriptionAr,
                 DetectLanguageHintIsArabic(x.DescriptionEn) ? x.DescriptionEn : null);
-            var retailDescriptionEn = includeRetailFields
+            var retailDescriptionEn = includeRetail
                 ? FirstNonEmpty(tr?.RetailDescriptionEn, x.RetailDescriptionEn)
                 : null;
-            var retailDescriptionAr = includeRetailFields
+            var retailDescriptionAr = includeRetail
                 ? FirstNonEmpty(
                     tr?.RetailDescriptionAr,
                     DetectLanguageHintIsArabic(x.RetailDescriptionEn) ? x.RetailDescriptionEn : null)
@@ -225,7 +249,7 @@ public partial class ProductsAppService
                 wholesaleDescription = x.DescriptionEn,
                 wholesaleDescriptionEn = descriptionEn,
                 wholesaleDescriptionAr = descriptionAr,
-                retailDescription = includeRetailFields ? x.RetailDescriptionEn : null,
+                retailDescription = includeRetail ? x.RetailDescriptionEn : null,
                 retailDescriptionEn,
                 retailDescriptionAr,
                 x.MinimumOrderQuantity,
@@ -252,8 +276,8 @@ public partial class ProductsAppService
                     : x.PackagingDetails,
                 wholesalePackaging = x.Packaging,
                 wholesalePackagingDetails = x.PackagingDetails,
-                retailPackaging = includeRetailFields ? x.RetailPackaging : null,
-                retailPackagingDetails = includeRetailFields ? x.RetailPackagingDetails : null,
+                retailPackaging = includeRetail ? x.RetailPackaging : null,
+                retailPackagingDetails = includeRetail ? x.RetailPackagingDetails : null,
                 x.Negotiable,
                 x.IsFeatured,
                 x.ViewsCount,
@@ -288,20 +312,21 @@ public partial class ProductsAppService
                 arrivalPortNameAr = x.ArrivalPortNameAr,
                 addressId = x.AddressId,
                 address = ResolveAddressText(x.AddressId, addressLookup),
-                hasRetailPricing = includeRetailFields && hasRetailPricing,
-                retailPrice = includeRetailFields ? retailPriced?.Price : null,
-                retailPriceAed = includeRetailFields ? retailPriced?.PriceAed : null,
-                retailUnitId = includeRetailFields ? x.RetailUnitId : null,
+                hasRetailPricing = includeRetail && hasRetailPricing,
+                retailPrice = includeRetail ? retailPriced?.Price : null,
+                retailPriceAed = includeRetail ? retailPriced?.PriceAed : null,
+                retailUnitId = includeRetail ? x.RetailUnitId : null,
                 retailUnitName = retailUnitNameEn,
                 retailUnitNameEn,
                 retailUnitNameAr,
-                retailQuantity = includeRetailFields ? x.RetailQuantity : null,
+                retailQuantity = includeRetail ? x.RetailQuantity : null,
                 requestTypeId = x.RequestTypeId,
                 requestTypeName = requestTypeNameEn,
                 requestTypeNameEn,
                 requestTypeNameAr,
                 bookingPriceTypeId = x.BookingPriceTypeId,
                 bookingPriceTypeName = ResolveBookingPriceTypeName(x.BookingPriceTypeId, x.BookingPriceTypeName),
+                searchListingChannel = listingChannel,
                 images = imagesDict.TryGetValue(x.ProductId, out var images)
                     ? images
                     : new List<string>(),

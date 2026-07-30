@@ -55,6 +55,7 @@ class MyListingProductModel {
     this.ownerId = '',
     this.pendingOffersCount = 0,
     this.hasRetailPricing = false,
+    this.searchListingChannel = '',
     this.retailPrice = '',
     this.retailUnitName = '',
     this.retailUnitNameEn = '',
@@ -132,6 +133,13 @@ class MyListingProductModel {
   bool get isRetailFeedProduct =>
       isRetailProduct || hasRetailPricing;
 
+  /// Prefer retail cart when opening from search dual-list retail card.
+  bool get preferRetailFromSearchListing {
+    if (searchListingChannel == 'retail') return true;
+    if (searchListingChannel == 'category') return false;
+    return isRetailProduct && hasNoMainCategory;
+  }
+
   /// Category + retail dual listing (wholesale + retail fields).
   bool get isHybridCategoryRetail =>
       hasRetailPricing && categoryId != null && categoryId! > 0;
@@ -206,6 +214,9 @@ class MyListingProductModel {
   final String updatedAt;
   final String ownerId;
   final int pendingOffersCount;
+  /// Search/image dual listing: `retail` | `category` (empty when not expanded).
+  final String searchListingChannel;
+
   final bool hasRetailPricing;
   final String retailPrice;
   final String retailUnitName;
@@ -803,6 +814,12 @@ class MyListingProductModel {
       hasRetailPricing: _parseBoolFlag(
         json['hasRetailPricing'] ?? json['HasRetailPricing'],
       ),
+      searchListingChannel: (json['searchListingChannel'] ??
+                  json['SearchListingChannel'] ??
+                  '')
+              .toString()
+              .trim()
+              .toLowerCase(),
       retailPrice: json['retailPrice']?.toString() ??
           json['RetailPrice']?.toString() ??
           '',

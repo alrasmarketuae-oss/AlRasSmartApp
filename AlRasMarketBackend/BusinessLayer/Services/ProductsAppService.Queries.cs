@@ -66,7 +66,8 @@ public partial class ProductsAppService
                 codeProducts.Count,
                 page,
                 pageSize,
-                cancellationToken);
+                cancellationToken,
+                expandHybridSearchChannels: true);
 
             await SetProductCacheAsync(codeCacheKey, codeResult, TimeSpan.FromMinutes(2), cancellationToken);
             return codeResult;
@@ -104,7 +105,13 @@ public partial class ProductsAppService
             }
         }
 
-        var result = await BuildPublicProductListPageAsync(products, totalCount, page, pageSize, cancellationToken);
+        var result = await BuildPublicProductListPageAsync(
+            products,
+            totalCount,
+            page,
+            pageSize,
+            cancellationToken,
+            expandHybridSearchChannels: true);
 
         // Do not cache empty pages so AI assist can still run on the next request.
         if (totalCount > 0)
@@ -217,7 +224,10 @@ public partial class ProductsAppService
                 // If the corrected name exists in catalog, always return it (do not log as missed).
                 if (correctedTotal > 0)
                 {
-                    var items = await BuildPublicProductListItemsAsync(correctedProducts, cancellationToken);
+                    var items = await BuildPublicProductListItemsAsync(
+                        correctedProducts,
+                        cancellationToken,
+                        expandHybridSearchChannels: true);
                     return new
                     {
                         count = items.Count,

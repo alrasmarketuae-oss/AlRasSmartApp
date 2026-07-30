@@ -37,7 +37,7 @@ public partial class ProductsAppService(
     private const string ProductsByTypeCachePrefix = "products:by-type:v14:";
     private const string ProductsByCategoryCachePrefix = "products:by-category:v10:";
     private const string FeaturedProductsCacheKey = "products:featured:v7";
-    private const string SearchProductsCachePrefix = "products:search:v11:";
+    private const string SearchProductsCachePrefix = "products:search:v12:";
     private const string ProductByCodeCachePrefix = "products:by-code:v2:";
     private const string ProductByIdCachePrefix = "products:by-id:v7:";
 

@@ -109,7 +109,10 @@ public partial class ProductsAppService
             .Select(x => x.Product)
             .ToList();
 
-        var items = await BuildPublicProductListItemsAsync(ranked, cancellationToken);
+        var items = await BuildPublicProductListItemsAsync(
+            ranked,
+            cancellationToken,
+            expandHybridSearchChannels: true);
 
         var result = new
         {
@@ -224,7 +227,10 @@ public partial class ProductsAppService
                 .Select(id => byId[id])
                 .ToList();
 
-            var items = await BuildPublicProductListItemsAsync(ranked, cancellationToken)
+            var items = await BuildPublicProductListItemsAsync(
+                    ranked,
+                    cancellationToken,
+                    expandHybridSearchChannels: true)
                 .ConfigureAwait(false);
 
             var topName = hits

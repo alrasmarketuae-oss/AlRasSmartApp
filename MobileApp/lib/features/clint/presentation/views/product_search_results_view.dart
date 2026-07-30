@@ -5,7 +5,7 @@ import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/utils/product_grid_layout.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_states.dart';
-import 'package:alrasmarket/features/clint/presentation/widgets/product%20_card_retail.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/product%20_card.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/search_header.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
@@ -202,7 +202,13 @@ class _ProductSearchResultsViewState extends State<ProductSearchResultsView> {
                           ),
                           itemCount: products.length,
                           itemBuilder: (context, index) {
-                            return ProductCardRetail(product: products[index]);
+                            final product = products[index];
+                            return ProductCard(
+                              title: product.productName,
+                              product: product,
+                              preferRetailChannel:
+                                  product.preferRetailFromSearchListing,
+                            );
                           },
                         ),
                       ),

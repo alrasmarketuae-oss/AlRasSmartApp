@@ -2096,6 +2096,8 @@ class ClintCubit extends Cubit<ClintStates> {
       'createdAt': json['createdAt'] ?? '',
       'updatedAt': json['updatedAt'] ?? '',
       'hasRetailPricing': json['hasRetailPricing'] ?? json['HasRetailPricing'],
+      'searchListingChannel':
+          json['searchListingChannel'] ?? json['SearchListingChannel'],
       'retailPrice': json['retailPrice'] ?? json['RetailPrice'],
       'retailUnitName': json['retailUnitName'] ?? json['RetailUnitName'],
       'retailQuantity': json['retailQuantity'] ?? json['RetailQuantity'],

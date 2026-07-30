@@ -173,6 +173,22 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
     }
   }
 
+  void _goToPrevious() {
+    if (_currentIndex <= 0) return;
+    _pageController.previousPage(
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _goToNext() {
+    if (_currentIndex >= widget.items.length - 1) return;
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
   void _onVerticalDragUpdate(DragUpdateDetails details) {
     final dy = details.delta.dy;
     if (dy == 0) return;
@@ -259,14 +275,20 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
                 },
               ),
               SafeArea(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                  child: Row(
-                    children: [
-                      _CloseMediaButton(onPressed: _close),
-                      const Spacer(),
-                      if (widget.items.length > 1)
-                        Container(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Always visual top-left (ignore RTL so close stays left).
+                    Positioned(
+                      top: 4.h,
+                      left: 8.w,
+                      child: _CloseMediaButton(onPressed: _close),
+                    ),
+                    if (widget.items.length > 1)
+                      Positioned(
+                        top: 4.h,
+                        right: 8.w,
+                        child: Container(
                           padding: EdgeInsets.symmetric(
                             horizontal: 10.w,
                             vertical: 6.h,
@@ -284,8 +306,32 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
                             ),
                           ),
                         ),
+                      ),
+                    if (widget.items.length > 1) ...[
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Padding(
+                          padding: EdgeInsets.only(left: 8.w),
+                          child: _NavMediaButton(
+                            icon: Icons.chevron_left_rounded,
+                            enabled: _currentIndex > 0,
+                            onPressed: _goToPrevious,
+                          ),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Padding(
+                          padding: EdgeInsets.only(right: 8.w),
+                          child: _NavMediaButton(
+                            icon: Icons.chevron_right_rounded,
+                            enabled: _currentIndex < widget.items.length - 1,
+                            onPressed: _goToNext,
+                          ),
+                        ),
+                      ),
                     ],
-                  ),
+                  ],
                 ),
               ),
             ],
@@ -316,6 +362,39 @@ class _CloseMediaButton extends StatelessWidget {
             Icons.close_rounded,
             color: Colors.white,
             size: 26.sp,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavMediaButton extends StatelessWidget {
+  const _NavMediaButton({
+    required this.icon,
+    required this.onPressed,
+    this.enabled = true,
+  });
+
+  final IconData icon;
+  final VoidCallback onPressed;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.black.withValues(alpha: enabled ? 0.55 : 0.25),
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: enabled ? onPressed : null,
+        child: SizedBox(
+          width: 48.w,
+          height: 48.w,
+          child: Icon(
+            icon,
+            color: Colors.white.withValues(alpha: enabled ? 1 : 0.35),
+            size: 32.sp,
           ),
         ),
       ),
