@@ -1,3 +1,4 @@
+import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/serveses/cached_constants.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
@@ -7,6 +8,7 @@ import 'package:alrasmarket/core/widgets/profile_avatar.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
 class AppHeader extends StatelessWidget {
   final bool isRecording;
@@ -26,6 +28,14 @@ class AppHeader extends StatelessWidget {
     return null;
   }
 
+  void _openProfile(BuildContext context) {
+    if (!AuthService.instance.isAuthenticated) {
+      context.push(AppRoutes.kLoginView);
+      return;
+    }
+    context.push(AppRoutes.kEditProfileView);
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
@@ -37,39 +47,62 @@ class AppHeader extends StatelessWidget {
 
     return Row(
       children: [
-        const HeaderProfileAvatar(),
+        InkWell(
+          onTap: () => _openProfile(context),
+          borderRadius: BorderRadius.circular(20.r),
+          child: const HeaderProfileAvatar(),
+        ),
         SizedBox(width: 8.w),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                display,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                  height: 1.2,
-                ),
-              ),
-              if (subtitle != null) ...[
-                SizedBox(height: 2.h),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF64748B),
-                    height: 1.2,
+          child: InkWell(
+            onTap: () => _openProfile(context),
+            borderRadius: BorderRadius.circular(8.r),
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 2.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    display,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: false,
+                    textHeightBehavior: const TextHeightBehavior(
+                      applyHeightToFirstAscent: false,
+                      applyHeightToLastDescent: false,
+                    ),
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black,
+                      height: 1.15,
+                      letterSpacing: 0,
+                    ),
                   ),
-                ),
-              ],
-            ],
+                  if (subtitle != null) ...[
+                    SizedBox(height: 2.h),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      softWrap: false,
+                      textHeightBehavior: const TextHeightBehavior(
+                        applyHeightToFirstAscent: false,
+                        applyHeightToLastDescent: false,
+                      ),
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF64748B),
+                        height: 1.15,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
         if (!isRecording) ...[

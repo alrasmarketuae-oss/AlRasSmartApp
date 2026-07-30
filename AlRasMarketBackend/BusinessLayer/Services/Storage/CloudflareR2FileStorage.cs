@@ -138,6 +138,54 @@ public sealed class CloudflareR2FileStorage : IFileStorage, IDisposable
         return Task.FromResult<string?>(url);
     }
 
+    public async Task<IReadOnlyList<StoredObjectInfo>> ListAsync(
+        string prefix,
+        CancellationToken cancellationToken = default)
+    {
+        var keyPrefix = ToObjectKey(prefix);
+        if (string.IsNullOrWhiteSpace(keyPrefix))
+        {
+            return Array.Empty<StoredObjectInfo>();
+        }
+
+        if (!keyPrefix.EndsWith('/'))
+        {
+            keyPrefix += "/";
+        }
+
+        var results = new List<StoredObjectInfo>();
+        string? continuation = null;
+        do
+        {
+            var request = new ListObjectsV2Request
+            {
+                BucketName = _options.BucketName,
+                Prefix = keyPrefix,
+                ContinuationToken = continuation,
+                MaxKeys = 1000
+            };
+            var response = await _client.ListObjectsV2Async(request, cancellationToken);
+            foreach (var obj in response.S3Objects)
+            {
+                if (string.IsNullOrWhiteSpace(obj.Key) || obj.Key.EndsWith('/'))
+                {
+                    continue;
+                }
+
+                results.Add(new StoredObjectInfo(
+                    "/" + obj.Key.TrimStart('/'),
+                    new DateTimeOffset(
+                        DateTime.SpecifyKind(obj.LastModified.ToUniversalTime(), DateTimeKind.Utc))));
+            }
+
+            continuation = response.IsTruncated == true
+                ? response.NextContinuationToken
+                : null;
+        } while (!string.IsNullOrEmpty(continuation));
+
+        return results;
+    }
+
     public void Dispose() => _client.Dispose();
 
     private static string ToObjectKey(string relativePath)

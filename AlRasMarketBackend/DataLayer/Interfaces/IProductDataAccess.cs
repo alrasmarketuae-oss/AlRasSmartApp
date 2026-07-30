@@ -174,9 +174,9 @@ public interface IProductDataAccess
         MissedProductSearchInsert insert,
         CancellationToken cancellationToken = default);
 
-    Task ExpireDueNonOfferListingsAsync(CancellationToken cancellationToken = default);
+    Task<int> ExpireDueNonOfferListingsAsync(CancellationToken cancellationToken = default);
 
-    Task ExpireDueOfferDiscountsAsync(CancellationToken cancellationToken = default);
+    Task<int> ExpireDueOfferDiscountsAsync(CancellationToken cancellationToken = default);
 
     Task<int?> GetAdDisplayDurationDaysAsync(CancellationToken cancellationToken = default);
 

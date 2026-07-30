@@ -16,10 +16,17 @@ public class CategoriesAppService(
     IMemoryCache cache,
     IAdminPermissionService permissionService,
     IAdminAuditLogAppService auditLogAppService,
-    IMediaStorageService mediaStorage) : ICategoriesAppService
+    IMediaStorageService mediaStorage,
+    IStaticReferenceCache staticReferenceCache) : ICategoriesAppService
 {
     private const string PublicCategoriesCacheKeyPrefix = "categories:public";
     private const string AdminCategoriesCacheKeyPrefix = "categories:admin";
+
+    private void BustCategoryCaches()
+    {
+        CategoriesListCache.Bump();
+        staticReferenceCache.InvalidateCategories();
+    }
 
     public async Task<object> GetAllAsync(CancellationToken cancellationToken = default)
     {
@@ -82,7 +89,7 @@ public class CategoriesAppService(
 
         await dbContext.Categories.AddAsync(entity, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
-        CategoriesListCache.Bump();
+        BustCategoryCaches();
 
         await auditLogAppService.WriteAsync(
             AdminAuditActions.CategoryCreate,
@@ -131,7 +138,7 @@ public class CategoriesAppService(
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
-        CategoriesListCache.Bump();
+        BustCategoryCaches();
         ProductsAppService.InvalidateProductListCaches();
 
         await auditLogAppService.WriteAsync(
@@ -160,7 +167,7 @@ public class CategoriesAppService(
 
         category.IsHide = input.IsHide;
         await dbContext.SaveChangesAsync(cancellationToken);
-        CategoriesListCache.Bump();
+        BustCategoryCaches();
         ProductsAppService.InvalidateProductListCaches();
 
         await auditLogAppService.WriteAsync(
@@ -198,7 +205,7 @@ public class CategoriesAppService(
             fileName,
             cancellationToken: cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
-        CategoriesListCache.Bump();
+        BustCategoryCaches();
 
         await mediaStorage.DeleteAsync(previousPath, cancellationToken);
 
@@ -226,7 +233,7 @@ public class CategoriesAppService(
         var categoryId = category.CategoryId;
         dbContext.Categories.Remove(category);
         await dbContext.SaveChangesAsync(cancellationToken);
-        CategoriesListCache.Bump();
+        BustCategoryCaches();
         ProductsAppService.InvalidateProductListCaches();
 
         await mediaStorage.DeleteAsync(imagePath, cancellationToken);

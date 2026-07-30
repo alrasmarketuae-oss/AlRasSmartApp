@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'package:alrasmarket/core/error/failure.dart';
 import 'package:alrasmarket/core/media/media_compression_service.dart';
 import 'package:alrasmarket/core/media/video_compressor.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
@@ -21,6 +22,7 @@ import 'package:alrasmarket/features/company/domain/usecases/get_geo_usecases.da
 import 'package:alrasmarket/features/company/presentation/helpers/create_ad_form_mapper.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_unit_options.dart';
 import 'package:alrasmarket/generated/l10n.dart';
+import 'package:dartz/dartz.dart';
 import '../../models/booking_price_type.dart';
 import '../../models/create_ad_currency.dart';
 import '../../models/create_ad_packing_options.dart';
@@ -90,6 +92,12 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
 
   /// Draft paths that have been confirmed (attached to a product) — not deleted on close.
   final Set<String> _confirmedDraftPaths = {};
+
+  /// In-flight draft uploads — awaited on abandon so late completions still get deleted.
+  final Map<String, Future<void>> _draftUploadInFlight = {};
+
+  /// True once the user left create-ad without a successful publish confirm path.
+  bool _draftsAbandoned = false;
 
   final List<String> _pendingRemoteImageDeletes = [];
   String? _initialRemoteVideoPath;
@@ -1151,9 +1159,54 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
         ),
       );
 
-      // 1) Create the ad first, then attach media synchronously with progress.
+      // 1) Create the ad first (with draft paths when already on R2), then attach leftovers.
+      if (_draftUploadInFlight.isNotEmpty) {
+        try {
+          await Future.wait(
+            _draftUploadInFlight.values.toList(growable: false),
+            eagerError: false,
+          );
+        } catch (_) {}
+      }
+
+      final draftImageLocals = <String>[];
+      final draftImageRemotes = <String>[];
+      for (final path in imagePaths) {
+        final remote = _draftRemoteByLocal[path];
+        if (remote != null && remote.isNotEmpty) {
+          draftImageLocals.add(path);
+          draftImageRemotes.add(remote);
+        }
+      }
+
+      String? draftVideoRemote;
+      String? draftVideoLocal;
+      int? draftVideoDuration;
+      if (localVideoPaths.isNotEmpty) {
+        final firstVideo = localVideoPaths.first;
+        draftVideoRemote = _draftRemoteByLocal[firstVideo];
+        if (draftVideoRemote != null && draftVideoRemote.isNotEmpty) {
+          draftVideoLocal = firstVideo;
+          draftVideoDuration =
+              await VideoCompressor.readDurationSecondsRounded(
+            firstVideo,
+            maxSeconds: CreateAdFormMapper.maxProductVideoDurationSeconds,
+          );
+        }
+      }
+
+      final createRequest = request.copyWith(
+        clearProductVideoFile: true,
+        draftImagePaths: draftImageRemotes.isEmpty ? null : draftImageRemotes,
+        draftVideoPath: draftVideoRemote,
+        draftVideoDurationSeconds:
+            (draftVideoDuration != null && draftVideoDuration > 0)
+            ? draftVideoDuration
+            : null,
+      );
+
       final createResult = await _createProductUseCase(
-        request: request.copyWith(clearProductVideoFile: true),
+        request: createRequest,
         token: token,
       );
 
@@ -1166,41 +1219,63 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
         return;
       }
 
-      // 2) Images — use draft path if already uploaded, otherwise full upload.
-      if (hasImages) {
+      // Drafts sent with create are already attached — mark confirmed.
+      for (final remote in draftImageRemotes) {
+        _confirmedDraftPaths.add(remote);
+      }
+      if (draftVideoRemote != null) {
+        _confirmedDraftPaths.add(draftVideoRemote);
+      }
+
+      // 2) Images — confirm leftover drafts / upload missing in one batch when possible.
+      final leftoverImageLocals = imagePaths
+          .where((p) => !draftImageLocals.contains(p))
+          .toList(growable: false);
+      if (leftoverImageLocals.isNotEmpty ||
+          (hasImages && draftImageRemotes.isEmpty)) {
         _emitPublishStep(CreateAdPublishStep.preparingImages);
         if (isClosed) return;
-        final compressedImagePaths =
-            await _ensureLocalMediaReadyForUpload(imagePaths);
-        if (compressedImagePaths.any((p) => p.isEmpty)) {
-          _emitSubmitFailure(
-            S.current.adUploadProgressCompressingImages,
-          );
-          return;
-        }
+        final pathsNeedingAttach = leftoverImageLocals.isNotEmpty
+            ? leftoverImageLocals
+            : (draftImageRemotes.isEmpty ? imagePaths : <String>[]);
+        if (pathsNeedingAttach.isNotEmpty) {
+          final compressedImagePaths =
+              await _ensureLocalMediaReadyForUpload(pathsNeedingAttach);
+          if (compressedImagePaths.any((p) => p.isEmpty)) {
+            _emitSubmitFailure(
+              S.current.adUploadProgressCompressingImages,
+            );
+            return;
+          }
 
-        _emitPublishStep(CreateAdPublishStep.uploadingImages);
-        final imageAttachError = await _attachImagesAfterCreate(
-          productId: createdProductId,
-          compressedPaths: compressedImagePaths,
-          token: token,
-        );
-        if (imageAttachError != null) {
-          _emitSubmitFailure(imageAttachError);
-          return;
+          _emitPublishStep(CreateAdPublishStep.uploadingImages);
+          final imageAttachError = await _attachImagesAfterCreate(
+            productId: createdProductId,
+            compressedPaths: compressedImagePaths,
+            token: token,
+          );
+          if (imageAttachError != null) {
+            _emitSubmitFailure(imageAttachError);
+            return;
+          }
         }
       }
 
-      // 3) Videos next (compress then upload).
+      // 3) Videos next (skip if already attached via create drafts).
       if (hasVideo) {
-        final videoError = await _uploadLocalVideos(
-          productId: createdProductId,
-          localVideoPaths: localVideoPaths,
-          token: token,
-        );
-        if (videoError != null) {
-          _emitSubmitFailure(videoError);
-          return;
+        final videosNeedingUpload = draftVideoLocal == null
+            ? localVideoPaths
+            : localVideoPaths.where((p) => p != draftVideoLocal).toList();
+        if (videosNeedingUpload.isNotEmpty) {
+          final videoError = await _uploadLocalVideos(
+            productId: createdProductId,
+            localVideoPaths: videosNeedingUpload,
+            token: token,
+          );
+          if (videoError != null) {
+            _emitSubmitFailure(videoError);
+            return;
+          }
         }
       }
 
@@ -1438,8 +1513,8 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     _uploadReadyLocalPaths.clear();
     _activeMediaPrepJobs = 0;
     _mediaProgressFloor = 0;
-    _draftRemoteByLocal.clear();
-    _confirmedDraftPaths.clear();
+    // Drop unused draft objects (picked then replaced / not attached on publish).
+    _purgeUnconfirmedDrafts();
     formKey = GlobalKey<FormState>();
 
     emit(
@@ -1824,8 +1899,7 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
   }
 
   /// Attaches images to a newly created product.
-  /// For each compressed path: if a draft is already on R2 → confirm it (no re-upload);
-  /// otherwise → full presign + PUT + confirm via uploadProductImagesUseCase.
+  /// Prefer a single batch confirm for drafts; fallback to full upload for the rest.
   Future<String?> _attachImagesAfterCreate({
     required String productId,
     required List<String> compressedPaths,
@@ -1837,26 +1911,23 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     for (final path in compressedPaths) {
       final draftRemote = _draftRemoteByLocal[path];
       if (draftRemote != null && draftRemote.isNotEmpty) {
-        draftPaths.add(path);
+        draftPaths.add(draftRemote);
       } else {
         fallbackPaths.add(path);
       }
     }
 
-    // Confirm already-uploaded drafts.
-    for (final localPath in draftPaths) {
-      final draftRemote = _draftRemoteByLocal[localPath]!;
-      final confirmResult = await _draftOps.confirmDraftImage(
+    if (draftPaths.isNotEmpty) {
+      final confirmResult = await _draftOps.confirmDraftAssetsBatch(
         productId: productId,
-        draftPath: draftRemote,
+        imagePaths: draftPaths,
         token: token,
       );
       final error = confirmResult.fold<String?>((f) => f.message, (_) => null);
       if (error != null) return error;
-      _confirmedDraftPaths.add(draftRemote);
+      _confirmedDraftPaths.addAll(draftPaths);
     }
 
-    // Full upload for images that didn't get a draft slot.
     if (fallbackPaths.isNotEmpty) {
       final result = await _uploadProductImagesUseCase(
         productId: productId,
@@ -2175,7 +2246,8 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     shippingDurationController.dispose();
     originCountryController.dispose();
     destinationCountryController.dispose();
-    _deletePendingDraftsOnAbandon();
+    // Fire-and-forget but awaits in-flight uploads before R2 deletes.
+    unawaited(_deletePendingDraftsOnAbandon());
     return super.close();
   }
 
@@ -2183,59 +2255,130 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
   /// Fire-and-forget — failures are silent (full upload fallback on publish).
   Future<void> _uploadSingleImageDraft(String localPath, String token) async {
     if (_draftRemoteByLocal.containsKey(localPath)) return;
+    if (_draftUploadInFlight.containsKey(localPath)) return;
+    if (_draftsAbandoned) return;
+
+    final future = _runDraftUpload(
+      localPath: localPath,
+      token: token,
+      upload: () => _draftOps.uploadDraftImage(filePath: localPath, token: token),
+      label: 'Image',
+    );
+    _draftUploadInFlight[localPath] = future;
     try {
-      final result = await _draftOps.uploadDraftImage(
-        filePath: localPath,
-        token: token,
-      );
-      result.fold(
-        (failure) => debugPrint('[Draft] Image upload failed: ${failure.message}'),
-        (remotePath) {
-          if (!isClosed) {
-            _draftRemoteByLocal[localPath] = remotePath;
-          }
-        },
-      );
-    } catch (e) {
-      debugPrint('[Draft] Image upload error: $e');
+      await future;
+    } finally {
+      _draftUploadInFlight.remove(localPath);
     }
   }
 
   /// Uploads a single compressed video to R2 as a draft and stores the mapping.
   Future<void> _uploadSingleVideoDraft(String localPath, String token) async {
     if (_draftRemoteByLocal.containsKey(localPath)) return;
+    if (_draftUploadInFlight.containsKey(localPath)) return;
+    if (_draftsAbandoned) return;
+
+    final future = _runDraftUpload(
+      localPath: localPath,
+      token: token,
+      upload: () => _draftOps.uploadDraftVideo(filePath: localPath, token: token),
+      label: 'Video',
+    );
+    _draftUploadInFlight[localPath] = future;
     try {
-      final result = await _draftOps.uploadDraftVideo(
-        filePath: localPath,
-        token: token,
-      );
-      result.fold(
-        (failure) =>
-            debugPrint('[Draft] Video upload failed: ${failure.message}'),
-        (remotePath) {
-          if (!isClosed) {
-            _draftRemoteByLocal[localPath] = remotePath;
+      await future;
+    } finally {
+      _draftUploadInFlight.remove(localPath);
+    }
+  }
+
+  Future<void> _runDraftUpload({
+    required String localPath,
+    required String token,
+    required Future<Either<Failure, String>> Function() upload,
+    required String label,
+  }) async {
+    try {
+      final result = await upload();
+      await result.fold(
+        (failure) async {
+          debugPrint('[Draft] $label upload failed: ${failure.message}');
+        },
+        (remotePath) async {
+          if (_draftsAbandoned || isClosed) {
+            // User already left — delete immediately so R2 is not left orphaned.
+            if (!_confirmedDraftPaths.contains(remotePath)) {
+              await _draftOps.deleteDraft(draftPath: remotePath, token: token);
+            }
+            return;
           }
+          _draftRemoteByLocal[localPath] = remotePath;
         },
       );
     } catch (e) {
-      debugPrint('[Draft] Video upload error: $e');
+      debugPrint('[Draft] $label upload error: $e');
     }
   }
 
   /// Deletes any draft R2 objects that were never confirmed to a product.
   /// Called on cubit close (user left the form without publishing).
-  void _deletePendingDraftsOnAbandon() {
+  Future<void> _deletePendingDraftsOnAbandon() async {
+    _draftsAbandoned = true;
     final token = AuthService.instance.currentToken;
-    if (token == null || token.isEmpty) return;
+    if (token == null || token.isEmpty) {
+      _draftRemoteByLocal.clear();
+      _confirmedDraftPaths.clear();
+      _draftUploadInFlight.clear();
+      return;
+    }
 
-    for (final entry in _draftRemoteByLocal.entries) {
-      final draftPath = entry.value;
+    // Wait for uploads that started before abandon so we can delete their keys.
+    if (_draftUploadInFlight.isNotEmpty) {
+      try {
+        await Future.wait(
+          _draftUploadInFlight.values.toList(growable: false),
+          eagerError: false,
+        );
+      } catch (e) {
+        debugPrint('[Draft] Wait for in-flight uploads: $e');
+      }
+    }
+
+    final toDelete = <String>[];
+    for (final draftPath in _draftRemoteByLocal.values) {
       if (!_confirmedDraftPaths.contains(draftPath)) {
-        unawaited(_draftOps.deleteDraft(draftPath: draftPath, token: token));
+        toDelete.add(draftPath);
       }
     }
     _draftRemoteByLocal.clear();
     _confirmedDraftPaths.clear();
+    _draftUploadInFlight.clear();
+
+    if (toDelete.isEmpty) return;
+    await Future.wait(
+      toDelete.map(
+        (draftPath) => _draftOps.deleteDraft(draftPath: draftPath, token: token),
+      ),
+      eagerError: false,
+    );
+  }
+
+  /// Deletes mapped drafts that were never confirmed; clears tracking maps.
+  void _purgeUnconfirmedDrafts({String? token}) {
+    final authToken = token ?? AuthService.instance.currentToken;
+    final toDelete = <String>[];
+    for (final draftPath in _draftRemoteByLocal.values) {
+      if (!_confirmedDraftPaths.contains(draftPath)) {
+        toDelete.add(draftPath);
+      }
+    }
+    _draftRemoteByLocal.clear();
+    _confirmedDraftPaths.clear();
+    _draftUploadInFlight.clear();
+
+    if (authToken == null || authToken.isEmpty || toDelete.isEmpty) return;
+    for (final draftPath in toDelete) {
+      unawaited(_draftOps.deleteDraft(draftPath: draftPath, token: authToken));
+    }
   }
 }

@@ -94,3 +94,28 @@ public sealed class UnitSnapshot
     public byte Id { get; init; }
     public string UnitNameEn { get; init; } = string.Empty;
 }
+
+public sealed class ProductTypeSnapshot
+{
+    public byte Id { get; init; }
+    public string TypeNameEn { get; init; } = string.Empty;
+}
+
+public sealed class CategorySnapshot
+{
+    public byte CategoryId { get; init; }
+    public string NameEn { get; init; } = string.Empty;
+    public string? NameAr { get; init; }
+}
+
+public sealed class RequestTypeSnapshot
+{
+    public byte Id { get; init; }
+    public string NameEn { get; init; } = string.Empty;
+}
+
+public sealed class BookingPriceTypeSnapshot
+{
+    public byte Id { get; init; }
+    public string NameEn { get; init; } = string.Empty;
+}

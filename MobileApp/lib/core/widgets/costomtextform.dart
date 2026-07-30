@@ -35,6 +35,7 @@ class CustomTextFormField extends StatefulWidget {
     this.height,
     this.expandHeight = false,
     this.focusNode,
+    this.showShadow = true,
   }) : super(key: key);
 
   final FocusNode? focusNode;
@@ -66,6 +67,7 @@ class CustomTextFormField extends StatefulWidget {
   final IconButton? suffixIcon;
   final String? label;
   final Color? rightIconColor;
+  final bool showShadow;
   @override
   State<CustomTextFormField> createState() => _CustomTextFormFieldState();
 }
@@ -246,7 +248,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
       ),
     );
 
-    final wrappedField = widget.borderRadius == 0
+    final wrappedField = widget.borderRadius == 0 || !widget.showShadow
         ? textField
         : Container(
             decoration: BoxDecoration(

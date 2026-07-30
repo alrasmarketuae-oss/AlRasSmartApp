@@ -13,5 +13,7 @@ public interface ITieredCache
         TimeSpan absoluteExpiration,
         CancellationToken cancellationToken = default);
 
+    Task RemoveAsync(string key, CancellationToken cancellationToken = default);
+
     bool IsRedisConnected { get; }
 }

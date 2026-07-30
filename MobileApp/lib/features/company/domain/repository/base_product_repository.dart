@@ -89,6 +89,14 @@ abstract class BaseProductRepository {
     required String token,
   });
 
+  Future<Either<Failure, void>> confirmDraftAssetsBatch({
+    required String productId,
+    required List<String> imagePaths,
+    String? videoPath,
+    int? videoDurationSeconds,
+    required String token,
+  });
+
   Future<Either<Failure, void>> confirmDraftVideo({
     required String productId,
     required String draftPath,

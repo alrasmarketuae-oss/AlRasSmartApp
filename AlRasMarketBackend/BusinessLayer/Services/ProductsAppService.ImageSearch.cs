@@ -20,8 +20,7 @@ public partial class ProductsAppService
         IReadOnlyList<string> suggestedNames,
         CancellationToken cancellationToken = default)
     {
-        await ExpireDueListingsAsync(cancellationToken);
-
+        // Do not await listing expiry here — image/name search must stay snappy.
         var names = (suggestedNames ?? Array.Empty<string>())
             .Select(x => x?.Trim() ?? string.Empty)
             .Where(x => !string.IsNullOrWhiteSpace(x))
@@ -160,6 +159,10 @@ public partial class ProductsAppService
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Visual product search: Image → CLIP embed → Qdrant HNSW → catalog products.
+    /// No OpenAI Vision fallback — text guessing is not visual marketplace search.
+    /// </summary>
     public async Task<object> DetectProductsFromImageAsync(Stream imageStream, string fileName, CancellationToken cancellationToken = default)
     {
         await using var buffered = new MemoryStream();
@@ -169,183 +172,107 @@ public partial class ProductsAppService
             return EmptyImageSearchResult();
         }
 
-        // Primary path: catalog-local vector search (Qdrant HNSW) against ads you indexed.
+        if (!imageEmbeddingOptions.Value.Enabled
+            || string.IsNullOrWhiteSpace(imageEmbeddingOptions.Value.ClipServiceUrl))
+        {
+            logger.LogWarning("Image search unavailable — CLIP is disabled or ClipServiceUrl is empty.");
+            return EmptyImageSearchResult();
+        }
+
+        using var clipCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        clipCts.CancelAfter(TimeSpan.FromSeconds(12));
+
         try
         {
             buffered.Position = 0;
             var vector = await imageEmbeddingService
-                .EmbedImageAsync(buffered, fileName, cancellationToken: cancellationToken)
+                .EmbedImageAsync(buffered, fileName, cancellationToken: clipCts.Token)
                 .ConfigureAwait(false);
 
-            if (vector is { Length: > 0 })
+            if (vector is not { Length: > 0 })
             {
-                var hits = await productImageVectorIndex
-                    .SearchSimilarAsync(vector, cancellationToken)
-                    .ConfigureAwait(false);
+                logger.LogWarning("CLIP embed returned empty for {FileName}", fileName);
+                return EmptyImageSearchResult();
+            }
 
-                // CLIP answered — never fall through to vision name-search (returns wrong ads).
-                if (hits.Count == 0)
-                {
-                    logger.LogInformation(
-                        "CLIP image search found no confident matches for {FileName}",
-                        fileName);
-                    return EmptyImageSearchResult();
-                }
+            var hits = await productImageVectorIndex
+                .SearchSimilarAsync(vector, clipCts.Token)
+                .ConfigureAwait(false);
 
-                if (hits.Count > 0)
-                {
-                    var orderedIds = hits
-                        .GroupBy(h => h.ProductId)
-                        .Select(g => new { ProductId = g.Key, Score = g.Max(x => x.Score) })
-                        .OrderByDescending(x => x.Score)
-                        .Select(x => x.ProductId)
-                        .ToList();
+            if (hits.Count == 0)
+            {
+                logger.LogInformation(
+                    "CLIP image search found no confident matches for {FileName}",
+                    fileName);
+                return EmptyImageSearchResult();
+            }
 
-                    var rows = await productData
-                        .GetProductsByIdsAsync(orderedIds, cancellationToken)
-                        .ConfigureAwait(false);
+            var orderedIds = hits
+                .GroupBy(h => h.ProductId)
+                .Select(g => new { ProductId = g.Key, Score = g.Max(x => x.Score) })
+                .OrderByDescending(x => x.Score)
+                .Select(x => x.ProductId)
+                .ToList();
 
-                    var byId = rows.ToDictionary(x => x.ProductId);
-                    var ranked = orderedIds
-                        .Where(byId.ContainsKey)
-                        .Select(id => byId[id])
-                        .ToList();
+            var rows = await productData
+                .GetProductsByIdsAsync(orderedIds, cancellationToken)
+                .ConfigureAwait(false);
 
-                    var items = await BuildPublicProductListItemsAsync(ranked, cancellationToken)
-                        .ConfigureAwait(false);
+            var byId = rows.ToDictionary(x => x.ProductId);
+            var ranked = orderedIds
+                .Where(byId.ContainsKey)
+                .Select(id => byId[id])
+                .ToList();
 
-                    var topName = hits
-                        .Select(h => h.ProductName)
-                        .FirstOrDefault(n => !string.IsNullOrWhiteSpace(n))
-                        ?? string.Empty;
+            var items = await BuildPublicProductListItemsAsync(ranked, cancellationToken)
+                .ConfigureAwait(false);
 
-                    return new
+            var topName = hits
+                .Select(h => h.ProductName)
+                .FirstOrDefault(n => !string.IsNullOrWhiteSpace(n))
+                ?? string.Empty;
+
+            return new
+            {
+                detectedProductName = topName,
+                detectedBrand = string.Empty,
+                suggestedNames = hits
+                    .Select(h => h.ProductName)
+                    .Where(n => !string.IsNullOrWhiteSpace(n))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Take(8)
+                    .ToList(),
+                count = items.Count,
+                items,
+                scores = hits
+                    .GroupBy(h => h.ProductId)
+                    .Select(g => new
                     {
-                        detectedProductName = topName,
-                        detectedBrand = string.Empty,
-                        suggestedNames = hits
-                            .Select(h => h.ProductName)
-                            .Where(n => !string.IsNullOrWhiteSpace(n))
-                            .Distinct(StringComparer.OrdinalIgnoreCase)
-                            .Take(8)
-                            .ToList(),
-                        count = items.Count,
-                        items,
-                        scores = hits
-                            .GroupBy(h => h.ProductId)
-                            .Select(g => new
-                            {
-                                productId = g.Key,
-                                score = g.Max(x => x.Score)
-                            })
-                            .OrderByDescending(x => x.score)
-                            .ToList(),
-                        searchMode = "clip-qdrant",
-                        products = new
-                        {
-                            searchNames = Array.Empty<string>(),
-                            searchTokens = Array.Empty<string>(),
-                            count = items.Count,
-                            items
-                        }
-                    };
+                        productId = g.Key,
+                        score = g.Max(x => x.Score)
+                    })
+                    .OrderByDescending(x => x.score)
+                    .ToList(),
+                searchMode = "clip-qdrant",
+                products = new
+                {
+                    searchNames = Array.Empty<string>(),
+                    searchTokens = Array.Empty<string>(),
+                    count = items.Count,
+                    items
                 }
-            }
+            };
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            logger.LogWarning("Vector image search timed out for {FileName}", fileName);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Vector image search failed for {FileName}; falling back to vision names", fileName);
-        }
-
-        // Fallback (empty catalog / Qdrant down): previous vision → name search.
-        buffered.Position = 0;
-        ImageProductVisionResult vision;
-        try
-        {
-            vision = await openAiVisionService
-                .SuggestProductNamesFromImageAsync(buffered, fileName, cancellationToken)
-                .ConfigureAwait(false);
-        }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-        {
-            logger.LogWarning("Image search timed out for {FileName}", fileName);
+            logger.LogWarning("CLIP/Qdrant image search timed out for {FileName}", fileName);
             return EmptyImageSearchResult();
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Image search vision failed for {FileName}", fileName);
+            logger.LogError(ex, "CLIP/Qdrant image search failed for {FileName}", fileName);
             return EmptyImageSearchResult();
         }
-
-        var searchNames = vision.SearchNames?.ToList() ?? [];
-        if (searchNames.Count == 0)
-        {
-            searchNames = vision.FallbackNames?.ToList() ?? [];
-        }
-
-        object searchResult;
-        if (searchNames.Count == 0)
-        {
-            searchResult = EmptySuggestedNamesSearch(searchNames);
-        }
-        else
-        {
-            searchResult = await SearchBySuggestedNamesAsync(searchNames, cancellationToken)
-                .ConfigureAwait(false);
-
-            var countAfterDetect = ReadSearchCount(searchResult);
-            if (countAfterDetect == 0
-                && vision.HasDetectedProductName
-                && vision.FallbackNames is { Count: > 0 })
-            {
-                searchResult = await SearchBySuggestedNamesAsync(vision.FallbackNames, cancellationToken)
-                    .ConfigureAwait(false);
-                searchNames = vision.FallbackNames.ToList();
-            }
-        }
-
-        var resultType = searchResult.GetType();
-        var itemsFallback = resultType.GetProperty("items")?.GetValue(searchResult) as IEnumerable<object>
-            ?? Array.Empty<object>();
-        var count = ReadSearchCount(searchResult);
-        if (count < 0)
-        {
-            count = itemsFallback.Count();
-        }
-
-        var suggestedForClient = new List<string>();
-        if (!string.IsNullOrWhiteSpace(vision.DetectedProductName))
-        {
-            suggestedForClient.Add(vision.DetectedProductName.Trim());
-        }
-
-        if (!string.IsNullOrWhiteSpace(vision.DetectedBrand))
-        {
-            suggestedForClient.Add(vision.DetectedBrand.Trim());
-        }
-
-        if (suggestedForClient.Count == 0)
-        {
-            suggestedForClient.AddRange(searchNames);
-        }
-
-        return new
-        {
-            detectedProductName = vision.DetectedProductName ?? string.Empty,
-            detectedBrand = vision.DetectedBrand ?? string.Empty,
-            suggestedNames = suggestedForClient
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Take(8)
-                .ToList(),
-            count,
-            items = itemsFallback,
-            searchMode = "vision-fallback",
-            products = searchResult
-        };
     }
 
     private static object EmptyImageSearchResult() => new
@@ -355,6 +282,7 @@ public partial class ProductsAppService
         suggestedNames = Array.Empty<string>(),
         count = 0,
         items = Array.Empty<object>(),
+        searchMode = "clip-qdrant",
         products = EmptySuggestedNamesSearch([])
     };
 
@@ -365,10 +293,4 @@ public partial class ProductsAppService
         count = 0,
         items = Array.Empty<object>()
     };
-
-    private static int ReadSearchCount(object searchResult)
-    {
-        var countObj = searchResult.GetType().GetProperty("count")?.GetValue(searchResult);
-        return countObj is int c ? c : -1;
-    }
 }

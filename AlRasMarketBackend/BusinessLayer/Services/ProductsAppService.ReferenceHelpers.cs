@@ -46,8 +46,9 @@ public partial class ProductsAppService
         ProductType? productType = null;
         if (!string.IsNullOrWhiteSpace(input.ProductTypeName))
         {
-            productType = await productData.GetProductTypeByNameAsync(input.ProductTypeName, cancellationToken)
+            var typeSnap = staticReferenceCache.FindProductTypeByName(input.ProductTypeName)
                 ?? throw new KeyNotFoundException($"Product type '{input.ProductTypeName}' was not found.");
+            productType = new ProductType { Id = typeSnap.Id, TypeNameEn = typeSnap.TypeNameEn };
         }
 
         var unit = staticReferenceCache.FindUnitByName(input.UnitName)
@@ -109,14 +110,16 @@ public partial class ProductsAppService
         {
             if (input.RequestTypeId.HasValue)
             {
-                requestType = await productData.GetRequestTypeByIdAsync(input.RequestTypeId.Value, cancellationToken)
+                var snap = staticReferenceCache.FindRequestTypeById(input.RequestTypeId.Value)
                     ?? throw new KeyNotFoundException($"Request type id '{input.RequestTypeId}' was not found.");
+                requestType = new RequestType { Id = snap.Id, NameEn = snap.NameEn };
             }
             else if (!string.IsNullOrWhiteSpace(input.RequestTypeName))
             {
                 var requestTypeName = NormalizeRequestTypeName(input.RequestTypeName);
-                requestType = await productData.GetRequestTypeByNameAsync(requestTypeName, cancellationToken)
+                var snap = staticReferenceCache.FindRequestTypeByName(requestTypeName)
                     ?? throw new KeyNotFoundException($"Request type '{input.RequestTypeName}' was not found.");
+                requestType = new RequestType { Id = snap.Id, NameEn = snap.NameEn };
             }
             else if (requiresPriceType)
             {
@@ -136,18 +139,16 @@ public partial class ProductsAppService
         {
             if (input.BookingPriceTypeId.HasValue)
             {
-                bookingPriceType = await productData.GetBookingPriceTypeByIdAsync(
-                        input.BookingPriceTypeId.Value,
-                        cancellationToken)
+                var snap = staticReferenceCache.FindBookingPriceTypeById(input.BookingPriceTypeId.Value)
                     ?? throw new KeyNotFoundException($"Booking price type id '{input.BookingPriceTypeId}' was not found.");
+                bookingPriceType = new BookingPriceType { Id = snap.Id, NameEn = snap.NameEn };
             }
             else
             {
                 var bookingPriceTypeName = NormalizeBookingPriceTypeName(input.BookingPriceTypeName!);
-                bookingPriceType = await productData.GetBookingPriceTypeByNameAsync(
-                        bookingPriceTypeName,
-                        cancellationToken)
+                var snap = staticReferenceCache.FindBookingPriceTypeByName(bookingPriceTypeName)
                     ?? throw new KeyNotFoundException($"Booking price type '{input.BookingPriceTypeName}' was not found.");
+                bookingPriceType = new BookingPriceType { Id = snap.Id, NameEn = snap.NameEn };
             }
         }
 

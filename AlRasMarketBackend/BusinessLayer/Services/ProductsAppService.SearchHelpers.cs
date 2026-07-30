@@ -361,11 +361,29 @@ public partial class ProductsAppService
     }
 
 
+    private static long _lastExpireDueListingsTicks;
+    private static readonly TimeSpan ExpireDueListingsMinInterval = TimeSpan.FromMinutes(2);
+
     private async Task ExpireDueListingsAsync(CancellationToken cancellationToken)
     {
-        await productData.ExpireDueOfferDiscountsAsync(cancellationToken);
-        await productData.ExpireDueNonOfferListingsAsync(cancellationToken);
-        InvalidateListingCaches();
+        // Search/list endpoints call this often — throttle so we don't scan offers
+        // and bust Redis/RAM product caches on every keystroke/search.
+        var nowTicks = DateTime.UtcNow.Ticks;
+        var last = Interlocked.Read(ref _lastExpireDueListingsTicks);
+        if (last > 0
+            && TimeSpan.FromTicks(nowTicks - last) < ExpireDueListingsMinInterval)
+        {
+            return;
+        }
+
+        Interlocked.Exchange(ref _lastExpireDueListingsTicks, nowTicks);
+
+        var expiredOffers = await productData.ExpireDueOfferDiscountsAsync(cancellationToken);
+        var expiredListings = await productData.ExpireDueNonOfferListingsAsync(cancellationToken);
+        if (expiredOffers + expiredListings > 0)
+        {
+            InvalidateListingCaches();
+        }
     }
 
     /// <summary>

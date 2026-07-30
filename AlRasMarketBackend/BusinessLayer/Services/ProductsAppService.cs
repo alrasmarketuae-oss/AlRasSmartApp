@@ -4,10 +4,12 @@ using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using DataLayer.Interfaces;
 using DataLayer.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Security.Claims;
 
 namespace BusinessLayer.Services;
 
@@ -27,7 +29,9 @@ public partial class ProductsAppService(
     IMediaStorageService mediaStorage,
     IImageEmbeddingService imageEmbeddingService,
     IProductImageVectorIndex productImageVectorIndex,
-    Microsoft.Extensions.Options.IOptions<BusinessLayer.Options.ImageEmbeddingOptions> imageEmbeddingOptions) : IProductsAppService
+    Microsoft.Extensions.Options.IOptions<BusinessLayer.Options.ImageEmbeddingOptions> imageEmbeddingOptions,
+    IHttpContextAccessor httpContextAccessor,
+    IProductAssetsAppService productAssetsAppService) : IProductsAppService
 {
     private const string AllProductsCacheKey = "products:all:v14";
     private const string ProductsByTypeCachePrefix = "products:by-type:v14:";
@@ -149,7 +153,22 @@ public partial class ProductsAppService(
 
         product.ProductCode = await productData.InsertProductAsync(product, cancellationToken);
 
-       
+        // Attach already-uploaded draft media in one SaveChanges (mobile create+drafts path).
+        if ((input.DraftImagePaths is { Count: > 0 })
+            || !string.IsNullOrWhiteSpace(input.DraftVideoPath))
+        {
+            await productAssetsAppService.ConfirmProductAssetsBatchAsync(
+                new ConfirmProductAssetsBatchInput
+                {
+                    ProductId = product.ProductId.ToString("D"),
+                    OwnerId = input.OwnerId,
+                    ImagePaths = input.DraftImagePaths ?? [],
+                    VideoPath = input.DraftVideoPath,
+                    VideoDurationSeconds = input.DraftVideoDurationSeconds
+                        ?? input.VideoDurationSeconds,
+                },
+                cancellationToken);
+        }
 
         // OpenAI translation must not block create response.
         await QueueTranslateProductFieldsAsync(product, cancellationToken);

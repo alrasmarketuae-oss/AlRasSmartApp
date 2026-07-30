@@ -39,11 +39,11 @@ public partial class ProductsAppService
         if (!string.IsNullOrWhiteSpace(productTypeCandidate))
         {
             var normalizedType = productTypeCandidate.ToLowerInvariant();
-            var isProductType = await productData.ProductTypeExistsByNameAsync(productTypeCandidate, cancellationToken);
+            var isProductType = staticReferenceCache.ProductTypeExistsByName(productTypeCandidate);
 
             if (!isProductType)
             {
-                var isCategoryName = await productData.CategoryExistsByNameAsync(productTypeCandidate, cancellationToken);
+                var isCategoryName = staticReferenceCache.CategoryExistsByName(productTypeCandidate);
 
                 if (isCategoryName)
                 {
@@ -52,7 +52,7 @@ public partial class ProductsAppService
                 }
                 else if (byte.TryParse(productTypeCandidate, out var maybeCategoryId) && maybeCategoryId > 0)
                 {
-                    var categoryExists = await productData.CategoryExistsByIdAsync(maybeCategoryId, cancellationToken);
+                    var categoryExists = staticReferenceCache.CategoryExistsById(maybeCategoryId);
 
                     if (categoryExists)
                     {
@@ -119,7 +119,7 @@ public partial class ProductsAppService
 
         if (idText != null && byte.TryParse(idText, out var parsedId) && parsedId > 0)
         {
-            var byId = await productData.GetCategoryByIdAsync(parsedId, cancellationToken);
+            var byId = staticReferenceCache.FindCategoryById(parsedId);
 
             if (byId != null)
             {
@@ -129,7 +129,7 @@ public partial class ProductsAppService
             var canonical = CanonicalCategories.Seed.FirstOrDefault(x => x.CategoryId == parsedId);
             if (canonical != null)
             {
-                var byCanonicalName = await productData.GetCategoryByNameAsync(canonical.NameEn, cancellationToken);
+                var byCanonicalName = staticReferenceCache.FindCategoryByName(canonical.NameEn);
 
                 if (byCanonicalName != null)
                 {
@@ -143,7 +143,7 @@ public partial class ProductsAppService
         var lookupName = nameText ?? (idText != null && !byte.TryParse(idText, out _) ? idText : null);
         if (!string.IsNullOrWhiteSpace(lookupName))
         {
-            var byName = await productData.GetCategoryByNameAsync(lookupName, cancellationToken);
+            var byName = staticReferenceCache.FindCategoryByName(lookupName);
 
             if (byName != null)
             {

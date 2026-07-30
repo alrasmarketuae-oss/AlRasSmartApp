@@ -302,7 +302,7 @@ public class ProductsController(
     }
 
     /// <summary>
-    /// Uploads an image, asks OpenAI for 3 product names, then returns matching products.
+    /// Visual search: Image → CLIP → Qdrant → matching catalog products.
     /// </summary>
     [HttpPost("detect-by-image")]
     [AllowAnonymous]
@@ -737,8 +737,30 @@ public class ProductsController(
             RequestTypeName = request.RequestTypeName,
             RequestTypeId = request.RequestTypeId,
             BookingPriceTypeName = request.BookingPriceTypeName,
-            BookingPriceTypeId = request.BookingPriceTypeId
+            BookingPriceTypeId = request.BookingPriceTypeId,
+            DraftImagePaths = ParseDraftImagePaths(request.DraftImagePaths, request.DraftImagePathsCsv),
+            DraftVideoPath = request.DraftVideoPath,
+            DraftVideoDurationSeconds = request.DraftVideoDurationSeconds
         };
+
+    private static List<string>? ParseDraftImagePaths(List<string>? paths, string? csv)
+    {
+        var list = new List<string>();
+        if (paths is { Count: > 0 })
+        {
+            list.AddRange(paths.Where(p => !string.IsNullOrWhiteSpace(p)).Select(p => p.Trim()));
+        }
+
+        if (!string.IsNullOrWhiteSpace(csv))
+        {
+            list.AddRange(
+                csv.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        }
+
+        return list.Count == 0
+            ? null
+            : list.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+    }
 
     private static void ApplyFormFieldAliases(HttpRequest httpRequest, CreateProductRequest request)
     {
@@ -1044,6 +1066,15 @@ public sealed class CreateProductRequest
     public byte? RequestTypeId { get; set; }
     public string? BookingPriceTypeName { get; set; }
     public byte? BookingPriceTypeId { get; set; }
+
+    /// <summary>Repeated form keys or bound list of draft image paths already on R2.</summary>
+    public List<string>? DraftImagePaths { get; set; }
+
+    /// <summary>Comma-separated draft image paths (mobile-friendly single field).</summary>
+    public string? DraftImagePathsCsv { get; set; }
+
+    public string? DraftVideoPath { get; set; }
+    public byte? DraftVideoDurationSeconds { get; set; }
 }
 
 public sealed class DetectProductsByImageRequest

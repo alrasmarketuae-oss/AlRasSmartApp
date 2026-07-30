@@ -557,15 +557,20 @@ public sealed class ProductDataAccess(
             return [];
         }
 
-        HashSet<Guid> candidateIds = [];
+        // One round-trip per source (products / translations) instead of 2×N word loops.
+        IQueryable<Guid>? productIdUnion = null;
+        IQueryable<Guid>? translationIdUnion = null;
         foreach (var word in uniqueWords)
         {
             var containsPattern = ToSqlLikePattern(word);
-            var fromProducts = await productsQuery
+            var fromProducts = productsQuery
                 .Where(x => EF.Functions.Like(x.NameEn ?? string.Empty, containsPattern))
-                .Select(x => x.ProductId)
-                .ToListAsync(cancellationToken);
-            var fromNameTranslations = await (
+                .Select(x => x.ProductId);
+            productIdUnion = productIdUnion is null
+                ? fromProducts
+                : productIdUnion.Union(fromProducts);
+
+            var fromNameTranslations = (
                     from t in dbContext.ContentTranslations.AsNoTracking()
                     join p in productsQuery on t.ProductId equals p.ProductId
                     where t.Scope == ContentTranslationScopes.Product
@@ -574,9 +579,24 @@ public sealed class ProductDataAccess(
                           && (EF.Functions.Like(t.TextAr ?? string.Empty, containsPattern)
                               || EF.Functions.Like(t.TextEn ?? string.Empty, containsPattern))
                     select t.ProductId!.Value)
-                .Distinct()
-                .ToListAsync(cancellationToken);
-            foreach (var id in fromProducts.Concat(fromNameTranslations))
+                .Distinct();
+            translationIdUnion = translationIdUnion is null
+                ? fromNameTranslations
+                : translationIdUnion.Union(fromNameTranslations);
+        }
+
+        var candidateIds = new HashSet<Guid>();
+        if (productIdUnion is not null)
+        {
+            foreach (var id in await productIdUnion.ToListAsync(cancellationToken))
+            {
+                candidateIds.Add(id);
+            }
+        }
+
+        if (translationIdUnion is not null)
+        {
+            foreach (var id in await translationIdUnion.ToListAsync(cancellationToken))
             {
                 candidateIds.Add(id);
             }
@@ -951,7 +971,7 @@ public sealed class ProductDataAccess(
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task ExpireDueNonOfferListingsAsync(CancellationToken cancellationToken = default)
+    public async Task<int> ExpireDueNonOfferListingsAsync(CancellationToken cancellationToken = default)
     {
         var utcNow = DateTime.UtcNow;
         var expired = await dbContext.Products
@@ -963,7 +983,7 @@ public sealed class ProductDataAccess(
             .ToListAsync(cancellationToken);
         if (expired.Count == 0)
         {
-            return;
+            return 0;
         }
 
         foreach (var product in expired)
@@ -973,36 +993,30 @@ public sealed class ProductDataAccess(
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        return expired.Count;
     }
 
-    public async Task ExpireDueOfferDiscountsAsync(CancellationToken cancellationToken = default)
+    public async Task<int> ExpireDueOfferDiscountsAsync(CancellationToken cancellationToken = default)
     {
         var utcNow = DateTime.UtcNow;
+        // SQL Server: expire only rows whose discount window already ended.
         var candidates = await dbContext.Products
             .Where(x =>
                 x.ProductTypeId == 3
                 && x.DiscountPercentage != null
                 && x.DiscountPercentage > 0
                 && x.DiscountDays != null
-                && x.DiscountDays > 0)
+                && x.DiscountDays > 0
+                && EF.Functions.DateDiffDay(x.CreatedAt, utcNow) >= x.DiscountDays)
             .ToListAsync(cancellationToken);
         if (candidates.Count == 0)
         {
-            return;
+            return 0;
         }
 
-        var changed = false;
+        var changed = 0;
         foreach (var product in candidates)
         {
-            var created = product.CreatedAt.Kind == DateTimeKind.Utc
-                ? product.CreatedAt
-                : DateTime.SpecifyKind(product.CreatedAt, DateTimeKind.Utc);
-            var endsAt = created.AddDays(product.DiscountDays!.Value);
-            if (utcNow < endsAt)
-            {
-                continue;
-            }
-
             var factor = 1m - (product.DiscountPercentage!.Value / 100m);
             if (factor > 0)
             {
@@ -1012,15 +1026,16 @@ public sealed class ProductDataAccess(
             product.DiscountPercentage = null;
             product.DiscountDays = null;
             product.UpdatedAt = utcNow;
-            changed = true;
+            changed++;
         }
 
-        if (!changed)
+        if (changed == 0)
         {
-            return;
+            return 0;
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        return changed;
     }
 
     public Task<int?> GetAdDisplayDurationDaysAsync(CancellationToken cancellationToken = default) =>

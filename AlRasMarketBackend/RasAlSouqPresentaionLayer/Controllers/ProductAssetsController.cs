@@ -531,6 +531,50 @@ public class ProductAssetsController(IProductAssetsAppService productAssetsAppSe
             return NotFound(new { message = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Confirms many draft/final images (+ optional video) in one request / SaveChanges.
+    /// Preferred after create when drafts were uploaded while filling the form.
+    /// </summary>
+    [HttpPost("{productId}/assets/confirm-batch")]
+    public async Task<IActionResult> ConfirmProductAssetsBatch(
+        [FromRoute] string productId,
+        [FromBody] ConfirmProductAssetsBatchBodyRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            var result = await _productAssetsAppService.ConfirmProductAssetsBatchAsync(
+                new ConfirmProductAssetsBatchInput
+                {
+                    ProductId = productId,
+                    OwnerId = userId,
+                    ImagePaths = request.ImagePaths ?? [],
+                    VideoPath = request.VideoPath,
+                    VideoDurationSeconds = request.VideoDurationSeconds,
+                },
+                cancellationToken);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
 }
 
 public sealed class UploadProductAssetRequest
@@ -565,6 +609,13 @@ public sealed class ConfirmProductAssetRequest
 public sealed class ConfirmProductVideoBodyRequest
 {
     public string? Path { get; set; }
+    public byte? VideoDurationSeconds { get; set; }
+}
+
+public sealed class ConfirmProductAssetsBatchBodyRequest
+{
+    public List<string>? ImagePaths { get; set; }
+    public string? VideoPath { get; set; }
     public byte? VideoDurationSeconds { get; set; }
 }
 

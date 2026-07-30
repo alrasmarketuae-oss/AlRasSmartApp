@@ -127,7 +127,8 @@ builder.Services.Configure<ImageEmbeddingOptions>(builder.Configuration.GetSecti
 builder.Services.AddSingleton<IConfigurationAccessor, ConfigurationAccessor>();
 builder.Services.AddHttpClient<IImageEmbeddingService, ClipHttpEmbeddingService>(client =>
 {
-    client.Timeout = TimeSpan.FromSeconds(90);
+    // Indexing jobs use their own CTS; search caps wait separately (~12s).
+    client.Timeout = TimeSpan.FromSeconds(45);
 });
 builder.Services.AddHttpClient<IProductImageVectorIndex, QdrantProductImageVectorIndex>((sp, client) =>
 {

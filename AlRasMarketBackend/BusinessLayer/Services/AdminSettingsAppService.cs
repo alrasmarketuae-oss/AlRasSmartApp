@@ -12,7 +12,8 @@ public class AdminSettingsAppService(
     IRasAlSouqDbContext dbContext,
     ICommissionSettingsProvider commissionSettingsProvider,
     ICategoryCommissionProvider categoryCommissionProvider,
-    IAdminAuditLogAppService auditLogAppService) : IAdminSettingsAppService
+    IAdminAuditLogAppService auditLogAppService,
+    IStaticReferenceCache staticReferenceCache) : IAdminSettingsAppService
 {
     public async Task<object> GetSettingsAsync(CancellationToken cancellationToken = default)
     {
@@ -114,6 +115,7 @@ public class AdminSettingsAppService(
         commissionSettingsProvider.Invalidate();
         categoryCommissionProvider.Invalidate();
         CategoriesListCache.Bump();
+        staticReferenceCache.InvalidateCategories();
         ProductsAppService.InvalidateProductListCaches();
 
         await auditLogAppService.WriteAsync(

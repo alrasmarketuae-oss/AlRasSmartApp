@@ -63,6 +63,23 @@ public interface IStaticReferenceCache
     IReadOnlyList<UnitSnapshot> GetUnits();
     UnitSnapshot? FindUnitById(byte id);
     UnitSnapshot? FindUnitByName(string unitNameEn);
+
+    /// <summary>Product types (Retail/Booking/…) — static seed; Redis + memory.</summary>
+    ProductTypeSnapshot? FindProductTypeByName(string typeNameEn);
+    ProductTypeSnapshot? FindProductTypeById(byte id);
+    bool ProductTypeExistsByName(string typeNameEn);
+
+    /// <summary>Categories — Redis + memory; call <see cref="InvalidateCategories"/> after admin writes.</summary>
+    CategorySnapshot? FindCategoryById(byte id);
+    CategorySnapshot? FindCategoryByName(string name);
+    bool CategoryExistsById(byte id);
+    bool CategoryExistsByName(string name);
+    void InvalidateCategories();
+
+    RequestTypeSnapshot? FindRequestTypeById(byte id);
+    RequestTypeSnapshot? FindRequestTypeByName(string nameEn);
+    BookingPriceTypeSnapshot? FindBookingPriceTypeById(byte id);
+    BookingPriceTypeSnapshot? FindBookingPriceTypeByName(string nameEn);
 }
 
 /// <summary>Backward-compatible alias for geo lookups on <see cref="IStaticReferenceCache"/>.</summary>

@@ -30,12 +30,15 @@ class SearchHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final canPop = isBackButton && context.canPop();
+    // Match Android/iOS: honor status-bar/notch when parent has no SafeArea;
+    // keep a compact gap when already inside SafeArea (padding.top == 0).
+    final topInset = MediaQuery.paddingOf(context).top;
+    final topPad = topInset > 0 ? topInset + 8.h : 12.h;
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      padding: EdgeInsets.fromLTRB(16.w, topPad, 16.w, 0),
       child: Column(
         children: [
-          SizedBox(height: 20.h),
           Row(
             children: [
               if (canPop && !isSearch) ...[

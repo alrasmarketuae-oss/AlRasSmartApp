@@ -8,17 +8,25 @@ using Microsoft.Extensions.DependencyInjection;
 namespace BusinessLayer.Caching;
 
 /// <summary>
-/// In-memory reference data loaded once at application startup (countries, cities, ports, roles, units).
-/// Countries/cities/ports are also mirrored to Redis for shared warm-start across instances.
+/// In-memory reference data loaded once at application startup (countries, cities, ports, roles, units,
+/// product types, categories, request/booking price types).
+/// Geo + catalog lists are mirrored to Redis for shared warm-start across instances.
+/// Categories alone can be invalidated when the admin dashboard adds/edits a category.
 /// </summary>
 public sealed class StaticReferenceCache(
     IServiceScopeFactory scopeFactory,
     ITieredCache tieredCache) : IGeoReferenceCache
 {
     private static readonly TimeSpan GeoRedisTtl = TimeSpan.FromHours(24);
+    private static readonly TimeSpan CatalogRedisTtl = TimeSpan.FromDays(7);
     private const string CountriesKey = "geo:countries:v1";
     private const string CitiesKey = "geo:cities:v1";
     private const string PortsKey = "geo:ports:v1";
+    private const string UnitsKey = "catalog:units:v1";
+    private const string ProductTypesKey = "catalog:product-types:v1";
+    private const string CategoriesKey = "catalog:categories:v1";
+    private const string RequestTypesKey = "catalog:request-types:v1";
+    private const string BookingPriceTypesKey = "catalog:booking-price-types:v1";
 
     private static readonly JsonSerializerOptions GeoJsonOptions = new()
     {
@@ -27,10 +35,11 @@ public sealed class StaticReferenceCache(
 
     private readonly SemaphoreSlim _lock = new(1, 1);
     private ReferenceSnapshot? _snapshot;
+    private CatalogSnapshot? _catalog;
 
     public async Task EnsureLoadedAsync(CancellationToken cancellationToken = default)
     {
-        if (_snapshot is not null)
+        if (_snapshot is not null && _catalog is not null)
         {
             return;
         }
@@ -38,7 +47,7 @@ public sealed class StaticReferenceCache(
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (_snapshot is not null)
+            if (_snapshot is not null && _catalog is not null)
             {
                 return;
             }
@@ -46,89 +55,194 @@ public sealed class StaticReferenceCache(
             using var scope = scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<IRasAlSouqDbContext>();
 
-            var countries = await TryReadGeoListAsync<GeoCountrySnapshot>(CountriesKey, cancellationToken)
-                .ConfigureAwait(false);
-            var ports = await TryReadGeoListAsync<GeoPortSnapshot>(PortsKey, cancellationToken)
-                .ConfigureAwait(false);
-            var cities = await TryReadGeoListAsync<GeoCitySnapshot>(CitiesKey, cancellationToken)
-                .ConfigureAwait(false);
-
-            var loadedGeoFromRedis = countries is { Count: > 0 }
-                && ports is not null
-                && cities is not null;
-
-            if (!loadedGeoFromRedis)
+            if (_snapshot is null)
             {
-                countries = await db.Countries
+                var countries = await TryReadGeoListAsync<GeoCountrySnapshot>(CountriesKey, cancellationToken)
+                    .ConfigureAwait(false);
+                var ports = await TryReadGeoListAsync<GeoPortSnapshot>(PortsKey, cancellationToken)
+                    .ConfigureAwait(false);
+                var cities = await TryReadGeoListAsync<GeoCitySnapshot>(CitiesKey, cancellationToken)
+                    .ConfigureAwait(false);
+
+                var loadedGeoFromRedis = countries is { Count: > 0 }
+                    && ports is not null
+                    && cities is not null;
+
+                if (!loadedGeoFromRedis)
+                {
+                    countries = await db.Countries
+                        .AsNoTracking()
+                        .OrderBy(x => x.CountryNameEn)
+                        .Select(x => new GeoCountrySnapshot
+                        {
+                            Id = x.Id,
+                            CountryNameEn = x.CountryNameEn,
+                            CountryNameAr = x.CountryNameAr,
+                            Iso2Code = x.Iso2Code
+                        })
+                        .ToListAsync(cancellationToken)
+                        .ConfigureAwait(false);
+
+                    ports = await db.Ports
+                        .AsNoTracking()
+                        .OrderBy(x => x.PortNameEn)
+                        .Select(x => new GeoPortSnapshot
+                        {
+                            Id = x.Id,
+                            CountryId = x.CountryId,
+                            PortNameEn = x.PortNameEn,
+                            PortNameAr = x.PortNameAr,
+                            UnLocode = x.UnLocode
+                        })
+                        .ToListAsync(cancellationToken)
+                        .ConfigureAwait(false);
+
+                    cities = await db.Cities
+                        .AsNoTracking()
+                        .OrderBy(x => x.CityName)
+                        .Select(x => new GeoCitySnapshot
+                        {
+                            Id = x.Id,
+                            CityName = x.CityName,
+                            CountryId = x.CountryId
+                        })
+                        .ToListAsync(cancellationToken)
+                        .ConfigureAwait(false);
+
+                    await MirrorGeoToRedisAsync(countries, cities, ports, cancellationToken).ConfigureAwait(false);
+                }
+
+                var roles = await db.Roles
                     .AsNoTracking()
-                    .OrderBy(x => x.CountryNameEn)
-                    .Select(x => new GeoCountrySnapshot
+                    .OrderBy(x => x.Id)
+                    .Select(x => new RoleSnapshot
                     {
                         Id = x.Id,
-                        CountryNameEn = x.CountryNameEn,
-                        CountryNameAr = x.CountryNameAr,
-                        Iso2Code = x.Iso2Code
+                        RoleName = x.RoleName
                     })
                     .ToListAsync(cancellationToken)
                     .ConfigureAwait(false);
 
-                ports = await db.Ports
-                    .AsNoTracking()
-                    .OrderBy(x => x.PortNameEn)
-                    .Select(x => new GeoPortSnapshot
-                    {
-                        Id = x.Id,
-                        CountryId = x.CountryId,
-                        PortNameEn = x.PortNameEn,
-                        PortNameAr = x.PortNameAr,
-                        UnLocode = x.UnLocode
-                    })
-                    .ToListAsync(cancellationToken)
+                var units = await TryReadGeoListAsync<UnitSnapshot>(UnitsKey, cancellationToken)
                     .ConfigureAwait(false);
+                if (units is not { Count: > 0 })
+                {
+                    units = await db.Units
+                        .AsNoTracking()
+                        .OrderBy(x => x.Id)
+                        .Select(x => new UnitSnapshot
+                        {
+                            Id = x.Id,
+                            UnitNameEn = x.UnitNameEn
+                        })
+                        .ToListAsync(cancellationToken)
+                        .ConfigureAwait(false);
 
-                cities = await db.Cities
-                    .AsNoTracking()
-                    .OrderBy(x => x.CityName)
-                    .Select(x => new GeoCitySnapshot
+                    try
                     {
-                        Id = x.Id,
-                        CityName = x.CityName,
-                        CountryId = x.CountryId
-                    })
-                    .ToListAsync(cancellationToken)
-                    .ConfigureAwait(false);
+                        await tieredCache.SetAsync(UnitsKey, units, CatalogRedisTtl, cancellationToken)
+                            .ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                        // best-effort
+                    }
+                }
 
-                await MirrorGeoToRedisAsync(countries, cities, ports, cancellationToken).ConfigureAwait(false);
+                _snapshot = ReferenceSnapshot.Build(countries!, ports!, cities!, roles, units!);
             }
 
-            var roles = await db.Roles
-                .AsNoTracking()
-                .OrderBy(x => x.Id)
-                .Select(x => new RoleSnapshot
-                {
-                    Id = x.Id,
-                    RoleName = x.RoleName
-                })
-                .ToListAsync(cancellationToken)
-                .ConfigureAwait(false);
-
-            var units = await db.Units
-                .AsNoTracking()
-                .OrderBy(x => x.Id)
-                .Select(x => new UnitSnapshot
-                {
-                    Id = x.Id,
-                    UnitNameEn = x.UnitNameEn
-                })
-                .ToListAsync(cancellationToken)
-                .ConfigureAwait(false);
-
-            _snapshot = ReferenceSnapshot.Build(countries!, ports!, cities!, roles, units);
+            if (_catalog is null)
+            {
+                await LoadCatalogUnlockedAsync(db, cancellationToken).ConfigureAwait(false);
+            }
         }
         finally
         {
             _lock.Release();
         }
+    }
+
+    private async Task LoadCatalogUnlockedAsync(IRasAlSouqDbContext db, CancellationToken cancellationToken)
+    {
+        var productTypes = await TryReadGeoListAsync<ProductTypeSnapshot>(ProductTypesKey, cancellationToken)
+            .ConfigureAwait(false);
+        if (productTypes is not { Count: > 0 })
+        {
+            productTypes = await db.ProductTypes
+                .AsNoTracking()
+                .OrderBy(x => x.Id)
+                .Select(x => new ProductTypeSnapshot { Id = x.Id, TypeNameEn = x.TypeNameEn })
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+            try
+            {
+                await tieredCache.SetAsync(ProductTypesKey, productTypes, CatalogRedisTtl, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch { /* best-effort */ }
+        }
+
+        var categories = await TryReadGeoListAsync<CategorySnapshot>(CategoriesKey, cancellationToken)
+            .ConfigureAwait(false);
+        if (categories is not { Count: > 0 })
+        {
+            categories = await db.Categories
+                .AsNoTracking()
+                .OrderBy(x => x.CategoryId)
+                .Select(x => new CategorySnapshot
+                {
+                    CategoryId = x.CategoryId,
+                    NameEn = x.NameEn ?? string.Empty,
+                    NameAr = x.NameAr
+                })
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+            try
+            {
+                await tieredCache.SetAsync(CategoriesKey, categories, CatalogRedisTtl, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch { /* best-effort */ }
+        }
+
+        var requestTypes = await TryReadGeoListAsync<RequestTypeSnapshot>(RequestTypesKey, cancellationToken)
+            .ConfigureAwait(false);
+        if (requestTypes is not { Count: > 0 })
+        {
+            requestTypes = await db.RequestTypes
+                .AsNoTracking()
+                .OrderBy(x => x.Id)
+                .Select(x => new RequestTypeSnapshot { Id = x.Id, NameEn = x.NameEn })
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+            try
+            {
+                await tieredCache.SetAsync(RequestTypesKey, requestTypes, CatalogRedisTtl, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch { /* best-effort */ }
+        }
+
+        var bookingTypes = await TryReadGeoListAsync<BookingPriceTypeSnapshot>(BookingPriceTypesKey, cancellationToken)
+            .ConfigureAwait(false);
+        if (bookingTypes is not { Count: > 0 })
+        {
+            bookingTypes = await db.BookingPriceTypes
+                .AsNoTracking()
+                .OrderBy(x => x.Id)
+                .Select(x => new BookingPriceTypeSnapshot { Id = x.Id, NameEn = x.NameEn })
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+            try
+            {
+                await tieredCache.SetAsync(BookingPriceTypesKey, bookingTypes, CatalogRedisTtl, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch { /* best-effort */ }
+        }
+
+        _catalog = CatalogSnapshot.Build(productTypes!, categories!, requestTypes!, bookingTypes!);
     }
 
     private async Task<List<T>?> TryReadGeoListAsync<T>(string key, CancellationToken cancellationToken)
@@ -459,6 +573,70 @@ public sealed class StaticReferenceCache(
             string.Equals(NormalizeUnitName(x.UnitNameEn), normalized, StringComparison.OrdinalIgnoreCase));
     }
 
+    public ProductTypeSnapshot? FindProductTypeByName(string typeNameEn)
+    {
+        EnsureCatalog();
+        if (string.IsNullOrWhiteSpace(typeNameEn)) return null;
+        return _catalog!.ProductTypesByName.TryGetValue(typeNameEn.Trim(), out var t) ? t : null;
+    }
+
+    public ProductTypeSnapshot? FindProductTypeById(byte id)
+    {
+        EnsureCatalog();
+        return _catalog!.ProductTypesById.TryGetValue(id, out var t) ? t : null;
+    }
+
+    public bool ProductTypeExistsByName(string typeNameEn) => FindProductTypeByName(typeNameEn) is not null;
+
+    public CategorySnapshot? FindCategoryById(byte id)
+    {
+        EnsureCatalog();
+        return _catalog!.CategoriesById.TryGetValue(id, out var c) ? c : null;
+    }
+
+    public CategorySnapshot? FindCategoryByName(string name)
+    {
+        EnsureCatalog();
+        if (string.IsNullOrWhiteSpace(name)) return null;
+        return _catalog!.CategoriesByName.TryGetValue(name.Trim(), out var c) ? c : null;
+    }
+
+    public bool CategoryExistsById(byte id) => FindCategoryById(id) is not null;
+
+    public bool CategoryExistsByName(string name) => FindCategoryByName(name) is not null;
+
+    public void InvalidateCategories()
+    {
+        _catalog = null;
+        _ = tieredCache.RemoveAsync(CategoriesKey);
+    }
+
+    public RequestTypeSnapshot? FindRequestTypeById(byte id)
+    {
+        EnsureCatalog();
+        return _catalog!.RequestTypesById.TryGetValue(id, out var t) ? t : null;
+    }
+
+    public RequestTypeSnapshot? FindRequestTypeByName(string nameEn)
+    {
+        EnsureCatalog();
+        if (string.IsNullOrWhiteSpace(nameEn)) return null;
+        return _catalog!.RequestTypesByName.TryGetValue(nameEn.Trim(), out var t) ? t : null;
+    }
+
+    public BookingPriceTypeSnapshot? FindBookingPriceTypeById(byte id)
+    {
+        EnsureCatalog();
+        return _catalog!.BookingPriceTypesById.TryGetValue(id, out var t) ? t : null;
+    }
+
+    public BookingPriceTypeSnapshot? FindBookingPriceTypeByName(string nameEn)
+    {
+        EnsureCatalog();
+        if (string.IsNullOrWhiteSpace(nameEn)) return null;
+        return _catalog!.BookingPriceTypesByName.TryGetValue(nameEn.Trim(), out var t) ? t : null;
+    }
+
     /// <summary>
     /// Maps common UI aliases (Kg/kg) to canonical Units.UnitNameEn values in DB.
     /// </summary>
@@ -504,6 +682,18 @@ public sealed class StaticReferenceCache(
         }
     }
 
+    private void EnsureCatalog()
+    {
+        EnsureLoaded();
+        if (_catalog is not null)
+        {
+            return;
+        }
+
+        // Rare path after admin category invalidate — reload catalog asynchronously waited.
+        EnsureLoadedAsync().GetAwaiter().GetResult();
+    }
+
     private static string BuildPortKey(short countryId, string portName) =>
         $"{countryId}:{portName.Trim().ToLowerInvariant()}";
 
@@ -518,6 +708,60 @@ public sealed class StaticReferenceCache(
         return source
             .GroupBy(keySelector, comparer)
             .ToDictionary(g => g.Key, g => g.First(), comparer);
+    }
+
+    private sealed class CatalogSnapshot
+    {
+        public required Dictionary<byte, ProductTypeSnapshot> ProductTypesById { get; init; }
+        public required Dictionary<string, ProductTypeSnapshot> ProductTypesByName { get; init; }
+        public required Dictionary<byte, CategorySnapshot> CategoriesById { get; init; }
+        public required Dictionary<string, CategorySnapshot> CategoriesByName { get; init; }
+        public required Dictionary<byte, RequestTypeSnapshot> RequestTypesById { get; init; }
+        public required Dictionary<string, RequestTypeSnapshot> RequestTypesByName { get; init; }
+        public required Dictionary<byte, BookingPriceTypeSnapshot> BookingPriceTypesById { get; init; }
+        public required Dictionary<string, BookingPriceTypeSnapshot> BookingPriceTypesByName { get; init; }
+
+        public static CatalogSnapshot Build(
+            IReadOnlyList<ProductTypeSnapshot> productTypes,
+            IReadOnlyList<CategorySnapshot> categories,
+            IReadOnlyList<RequestTypeSnapshot> requestTypes,
+            IReadOnlyList<BookingPriceTypeSnapshot> bookingTypes)
+        {
+            var categoriesByName = new Dictionary<string, CategorySnapshot>(StringComparer.OrdinalIgnoreCase);
+            foreach (var c in categories)
+            {
+                if (!string.IsNullOrWhiteSpace(c.NameEn))
+                {
+                    categoriesByName[c.NameEn.Trim()] = c;
+                }
+
+                if (!string.IsNullOrWhiteSpace(c.NameAr))
+                {
+                    categoriesByName[c.NameAr.Trim()] = c;
+                }
+            }
+
+            return new CatalogSnapshot
+            {
+                ProductTypesById = productTypes.ToDictionary(x => x.Id),
+                ProductTypesByName = IndexByKey(
+                    productTypes,
+                    x => x.TypeNameEn.Trim(),
+                    StringComparer.OrdinalIgnoreCase),
+                CategoriesById = categories.ToDictionary(x => x.CategoryId),
+                CategoriesByName = categoriesByName,
+                RequestTypesById = requestTypes.ToDictionary(x => x.Id),
+                RequestTypesByName = IndexByKey(
+                    requestTypes,
+                    x => x.NameEn.Trim(),
+                    StringComparer.OrdinalIgnoreCase),
+                BookingPriceTypesById = bookingTypes.ToDictionary(x => x.Id),
+                BookingPriceTypesByName = IndexByKey(
+                    bookingTypes,
+                    x => x.NameEn.Trim(),
+                    StringComparer.OrdinalIgnoreCase),
+            };
+        }
     }
 
     private sealed class ReferenceSnapshot

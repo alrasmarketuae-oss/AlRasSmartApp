@@ -38,10 +38,13 @@ class BookingDetailsAppBar extends StatelessWidget
         ),
       ),
       actions: [
-        IconButton(
-          onPressed: () => ProductShareHelper.shareProduct(context, product),
-          tooltip: s.shareProduct,
-          icon: Icon(Icons.ios_share_rounded, size: 20.sp),
+        Builder(
+          builder: (buttonContext) => IconButton(
+            onPressed: () =>
+                ProductShareHelper.shareProduct(buttonContext, product),
+            tooltip: s.shareProduct,
+            icon: Icon(Icons.ios_share_rounded, size: 20.sp),
+          ),
         ),
         ProductBookmarkButton(
           productId: product.productId,

@@ -1,4 +1,5 @@
 using System.Data;
+using System.Security.Claims;
 using BusinessLayer.Dtos;
 using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
@@ -138,6 +139,13 @@ public partial class ProductsAppService
             throw new ArgumentException("Invalid owner id.");
         }
 
+        var principal = httpContextAccessor.HttpContext?.User;
+        if (principal?.Identity?.IsAuthenticated == true
+            && TryAuthorizeCompanyOwnerFromToken(principal, ownerId))
+        {
+            return ownerId;
+        }
+
         var owner = await productData.GetUserByIdAsync(ownerId, tracked: true, cancellationToken)
             ?? throw new KeyNotFoundException("Owner user not found.");
 
@@ -157,6 +165,54 @@ public partial class ProductsAppService
         return ownerId;
     }
 
+    /// <summary>
+    /// Fast path: trust JWT claims issued at login (roleId / approval / phone).
+    /// Falls through when claims are missing (old tokens) so DB check still runs.
+    /// </summary>
+    private static bool TryAuthorizeCompanyOwnerFromToken(ClaimsPrincipal principal, Guid expectedOwnerId)
+    {
+        var claimId = principal.FindFirst("EntityId")?.Value
+            ?? principal.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!Guid.TryParse(claimId, out var tokenUserId) || tokenUserId != expectedOwnerId)
+        {
+            return false;
+        }
+
+        var roleIdRaw = principal.FindFirst("roleId")?.Value;
+        var roleName = principal.FindFirst(ClaimTypes.Role)?.Value;
+        var isSeller = roleIdRaw == "2"
+            || string.Equals(roleName, "Seller", StringComparison.OrdinalIgnoreCase);
+        if (!isSeller)
+        {
+            return false;
+        }
+
+        // New tokens always include isApproved. Old tokens without it → force DB path.
+        var approvedClaim = principal.FindFirst("isApproved")?.Value;
+        if (approvedClaim is null)
+        {
+            return false;
+        }
+
+        var isApproved = IsTruthClaim(approvedClaim);
+        var isActive = IsTruthClaim(principal.FindFirst("isActive")?.Value ?? "true");
+        var isRejected = IsTruthClaim(principal.FindFirst("isRejected")?.Value);
+        var hasPending = IsTruthClaim(principal.FindFirst("hasPendingProfile")?.Value);
+
+        if (isRejected || !isActive || (!isApproved && !hasPending))
+        {
+            throw new UnauthorizedAccessException(
+                "Your company account is pending admin approval. You cannot create or edit ads now.");
+        }
+
+        return true;
+    }
+
+    private static bool IsTruthClaim(string? value) =>
+        string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
+        || value == "1";
+
     /// <summary>Companies registered with a non-UAE phone may only create Booking ads.</summary>
     private async Task EnsureNonUaeCompanyBookingOnlyAsync(
         Guid ownerId,
@@ -164,7 +220,11 @@ public partial class ProductsAppService
         byte? categoryId,
         CancellationToken cancellationToken)
     {
-        var phone = await productData.GetUserPhoneByIdAsync(ownerId, cancellationToken);
+        var phone = httpContextAccessor.HttpContext?.User?.FindFirst("phone")?.Value;
+        if (string.IsNullOrWhiteSpace(phone))
+        {
+            phone = await productData.GetUserPhoneByIdAsync(ownerId, cancellationToken);
+        }
 
         if (IsUaePhoneNumber(phone))
         {

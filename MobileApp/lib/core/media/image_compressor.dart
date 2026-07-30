@@ -111,15 +111,11 @@ class ImageCompressor {
     String? bestPath;
     var bestSize = originalSize;
 
-    // Progressively lower quality and dimensions until under maxBytes.
+    // Few aggressive passes — image search must not burn seconds on-device.
     final attempts = <({int quality, int maxSide})>[
-      (quality: 70, maxSide: 1280),
-      (quality: 55, maxSide: 1024),
-      (quality: 40, maxSide: 800),
-      (quality: 30, maxSide: 640),
-      (quality: 20, maxSide: 480),
-      (quality: 15, maxSide: 360),
-      (quality: 10, maxSide: 320),
+      (quality: 45, maxSide: 800),
+      (quality: 28, maxSide: 640),
+      (quality: 18, maxSide: 480),
     ];
 
     for (var i = 0; i < attempts.length; i++) {

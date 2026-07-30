@@ -759,6 +759,125 @@ public class ProductAssetsAppService(
         return new { path = videoPath };
     }
 
+    public async Task<object> ConfirmProductAssetsBatchAsync(
+        ConfirmProductAssetsBatchInput input,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(input.ProductId, out var productId))
+        {
+            throw new ArgumentException("Invalid product id.");
+        }
+
+        var product = await dbContext.Products
+            .Include(x => x.ProductVideos)
+            .Include(x => x.ProductImages)
+            .FirstOrDefaultAsync(x => x.ProductId == productId, cancellationToken)
+            ?? throw new KeyNotFoundException("Product not found.");
+
+        var imagePaths = (input.ImagePaths ?? Array.Empty<string>())
+            .Where(p => !string.IsNullOrWhiteSpace(p))
+            .Select(p => RequireStoredPathInFolder(p, ProductImagesFolder, [".jpg", ".jpeg"]))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (product.ProductImages.Count + imagePaths.Count(p =>
+                !product.ProductImages.Any(i =>
+                    string.Equals(i.ImagePath, p, StringComparison.OrdinalIgnoreCase)))
+            > MaxProductImages)
+        {
+            throw new InvalidOperationException("A product can have at most 15 images.");
+        }
+
+        var confirmedImages = new List<object>();
+        foreach (var imagePath in imagePaths)
+        {
+            var existing = product.ProductImages.FirstOrDefault(x =>
+                string.Equals(x.ImagePath, imagePath, StringComparison.OrdinalIgnoreCase));
+            if (existing is not null)
+            {
+                confirmedImages.Add(new { existing.Id, existing.ProductId, Path = existing.ImagePath });
+                continue;
+            }
+
+            await EnsureObjectExistsAsync(imagePath, cancellationToken);
+            var entity = new ProductImage
+            {
+                ProductId = productId,
+                ImagePath = imagePath
+            };
+            await dbContext.ProductImages.AddAsync(entity, cancellationToken);
+            product.ProductImages.Add(entity);
+            confirmedImages.Add(new { entity.Id, entity.ProductId, Path = entity.ImagePath });
+        }
+
+        object? confirmedVideo = null;
+        if (!string.IsNullOrWhiteSpace(input.VideoPath))
+        {
+            ValidateVideoDuration(input.VideoDurationSeconds);
+            var videoPath = RequireStoredPathInFolder(
+                input.VideoPath,
+                ProductVideosFolder,
+                [".mp4", ".mov", ".webm", ".m4v"]);
+
+            var alreadyPrimary = string.Equals(
+                NormalizeAssetPath(product.VideoPath),
+                videoPath,
+                StringComparison.OrdinalIgnoreCase);
+            var alreadyExtra = product.ProductVideos.Any(v =>
+                string.Equals(NormalizeAssetPath(v.VideoPath), videoPath, StringComparison.OrdinalIgnoreCase));
+
+            if (!alreadyPrimary && !alreadyExtra)
+            {
+                await EnsureObjectExistsAsync(videoPath, cancellationToken);
+                EnsureVideoSlotAvailable(product);
+
+                if (string.IsNullOrWhiteSpace(product.VideoPath))
+                {
+                    product.VideoPath = videoPath;
+                    product.VideoDurationSeconds = input.VideoDurationSeconds;
+                }
+                else
+                {
+                    await dbContext.ProductVideos.AddAsync(
+                        new ProductVideo
+                        {
+                            ProductId = productId,
+                            VideoPath = videoPath,
+                            VideoDurationSeconds = input.VideoDurationSeconds!.Value,
+                        },
+                        cancellationToken);
+                }
+            }
+
+            confirmedVideo = new { path = videoPath };
+        }
+
+        if (!input.AllowAdminAccess)
+        {
+            await MarkOwnerMediaChangedForReviewAsync(product, cancellationToken);
+        }
+        else
+        {
+            product.UpdatedAt = UtcDateTimeHelper.UtcNow;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        // Skip listing cache bust while the ad is still hidden from admin/public.
+        if (product.IsReadyForAdminReview || product.IsApproved == true || input.AllowAdminAccess)
+        {
+            ProductsAppService.InvalidateListingCaches(product.OwnerId);
+        }
+
+        return new
+        {
+            productId = productId.ToString("D"),
+            images = confirmedImages,
+            video = confirmedVideo,
+            count = confirmedImages.Count
+        };
+    }
+
     private static void ValidateVideoDuration(byte? videoDurationSeconds)
     {
         if (!videoDurationSeconds.HasValue

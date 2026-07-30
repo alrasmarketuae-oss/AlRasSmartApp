@@ -9,10 +9,9 @@ import 'package:alrasmarket/core/serveses/notifications_service.dart';
 import 'package:alrasmarket/core/serveses/profile_service.dart';
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/in_app_notification_service.dart';
+import 'package:alrasmarket/features/clint/data/models/app_notification_model.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/notification_navigation_helper.dart';
-import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
-import 'package:alrasmarket/features/company/presentation/controller/cubit/company_cubit.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart' hide Priority;
@@ -77,6 +76,16 @@ class AppPushNotificationService {
     FirebaseMessaging.onMessage.listen(_onForegroundMessage);
     FirebaseMessaging.onMessageOpenedApp.listen(_onNotificationOpened);
 
+    // iOS: show system banner while app is foreground (matches Android tray UX).
+    if (Platform.isIOS) {
+      await FirebaseMessaging.instance
+          .setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+    }
+
     try {
       final initialMessage = await FirebaseMessaging.instance
           .getInitialMessage()
@@ -86,6 +95,23 @@ class AppPushNotificationService {
       }
     } catch (e) {
       debugPrint('getInitialMessage skipped: $e');
+    }
+
+    // Cold-start tap on a local notification (common on iOS).
+    try {
+      final launch = await _localNotifications
+          .getNotificationAppLaunchDetails()
+          .timeout(const Duration(seconds: 3));
+      final response = launch?.notificationResponse;
+      if (launch?.didNotificationLaunchApp == true &&
+          response?.payload != null &&
+          response!.payload!.isNotEmpty &&
+          _pendingNavigationData == null) {
+        final decoded = jsonDecode(response.payload!) as Map<String, dynamic>;
+        _pendingNavigationData = decoded;
+      }
+    } catch (e) {
+      debugPrint('getNotificationAppLaunchDetails skipped: $e');
     }
 
     _initialized = true;
@@ -402,13 +428,22 @@ class AppPushNotificationService {
   }
 
   void _navigateFromNotificationData(Map<String, dynamic> data) {
-    final routeId =
-        (data['routeId'] ?? data['RouteId'] ?? '').toString().toLowerCase();
-    final type = (data['type'] ?? data['Type'] ?? '').toString().toLowerCase();
     final ctx = AppRoutes.navigatorKey.currentContext;
+    if (ctx == null) {
+      debugPrint('Notification navigation skipped: no navigator context');
+      return;
+    }
 
-    if (routeId == 'profile' ||
-        type.contains('company_profile_approved') ||
+    final type = (data['type'] ??
+            data['Type'] ??
+            data['typeName'] ??
+            data['TypeName'] ??
+            '')
+        .toString()
+        .toLowerCase();
+
+    // Profile approval/rejection always opens edit profile (push payload quirk).
+    if (type.contains('company_profile_approved') ||
         type.contains('company_profile_rejected') ||
         type.contains('company_approved') ||
         type.contains('company_rejected')) {
@@ -416,140 +451,29 @@ class AppPushNotificationService {
       return;
     }
 
-    // Request-ad offers only — do not treat product purchases as offers.
-    if (type == 'request_offer') {
-      _navigateToAdOffers(data);
-      return;
-    }
-
-    if (routeId == 'my_offers') {
-      AppRoutes.router.push(AppRoutes.kMyAdsView);
-      return;
-    }
-
-    // Seller: new order on an ad → My Ads + highlight/blink that product.
-    if (routeId == 'my_ads' ||
-        type == 'new_order' ||
-        type == 'product_order' ||
-        type == 'order') {
-      _navigateToMyAdsHighlight(data);
-      return;
-    }
-
-    final orderId = _parseOrderIdPreferringOrderKey(data);
-    final isBuyerOrderNotification = routeId == 'track_order' ||
-        routeId == 'orders' ||
-        type.contains('order_status') ||
-        type.contains('order_placed') ||
-        type.contains('order_refund') ||
-        type.contains('order_created');
-
-    if (isBuyerOrderNotification) {
-      if (ctx != null) {
-        NotificationNavigationHelper.openMyOrdersTab(
-          ctx,
-          highlightOrderId: orderId,
-        );
-      }
-      return;
-    }
-
-    if (routeId == 'product-detail' ||
-        type.contains('product') ||
-        type.contains('ad_')) {
-      AppRoutes.router.push(AppRoutes.kMyAdsView);
-      return;
-    }
-
-    if (routeId.contains('offer') || type.contains('offer')) {
-      AppRoutes.router.push(AppRoutes.kOffersServiceView);
-      return;
-    }
-
-    if (routeId.contains('request') || type.contains('request')) {
-      AppRoutes.router.push(AppRoutes.kRequestsServiceView);
-      return;
-    }
-
-    if (routeId.contains('chat') ||
-        type.contains('chat') ||
-        type == 'chat_message') {
-      AppRoutes.router.push(AppRoutes.kSupportChatView);
-      return;
-    }
-
-    if (orderId != null && ctx != null) {
-      NotificationNavigationHelper.openMyOrdersTab(
-        ctx,
-        highlightOrderId: orderId,
-      );
-    }
-  }
-
-  /// Prefers explicit orderId. Avoids treating product referenceId as order id.
-  int? _parseOrderIdPreferringOrderKey(Map<String, dynamic> data) {
-    final explicit = int.tryParse(
-      data['orderId']?.toString() ?? data['OrderId']?.toString() ?? '',
-    );
-    if (explicit != null && explicit > 0) return explicit;
-
-    final routeId =
-        (data['routeId'] ?? data['RouteId'] ?? '').toString().toLowerCase();
-    final type = (data['type'] ?? data['Type'] ?? '').toString().toLowerCase();
-    if (routeId == 'my_ads' ||
-        type == 'new_order' ||
-        type == 'product_order' ||
-        type == 'request_offer') {
-      return null;
-    }
-
-    return int.tryParse(
-      data['referenceId']?.toString() ??
-          data['ReferenceId']?.toString() ??
-          '',
-    );
-  }
-
-  void _navigateToMyAdsHighlight(Map<String, dynamic> data) {
-    final productId = (data['highlightProductId'] ??
+    // Same routing as in-app notification list (Android + iOS).
+    final referenceId = (data['highlightProductId'] ??
             data['productId'] ??
             data['ProductId'] ??
             data['referenceId'] ??
             data['ReferenceId'] ??
+            data['orderId'] ??
+            data['OrderId'] ??
             '')
         .toString()
         .trim();
 
-    AppRoutes.router.push(
-      AppRoutes.kMyAdsView,
-      extra: productId.isEmpty
-          ? null
-          : <String, dynamic>{'highlightProductId': productId},
+    final item = AppNotificationModel(
+      id: (data['id'] ?? data['Id'] ?? '').toString(),
+      title: (data['title'] ?? data['Title'] ?? '').toString(),
+      body: (data['body'] ?? data['Body'] ?? '').toString(),
+      referenceId: referenceId,
+      routeId: (data['routeId'] ?? data['RouteId'] ?? '').toString(),
+      routeName: (data['routeName'] ?? data['RouteName'] ?? '').toString(),
+      typeName: type,
     );
-  }
 
-  void _navigateToAdOffers(Map<String, dynamic> data) {
-    final productId = (data['productId'] ??
-            data['ProductId'] ??
-            data['referenceId'] ??
-            data['ReferenceId'] ??
-            '')
-        .toString()
-        .trim();
-    if (productId.isEmpty) {
-      AppRoutes.router.push(AppRoutes.kMyAdsView);
-      return;
-    }
-
-    final companyCubit = sl<CompanyCubit>();
-    final listing = companyCubit.findListingProduct(productId);
-    final product = listing ??
-        MyListingProductModel.notificationStub(productId: productId);
-
-    AppRoutes.router.push(
-      AppRoutes.kAdRequestOffersView,
-      extra: {'product': product},
-    );
+    unawaited(NotificationNavigationHelper.open(ctx, item));
   }
 
   int? _parseOrderId(Map<String, dynamic> data) {

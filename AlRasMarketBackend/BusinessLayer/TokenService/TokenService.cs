@@ -24,6 +24,12 @@ public class TokenService(IConfiguration configuration) : ITokenService
             new("EntityId", user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email),
             new(ClaimTypes.Role, GetRoleName(user.RoleId)),
+            new("roleId", user.RoleId.ToString()),
+            new("isApproved", user.IsApproved ? "true" : "false"),
+            new("isActive", user.IsActive ? "true" : "false"),
+            new("isRejected", user.IsRejected ? "true" : "false"),
+            new("hasPendingProfile", string.IsNullOrWhiteSpace(user.PendingProfileChanges) ? "false" : "true"),
+            new("phone", user.PhoneNumber ?? string.Empty),
             new("fullName", user.FullName),
             new("imgPath", user.ImgPath ?? string.Empty),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())

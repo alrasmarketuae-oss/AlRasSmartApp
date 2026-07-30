@@ -275,6 +275,14 @@ public interface IProductAssetsAppService
     Task<object> ConfirmDocumentUploadAsync(ConfirmProductDocumentInput input, CancellationToken cancellationToken = default);
     Task<object> PresignVideoUploadAsync(PresignProductVideoInput input, CancellationToken cancellationToken = default);
     Task<object> ConfirmVideoUploadAsync(ConfirmProductVideoInput input, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Confirms many draft/final image paths (+ optional video) in one DB SaveChanges.
+    /// </summary>
+    Task<object> ConfirmProductAssetsBatchAsync(
+        ConfirmProductAssetsBatchInput input,
+        CancellationToken cancellationToken = default);
+
     Task<object> UploadOfferStagingImageAsync(UploadStagingAssetInput input, CancellationToken cancellationToken = default);
     Task<object> UploadOfferStagingDocumentAsync(UploadStagingAssetInput input, CancellationToken cancellationToken = default);
     Task<object> UploadOfferStagingVideoAsync(UploadStagingAssetInput input, CancellationToken cancellationToken = default);

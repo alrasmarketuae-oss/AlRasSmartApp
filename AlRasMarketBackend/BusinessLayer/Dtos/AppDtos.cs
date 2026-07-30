@@ -152,6 +152,16 @@ public sealed class ConfirmProductVideoInput
     public bool AllowAdminAccess { get; set; }
 }
 
+public sealed class ConfirmProductAssetsBatchInput
+{
+    public string ProductId { get; set; } = string.Empty;
+    public string OwnerId { get; set; } = string.Empty;
+    public IReadOnlyList<string> ImagePaths { get; set; } = Array.Empty<string>();
+    public string? VideoPath { get; set; }
+    public byte? VideoDurationSeconds { get; set; }
+    public bool AllowAdminAccess { get; set; }
+}
+
 public sealed class PresignDraftImageInput
 {
     public string OwnerId { get; set; } = string.Empty;
@@ -235,6 +245,18 @@ public class CreateProductInput
     /// <summary>Booking Incoterm name: FOB / CNF / CIF.</summary>
     public string? BookingPriceTypeName { get; set; }
     public byte? BookingPriceTypeId { get; set; }
+
+    /// <summary>
+    /// Draft image paths already uploaded to R2 (product-images/drafts/…).
+    /// Attached in the same create request — skips per-image confirm round-trips.
+    /// </summary>
+    public List<string>? DraftImagePaths { get; set; }
+
+    /// <summary>Draft video path already on R2 under product-videos/drafts/…</summary>
+    public string? DraftVideoPath { get; set; }
+
+    /// <summary>Required when <see cref="DraftVideoPath"/> is set.</summary>
+    public byte? DraftVideoDurationSeconds { get; set; }
 }
 
 public sealed class UpdateProductInput : CreateProductInput

@@ -40,6 +40,9 @@ class CreateAdProductRequest {
     this.retailPackaging,
     this.retailPackagingDetails,
     this.retailDescriptionEn,
+    this.draftImagePaths,
+    this.draftVideoPath,
+    this.draftVideoDurationSeconds,
   });
 
   final String? nameEn;
@@ -80,6 +83,11 @@ class CreateAdProductRequest {
   final int? retailPackaging;
   final String? retailPackagingDetails;
   final String? retailDescriptionEn;
+
+  /// R2 draft paths already uploaded while filling the form (create only).
+  final List<String>? draftImagePaths;
+  final String? draftVideoPath;
+  final int? draftVideoDurationSeconds;
 
   Map<String, dynamic> toJson() => {
         'nameEn': nameEn,
@@ -193,6 +201,9 @@ class CreateAdProductRequest {
     int? retailPackaging,
     String? retailPackagingDetails,
     String? retailDescriptionEn,
+    List<String>? draftImagePaths,
+    String? draftVideoPath,
+    int? draftVideoDurationSeconds,
     bool clearProductVideoFile = false,
   }) {
     return CreateAdProductRequest(
@@ -238,6 +249,10 @@ class CreateAdProductRequest {
       retailPackagingDetails:
           retailPackagingDetails ?? this.retailPackagingDetails,
       retailDescriptionEn: retailDescriptionEn ?? this.retailDescriptionEn,
+      draftImagePaths: draftImagePaths ?? this.draftImagePaths,
+      draftVideoPath: draftVideoPath ?? this.draftVideoPath,
+      draftVideoDurationSeconds:
+          draftVideoDurationSeconds ?? this.draftVideoDurationSeconds,
     );
   }
 
@@ -403,6 +418,22 @@ class CreateAdProductRequest {
         contentType: _videoContentType(productVideoFile!.path),
       );
       map['VideoDurationSeconds'] = (videoDurationSeconds ?? 0).toString();
+    }
+
+    final drafts = draftImagePaths
+        ?.where((p) => p.trim().isNotEmpty)
+        .map((p) => p.trim())
+        .toList(growable: false);
+    if (drafts != null && drafts.isNotEmpty) {
+      map['DraftImagePathsCsv'] = drafts.join(',');
+    }
+    final draftVideo = draftVideoPath?.trim();
+    if (draftVideo != null && draftVideo.isNotEmpty) {
+      map['DraftVideoPath'] = draftVideo;
+      if (draftVideoDurationSeconds != null && draftVideoDurationSeconds! > 0) {
+        map['DraftVideoDurationSeconds'] =
+            draftVideoDurationSeconds.toString();
+      }
     }
 
     _appendRetailPricingFields(map, forUpdate: false);

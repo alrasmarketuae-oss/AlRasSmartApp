@@ -100,6 +100,14 @@ abstract class BaseProductRemoteDataSource {
     required String token,
   });
 
+  Future<Either<Failure, void>> confirmDraftAssetsBatch({
+    required String productId,
+    required List<String> imagePaths,
+    String? videoPath,
+    int? videoDurationSeconds,
+    required String token,
+  });
+
   /// Calls the confirm endpoint for an already-uploaded draft video.
   Future<Either<Failure, void>> confirmDraftVideo({
     required String productId,
@@ -703,6 +711,51 @@ class ProductRemoteDataSource implements BaseProductRemoteDataSource {
       return const Right(null);
     } on DioException catch (e) {
       return Left(ServerFailure(_extractMessage(e.response?.data) ?? e.message ?? 'Confirm error'));
+    } catch (e) {
+      return Left(NetworkFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> confirmDraftAssetsBatch({
+    required String productId,
+    required List<String> imagePaths,
+    String? videoPath,
+    int? videoDurationSeconds,
+    required String token,
+  }) async {
+    try {
+      final body = <String, dynamic>{
+        'imagePaths': imagePaths,
+      };
+      if (videoPath != null && videoPath.trim().isNotEmpty) {
+        body['videoPath'] = videoPath.trim();
+        if (videoDurationSeconds != null && videoDurationSeconds > 0) {
+          body['videoDurationSeconds'] = videoDurationSeconds;
+        }
+      }
+
+      final confirmResponse = await DioHelper.postData(
+        url: ApiConstants.productAssetsConfirmBatchEndPoint(productId),
+        data: body,
+        token: token,
+      );
+      final status = confirmResponse?.statusCode ?? 0;
+      if (status < 200 || status >= 300) {
+        return Left(
+          ServerFailure(
+            _extractMessage(confirmResponse?.data) ??
+                'Confirm assets batch failed ($status)',
+          ),
+        );
+      }
+      return const Right(null);
+    } on DioException catch (e) {
+      return Left(
+        ServerFailure(
+          _extractMessage(e.response?.data) ?? e.message ?? 'Confirm batch error',
+        ),
+      );
     } catch (e) {
       return Left(NetworkFailure(e.toString()));
     }

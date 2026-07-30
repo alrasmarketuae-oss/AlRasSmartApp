@@ -47,8 +47,18 @@ public sealed class ClipHttpEmbeddingService(
         }
 
         buffered.Position = 0;
-        var jpegBytes = await ToJpegBytesAsync(buffered, _options.CenterCropRatio, cancellationToken)
-            .ConfigureAwait(false);
+        // Mobile already sends a small JPEG for search — skip ImageSharp re-encode.
+        byte[] jpegBytes;
+        if (LooksLikeJpeg(buffered) && buffered.Length is > 0 and <= 120_000)
+        {
+            jpegBytes = buffered.ToArray();
+        }
+        else
+        {
+            jpegBytes = await ToJpegBytesAsync(buffered, _options.CenterCropRatio, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
         if (jpegBytes.Length == 0)
         {
             return null;
@@ -138,6 +148,27 @@ public sealed class ClipHttpEmbeddingService(
         {
             logger.LogWarning(ex, "Failed parsing CLIP response for {File}", fileName);
             return null;
+        }
+    }
+
+    private static bool LooksLikeJpeg(MemoryStream stream)
+    {
+        if (stream.Length < 3)
+        {
+            return false;
+        }
+
+        var pos = stream.Position;
+        try
+        {
+            stream.Position = 0;
+            Span<byte> header = stackalloc byte[3];
+            var read = stream.Read(header);
+            return read == 3 && header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF;
+        }
+        finally
+        {
+            stream.Position = pos;
         }
     }
 

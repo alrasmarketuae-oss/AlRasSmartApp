@@ -19,6 +19,13 @@ public interface IFileStorage
     Task<Stream?> OpenReadAsync(string relativePath, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Lists objects under [prefix] (relative path). Empty list when unsupported.
+    /// </summary>
+    Task<IReadOnlyList<StoredObjectInfo>> ListAsync(
+        string prefix,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Client direct PUT URL when the provider supports it (R2/S3). Returns null for local storage.
     /// </summary>
     Task<string?> TryCreatePresignedPutUrlAsync(
@@ -27,3 +34,5 @@ public interface IFileStorage
         TimeSpan expiry,
         CancellationToken cancellationToken = default);
 }
+
+public sealed record StoredObjectInfo(string RelativePath, DateTimeOffset LastModified);

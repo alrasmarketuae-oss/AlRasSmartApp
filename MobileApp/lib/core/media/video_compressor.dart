@@ -15,13 +15,15 @@ class VideoCompressor {
   VideoCompressor._();
 
   static const _audioBitrateK = 96;
+  /// WhatsApp-like: one fast pass first; only fall back if still over the ceiling.
+  static const _x264Preset = 'veryfast';
   static const _crfProfiles = <({int width, int crf})>[
-    (width: 1280, crf: 28),
-    (width: 960, crf: 30),
-    (width: 720, crf: 32),
-    (width: 640, crf: 34),
+    (width: 720, crf: 28),
+    (width: 640, crf: 32),
   ];
-  static const _maxBitrateAttempts = 6;
+  static const _maxBitrateAttempts = 2;
+  /// Skip re-encode when already small enough (WhatsApp-style).
+  static const _alreadySmallEnoughBytes = 12 * 1024 * 1024;
 
   /// Prefer libx264; on some FFmpegKit builds use mpeg4 (always available).
   static List<String> _videoEncodeArgs({
@@ -32,13 +34,16 @@ class VideoCompressor {
     final scale = "scale='min($width,iw)':-2";
     if (crf != null) {
       return [
-        '-c:v', 'libx264', '-preset', 'medium', '-crf', '$crf',
+        '-c:v', 'libx264',
+        '-preset', _x264Preset,
+        '-crf', '$crf',
         '-vf', scale,
       ];
     }
     final bitrate = videoBitrateK!;
     return [
-      '-c:v', 'libx264', '-preset', 'medium',
+      '-c:v', 'libx264',
+      '-preset', _x264Preset,
       '-b:v', '${bitrate}k',
       '-maxrate', '${bitrate}k',
       '-bufsize', '${bitrate * 2}k',
@@ -89,6 +94,14 @@ class VideoCompressor {
       return inputPath;
     }
 
+    // Already compact — no multi-pass re-encode (WhatsApp skips these too).
+    if (forceCompress &&
+        originalSize <= _alreadySmallEnoughBytes &&
+        originalSize <= maxBytes) {
+      onProgress?.call(1);
+      return inputPath;
+    }
+
     final durationSec = await _readDurationSeconds(inputPath);
     if (durationSec <= 0) {
       debugPrint('[VideoCompressor] Could not read video duration.');
@@ -114,13 +127,19 @@ class VideoCompressor {
 
     Future<bool> acceptTry(String tryPath) async {
       final size = await File(tryPath).length();
-      if (size <= 0 || size > maxBytes) {
+      if (size <= 0) {
+        await _deleteIfExists(tryPath);
+        return false;
+      }
+      if (size > maxBytes) {
         if (forceCompress) await _deleteIfExists(tryPath);
         return false;
       }
+      // Non-force: first under-ceiling pass wins.
       if (!forceCompress) {
         return true;
       }
+      // Force: accept first successful shrink (don't ladder for 15%+ cuts).
       if (size >= bestSize) {
         await _deleteIfExists(tryPath);
         return false;
@@ -130,8 +149,7 @@ class VideoCompressor {
       }
       bestSize = size;
       bestPath = tryPath;
-      // Stop once we cut ~15%+ — enough for ads without many ffmpeg passes.
-      return bestSize <= (originalSize * 0.85).floor();
+      return true;
     }
 
     for (final profile in _crfProfiles) {

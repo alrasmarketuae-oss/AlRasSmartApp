@@ -57,6 +57,31 @@ public sealed class LocalWebRootFileStorage(IWebHostEnvironment environment) : I
         return Task.FromResult<Stream?>(stream);
     }
 
+    public Task<IReadOnlyList<StoredObjectInfo>> ListAsync(
+        string prefix,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var key = WebRootFileHelper.NormalizeStoredPath(prefix).TrimStart('/');
+        var root = Path.Combine(WebRootPath, key.Replace('/', Path.DirectorySeparatorChar));
+        if (!Directory.Exists(root))
+        {
+            return Task.FromResult<IReadOnlyList<StoredObjectInfo>>(Array.Empty<StoredObjectInfo>());
+        }
+
+        var results = new List<StoredObjectInfo>();
+        foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var relative = Path.GetRelativePath(WebRootPath, file)
+                .Replace('\\', '/');
+            var info = new FileInfo(file);
+            results.Add(new StoredObjectInfo("/" + relative.TrimStart('/'), info.LastWriteTimeUtc));
+        }
+
+        return Task.FromResult<IReadOnlyList<StoredObjectInfo>>(results);
+    }
+
     public Task<string?> TryCreatePresignedPutUrlAsync(
         string relativePath,
         string contentType,

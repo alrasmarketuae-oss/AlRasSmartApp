@@ -128,6 +128,23 @@ class FcmTokenService {
 
   Future<String?> _fetchToken() async {
     try {
+      if (Platform.isIOS) {
+        // FCM token on iOS requires APNs token first (especially TestFlight/production).
+        final apns = await FirebaseMessaging.instance
+            .getAPNSToken()
+            .timeout(const Duration(seconds: 8));
+        if (apns == null || apns.isEmpty) {
+          debugPrint('FCM: APNs token not ready yet');
+          // Brief wait — APNs callback can arrive just after permission grant.
+          await Future<void>.delayed(const Duration(seconds: 2));
+          final retryApns = await FirebaseMessaging.instance.getAPNSToken();
+          if (retryApns == null || retryApns.isEmpty) {
+            debugPrint('FCM: APNs token still missing — cannot get FCM token');
+            return null;
+          }
+        }
+      }
+
       final token = await FirebaseMessaging.instance.getToken();
       debugPrint('FCM getToken result: $token');
       return token;

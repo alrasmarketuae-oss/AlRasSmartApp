@@ -271,6 +271,22 @@ class ProductDraftOpsUseCase {
     );
   }
 
+  Future<Either<Failure, void>> confirmDraftAssetsBatch({
+    required String productId,
+    required List<String> imagePaths,
+    String? videoPath,
+    int? videoDurationSeconds,
+    required String token,
+  }) {
+    return _repository.confirmDraftAssetsBatch(
+      productId: productId,
+      imagePaths: imagePaths,
+      videoPath: videoPath,
+      videoDurationSeconds: videoDurationSeconds,
+      token: token,
+    );
+  }
+
   Future<Either<Failure, void>> confirmDraftVideo({
     required String productId,
     required String draftPath,

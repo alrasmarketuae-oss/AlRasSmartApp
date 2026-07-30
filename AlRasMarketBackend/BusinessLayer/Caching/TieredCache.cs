@@ -101,6 +101,26 @@ public sealed class TieredCache : ITieredCache
         }
     }
 
+    public async Task RemoveAsync(string key, CancellationToken cancellationToken = default)
+    {
+        memoryCache.Remove(key);
+
+        if (!IsRedisConnected || redis is null)
+        {
+            return;
+        }
+
+        try
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            await redis.GetDatabase().KeyDeleteAsync(Prefixed(key)).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Redis DELETE failed for {CacheKey}", key);
+        }
+    }
+
     private string Prefixed(string key) =>
         string.IsNullOrWhiteSpace(options.InstanceName)
             ? key

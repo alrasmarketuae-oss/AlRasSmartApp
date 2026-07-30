@@ -164,6 +164,8 @@ class ApiConstants {
       '/ProductAssets/$productId/images/presign';
   static String productImageConfirmEndPoint(String productId) =>
       '/ProductAssets/$productId/images/confirm';
+  static String productAssetsConfirmBatchEndPoint(String productId) =>
+      '/ProductAssets/$productId/assets/confirm-batch';
   static String productImageDeleteByPathEndPoint(String productId) =>
       '/ProductAssets/$productId/images';
   static String productDocumentUploadEndPoint(String productId) =>
