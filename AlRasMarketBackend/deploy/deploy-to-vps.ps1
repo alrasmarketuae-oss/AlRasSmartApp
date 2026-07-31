@@ -56,6 +56,9 @@ set -e
 cd '$RemotePath'
 tar -xzf backend.tar.gz
 rm -f backend.tar.gz
+# Stale path from before ProductAdoRepository moved to DataLayer.
+rm -f BusinessLayer/DataAccess/ProductAdoRepository.cs
+rmdir BusinessLayer/DataAccess 2>/dev/null || true
 mkdir -p deploy/certbot/conf deploy/certbot/www
 echo '==> Building & restarting...'
 if [ -n '$serviceList' ]; then
