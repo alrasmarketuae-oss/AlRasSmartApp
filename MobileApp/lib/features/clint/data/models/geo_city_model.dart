@@ -2,15 +2,18 @@ class GeoCityModel {
   const GeoCityModel({
     required this.cityId,
     required this.cityName,
+    this.countryId = 0,
   });
 
   final String cityId;
   final String cityName;
+  final int countryId;
 
   factory GeoCityModel.fromJson(Map<String, dynamic> json) {
     return GeoCityModel(
       cityId: (json['cityId'] ?? json['id'] ?? '').toString(),
       cityName: json['cityName'] as String? ?? '',
+      countryId: int.tryParse((json['countryId'] ?? '').toString()) ?? 0,
     );
   }
 }

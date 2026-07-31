@@ -15,6 +15,10 @@ class FcmTokenService {
   String? _cachedToken;
   bool _initialized = false;
 
+  /// Invoked when Firebase rotates the token, so the new one can be pushed to
+  /// the backend for the signed-in account. Set by [AuthService].
+  ValueChanged<String>? onTokenRefreshed;
+
   /// Firebase init + token listeners only. Do NOT request notification
   /// permission or await APNs token here — that blocks the native splash
   /// (especially on iOS when a session is restored) until [runApp].
@@ -31,6 +35,9 @@ class FcmTokenService {
       FirebaseMessaging.instance.onTokenRefresh.listen((token) {
         _cachedToken = token;
         debugPrint('FCM token refreshed: $token');
+        if (token.isNotEmpty) {
+          onTokenRefreshed?.call(token);
+        }
       });
 
       _initialized = true;

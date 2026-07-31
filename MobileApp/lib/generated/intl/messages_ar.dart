@@ -400,6 +400,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "counterfeitProducts": MessageLookupByLibrary.simpleMessage(
       "منتجات مقلدة أو مزيفة.",
     ),
+    "country": MessageLookupByLibrary.simpleMessage("الدولة"),
     "countryCode": MessageLookupByLibrary.simpleMessage("كود الدولة"),
     "countryOfOrigin": MessageLookupByLibrary.simpleMessage("بلد المنشأ"),
     "createAccount": MessageLookupByLibrary.simpleMessage("إنشاء حساب"),
@@ -446,6 +447,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "deleteAdConfirmTitle": MessageLookupByLibrary.simpleMessage(
       "حذف الإعلان؟",
     ),
+    "deleteAddress": MessageLookupByLibrary.simpleMessage("حذف العنوان"),
+    "deleteAddressConfirm": MessageLookupByLibrary.simpleMessage(
+      "هل أنت متأكد من حذف هذا العنوان؟",
+    ),
     "deleteShippingAdConfirm": MessageLookupByLibrary.simpleMessage(
       "هل تريد حذف هذا الإعلان؟",
     ),
@@ -482,6 +487,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "dubaiUae": MessageLookupByLibrary.simpleMessage("دبي,الإمارات"),
     "edit": MessageLookupByLibrary.simpleMessage("تعديل"),
+    "editAddress": MessageLookupByLibrary.simpleMessage("تعديل العنوان"),
     "editCart": MessageLookupByLibrary.simpleMessage("تعديل السلة"),
     "editProfile": MessageLookupByLibrary.simpleMessage("تعديل الملف الشخصي"),
     "editShippingAd": MessageLookupByLibrary.simpleMessage("تعديل إعلان شحن"),
@@ -1162,12 +1168,18 @@ class MessageLookup extends MessageLookupByLibrary {
     "searchHistoryNotFound": MessageLookupByLibrary.simpleMessage(
       "نتائج البحث المحفوظة لم تعد متاحة.",
     ),
+    "searchOrTypeCity": MessageLookupByLibrary.simpleMessage(
+      "ابحث عن مدينتك أو اكتبها",
+    ),
     "searchResults": MessageLookupByLibrary.simpleMessage("نتائج البحث"),
     "secondNature": MessageLookupByLibrary.simpleMessage(
       "ثانياً: طبيعة عمل التطبيق",
     ),
     "selectAnOption": MessageLookupByLibrary.simpleMessage("اختر خياراً"),
     "selectCategory": MessageLookupByLibrary.simpleMessage("اختر الفئة"),
+    "selectCountryFirst": MessageLookupByLibrary.simpleMessage(
+      "اختر الدولة أولاً",
+    ),
     "selectCurrency": MessageLookupByLibrary.simpleMessage(
       "يرجى اختيار العملة.",
     ),
@@ -1193,6 +1205,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "sendPurchaseOrder": MessageLookupByLibrary.simpleMessage(
       "إرسال طلب الشراء",
+    ),
+    "setPassword": MessageLookupByLibrary.simpleMessage("تعيين كلمة المرور"),
+    "setPasswordSocialHint": MessageLookupByLibrary.simpleMessage(
+      "لقد سجلت الدخول عبر جوجل أو آبل، لذلك لا توجد كلمة مرور حالية. اختر كلمة مرور لتتمكن أيضاً من تسجيل الدخول ببريدك الإلكتروني.",
     ),
     "settings": MessageLookupByLibrary.simpleMessage("الإعدادات"),
     "seventhLiability": MessageLookupByLibrary.simpleMessage(

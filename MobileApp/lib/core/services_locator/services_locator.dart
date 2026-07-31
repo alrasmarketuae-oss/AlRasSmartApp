@@ -192,8 +192,10 @@ class ServicesLocator {
       () => GeoRepository(remote: sl()),
     );
     sl.registerLazySingleton(() => GetGeoCountriesUseCase(sl()));
+    sl.registerLazySingleton(() => GetGeoCountryListUseCase(sl()));
     sl.registerLazySingleton(() => GetGeoPortsByCountryUseCase(sl()));
     sl.registerLazySingleton(() => GetGeoCitiesByCountryUseCase(sl()));
+    sl.registerLazySingleton(() => GetGeoCitiesByCountryIdUseCase(sl()));
 
     sl.registerLazySingleton<BaseAddressRemoteDataSource>(
       () => AddressRemoteDataSource(),
@@ -203,6 +205,8 @@ class ServicesLocator {
     );
     sl.registerLazySingleton(() => GetClientAddressesUseCase(sl()));
     sl.registerLazySingleton(() => CreateClientAddressUseCase(sl()));
+    sl.registerLazySingleton(() => UpdateClientAddressUseCase(sl()));
+    sl.registerLazySingleton(() => DeleteClientAddressUseCase(sl()));
 
     sl.registerLazySingleton<BaseProductRemoteDataSource>(
       () => ProductRemoteDataSource(),

@@ -1,6 +1,37 @@
+import 'dart:convert';
+
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/utils/utc_date_time.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_message_type.dart';
+
+class ChatFileContent {
+  const ChatFileContent({
+    required this.path,
+    required this.name,
+    required this.sizeBytes,
+    required this.mimeType,
+  });
+
+  final String path;
+  final String name;
+  final int sizeBytes;
+  final String mimeType;
+
+  String? get readableSize {
+    if (sizeBytes <= 0) return null;
+    const units = ['B', 'KB', 'MB', 'GB'];
+    var value = sizeBytes.toDouble();
+    var unitIndex = 0;
+    while (value >= 1024 && unitIndex < units.length - 1) {
+      value /= 1024;
+      unitIndex++;
+    }
+    final rounded = value >= 10 || unitIndex == 0
+        ? value.round().toString()
+        : value.toStringAsFixed(1);
+    return '$rounded ${units[unitIndex]}';
+  }
+}
 
 class ChatMessageModel {
   const ChatMessageModel({
@@ -37,21 +68,115 @@ class ChatMessageModel {
   final double? processingProgress;
   final String? processingLabel;
 
-  String get contentUrl {
-    if (content.startsWith('http://') || content.startsWith('https://')) {
-      return ApiConstants.rewriteMediaUrl(content);
+  /// Chat attachments live on the media CDN, except API routes such as
+  /// `/Chat/voice` and `/Chat/video` which stream from the API host.
+  String get contentUrl => resolveAttachmentUrl(content);
+
+  static String resolveAttachmentUrl(String rawPath) {
+    final trimmed = rawPath.trim();
+    if (trimmed.isEmpty) return '';
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return ApiConstants.rewriteMediaUrl(trimmed);
     }
-    if (content.startsWith('/chat-') || content.startsWith('/Chat/')) {
-      return '${ApiConstants.apiOrigin}$content';
+    if (trimmed.startsWith('/Chat/') || trimmed.startsWith('/api/')) {
+      return '${ApiConstants.apiOrigin}$trimmed';
     }
-    return ApiConstants.resolveMediaUrl(content);
+    return ApiConstants.resolveMediaUrl(trimmed);
+  }
+
+  /// Image messages may carry a single path or a `{"images":[...]}` payload.
+  List<String> get imagePaths {
+    final trimmed = content.trim();
+    if (trimmed.isEmpty) return const [];
+    if (trimmed.startsWith('{') && trimmed.contains('"images"')) {
+      try {
+        final decoded = jsonDecode(trimmed);
+        if (decoded is Map && decoded['images'] is List) {
+          final paths = (decoded['images'] as List)
+              .whereType<String>()
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList();
+          if (paths.isNotEmpty) return paths;
+        }
+      } catch (_) {
+        // Fall through to the single-path case.
+      }
+    }
+    return [trimmed];
   }
 
   String get videoUrl {
     if (messageType != ChatMessageType.video) return contentUrl;
-    if (!content.startsWith('/chat-videos/')) return contentUrl;
-    final encoded = Uri.encodeComponent(content);
+    final normalized = _normalizedStoragePath;
+    if (!normalized.startsWith('/chat-videos/')) return contentUrl;
+    final encoded = Uri.encodeComponent(normalized);
     return '${ApiConstants.baseUrl}/Chat/video?path=$encoded';
+  }
+
+  /// Document messages carry `{"path":..,"name":..,"size":..,"mime":..}` because the
+  /// stored object is renamed to a GUID and the original name must survive.
+  ChatFileContent? get fileContent {
+    final trimmed = content.trim();
+    if (trimmed.isEmpty) return null;
+
+    if (trimmed.startsWith('{')) {
+      try {
+        final decoded = jsonDecode(trimmed);
+        if (decoded is! Map) return null;
+        final path = decoded['path']?.toString().trim() ?? '';
+        final name = decoded['name']?.toString().trim() ?? '';
+        if (name.isEmpty && path.isEmpty) return null;
+        return ChatFileContent(
+          path: path,
+          name: name.isNotEmpty ? name : path.split('/').last,
+          sizeBytes: int.tryParse('${decoded['size']}') ?? 0,
+          mimeType: decoded['mime']?.toString().trim() ?? '',
+        );
+      } catch (_) {
+        return null;
+      }
+    }
+
+    if (trimmed.startsWith('/chat-files/')) {
+      return ChatFileContent(
+        path: trimmed,
+        name: trimmed.split('/').last,
+        sizeBytes: 0,
+        mimeType: '',
+      );
+    }
+
+    return null;
+  }
+
+  /// Downloads through the API so the response keeps the original file name.
+  String? get fileDownloadUrl {
+    final file = fileContent;
+    final path = file?.path.trim() ?? '';
+    if (file == null || path.isEmpty) return null;
+    final normalized = path.startsWith('/') ? path : '/$path';
+    return '${ApiConstants.baseUrl}/Chat/file'
+        '?path=${Uri.encodeComponent(normalized)}'
+        '&name=${Uri.encodeComponent(file.name)}';
+  }
+
+  /// Streams through the API so the response carries a playable content type.
+  String get voiceUrl {
+    final normalized = _normalizedStoragePath;
+    if (!normalized.startsWith('/chat-voice/')) return contentUrl;
+    final encoded = Uri.encodeComponent(normalized);
+    return '${ApiConstants.baseUrl}/Chat/voice?path=$encoded';
+  }
+
+  String get _normalizedStoragePath {
+    final trimmed = content.trim().replaceAll('\\', '/');
+    if (trimmed.isEmpty ||
+        trimmed.startsWith('http://') ||
+        trimmed.startsWith('https://')) {
+      return '';
+    }
+    return trimmed.startsWith('/') ? trimmed : '/$trimmed';
   }
 
   ChatMessageModel copyWith({

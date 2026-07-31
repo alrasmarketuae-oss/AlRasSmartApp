@@ -1125,6 +1125,8 @@ export const arMessages = {
       attachImage: 'صورة',
       attachVideo: 'فيديو',
       videoTooLarge: 'يجب ألا يتجاوز حجم الفيديو 30 ميجابايت.',
+      attachDocument: 'ملف',
+      documentTooLarge: 'يجب ألا يتجاوز حجم الملف 20 ميجابايت.',
       recordVoice: 'تسجيل',
       stopRecord: 'إيقاف',
       cancelRecord: 'إلغاء',

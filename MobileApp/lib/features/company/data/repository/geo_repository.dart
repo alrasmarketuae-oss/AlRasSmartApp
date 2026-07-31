@@ -17,6 +17,20 @@ class GeoRepository implements BaseGeoRepository {
   }
 
   @override
+  Future<Either<Failure, List<GeoCountryModel>>> getCountryList() async {
+    final result = await _remote.fetchCountryList();
+    return result.fold(Left.new, (response) => Right(response.items));
+  }
+
+  @override
+  Future<Either<Failure, GeoCitiesResponse>> getCitiesByCountryId(
+    int countryId,
+  ) async {
+    final result = await _remote.fetchCitiesByCountryId(countryId);
+    return result.fold(Left.new, Right.new);
+  }
+
+  @override
   Future<Either<Failure, GeoPortsResponse>> getPortsByCountry(
     String countryName,
   ) async {

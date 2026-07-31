@@ -349,21 +349,21 @@ class _CloseMediaButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.black.withValues(alpha: 0.55),
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onPressed,
-        child: SizedBox(
-          width: 44.w,
-          height: 44.w,
-          child: Icon(
-            Icons.close_rounded,
-            color: Colors.white,
-            size: 26.sp,
+    return IconButton(
+      onPressed: onPressed,
+      padding: EdgeInsets.zero,
+      constraints: BoxConstraints.tightFor(width: 28.w, height: 28.w),
+      icon: Icon(
+        Icons.close_rounded,
+        color: Colors.white,
+        size: 22.sp,
+        shadows: const [
+          Shadow(
+            color: Color.fromRGBO(0, 0, 0, 0.55),
+            blurRadius: 4,
+            offset: Offset(0, 1),
           ),
-        ),
+        ],
       ),
     );
   }

@@ -4,7 +4,9 @@ class ClientAddressModel {
     required this.label,
     this.cityId = '',
     this.cityName = '',
+    this.countryId = 0,
     this.countryNameEn = '',
+    this.countryNameAr,
     this.addressLine1 = '',
     this.addressLine2,
   });
@@ -13,9 +15,17 @@ class ClientAddressModel {
   final String label;
   final String cityId;
   final String cityName;
+  final int countryId;
   final String countryNameEn;
+  final String? countryNameAr;
   final String addressLine1;
   final String? addressLine2;
+
+  String countryDisplayName(bool isArabic) {
+    final arabic = countryNameAr?.trim() ?? '';
+    if (isArabic && arabic.isNotEmpty) return arabic;
+    return countryNameEn;
+  }
 
   String get formattedAddressLine {
     final line1 = addressLine1.trim();
@@ -35,7 +45,9 @@ class ClientAddressModel {
       addressId: (json['addressId'] ?? json['id'] ?? '').toString(),
       cityId: (json['cityId'] ?? json['CityId'] ?? '').toString(),
       cityName: city,
+      countryId: int.tryParse((json['countryId'] ?? '').toString()) ?? 0,
       countryNameEn: country,
+      countryNameAr: (json['countryNameAr'] as String?)?.trim(),
       addressLine1: line1,
       addressLine2: line2.isEmpty ? null : line2,
       label: _formatLabel(
@@ -83,18 +95,31 @@ class ClientAddressesResponse {
 
 class CreateAddressRequest {
   const CreateAddressRequest({
-    required this.cityId,
+    this.cityId,
+    this.countryId,
+    this.cityName,
     required this.addressLine1,
     this.addressLine2,
   });
 
-  final String cityId;
+  /// Set when the user picked an existing city.
+  final String? cityId;
+
+  /// Set together with [cityName] when the city is typed in — the API matches
+  /// it against the country's cities and creates it when it is new.
+  final int? countryId;
+  final String? cityName;
+
   final String addressLine1;
   final String? addressLine2;
 
   Map<String, dynamic> toJson() {
+    final city = cityId?.trim() ?? '';
+    final name = cityName?.trim() ?? '';
     return {
-      'cityId': cityId,
+      if (city.isNotEmpty) 'cityId': city,
+      if (countryId != null) 'countryId': countryId,
+      if (name.isNotEmpty) 'cityName': name,
       'addressLine1': addressLine1,
       if (addressLine2 != null && addressLine2!.trim().isNotEmpty)
         'addressLine2': addressLine2!.trim(),

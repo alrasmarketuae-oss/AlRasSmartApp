@@ -892,8 +892,10 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
   }
 
   /// Creates a **Requests** product from the client add-order form.
+  ///
+  /// Media is not passed in: the form uses [pickProductImages], so picked files
+  /// are already persisted, compressed and uploaded to R2 as drafts by now.
   Future<void> submitRequestOrder({
-    required BuildContext context,
     required String productName,
     required String specifications,
     required String quantity,
@@ -904,9 +906,18 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     String? address,
     String? addressId,
     DateTime? requiredDeliveryDate,
-    List<String> mediaPaths = const [],
   }) async {
     if (state.isSubmitting) return;
+
+    if (state.isCompressingMedia) {
+      emit(
+        state.copyWith(
+          submitErrorMessage: S.current.adUploadProgressCompressingImages,
+          clearSubmitSuccessMessage: true,
+        ),
+      );
+      return;
+    }
 
     productNameController.text = productName.trim();
     quantityController.text = quantity.trim();
@@ -916,12 +927,6 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     final notes = additionalNotes?.trim();
     specificationsController.text =
         notes != null && notes.isNotEmpty ? '$specs\n\n$notes' : specs;
-
-    final preparedMedia = await _finalizePickedPaths(
-      context: context,
-      rawPaths: mediaPaths,
-    );
-    if (preparedMedia.isEmpty && mediaPaths.isNotEmpty) return;
 
     emit(
       state.copyWith(
@@ -933,7 +938,6 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
         requiredDeliveryDate: requiredDeliveryDate,
         address: address?.trim(),
         addressId: addressId?.trim(),
-        productImages: preparedMedia,
         productDocuments: const [],
         clearSubmitErrorMessage: true,
         clearSubmitSuccessMessage: true,
@@ -943,7 +947,6 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     await _executeSubmit(
       requiresGeo: false,
       createSuccessMessage: S.current.requestPublishedSuccessfully,
-      resetFormOnSuccess: false,
     );
   }
 
@@ -1713,20 +1716,6 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     }
 
     return pickedPaths;
-  }
-
-  Future<List<String>> _finalizePickedPaths({
-    required BuildContext context,
-    required List<String> rawPaths,
-  }) async {
-    final mapped = await _finalizePickedPathsMapped(
-      context: context,
-      rawPaths: rawPaths,
-    );
-    return [
-      for (final raw in rawPaths)
-        if (mapped[raw] != null && mapped[raw]!.isNotEmpty) mapped[raw]!,
-    ];
   }
 
   /// Persists picks in parallel and soft-validates video duration.

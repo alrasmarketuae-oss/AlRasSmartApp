@@ -529,6 +529,22 @@ public class AccountDeletionAppService(
             Add(path);
         }
 
+        // File messages store JSON (path + original name), so the path has to be parsed out.
+        var chatFileContents = await dbContext.ChatMessages
+            .AsNoTracking()
+            .Where(x =>
+                (x.FromUserId == user.Id || x.ToUserId == user.Id)
+                && x.MessageType == ChatMessageType.File)
+            .Select(x => x.Content)
+            .ToListAsync(cancellationToken);
+        foreach (var content in chatFileContents)
+        {
+            if (ChatFileContentHelper.TryParse(content, out var fileContent))
+            {
+                Add(fileContent.Path);
+            }
+        }
+
         return paths;
     }
 

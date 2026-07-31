@@ -12,6 +12,26 @@ class GetGeoCountriesUseCase {
   Future<Either<Failure, List<String>>> call() => _repository.getCountries();
 }
 
+/// Countries with their ids, used by the address flow.
+class GetGeoCountryListUseCase {
+  GetGeoCountryListUseCase(this._repository);
+
+  final BaseGeoRepository _repository;
+
+  Future<Either<Failure, List<GeoCountryModel>>> call() =>
+      _repository.getCountryList();
+}
+
+class GetGeoCitiesByCountryIdUseCase {
+  GetGeoCitiesByCountryIdUseCase(this._repository);
+
+  final BaseGeoRepository _repository;
+
+  Future<Either<Failure, GeoCitiesResponse>> call(int countryId) {
+    return _repository.getCitiesByCountryId(countryId);
+  }
+}
+
 class GetGeoPortsByCountryUseCase {
   GetGeoPortsByCountryUseCase(this._repository);
 

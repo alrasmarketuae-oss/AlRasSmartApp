@@ -1,12 +1,15 @@
 import { useState } from 'react'
+import { apiUrl } from '../../config/api.js'
 import { resolveAssetUrl } from '../../lib/assets'
 import VoiceAudioPlayer from './VoiceAudioPlayer'
 import {
+  formatFileSize,
+  parseFileContent,
   parseImageContent,
   parseLocationContent,
   type ChatMessage,
 } from '../../types/chat'
-import { IconMapPin, IconMic } from '../icons'
+import { IconDocument, IconMapPin, IconMic } from '../icons'
 
 type ChatMessageBubbleProps = {
   message: ChatMessage
@@ -70,6 +73,8 @@ function MessageBody({ message, isMine }: ChatMessageBubbleProps) {
       return <ChatVoiceMessage message={message} isMine={isMine} />
     case 5:
       return <ChatVideoMessage message={message} />
+    case 6:
+      return <ChatFileMessage message={message} isMine={isMine} />
     case 4: {
       const location = parseLocationContent(message.content)
       if (!location) {
@@ -164,6 +169,54 @@ function ChatVoiceMessage({ message, isMine }: { message: ChatMessage; isMine: b
         isMine={isMine}
       />
     </div>
+  )
+}
+
+function ChatFileMessage({ message, isMine }: { message: ChatMessage; isMine: boolean }) {
+  const file = parseFileContent(message.content)
+
+  if (!file) {
+    return <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{message.content}</p>
+  }
+
+  const sizeLabel = formatFileSize(file.size)
+  // Still uploading: no storage path yet, so render the name without a link.
+  const href = file.path
+    ? apiUrl(`/api/Chat/file?path=${encodeURIComponent(file.path)}&name=${encodeURIComponent(file.name)}`)
+    : null
+
+  const body = (
+    <>
+      <span
+        className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+          isMine ? 'bg-white/20' : 'bg-[#3B7FC7]/10 text-[#3B7FC7] dark:text-[#7eb8ff]'
+        }`}
+      >
+        <IconDocument className="h-5 w-5" />
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-sm font-medium">{file.name}</span>
+        {sizeLabel ? <span className="block text-[11px] opacity-70">{sizeLabel}</span> : null}
+      </span>
+    </>
+  )
+
+  if (!href) {
+    return <div className="flex items-center gap-2 py-0.5">{body}</div>
+  }
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      download={file.name}
+      className={`flex items-center gap-2 rounded-xl px-2 py-1.5 transition ${
+        isMine ? 'hover:bg-white/10' : 'hover:bg-[#3B7FC7]/10'
+      }`}
+    >
+      {body}
+    </a>
   )
 }
 

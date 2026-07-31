@@ -12,6 +12,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 
 class ChatMessageBubble extends StatefulWidget {
@@ -56,13 +57,39 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
 
     final source = _isLocalFile
         ? DeviceFileSource(widget.message.content)
-        : UrlSource(widget.message.contentUrl);
+        : UrlSource(widget.message.voiceUrl);
 
-    await _player.play(source);
+    try {
+      await _player.play(source);
+    } catch (_) {
+      if (mounted) setState(() => _isPlaying = false);
+      return;
+    }
+    if (!mounted) return;
     setState(() => _isPlaying = true);
     _player.onPlayerComplete.listen((_) {
       if (mounted) setState(() => _isPlaying = false);
     });
+  }
+
+  Future<void> _openLocation(double lat, double lng) async {
+    final uri = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
+    );
+    try {
+      final opened = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!opened) {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open the map.')),
+      );
+    }
   }
 
   @override
@@ -160,50 +187,7 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
   Widget _buildContent(Color textColor) {
     switch (widget.message.messageType) {
       case ChatMessageType.image:
-        final imageSource = _isLocalFile
-            ? widget.message.content
-            : widget.message.contentUrl;
-        final imageChild = _isLocalFile
-            ? ClipRRect(
-                borderRadius: BorderRadius.circular(8.r),
-                child: Image.file(
-                  File(widget.message.content),
-                  width: 200.w,
-                  fit: BoxFit.cover,
-                ),
-              )
-            : ClipRRect(
-                borderRadius: BorderRadius.circular(8.r),
-                child: CachedAppImage(
-                  imageUrl: widget.message.contentUrl,
-                  width: 200.w,
-                  fit: BoxFit.cover,
-                  placeholder: SizedBox(
-                    width: 200.w,
-                    height: 140.h,
-                    child: const Center(child: CircularProgressIndicator()),
-                  ),
-                  errorWidget: Text(
-                    widget.message.content,
-                    style: TextStyle(color: textColor, fontSize: 14.sp),
-                  ),
-                ),
-              );
-        return GestureDetector(
-          onTap: () {
-            if (imageSource.trim().isEmpty) return;
-            ProductMediaPreviewScreen.open(
-              context,
-              items: [
-                ProductMediaItem(
-                  url: imageSource,
-                  kind: ProductMediaKind.image,
-                ),
-              ],
-            );
-          },
-          child: imageChild,
-        );
+        return _buildImageContent();
       case ChatMessageType.voice:
         return InkWell(
           onTap: _toggleVoice,
@@ -235,6 +219,8 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
         );
       case ChatMessageType.location:
         return _buildLocationContent(textColor);
+      case ChatMessageType.file:
+        return _buildFileContent(textColor);
       case ChatMessageType.text:
         if (widget.message.content.startsWith('📎 ')) {
           return Row(
@@ -258,39 +244,215 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
     }
   }
 
+  Widget _buildImageContent() {
+    if (_isLocalFile) {
+      return GestureDetector(
+        onTap: () => _openPreview([widget.message.content], 0),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8.r),
+          child: Image.file(
+            File(widget.message.content),
+            width: 200.w,
+            fit: BoxFit.cover,
+          ),
+        ),
+      );
+    }
+
+    final urls = widget.message.imagePaths
+        .map(ChatMessageModel.resolveAttachmentUrl)
+        .where((url) => url.isNotEmpty)
+        .toList();
+    if (urls.isEmpty) return _buildBrokenMedia(Icons.image_not_supported_outlined);
+
+    if (urls.length == 1) {
+      return GestureDetector(
+        onTap: () => _openPreview(urls, 0),
+        child: _buildRemoteImage(urls.first, width: 200.w, height: 140.h),
+      );
+    }
+
+    return SizedBox(
+      width: 200.w,
+      child: Wrap(
+        spacing: 4.w,
+        runSpacing: 4.w,
+        children: [
+          for (var i = 0; i < urls.length; i++)
+            GestureDetector(
+              onTap: () => _openPreview(urls, i),
+              child: _buildRemoteImage(urls[i], width: 98.w, height: 98.w),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRemoteImage(
+    String url, {
+    required double width,
+    required double height,
+  }) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8.r),
+      child: CachedAppImage(
+        imageUrl: url,
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        placeholder: SizedBox(
+          width: width,
+          height: height,
+          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        ),
+        errorWidget: SizedBox(
+          width: width,
+          height: height,
+          child: _buildBrokenMedia(Icons.broken_image_outlined),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBrokenMedia(IconData icon) {
+    return Container(
+      alignment: Alignment.center,
+      color: const Color(0x1A000000),
+      padding: EdgeInsets.all(12.w),
+      child: Icon(icon, size: 28.sp, color: Colors.white70),
+    );
+  }
+
+  void _openPreview(List<String> urls, int index) {
+    final items = urls
+        .where((url) => url.trim().isNotEmpty)
+        .map((url) => ProductMediaItem(url: url, kind: ProductMediaKind.image))
+        .toList();
+    if (items.isEmpty) return;
+    ProductMediaPreviewScreen.open(
+      context,
+      items: items,
+      initialIndex: index.clamp(0, items.length - 1),
+    );
+  }
+
+  Widget _buildFileContent(Color textColor) {
+    final file = widget.message.fileContent;
+    final name = file?.name.isNotEmpty == true
+        ? file!.name
+        : widget.message.content.split(RegExp(r'[\\/]')).last;
+    final size = file?.readableSize;
+    final url = widget.message.fileDownloadUrl;
+
+    return InkWell(
+      onTap: url == null ? null : () => _openFile(url),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.description_outlined, color: textColor, size: 26.sp),
+          SizedBox(width: 8.w),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (size != null)
+                  Text(
+                    size,
+                    style: TextStyle(
+                      color: textColor.withValues(alpha: 0.75),
+                      fontSize: 11.sp,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openFile(String url) async {
+    try {
+      final opened = await launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.externalApplication,
+      );
+      if (!opened) {
+        await launchUrl(Uri.parse(url), mode: LaunchMode.platformDefault);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open the file.')),
+      );
+    }
+  }
+
   Widget _buildLocationContent(Color textColor) {
     final raw = widget.message.content.trim();
     var label = 'Location';
+    double? lat;
+    double? lng;
     try {
       final map = jsonDecode(raw);
       if (map is Map) {
+        lat = double.tryParse('${map['lat']}');
+        lng = double.tryParse('${map['lng']}');
         final parsedLabel = map['label']?.toString().trim();
         if (parsedLabel != null && parsedLabel.isNotEmpty) {
           label = parsedLabel;
-        } else {
-          final lat = map['lat'];
-          final lng = map['lng'];
-          if (lat != null && lng != null) {
-            label = '$lat, $lng';
-          }
+        } else if (lat != null && lng != null) {
+          label = '${lat.toStringAsFixed(5)}, ${lng.toStringAsFixed(5)}';
         }
       }
     } catch (_) {
       if (raw.isNotEmpty) label = raw;
     }
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Icons.location_on, color: textColor, size: 20.sp),
-        SizedBox(width: 6.w),
-        Flexible(
-          child: Text(
-            label,
-            style: TextStyle(color: textColor, fontSize: 14.sp),
+    final hasCoordinates = lat != null && lng != null;
+
+    return InkWell(
+      onTap: hasCoordinates ? () => _openLocation(lat!, lng!) : null,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.location_on, color: textColor, size: 20.sp),
+          SizedBox(width: 6.w),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(color: textColor, fontSize: 14.sp),
+                ),
+                if (hasCoordinates)
+                  Text(
+                    'Open in Maps',
+                    style: TextStyle(
+                      color: textColor.withValues(alpha: 0.75),
+                      fontSize: 11.sp,
+                      decoration: TextDecoration.underline,
+                      decorationColor: textColor.withValues(alpha: 0.75),
+                    ),
+                  ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

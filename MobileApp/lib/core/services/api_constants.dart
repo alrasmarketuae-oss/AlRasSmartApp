@@ -110,6 +110,7 @@ class ApiConstants {
 
   // Auth Endpoints
   static String loginEndPoint = '/Auth/login';
+  static String updateFcmTokenEndPoint = '/Auth/fcm-token';
   static String clearFcmTokenEndPoint = '/Auth/clear-fcm-token';
   static String deleteAccountEndPoint = '/Auth/delete-account';
   static String registerPersonEndPoint = '/Auth/register-person';

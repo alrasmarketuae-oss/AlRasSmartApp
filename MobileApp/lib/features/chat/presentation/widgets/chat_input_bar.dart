@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:alrasmarket/core/theme/colors.dart';
+import 'package:alrasmarket/features/chat/data/utils/chat_media_helper.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -70,44 +71,82 @@ class _ChatInputBarState extends State<ChatInputBar> {
     }
   }
 
+  void _notify(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
   Future<void> _pickFile() async {
     if (widget.isSending) return;
-    final result = await FilePicker.pickFiles();
-    if (result != null && result.files.single.path != null) {
-      final path = result.files.single.path!;
-      final name = result.files.single.name;
-      widget.onSendFile(path, name);
+    final result = await FilePicker.pickFiles(withReadStream: false);
+    final picked = result?.files.isNotEmpty == true ? result!.files.first : null;
+    final path = picked?.path;
+    if (picked == null || path == null || path.isEmpty) return;
+
+    final isSupported = ChatMediaHelper.uploadTypeForPath(path) != null ||
+        ChatMediaHelper.uploadTypeForPath(picked.name) != null;
+    if (!isSupported) {
+      _notify(
+        'Unsupported file type. Allowed: '
+        '${ChatMediaHelper.supportedDocumentsLabel}, images, videos and audio.',
+      );
+      return;
     }
+
+    widget.onSendFile(path, picked.name);
   }
 
   Future<void> _shareLocation() async {
     if (widget.isSending) return;
 
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Location permission denied')),
-        );
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        _notify('Turn on location services to share your location.');
+        await Geolocator.openLocationSettings();
+        return;
       }
-      return;
-    }
 
-    final position = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-      ),
-    );
-    final payload = jsonEncode({
-      'lat': position.latitude,
-      'lng': position.longitude,
-      'label': 'My location',
-    });
-    widget.onSendLocation(payload);
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.deniedForever) {
+        _notify('Location permission is blocked. Enable it from settings.');
+        await Geolocator.openAppSettings();
+        return;
+      }
+      if (permission == LocationPermission.denied) {
+        _notify('Location permission denied');
+        return;
+      }
+
+      Position? position;
+      try {
+        position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 20),
+          ),
+        );
+      } catch (_) {
+        position = await Geolocator.getLastKnownPosition();
+      }
+
+      if (position == null) {
+        _notify('Could not read your location. Please try again.');
+        return;
+      }
+
+      widget.onSendLocation(
+        jsonEncode({
+          'lat': position.latitude,
+          'lng': position.longitude,
+          'label': 'My location',
+        }),
+      );
+    } catch (_) {
+      _notify('Could not read your location. Please try again.');
+    }
   }
 
   Future<void> _toggleRecording() async {
@@ -122,7 +161,10 @@ class _ChatInputBarState extends State<ChatInputBar> {
       return;
     }
 
-    if (!await _recorder.hasPermission()) return;
+    if (!await _recorder.hasPermission()) {
+      _notify('Microphone permission is required to record a voice message.');
+      return;
+    }
 
     final dir = await getTemporaryDirectory();
     final filePath =
@@ -178,8 +220,8 @@ class _ChatInputBarState extends State<ChatInputBar> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.attach_file),
-              title: const Text('File'),
+              leading: const Icon(Icons.description_outlined),
+              title: const Text('Document'),
               onTap: () {
                 Navigator.pop(ctx);
                 _pickFile();

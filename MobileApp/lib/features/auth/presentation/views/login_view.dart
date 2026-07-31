@@ -211,13 +211,6 @@ class _LoginFormBodyState extends State<_LoginFormBody> {
                   ? () {}
                   : () => AuthCubit.get(context).loginWithGoogle(),
             ),
-            SizedBox(height: 12.h),
-            CustomSocialButton(
-              label: S.of(context).continueWithFacebook,
-
-              assetImage: AppAssets.facebookIcon,
-              onPressed: () {},
-            ),
             if (Platform.isIOS) ...[
               SizedBox(height: 12.h),
               CustomSocialButton(

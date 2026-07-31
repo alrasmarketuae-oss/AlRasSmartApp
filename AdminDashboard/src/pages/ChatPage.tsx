@@ -501,6 +501,26 @@ export default function ChatPage() {
     }
   }
 
+  async function handleSendDocument(file: File) {
+    if (!selectedUserId) return
+    if (file.size > 20 * 1024 * 1024) {
+      setActionError(t('chat.documentTooLarge'))
+      return
+    }
+
+    setActionError(null)
+    const placeholder = JSON.stringify({ path: '', name: file.name, size: file.size })
+    const optimisticId = pushOptimisticMessage(6, placeholder)
+
+    try {
+      const upload = await uploadMedia({ file, messageType: 6 }).unwrap()
+      await handleSend(6, upload.content, optimisticId)
+    } catch (err) {
+      markOptimisticFailed(optimisticId)
+      setActionError(getRtkErrorMessage(err as never, t('chat.uploadError')))
+    }
+  }
+
   async function handleSendLocation() {
     if (!selectedUserId) return
     setActionError(null)
@@ -711,6 +731,7 @@ export default function ChatPage() {
           onSendImages={handleSendImages}
           onSendVoice={handleSendVoice}
           onSendVideo={handleSendVideo}
+          onSendDocument={handleSendDocument}
           onSendLocation={handleSendLocation}
           onBack={() => setSelectedContact(null)}
           className={showMobileThread ? 'flex' : 'hidden lg:flex'}

@@ -31,6 +31,7 @@ type ChatThreadPanelProps = {
   onSendImages: (files: File[]) => Promise<void>
   onSendVoice: (file: File) => Promise<void>
   onSendVideo: (file: File) => Promise<void>
+  onSendDocument: (file: File) => Promise<void>
   onSendLocation: () => Promise<void>
   onBack?: () => void
   className?: string
@@ -53,6 +54,7 @@ export default function ChatThreadPanel({
   onSendImages,
   onSendVoice,
   onSendVideo,
+  onSendDocument,
   onSendLocation,
   onBack,
   className = '',
@@ -69,6 +71,7 @@ export default function ChatThreadPanel({
   const bottomRef = useRef<HTMLDivElement | null>(null)
   const imageInputRef = useRef<HTMLInputElement | null>(null)
   const videoInputRef = useRef<HTMLInputElement | null>(null)
+  const documentInputRef = useRef<HTMLInputElement | null>(null)
 
   const sortedMessages = useMemo(
     () => [...messages].sort((a, b) => a.sentAtUtc.localeCompare(b.sentAtUtc)),
@@ -383,6 +386,18 @@ export default function ChatThreadPanel({
         }}
       />
 
+      <input
+        ref={documentInputRef}
+        type="file"
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.rtf,.zip"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          e.target.value = ''
+          if (file) void onSendDocument(file)
+        }}
+      />
+
       {!isLocked ? (
       <ChatComposer
         draft={draft}
@@ -390,6 +405,7 @@ export default function ChatThreadPanel({
         onSubmit={() => void handleSendText()}
         onPickImage={() => imageInputRef.current?.click()}
         onPickVideo={() => videoInputRef.current?.click()}
+        onPickDocument={() => documentInputRef.current?.click()}
         onShareLocation={() => void onSendLocation()}
         recording={recording}
         recordingSeconds={recordingSeconds}

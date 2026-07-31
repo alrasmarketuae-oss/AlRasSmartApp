@@ -24,6 +24,11 @@ class UserProfile {
   final String? rejectionReason;
   final bool hasPendingProfileChanges;
 
+  /// False for Google/Apple accounts that never set a local password.
+  /// Null when the response predates the field (e.g. a stale cache entry).
+  final bool? hasPassword;
+  final String? loginProviderName;
+
   const UserProfile({
     required this.fullName,
     required this.email,
@@ -39,6 +44,8 @@ class UserProfile {
     this.isRejected = false,
     this.rejectionReason,
     this.hasPendingProfileChanges = false,
+    this.hasPassword,
+    this.loginProviderName,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -69,6 +76,9 @@ class UserProfile {
           json['hasPendingProfileChanges'] == true ||
           json['HasPendingProfileChanges'] == true ||
           (json['pendingProfileChanges'] ?? json['PendingProfileChanges']) != null,
+      hasPassword: (json['hasPassword'] ?? json['HasPassword']) as bool?,
+      loginProviderName:
+          (json['loginProviderName'] ?? json['LoginProviderName'])?.toString(),
     );
   }
 
@@ -87,6 +97,8 @@ class UserProfile {
     'isRejected': isRejected,
     'rejectionReason': rejectionReason,
     'hasPendingProfileChanges': hasPendingProfileChanges,
+    'hasPassword': hasPassword,
+    'loginProviderName': loginProviderName,
   };
 }
 
@@ -252,6 +264,11 @@ class ProfileService {
     if (profile.phoneNumber != null) {
       await AuthService.instance.savePhone(profile.phoneNumber!);
     }
+    final hasPassword = profile.hasPassword;
+    if (hasPassword != null) {
+      await AuthService.instance.setHasPassword(hasPassword);
+    }
+    await AuthService.instance.setLoginProviderName(profile.loginProviderName);
   }
 }
 

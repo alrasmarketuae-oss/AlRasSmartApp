@@ -23,7 +23,9 @@ public sealed partial class ChatAppService(
     private const string ChatImagesFolder = "chat-images";
     private const string ChatVoiceFolder = "chat-voice";
     private const string ChatVideosFolder = "chat-videos";
+    private const string ChatFilesFolder = "chat-files";
     private const long MaxChatVideoBytes = 30L * 1024 * 1024;
+    private const long MaxChatFileBytes = 20L * 1024 * 1024;
 
     public async Task<ChatInboxDto> GetMyInboxAsync(string userId, CancellationToken ct = default)
     {
@@ -397,7 +399,8 @@ public sealed partial class ChatAppService(
             ChatApiMessageType.Image => await UploadImageAsync(file, webRootPath, ct),
             ChatApiMessageType.Voice => await UploadVoiceAsync(file, webRootPath, ct),
             ChatApiMessageType.Video => await UploadVideoAsync(file, webRootPath, ct),
-            _ => throw new ArgumentException("Upload supports image, voice, and video messages only.")
+            ChatApiMessageType.File => await UploadDocumentAsync(file, webRootPath, ct),
+            _ => throw new ArgumentException("Upload supports image, voice, video, and file messages only.")
         };
     }
 
@@ -582,6 +585,48 @@ public sealed partial class ChatAppService(
         return new ChatUploadResultDto(relativePath, ChatApiMessageType.Video, mimeType);
     }
 
+    private async Task<ChatUploadResultDto> UploadDocumentAsync(
+        IFormFile file,
+        string webRootPath,
+        CancellationToken ct)
+    {
+        _ = webRootPath;
+        if (file.Length > MaxChatFileBytes)
+        {
+            throw new ArgumentException("File must be 20 MB or smaller.");
+        }
+
+        var originalName = Path.GetFileName(file.FileName ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(originalName))
+        {
+            originalName = "document";
+        }
+
+        var extension = Path.GetExtension(originalName).ToLowerInvariant();
+        if (!ChatFileContentHelper.IsAllowedExtension(extension))
+        {
+            throw new ArgumentException(
+                $"Unsupported file type. Allowed: {ChatFileContentHelper.AllowedExtensionsLabel}.");
+        }
+
+        var contentType = ChatFileContentHelper.GetContentType(extension);
+        var storedName = $"{Guid.NewGuid():N}{extension}";
+        var relativePath = await mediaStorage.SaveFormFileAsync(
+            file,
+            ChatFilesFolder,
+            storedName,
+            contentType,
+            ct);
+
+        var content = ChatFileContentHelper.Serialize(
+            relativePath,
+            originalName,
+            file.Length,
+            contentType);
+
+        return new ChatUploadResultDto(content, ChatApiMessageType.File, contentType);
+    }
+
     private async Task<IReadOnlyList<ChatContactDto>> BuildContactsAsync(
         Guid inboxOwnerId,
         Guid viewerUserId,
@@ -715,6 +760,9 @@ public sealed partial class ChatAppService(
                 : "صورة",
             ChatMessageType.Location => "موقع",
             ChatMessageType.Video => "فيديو",
+            ChatMessageType.File => ChatFileContentHelper.TryParse(message.Content, out var fileContent)
+                ? Truncate(fileContent.FileName, 60)
+                : "ملف",
             _ => message.Content
         };
     }
@@ -797,6 +845,16 @@ public sealed partial class ChatAppService(
                 throw new ArgumentException("Video content must be a chat video path.");
             }
         }
+
+        if (messageType == ChatApiMessageType.File)
+        {
+            if (!ChatFileContentHelper.TryParse(content.Trim(), out var parsed)
+                || !parsed.Path.StartsWith(ChatFileContentHelper.FolderPrefix, StringComparison.OrdinalIgnoreCase)
+                || parsed.Path.Contains("..", StringComparison.Ordinal))
+            {
+                throw new ArgumentException("File content must reference a chat file path.");
+            }
+        }
     }
 
     private static ChatMessageType MapMessageType(ChatApiMessageType type) =>
@@ -807,6 +865,7 @@ public sealed partial class ChatAppService(
             ChatApiMessageType.Image => ChatMessageType.Image,
             ChatApiMessageType.Location => ChatMessageType.Location,
             ChatApiMessageType.Video => ChatMessageType.Video,
+            ChatApiMessageType.File => ChatMessageType.File,
             _ => ChatMessageType.Text
         };
 
@@ -818,8 +877,12 @@ public sealed partial class ChatAppService(
             ChatMessageType.Image => ChatApiMessageType.Image,
             ChatMessageType.Location => ChatApiMessageType.Location,
             ChatMessageType.Video => ChatApiMessageType.Video,
+            ChatMessageType.File => ChatApiMessageType.File,
             _ => ChatApiMessageType.Text
         };
+
+    private static string? GetFileContentType(string content) =>
+        ChatFileContentHelper.TryParse(content, out var parsed) ? parsed.ContentType : null;
 
     private static string? GetVideoContentType(string content)
     {
@@ -851,6 +914,7 @@ public sealed partial class ChatAppService(
             {
                 ChatMessageType.Voice => VoiceFileHelper.GetContentType(message.Content),
                 ChatMessageType.Video => GetVideoContentType(message.Content),
+                ChatMessageType.File => GetFileContentType(message.Content),
                 _ => null
             });
 

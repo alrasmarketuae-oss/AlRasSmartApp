@@ -216,6 +216,25 @@ public class AuthAppService(
             request.FullName);
     }
 
+    /// <summary>
+    /// Re-points the device token at the signed-in account. Called after every login and on
+    /// token refresh, so the token always follows the account currently using the device.
+    /// </summary>
+    public async Task UpdateFcmTokenAsync(string userId, string fcmToken, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            throw new ArgumentException("User id is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(fcmToken))
+        {
+            throw new ArgumentException("FCM token is required.");
+        }
+
+        await userRepository.UpdateFcmTokenAsync(userId, fcmToken.Trim());
+    }
+
     public async Task ClearFcmTokenAsync(string userId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(userId))
@@ -498,17 +517,23 @@ public class AuthAppService(
             throw new ArgumentException("Invalid user id.");
         }
 
-        if (string.IsNullOrWhiteSpace(currentPassword) || string.IsNullOrWhiteSpace(newPassword))
+        if (string.IsNullOrWhiteSpace(newPassword))
         {
-            throw new ArgumentException("Current and new password are required.");
+            throw new ArgumentException("New password is required.");
         }
 
         var user = await dbContext.Users.FindAsync([parsedUserId], cancellationToken)
             ?? throw new KeyNotFoundException("User not found.");
 
-        if (string.IsNullOrWhiteSpace(user.HashedPassword) || !passwordHasher.VerifyPassword(currentPassword, user.HashedPassword))
+        // Google/Apple accounts are created without a password hash, so the first
+        // password they set has no current password to verify against.
+        if (!string.IsNullOrWhiteSpace(user.HashedPassword))
         {
-            throw new UnauthorizedAccessException("Current password is incorrect.");
+            if (string.IsNullOrWhiteSpace(currentPassword)
+                || !passwordHasher.VerifyPassword(currentPassword, user.HashedPassword))
+            {
+                throw new UnauthorizedAccessException("Current password is incorrect.");
+            }
         }
 
         user.HashedPassword = passwordHasher.HashPassword(newPassword);

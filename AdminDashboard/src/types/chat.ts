@@ -1,6 +1,6 @@
-export type ChatMessageType = 'Text' | 'Voice' | 'Image' | 'Location'
+export type ChatMessageType = 'Text' | 'Voice' | 'Image' | 'Location' | 'Video' | 'File'
 
-export type ChatMessageTypeCode = 1 | 2 | 3 | 4 | 5
+export type ChatMessageTypeCode = 1 | 2 | 3 | 4 | 5 | 6
 
 export type ChatContact = {
   contactUserId: string
@@ -92,6 +92,13 @@ export type ChatLocationContent = {
   label?: string
 }
 
+export type ChatFileContent = {
+  path: string
+  name: string
+  size?: number
+  mime?: string
+}
+
 export type SendChatMessagePayload = {
   toUserId: string
   messageType: ChatMessageTypeCode
@@ -142,9 +149,57 @@ export function messageTypeLabel(type: ChatMessageTypeCode | string): string {
     case 5:
     case 'Video':
       return 'فيديو'
+    case 6:
+    case 'File':
+      return 'ملف'
     default:
       return 'رسالة'
   }
+}
+
+export function parseFileContent(content: string): ChatFileContent | null {
+  const trimmed = content.trim()
+  if (!trimmed) return null
+
+  if (trimmed.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(trimmed) as Partial<ChatFileContent>
+      if (typeof parsed.path === 'string' && parsed.path.trim()) {
+        const path = parsed.path.trim()
+        const name =
+          typeof parsed.name === 'string' && parsed.name.trim()
+            ? parsed.name.trim()
+            : path.split('/').pop() || 'file'
+        return {
+          path,
+          name,
+          size: typeof parsed.size === 'number' ? parsed.size : undefined,
+          mime: typeof parsed.mime === 'string' ? parsed.mime : undefined,
+        }
+      }
+    } catch {
+      return null
+    }
+    return null
+  }
+
+  if (trimmed.startsWith('/chat-files/')) {
+    return { path: trimmed, name: trimmed.split('/').pop() || 'file' }
+  }
+
+  return null
+}
+
+export function formatFileSize(bytes: number | undefined): string | null {
+  if (!bytes || bytes <= 0) return null
+  const units = ['B', 'KB', 'MB', 'GB']
+  let value = bytes
+  let unitIndex = 0
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024
+    unitIndex += 1
+  }
+  return `${value >= 10 || unitIndex === 0 ? Math.round(value) : value.toFixed(1)} ${units[unitIndex]}`
 }
 
 export function parseLocationContent(content: string): ChatLocationContent | null {

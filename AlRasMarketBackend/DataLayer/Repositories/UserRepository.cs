@@ -86,7 +86,17 @@ public class UserRepository(IRasAlSouqDbContext dbContext) : IUserRepository
 
         if (!string.IsNullOrWhiteSpace(fcmToken))
         {
-            user.FcmToken = fcmToken;
+            var normalizedToken = fcmToken.Trim();
+            // Same device previously signed in as someone else — release the token.
+            var staleOwners = await _dbContext.Users
+                .Where(x => x.Id != userId && x.FcmToken == normalizedToken)
+                .ToListAsync();
+            foreach (var staleOwner in staleOwners)
+            {
+                staleOwner.FcmToken = null;
+            }
+
+            user.FcmToken = normalizedToken;
         }
 
         await _dbContext.SaveChangesAsync();

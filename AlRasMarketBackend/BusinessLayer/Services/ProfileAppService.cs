@@ -243,6 +243,9 @@ public class ProfileAppService(
             isVerified = user.IsVerified,
             isRejected = user.IsRejected,
             rejectionReason = user.RejectionReason,
+            loginProviderName = user.LoginProviderName,
+            // Social accounts have no hash, so the app hides the current-password field.
+            hasPassword = !string.IsNullOrWhiteSpace(user.HashedPassword),
             hasPendingProfileChanges = pending?.HasAnyChange == true,
             pendingProfileChanges = pending,
             balance

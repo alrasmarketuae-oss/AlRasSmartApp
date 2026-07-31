@@ -3,7 +3,8 @@ enum ChatMessageType {
   voice(2),
   image(3),
   location(4),
-  video(5);
+  video(5),
+  file(6);
 
   const ChatMessageType(this.apiValue);
   final int apiValue;

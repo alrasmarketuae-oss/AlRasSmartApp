@@ -320,6 +320,9 @@ class AppChatListenerService {
         return 'Sent a video';
       case ChatMessageType.location:
         return 'Sent a location';
+      case ChatMessageType.file:
+        final fileName = message.fileContent?.name.trim() ?? '';
+        return fileName.isEmpty ? 'Sent a file' : 'Sent a file: $fileName';
       case ChatMessageType.text:
         final text = message.content.trim();
         if (text.isEmpty) return 'New message from support';

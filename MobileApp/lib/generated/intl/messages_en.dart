@@ -403,6 +403,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "counterfeitProducts": MessageLookupByLibrary.simpleMessage(
       "Counterfeit or fake products.",
     ),
+    "country": MessageLookupByLibrary.simpleMessage("Country"),
     "countryCode": MessageLookupByLibrary.simpleMessage("Country Code"),
     "countryOfOrigin": MessageLookupByLibrary.simpleMessage(
       "Country of Origin",
@@ -443,6 +444,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "deleteAdConfirmMessage": m13,
     "deleteAdConfirmTitle": MessageLookupByLibrary.simpleMessage("Delete ad?"),
+    "deleteAddress": MessageLookupByLibrary.simpleMessage("Delete Address"),
+    "deleteAddressConfirm": MessageLookupByLibrary.simpleMessage(
+      "Are you sure you want to delete this address?",
+    ),
     "deleteShippingAdConfirm": MessageLookupByLibrary.simpleMessage(
       "Delete this shipping ad?",
     ),
@@ -483,6 +488,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "dubaiUae": MessageLookupByLibrary.simpleMessage("Dubai, UAE"),
     "edit": MessageLookupByLibrary.simpleMessage("Edit"),
+    "editAddress": MessageLookupByLibrary.simpleMessage("Edit Address"),
     "editCart": MessageLookupByLibrary.simpleMessage("Edit Cart"),
     "editProfile": MessageLookupByLibrary.simpleMessage("Edit Profile"),
     "editShippingAd": MessageLookupByLibrary.simpleMessage("Edit Shipping Ad"),
@@ -1175,12 +1181,18 @@ class MessageLookup extends MessageLookupByLibrary {
     "searchHistoryNotFound": MessageLookupByLibrary.simpleMessage(
       "Saved search results are no longer available.",
     ),
+    "searchOrTypeCity": MessageLookupByLibrary.simpleMessage(
+      "Search or type your city",
+    ),
     "searchResults": MessageLookupByLibrary.simpleMessage("Search Results"),
     "secondNature": MessageLookupByLibrary.simpleMessage(
       "Second: Nature of the App\'s Work",
     ),
     "selectAnOption": MessageLookupByLibrary.simpleMessage("Select an option"),
     "selectCategory": MessageLookupByLibrary.simpleMessage("Select Category"),
+    "selectCountryFirst": MessageLookupByLibrary.simpleMessage(
+      "Select a country first",
+    ),
     "selectCurrency": MessageLookupByLibrary.simpleMessage(
       "Please select a currency.",
     ),
@@ -1204,6 +1216,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "sendEmail": MessageLookupByLibrary.simpleMessage("Send Email"),
     "sendPurchaseOrder": MessageLookupByLibrary.simpleMessage(
       "Send Purchase Order",
+    ),
+    "setPassword": MessageLookupByLibrary.simpleMessage("Set Password"),
+    "setPasswordSocialHint": MessageLookupByLibrary.simpleMessage(
+      "You signed in with Google or Apple, so there is no current password. Choose a password to also sign in with your email.",
     ),
     "settings": MessageLookupByLibrary.simpleMessage("Settings"),
     "seventhLiability": MessageLookupByLibrary.simpleMessage(

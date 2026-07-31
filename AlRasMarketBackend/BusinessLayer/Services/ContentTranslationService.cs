@@ -360,8 +360,12 @@ public class ContentTranslationService(
         var fromName = fromLang == "ar" ? "Arabic" : "English";
         var toName = toLang == "ar" ? "Arabic" : "English";
         var prompt =
-            $"Translate the following marketplace product text from {fromName} to {toName}. " +
-            "Keep product names, brand names, units, and numbers accurate. " +
+            $"Translate the following food-market product text from {fromName} to {toName}. " +
+            "Translate literally and do not correct, rewrite, normalize, or guess spelling. " +
+            "Preserve product varieties, trade terms, brand names, abbreviations, acronyms, " +
+            "codes, letter casing, units, and numbers exactly as entered. " +
+            "For example, JBP is a cardamom product type and must remain JBP; never change it to JOB or job. " +
+            "When a term is uncertain, preserve the original term unchanged instead of correcting it. " +
             "Return ONLY JSON: {\"translation\":\"...\"}. No markdown.\n\n" +
             text;
 

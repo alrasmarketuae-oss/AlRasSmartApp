@@ -485,6 +485,9 @@ public static class NotificationMessages
             ChatApiMessageType.Voice => IsArabic(language) ? "🎤 رسالة صوتية" : "🎤 Voice message",
             ChatApiMessageType.Location => IsArabic(language) ? "📍 موقع" : "📍 Location",
             ChatApiMessageType.Video => IsArabic(language) ? "🎬 فيديو" : "🎬 Video",
+            ChatApiMessageType.File => ChatFileContentHelper.TryParse(content, out var fileContent)
+                ? $"📎 {TruncateChatPreview(fileContent.FileName, 60)}"
+                : IsArabic(language) ? "📎 ملف" : "📎 File",
             _ => ChatFallbackSenderName(language)
         };
     }

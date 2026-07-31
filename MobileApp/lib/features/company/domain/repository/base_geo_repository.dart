@@ -5,6 +5,8 @@ import 'package:dartz/dartz.dart';
 
 abstract class BaseGeoRepository {
   Future<Either<Failure, List<String>>> getCountries();
+  Future<Either<Failure, List<GeoCountryModel>>> getCountryList();
   Future<Either<Failure, GeoPortsResponse>> getPortsByCountry(String countryName);
   Future<Either<Failure, GeoCitiesResponse>> getCitiesByCountry(String countryName);
+  Future<Either<Failure, GeoCitiesResponse>> getCitiesByCountryId(int countryId);
 }

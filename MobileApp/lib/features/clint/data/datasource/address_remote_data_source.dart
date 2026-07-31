@@ -19,6 +19,17 @@ abstract class BaseAddressRemoteDataSource {
     required CreateAddressRequest request,
     required String token,
   });
+
+  Future<Either<Failure, void>> updateAddress({
+    required String addressId,
+    required CreateAddressRequest request,
+    required String token,
+  });
+
+  Future<Either<Failure, void>> deleteAddress({
+    required String addressId,
+    required String token,
+  });
 }
 
 class AddressRemoteDataSource implements BaseAddressRemoteDataSource {
@@ -128,13 +139,67 @@ class AddressRemoteDataSource implements BaseAddressRemoteDataSource {
         );
       }
 
-      final userId = AuthService.instance.currentUserID;
-      if (userId != null && userId.isNotEmpty) {
-        await ApiCacheStore.instance.remove(ApiCacheKeys.userAddresses(userId));
-      }
+      await _invalidateAddressesCache();
       return const Right(null);
     } catch (e) {
       return Left(NetworkFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> updateAddress({
+    required String addressId,
+    required CreateAddressRequest request,
+    required String token,
+  }) async {
+    try {
+      final response = await DioHelper.putData(
+        url: '${ApiConstants.addressesEndPoint}/$addressId',
+        data: request.toJson(),
+        token: token,
+      );
+      final status = response?.statusCode ?? 0;
+      if (status < 200 || status >= 300) {
+        return Left(
+          ServerFailure(response?.statusMessage ?? 'Request failed ($status)'),
+        );
+      }
+
+      await _invalidateAddressesCache();
+      return const Right(null);
+    } catch (e) {
+      return Left(NetworkFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteAddress({
+    required String addressId,
+    required String token,
+  }) async {
+    try {
+      final response = await DioHelper.deleteData(
+        url: '${ApiConstants.addressesEndPoint}/$addressId',
+        token: token,
+      );
+      final status = response?.statusCode ?? 0;
+      if (status < 200 || status >= 300) {
+        return Left(
+          ServerFailure(response?.statusMessage ?? 'Request failed ($status)'),
+        );
+      }
+
+      await _invalidateAddressesCache();
+      return const Right(null);
+    } catch (e) {
+      return Left(NetworkFailure(e.toString()));
+    }
+  }
+
+  Future<void> _invalidateAddressesCache() async {
+    final userId = AuthService.instance.currentUserID;
+    if (userId != null && userId.isNotEmpty) {
+      await ApiCacheStore.instance.remove(ApiCacheKeys.userAddresses(userId));
     }
   }
 }

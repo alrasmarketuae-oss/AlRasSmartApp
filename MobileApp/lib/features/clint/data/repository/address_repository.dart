@@ -12,6 +12,17 @@ abstract class BaseAddressRepository {
     required CreateAddressRequest request,
     required String token,
   });
+
+  Future<Either<Failure, void>> updateAddress({
+    required String addressId,
+    required CreateAddressRequest request,
+    required String token,
+  });
+
+  Future<Either<Failure, void>> deleteAddress({
+    required String addressId,
+    required String token,
+  });
 }
 
 class AddressRepository implements BaseAddressRepository {
@@ -34,5 +45,26 @@ class AddressRepository implements BaseAddressRepository {
     required String token,
   }) {
     return _remote.createAddress(request: request, token: token);
+  }
+
+  @override
+  Future<Either<Failure, void>> updateAddress({
+    required String addressId,
+    required CreateAddressRequest request,
+    required String token,
+  }) {
+    return _remote.updateAddress(
+      addressId: addressId,
+      request: request,
+      token: token,
+    );
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteAddress({
+    required String addressId,
+    required String token,
+  }) {
+    return _remote.deleteAddress(addressId: addressId, token: token);
   }
 }

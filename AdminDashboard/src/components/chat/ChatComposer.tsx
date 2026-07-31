@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { IconImage, IconMapPin, IconMic, IconPlus, IconSend, IconVideo } from '../icons'
+import { IconDocument, IconImage, IconMapPin, IconMic, IconPlus, IconSend, IconVideo } from '../icons'
 import type { VoiceDraft } from './ChatThreadPanel'
 
 type ChatComposerProps = {
@@ -8,6 +8,7 @@ type ChatComposerProps = {
   onSubmit: () => void
   onPickImage: () => void
   onPickVideo: () => void
+  onPickDocument: () => void
   onShareLocation: () => void
   recording: boolean
   recordingSeconds: number
@@ -25,6 +26,7 @@ export default function ChatComposer({
   onSubmit,
   onPickImage,
   onPickVideo,
+  onPickDocument,
   onShareLocation,
   recording,
   recordingSeconds,
@@ -165,6 +167,19 @@ export default function ChatComposer({
                     <IconVideo className="h-5 w-5" />
                   </span>
                   <span>{t('chat.attachVideo')}</span>
+                </button>
+                <button
+                  type="button"
+                  className="chat-attach-item"
+                  onClick={() => {
+                    setAttachOpen(false)
+                    onPickDocument()
+                  }}
+                >
+                  <span className="chat-attach-icon chat-attach-icon-document">
+                    <IconDocument className="h-5 w-5" />
+                  </span>
+                  <span>{t('chat.attachDocument')}</span>
                 </button>
                 <button
                   type="button"

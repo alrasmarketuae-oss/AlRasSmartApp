@@ -54,8 +54,13 @@ public interface IStaticReferenceCache
     IReadOnlyList<GeoCitySnapshot> GetCitiesByCountryId(short countryId);
     GeoCitySnapshot? FindCityById(Guid id);
     GeoCitySnapshot? FindCityByName(string cityName);
+    GeoCitySnapshot? FindCityByName(string cityName, short countryId);
     object GetCitiesByCountryNameResponse(string countryName);
     object GetCitiesByCountryIdResponse(short countryId);
+
+    /// <summary>Drops the countries/cities/ports snapshot so the next read reloads from SQL.
+    /// Call after inserting a city for a country that had none.</summary>
+    Task InvalidateGeoAsync(CancellationToken cancellationToken = default);
 
     IReadOnlyList<RoleSnapshot> GetRoles();
     RoleSnapshot? FindRoleById(byte id);

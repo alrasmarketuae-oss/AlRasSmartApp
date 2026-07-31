@@ -6,7 +6,8 @@ public enum ChatMessageType : byte
     Voice = 2,
     Image = 3,
     Location = 4,
-    Video = 5
+    Video = 5,
+    File = 6
 }
 
 public class ChatMessage

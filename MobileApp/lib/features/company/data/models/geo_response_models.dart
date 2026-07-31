@@ -27,6 +27,64 @@ class GeoPortsResponse {
   }
 }
 
+/// A country row from `GET /Geo/countries`, keeping the id so cities can be
+/// looked up and addresses saved without relying on name matching.
+class GeoCountryModel {
+  const GeoCountryModel({
+    required this.countryId,
+    required this.nameEn,
+    this.nameAr,
+    this.iso2Code = '',
+  });
+
+  final int countryId;
+  final String nameEn;
+  final String? nameAr;
+  final String iso2Code;
+
+  String displayName(bool isArabic) {
+    final arabic = nameAr?.trim() ?? '';
+    if (isArabic && arabic.isNotEmpty) return arabic;
+    return nameEn;
+  }
+
+  factory GeoCountryModel.fromJson(Map<String, dynamic> json) {
+    return GeoCountryModel(
+      countryId:
+          int.tryParse((json['countryId'] ?? json['id'] ?? '').toString()) ?? 0,
+      nameEn: (json['countryNameEn'] ?? json['country'] ?? json['name'] ?? '')
+          .toString()
+          .trim(),
+      nameAr: (json['countryNameAr'] as String?)?.trim(),
+      iso2Code: (json['iso2Code'] ?? '').toString().trim(),
+    );
+  }
+}
+
+class GeoCountryListResponse {
+  const GeoCountryListResponse({required this.items});
+
+  final List<GeoCountryModel> items;
+
+  factory GeoCountryListResponse.fromJson(Map<String, dynamic> json) {
+    final itemsJson = json['items'] as List<dynamic>? ??
+        json['countries'] as List<dynamic>? ??
+        [];
+
+    final items = <GeoCountryModel>[];
+    for (final item in itemsJson) {
+      if (item is! Map) continue;
+      final country =
+          GeoCountryModel.fromJson(Map<String, dynamic>.from(item));
+      if (country.countryId > 0 && country.nameEn.isNotEmpty) {
+        items.add(country);
+      }
+    }
+
+    return GeoCountryListResponse(items: items);
+  }
+}
+
 class GeoCountriesResponse {
   const GeoCountriesResponse({required this.countries});
 

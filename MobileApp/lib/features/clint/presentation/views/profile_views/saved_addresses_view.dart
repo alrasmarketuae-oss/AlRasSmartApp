@@ -3,6 +3,7 @@ import 'package:alrasmarket/core/cache/api_cache_store.dart';
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
+import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/features/clint/data/models/client_address_model.dart';
 import 'package:alrasmarket/features/clint/domain/usecases/address_usecases.dart';
@@ -22,6 +23,7 @@ class SavedAddressesView extends StatefulWidget {
 
 class _SavedAddressesViewState extends State<SavedAddressesView> {
   final _getAddressesUseCase = sl<GetClientAddressesUseCase>();
+  final _deleteAddressUseCase = sl<DeleteClientAddressUseCase>();
   List<ClientAddressModel> _addresses = [];
   bool _loading = true;
   String? _error;
@@ -71,11 +73,56 @@ class _SavedAddressesViewState extends State<SavedAddressesView> {
     );
   }
 
+  /// Saved addresses are not tied to retail shipping, so any country is allowed.
   Future<void> _addAddress() async {
-    final created = await AddAddressDialog.show(context, retailMode: true);
+    final created = await AddAddressDialog.show(context);
     if (created == true) {
       await _loadAddresses(forceRefresh: true);
     }
+  }
+
+  Future<void> _editAddress(ClientAddressModel address) async {
+    final updated = await AddAddressDialog.show(context, existing: address);
+    if (updated == true) {
+      await _loadAddresses(forceRefresh: true);
+    }
+  }
+
+  Future<void> _deleteAddress(ClientAddressModel address) async {
+    final s = S.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: Colors.white,
+        title: Text(s.deleteAddress),
+        content: Text(s.deleteAddressConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(s.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(s.delete, style: const TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final token = AuthService.instance.currentToken;
+    if (token == null || token.isEmpty) return;
+
+    final result = await _deleteAddressUseCase(
+      addressId: address.addressId,
+      token: token,
+    );
+    if (!mounted) return;
+
+    result.fold(
+      (failure) => AppToast.showError(context, failure.message),
+      (_) => _loadAddresses(forceRefresh: true),
+    );
   }
 
   @override
@@ -155,6 +202,10 @@ class _SavedAddressesViewState extends State<SavedAddressesView> {
       separatorBuilder: (_, __) => SizedBox(height: 12.h),
       itemBuilder: (context, index) {
         final address = _addresses[index];
+        final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+        final headline = [address.cityName, address.countryDisplayName(isArabic)]
+            .where((e) => e.trim().isNotEmpty)
+            .join(', ');
         return Container(
           padding: EdgeInsets.all(16.w),
           decoration: BoxDecoration(
@@ -184,11 +235,9 @@ class _SavedAddressesViewState extends State<SavedAddressesView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (address.cityName.isNotEmpty || address.countryNameEn.isNotEmpty)
+                    if (headline.isNotEmpty)
                       Text(
-                        [address.cityName, address.countryNameEn]
-                            .where((e) => e.trim().isNotEmpty)
-                            .join(', '),
+                        headline,
                         style: TextStyle(
                           fontSize: 14.sp,
                           fontWeight: FontWeight.w600,
@@ -204,6 +253,24 @@ class _SavedAddressesViewState extends State<SavedAddressesView> {
                     ),
                   ],
                 ),
+              ),
+              IconButton(
+                onPressed: () => _editAddress(address),
+                icon: Icon(
+                  Icons.edit_outlined,
+                  size: 20.sp,
+                  color: LightColor.greyTextColor,
+                ),
+                tooltip: S.of(context).edit,
+              ),
+              IconButton(
+                onPressed: () => _deleteAddress(address),
+                icon: Icon(
+                  Icons.delete_outline,
+                  size: 20.sp,
+                  color: Colors.red.shade400,
+                ),
+                tooltip: S.of(context).delete,
               ),
             ],
           ),

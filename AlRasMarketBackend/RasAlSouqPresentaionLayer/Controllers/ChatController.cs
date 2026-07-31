@@ -581,6 +581,57 @@ public class ChatController(
         return File(stream, contentType, enableRangeProcessing: true);
     }
 
+    [HttpGet("file/{*storagePath}")]
+    [AllowAnonymous]
+    public Task<IActionResult> DownloadFileByPath(
+        string storagePath,
+        [FromQuery] string? name,
+        CancellationToken ct) =>
+        DownloadFileInternalAsync(storagePath, name, ct);
+
+    [HttpGet("file")]
+    [AllowAnonymous]
+    public Task<IActionResult> DownloadFile(
+        [FromQuery] string path,
+        [FromQuery] string? name,
+        CancellationToken ct) =>
+        DownloadFileInternalAsync(path, name, ct);
+
+    /// <summary>
+    /// Streams a chat document. Serves it inline through the API rather than redirecting so the
+    /// response can carry the original file name instead of the stored GUID.
+    /// </summary>
+    private async Task<IActionResult> DownloadFileInternalAsync(
+        string? path,
+        string? downloadName,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return BadRequest(new { message = "path is required." });
+        }
+
+        var normalized = WebRootFileHelper.NormalizeStoredPath(path);
+        if (!normalized.StartsWith(ChatFileContentHelper.FolderPrefix, StringComparison.OrdinalIgnoreCase)
+            || normalized.Contains("..", StringComparison.Ordinal))
+        {
+            return BadRequest(new { message = "Invalid file path." });
+        }
+
+        var stream = await mediaStorage.OpenReadAsync(normalized, ct);
+        if (stream is null)
+        {
+            return NotFound();
+        }
+
+        var contentType = ChatFileContentHelper.GetContentType(Path.GetExtension(normalized));
+        var fileName = string.IsNullOrWhiteSpace(downloadName)
+            ? Path.GetFileName(normalized)
+            : Path.GetFileName(downloadName.Trim());
+
+        return File(stream, contentType, fileName, enableRangeProcessing: true);
+    }
+
     private bool TryRedirectToCdn(string normalizedPath, out IActionResult? result)
     {
         result = null;

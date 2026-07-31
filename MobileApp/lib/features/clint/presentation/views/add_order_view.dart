@@ -1,10 +1,7 @@
-import 'dart:io';
-
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
-import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/widgets/primary_button.dart';
@@ -18,14 +15,13 @@ import 'package:alrasmarket/features/company/presentation/controller/cubit/creat
 import 'package:alrasmarket/features/company/presentation/controller/cubit/create_ad_states.dart';
 import 'package:alrasmarket/features/company/presentation/models/create_ad_type.dart';
 import 'package:alrasmarket/features/company/presentation/models/negotiation_type.dart';
+import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_product_images_widget.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_requests_fields_widget.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 
 class AddOrderView extends StatefulWidget {
   const AddOrderView({super.key});
@@ -35,7 +31,6 @@ class AddOrderView extends StatefulWidget {
 }
 
 class _AddOrderViewState extends State<AddOrderView> {
-  final ImagePicker _picker = ImagePicker();
   final _formKey = GlobalKey<FormState>();
   final _productNameController = TextEditingController();
   final _specificationsController = TextEditingController();
@@ -43,8 +38,6 @@ class _AddOrderViewState extends State<AddOrderView> {
   final _targetPriceController = TextEditingController();
   final _notesController = TextEditingController();
   NegotiationType _negotiationType = NegotiationType.negotiable;
-  String? _productMediaPath;
-  bool _isProductVideo = false;
   final _getAddressesUseCase = sl<GetClientAddressesUseCase>();
   List<ClientAddressModel> _addresses = [];
   String? _selectedAddressId;
@@ -223,7 +216,6 @@ class _AddOrderViewState extends State<AddOrderView> {
     }
 
     await context.read<CreateAdCubit>().submitRequestOrder(
-      context: context,
       productName: _productNameController.text,
       specifications: _specificationsController.text,
       quantity: _quantityController.text,
@@ -234,7 +226,6 @@ class _AddOrderViewState extends State<AddOrderView> {
       address: _selectedAddressLabel,
       addressId: _selectedAddressId,
       requiredDeliveryDate: _pickupDate,
-      mediaPaths: _productMediaPath != null ? [_productMediaPath!] : [],
     );
   }
 
@@ -246,8 +237,6 @@ class _AddOrderViewState extends State<AddOrderView> {
     _notesController.clear();
     setState(() {
       _negotiationType = NegotiationType.negotiable;
-      _productMediaPath = null;
-      _isProductVideo = false;
       _selectedAddressId = _addresses.isNotEmpty ? _addresses.first.addressId : null;
       _selectedAddressLabel =
           _addresses.isNotEmpty ? _addresses.first.label : null;
@@ -256,48 +245,27 @@ class _AddOrderViewState extends State<AddOrderView> {
     _formKey.currentState?.reset();
   }
 
-  Future<void> _pickProductMedia() async {
-    final selectedType = await showModalBottomSheet<String>(
-      context: context,
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.image_outlined),
-                title: const Text('Image from gallery'),
-                onTap: () => Navigator.pop(context, 'image'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.videocam_outlined),
-                title: const Text('Video from gallery'),
-                onTap: () => Navigator.pop(context, 'video'),
-              ),
-            ],
-          ),
+  /// Same picker as Create Ad: files are persisted, compressed and uploaded to
+  /// Cloudflare R2 as drafts right after selection, not on submit.
+  Widget _buildMediaSection() {
+    final cubit = context.read<CreateAdCubit>();
+    return BlocBuilder<CreateAdCubit, CreateAdFormState>(
+      buildWhen: (previous, current) =>
+          previous.productImages != current.productImages ||
+          previous.isCompressingMedia != current.isCompressingMedia ||
+          previous.mediaCompressionProgress != current.mediaCompressionProgress ||
+          previous.mediaCompressionLabel != current.mediaCompressionLabel,
+      builder: (context, state) {
+        return CreateAdProductImagesWidget(
+          productImages: state.productImages,
+          onPickTap: () => cubit.pickProductImages(context),
+          onRemove: cubit.removeProductImage,
+          isCompressingMedia: state.isCompressingMedia,
+          mediaCompressionProgress: state.mediaCompressionProgress,
+          mediaCompressionLabel: state.mediaCompressionLabel,
         );
       },
     );
-
-    if (selectedType == null) return;
-
-    if (selectedType == 'image') {
-      final image = await _picker.pickImage(source: ImageSource.gallery);
-      if (image == null || !mounted) return;
-      setState(() {
-        _productMediaPath = image.path;
-        _isProductVideo = false;
-      });
-      return;
-    }
-
-    final video = await _picker.pickVideo(source: ImageSource.gallery);
-    if (video == null || !mounted) return;
-    setState(() {
-      _productMediaPath = video.path;
-      _isProductVideo = true;
-    });
   }
 
   Future<void> _pickPickupDate() async {
@@ -323,9 +291,15 @@ class _AddOrderViewState extends State<AddOrderView> {
       listener: (context, state) {
         final cubit = context.read<CreateAdCubit>();
         if (state.submitSuccessMessage != null) {
+          final createdProductId = state.submitNavigateProductId;
           cubit.clearSubmitFeedback();
+          // The cubit reset clears the type, so re-arm it for the next request.
+          cubit.setSelectedType(CreateAdType.requests.label);
           _clearLocalForm();
-          context.push(AppRoutes.kConfirmCircalView);
+          context.push(
+            AppRoutes.kConfirmCircalView,
+            extra: {'productId': createdProductId},
+          );
         } else if (state.submitErrorMessage != null) {
           AppToast.showError(context, state.submitErrorMessage!);
           cubit.clearSubmitFeedback();
@@ -350,6 +324,10 @@ class _AddOrderViewState extends State<AddOrderView> {
                         key: _formKey,
                         child: Column(
                           children: [
+                        // Media first so the R2 upload runs while the rest of
+                        // the form is filled in (same flow as Create Ad).
+                        _buildMediaSection(),
+                        SizedBox(height: 12.h),
                         Container(
                           decoration: const BoxDecoration(),
                           padding: EdgeInsets.zero,
@@ -689,161 +667,6 @@ class _AddOrderViewState extends State<AddOrderView> {
                               setState(() => _negotiationType = type);
                             },
                             fromBuyer: true,
-                          ),
-                        ),
-                        SizedBox(height: 20.h),
-                        Container(
-                          decoration: const BoxDecoration(),
-                          padding: EdgeInsets.zero,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                S.of(context).productImages,
-                                style: TextStyle(fontSize: 16.sp, height: 1.5),
-                              ),
-                              SizedBox(height: 12.h),
-                              InkWell(
-                                onTap: _pickProductMedia,
-                                borderRadius: BorderRadius.circular(12.r),
-                                child: Container(
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(12.r),
-                                    color: Colors.white,
-                                    border: Border.all(
-                                      color: LightColor.lightGrey,
-                                      width: 1.5,
-                                    ),
-                                  ),
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 16.w,
-                                    vertical: 24.h,
-                                  ),
-                                  child: _productMediaPath == null
-                                      ? Column(
-                                          children: [
-                                            Container(
-                                              padding: EdgeInsets.all(12.w),
-                                              decoration: const BoxDecoration(
-                                                color: Color(0xFFF5F5F5),
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: SvgPicture.asset(
-                                                AppAssets.uploadIcon,
-                                                width: 24.w,
-                                                height: 24.h,
-                                              ),
-                                            ),
-                                            SizedBox(height: 16.h),
-                                            Text(
-                                              S.of(context).tapToUploadImageOrVideo,
-                                              textAlign: TextAlign.center,
-                                              style: TextStyle(
-                                                color: LightColor.greyTextColor,
-                                                fontSize: 14.sp,
-                                                fontWeight: FontWeight.normal,
-                                                height: 1.5,
-                                              ),
-                                            ),
-                                            SizedBox(height: 12.h),
-                                            Text(
-                                              'jpg, png, mp4',
-                                              textAlign: TextAlign.center,
-                                              style: TextStyle(
-                                                color: LightColor.hintColor,
-                                                fontSize: 14.sp,
-                                                fontWeight: FontWeight.normal,
-                                                height: 1.5,
-                                              ),
-                                            ),
-                                          ],
-                                        )
-                                      : Column(
-                                          children: [
-                                            Stack(
-                                              children: [
-                                                ClipRRect(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                        12.r,
-                                                      ),
-                                                  child: _isProductVideo
-                                                      ? Container(
-                                                          width:
-                                                              double.infinity,
-                                                          height: 140.h,
-                                                          color: const Color(
-                                                            0xFFF5F5F5,
-                                                          ),
-                                                          alignment:
-                                                              Alignment.center,
-                                                          child: Icon(
-                                                            Icons.videocam,
-                                                            size: 42.sp,
-                                                            color: LightColor
-                                                                .greyTextColor,
-                                                          ),
-                                                        )
-                                                      : Image.file(
-                                                          File(
-                                                            _productMediaPath!,
-                                                          ),
-                                                          width:
-                                                              double.infinity,
-                                                          height: 140.h,
-                                                          fit: BoxFit.cover,
-                                                        ),
-                                                ),
-                                                Positioned(
-                                                  top: 8.h,
-                                                  right: 8.w,
-                                                  child: InkWell(
-                                                    onTap: () {
-                                                      setState(() {
-                                                        _productMediaPath =
-                                                            null;
-                                                        _isProductVideo = false;
-                                                      });
-                                                    },
-                                                    child: Container(
-                                                      padding: EdgeInsets.all(
-                                                        4.w,
-                                                      ),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.black54,
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              20.r,
-                                                            ),
-                                                      ),
-                                                      child: Icon(
-                                                        Icons.close,
-                                                        color: Colors.white,
-                                                        size: 16.sp,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            SizedBox(height: 10.h),
-                                            Text(
-                                              _isProductVideo
-                                                  ? S.of(context).videoSelectedFromGallery
-                                                  : S.of(context).imageSelectedFromGallery,
-                                              style: TextStyle(
-                                                fontSize: 14.sp,
-                                                color: LightColor.greyTextColor,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                          ],
-                                        ),
-                                ),
-                              ),
-                            ],
                           ),
                         ),
                         SizedBox(height: 20.h),

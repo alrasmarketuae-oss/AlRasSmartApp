@@ -523,6 +523,36 @@ public sealed class StaticReferenceCache(
         return _snapshot!.CitiesByName.TryGetValue(cityName.Trim(), out var city) ? city : null;
     }
 
+    /// <summary>City names are only unique within a country, so scope the lookup.</summary>
+    public GeoCitySnapshot? FindCityByName(string cityName, short countryId)
+    {
+        EnsureLoaded();
+        if (string.IsNullOrWhiteSpace(cityName))
+        {
+            return null;
+        }
+
+        var trimmed = cityName.Trim();
+        return GetCitiesByCountryId(countryId)
+            .FirstOrDefault(city => city.CityName.Trim().Equals(trimmed, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public async Task InvalidateGeoAsync(CancellationToken cancellationToken = default)
+    {
+        _snapshot = null;
+        // Awaited so a sibling instance cannot reload the stale list from Redis.
+        try
+        {
+            await tieredCache.RemoveAsync(CountriesKey, cancellationToken).ConfigureAwait(false);
+            await tieredCache.RemoveAsync(CitiesKey, cancellationToken).ConfigureAwait(false);
+            await tieredCache.RemoveAsync(PortsKey, cancellationToken).ConfigureAwait(false);
+        }
+        catch
+        {
+            // Best-effort; the memory snapshot for this instance is already dropped.
+        }
+    }
+
     public IReadOnlyList<RoleSnapshot> GetRoles()
     {
         EnsureLoaded();
@@ -676,10 +706,13 @@ public sealed class StaticReferenceCache(
 
     private void EnsureLoaded()
     {
-        if (_snapshot is null)
+        if (_snapshot is not null)
         {
-            throw new InvalidOperationException("Static reference cache is not loaded yet.");
+            return;
         }
+
+        // Rare path after InvalidateGeoAsync — reload before serving the read.
+        EnsureLoadedAsync().GetAwaiter().GetResult();
     }
 
     private void EnsureCatalog()

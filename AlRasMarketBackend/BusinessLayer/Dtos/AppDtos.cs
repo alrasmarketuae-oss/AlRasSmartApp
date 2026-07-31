@@ -364,7 +364,27 @@ public sealed class ImageProductVisionResult
 public sealed class AddAddressInput
 {
     public string UserId { get; set; } = string.Empty;
-    public Guid CityId { get; set; }
+
+    /// <summary>Existing city. When null, <see cref="CountryId"/> + <see cref="CityName"/> are resolved instead.</summary>
+    public Guid? CityId { get; set; }
+
+    /// <summary>Country the typed <see cref="CityName"/> belongs to.</summary>
+    public short? CountryId { get; set; }
+
+    /// <summary>Free-typed city; matched against the country's cities, inserted when it is new.</summary>
+    public string? CityName { get; set; }
+
+    public string AddressLine1 { get; set; } = string.Empty;
+    public string? AddressLine2 { get; set; }
+}
+
+public sealed class UpdateAddressInput
+{
+    public string UserId { get; set; } = string.Empty;
+    public Guid AddressId { get; set; }
+    public Guid? CityId { get; set; }
+    public short? CountryId { get; set; }
+    public string? CityName { get; set; }
     public string AddressLine1 { get; set; } = string.Empty;
     public string? AddressLine2 { get; set; }
 }

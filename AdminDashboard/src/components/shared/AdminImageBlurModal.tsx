@@ -170,7 +170,7 @@ export default function AdminImageBlurModal({
             width: rect.width * scaleX,
             height: rect.height * scaleY,
           },
-          14,
+          28,
         )
       }
 
@@ -244,9 +244,9 @@ export default function AdminImageBlurModal({
                   top: rect.y,
                   width: rect.width,
                   height: rect.height,
-                  backdropFilter: 'blur(10px)',
-                  WebkitBackdropFilter: 'blur(10px)',
-                  background: 'rgba(255,255,255,0.15)',
+                  backdropFilter: 'blur(20px)',
+                  WebkitBackdropFilter: 'blur(20px)',
+                  background: 'rgba(255,255,255,0.2)',
                 }}
               />
             ))}

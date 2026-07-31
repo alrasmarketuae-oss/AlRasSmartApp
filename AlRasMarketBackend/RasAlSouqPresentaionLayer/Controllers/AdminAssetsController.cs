@@ -32,6 +32,7 @@ public class AdminAssetsController(
         "chat-images",
         "chat-voice",
         "chat-videos",
+        "chat-files",
         "home-banners",
         "order-videos",
         "order-returns",

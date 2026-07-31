@@ -24,6 +24,9 @@ class ChatCubit extends Cubit<ChatState> {
   static ChatCubit get(BuildContext context) =>
       BlocProvider.of<ChatCubit>(context);
 
+  /// Matches the server limit in `ChatAppService.MaxChatFileBytes`.
+  static const int chatFileMaxBytes = 20 * 1024 * 1024;
+
   final ChatRepository _repository;
   StreamSubscription<ChatMessageModel>? _messageSubscription;
   StreamSubscription<dynamic>? _seenSubscription;
@@ -394,7 +397,8 @@ class ChatCubit extends Cubit<ChatState> {
       sentAtUtc: DateTime.now().toUtc(),
       deliveryStatus: MessageDeliveryStatus.sending,
       processingProgress: 0,
-      processingLabel: 'Compressing...',
+      processingLabel:
+          messageType == ChatMessageType.file ? 'Uploading...' : 'Compressing...',
     );
     messages.add(localMessage);
     emit(ChatMessagesLoaded(List.from(messages)));
@@ -428,10 +432,12 @@ class ChatCubit extends Cubit<ChatState> {
     }
 
     try {
-      final isVoice = messageType == ChatMessageType.voice;
+      // Voice is already encoded; documents must be uploaded byte-for-byte.
+      final skipCompression = messageType == ChatMessageType.voice ||
+          messageType == ChatMessageType.file;
       String prepared = filePath;
 
-      if (!isVoice) {
+      if (!skipCompression) {
         final compressed = await MediaCompressionService.prepareChatMedia(
           filePath,
           onProgress: (progress) {
@@ -470,6 +476,21 @@ class ChatCubit extends Cubit<ChatState> {
                 ),
           );
           emit(const ChatMessageSendError('Video must be 30 MB or smaller.'));
+          return;
+        }
+      }
+
+      if (messageType == ChatMessageType.file) {
+        final size = await MediaCompressionService.fileSizeBytes(prepared);
+        if (size > chatFileMaxBytes) {
+          updateMessage(
+            messages.firstWhere((m) => m.messageId == tempId).copyWith(
+                  deliveryStatus: MessageDeliveryStatus.failed,
+                  clearProcessingProgress: true,
+                  processingLabel: 'File too large',
+                ),
+          );
+          emit(const ChatMessageSendError('File must be 20 MB or smaller.'));
           return;
         }
       }
@@ -556,7 +577,20 @@ class ChatCubit extends Cubit<ChatState> {
       return;
     }
 
-    await sendTextMessage('📎 $fileName');
+    if (uploadType == ChatMessageType.file) {
+      await sendMediaMessage(
+        filePath: filePath,
+        messageType: ChatMessageType.file,
+      );
+      return;
+    }
+
+    emit(
+      ChatMessageSendError(
+        'Unsupported file type. Allowed: '
+        '${ChatMediaHelper.supportedDocumentsLabel}, images, videos and audio.',
+      ),
+    );
   }
 
   Future<void> _sendMessage(

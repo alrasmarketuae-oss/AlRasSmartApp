@@ -1,5 +1,6 @@
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
+import 'package:alrasmarket/core/serveses/profile_service.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
@@ -28,6 +29,29 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
   final _newPasswordCtrl = TextEditingController();
   final _confirmPasswordCtrl = TextEditingController();
 
+  /// Google/Apple accounts have no local password, so there is nothing to ask for.
+  bool _hasPassword = AuthService.instance.hasPassword ?? true;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshHasPassword();
+  }
+
+  Future<void> _refreshHasPassword() async {
+    if (AuthService.instance.hasPassword != null) return;
+    try {
+      final profile = await ProfileService.instance.fetchMyProfile();
+      final hasPassword = profile.hasPassword;
+      if (!mounted || hasPassword == null || hasPassword == _hasPassword) {
+        return;
+      }
+      setState(() => _hasPassword = hasPassword);
+    } catch (_) {
+      // Keep the cached assumption; the backend still validates on submit.
+    }
+  }
+
   @override
   void dispose() {
     _currentPasswordCtrl.dispose();
@@ -39,7 +63,7 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
   void _submit() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    final current = _currentPasswordCtrl.text.trim();
+    final current = _hasPassword ? _currentPasswordCtrl.text.trim() : '';
     final newPassword = _newPasswordCtrl.text.trim();
     final confirm = _confirmPasswordCtrl.text.trim();
 
@@ -62,6 +86,7 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
     return BlocListener<AuthCubit, AuthStates>(
       listener: (context, state) {
         if (state is ChangePasswordSuccessState) {
+          AuthService.instance.setHasPassword(true);
           AppToast.showSuccess(context, state.message);
           Navigator.pop(context);
         } else if (state is ChangePasswordErrorState) {
@@ -81,7 +106,9 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
                   children: [
                     Center(
                       child: Text(
-                        S.of(context).changePassword,
+                        _hasPassword
+                            ? S.of(context).changePassword
+                            : S.of(context).setPassword,
                         style: TextStyle(
                           fontSize: 18.sp,
                           color: LightColor.defaultColor,
@@ -126,20 +153,33 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
                             ),
                           ),
                           SizedBox(height: 20.h),
-                          CustomTextFormField(
-                            controller: _currentPasswordCtrl,
-                            label: S.of(context).currentPassword,
-                            hintText: S.of(context).enterCurrentPassword,
-                            isPassword: true,
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return S.of(context).thisFieldIsRequired;
-                              }
-                              return null;
-                            },
-                            rightIconColor: LightColor.defaultColor,
-                          ),
-                          SizedBox(height: 20.h),
+                          if (_hasPassword) ...[
+                            CustomTextFormField(
+                              controller: _currentPasswordCtrl,
+                              label: S.of(context).currentPassword,
+                              hintText: S.of(context).enterCurrentPassword,
+                              isPassword: true,
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return S.of(context).thisFieldIsRequired;
+                                }
+                                return null;
+                              },
+                              rightIconColor: LightColor.defaultColor,
+                            ),
+                            SizedBox(height: 20.h),
+                          ] else ...[
+                            Text(
+                              S.of(context).setPasswordSocialHint,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: LightColor.greyTextColor,
+                                fontSize: 13.sp,
+                                height: 1.5,
+                              ),
+                            ),
+                            SizedBox(height: 20.h),
+                          ],
                           CustomTextFormField(
                             controller: _newPasswordCtrl,
                             label: S.of(context).newPassword,
@@ -179,34 +219,36 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
                             text: S.of(context).savePassword,
                             onPressed: isLoading ? null : _submit,
                           ),
-                          SizedBox(height: 20.h),
-                          TextButton(
-                            onPressed: () {
-                              final email =
-                                  AuthService.instance.currentUserEmail ?? '';
-                              context.push(
-                                AppRoutes.kForgotPasswordView,
-                                extra: email,
-                              );
-                            },
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: Text(
-                              S.of(context).forgotPassword,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: LightColor.defaultColor,
-                                decoration: TextDecoration.underline,
-                                decorationColor: LightColor.defaultColor,
-                                fontSize: 15.sp,
-                                fontWeight: FontWeight.bold,
-                                height: 1.5,
+                          if (_hasPassword) ...[
+                            SizedBox(height: 20.h),
+                            TextButton(
+                              onPressed: () {
+                                final email =
+                                    AuthService.instance.currentUserEmail ?? '';
+                                context.push(
+                                  AppRoutes.kForgotPasswordView,
+                                  extra: email,
+                                );
+                              },
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: Text(
+                                S.of(context).forgotPassword,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: LightColor.defaultColor,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: LightColor.defaultColor,
+                                  fontSize: 15.sp,
+                                  fontWeight: FontWeight.bold,
+                                  height: 1.5,
+                                ),
                               ),
                             ),
-                          ),
+                          ],
                         ],
                       ),
                     ),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/cache/api_cache_store.dart';
@@ -6,6 +8,7 @@ import '../../../core/serveses/app_chat_listener_service.dart';
 import '../../../core/serveses/cached_constants.dart';
 import '../../../core/services/api_constants.dart';
 import '../../../core/services/dio_helper.dart';
+import '../../../core/services/fcm_token_service.dart';
 import '../../features/chat/data/utils/chat_e2e_crypto.dart';
 
 /// Centralized authentication service for managing user authentication state
@@ -55,6 +58,13 @@ class AuthService {
   String? get currentUserPhone => phone;
 
   String? phone;
+
+  /// Null until `/users/me` has been read once. False for Google/Apple accounts
+  /// that never set a local password — they must not be asked for a current one.
+  bool? hasPassword;
+
+  /// `Local`, `Google`, `Apple`, ... as reported by the profile endpoint.
+  String? loginProviderName;
 
   /// Get current user role name
   String? get currentUserRoleName => roleName;
@@ -120,10 +130,17 @@ class AuthService {
           CachHelper.getData('isShippingCompanyAccount') as bool?;
       isShippingCompanyAccount = isShippingCompanyAccountData;
 
+      hasPassword = CachHelper.getData('hasPassword') as bool?;
+      loginProviderName = CachHelper.getData('loginProviderName')?.toString();
+
       final role = CachHelper.getData('role');
       roleName = role?.toString();
       final rId = CachHelper.getData('roleId')?.toString();
       roleId = rId;
+
+      // Push token rotations reach the backend without waiting for a new login.
+      FcmTokenService.instance.onTokenRefreshed =
+          (refreshed) => unawaited(registerFcmToken(fcmToken: refreshed));
 
       // Load language settings
       lang = CachHelper.getData('languageCode')?.toString() ?? 'ar';
@@ -240,6 +257,48 @@ class AuthService {
       debugPrint('Error saving auth data: $e');
       rethrow;
     }
+
+    // Every login funnels through here, so this is where the device token gets
+    // re-pointed at the account that just signed in.
+    if (isAuthenticated) {
+      unawaited(registerFcmToken());
+    }
+  }
+
+  /// Binds the device push token to the signed-in account. Safe to call
+  /// repeatedly — the backend releases the token from any previous owner.
+  Future<void> registerFcmToken({String? fcmToken}) async {
+    final authToken = currentToken;
+    if (authToken == null || authToken.trim().isEmpty) return;
+
+    try {
+      final deviceToken =
+          fcmToken ?? await FcmTokenService.instance.getToken();
+      if (deviceToken.trim().isEmpty) {
+        debugPrint('registerFcmToken skipped: no device token');
+        return;
+      }
+      await DioHelper.postData(
+        url: ApiConstants.updateFcmTokenEndPoint,
+        data: {'fcmToken': deviceToken.trim()},
+        token: authToken,
+      );
+      debugPrint('FCM token registered for user $id');
+    } catch (e) {
+      debugPrint('registerFcmToken skipped: $e');
+    }
+  }
+
+  Future<void> setHasPassword(bool value) async {
+    hasPassword = value;
+    await CachHelper.saveData(key: 'hasPassword', value: value);
+  }
+
+  Future<void> setLoginProviderName(String? provider) async {
+    final normalized = provider?.trim();
+    if (normalized == null || normalized.isEmpty) return;
+    loginProviderName = normalized;
+    await CachHelper.saveData(key: 'loginProviderName', value: normalized);
   }
 
   Future<void> setCompanyWaiting(bool waiting) async {
@@ -400,6 +459,8 @@ class AuthService {
     isCompanyAccount = null;
     phone = null;
     userImagePath = null;
+    hasPassword = null;
+    loginProviderName = null;
     profileImageRevision.value = 0;
 
     // Remove only the auth-related keys
@@ -417,6 +478,8 @@ class AuthService {
     await CachHelper.removeData('phone');
     await CachHelper.removeData('userImagePath');
     await CachHelper.removeData('userImageRevision');
+    await CachHelper.removeData('hasPassword');
+    await CachHelper.removeData('loginProviderName');
 
     debugPrint('Auth data cleared');
   }
@@ -464,7 +527,17 @@ class AuthService {
           await clearAuthData();
           return false;
         }
+        final passwordFlag = data['hasPassword'] ?? data['HasPassword'];
+        if (passwordFlag is bool) {
+          await setHasPassword(passwordFlag);
+        }
+        await setLoginProviderName(
+          (data['loginProviderName'] ?? data['LoginProviderName'])?.toString(),
+        );
       }
+
+      // Restored sessions never hit the login endpoint, so refresh the token here.
+      unawaited(registerFcmToken());
       return true;
     } catch (e) {
       debugPrint('Session validation skipped: $e');

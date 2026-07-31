@@ -113,6 +113,20 @@ abstract class AppRoutes {
   static const String kPaymentSuccessView = '/payment-success';
   static const String kPaymentCancelView = '/payment-cancel';
   static const String kPersonHomeView = '/PersonHomeView';
+
+  /// Path of the route currently on top of the navigation stack.
+  static String currentLocation(BuildContext context) {
+    try {
+      return GoRouter.of(context).routerDelegate.currentConfiguration.uri.path;
+    } catch (_) {
+      return '';
+    }
+  }
+
+  /// True when [path] is already the visible route, so pushing it again is a no-op.
+  static bool isCurrent(BuildContext context, String path) =>
+      currentLocation(context) == path;
+
   static final router = GoRouter(
     navigatorKey: navigatorKey,
     redirect: (context, state) {
@@ -286,7 +300,14 @@ abstract class AppRoutes {
       ),
       GoRoute(
         path: kConfirmCircalView,
-        builder: (context, state) => const ConfirmCircalView(),
+        builder: (context, state) {
+          final extra = state.extra is Map<String, dynamic>
+              ? state.extra as Map<String, dynamic>
+              : const <String, dynamic>{};
+          return ConfirmCircalView(
+            productId: extra['productId'] as String?,
+          );
+        },
       ),
       GoRoute(
         path: kEditProfileView,

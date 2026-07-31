@@ -1534,6 +1534,26 @@ class S {
     );
   }
 
+  /// `Set Password`
+  String get setPassword {
+    return Intl.message(
+      'Set Password',
+      name: 'setPassword',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `You signed in with Google or Apple, so there is no current password. Choose a password to also sign in with your email.`
+  String get setPasswordSocialHint {
+    return Intl.message(
+      'You signed in with Google or Apple, so there is no current password. Choose a password to also sign in with your email.',
+      name: 'setPasswordSocialHint',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Payment Methods`
   String get paymentMethods {
     return Intl.message(
@@ -4999,6 +5019,61 @@ class S {
   /// `City`
   String get city {
     return Intl.message('City', name: 'city', desc: '', args: []);
+  }
+
+  /// `Country`
+  String get country {
+    return Intl.message('Country', name: 'country', desc: '', args: []);
+  }
+
+  /// `Edit Address`
+  String get editAddress {
+    return Intl.message(
+      'Edit Address',
+      name: 'editAddress',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Delete Address`
+  String get deleteAddress {
+    return Intl.message(
+      'Delete Address',
+      name: 'deleteAddress',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Are you sure you want to delete this address?`
+  String get deleteAddressConfirm {
+    return Intl.message(
+      'Are you sure you want to delete this address?',
+      name: 'deleteAddressConfirm',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Search or type your city`
+  String get searchOrTypeCity {
+    return Intl.message(
+      'Search or type your city',
+      name: 'searchOrTypeCity',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Select a country first`
+  String get selectCountryFirst {
+    return Intl.message(
+      'Select a country first',
+      name: 'selectCountryFirst',
+      desc: '',
+      args: [],
+    );
   }
 
   /// `Address Line 1`

@@ -5,7 +5,7 @@ import PendingProductEditPanel from './PendingProductEditPanel'
 import ProductVideosPanel from './ProductVideosPanel'
 import CountryFlag from '../shared/CountryFlag'
 import AdminImageBlurModal from '../shared/AdminImageBlurModal'
-import ImageGallery from '../ui/ImageGallery'
+import ImageGallery, { type GalleryMediaItem } from '../ui/ImageGallery'
 import { downloadAsset, filenameFromAssetPath } from '../../utils/downloadAsset'
 import {
   displayAdProductTypeName,
@@ -364,6 +364,21 @@ export default function BookingAdDetailView({
     const primary = product.videoPath?.trim()
     return primary ? [primary] : []
   }, [product])
+
+  const galleryMedia = useMemo((): GalleryMediaItem[] => {
+    const images = galleryImages.map((image) => ({
+      src: image.path,
+      kind: 'image' as const,
+      id: typeof image.id === 'number' ? image.id : undefined,
+      path: image.path,
+    }))
+    const videos = videoPaths.map((path) => ({
+      src: path,
+      kind: 'video' as const,
+      path,
+    }))
+    return [...images, ...videos]
+  }, [galleryImages, videoPaths])
 
   const mainImage = galleryImages[0]
   const mainUrl = mainImage ? resolveAssetUrl(mainImage.path) : null
@@ -1122,10 +1137,23 @@ export default function BookingAdDetailView({
         onSave={handleBlurSave}
       />
       <ImageGallery
-        images={galleryImages.map((image) => image.path)}
+        media={galleryMedia}
         initialIndex={previewIndex ?? 0}
         open={previewIndex != null}
         onClose={() => setPreviewIndex(null)}
+        isVideoMuted={isVideoMuted}
+        onMuteChange={handleMuteChange}
+        muteLabel="Mute"
+        unmuteLabel="Unmute"
+        blurLabel={t('ads.blurImage')}
+        onBlur={(item) => {
+          if (typeof item.id !== 'number' || !onReplaceImage) return
+          setPreviewIndex(null)
+          setBlurTarget({
+            id: item.id,
+            url: resolveAssetUrl(item.src),
+          })
+        }}
       />
     </div>
   )

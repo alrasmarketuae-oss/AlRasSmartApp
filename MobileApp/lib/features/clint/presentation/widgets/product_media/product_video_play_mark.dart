@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-/// Shared video play mark: translucent circle + solid white triangle.
+/// Shared video play mark: white play triangle only (no circle background).
 class ProductVideoPlayMark extends StatelessWidget {
   const ProductVideoPlayMark({super.key, this.size});
 
@@ -9,26 +8,18 @@ class ProductVideoPlayMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dim = size ?? 44.w;
-    return Container(
-      width: dim,
-      height: dim,
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.38),
-        shape: BoxShape.circle,
-        boxShadow: const [
-          BoxShadow(
-            color: Color.fromRGBO(0, 0, 0, 0.16),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Icon(
-        Icons.play_arrow_rounded,
-        color: Colors.white,
-        size: dim * 0.68,
-      ),
+    final dim = size ?? 44;
+    return Icon(
+      Icons.play_arrow_rounded,
+      color: Colors.white,
+      size: dim * 0.9,
+      shadows: const [
+        Shadow(
+          color: Color.fromRGBO(0, 0, 0, 0.45),
+          blurRadius: 6,
+          offset: Offset(0, 1),
+        ),
+      ],
     );
   }
 }

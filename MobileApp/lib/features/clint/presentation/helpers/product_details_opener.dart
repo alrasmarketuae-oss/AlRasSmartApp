@@ -1,14 +1,11 @@
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/services/dio_helper.dart';
-import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_navigation_helper.dart';
-import 'package:alrasmarket/features/clint/presentation/widgets/search_header.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
 /// Opens marketplace product details by product id (fetches public listing first).
@@ -56,14 +53,25 @@ class ProductDetailsOpener {
     }
 
     if (!context.mounted) return;
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => _ProductDetailsLoadingPage(
-          productId: id,
-          preferRetailChannel: preferRetailChannel,
-        ),
-      ),
-    );
+    try {
+      final product = await fetchPublicProductById(
+        id,
+        asRetail: preferRetailChannel,
+      );
+      if (!context.mounted) return;
+      if (product == null) {
+        AppToast.showError(context, S.of(context).productUnavailable);
+        return;
+      }
+      ProductNavigationHelper.openDetails(
+        context,
+        product,
+        preferRetailChannel: preferRetailChannel,
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      AppToast.showError(context, S.of(context).productUnavailable);
+    }
   }
 
   static Future<MyListingProductModel?> fetchPublicProductById(
@@ -85,127 +93,6 @@ class ProductDetailsOpener {
     final item = map['item'] ?? map['Item'];
     if (item is! Map) return null;
     return MyListingProductModel.fromJson(Map<String, dynamic>.from(item));
-  }
-}
-
-/// Skeleton page shown only when opening by id without seed data.
-class _ProductDetailsLoadingPage extends StatefulWidget {
-  const _ProductDetailsLoadingPage({
-    required this.productId,
-    required this.preferRetailChannel,
-  });
-
-  final String productId;
-  final bool preferRetailChannel;
-
-  @override
-  State<_ProductDetailsLoadingPage> createState() =>
-      _ProductDetailsLoadingPageState();
-}
-
-class _ProductDetailsLoadingPageState extends State<_ProductDetailsLoadingPage> {
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    try {
-      final product = await ProductDetailsOpener.fetchPublicProductById(
-        widget.productId,
-        asRetail: widget.preferRetailChannel,
-      );
-      if (!mounted) return;
-      if (product == null) {
-        Navigator.of(context).pop();
-        AppToast.showError(context, S.of(context).productUnavailable);
-        return;
-      }
-      Navigator.of(context).pop();
-      if (!mounted) return;
-      ProductNavigationHelper.openDetails(
-        context,
-        product,
-        preferRetailChannel: widget.preferRetailChannel,
-      );
-    } catch (_) {
-      if (!mounted) return;
-      Navigator.of(context).pop();
-      AppToast.showError(context, S.of(context).productUnavailable);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF4F7FA),
-        body: Column(
-          children: [
-            SearchHeader(
-              title: S.of(context).productDetails,
-              isSearch: false,
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(24.w, 16.h, 24.w, 24.h),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _SkeletonBox(height: 220.h, radius: 16.r),
-                    SizedBox(height: 16.h),
-                    _SkeletonBox(height: 22.h, width: 180.w),
-                    SizedBox(height: 10.h),
-                    _SkeletonBox(height: 14.h, width: double.infinity),
-                    SizedBox(height: 8.h),
-                    _SkeletonBox(height: 14.h, width: 220.w),
-                    SizedBox(height: 20.h),
-                    _SkeletonBox(height: 16.h, width: 120.w),
-                    SizedBox(height: 10.h),
-                    _SkeletonBox(height: 80.h, radius: 12.r),
-                    SizedBox(height: 20.h),
-                    Text(
-                      S.of(context).loadingEllipsis,
-                      style: TextStyle(
-                        fontFamily: fontFamily,
-                        fontSize: 13.sp,
-                        color: const Color(0xFF94A3B8),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SkeletonBox extends StatelessWidget {
-  const _SkeletonBox({
-    required this.height,
-    this.width,
-    this.radius,
-  });
-
-  final double height;
-  final double? width;
-  final double? radius;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: height,
-      width: width ?? double.infinity,
-      decoration: BoxDecoration(
-        color: const Color(0xFFE2E8F0),
-        borderRadius: BorderRadius.circular(radius ?? 8.r),
-      ),
-    );
   }
 }
 

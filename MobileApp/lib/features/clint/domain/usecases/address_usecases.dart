@@ -27,3 +27,34 @@ class CreateClientAddressUseCase {
     return _repository.createAddress(request: request, token: token);
   }
 }
+
+class UpdateClientAddressUseCase {
+  UpdateClientAddressUseCase(this._repository);
+
+  final BaseAddressRepository _repository;
+
+  Future<Either<Failure, void>> call({
+    required String addressId,
+    required CreateAddressRequest request,
+    required String token,
+  }) {
+    return _repository.updateAddress(
+      addressId: addressId,
+      request: request,
+      token: token,
+    );
+  }
+}
+
+class DeleteClientAddressUseCase {
+  DeleteClientAddressUseCase(this._repository);
+
+  final BaseAddressRepository _repository;
+
+  Future<Either<Failure, void>> call({
+    required String addressId,
+    required String token,
+  }) {
+    return _repository.deleteAddress(addressId: addressId, token: token);
+  }
+}

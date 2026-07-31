@@ -722,6 +722,10 @@ body {
   background: #ff7a45;
 }
 
+.chat-attach-icon-document {
+  background: #3b7fc7;
+}
+
 @media print {
   @page {
     margin: 10mm;

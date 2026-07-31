@@ -35,13 +35,32 @@ class ChatMediaHelper {
     'm4v',
   };
 
+  /// Must stay in sync with the server allowlist in `ChatFileContentHelper`.
+  static const _documentExtensions = {
+    'pdf',
+    'doc',
+    'docx',
+    'xls',
+    'xlsx',
+    'ppt',
+    'pptx',
+    'txt',
+    'csv',
+    'rtf',
+    'zip',
+  };
+
   static ChatMessageType? uploadTypeForPath(String path) {
     final ext = extensionFromPath(path);
     if (_imageExtensions.contains(ext)) return ChatMessageType.image;
     if (_audioExtensions.contains(ext)) return ChatMessageType.voice;
     if (_videoExtensions.contains(ext)) return ChatMessageType.video;
+    if (_documentExtensions.contains(ext)) return ChatMessageType.file;
     return null;
   }
+
+  static String get supportedDocumentsLabel =>
+      _documentExtensions.map((e) => '.$e').join(', ');
 
   static bool isImagePath(String path) =>
       uploadTypeForPath(path) == ChatMessageType.image;

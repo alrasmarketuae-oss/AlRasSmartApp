@@ -1129,6 +1129,8 @@ export const enMessages = {
       attachImage: 'Image',
       attachVideo: 'Video',
       videoTooLarge: 'Video must be 30 MB or smaller.',
+      attachDocument: 'Document',
+      documentTooLarge: 'File must be 20 MB or smaller.',
       recordVoice: 'Record',
       stopRecord: 'Stop',
       cancelRecord: 'Cancel',

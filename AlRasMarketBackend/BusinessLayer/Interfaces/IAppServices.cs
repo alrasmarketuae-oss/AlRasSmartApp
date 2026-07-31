@@ -15,6 +15,7 @@ public interface IAuthAppService
     Task SendEmailOtpAsync(string email, CancellationToken cancellationToken = default);
     Task<OtpVerificationStatus> VerifyEmailOtpAsync(string email, string otp, CancellationToken cancellationToken = default);
     Task<object> VerifyEmailOtpAndLoginAsync(string email, string otp, string? fcmToken = null, CancellationToken cancellationToken = default);
+    Task UpdateFcmTokenAsync(string userId, string fcmToken, CancellationToken cancellationToken = default);
     Task ClearFcmTokenAsync(string userId, CancellationToken cancellationToken = default);
     Task<object> GetCompanyActivationStatusAsync(string email, string? fcmToken = null, CancellationToken cancellationToken = default);
     Task<object> GetAccountApprovalStatusAsync(string email, CancellationToken cancellationToken = default);
@@ -357,6 +358,8 @@ public interface IAddressesAppService
 {
     Task<object> GetByUserAsync(string userId, CancellationToken cancellationToken = default);
     Task<object> AddAsync(AddAddressInput input, CancellationToken cancellationToken = default);
+    Task<object> UpdateAsync(UpdateAddressInput input, CancellationToken cancellationToken = default);
+    Task DeleteAsync(string userId, Guid addressId, CancellationToken cancellationToken = default);
 }
 
 public interface IOffersAppService

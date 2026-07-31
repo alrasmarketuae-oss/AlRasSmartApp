@@ -1453,7 +1453,7 @@ export const adminApi = createApi({
 
     uploadChatMedia: builder.mutation<
       ChatUploadResult,
-      { file: File; messageType: 2 | 3 | 5 }
+      { file: File; messageType: 2 | 3 | 5 | 6 }
     >({
       queryFn: async ({ file, messageType }) => {
         const token = getAuthToken()

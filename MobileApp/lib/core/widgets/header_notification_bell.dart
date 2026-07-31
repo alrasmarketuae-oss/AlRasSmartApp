@@ -18,7 +18,12 @@ class HeaderNotificationBell extends StatelessWidget {
         return IconButton(
           padding: EdgeInsets.zero,
           constraints: BoxConstraints.tightFor(width: 40.w, height: 40.w),
-          onPressed: () => context.push(AppRoutes.kNotificationsView),
+          onPressed: () {
+            if (AppRoutes.isCurrent(context, AppRoutes.kNotificationsView)) {
+              return;
+            }
+            context.push(AppRoutes.kNotificationsView);
+          },
           icon: Stack(
             clipBehavior: Clip.none,
             children: [

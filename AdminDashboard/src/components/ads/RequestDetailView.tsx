@@ -9,7 +9,7 @@ import type { Category } from '../../types/category'
 import CountryFlag from '../shared/CountryFlag'
 import RequestOffersPanel from './RequestOffersPanel'
 import AdminImageBlurModal from '../shared/AdminImageBlurModal'
-import ImageGallery from '../ui/ImageGallery'
+import ImageGallery, { type GalleryMediaItem } from '../ui/ImageGallery'
 import { downloadAsset, filenameFromAssetPath } from '../../utils/downloadAsset'
 import {
   displayAdProductTypeName,
@@ -268,6 +268,20 @@ export default function RequestDetailView({
   }, [product.images, product.imagePaths, product.primaryImagePath])
 
   const videoPaths = useMemo(() => resolveProductVideoPaths(product), [product])
+  const galleryMedia = useMemo((): GalleryMediaItem[] => {
+    const images = galleryImages.map((image) => ({
+      src: image.path,
+      kind: 'image' as const,
+      id: typeof image.id === 'number' ? image.id : undefined,
+      path: image.path,
+    }))
+    const videos = videoPaths.map((path) => ({
+      src: path,
+      kind: 'video' as const,
+      path,
+    }))
+    return [...images, ...videos]
+  }, [galleryImages, videoPaths])
   const hasVideo = videoPaths.length > 0
   const activeVideoPath = videoPaths[selectedVideoIndex] ?? videoPaths[0] ?? null
   const videoUrl = activeVideoPath ? resolveAssetUrl(activeVideoPath) : null
@@ -451,17 +465,27 @@ export default function RequestDetailView({
               <div className="w-[140px] shrink-0 sm:w-[160px]">
                 <div className="overflow-hidden rounded-xl bg-slate-100 ring-1 ring-slate-200">
                   {showVideo && videoUrl ? (
-                    <video
-                      key={videoUrl}
-                      ref={mainVideoRef}
-                      controls
-                      autoPlay
-                      playsInline
-                      muted={isVideoMuted}
-                      preload="metadata"
-                      className="aspect-square h-[140px] w-full bg-black object-contain sm:h-[160px]"
-                      src={videoUrl}
-                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPreviewIndex(galleryImages.length + Math.max(selectedVideoIndex, 0))
+                      }
+                      className="relative block w-full cursor-zoom-in"
+                      title={t('ads.preview')}
+                    >
+                      <video
+                        key={videoUrl}
+                        ref={mainVideoRef}
+                        muted
+                        playsInline
+                        preload="metadata"
+                        className="pointer-events-none aspect-square h-[140px] w-full bg-black object-contain sm:h-[160px]"
+                        src={videoUrl}
+                      />
+                      <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25 text-2xl text-white">
+                        ▶
+                      </span>
+                    </button>
                   ) : mainUrl ? (
                     <button
                       type="button"
@@ -566,6 +590,7 @@ export default function RequestDetailView({
                           onClick={() => {
                             setSelectedVideoIndex(index)
                             setShowVideo(true)
+                            setPreviewIndex(galleryImages.length + index)
                           }}
                           className={`relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-slate-900 text-white ring-2 transition ${
                             selected
@@ -1265,10 +1290,33 @@ export default function RequestDetailView({
         onSave={handleBlurSave}
       />
       <ImageGallery
-        images={galleryImages.map((image) => image.path)}
+        media={galleryMedia}
         initialIndex={previewIndex ?? 0}
         open={previewIndex != null}
         onClose={() => setPreviewIndex(null)}
+        isVideoMuted={isVideoMuted}
+        onMuteChange={setIsVideoMuted}
+        muteLabel="Mute"
+        unmuteLabel="Unmute"
+        blurLabel={t('ads.blurImage')}
+        deleteLabel={t('ads.deleteAd')}
+        onBlur={(item) => {
+          if (typeof item.id !== 'number') return
+          setPreviewIndex(null)
+          setBlurTarget({
+            id: item.id,
+            url: resolveAssetUrl(item.src),
+          })
+        }}
+        onDelete={
+          onDeleteImage
+            ? (item) => {
+                if (typeof item.id !== 'number') return
+                onDeleteImage(item.id)
+                setPreviewIndex(null)
+              }
+            : undefined
+        }
       />
     </div>
   )

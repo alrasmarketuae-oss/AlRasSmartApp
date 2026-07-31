@@ -21,6 +21,13 @@ abstract class BaseGeoRemoteDataSource {
     String countryName, {
     bool forceRefresh = false,
   });
+  Future<Either<Failure, GeoCountryListResponse>> fetchCountryList({
+    bool forceRefresh = false,
+  });
+  Future<Either<Failure, GeoCitiesResponse>> fetchCitiesByCountryId(
+    int countryId, {
+    bool forceRefresh = false,
+  });
 }
 
 class GeoRemoteDataSource implements BaseGeoRemoteDataSource {
@@ -43,6 +50,60 @@ class GeoRemoteDataSource implements BaseGeoRemoteDataSource {
         final data = response!.data;
         if (data is! Map<String, dynamic>) {
           throw const FormatException('Invalid countries response');
+        }
+        return data;
+      },
+    );
+  }
+
+  /// Same payload as [fetchCountries] but keeps the country ids, which the
+  /// address flow needs to save a city under the right country.
+  @override
+  Future<Either<Failure, GeoCountryListResponse>> fetchCountryList({
+    bool forceRefresh = false,
+  }) async {
+    return _loadCachedGet<GeoCountryListResponse>(
+      cacheKey: ApiCacheKeys.geoCountries,
+      ttl: ApiCacheTtl.geo,
+      forceRefresh: forceRefresh,
+      parse: (data) => GeoCountryListResponse.fromJson(
+        Map<String, dynamic>.from(data as Map),
+      ),
+      fetch: () async {
+        final response = await DioHelper.getData(
+          url: ApiConstants.geoCountriesEndPoint,
+        );
+        _ensureSuccess(response);
+        final data = response!.data;
+        if (data is! Map<String, dynamic>) {
+          throw const FormatException('Invalid countries response');
+        }
+        return data;
+      },
+    );
+  }
+
+  @override
+  Future<Either<Failure, GeoCitiesResponse>> fetchCitiesByCountryId(
+    int countryId, {
+    bool forceRefresh = false,
+  }) async {
+    return _loadCachedGet<GeoCitiesResponse>(
+      cacheKey: ApiCacheKeys.geoCities('id-$countryId'),
+      ttl: ApiCacheTtl.geo,
+      forceRefresh: forceRefresh,
+      parse: (data) => GeoCitiesResponse.fromJson(
+        Map<String, dynamic>.from(data as Map),
+      ),
+      fetch: () async {
+        final response = await DioHelper.getData(
+          url: ApiConstants.geoCitiesByCountryEndPoint,
+          query: {'countryId': countryId},
+        );
+        _ensureSuccess(response);
+        final data = response!.data;
+        if (data is! Map<String, dynamic>) {
+          throw const FormatException('Invalid cities response');
         }
         return data;
       },

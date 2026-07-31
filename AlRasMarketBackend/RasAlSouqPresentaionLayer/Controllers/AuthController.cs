@@ -164,6 +164,36 @@ public class AuthController(
     }
 
     /// <summary>
+    /// Registers the device FCM token for the authenticated user. The app calls this after
+    /// every login and whenever Firebase rotates the token.
+    /// </summary>
+    [HttpPost("fcm-token")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> UpdateFcmToken(
+        [FromBody] UpdateFcmTokenRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            await _authAppService.UpdateFcmTokenAsync(userId, request.FcmToken, cancellationToken);
+            return Ok(new { message = "FCM token updated." });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Clears the authenticated user's FCM token on logout (same device, different accounts).
     /// </summary>
     [HttpPost("clear-fcm-token")]
@@ -617,13 +647,24 @@ public sealed class VerifyEmailOtpRequest
 public sealed class ChangePasswordRequest
 {
     /// <summary>
-    /// Current account password.
+    /// Current account password. Optional for Google/Apple accounts that never had one.
     /// </summary>
     public string CurrentPassword { get; set; } = string.Empty;
     /// <summary>
     /// New account password.
     /// </summary>
     public string NewPassword { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Request body for registering the device push token against the signed-in account.
+/// </summary>
+public sealed class UpdateFcmTokenRequest
+{
+    /// <summary>
+    /// Firebase Cloud Messaging device token.
+    /// </summary>
+    public string FcmToken { get; set; } = string.Empty;
 }
 
 /// <summary>

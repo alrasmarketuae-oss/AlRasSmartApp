@@ -1,30 +1,72 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { resolveAssetUrl } from '../../lib/assets'
 
+export type GalleryMediaItem = {
+  src: string
+  kind: 'image' | 'video'
+  id?: number
+  path?: string
+}
+
 type ImageGalleryProps = {
-  images: string[]
+  /** @deprecated Prefer `media`. Kept for older call sites. */
+  images?: string[]
+  media?: GalleryMediaItem[]
   initialIndex?: number
   open: boolean
   onClose: () => void
+  isVideoMuted?: boolean
+  onMuteChange?: (muted: boolean) => void
+  muteLabel?: string
+  unmuteLabel?: string
+  onBlur?: (item: GalleryMediaItem, index: number) => void
+  onDelete?: (item: GalleryMediaItem, index: number) => void
+  blurLabel?: string
+  deleteLabel?: string
+  canBlurCurrent?: boolean
+  canDeleteCurrent?: boolean
+}
+
+function toMedia(images: string[] | undefined, media: GalleryMediaItem[] | undefined): GalleryMediaItem[] {
+  if (media && media.length > 0) {
+    return media.filter((item) => Boolean(item.src?.trim()))
+  }
+  return (images ?? [])
+    .map((src) => src?.trim())
+    .filter((src): src is string => Boolean(src))
+    .map((src) => ({ src, kind: 'image' as const, path: src }))
 }
 
 export default function ImageGallery({
   images,
+  media,
   initialIndex = 0,
   open,
   onClose,
+  isVideoMuted = true,
+  onMuteChange,
+  muteLabel = 'Mute',
+  unmuteLabel = 'Unmute',
+  onBlur,
+  onDelete,
+  blurLabel = 'Blur',
+  deleteLabel = 'Delete',
+  canBlurCurrent,
+  canDeleteCurrent,
 }: ImageGalleryProps) {
-  const validImages = images.filter((path) => Boolean(path?.trim()))
+  const items = useMemo(() => toMedia(images, media), [images, media])
   const [index, setIndex] = useState(0)
+  const [localMuted, setLocalMuted] = useState(isVideoMuted)
 
   useEffect(() => {
     if (!open) return
-    const next = Math.min(
-      Math.max(initialIndex, 0),
-      Math.max(validImages.length - 1, 0),
-    )
+    const next = Math.min(Math.max(initialIndex, 0), Math.max(items.length - 1, 0))
     setIndex(next)
-  }, [open, initialIndex, validImages.length])
+  }, [open, initialIndex, items.length])
+
+  useEffect(() => {
+    setLocalMuted(isVideoMuted)
+  }, [isVideoMuted, open])
 
   useEffect(() => {
     if (!open) return
@@ -34,23 +76,40 @@ export default function ImageGallery({
         return
       }
       if (event.key === 'ArrowRight') {
-        setIndex((current) => (current + 1) % Math.max(validImages.length, 1))
+        setIndex((current) => (current + 1) % Math.max(items.length, 1))
       }
       if (event.key === 'ArrowLeft') {
-        setIndex((current) =>
-          (current - 1 + Math.max(validImages.length, 1)) %
-          Math.max(validImages.length, 1),
+        setIndex(
+          (current) =>
+            (current - 1 + Math.max(items.length, 1)) % Math.max(items.length, 1),
         )
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [open, onClose, validImages.length])
+  }, [open, onClose, items.length])
 
-  if (!open || validImages.length === 0) return null
+  if (!open || items.length === 0) return null
 
-  const current = validImages[index] ?? validImages[0]
-  const showNav = validImages.length > 1
+  const current = items[index] ?? items[0]
+  const currentUrl = resolveAssetUrl(current.src)
+  const showNav = items.length > 1
+  const muted = onMuteChange ? isVideoMuted : localMuted
+  const isVideo = current.kind === 'video'
+  const showBlur =
+    !isVideo &&
+    Boolean(onBlur) &&
+    (canBlurCurrent ?? typeof current.id === 'number')
+  const showDelete =
+    !isVideo &&
+    Boolean(onDelete) &&
+    (canDeleteCurrent ?? typeof current.id === 'number')
+
+  function toggleMute() {
+    const next = !muted
+    if (onMuteChange) onMuteChange(next)
+    else setLocalMuted(next)
+  }
 
   return (
     <div
@@ -72,12 +131,9 @@ export default function ImageGallery({
           className="absolute start-3 top-1/2 z-[101] -translate-y-1/2 rounded-full bg-white/15 px-3 py-2 text-lg font-bold text-white hover:bg-white/25"
           onClick={(event) => {
             event.stopPropagation()
-            setIndex(
-              (current) =>
-                (current - 1 + validImages.length) % validImages.length,
-            )
+            setIndex((current) => (current - 1 + items.length) % items.length)
           }}
-          aria-label="Previous image"
+          aria-label="Previous"
         >
           ‹
         </button>
@@ -89,27 +145,74 @@ export default function ImageGallery({
           className="absolute end-3 top-1/2 z-[101] -translate-y-1/2 rounded-full bg-white/15 px-3 py-2 text-lg font-bold text-white hover:bg-white/25"
           onClick={(event) => {
             event.stopPropagation()
-            setIndex((current) => (current + 1) % validImages.length)
+            setIndex((current) => (current + 1) % items.length)
           }}
-          aria-label="Next image"
+          aria-label="Next"
         >
           ›
         </button>
       ) : null}
 
       <div
-        className="flex max-h-[90vh] max-w-[min(96vw,1200px)] flex-col items-center gap-2"
+        className="relative flex max-h-[90vh] max-w-[min(96vw,1200px)] flex-col items-center gap-3"
         onClick={(event) => event.stopPropagation()}
         role="presentation"
       >
-        <img
-          src={resolveAssetUrl(current)}
-          alt=""
-          className="max-h-[84vh] max-w-full rounded-lg object-contain"
-        />
+        {isVideo && currentUrl ? (
+          <video
+            key={current.src}
+            controls
+            autoPlay
+            playsInline
+            muted={muted}
+            preload="metadata"
+            className="max-h-[78vh] max-w-full rounded-lg bg-black object-contain"
+            src={currentUrl}
+          />
+        ) : currentUrl ? (
+          <img
+            src={currentUrl}
+            alt=""
+            className="max-h-[78vh] max-w-full rounded-lg object-contain"
+          />
+        ) : null}
+
+        {isVideo ? (
+          <button
+            type="button"
+            onClick={toggleMute}
+            className="rounded-full bg-white/15 px-4 py-2 text-sm font-semibold text-white hover:bg-white/25"
+          >
+            {muted ? unmuteLabel : muteLabel}
+          </button>
+        ) : null}
+
+        {!isVideo && (showBlur || showDelete) ? (
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {showBlur && onBlur ? (
+              <button
+                type="button"
+                onClick={() => onBlur(current, index)}
+                className="rounded-full bg-white/15 px-4 py-2 text-sm font-semibold text-white hover:bg-white/25"
+              >
+                {blurLabel}
+              </button>
+            ) : null}
+            {showDelete && onDelete ? (
+              <button
+                type="button"
+                onClick={() => onDelete(current, index)}
+                className="rounded-full bg-red-500/80 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500"
+              >
+                {deleteLabel}
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+
         {showNav ? (
           <p className="text-xs font-semibold text-white/80">
-            {index + 1} / {validImages.length}
+            {index + 1} / {items.length}
           </p>
         ) : null}
       </div>
