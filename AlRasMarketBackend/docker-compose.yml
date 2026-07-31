@@ -24,6 +24,9 @@ services:
       ImageEmbedding__MaxConcurrentIndexingJobs: "1"
       EmailSettings__PublicBaseUrl: "https://api.alrasmarketapp.com"
       CloudflareR2__PublicBaseUrl: "https://cdn.alrasmarketapp.com"
+      # Google: Web + iOS OAuth client IDs (idToken audience). Apple: iOS bundle id.
+      ExternalAuth__Google__ClientIds: "${GOOGLE_CLIENT_IDS:-592516755028-omkgbtoesqbj89g1ds07h6jqu4r7979i.apps.googleusercontent.com,592516755028-8482cm2q52e83uv9h8t9a2oh6jjtoaab.apps.googleusercontent.com}"
+      ExternalAuth__Apple__ClientIds: "${APPLE_CLIENT_IDS:-com.mergespice.alrasmarket}"
     depends_on:
       - redis
       - qdrant
