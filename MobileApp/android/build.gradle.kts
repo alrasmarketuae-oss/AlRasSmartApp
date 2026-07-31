@@ -1,6 +1,7 @@
 allprojects {
     repositories {
-        // Local aapt2 only — avoids Java TLS failures for this artifact.
+        // Prefer local mirror to avoid Java TLS failures (bad_record_mac).
+        maven { url = uri("file:///C:/src/gradle-mirror/maven-local") }
         maven { url = uri("file:///C:/src/gradle-mirror/aapt2-only") }
         google()
         mavenCentral()
@@ -22,9 +23,11 @@ subprojects {
 subprojects {
     buildscript {
         repositories {
+            maven { url = uri("file:///C:/src/gradle-mirror/maven-local") }
             maven { url = uri("file:///C:/src/gradle-mirror/aapt2-only") }
             google()
             mavenCentral()
+            gradlePluginPortal()
         }
         configurations.classpath {
             resolutionStrategy {
@@ -33,6 +36,7 @@ subprojects {
         }
     }
     repositories {
+        maven { url = uri("file:///C:/src/gradle-mirror/maven-local") }
         maven { url = uri("file:///C:/src/gradle-mirror/aapt2-only") }
         google()
         mavenCentral()

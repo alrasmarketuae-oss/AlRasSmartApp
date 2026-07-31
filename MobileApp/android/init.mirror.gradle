@@ -1,0 +1,19 @@
+allprojects {
+    buildscript {
+        repositories {
+            maven { url 'file:///C:/src/gradle-mirror/maven-local' }
+            maven { url 'file:///C:/src/gradle-mirror/aapt2-only' }
+            google()
+            mavenCentral()
+            gradlePluginPortal()
+        }
+    }
+    repositories {
+        maven { url 'file:///C:/src/gradle-mirror/aapt2-only' }
+        maven { url 'file:///C:/src/gradle-mirror/maven-local' }
+        google()
+        mavenCentral()
+        maven { url 'https://www.jitpack.io' }
+        maven { url 'https://storage.googleapis.com/download.flutter.io' }
+    }
+}
