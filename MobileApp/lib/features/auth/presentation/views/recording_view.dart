@@ -6,6 +6,7 @@ import 'package:alrasmarket/core/theme/brand_colors.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/widgets/colored_brand_title.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_cubit.dart';
+import 'package:alrasmarket/features/auth/presentation/widgets/biometric_unlock_button.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
@@ -78,6 +79,7 @@ class RecordingView extends StatelessWidget {
                               ),
                             ),
                             SizedBox(height: 24.h),
+                            const BiometricUnlockButton(),
                             _RoleTile(
                               accent: BrandColors.primaryBlue,
                               tint: const Color(0xFFF4F7FB),

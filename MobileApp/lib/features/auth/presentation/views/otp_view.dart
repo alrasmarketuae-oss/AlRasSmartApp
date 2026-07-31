@@ -8,6 +8,7 @@ import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_cubit.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_states.dart';
+import 'package:alrasmarket/features/auth/presentation/widgets/biometric_enrollment_prompt.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -126,9 +127,11 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
       child: Scaffold(
         backgroundColor: LightColor.background,
         body: BlocConsumer<AuthCubit, AuthStates>(
-          listener: (context, state) {
+          listener: (context, state) async {
             if (state is VerifyOtpSuccessState) {
               AppToast.showSuccess(context, 'ُEmail verficated successfully');
+              await promptBiometricEnrollmentIfNeeded(context);
+              if (!context.mounted) return;
               AuthCubit.navigateAfterAuthSuccess(context, state.loginResponse);
             } else if (state is VerifyOtpErrorState) {
               if (AuthCubit.isPendingApprovalMessage(state.message)) {

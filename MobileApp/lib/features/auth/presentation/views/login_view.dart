@@ -12,6 +12,8 @@ import 'package:alrasmarket/core/widgets/custom_social_button.dart';
 import 'package:alrasmarket/core/widgets/primary_button.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_cubit.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_states.dart';
+import 'package:alrasmarket/features/auth/presentation/widgets/biometric_enrollment_prompt.dart';
+import 'package:alrasmarket/features/auth/presentation/widgets/biometric_unlock_button.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -27,9 +29,11 @@ class LoginView extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: BlocConsumer<AuthCubit, AuthStates>(
-          listener: (context, state) {
+          listener: (context, state) async {
             if (state is LoginSuccessState) {
               AppToast.showSuccess(context, S.of(context).loginSuccess);
+              await promptBiometricEnrollmentIfNeeded(context);
+              if (!context.mounted) return;
               AuthCubit.navigateAfterAuthSuccess(
                 context,
                 state.loginResponse,
@@ -175,6 +179,7 @@ class _LoginFormBodyState extends State<_LoginFormBody> {
               ),
             ),
             SizedBox(height: 16.h),
+            const BiometricUnlockButton(),
             SizedBox(
               height: 48.h,
               child: widget.isLoading

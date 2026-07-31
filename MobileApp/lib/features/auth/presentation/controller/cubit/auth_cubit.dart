@@ -13,6 +13,8 @@ import 'package:alrasmarket/features/person/presentation/controller/cubit/person
 import 'package:alrasmarket/features/shipping_company/presentation/controller/cubit/shipping_company_cubit.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_states.dart';
 import 'package:alrasmarket/core/services/fcm_token_service.dart';
+import 'package:alrasmarket/core/services/biometric_auth_service.dart';
+import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -20,7 +22,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:alrasmarket/core/helper/cach_helper.dart';
 import 'package:alrasmarket/core/serveses/app_chat_listener_service.dart';
-import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/serveses/user_preferences_service.dart';
 import '../../../domain/repository/base_auth_repository.dart';
 import '../../../domain/usecases/login_usecase.dart';
@@ -168,6 +169,7 @@ class AuthCubit extends Cubit<AuthStates> {
     }
 
     await _saveLoginData(loginResponse, emailFallback);
+    unawaited(BiometricAuthService.instance.refreshSnapshotIfEnabled());
 
     final isSocialLogin =
         loginProviderName == 'google' || loginProviderName == 'apple';
@@ -287,17 +289,18 @@ class AuthCubit extends Cubit<AuthStates> {
     try {
       emit(LoginLoadingState());
 
-      GoogleSignInAccount? account;
+      // Drop any cached Google session first, otherwise the plugin reuses the
+      // last account and the chooser never appears.
       try {
-        account = await _googleSignIn.signInSilently().timeout(
-          const Duration(seconds: 12),
+        await _googleSignIn.signOut().timeout(
+          const Duration(seconds: 10),
           onTimeout: () => null,
         );
       } catch (e) {
-        debugPrint('Google signInSilently error: $e');
+        debugPrint('Google signOut before sign-in error: $e');
       }
 
-      account ??= await _googleSignIn.signIn().timeout(
+      final account = await _googleSignIn.signIn().timeout(
         const Duration(seconds: 90),
         onTimeout: () => null,
       );
@@ -344,7 +347,7 @@ class AuthCubit extends Cubit<AuthStates> {
         },
         (loginResponse) async => _handleLoginSuccess(
           loginResponse,
-          account!.email,
+          account.email,
           loginProviderName: 'google',
         ),
       );
@@ -688,6 +691,26 @@ class AuthCubit extends Cubit<AuthStates> {
     unawaited(_ensureInitialAddressIfMissing());
   }
 
+  /// Restores navigation after Face ID / fingerprint unlock (no LoginResponse).
+  static void navigateAfterBiometricUnlock(BuildContext context) {
+    _resetHomeTabs();
+    final destination = whereToGo();
+    context.go(destination);
+
+    final isHome = destination == AppRoutes.kPersonHomeView ||
+        destination == AppRoutes.kClientHomeView ||
+        destination == AppRoutes.kCompanyHomeView ||
+        destination == AppRoutes.kShippingCompanyHomeView;
+    if (!isHome) return;
+
+    final clintCubit = sl<ClintCubit>();
+    if (!clintCubit.isClosed) {
+      final isPerson = AuthService.instance.currentUserIsCompanyAccount != true;
+      unawaited(clintCubit.reloadHomeAfterAuth(isPerson: isPerson));
+    }
+    unawaited(_ensureInitialAddressIfMissing());
+  }
+
   static Future<void> _ensureInitialAddressIfMissing() async {
     final token = AuthService.instance.currentToken;
     if (token == null || token.isEmpty) return;
@@ -839,6 +862,7 @@ class AuthCubit extends Cubit<AuthStates> {
         emit(DeleteAccountErrorState(failure.message));
       },
       (message) async {
+        await BiometricAuthService.instance.disable();
         await AuthService.instance.logout();
         emit(DeleteAccountSuccessState(message));
       },

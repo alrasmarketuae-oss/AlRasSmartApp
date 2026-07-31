@@ -7,6 +7,7 @@ import '../../../core/helper/cach_helper.dart';
 import '../../../core/serveses/app_chat_listener_service.dart';
 import '../../../core/serveses/cached_constants.dart';
 import '../../../core/services/api_constants.dart';
+import '../../../core/services/biometric_auth_service.dart';
 import '../../../core/services/dio_helper.dart';
 import '../../../core/services/fcm_token_service.dart';
 import '../../features/chat/data/utils/chat_e2e_crypto.dart';
@@ -484,8 +485,9 @@ class AuthService {
     debugPrint('Auth data cleared');
   }
 
-  // Logout
+  // Logout — keeps a biometric session snapshot when Face ID / fingerprint is on.
   Future<void> logout() async {
+    await BiometricAuthService.instance.stashSessionBeforeLogout();
     await _clearFcmTokenOnServer();
     await AppChatListenerService.instance.stop();
     await ApiCacheStore.instance.invalidateUserData();

@@ -241,6 +241,30 @@ class MessageLookup extends MessageLookupByLibrary {
     "balanceWithdrawal": MessageLookupByLibrary.simpleMessage("Withdrawal"),
     "beauty": MessageLookupByLibrary.simpleMessage("Beauty"),
     "beforeDiscount": MessageLookupByLibrary.simpleMessage("Before Discount"),
+    "biometricAuthReason": MessageLookupByLibrary.simpleMessage(
+      "Confirm it is you to continue",
+    ),
+    "biometricDisabledSuccess": MessageLookupByLibrary.simpleMessage(
+      "Biometric unlock disabled",
+    ),
+    "biometricEnableReason": MessageLookupByLibrary.simpleMessage(
+      "Confirm it is you to enable biometric unlock",
+    ),
+    "biometricEnabledSuccess": MessageLookupByLibrary.simpleMessage(
+      "Biometric unlock enabled",
+    ),
+    "biometricNoEnrolled": MessageLookupByLibrary.simpleMessage(
+      "Set up Face ID or a fingerprint in device settings first",
+    ),
+    "biometricNotAvailable": MessageLookupByLibrary.simpleMessage(
+      "Biometrics are not available on this device",
+    ),
+    "biometricUnlockFailed": MessageLookupByLibrary.simpleMessage(
+      "Biometric unlock failed. Please sign in normally.",
+    ),
+    "biometricUnlockSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Sign back in quickly after logout using Face ID or fingerprint. Only for this saved account.",
+    ),
     "booking": MessageLookupByLibrary.simpleMessage("Booking"),
     "callNow": MessageLookupByLibrary.simpleMessage("Call Now"),
     "camera": MessageLookupByLibrary.simpleMessage("Camera"),
@@ -498,6 +522,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "email": MessageLookupByLibrary.simpleMessage("Email"),
     "emailIsRequired": MessageLookupByLibrary.simpleMessage(
       "Email is required",
+    ),
+    "enableBiometricUnlock": MessageLookupByLibrary.simpleMessage(
+      "Face ID / Fingerprint",
     ),
     "endingSoon": MessageLookupByLibrary.simpleMessage("Ending Soon"),
     "englishLabel": MessageLookupByLibrary.simpleMessage("English"),
@@ -1408,6 +1435,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "unitPieces": MessageLookupByLibrary.simpleMessage("Pieces"),
     "unitTon": MessageLookupByLibrary.simpleMessage("Ton"),
     "unitTons": MessageLookupByLibrary.simpleMessage("Tons"),
+    "unlockWithBiometrics": MessageLookupByLibrary.simpleMessage(
+      "Unlock with biometrics",
+    ),
+    "unlockWithFaceId": MessageLookupByLibrary.simpleMessage(
+      "Unlock with Face ID",
+    ),
+    "unlockWithFingerprint": MessageLookupByLibrary.simpleMessage(
+      "Unlock with fingerprint",
+    ),
     "unmuteVideo": MessageLookupByLibrary.simpleMessage("Unmute"),
     "uploadCompanySiteImages": MessageLookupByLibrary.simpleMessage(
       "Upload Company Site Images",

@@ -232,6 +232,30 @@ class MessageLookup extends MessageLookupByLibrary {
     "balanceWithdrawal": MessageLookupByLibrary.simpleMessage("سحب"),
     "beauty": MessageLookupByLibrary.simpleMessage("تجميل"),
     "beforeDiscount": MessageLookupByLibrary.simpleMessage("قبل الخصم"),
+    "biometricAuthReason": MessageLookupByLibrary.simpleMessage(
+      "أكد هويتك للمتابعة",
+    ),
+    "biometricDisabledSuccess": MessageLookupByLibrary.simpleMessage(
+      "تم إيقاف الفتح بالبصمة",
+    ),
+    "biometricEnableReason": MessageLookupByLibrary.simpleMessage(
+      "أكد هويتك لتفعيل فتح Face ID أو البصمة",
+    ),
+    "biometricEnabledSuccess": MessageLookupByLibrary.simpleMessage(
+      "تم تفعيل الفتح بالبصمة",
+    ),
+    "biometricNoEnrolled": MessageLookupByLibrary.simpleMessage(
+      "فعّل Face ID أو البصمة من إعدادات الجهاز أولاً",
+    ),
+    "biometricNotAvailable": MessageLookupByLibrary.simpleMessage(
+      "البصمة أو Face ID غير متاحة على هذا الجهاز",
+    ),
+    "biometricUnlockFailed": MessageLookupByLibrary.simpleMessage(
+      "فشل الفتح بالبصمة. سجّل الدخول بالطريقة العادية.",
+    ),
+    "biometricUnlockSubtitle": MessageLookupByLibrary.simpleMessage(
+      "سجّل الدخول بسرعة بعد الخروج باستخدام Face ID أو البصمة. يظهر فقط للحساب المحفوظ.",
+    ),
     "booking": MessageLookupByLibrary.simpleMessage("بوكينج"),
     "callNow": MessageLookupByLibrary.simpleMessage("اتصل الآن"),
     "camera": MessageLookupByLibrary.simpleMessage("الكاميرا"),
@@ -497,6 +521,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "email": MessageLookupByLibrary.simpleMessage("البريد الإلكتروني"),
     "emailIsRequired": MessageLookupByLibrary.simpleMessage(
       "بريد إلكتروني مطلوب",
+    ),
+    "enableBiometricUnlock": MessageLookupByLibrary.simpleMessage(
+      "Face ID / البصمة",
     ),
     "endingSoon": MessageLookupByLibrary.simpleMessage("قريب الإنتهاء"),
     "englishLabel": MessageLookupByLibrary.simpleMessage("الإنجليزية"),
@@ -1387,6 +1414,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "unitPieces": MessageLookupByLibrary.simpleMessage("قطع"),
     "unitTon": MessageLookupByLibrary.simpleMessage("طن"),
     "unitTons": MessageLookupByLibrary.simpleMessage("أطنان"),
+    "unlockWithBiometrics": MessageLookupByLibrary.simpleMessage(
+      "فتح بالبصمة أو الوجه",
+    ),
+    "unlockWithFaceId": MessageLookupByLibrary.simpleMessage("فتح بـ Face ID"),
+    "unlockWithFingerprint": MessageLookupByLibrary.simpleMessage(
+      "فتح بالبصمة",
+    ),
     "unmuteVideo": MessageLookupByLibrary.simpleMessage("تشغيل الصوت"),
     "uploadCompanySiteImages": MessageLookupByLibrary.simpleMessage(
       "تحميل صور موقع الشركة",

@@ -1,6 +1,7 @@
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/serveses/profile_service.dart';
+import 'package:alrasmarket/core/services/biometric_auth_service.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
@@ -33,11 +34,63 @@ class _ProfileViewState extends State<ProfileView> {
   String _roleLabel = '';
   bool _loading = true;
   String? _imgPath;
+  bool _biometricSupported = false;
+  bool _biometricEnabled = false;
+  bool _biometricBusy = false;
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
+    _loadBiometricState();
+  }
+
+  Future<void> _loadBiometricState() async {
+    final bio = BiometricAuthService.instance;
+    final supported =
+        await bio.isDeviceSupported && await bio.hasEnrolledBiometrics;
+    if (!mounted) return;
+    setState(() {
+      _biometricSupported = supported;
+      _biometricEnabled = bio.isEnabled;
+    });
+  }
+
+  Future<void> _toggleBiometric(bool enable) async {
+    if (_biometricBusy) return;
+    final s = S.of(context);
+    setState(() => _biometricBusy = true);
+
+    try {
+      if (enable) {
+        final supported = await BiometricAuthService.instance.isDeviceSupported;
+        final enrolled =
+            await BiometricAuthService.instance.hasEnrolledBiometrics;
+        if (!supported) {
+          if (mounted) AppToast.showError(context, s.biometricNotAvailable);
+          return;
+        }
+        if (!enrolled) {
+          if (mounted) AppToast.showError(context, s.biometricNoEnrolled);
+          return;
+        }
+        final ok = await BiometricAuthService.instance.enableForCurrentSession(
+          reason: s.biometricEnableReason,
+        );
+        if (!mounted) return;
+        if (ok) {
+          setState(() => _biometricEnabled = true);
+          AppToast.showSuccess(context, s.biometricEnabledSuccess);
+        }
+      } else {
+        await BiometricAuthService.instance.disable();
+        if (!mounted) return;
+        setState(() => _biometricEnabled = false);
+        AppToast.showSuccess(context, s.biometricDisabledSuccess);
+      }
+    } finally {
+      if (mounted) setState(() => _biometricBusy = false);
+    }
   }
 
   Future<void> _loadProfile() async {
@@ -88,6 +141,71 @@ class _ProfileViewState extends State<ProfileView> {
     final source = _name.trim().isNotEmpty ? _name : _email;
     if (source.isEmpty) return '?';
     return source.substring(0, 1).toUpperCase();
+  }
+
+  Widget _biometricToggleItem() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8.r),
+        color: Colors.white,
+      ),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+      child: Row(
+        children: [
+          Container(
+            width: 40.w,
+            height: 40.h,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: LightColor.defaultColor,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.fingerprint_rounded,
+              color: Colors.white,
+              size: 22.sp,
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  S.of(context).enableBiometricUnlock,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    height: 1.3,
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  S.of(context).biometricUnlockSubtitle,
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    color: const Color(0xFF6B7280),
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (_biometricBusy)
+            SizedBox(
+              width: 22.w,
+              height: 22.w,
+              child: const CircularProgressIndicator(strokeWidth: 2),
+            )
+          else
+            Switch.adaptive(
+              value: _biometricEnabled,
+              onChanged: _toggleBiometric,
+              activeThumbColor: LightColor.defaultColor,
+            ),
+        ],
+      ),
+    );
   }
 
   Widget _accountItem(
@@ -478,6 +596,10 @@ class _ProfileViewState extends State<ProfileView> {
                                       context.push(AppRoutes.kLanguageView);
                                     },
                                   ),
+                                  if (_biometricSupported) ...[
+                                    SizedBox(height: 13.h),
+                                    _biometricToggleItem(),
+                                  ],
                                   SizedBox(height: 13.h),
                                   _accountItem(
                                     onTap: () {

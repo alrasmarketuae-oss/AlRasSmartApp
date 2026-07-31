@@ -62,6 +62,8 @@
 			<string>https</string>
 			<string>http</string>
 		</array>
+		<key>NSFaceIDUsageDescription</key>
+		<string>We use Face ID so you can unlock your saved account quickly and securely.</string>
 		<key>NSMicrophoneUsageDescription</key>
 		<string>We need microphone access to send voice messages in support chat.</string>
 		<key>NSCameraUsageDescription</key>

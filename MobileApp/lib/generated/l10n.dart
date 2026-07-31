@@ -169,6 +169,126 @@ class S {
     );
   }
 
+  /// `Unlock with Face ID`
+  String get unlockWithFaceId {
+    return Intl.message(
+      'Unlock with Face ID',
+      name: 'unlockWithFaceId',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Unlock with fingerprint`
+  String get unlockWithFingerprint {
+    return Intl.message(
+      'Unlock with fingerprint',
+      name: 'unlockWithFingerprint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Unlock with biometrics`
+  String get unlockWithBiometrics {
+    return Intl.message(
+      'Unlock with biometrics',
+      name: 'unlockWithBiometrics',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Face ID / Fingerprint`
+  String get enableBiometricUnlock {
+    return Intl.message(
+      'Face ID / Fingerprint',
+      name: 'enableBiometricUnlock',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Sign back in quickly after logout using Face ID or fingerprint. Only for this saved account.`
+  String get biometricUnlockSubtitle {
+    return Intl.message(
+      'Sign back in quickly after logout using Face ID or fingerprint. Only for this saved account.',
+      name: 'biometricUnlockSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Confirm it is you to continue`
+  String get biometricAuthReason {
+    return Intl.message(
+      'Confirm it is you to continue',
+      name: 'biometricAuthReason',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Confirm it is you to enable biometric unlock`
+  String get biometricEnableReason {
+    return Intl.message(
+      'Confirm it is you to enable biometric unlock',
+      name: 'biometricEnableReason',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Biometrics are not available on this device`
+  String get biometricNotAvailable {
+    return Intl.message(
+      'Biometrics are not available on this device',
+      name: 'biometricNotAvailable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Set up Face ID or a fingerprint in device settings first`
+  String get biometricNoEnrolled {
+    return Intl.message(
+      'Set up Face ID or a fingerprint in device settings first',
+      name: 'biometricNoEnrolled',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Biometric unlock enabled`
+  String get biometricEnabledSuccess {
+    return Intl.message(
+      'Biometric unlock enabled',
+      name: 'biometricEnabledSuccess',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Biometric unlock disabled`
+  String get biometricDisabledSuccess {
+    return Intl.message(
+      'Biometric unlock disabled',
+      name: 'biometricDisabledSuccess',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Biometric unlock failed. Please sign in normally.`
+  String get biometricUnlockFailed {
+    return Intl.message(
+      'Biometric unlock failed. Please sign in normally.',
+      name: 'biometricUnlockFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Forgot password?`
   String get forgotPassword {
     return Intl.message(
