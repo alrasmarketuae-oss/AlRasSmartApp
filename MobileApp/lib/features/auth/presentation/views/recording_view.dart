@@ -13,6 +13,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
+/// Accent used by the shipping entry point; the rest come from [BrandColors].
+const Color _shippingOrange = Color(0xFFF97316);
+
 class RecordingView extends StatelessWidget {
   const RecordingView({super.key});
 
@@ -45,28 +48,21 @@ class RecordingView extends StatelessWidget {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
+                            SizedBox(height: 8.h),
                             Image.asset(
                               AppAssets.logo,
-                              width: 108.w,
+                              width: 132.w,
                               fit: BoxFit.contain,
                               filterQuality: FilterQuality.high,
                             ),
-                            SizedBox(height: 14.h),
-                            Text(
-                              s.welcomeTo,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 15.sp,
-                                fontWeight: FontWeight.w600,
-                                color: BrandColors.darkBlue,
-                                fontFamily: AppFonts.cairo,
-                              ),
+                            SizedBox(height: 10.h),
+                            ColoredBrandTitle(
+                              fontSize: 26.sp,
+                              includeAppWord: false,
                             ),
-                            SizedBox(height: 4.h),
-                            ColoredBrandTitle(fontSize: 24.sp),
-                            SizedBox(height: 12.h),
+                            SizedBox(height: 14.h),
                             const BrandDotDivider(),
-                            SizedBox(height: 12.h),
+                            SizedBox(height: 14.h),
                             Padding(
                               padding: EdgeInsets.symmetric(horizontal: 8.w),
                               child: Text(
@@ -81,66 +77,50 @@ class RecordingView extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            SizedBox(height: 20.h),
-                            IntrinsicHeight(
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  Expanded(
-                                    child: _RoleCard(
-                                      color: BrandColors.primaryBlue,
-                                      icon: Icons.person_outline_rounded,
-                                      title: s.registerClient,
-                                      subtitle: s.registerClientSubtitle,
-                                      onTap: () => context.push(
-                                        AppRoutes.kRegisterView,
-                                        extra: {'isCompany': false},
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(width: 12.w),
-                                  Expanded(
-                                    child: _RoleCard(
-                                      color: BrandColors.primaryGreen,
-                                      icon: Icons.storefront_outlined,
-                                      title: s.registerSupplier,
-                                      subtitle: s.registerSupplierSubtitle,
-                                      onTap: () => context.push(
-                                        AppRoutes.kRegisterView,
-                                        extra: {'isCompany': true},
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                            SizedBox(height: 24.h),
+                            _RoleTile(
+                              accent: BrandColors.primaryBlue,
+                              tint: const Color(0xFFF4F7FB),
+                              icon: Icons.person_outline_rounded,
+                              title: s.registerClient,
+                              subtitle: s.registerClientSubtitle,
+                              onTap: () => context.push(
+                                AppRoutes.kRegisterView,
+                                extra: {'isCompany': false},
                               ),
                             ),
                             SizedBox(height: 12.h),
-                            _ActionCard(
-                              icon: Icons.login_rounded,
-                              iconColor: BrandColors.primaryBlue,
-                              title: s.login,
-                              subtitle: s.loginSubtitle,
-                              onTap: () => context.push(AppRoutes.kLoginView),
+                            _RoleTile(
+                              accent: const Color(0xFF16A34A),
+                              tint: const Color(0xFFF1FAF4),
+                              icon: Icons.storefront_rounded,
+                              title: s.registerSupplier,
+                              subtitle: s.registerSupplierSubtitle,
+                              onTap: () => context.push(
+                                AppRoutes.kRegisterView,
+                                extra: {'isCompany': true},
+                              ),
                             ),
-                            SizedBox(height: 10.h),
-                            _ActionCard(
-                              icon: Icons.directions_boat_filled_outlined,
-                              iconColor: BrandColors.darkBlue,
+                            SizedBox(height: 12.h),
+                            _RoleTile(
+                              accent: _shippingOrange,
+                              tint: const Color(0xFFFFF6EE),
+                              icon: Icons.directions_boat_rounded,
                               title: s.shippingCompany,
                               subtitle: isAr
-                                  ? 'شحن سريع وآمن'
+                                  ? 'شحن سريع وآمن داخل وخارج الدولة'
                                   : s.shippingCompanySubtitle,
                               onTap: () =>
                                   context.push(AppRoutes.kShippingLoginView),
                             ),
-                            SizedBox(height: 10.h),
-                            _ActionCard(
-                              icon: Icons.person_outline_rounded,
-                              iconColor: BrandColors.primaryBlue,
-                              title: isAr ? 'دخول زائر' : s.loginAsGuest,
-                              subtitle: isAr
-                                  ? 'تصفح بدون تسجيل دخول'
-                                  : 'Browse without signing in',
+                            SizedBox(height: 18.h),
+                            _LoginButton(
+                              label: s.login,
+                              onTap: () => context.push(AppRoutes.kLoginView),
+                            ),
+                            SizedBox(height: 16.h),
+                            _GuestEntry(
+                              label: isAr ? 'دخول زائر' : s.loginAsGuest,
                               onTap: () async {
                                 await AuthService.instance.clearAuthData();
                                 final clintCubit = sl<ClintCubit>();
@@ -224,16 +204,19 @@ class _LanguagePill extends StatelessWidget {
   }
 }
 
-class _RoleCard extends StatelessWidget {
-  const _RoleCard({
-    required this.color,
+/// Full-width entry card: tinted surface, solid accent icon, trailing chevron.
+class _RoleTile extends StatelessWidget {
+  const _RoleTile({
+    required this.accent,
+    required this.tint,
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.onTap,
   });
 
-  final Color color;
+  final Color accent;
+  final Color tint;
   final IconData icon;
   final String title;
   final String subtitle;
@@ -242,63 +225,78 @@ class _RoleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: color,
-      borderRadius: BorderRadius.circular(14.r),
-      elevation: 2,
-      shadowColor: color.withValues(alpha: 0.35),
+      color: tint,
+      borderRadius: BorderRadius.circular(16.r),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14.r),
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 12.h),
-          child: Row(
-            children: [
-              Container(
-                width: 34.w,
-                height: 34.w,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(8.r),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(16.r),
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(color: accent.withValues(alpha: 0.12)),
+          ),
+          // Icon stays leading-left in both locales, matching the design.
+          child: Directionality(
+            textDirection: TextDirection.ltr,
+            child: Row(
+              children: [
+                Container(
+                  width: 50.w,
+                  height: 50.w,
+                  decoration: BoxDecoration(
+                    color: accent,
+                    borderRadius: BorderRadius.circular(14.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color: accent.withValues(alpha: 0.30),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 26.sp),
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        title,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w800,
+                          color: accent,
+                          fontFamily: AppFonts.cairo,
+                        ),
+                      ),
+                      SizedBox(height: 3.h),
+                      Text(
+                        subtitle,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 11.5.sp,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF8A94A6),
+                          fontFamily: AppFonts.cairo,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: Icon(icon, color: Colors.white, size: 20.sp),
-              ),
-              SizedBox(width: 8.w),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                        fontFamily: AppFonts.cairo,
-                      ),
-                    ),
-                    SizedBox(height: 2.h),
-                    Text(
-                      subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 9.5.sp,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white.withValues(alpha: 0.92),
-                        fontFamily: AppFonts.cairo,
-                        height: 1.25,
-                      ),
-                    ),
-                  ],
+                SizedBox(width: 4.w),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: accent.withValues(alpha: 0.85),
+                  size: 24.sp,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -306,87 +304,121 @@ class _RoleCard extends StatelessWidget {
   }
 }
 
-class _ActionCard extends StatelessWidget {
-  const _ActionCard({
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
+class _LoginButton extends StatelessWidget {
+  const _LoginButton({required this.label, required this.onTap});
 
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
+  final String label;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: BrandColors.bgWhite,
-      borderRadius: BorderRadius.circular(14.r),
-      elevation: 2,
-      shadowColor: Colors.black.withValues(alpha: 0.08),
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(16.r),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14.r),
-        child: Container(
+        borderRadius: BorderRadius.circular(16.r),
+        child: Ink(
           width: double.infinity,
-          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14.r),
-            border: Border.all(color: const Color(0xFFE8EEF5)),
-          ),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 24.sp,
-                child: Icon(icon, color: iconColor, size: 24.sp),
-              ),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      title,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w800,
-                        color: BrandColors.darkBlue,
-                        fontFamily: AppFonts.cairo,
-                      ),
-                    ),
-                    SizedBox(height: 2.h),
-                    Text(
-                      subtitle,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF8A94A6),
-                        fontFamily: AppFonts.cairo,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(
-                width: 24.sp,
-                child: Icon(
-                  Directionality.of(context) == TextDirection.rtl
-                      ? Icons.chevron_left_rounded
-                      : Icons.chevron_right_rounded,
-                  color: BrandColors.primaryBlue.withValues(alpha: 0.75),
-                  size: 22.sp,
-                ),
+            borderRadius: BorderRadius.circular(16.r),
+            gradient: const LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [Color(0xFF0B4FD1), Color(0xFF1E6BE8)],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: BrandColors.primaryBlue.withValues(alpha: 0.32),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
+          child: Directionality(
+            textDirection: TextDirection.ltr,
+            child: Row(
+              children: [
+                Container(
+                  width: 44.w,
+                  height: 44.w,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.35),
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.login_rounded,
+                    color: Colors.white,
+                    size: 22.sp,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 17.sp,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      fontFamily: AppFonts.cairo,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 44.w),
+              ],
+            ),
+          ),
         ),
       ),
+    );
+  }
+}
+
+class _GuestEntry extends StatelessWidget {
+  const _GuestEntry({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final lineColor = BrandColors.primaryBlue.withValues(alpha: 0.20);
+    return Row(
+      children: [
+        Expanded(child: Divider(color: lineColor, thickness: 1)),
+        InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20.r),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
+                    color: BrandColors.primaryBlue,
+                    fontFamily: AppFonts.cairo,
+                  ),
+                ),
+                SizedBox(width: 6.w),
+                Icon(
+                  Icons.person_outline_rounded,
+                  color: BrandColors.primaryBlue,
+                  size: 18.sp,
+                ),
+              ],
+            ),
+          ),
+        ),
+        Expanded(child: Divider(color: lineColor, thickness: 1)),
+      ],
     );
   }
 }
