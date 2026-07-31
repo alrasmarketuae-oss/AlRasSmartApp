@@ -45,6 +45,19 @@ public sealed class ProductTranslationWorker(
                     workItem.SupplierNotesEn,
                     workItem.ShippingDescriptionEn).ConfigureAwait(false);
                 ProductsAppService.InvalidateListingCaches();
+
+                try
+                {
+                    var textSync = scope.ServiceProvider.GetRequiredService<ProductTextSearchSyncService>();
+                    await textSync.UpsertProductAsync(workItem.ProductId, stoppingToken).ConfigureAwait(false);
+                }
+                catch (Exception syncEx)
+                {
+                    logger.LogWarning(
+                        syncEx,
+                        "Meilisearch sync after translation failed for {ProductId}",
+                        workItem.ProductId);
+                }
             }
             catch (Exception ex)
             {

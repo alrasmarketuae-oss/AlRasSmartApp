@@ -354,6 +354,7 @@ public interface IProductsAppService
     Task<object> GetByCategoryAsync(GetProductsByCategoryInput input, CancellationToken cancellationToken = default);
     Task<object> GetFeaturedAsync(GetProductsInput input, CancellationToken cancellationToken = default);
     Task<object> SearchAsync(SearchProductsInput input, CancellationToken cancellationToken = default);
+    Task<object> SuggestSearchAsync(string query, int limit = 8, CancellationToken cancellationToken = default);
     Task<object> GetByCodeAsync(string productCode, CancellationToken cancellationToken = default);
     Task<object> GetByIdAsync(string productId, bool asRetail = false, CancellationToken cancellationToken = default);
     Task<object> GetSearchNameIndexAsync(CancellationToken cancellationToken = default);

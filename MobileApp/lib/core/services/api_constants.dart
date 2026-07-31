@@ -141,6 +141,7 @@ class ApiConstants {
   static String productsMyListingsEndPoint = '/Products/my-listings';
   static String productsFeaturedEndPoint = '/Products/featured';
   static String productsSearchEndPoint = '/Products/search';
+  static String productsSearchSuggestEndPoint = '/Products/search-suggest';
   static String productsSearchNamesEndPoint = '/Products/search-names';
   static String productByCodeEndPoint(String productCode) =>
       '/Products/by-code/${Uri.encodeComponent(productCode)}';

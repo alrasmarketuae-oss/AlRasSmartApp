@@ -32,7 +32,8 @@ public partial class ProductsAppService(
     IProductImageVectorIndex productImageVectorIndex,
     Microsoft.Extensions.Options.IOptions<BusinessLayer.Options.ImageEmbeddingOptions> imageEmbeddingOptions,
     IHttpContextAccessor httpContextAccessor,
-    IProductAssetsAppService productAssetsAppService) : IProductsAppService
+    IProductAssetsAppService productAssetsAppService,
+    IProductTextSearchIndex productTextSearchIndex) : IProductsAppService
 {
     private const string AllProductsCacheKey = "products:all:v14";
     private const string ProductsByTypeCachePrefix = "products:by-type:v14:";
@@ -71,6 +72,31 @@ public partial class ProductsAppService(
     public static void InvalidateListingCaches(Guid? ownerId = null) => InvalidateProductListCaches(ownerId);
 
     private static void InvalidateProductCaches(Guid? ownerId = null) => InvalidateProductListCaches(ownerId);
+
+    /// <summary>Fire-and-forget Meilisearch upsert/delete; never blocks the API response.</summary>
+    private void QueueTextSearchSync(Guid productId, bool deleted = false)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await using var scope = scopeFactory.CreateAsyncScope();
+                var sync = scope.ServiceProvider.GetRequiredService<ProductTextSearchSyncService>();
+                if (deleted)
+                {
+                    await sync.DeleteProductAsync(productId).ConfigureAwait(false);
+                }
+                else
+                {
+                    await sync.UpsertProductAsync(productId).ConfigureAwait(false);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Background Meilisearch sync failed for {ProductId}", productId);
+            }
+        });
+    }
 
     /// <summary>Busts detail/by-code only (e.g. view-count bumps).</summary>
     private void InvalidateProductDetailCaches() => productCacheVersions.BumpDetail();
@@ -187,6 +213,7 @@ public partial class ProductsAppService(
         await QueueTranslateProductFieldsAsync(product, cancellationToken);
 
         InvalidateProductCaches(ownerId);
+        QueueTextSearchSync(product.ProductId);
 
         // Do not notify admin yet — media uploads happen after create.
         // Client calls SubmitForAdminReviewAsync when uploads complete.
@@ -545,6 +572,7 @@ public partial class ProductsAppService(
         // CLIP reindex runs once after translation (inside QueueTranslateProductFields).
         await QueueTranslateProductFieldsAsync(product, cancellationToken);
         InvalidateProductCaches(ownerId);
+        QueueTextSearchSync(product.ProductId);
 
         if (requiresAdminReapproval)
         {
@@ -650,6 +678,7 @@ public partial class ProductsAppService(
 
         await productData.SaveChangesAsync(cancellationToken);
         InvalidateProductCaches(product.OwnerId);
+        QueueTextSearchSync(product.ProductId);
 
         // Same admin alert/counts as before — off the HTTP critical path.
         QueueAdminAdAlert(product, isEdit: isEditResubmit);
@@ -737,6 +766,7 @@ public partial class ProductsAppService(
         }
 
         InvalidateProductCaches(cascade.OwnerId);
+        QueueTextSearchSync(productId, deleted: true);
 
         await DeleteProductPhysicalAssetsAsync(
             productId,
@@ -819,6 +849,7 @@ public partial class ProductsAppService(
         product.UpdatedAt = UtcDateTimeHelper.UtcNow;
         await productData.SaveChangesAsync(cancellationToken);
         InvalidateProductCaches(ownerId);
+        QueueTextSearchSync(product.ProductId);
 
         var statusName = ProductStatusCodes.ToDisplayName(product.Status, product.IsApproved);
         var isPublic = ProductStatusCodes.IsPubliclyVisible(product.Status, product.IsApproved);
@@ -869,6 +900,7 @@ public partial class ProductsAppService(
         product.UpdatedAt = UtcDateTimeHelper.UtcNow;
         await productData.SaveChangesAsync(cancellationToken);
         InvalidateProductCaches(owner);
+        QueueTextSearchSync(product.ProductId);
 
         return new
         {

@@ -207,6 +207,23 @@ public class ProductsController(
     }
 
     /// <summary>
+    /// Fast autocomplete suggestions (Meilisearch when enabled; SQL name index fallback).
+    /// </summary>
+    [HttpGet("search-suggest")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> SuggestSearch(
+        [FromQuery] string q,
+        [FromQuery] string? query,
+        [FromQuery] int limit = 8,
+        CancellationToken cancellationToken = default)
+    {
+        var text = !string.IsNullOrWhiteSpace(q) ? q : query ?? string.Empty;
+        var result = await _productsAppService.SuggestSearchAsync(text, limit, cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Returns all active product names for client-side search autocomplete.
     /// </summary>
     [HttpGet("search-names")]

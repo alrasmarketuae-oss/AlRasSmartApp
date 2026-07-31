@@ -26,6 +26,23 @@ public class AdminProductsAppService(
     private readonly IProductsAppService _productsAppService = productsAppService;
     private readonly IProductAssetsAppService _productAssetsAppService = productAssetsAppService;
 
+    private void QueueTextSearchSync(Guid productId)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await using var scope = scopeFactory.CreateAsyncScope();
+                var sync = scope.ServiceProvider.GetRequiredService<ProductTextSearchSyncService>();
+                await sync.UpsertProductAsync(productId).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Background Meilisearch sync failed for admin product {ProductId}", productId);
+            }
+        });
+    }
+
     public async Task<object> ReindexImageVectorsAsync(CancellationToken cancellationToken = default)
     {
         var imageIds = await dbContext.ProductImages
@@ -423,6 +440,7 @@ public class AdminProductsAppService(
 
         await dbContext.SaveChangesAsync(cancellationToken);
         ProductsAppService.InvalidateListingCaches(product.OwnerId);
+        QueueTextSearchSync(product.ProductId);
         await adminRealtimeNotificationService.BroadcastCountsAsync(cancellationToken);
 
         await auditLogAppService.WriteAsync(
@@ -516,6 +534,7 @@ public class AdminProductsAppService(
 
         await dbContext.SaveChangesAsync(cancellationToken);
         ProductsAppService.InvalidateListingCaches(product.OwnerId);
+        QueueTextSearchSync(product.ProductId);
         await adminRealtimeNotificationService.BroadcastCountsAsync(cancellationToken);
 
         var owner = product.Owner;

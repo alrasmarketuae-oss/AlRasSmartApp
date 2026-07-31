@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:alrasmarket/core/cache/api_cache_keys.dart';
 import 'package:alrasmarket/core/cache/api_cache_store.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/serveses/product_search_index_service.dart';
@@ -72,6 +71,5 @@ class CatalogSyncService {
 
   Future<void> _invalidateProductDiskCache() async {
     await ApiCacheStore.instance.invalidateHomeCatalog();
-    await ApiCacheStore.instance.remove(ApiCacheKeys.productSearchNames);
   }
 }

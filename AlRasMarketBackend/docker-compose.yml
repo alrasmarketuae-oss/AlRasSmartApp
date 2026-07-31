@@ -22,6 +22,11 @@ services:
       ImageEmbedding__ClipServiceUrl: "http://clip:8088"
       ImageEmbedding__EmbeddingDimensions: "512"
       ImageEmbedding__MaxConcurrentIndexingJobs: "1"
+      Meilisearch__Enabled: "true"
+      Meilisearch__Url: "http://meilisearch:7700"
+      Meilisearch__ApiKey: "${MEILI_MASTER_KEY:-alras-meili-master-key-change-me}"
+      Meilisearch__IndexUid: "products"
+      Meilisearch__BootstrapOnStartup: "true"
       EmailSettings__PublicBaseUrl: "https://api.alrasmarketapp.com"
       CloudflareR2__PublicBaseUrl: "https://cdn.alrasmarketapp.com"
       # Google: Web + iOS OAuth client IDs (idToken audience). Apple: iOS bundle id.
@@ -31,6 +36,7 @@ services:
       - redis
       - qdrant
       - clip
+      - meilisearch
     networks:
       - alras
     expose:
@@ -75,6 +81,21 @@ services:
       - alras
     expose:
       - "8088"
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.11
+    container_name: alras-meilisearch
+    restart: unless-stopped
+    environment:
+      MEILI_ENV: production
+      MEILI_MASTER_KEY: "${MEILI_MASTER_KEY:-alras-meili-master-key-change-me}"
+      MEILI_NO_ANALYTICS: "true"
+    volumes:
+      - meili_data:/meili_data
+    networks:
+      - alras
+    expose:
+      - "7700"
 
   nginx:
     image: nginx:1.27-alpine
@@ -147,6 +168,7 @@ volumes:
   redis_data:
   qdrant_data:
   clip_models:
+  meili_data:
   prometheus_data:
   grafana_data:
 

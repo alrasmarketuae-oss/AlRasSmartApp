@@ -89,14 +89,16 @@ class _SearchFormFiledState extends State<SearchFormFiled> {
     _refreshSuggestions();
   }
 
-  void _refreshSuggestions() {
+  Future<void> _refreshSuggestions() async {
+    final query = _controller.text;
     final items =
-        ProductSearchIndexService.instance.suggest(_controller.text).toList();
+        await ProductSearchIndexService.instance.suggestRemote(query);
+    if (!mounted || _controller.text != query) return;
     setState(() {
       _suggestions = items;
       _showSuggestions =
           _focusNode.hasFocus &&
-          _controller.text.trim().isNotEmpty &&
+          query.trim().isNotEmpty &&
           items.isNotEmpty;
     });
   }

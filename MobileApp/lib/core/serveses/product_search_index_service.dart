@@ -1,175 +1,112 @@
 import 'dart:async';
 
-import 'package:alrasmarket/core/cache/api_cache_keys.dart';
-import 'package:alrasmarket/core/cache/api_cache_store.dart';
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/services/dio_helper.dart';
 import 'package:flutter/foundation.dart';
 
-/// Local index of product names for search autocomplete.
+/// Server-backed product search autocomplete (Meilisearch via API).
+///
+/// No longer downloads the full product-name catalog to the device.
 class ProductSearchIndexService {
   ProductSearchIndexService._();
 
   static final ProductSearchIndexService instance = ProductSearchIndexService._();
 
-  static const _cacheKey = ApiCacheKeys.productSearchNames;
+  static const _debounce = Duration(milliseconds: 120);
 
-  List<String> _names = [];
-  bool _ready = false;
+  Timer? _debounceTimer;
+  int _requestSeq = 0;
+  String _lastQuery = '';
+  List<String> _lastSuggestions = const [];
 
-  bool get isReady => _ready && _names.isNotEmpty;
-
-  int get totalCount => _names.length;
-
+  /// Kept for startup compatibility — no bulk download.
   Future<void> init() async {
-    // Disk only at startup — network refresh must not block native splash.
-    await _loadFromDisk();
-    if (_names.isEmpty) {
-      await _loadFallbackFromProductCaches();
-    }
-    debugPrint(
-      'ProductSearchIndexService ready=$_ready count=${_names.length}',
-    );
-    unawaited(refresh());
+    debugPrint('ProductSearchIndexService ready (remote suggest)');
   }
 
-  /// Rebuild search index after catalog mutations.
+  /// No-op: suggestions are fetched per keystroke from the API.
   Future<void> refresh() async {
-    await ApiCacheStore.instance.remove(_cacheKey);
-    await _refreshFromNetwork();
-    if (_names.isEmpty) {
-      await _loadFallbackFromProductCaches();
-    }
+    _lastQuery = '';
+    _lastSuggestions = const [];
   }
 
-  Iterable<String> suggest(String query, {int limit = 8}) sync* {
+  /// Immediate cache hit for the last query (sync callers).
+  Iterable<String> suggest(String query, {int limit = 8}) {
     final normalized = query.trim().toLowerCase();
-    if (normalized.isEmpty || _names.isEmpty) return;
-
-    var count = 0;
-    for (final name in _names) {
-      if (name.toLowerCase().contains(normalized)) {
-        yield name;
-        count++;
-        if (count >= limit) break;
-      }
+    if (normalized.isEmpty) return const [];
+    if (normalized == _lastQuery) {
+      return _lastSuggestions.take(limit);
     }
+    return const [];
   }
 
-  Future<void> _loadFromDisk() async {
-    final entry = await ApiCacheStore.instance.read(
-      _cacheKey,
-      allowStale: true,
-    );
-    if (entry == null) return;
-
-    try {
-      _applyPayload(entry.data);
-    } catch (_) {
-      await ApiCacheStore.instance.remove(_cacheKey);
+  /// Debounced remote suggestions for the search field.
+  Future<List<String>> suggestRemote(
+    String query, {
+    int limit = 8,
+  }) async {
+    final normalized = query.trim();
+    if (normalized.isEmpty) {
+      _lastQuery = '';
+      _lastSuggestions = const [];
+      return const [];
     }
-  }
 
-  Future<void> _refreshFromNetwork() async {
-    try {
-      final response = await DioHelper.getData(
-        url: ApiConstants.productsSearchNamesEndPoint,
-      );
-      if (response?.statusCode != 200) {
-        debugPrint(
-          'ProductSearchIndexService HTTP ${response?.statusCode}',
+    final lower = normalized.toLowerCase();
+    if (lower == _lastQuery && _lastSuggestions.isNotEmpty) {
+      return _lastSuggestions.take(limit).toList();
+    }
+
+    final completer = Completer<List<String>>();
+    final seq = ++_requestSeq;
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(_debounce, () async {
+      try {
+        final response = await DioHelper.getData(
+          url: ApiConstants.productsSearchSuggestEndPoint,
+          query: {
+            'q': normalized,
+            'limit': limit,
+          },
         );
-        return;
+
+        if (seq != _requestSeq) {
+          if (!completer.isCompleted) {
+            completer.complete(_lastSuggestions.take(limit).toList());
+          }
+          return;
+        }
+
+        if (response?.statusCode != 200) {
+          debugPrint(
+            'ProductSearchIndexService suggest HTTP ${response?.statusCode}',
+          );
+          if (!completer.isCompleted) completer.complete(const []);
+          return;
+        }
+
+        final suggestions = _parseSuggestions(response?.data);
+        _lastQuery = lower;
+        _lastSuggestions = suggestions;
+        if (!completer.isCompleted) {
+          completer.complete(suggestions.take(limit).toList());
+        }
+      } catch (e) {
+        debugPrint('ProductSearchIndexService suggest error: $e');
+        if (!completer.isCompleted) completer.complete(const []);
       }
+    });
 
-      final map = _asStringKeyedMap(response?.data);
-      if (map == null) return;
-
-      _applyPayload(map);
-      await ApiCacheStore.instance.write(
-        _cacheKey,
-        map,
-        ApiCacheTtl.catalog,
-      );
-    } catch (e) {
-      debugPrint('ProductSearchIndexService network error: $e');
-    }
+    return completer.future;
   }
 
-  Future<void> _loadFallbackFromProductCaches() async {
-    final keys = [
-      ApiCacheKeys.homeProducts(1, 20),
-      ApiCacheKeys.featuredProducts(1, 100),
-      ApiCacheKeys.productsByType('retail', 1, 50),
-    ];
-
-    final collected = <String>{};
-    for (final key in keys) {
-      final entry = await ApiCacheStore.instance.read(key, allowStale: true);
-      if (entry == null) continue;
-      collected.addAll(_extractNamesFromPayload(entry.data));
-    }
-
-    if (collected.isEmpty) return;
-
-    _names = collected.toList()..sort();
-    _ready = _names.isNotEmpty;
-  }
-
-  Set<String> _extractNamesFromPayload(dynamic data) {
-    final names = <String>{};
-    if (data is! Map) return names;
-
-    final items = data['items'];
-    if (items is! List) return names;
-
-    for (final item in items) {
-      if (item is! Map) continue;
-      final map = Map<String, dynamic>.from(item);
-      final name = (map['productName'] ?? map['ProductName'] ?? map['nameEn'] ??
-              map['NameEn'] ??
-              map['name'] ??
-              map['Name'])
-          ?.toString()
-          .trim();
-      if (name != null && name.isNotEmpty) {
-        names.add(name);
-      }
-    }
-    return names;
-  }
-
-  Map<String, dynamic>? _asStringKeyedMap(dynamic data) {
-    if (data is Map<String, dynamic>) return data;
-    if (data is Map) return Map<String, dynamic>.from(data);
-    return null;
-  }
-
-  void _applyPayload(dynamic data) {
-    final map = _asStringKeyedMap(data);
-    if (map == null) return;
-
-    final raw = map['names'] ?? map['Names'];
-    final codesRaw = map['productCodes'] ?? map['ProductCodes'];
-    final collected = <String>{};
-
-    if (raw is List) {
-      collected.addAll(
-        raw
-            .map((item) => item.toString().trim())
-            .where((item) => item.isNotEmpty),
-      );
-    }
-
-    if (codesRaw is List) {
-      collected.addAll(
-        codesRaw
-            .map((item) => item.toString().trim().toUpperCase())
-            .where((item) => item.isNotEmpty),
-      );
-    }
-
-    _names = collected.toList()..sort();
-    _ready = _names.isNotEmpty;
+  List<String> _parseSuggestions(dynamic data) {
+    if (data is! Map) return const [];
+    final raw = data['suggestions'] ?? data['Suggestions'];
+    if (raw is! List) return const [];
+    return raw
+        .map((item) => item.toString().trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
   }
 }

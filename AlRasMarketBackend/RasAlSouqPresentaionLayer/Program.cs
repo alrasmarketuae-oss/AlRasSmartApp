@@ -124,6 +124,7 @@ builder.Services.AddHttpClient<IOpenAiVisionService, OpenAiVisionService>(client
 });
 builder.Services.Configure<QdrantOptions>(builder.Configuration.GetSection(QdrantOptions.SectionName));
 builder.Services.Configure<ImageEmbeddingOptions>(builder.Configuration.GetSection(ImageEmbeddingOptions.SectionName));
+builder.Services.Configure<MeilisearchOptions>(builder.Configuration.GetSection(MeilisearchOptions.SectionName));
 builder.Services.AddSingleton<IConfigurationAccessor, ConfigurationAccessor>();
 builder.Services.AddHttpClient<IImageEmbeddingService, ClipHttpEmbeddingService>(client =>
 {
@@ -136,6 +137,14 @@ builder.Services.AddHttpClient<IProductImageVectorIndex, QdrantProductImageVecto
     client.BaseAddress = new Uri((qdrant.Url ?? "http://localhost:6333").TrimEnd('/') + "/");
     client.Timeout = TimeSpan.FromSeconds(30);
 });
+builder.Services.AddHttpClient<IProductTextSearchIndex, MeilisearchProductTextSearchIndex>((sp, client) =>
+{
+    var meili = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<MeilisearchOptions>>().Value;
+    client.BaseAddress = new Uri((meili.Url ?? "http://localhost:7700").TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(20);
+});
+builder.Services.AddScoped<ProductTextSearchSyncService>();
+builder.Services.AddHostedService<ProductTextSearchBootstrapHostedService>();
 builder.Services.AddHttpClient(nameof(ContentTranslationService));
 builder.Services.AddScoped<IContentTranslationService, ContentTranslationService>();
 builder.Services.AddScoped<IPortNameArBackfillService, PortNameArBackfillService>();

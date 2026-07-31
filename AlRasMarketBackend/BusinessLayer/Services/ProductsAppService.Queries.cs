@@ -80,7 +80,10 @@ public partial class ProductsAppService
             return cached;
         }
 
-        var (products, totalCount) = await SearchCatalogByTextAsync(queryText, page, pageSize, cancellationToken);
+        // Meilisearch finds IDs fast; SQL still builds the same public payload
+        // (images, videos, bilingual fields, ad-type projection). On miss/error → SQL.
+        var (products, totalCount) =
+            await SearchCatalogPreferMeiliAsync(queryText, page, pageSize, cancellationToken);
 
         // Strict whole-word can miss real catalog names (esp. Arabic/English mixes).
         // Soft name LIKE before AI — only for queries long enough to avoid كو∈كوكو noise.
@@ -120,6 +123,94 @@ public partial class ProductsAppService
         }
 
         return result;
+    }
+
+    private async Task<(List<ProductPublicRow> Products, int TotalCount)> SearchCatalogPreferMeiliAsync(
+        string queryText,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        if (productTextSearchIndex.IsEnabled)
+        {
+            try
+            {
+                var meili = await SearchCatalogViaMeiliAsync(queryText, page, pageSize, cancellationToken);
+                if (meili.TotalCount > 0 || meili.Products.Count > 0)
+                {
+                    return meili;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Meilisearch product search failed; falling back to SQL for {Query}", queryText);
+            }
+        }
+
+        return await SearchCatalogByTextAsync(queryText, page, pageSize, cancellationToken);
+    }
+
+    /// <summary>
+    /// Meili ranks / filters IDs; hydrate + public filter + CreatedAt order from SQL
+    /// so response items match the existing catalog serializers.
+    /// </summary>
+    private async Task<(List<ProductPublicRow> Products, int TotalCount)> SearchCatalogViaMeiliAsync(
+        string queryText,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var tokens = queryText
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(t => !IsSearchStopToken(t))
+            .ToList();
+        if (tokens.Count == 0)
+        {
+            return ([], 0);
+        }
+
+        // Synonyms are configured on the Meili index — do not expand into the query
+        // string (matchingStrategy=all would otherwise require every synonym).
+        var meiliQuery = string.Join(' ', tokens);
+        var hitPage = await productTextSearchIndex.SearchAsync(
+            meiliQuery,
+            limit: Math.Max(page * pageSize, 100),
+            cancellationToken);
+
+        if (hitPage.Hits.Count == 0)
+        {
+            return ([], 0);
+        }
+
+        var orderedIds = hitPage.Hits
+            .Select(h => h.ProductId)
+            .Distinct()
+            .ToList();
+
+        var rows = await productData.GetProductsByIdsAsync(orderedIds, cancellationToken);
+        var byId = rows.ToDictionary(x => x.ProductId);
+
+        // Same public visibility rules as SQL catalog search (expiry already gated at index time).
+        var publicOrdered = orderedIds
+            .Where(byId.ContainsKey)
+            .Select(id => byId[id])
+            .Where(p =>
+                (p.Status == ProductCatalogCodes.StatusActive
+                    || (p.Status == ProductCatalogCodes.StatusUnderReview && p.IsApproved == true))
+                && (p.ProductTypeId != ProductCatalogCodes.TypeRequests || p.Quantity > 0))
+            .OrderByDescending(p => p.CreatedAt)
+            .ToList();
+
+        var totalCount = publicOrdered.Count;
+        if (hitPage.EstimatedTotal > totalCount && orderedIds.Count >= Math.Max(page * pageSize, 100))
+        {
+            // Meili had more hits than we hydrated — keep estimated total for paging UX.
+            totalCount = hitPage.EstimatedTotal;
+        }
+
+        var skip = (page - 1) * pageSize;
+        var pageRows = publicOrdered.Skip(skip).Take(pageSize).ToList();
+        return (pageRows, totalCount);
     }
 
     private async Task<(List<ProductPublicRow> Products, int TotalCount)> SearchCatalogByTextAsync(
@@ -162,6 +253,44 @@ public partial class ProductsAppService
             page,
             pageSize,
             cancellationToken);
+    }
+
+    public async Task<object> SuggestSearchAsync(
+        string query,
+        int limit = 8,
+        CancellationToken cancellationToken = default)
+    {
+        var q = (query ?? string.Empty).Trim();
+        if (q.Length < 1)
+        {
+            return new { suggestions = Array.Empty<string>() };
+        }
+
+        var take = Math.Clamp(limit <= 0 ? 8 : limit, 1, 20);
+
+        if (productTextSearchIndex.IsEnabled)
+        {
+            try
+            {
+                var suggestions = await productTextSearchIndex.SuggestAsync(q, take, cancellationToken);
+                return new { suggestions };
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Meilisearch suggest failed for {Query}", q);
+                // Fall through to SQL only when Meili throws.
+            }
+        }
+
+        // SQL fallback — only when Meili is disabled or errored (not for empty hits).
+        var index = await productData.GetSearchNameIndexAsync(cancellationToken);
+        var fallback = index.Names
+            .Concat(index.ProductCodes)
+            .Where(name => name.Contains(q, StringComparison.OrdinalIgnoreCase))
+            .Take(take)
+            .ToList();
+
+        return new { suggestions = fallback };
     }
 
     private async Task<object?> TryApplyAiSearchAssistAsync(
@@ -207,7 +336,7 @@ public partial class ProductsAppService
             if (!string.Equals(correctedQuery, originalQuery, StringComparison.OrdinalIgnoreCase))
             {
                 var (correctedProducts, correctedTotal) =
-                    await SearchCatalogByTextAsync(correctedQuery, page, pageSize, cancellationToken);
+                    await SearchCatalogPreferMeiliAsync(correctedQuery, page, pageSize, cancellationToken);
 
                 // Whole-word search can miss valid catalog names after AI typo fixes
                 // (Arabic/English variants, punctuation). Fall back to name LIKE.
