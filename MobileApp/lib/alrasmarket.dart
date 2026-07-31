@@ -114,13 +114,18 @@ class _AlRasMarketState extends State<AlRasMarket> with WidgetsBindingObserver {
                   });
                   return AnnotatedRegion<SystemUiOverlayStyle>(
                     value: const SystemUiOverlayStyle(
-                      statusBarColor: Colors.transparent,
+                      statusBarColor: Color(0xffF2F7FF),
                       statusBarBrightness: Brightness.light,
                       statusBarIconBrightness: Brightness.dark,
                       systemNavigationBarColor: Colors.white,
                       systemNavigationBarIconBrightness: Brightness.dark,
                     ),
-                    child: child ?? const SizedBox.shrink(),
+                    // Pages inset by SafeArea leave the status bar strip
+                    // unpainted, which renders black without this fill.
+                    child: ColoredBox(
+                      color: const Color(0xffF2F7FF),
+                      child: child ?? const SizedBox.shrink(),
+                    ),
                   );
                 },
               );

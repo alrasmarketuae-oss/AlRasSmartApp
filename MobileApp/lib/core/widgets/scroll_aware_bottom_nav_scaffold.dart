@@ -9,11 +9,14 @@ class ScrollAwareBottomNavScaffold extends StatefulWidget {
     required this.body,
     required this.bottomNavigationBar,
     this.tabIndex = 0,
+    this.backgroundColor,
   });
 
   final Widget body;
   final Widget bottomNavigationBar;
   final int tabIndex;
+  /// Background of the active tab; also fills the status bar area above it.
+  final Color? backgroundColor;
 
   @override
   State<ScrollAwareBottomNavScaffold> createState() =>
@@ -25,14 +28,6 @@ class _ScrollAwareBottomNavScaffoldState
   bool _isBottomNavVisible = true;
 
   static const _scaffoldBg = Color(0xffF2F7FF);
-  static const _statusBarStyle = SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    // iOS: light background → dark (black) status icons.
-    statusBarBrightness: Brightness.light,
-    statusBarIconBrightness: Brightness.dark,
-    systemNavigationBarColor: Colors.white,
-    systemNavigationBarIconBrightness: Brightness.dark,
-  );
 
   @override
   void didUpdateWidget(covariant ScrollAwareBottomNavScaffold oldWidget) {
@@ -78,10 +73,23 @@ class _ScrollAwareBottomNavScaffoldState
 
   @override
   Widget build(BuildContext context) {
+    final background = widget.backgroundColor ?? _scaffoldBg;
+    final useLightIcons =
+        ThemeData.estimateBrightnessForColor(background) == Brightness.dark;
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: _statusBarStyle,
+      value: SystemUiOverlayStyle(
+        statusBarColor: background,
+        // iOS reads the inverse: light background → dark (black) status icons.
+        statusBarBrightness:
+            useLightIcons ? Brightness.dark : Brightness.light,
+        statusBarIconBrightness:
+            useLightIcons ? Brightness.light : Brightness.dark,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
       child: Scaffold(
-        backgroundColor: _scaffoldBg,
+        backgroundColor: background,
         body: SafeArea(
           bottom: false,
           child: NotificationListener<ScrollNotification>(

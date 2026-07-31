@@ -143,7 +143,9 @@ class CreateAdOffersPricingRowSection extends StatelessWidget {
   ) {
     return CreateAdFieldColumn(
       flex: CreateAdPricingRowSection.priceFlex,
-      label: CreateAdPriceLabels.offerPricePerUnitLabel(s, selectedUnit),
+      label: s.offerPrice,
+      labelInfoMessage:
+          CreateAdPriceLabels.priceOverSelectedUnitTip(s, selectedUnit),
       child: CreateAdFormFieldStyles.buildRowTextFormField(
         controller: afterDiscountController,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),

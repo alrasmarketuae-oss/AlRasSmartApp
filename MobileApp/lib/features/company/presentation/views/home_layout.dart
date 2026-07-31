@@ -6,6 +6,7 @@ import 'package:alrasmarket/features/clint/presentation/views/my_orders_view.dar
 import 'package:alrasmarket/features/clint/presentation/views/profile_view.dart';
 import 'package:alrasmarket/features/company/presentation/views/create_ad.dart';
 import 'package:alrasmarket/features/company/presentation/views/my_ads_view.dart';
+import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_design.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/company_bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -45,11 +46,20 @@ class _CompanyHomeLayoutState extends State<CompanyHomeLayout> {
           const MyAdsView(isTabView: true),
           ProfileView(),
         ];
+        // Keeps the status bar the same colour as the tab shown behind it.
+        final tabBackgrounds = [
+          Colors.white,
+          CreateAdDesign.pageBg,
+          const Color(0xFFF4F7FA),
+          Colors.white,
+          const Color(0xffF2F7FF),
+        ];
         final currentIndex = cubit.currentIndex >= screens.length
             ? screens.length - 1
             : cubit.currentIndex;
         return ScrollAwareBottomNavScaffold(
           tabIndex: currentIndex,
+          backgroundColor: tabBackgrounds[currentIndex],
           body: IndexedStack(index: currentIndex, children: screens),
           bottomNavigationBar: ListenableBuilder(
             listenable: NotificationsService.instance,

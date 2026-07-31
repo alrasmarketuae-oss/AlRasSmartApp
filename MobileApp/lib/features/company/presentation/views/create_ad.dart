@@ -73,10 +73,11 @@ class _CreateAdPage extends StatelessWidget {
       builder: (context, state) {
         return PopScope(
           canPop: !state.isSubmitting,
-          child: SafeArea(
-            child: Scaffold(
-              backgroundColor: CreateAdDesign.pageBg,
-              body: Column(
+          // Scaffold stays outermost so its background also fills the status bar.
+          child: Scaffold(
+            backgroundColor: CreateAdDesign.pageBg,
+            body: SafeArea(
+              child: Column(
                 children: [
                   CreateAdHeaderWidget(showBack: state.isEditMode),
                   Expanded(

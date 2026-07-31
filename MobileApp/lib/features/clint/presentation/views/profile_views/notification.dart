@@ -37,8 +37,36 @@ class _NotificationsViewState extends State<NotificationsView> {
     try {
       final page = await NotificationsService.instance.fetchMine();
       if (!mounted) return;
+
+      final hasUnread = page.unreadCount > 0 ||
+          page.items.any((item) => !item.isRead);
+      var items = page.items;
+      if (hasUnread) {
+        try {
+          await NotificationsService.instance.markAllRead();
+          items = items
+              .map(
+                (current) => AppNotificationModel(
+                  id: current.id,
+                  title: current.title,
+                  body: current.body,
+                  referenceId: current.referenceId,
+                  routeId: current.routeId,
+                  routeName: current.routeName,
+                  typeName: current.typeName,
+                  isRead: true,
+                  createdAt: current.createdAt,
+                ),
+              )
+              .toList();
+        } catch (_) {
+          // Keep fetched list even if mark-all fails.
+        }
+      }
+
+      if (!mounted) return;
       setState(() {
-        _items = page.items;
+        _items = items;
         _loading = false;
       });
     } catch (e) {
@@ -63,57 +91,8 @@ class _NotificationsViewState extends State<NotificationsView> {
   }
 
   Future<void> _onTap(AppNotificationModel item) async {
-    if (!item.isRead) {
-      try {
-        await NotificationsService.instance.markRead(item.id);
-        if (mounted) {
-          setState(() {
-            final index = _items.indexWhere((e) => e.id == item.id);
-            if (index >= 0) {
-              final current = _items[index];
-              _items[index] = AppNotificationModel(
-                id: current.id,
-                title: current.title,
-                body: current.body,
-                referenceId: current.referenceId,
-                routeId: current.routeId,
-                routeName: current.routeName,
-                typeName: current.typeName,
-                isRead: true,
-                createdAt: current.createdAt,
-              );
-            }
-          });
-        }
-      } catch (_) {}
-    }
-
     if (!mounted) return;
     await NotificationNavigationHelper.open(context, item);
-  }
-
-  Future<void> _markAllRead() async {
-    try {
-      await NotificationsService.instance.markAllRead();
-      if (!mounted) return;
-      setState(() {
-        _items = _items
-            .map(
-              (current) => AppNotificationModel(
-                id: current.id,
-                title: current.title,
-                body: current.body,
-                referenceId: current.referenceId,
-                routeId: current.routeId,
-                routeName: current.routeName,
-                typeName: current.typeName,
-                isRead: true,
-                createdAt: current.createdAt,
-              ),
-            )
-            .toList();
-      });
-    } catch (_) {}
   }
 
   @override
@@ -181,9 +160,6 @@ class _NotificationsViewState extends State<NotificationsView> {
         else ...[
           NotificationSectionHeader(
             title: S.of(context).notifications,
-            showMarkAllAsRead: _items.any((e) => !e.isRead) ||
-                NotificationsService.instance.unreadCount > 0,
-            onMarkAllAsRead: _markAllRead,
           ),
           ..._items.map(
             (item) => Padding(

@@ -44,11 +44,20 @@ class _HomeLayoutState extends State<HomeLayout> {
           const MyAdsView(isTabView: true),
           ProfileView(),
         ];
+        // Keeps the status bar the same colour as the tab shown behind it.
+        const tabBackgrounds = [
+          Colors.white,
+          Color(0xffF2F7FF),
+          Color(0xFFF4F7FA),
+          Colors.white,
+          Color(0xffF2F7FF),
+        ];
         final currentIndex = cubit.currentIndex >= screens.length
             ? screens.length - 1
             : cubit.currentIndex;
         return ScrollAwareBottomNavScaffold(
           tabIndex: currentIndex,
+          backgroundColor: tabBackgrounds[currentIndex],
           body: IndexedStack(index: currentIndex, children: screens),
           bottomNavigationBar: ListenableBuilder(
             listenable: NotificationsService.instance,

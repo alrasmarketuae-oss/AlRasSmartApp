@@ -23,10 +23,10 @@ class LoginView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        //backgroundColor: const Color(0xffF2F7FF),
-        body: BlocConsumer<AuthCubit, AuthStates>(
+    // Scaffold stays outermost so its background also fills the status bar.
+    return Scaffold(
+      body: SafeArea(
+        child: BlocConsumer<AuthCubit, AuthStates>(
           listener: (context, state) {
             if (state is LoginSuccessState) {
               AppToast.showSuccess(context, S.of(context).loginSuccess);
