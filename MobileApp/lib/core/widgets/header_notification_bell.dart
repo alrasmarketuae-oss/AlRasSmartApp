@@ -19,7 +19,10 @@ class HeaderNotificationBell extends StatelessWidget {
           padding: EdgeInsets.zero,
           constraints: BoxConstraints.tightFor(width: 40.w, height: 40.w),
           onPressed: () {
-            if (AppRoutes.isCurrent(context, AppRoutes.kNotificationsView)) {
+            if (AppRoutes.shouldSkipPush(
+              context,
+              AppRoutes.kNotificationsView,
+            )) {
               return;
             }
             context.push(AppRoutes.kNotificationsView);

@@ -78,7 +78,7 @@ class _CreateAdPage extends StatelessWidget {
               backgroundColor: CreateAdDesign.pageBg,
               body: Column(
                 children: [
-                  const CreateAdHeaderWidget(),
+                  CreateAdHeaderWidget(showBack: state.isEditMode),
                   Expanded(
                     child: SingleChildScrollView(
                       padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),

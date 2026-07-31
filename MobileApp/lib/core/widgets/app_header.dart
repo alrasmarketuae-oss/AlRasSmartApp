@@ -30,11 +30,11 @@ class AppHeader extends StatelessWidget {
 
   void _openProfile(BuildContext context) {
     if (!AuthService.instance.isAuthenticated) {
-      if (AppRoutes.isCurrent(context, AppRoutes.kLoginView)) return;
+      if (AppRoutes.shouldSkipPush(context, AppRoutes.kLoginView)) return;
       context.push(AppRoutes.kLoginView);
       return;
     }
-    if (AppRoutes.isCurrent(context, AppRoutes.kEditProfileView)) return;
+    if (AppRoutes.shouldSkipPush(context, AppRoutes.kEditProfileView)) return;
     context.push(AppRoutes.kEditProfileView);
   }
 

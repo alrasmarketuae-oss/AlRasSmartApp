@@ -114,10 +114,13 @@ abstract class AppRoutes {
   static const String kPaymentCancelView = '/payment-cancel';
   static const String kPersonHomeView = '/PersonHomeView';
 
-  /// Path of the route currently on top of the navigation stack.
+  /// Path of the route that owns [context].
+  ///
+  /// Read from [GoRouterState] rather than the router configuration, whose uri
+  /// deliberately ignores routes added by [GoRouter.push].
   static String currentLocation(BuildContext context) {
     try {
-      return GoRouter.of(context).routerDelegate.currentConfiguration.uri.path;
+      return GoRouterState.of(context).uri.path;
     } catch (_) {
       return '';
     }
@@ -126,6 +129,11 @@ abstract class AppRoutes {
   /// True when [path] is already the visible route, so pushing it again is a no-op.
   static bool isCurrent(BuildContext context, String path) =>
       currentLocation(context) == path;
+
+  /// True when pushing [path] from [context] would duplicate a page: either it
+  /// is already shown, or a previous tap already navigated away from it.
+  static bool shouldSkipPush(BuildContext context, String path) =>
+      isCurrent(context, path) || ModalRoute.of(context)?.isCurrent == false;
 
   static final router = GoRouter(
     navigatorKey: navigatorKey,

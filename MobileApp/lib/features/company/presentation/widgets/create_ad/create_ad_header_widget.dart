@@ -4,15 +4,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class CreateAdHeaderWidget extends StatelessWidget {
-  const CreateAdHeaderWidget({super.key});
+  const CreateAdHeaderWidget({super.key, this.showBack = false});
+
+  /// Shown when the form was pushed (editing an ad) instead of hosted as the
+  /// company home tab, where there is nothing to go back to.
+  final bool showBack;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const SearchHeader(
+        SearchHeader(
           title: null,
-          isBackButton: false,
+          isBackButton: showBack,
           isSearch: true,
         ),
         Padding(
