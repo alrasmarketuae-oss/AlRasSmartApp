@@ -622,11 +622,16 @@ public class AdminProductsAppService(
                 x.RetailPackagingDetails,
                 x.VideoPath,
                 x.VideoDurationSeconds,
-                x.IsVideoMuted,
                 x.PendingProductChanges,
-                ExtraVideoPaths = x.ProductVideos
+                Videos = x.ProductVideos
                     .OrderBy(v => v.Id)
-                    .Select(v => v.VideoPath)
+                    .Select(v => new AdminProductVideoDto
+                    {
+                        Id = v.Id,
+                        Path = v.VideoPath,
+                        IsMuted = v.IsMuted,
+                        DurationSeconds = v.VideoDurationSeconds
+                    })
                     .ToList(),
                 OriginCountryName = x.OriginCountry != null ? x.OriginCountry.CountryNameEn : null,
                 DestinationCountryName = x.DestinationCountry != null ? x.DestinationCountry.CountryNameEn : null,
@@ -715,10 +720,58 @@ public class AdminProductsAppService(
             RetailDescription = displayRetailDescription,
             RetailPackaging = raw.RetailPackaging,
             RetailPackagingDetails = raw.RetailPackagingDetails,
-            VideoPath = raw.VideoPath,
-            VideoPaths = ProductVideoPathsHelper.ResolveAll(raw.VideoPath, raw.ExtraVideoPaths),
-            VideoDurationSeconds = raw.VideoDurationSeconds,
-            IsVideoMuted = raw.IsVideoMuted,
+            Videos = ProductVideoPathsHelper.ResolveVideoItems(
+                    raw.VideoPath,
+                    raw.VideoDurationSeconds,
+                    raw.Videos.Select(v => new ProductVideo
+                    {
+                        Id = v.Id,
+                        VideoPath = v.Path,
+                        VideoDurationSeconds = v.DurationSeconds,
+                        IsMuted = v.IsMuted
+                    }))
+                .Select(v => new AdminProductVideoDto
+                {
+                    Id = v.Id,
+                    Path = v.Path,
+                    IsMuted = v.IsMuted,
+                    DurationSeconds = v.DurationSeconds
+                })
+                .ToList(),
+            VideoPath = ProductVideoPathsHelper.ResolveVideoItems(
+                    raw.VideoPath,
+                    raw.VideoDurationSeconds,
+                    raw.Videos.Select(v => new ProductVideo
+                    {
+                        Id = v.Id,
+                        VideoPath = v.Path,
+                        VideoDurationSeconds = v.DurationSeconds,
+                        IsMuted = v.IsMuted
+                    }))
+                .FirstOrDefault()?.Path,
+            VideoPaths = ProductVideoPathsHelper.ResolveVideoItems(
+                    raw.VideoPath,
+                    raw.VideoDurationSeconds,
+                    raw.Videos.Select(v => new ProductVideo
+                    {
+                        Id = v.Id,
+                        VideoPath = v.Path,
+                        VideoDurationSeconds = v.DurationSeconds,
+                        IsMuted = v.IsMuted
+                    }))
+                .Select(v => v.Path)
+                .ToList(),
+            VideoDurationSeconds = ProductVideoPathsHelper.ResolveVideoItems(
+                    raw.VideoPath,
+                    raw.VideoDurationSeconds,
+                    raw.Videos.Select(v => new ProductVideo
+                    {
+                        Id = v.Id,
+                        VideoPath = v.Path,
+                        VideoDurationSeconds = v.DurationSeconds,
+                        IsMuted = v.IsMuted
+                    }))
+                .FirstOrDefault()?.DurationSeconds,
             PrimaryImagePath = imagePaths.FirstOrDefault(),
             ImagePaths = imagePaths,
             Images = raw.Images,
@@ -1068,7 +1121,6 @@ public class AdminProductsAppService(
             ProductTypeName = request.ProductTypeName.Trim(),
             UnitName = request.UnitName.Trim(),
             SupplierNotesEn = request.SupplierNotesEn,
-            IsVideoMuted = request.IsVideoMuted,
             // Preserve catalog fields the admin UI does not edit.
             RequestTypeId = product.RequestTypeId,
             BookingPriceTypeId = product.BookingPriceTypeId,
@@ -1166,6 +1218,13 @@ public class AdminProductsAppService(
             allowAdminAccess: true,
             cancellationToken);
     }
+
+    public Task<object> SetProductVideoMutedAsync(
+        string productId,
+        string videoPath,
+        bool isMuted,
+        CancellationToken cancellationToken = default) =>
+        _productAssetsAppService.SetVideoMutedAsync(productId, videoPath, isMuted, cancellationToken);
 
     public async Task<string> DeleteProductAsync(
         string productId,

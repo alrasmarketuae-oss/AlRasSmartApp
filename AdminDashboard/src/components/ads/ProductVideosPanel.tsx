@@ -1,11 +1,10 @@
 import { resolveAssetUrl } from '../../lib/assets'
 
 type ProductVideosPanelProps = {
-  videoPaths: string[]
+  videos: { path: string; isMuted?: boolean }[]
   selectedIndex: number
   onSelectedIndexChange: (index: number) => void
-  isVideoMuted: boolean
-  onMuteChange: (muted: boolean) => void
+  onMuteChange: (path: string, muted: boolean) => void
   muteLabel: string
   muteHint?: string
   emptyLabel: string
@@ -19,10 +18,9 @@ type ProductVideosPanelProps = {
 
 /** Single video player with prev/next — avoids stacking one &lt;video&gt; per path. */
 export default function ProductVideosPanel({
-  videoPaths,
+  videos,
   selectedIndex,
   onSelectedIndexChange,
-  isVideoMuted,
   onMuteChange,
   muteLabel,
   muteHint,
@@ -34,7 +32,7 @@ export default function ProductVideosPanel({
   deleteLabel = 'Delete video',
   deletingPath = null,
 }: ProductVideosPanelProps) {
-  if (videoPaths.length === 0) {
+  if (videos.length === 0) {
     return (
       <div className={className}>
         <p className="py-4 text-center text-[10px] text-slate-400">{emptyLabel}</p>
@@ -43,10 +41,11 @@ export default function ProductVideosPanel({
   }
 
   const safeIndex =
-    selectedIndex >= 0 && selectedIndex < videoPaths.length ? selectedIndex : 0
-  const activePath = videoPaths[safeIndex]
+    selectedIndex >= 0 && selectedIndex < videos.length ? selectedIndex : 0
+  const activeVideo = videos[safeIndex]
+  const activePath = activeVideo.path
   const activeUrl = resolveAssetUrl(activePath)
-  const count = videoPaths.length
+  const count = videos.length
   const isDeleting = Boolean(deletingPath && deletingPath === activePath)
 
   function go(delta: number) {
@@ -60,7 +59,7 @@ export default function ProductVideosPanel({
         <video
           key={activePath}
           controls
-          muted={isVideoMuted}
+          muted={activeVideo.isMuted ?? true}
           preload="metadata"
           className={videoClassName}
           src={activeUrl}
@@ -110,9 +109,9 @@ export default function ProductVideosPanel({
       <label className="flex items-start gap-2 text-start">
         <input
           type="checkbox"
-          checked={isVideoMuted}
+          checked={activeVideo.isMuted ?? true}
           disabled={isBusy || isDeleting}
-          onChange={(e) => onMuteChange(e.target.checked)}
+          onChange={(e) => onMuteChange(activePath, e.target.checked)}
           className="mt-0.5"
         />
         <span>
@@ -127,9 +126,14 @@ export default function ProductVideosPanel({
 }
 
 export function resolveProductVideoPaths(product: {
+  videos?: { path: string }[] | null
   videoPaths?: string[] | null
   videoPath?: string | null
 }): string[] {
+  const fromVideos = (product.videos ?? [])
+    .map((video) => video.path?.trim())
+    .filter((path): path is string => Boolean(path))
+  if (fromVideos.length > 0) return fromVideos
   const fromList = (product.videoPaths ?? [])
     .map((p) => p?.trim())
     .filter((p): p is string => Boolean(p))

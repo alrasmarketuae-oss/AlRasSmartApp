@@ -557,9 +557,9 @@ class _ChatVideoPlayerState extends State<ChatVideoPlayer> {
             ProductMediaItem(
               url: source,
               kind: ProductMediaKind.video,
+              isMuted: false,
             ),
           ],
-          isVideoMuted: false,
         );
       },
       child: SizedBox(

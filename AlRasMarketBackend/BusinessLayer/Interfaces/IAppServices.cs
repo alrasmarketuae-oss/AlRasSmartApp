@@ -243,6 +243,11 @@ public interface IAdminProductsAppService
         string videoPath,
         string? webRootPath,
         CancellationToken cancellationToken = default);
+    Task<object> SetProductVideoMutedAsync(
+        string productId,
+        string videoPath,
+        bool isMuted,
+        CancellationToken cancellationToken = default);
 
     Task<string> DeleteProductAsync(
         string productId,
@@ -295,6 +300,11 @@ public interface IProductAssetsAppService
         string ownerId,
         string? webRootPath,
         bool allowAdminAccess,
+        CancellationToken cancellationToken = default);
+    Task<object> SetVideoMutedAsync(
+        string productId,
+        string videoPath,
+        bool isMuted,
         CancellationToken cancellationToken = default);
 
     /// <summary>

@@ -2,8 +2,11 @@ namespace DataLayer.Models;
 
 public sealed class ProductMediaPathRow
 {
+    public long Id { get; set; }
     public Guid ProductId { get; set; }
     public string Path { get; set; } = string.Empty;
+    public byte? VideoDurationSeconds { get; set; }
+    public bool IsMuted { get; set; } = true;
 }
 
 public sealed class ProductMediaSnapshot
@@ -96,7 +99,6 @@ public sealed class OwnerListingRow
     public long ViewsCount { get; set; }
     public string? VideoPath { get; set; }
     public byte? VideoDurationSeconds { get; set; }
-    public bool IsVideoMuted { get; set; }
     public string? OriginCountryName { get; set; }
     public string? OriginCountryNameAr { get; set; }
     public string? DestinationCountryName { get; set; }

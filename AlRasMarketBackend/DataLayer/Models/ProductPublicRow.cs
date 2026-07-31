@@ -32,7 +32,6 @@ public sealed class ProductPublicRow
     public long ViewsCount { get; set; }
     public string? VideoPath { get; set; }
     public byte? VideoDurationSeconds { get; set; }
-    public bool IsVideoMuted { get; set; }
     public DateTime CreatedAt { get; set; }
     public string? CategoryName { get; set; }
     public string? CategoryNameAr { get; set; }

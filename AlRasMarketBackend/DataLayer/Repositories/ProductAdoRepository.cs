@@ -41,7 +41,6 @@ public sealed class ProductAdoRepository(
         public long ViewsCount { get; set; }
         public string? VideoPath { get; set; }
         public byte? VideoDurationSeconds { get; set; }
-        public bool IsVideoMuted { get; set; }
         public DateTime CreatedAt { get; set; }
 
         public string? CategoryName { get; set; }
@@ -118,7 +117,6 @@ public sealed class ProductAdoRepository(
         AddParameter(command, "@Negotiable", DbType.Boolean, product.Negotiable);
         AddParameter(command, "@VideoPath", DbType.String, product.VideoPath);
         AddParameter(command, "@VideoDurationSeconds", DbType.Byte, product.VideoDurationSeconds);
-        AddParameter(command, "@IsVideoMuted", DbType.Boolean, product.IsVideoMuted);
         AddParameter(command, "@ShippingDuration", DbType.String, product.ShippingDuration);
         AddParameter(command, "@OfferDuration", DbType.String, product.OfferDuration);
         AddParameter(command, "@AddressId", DbType.Guid, product.AddressId);
@@ -256,7 +254,6 @@ public sealed class ProductAdoRepository(
             ViewsCount = reader.GetInt64(reader.GetOrdinal("ViewsCount")),
             VideoPath = GetNullableString(reader, reader.GetOrdinal("VideoPath")),
             VideoDurationSeconds = reader.IsDBNull(reader.GetOrdinal("VideoDurationSeconds")) ? null : (byte)reader.GetByte(reader.GetOrdinal("VideoDurationSeconds")),
-            IsVideoMuted = reader.GetBoolean(reader.GetOrdinal("IsVideoMuted")),
             CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
 
             CategoryName = GetNullableString(reader, reader.GetOrdinal("CategoryName")),

@@ -6,6 +6,7 @@ export type GalleryMediaItem = {
   kind: 'image' | 'video'
   id?: number
   path?: string
+  isMuted?: boolean
 }
 
 type ImageGalleryProps = {
@@ -15,8 +16,7 @@ type ImageGalleryProps = {
   initialIndex?: number
   open: boolean
   onClose: () => void
-  isVideoMuted?: boolean
-  onMuteChange?: (muted: boolean) => void
+  onMuteChange?: (item: GalleryMediaItem, muted: boolean) => void
   muteLabel?: string
   unmuteLabel?: string
   onBlur?: (item: GalleryMediaItem, index: number) => void
@@ -43,7 +43,6 @@ export default function ImageGallery({
   initialIndex = 0,
   open,
   onClose,
-  isVideoMuted = true,
   onMuteChange,
   muteLabel = 'Mute',
   unmuteLabel = 'Unmute',
@@ -56,17 +55,13 @@ export default function ImageGallery({
 }: ImageGalleryProps) {
   const items = useMemo(() => toMedia(images, media), [images, media])
   const [index, setIndex] = useState(0)
-  const [localMuted, setLocalMuted] = useState(isVideoMuted)
+  const [localMuted, setLocalMuted] = useState(true)
 
   useEffect(() => {
     if (!open) return
     const next = Math.min(Math.max(initialIndex, 0), Math.max(items.length - 1, 0))
     setIndex(next)
   }, [open, initialIndex, items.length])
-
-  useEffect(() => {
-    setLocalMuted(isVideoMuted)
-  }, [isVideoMuted, open])
 
   useEffect(() => {
     if (!open) return
@@ -94,8 +89,8 @@ export default function ImageGallery({
   const current = items[index] ?? items[0]
   const currentUrl = resolveAssetUrl(current.src)
   const showNav = items.length > 1
-  const muted = onMuteChange ? isVideoMuted : localMuted
   const isVideo = current.kind === 'video'
+  const muted = current.isMuted ?? localMuted
   const showBlur =
     !isVideo &&
     Boolean(onBlur) &&
@@ -107,7 +102,7 @@ export default function ImageGallery({
 
   function toggleMute() {
     const next = !muted
-    if (onMuteChange) onMuteChange(next)
+    if (onMuteChange) onMuteChange(current, next)
     else setLocalMuted(next)
   }
 

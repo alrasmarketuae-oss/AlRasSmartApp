@@ -279,6 +279,32 @@ public class AdminProductsController(
         }
     }
 
+    [HttpPut("{productId}/videos/mute")]
+    [RequireAdminPermission(AdminPermissions.ProductsManage)]
+    public async Task<IActionResult> SetVideoMute(
+        string productId,
+        [FromBody] SetProductVideoMuteRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var result = await adminProductsAppService.SetProductVideoMutedAsync(
+                productId,
+                request.Path,
+                request.IsMuted,
+                cancellationToken);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
     [HttpDelete("{productId}")]
     public async Task<IActionResult> Delete(string productId, CancellationToken cancellationToken = default)
     {

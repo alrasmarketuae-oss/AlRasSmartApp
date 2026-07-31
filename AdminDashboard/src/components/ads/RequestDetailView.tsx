@@ -21,6 +21,7 @@ import { categoryDisplayName } from '../../utils/categoryDisplay'
 import { localizeProductStatusLabel } from '../../utils/localizedLabels'
 import { formatOrderQuantityWithUnit } from '../../utils/ordersDisplay'
 import { shippingFromProduct } from '../../utils/productShipping'
+import { useSetAdminProductVideoMuteMutation } from '../../store/adminApi'
 
 function countProductGalleryImages(product: AdminProductDetail): number {
   if (product.images.length > 0) return product.images.length
@@ -56,7 +57,6 @@ type RequestDetailViewProps = {
     productTypeName: string
     unitName: string
     supplierNotesEn: string
-    isVideoMuted: boolean
   }) => void
   onApprove: (supplierNotesEn: string) => void
   onReject: (payload: { supplierNotesEn: string; supplierNotesAr: string }) => void
@@ -192,7 +192,7 @@ export default function RequestDetailView({
   const [descriptionEn, setDescriptionEn] = useState(product.description ?? '')
   const [supplierNotesEn, setSupplierNotesEn] = useState(product.supplierNotesEn ?? '')
   const [supplierNotesAr, setSupplierNotesAr] = useState('')
-  const [isVideoMuted, setIsVideoMuted] = useState(product.isVideoMuted ?? true)
+  const [setAdminProductVideoMute] = useSetAdminProductVideoMuteMutation()
 
   useEffect(() => {
     setNameEn(product.name)
@@ -204,7 +204,6 @@ export default function RequestDetailView({
     setDescriptionEn(product.description ?? '')
     setSupplierNotesEn(product.supplierNotesEn ?? '')
     setSupplierNotesAr('')
-    setIsVideoMuted(product.isVideoMuted ?? true)
     setSelectedImageIndex(0)
     setSelectedVideoIndex(0)
     setShowVideo(shouldAutoShowProductVideo(product))
@@ -268,6 +267,13 @@ export default function RequestDetailView({
   }, [product.images, product.imagePaths, product.primaryImagePath])
 
   const videoPaths = useMemo(() => resolveProductVideoPaths(product), [product])
+  const videos = useMemo(
+    () =>
+      product.videos.length > 0
+        ? product.videos
+        : videoPaths.map((path, index) => ({ id: index, path, isMuted: true })),
+    [product.videos, videoPaths],
+  )
   const galleryMedia = useMemo((): GalleryMediaItem[] => {
     const images = galleryImages.map((image) => ({
       src: image.path,
@@ -275,15 +281,17 @@ export default function RequestDetailView({
       id: typeof image.id === 'number' ? image.id : undefined,
       path: image.path,
     }))
-    const videos = videoPaths.map((path) => ({
-      src: path,
+    const videoMedia = videos.map((video) => ({
+      src: video.path,
       kind: 'video' as const,
-      path,
+      path: video.path,
+      isMuted: video.isMuted,
     }))
-    return [...images, ...videos]
-  }, [galleryImages, videoPaths])
+    return [...images, ...videoMedia]
+  }, [galleryImages, videos])
   const hasVideo = videoPaths.length > 0
   const activeVideoPath = videoPaths[selectedVideoIndex] ?? videoPaths[0] ?? null
+  const activeVideoMuted = videos[selectedVideoIndex]?.isMuted ?? videos[0]?.isMuted ?? true
   const videoUrl = activeVideoPath ? resolveAssetUrl(activeVideoPath) : null
   const mainImage = galleryImages[selectedImageIndex] ?? galleryImages[0]
   const mainUrl = mainImage ? resolveAssetUrl(mainImage.path) : null
@@ -292,9 +300,9 @@ export default function RequestDetailView({
     if (!showVideo || !videoUrl) return
     const video = mainVideoRef.current
     if (!video) return
-    video.muted = isVideoMuted
+    video.muted = activeVideoMuted
     void video.play().catch(() => undefined)
-  }, [showVideo, videoUrl, isVideoMuted, selectedVideoIndex])
+  }, [showVideo, videoUrl, activeVideoMuted, selectedVideoIndex])
 
   const categoryLabel = (() => {
     if (product.categoryId != null) {
@@ -317,9 +325,12 @@ export default function RequestDetailView({
       productTypeName,
       unitName,
       supplierNotesEn: supplierNotesEn.trim(),
-      isVideoMuted,
     })
     setIsEditing(false)
+  }
+
+  function handleMuteChange(path: string, isMuted: boolean) {
+    void setAdminProductVideoMute({ productId: product.productId, path, isMuted })
   }
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -773,11 +784,10 @@ export default function RequestDetailView({
                 <div className="mt-5">
                   <p className="admin-text mb-2 text-sm font-bold">{t('ads.productVideo')}</p>
                   <ProductVideosPanel
-                    videoPaths={videoPaths}
+                    videos={videos}
                     selectedIndex={selectedVideoIndex}
                     onSelectedIndexChange={setSelectedVideoIndex}
-                    isVideoMuted={isVideoMuted}
-                    onMuteChange={setIsVideoMuted}
+                    onMuteChange={handleMuteChange}
                     muteLabel={t('ads.muteVideoInApp')}
                     emptyLabel={t('ads.noVideo')}
                     isBusy={isBusy}
@@ -1029,11 +1039,10 @@ export default function RequestDetailView({
                   <div>
                     <p className="admin-text mb-2 text-sm font-bold">{t('ads.productVideo')}</p>
                     <ProductVideosPanel
-                      videoPaths={videoPaths}
+                      videos={videos}
                       selectedIndex={selectedVideoIndex}
                       onSelectedIndexChange={setSelectedVideoIndex}
-                      isVideoMuted={isVideoMuted}
-                      onMuteChange={setIsVideoMuted}
+                      onMuteChange={handleMuteChange}
                       muteLabel={t('ads.muteVideoInApp')}
                       emptyLabel={t('ads.noVideo')}
                       isBusy={isBusy}
@@ -1294,12 +1303,13 @@ export default function RequestDetailView({
         initialIndex={previewIndex ?? 0}
         open={previewIndex != null}
         onClose={() => setPreviewIndex(null)}
-        isVideoMuted={isVideoMuted}
-        onMuteChange={setIsVideoMuted}
+        onMuteChange={(item, isMuted) => {
+          if (item.path) handleMuteChange(item.path, isMuted)
+        }}
         muteLabel="Mute"
         unmuteLabel="Unmute"
         blurLabel={t('ads.blurImage')}
-        deleteLabel={t('ads.deleteAd')}
+        deleteLabel={t('orders.deleteImage')}
         onBlur={(item) => {
           if (typeof item.id !== 'number') return
           setPreviewIndex(null)

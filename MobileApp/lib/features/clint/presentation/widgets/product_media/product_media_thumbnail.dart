@@ -108,7 +108,6 @@ class ProductMediaThumbnail extends StatelessWidget {
                 context,
                 items: mediaItems,
                 initialIndex: initialPreviewIndex,
-                isVideoMuted: product.isVideoMuted,
               ),
       behavior: HitTestBehavior.opaque,
       child: ClipRRect(

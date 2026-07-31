@@ -47,7 +47,6 @@ public class Product
     public int? ArrivalPortId { get; set; }
     public string? VideoPath { get; set; }
     public byte? VideoDurationSeconds { get; set; }
-    public bool IsVideoMuted { get; set; } = true;
     public string? ShippingDuration { get; set; }
     public string? OfferDuration { get; set; }
     public Guid? AddressId { get; set; }

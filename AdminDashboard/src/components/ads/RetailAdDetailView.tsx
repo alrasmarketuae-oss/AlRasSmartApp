@@ -24,6 +24,7 @@ import {
 } from '../../types/productShipping'
 import { shippingTypeKey } from '../../types/productShipping'
 import type { AdminProductDetail } from '../../types/adminProduct'
+import { useSetAdminProductVideoMuteMutation } from '../../store/adminApi'
 import type { CatalogAdDetailViewProps } from './CatalogAdDetailView'
 
 const C = {
@@ -315,7 +316,7 @@ export default function RetailAdDetailView({
   const [descriptionEn, setDescriptionEn] = useState(product.description ?? '')
   const [supplierNotesEn, setSupplierNotesEn] = useState(product.supplierNotesEn ?? '')
   const [supplierNotesAr, setSupplierNotesAr] = useState('')
-  const [isVideoMuted, setIsVideoMuted] = useState(product.isVideoMuted ?? true)
+  const [setAdminProductVideoMute] = useSetAdminProductVideoMuteMutation()
 
   useEffect(() => {
     setNameEn(product.name)
@@ -325,7 +326,6 @@ export default function RetailAdDetailView({
     setDescriptionEn(product.description ?? '')
     setSupplierNotesEn(product.supplierNotesEn ?? '')
     setSupplierNotesAr('')
-    setIsVideoMuted(product.isVideoMuted ?? true)
     setSelectedImageIndex(0)
     setSelectedVideoIndex(0)
     setShowVideo(shouldAutoShowProductVideo(product))
@@ -387,6 +387,13 @@ export default function RetailAdDetailView({
   }, [product.images, product.imagePaths, product.primaryImagePath])
 
   const videoPaths = useMemo(() => resolveProductVideoPaths(product), [product])
+  const videos = useMemo(
+    () =>
+      product.videos.length > 0
+        ? product.videos
+        : videoPaths.map((path, index) => ({ id: index, path, isMuted: true })),
+    [product.videos, videoPaths],
+  )
   const galleryMedia = useMemo((): GalleryMediaItem[] => {
     const images = galleryImages.map((image) => ({
       src: image.path,
@@ -394,14 +401,16 @@ export default function RetailAdDetailView({
       id: typeof image.id === 'number' ? image.id : undefined,
       path: image.path,
     }))
-    const videos = videoPaths.map((path) => ({
-      src: path,
+    const videoMedia = videos.map((video) => ({
+      src: video.path,
       kind: 'video' as const,
-      path,
+      path: video.path,
+      isMuted: video.isMuted,
     }))
-    return [...images, ...videos]
-  }, [galleryImages, videoPaths])
+    return [...images, ...videoMedia]
+  }, [galleryImages, videos])
   const activeVideoPath = videoPaths[selectedVideoIndex] ?? videoPaths[0] ?? null
+  const activeVideoMuted = videos[selectedVideoIndex]?.isMuted ?? videos[0]?.isMuted ?? true
   const videoUrl = activeVideoPath ? resolveAssetUrl(activeVideoPath) : null
   const mainImage = galleryImages[selectedImageIndex] ?? galleryImages[0]
   const mainUrl = mainImage ? resolveAssetUrl(mainImage.path) : null
@@ -410,9 +419,9 @@ export default function RetailAdDetailView({
     if (!showVideo || !videoUrl) return
     const video = mainVideoRef.current
     if (!video) return
-    video.muted = isVideoMuted
+    video.muted = activeVideoMuted
     void video.play().catch(() => undefined)
-  }, [showVideo, videoUrl, isVideoMuted])
+  }, [showVideo, videoUrl, activeVideoMuted])
 
   const routeText =
     shipping.shippingRouteSummary?.trim() ||
@@ -440,27 +449,12 @@ export default function RetailAdDetailView({
       productTypeName: '',
       unitName,
       supplierNotesEn: supplierNotesEn.trim(),
-      isVideoMuted,
     })
     setEditingBasic(false)
   }
 
-  function handleMuteChange(checked: boolean) {
-    setIsVideoMuted(checked)
-    const price = Number.parseFloat(usdPrice)
-    if (!nameEn.trim() || Number.isNaN(price) || price < 0) return
-    onSave({
-      nameEn: nameEn.trim(),
-      usdPrice: price,
-      currency,
-      quantity: product.quantity,
-      descriptionEn: descriptionEn.trim(),
-      categoryId: product.categoryId ?? null,
-      productTypeName: '',
-      unitName,
-      supplierNotesEn: supplierNotesEn.trim(),
-      isVideoMuted: checked,
-    })
+  function handleMuteChange(path: string, isMuted: boolean) {
+    void setAdminProductVideoMute({ productId: product.productId, path, isMuted })
   }
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -1086,10 +1080,9 @@ export default function RetailAdDetailView({
               </h2>
             </div>
             <ProductVideosPanel
-              videoPaths={videoPaths}
+              videos={videos}
               selectedIndex={selectedVideoIndex}
               onSelectedIndexChange={setSelectedVideoIndex}
-              isVideoMuted={isVideoMuted}
               onMuteChange={handleMuteChange}
               muteLabel={t('ads.muteVideoInApp')}
               muteHint={t('ads.muteVideoInAppHint')}
@@ -1313,12 +1306,13 @@ export default function RetailAdDetailView({
         initialIndex={previewIndex ?? 0}
         open={previewIndex != null}
         onClose={() => setPreviewIndex(null)}
-        isVideoMuted={isVideoMuted}
-        onMuteChange={handleMuteChange}
+        onMuteChange={(item, isMuted) => {
+          if (item.path) handleMuteChange(item.path, isMuted)
+        }}
         muteLabel="Mute"
         unmuteLabel="Unmute"
         blurLabel={t('ads.blurImage')}
-        deleteLabel={t('ads.deleteAd')}
+        deleteLabel={t('orders.deleteImage')}
         onBlur={(item) => {
           if (typeof item.id !== 'number') return
           setPreviewIndex(null)

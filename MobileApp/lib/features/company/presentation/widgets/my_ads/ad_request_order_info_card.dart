@@ -117,7 +117,6 @@ class AdRequestOrderInfoCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8.r),
                         child: BookingProductImageCarousel(
                           mediaItems: images,
-                          isVideoMuted: product.isVideoMuted,
                         ),
                       ),
                     if (images.isNotEmpty && videos.isNotEmpty)
@@ -127,7 +126,6 @@ class AdRequestOrderInfoCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8.r),
                         child: BookingProductImageCarousel(
                           mediaItems: videos,
-                          isVideoMuted: product.isVideoMuted,
                         ),
                       ),
                     SizedBox(height: 16.h),

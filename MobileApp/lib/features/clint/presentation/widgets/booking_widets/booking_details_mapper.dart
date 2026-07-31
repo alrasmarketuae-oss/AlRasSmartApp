@@ -36,10 +36,16 @@ class BookingDetailsMapper {
       }
     }
 
-    for (final path in product.allVideoPaths) {
-      final video = _resolveAssetUrl(path);
+    for (final videoMetadata in product.allVideos) {
+      final video = _resolveAssetUrl(videoMetadata.path);
       if (video != null) {
-        items.add(ProductMediaItem(url: video, kind: ProductMediaKind.video));
+        items.add(
+          ProductMediaItem(
+            url: video,
+            kind: ProductMediaKind.video,
+            isMuted: videoMetadata.isMuted,
+          ),
+        );
       }
     }
 

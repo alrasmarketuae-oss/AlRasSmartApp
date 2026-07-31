@@ -221,7 +221,6 @@ public class CreateProductInput
     public bool? Negotiable { get; set; }
     public IFormFile? ProductVideoFile { get; set; }
     public byte? VideoDurationSeconds { get; set; }
-    public bool? IsVideoMuted { get; set; }
     public string? ShippingDuration { get; set; }
     public string? OfferDuration { get; set; }
     public string? AddressId { get; set; }
@@ -285,7 +284,12 @@ public sealed class AdminUpdateProductRequest
     public string UnitName { get; set; } = string.Empty;
     public string? Currency { get; set; }
     public string? SupplierNotesEn { get; set; }
-    public bool? IsVideoMuted { get; set; }
+}
+
+public sealed class SetProductVideoMuteRequest
+{
+    public string Path { get; set; } = string.Empty;
+    public bool IsMuted { get; set; }
 }
 
 public sealed class AdminRejectProductRequest

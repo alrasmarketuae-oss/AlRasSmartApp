@@ -301,7 +301,6 @@ export const adminApi = createApi({
           productTypeName: body.productTypeName,
           unitName: body.unitName,
           supplierNotesEn: body.supplierNotesEn,
-          isVideoMuted: body.isVideoMuted,
         },
       }),
       invalidatesTags: (_r, _e, { productId }) => [
@@ -389,6 +388,20 @@ export const adminApi = createApi({
       invalidatesTags: (_r, _e, { productId }) => [
         { type: 'Products', id: productId },
         { type: 'Products', id: 'LIST' },
+      ],
+    }),
+
+    setAdminProductVideoMute: builder.mutation<
+      { id: number; path: string; isMuted: boolean },
+      { productId: string; path: string; isMuted: boolean }
+    >({
+      query: ({ productId, path, isMuted }) => ({
+        url: `/api/admin/products/${productId}/videos/mute`,
+        method: 'PUT',
+        body: { path, isMuted },
+      }),
+      invalidatesTags: (_r, _e, { productId }) => [
+        { type: 'Products', id: productId },
       ],
     }),
 
@@ -1722,6 +1735,7 @@ export const {
   useUploadAdminProductImageMutation,
   useDeleteAdminProductImageMutation,
   useDeleteAdminProductVideoMutation,
+  useSetAdminProductVideoMuteMutation,
   useApproveCompanyMutation,
   useRejectCompanyMutation,
   useSetUserActiveMutation,

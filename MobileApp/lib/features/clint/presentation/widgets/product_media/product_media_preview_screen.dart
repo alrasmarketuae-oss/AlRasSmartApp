@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:alrasmarket/core/media/cached_video_controller.dart';
 import 'package:alrasmarket/core/widgets/cached_app_image.dart';
 import 'package:alrasmarket/features/clint/presentation/models/product_media_item.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_video_play_mark.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -13,7 +14,6 @@ class ProductMediaPreviewScreen extends StatefulWidget {
     super.key,
     required this.items,
     this.initialIndex = 0,
-    this.isVideoMuted = true,
   });
 
   final List<ProductMediaItem> items;
@@ -23,7 +23,6 @@ class ProductMediaPreviewScreen extends StatefulWidget {
     BuildContext context, {
     required List<ProductMediaItem> items,
     int initialIndex = 0,
-    bool isVideoMuted = true,
   }) {
     if (items.isEmpty) return Future.value();
     final safeIndex = initialIndex.clamp(0, items.length - 1);
@@ -34,7 +33,6 @@ class ProductMediaPreviewScreen extends StatefulWidget {
         pageBuilder: (_, __, ___) => ProductMediaPreviewScreen(
           items: items,
           initialIndex: safeIndex,
-          isVideoMuted: isVideoMuted,
         ),
         transitionsBuilder: (_, animation, __, child) {
           return FadeTransition(opacity: animation, child: child);
@@ -42,8 +40,6 @@ class ProductMediaPreviewScreen extends StatefulWidget {
       ),
     );
   }
-
-  final bool isVideoMuted;
 
   @override
   State<ProductMediaPreviewScreen> createState() =>
@@ -56,14 +52,12 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
   VideoPlayerController? _videoController;
   bool _isVideoInitializing = false;
   bool _videoFailed = false;
-  late final bool _isVideoMuted;
   double _dragOffsetY = 0;
   double _dismissOpacity = 1;
 
   @override
   void initState() {
     super.initState();
-    _isVideoMuted = widget.isVideoMuted;
     _currentIndex = widget.initialIndex.clamp(0, widget.items.length - 1);
     _pageController = PageController(initialPage: _currentIndex);
     _initVideoForIndex(_currentIndex);
@@ -101,7 +95,7 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
     try {
       await controller.initialize();
       await controller.setLooping(true);
-      await controller.setVolume(_isVideoMuted ? 0 : 1);
+      await controller.setVolume(item.isMuted ? 0 : 1);
       await controller.play();
     } catch (_) {
       if (mounted) {
@@ -497,12 +491,7 @@ class _VideoPreviewBodyState extends State<_VideoPreviewBody> {
               ),
             ),
           ),
-          if (!isPlaying)
-            Icon(
-              Icons.play_circle_fill_rounded,
-              color: Colors.white.withValues(alpha: 0.92),
-              size: 64.sp,
-            ),
+          if (!isPlaying) ProductVideoPlayMark(size: 64.sp),
         ],
       ),
     );

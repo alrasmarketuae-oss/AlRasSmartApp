@@ -50,7 +50,6 @@ BEGIN
         p.ViewsCount,
         p.VideoPath,
         p.VideoDurationSeconds,
-        p.IsVideoMuted,
         p.CreatedAt,
 
         c.NameEn AS CategoryName,

@@ -19,6 +19,7 @@ import { formatOrderQuantityWithUnit } from '../../utils/ordersDisplay'
 import { shippingFromProduct } from '../../utils/productShipping'
 import { shippingTypeKey } from '../../types/productShipping'
 import type { CatalogAdDetailViewProps } from './CatalogAdDetailView'
+import { useSetAdminProductVideoMuteMutation } from '../../store/adminApi'
 
 const C = {
   blue: '#3B82F6',
@@ -269,6 +270,7 @@ export default function BookingAdDetailView({
   onReject,
   onDelete,
   onUploadImage,
+  onDeleteImage,
   onDeleteVideo,
   onReplaceImage,
 }: CatalogAdDetailViewProps) {
@@ -285,7 +287,7 @@ export default function BookingAdDetailView({
   const [descriptionEn, setDescriptionEn] = useState(product.description ?? '')
   const [supplierNotesEn, setSupplierNotesEn] = useState(product.supplierNotesEn ?? '')
   const [supplierNotesAr, setSupplierNotesAr] = useState('')
-  const [isVideoMuted, setIsVideoMuted] = useState(product.isVideoMuted ?? true)
+  const [setAdminProductVideoMute] = useSetAdminProductVideoMuteMutation()
   const [selectedVideoIndex, setSelectedVideoIndex] = useState(0)
 
   useEffect(() => {
@@ -296,7 +298,6 @@ export default function BookingAdDetailView({
     setDescriptionEn(product.description ?? '')
     setSupplierNotesEn(product.supplierNotesEn ?? '')
     setSupplierNotesAr('')
-    setIsVideoMuted(product.isVideoMuted ?? true)
     setEditingBasic(false)
   }, [product])
 
@@ -364,6 +365,13 @@ export default function BookingAdDetailView({
     const primary = product.videoPath?.trim()
     return primary ? [primary] : []
   }, [product])
+  const videos = useMemo(
+    () =>
+      product.videos.length > 0
+        ? product.videos
+        : videoPaths.map((path, index) => ({ id: index, path, isMuted: true })),
+    [product.videos, videoPaths],
+  )
 
   const galleryMedia = useMemo((): GalleryMediaItem[] => {
     const images = galleryImages.map((image) => ({
@@ -372,13 +380,14 @@ export default function BookingAdDetailView({
       id: typeof image.id === 'number' ? image.id : undefined,
       path: image.path,
     }))
-    const videos = videoPaths.map((path) => ({
-      src: path,
+    const videoMedia = videos.map((video) => ({
+      src: video.path,
       kind: 'video' as const,
-      path,
+      path: video.path,
+      isMuted: video.isMuted,
     }))
-    return [...images, ...videos]
-  }, [galleryImages, videoPaths])
+    return [...images, ...videoMedia]
+  }, [galleryImages, videos])
 
   const mainImage = galleryImages[0]
   const mainUrl = mainImage ? resolveAssetUrl(mainImage.path) : null
@@ -409,27 +418,12 @@ export default function BookingAdDetailView({
       productTypeName: '',
       unitName,
       supplierNotesEn: supplierNotesEn.trim(),
-      isVideoMuted,
     })
     setEditingBasic(false)
   }
 
-  function handleMuteChange(checked: boolean) {
-    setIsVideoMuted(checked)
-    const price = Number.parseFloat(usdPrice)
-    if (!nameEn.trim() || Number.isNaN(price) || price < 0) return
-    onSave({
-      nameEn: nameEn.trim(),
-      usdPrice: price,
-      currency,
-      quantity: product.quantity,
-      descriptionEn: descriptionEn.trim(),
-      categoryId: product.categoryId ?? null,
-      productTypeName: '',
-      unitName,
-      supplierNotesEn: supplierNotesEn.trim(),
-      isVideoMuted: checked,
-    })
+  function handleMuteChange(path: string, isMuted: boolean) {
+    void setAdminProductVideoMute({ productId: product.productId, path, isMuted })
   }
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -637,6 +631,20 @@ export default function BookingAdDetailView({
                   title={t('ads.preview')}
                 >
                   <img src={mainUrl} alt={product.name} className="max-h-32 w-full rounded-lg object-cover" />
+                </button>
+              ) : videos[0] ? (
+                <button
+                  type="button"
+                  onClick={() => setPreviewIndex(galleryImages.length)}
+                  className="block w-full cursor-zoom-in"
+                  title={t('ads.preview')}
+                >
+                  <video
+                    muted={videos[0].isMuted}
+                    preload="metadata"
+                    className="max-h-32 w-full rounded-lg bg-black object-cover"
+                    src={resolveAssetUrl(videos[0].path)}
+                  />
                 </button>
               ) : (
                 <>
@@ -918,10 +926,9 @@ export default function BookingAdDetailView({
               </h2>
             </div>
             <ProductVideosPanel
-              videoPaths={videoPaths}
+              videos={videos}
               selectedIndex={selectedVideoIndex}
               onSelectedIndexChange={setSelectedVideoIndex}
-              isVideoMuted={isVideoMuted}
               onMuteChange={handleMuteChange}
               muteLabel={t('ads.muteVideoInApp')}
               muteHint={t('ads.muteVideoInAppHint')}
@@ -1141,11 +1148,13 @@ export default function BookingAdDetailView({
         initialIndex={previewIndex ?? 0}
         open={previewIndex != null}
         onClose={() => setPreviewIndex(null)}
-        isVideoMuted={isVideoMuted}
-        onMuteChange={handleMuteChange}
+        onMuteChange={(item, isMuted) => {
+          if (item.path) handleMuteChange(item.path, isMuted)
+        }}
         muteLabel="Mute"
         unmuteLabel="Unmute"
         blurLabel={t('ads.blurImage')}
+        deleteLabel={t('orders.deleteImage')}
         onBlur={(item) => {
           if (typeof item.id !== 'number' || !onReplaceImage) return
           setPreviewIndex(null)
@@ -1154,6 +1163,15 @@ export default function BookingAdDetailView({
             url: resolveAssetUrl(item.src),
           })
         }}
+        onDelete={
+          onDeleteImage
+            ? (item) => {
+                if (typeof item.id !== 'number') return
+                onDeleteImage(item.id)
+                setPreviewIndex(null)
+              }
+            : undefined
+        }
       />
     </div>
   )

@@ -63,7 +63,6 @@ export default function AdDetailPage() {
     productTypeName: string
     unitName: string
     supplierNotesEn: string
-    isVideoMuted: boolean
   }) {
     setActionError(null)
     setSuccessMessage(null)

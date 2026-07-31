@@ -442,6 +442,14 @@ public sealed class AdminProductDocumentDto
     public string Path { get; set; } = string.Empty;
 }
 
+public sealed class AdminProductVideoDto
+{
+    public long Id { get; set; }
+    public string Path { get; set; } = string.Empty;
+    public bool IsMuted { get; set; }
+    public byte? DurationSeconds { get; set; }
+}
+
 public sealed class AdminProductDetailDto : AdminProductListItemDto
 {
     public byte? UnitId { get; set; }
@@ -453,7 +461,7 @@ public sealed class AdminProductDetailDto : AdminProductListItemDto
     public string? VideoPath { get; set; }
     public IReadOnlyList<string> VideoPaths { get; set; } = [];
     public byte? VideoDurationSeconds { get; set; }
-    public bool IsVideoMuted { get; set; } = true;
+    public IReadOnlyList<AdminProductVideoDto> Videos { get; set; } = [];
     public IReadOnlyList<AdminProductImageDto> Images { get; set; } = [];
     public IReadOnlyList<AdminProductDocumentDto> Documents { get; set; } = [];
     /// <summary>Previous vs proposed values while a seller edit awaits review.</summary>

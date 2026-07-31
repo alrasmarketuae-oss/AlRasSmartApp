@@ -695,7 +695,14 @@ public sealed class ProductDataAccess(
         dbContext.ProductVideos.AsNoTracking()
             .Where(v => productIds.Contains(v.ProductId))
             .OrderBy(v => v.Id)
-            .Select(v => new ProductMediaPathRow { ProductId = v.ProductId, Path = v.VideoPath })
+            .Select(v => new ProductMediaPathRow
+            {
+                Id = v.Id,
+                ProductId = v.ProductId,
+                Path = v.VideoPath,
+                VideoDurationSeconds = v.VideoDurationSeconds,
+                IsMuted = v.IsMuted
+            })
             .ToListAsync(cancellationToken);
 
     public async Task<Dictionary<byte, Category>> GetCategoriesByIdsAsync(
@@ -783,7 +790,6 @@ public sealed class ProductDataAccess(
                 ViewsCount = x.ViewsCount,
                 VideoPath = x.VideoPath,
                 VideoDurationSeconds = x.VideoDurationSeconds,
-                IsVideoMuted = x.IsVideoMuted,
                 OriginCountryName = x.OriginCountry != null ? x.OriginCountry.CountryNameEn : null,
                 OriginCountryNameAr = x.OriginCountry != null ? x.OriginCountry.CountryNameAr : null,
                 DestinationCountryName = x.DestinationCountry != null ? x.DestinationCountry.CountryNameEn : null,
@@ -1173,7 +1179,6 @@ public sealed class ProductDataAccess(
         ViewsCount = r.ViewsCount,
         VideoPath = r.VideoPath,
         VideoDurationSeconds = r.VideoDurationSeconds,
-        IsVideoMuted = r.IsVideoMuted,
         CreatedAt = r.CreatedAt,
         CategoryName = r.CategoryName,
         CategoryNameAr = r.CategoryNameAr,

@@ -330,15 +330,14 @@ public class ProductAssetsAppService(
             NormalizeAssetPath(product.VideoPath),
             normalizedPath,
             StringComparison.OrdinalIgnoreCase);
-
-        var extraMatch = product.ProductVideos
+        var video = product.ProductVideos
             .FirstOrDefault(v =>
                 string.Equals(
                     NormalizeAssetPath(v.VideoPath),
                     normalizedPath,
                     StringComparison.OrdinalIgnoreCase));
 
-        if (!primaryMatches && extraMatch is null)
+        if (!primaryMatches && video is null)
         {
             throw new KeyNotFoundException("Product video not found.");
         }
@@ -351,26 +350,27 @@ public class ProductAssetsAppService(
         var pending = PendingProductChangeHelper.TryParse(product.PendingProductChanges);
         var keepFileForPendingEdit = PendingProductChangeHelper.PathExistsInSnapshot(pending, normalizedPath);
 
+        if (video is not null)
+        {
+            dbContext.ProductVideos.Remove(video);
+        }
+
         if (primaryMatches)
         {
-            var nextExtra = product.ProductVideos
+            var nextVideo = product.ProductVideos
+                .Where(v => !ReferenceEquals(v, video))
                 .OrderBy(v => v.Id)
                 .FirstOrDefault();
-            if (nextExtra is not null)
+            if (nextVideo is not null)
             {
-                product.VideoPath = nextExtra.VideoPath;
-                product.VideoDurationSeconds = nextExtra.VideoDurationSeconds;
-                dbContext.ProductVideos.Remove(nextExtra);
+                product.VideoPath = nextVideo.VideoPath;
+                product.VideoDurationSeconds = nextVideo.VideoDurationSeconds;
             }
             else
             {
                 product.VideoPath = null;
                 product.VideoDurationSeconds = null;
             }
-        }
-        else if (extraMatch is not null)
-        {
-            dbContext.ProductVideos.Remove(extraMatch);
         }
 
         var markedAsEdit = false;
@@ -393,6 +393,58 @@ public class ProductAssetsAppService(
         }
 
         return "Video deleted successfully.";
+    }
+
+    public async Task<object> SetVideoMutedAsync(
+        string productId,
+        string videoPath,
+        bool isMuted,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(productId, out var parsedProductId))
+        {
+            throw new ArgumentException("Invalid product id.");
+        }
+
+        var normalizedPath = NormalizeAssetPath(videoPath);
+        if (string.IsNullOrWhiteSpace(normalizedPath))
+        {
+            throw new ArgumentException("Video path is required.");
+        }
+
+        var product = await dbContext.Products
+            .Include(x => x.ProductVideos)
+            .FirstOrDefaultAsync(x => x.ProductId == parsedProductId, cancellationToken)
+            ?? throw new KeyNotFoundException("Product not found.");
+
+        var video = product.ProductVideos.FirstOrDefault(x =>
+            string.Equals(NormalizeAssetPath(x.VideoPath), normalizedPath, StringComparison.OrdinalIgnoreCase));
+        if (video is null)
+        {
+            if (!string.Equals(NormalizeAssetPath(product.VideoPath), normalizedPath, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new KeyNotFoundException("Product video not found.");
+            }
+
+            video = new ProductVideo
+            {
+                ProductId = product.ProductId,
+                VideoPath = normalizedPath,
+                VideoDurationSeconds = product.VideoDurationSeconds,
+                IsMuted = isMuted
+            };
+            await dbContext.ProductVideos.AddAsync(video, cancellationToken);
+        }
+        else
+        {
+            video.IsMuted = isMuted;
+        }
+
+        product.UpdatedAt = UtcDateTimeHelper.UtcNow;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        ProductsAppService.InvalidateListingCaches(product.OwnerId);
+
+        return new { id = video.Id, path = video.VideoPath, isMuted = video.IsMuted };
     }
 
     private static string NormalizeAssetPath(string? path)
@@ -703,13 +755,16 @@ public class ProductAssetsAppService(
             StringComparison.OrdinalIgnoreCase);
         var alreadyExtra = product.ProductVideos.Any(v =>
             string.Equals(NormalizeAssetPath(v.VideoPath), videoPath, StringComparison.OrdinalIgnoreCase));
-        if (alreadyPrimary || alreadyExtra)
+        if (alreadyExtra)
         {
             return new { path = videoPath };
         }
 
         await EnsureObjectExistsAsync(videoPath, cancellationToken);
-        EnsureVideoSlotAvailable(product);
+        if (!alreadyPrimary)
+        {
+            EnsureVideoSlotAvailable(product);
+        }
 
         return await CompleteVideoRegistrationAsync(
             product,
@@ -728,20 +783,19 @@ public class ProductAssetsAppService(
         bool allowAdminAccess,
         CancellationToken cancellationToken)
     {
+        var entity = new ProductVideo
+        {
+            ProductId = productId,
+            VideoPath = videoPath,
+            VideoDurationSeconds = videoDurationSeconds,
+            IsMuted = true
+        };
+        await dbContext.ProductVideos.AddAsync(entity, cancellationToken);
+
         if (string.IsNullOrWhiteSpace(product.VideoPath))
         {
             product.VideoPath = videoPath;
             product.VideoDurationSeconds = videoDurationSeconds;
-        }
-        else
-        {
-            var entity = new ProductVideo
-            {
-                ProductId = productId,
-                VideoPath = videoPath,
-                VideoDurationSeconds = videoDurationSeconds,
-            };
-            await dbContext.ProductVideos.AddAsync(entity, cancellationToken);
         }
 
         if (!allowAdminAccess)
@@ -826,26 +880,28 @@ public class ProductAssetsAppService(
             var alreadyExtra = product.ProductVideos.Any(v =>
                 string.Equals(NormalizeAssetPath(v.VideoPath), videoPath, StringComparison.OrdinalIgnoreCase));
 
-            if (!alreadyPrimary && !alreadyExtra)
+            if (!alreadyExtra)
             {
                 await EnsureObjectExistsAsync(videoPath, cancellationToken);
-                EnsureVideoSlotAvailable(product);
+                if (!alreadyPrimary)
+                {
+                    EnsureVideoSlotAvailable(product);
+                }
+
+                await dbContext.ProductVideos.AddAsync(
+                    new ProductVideo
+                    {
+                        ProductId = productId,
+                        VideoPath = videoPath,
+                        VideoDurationSeconds = input.VideoDurationSeconds!.Value,
+                        IsMuted = true
+                    },
+                    cancellationToken);
 
                 if (string.IsNullOrWhiteSpace(product.VideoPath))
                 {
                     product.VideoPath = videoPath;
                     product.VideoDurationSeconds = input.VideoDurationSeconds;
-                }
-                else
-                {
-                    await dbContext.ProductVideos.AddAsync(
-                        new ProductVideo
-                        {
-                            ProductId = productId,
-                            VideoPath = videoPath,
-                            VideoDurationSeconds = input.VideoDurationSeconds!.Value,
-                        },
-                        cancellationToken);
                 }
             }
 

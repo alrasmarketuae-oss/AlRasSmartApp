@@ -53,7 +53,7 @@ public partial class ProductsAppService
             .GroupBy(x => x.ProductId)
             .ToDictionary(
                 g => g.Key,
-                g => g.Select(x => x.Path).ToList());
+                g => g.ToList());
 
         var translations = await contentTranslationService.GetProductTranslationsAsync(
             productIds,
@@ -63,9 +63,11 @@ public partial class ProductsAppService
         {
             var priced = BuildSupplierFacingPrice(x.USDPrice, x.ProductTypeId, x.Currency, usdToAedRate);
             var addressText = ResolveAddressText(x.AddressId, addressLookup);
-            var videoPaths = ProductVideoPathsHelper.ResolveAll(
+            var videos = ProductVideoPathsHelper.ResolveVideoItems(
                 x.VideoPath,
+                x.VideoDurationSeconds,
                 extraVideosDict.GetValueOrDefault(x.ProductId));
+            var videoPaths = videos.Select(v => v.Path).ToList();
             translations.TryGetValue(x.ProductId, out var tr);
             var createdLanguage = ResolveCreatedLanguage(x.CreatedLanguage, x.NameEn, tr?.NameAr);
             var nameEn = FirstNonEmpty(tr?.NameEn, x.NameEn) ?? string.Empty;
@@ -206,8 +208,15 @@ public partial class ProductsAppService
             ViewsCount = x.ViewsCount.ToString(),
             VideoPath = videoPaths.FirstOrDefault() ?? string.Empty,
             VideoPaths = videoPaths,
-            VideoDurationSeconds = x.VideoDurationSeconds?.ToString() ?? string.Empty,
-            IsVideoMuted = x.IsVideoMuted,
+            VideoDurationSeconds = videos.FirstOrDefault()?.DurationSeconds?.ToString() ?? string.Empty,
+            Videos = videos.Select(v => new ProductVideoDto
+            {
+                Id = v.Id,
+                Path = v.Path,
+                VideoPath = v.Path,
+                DurationSeconds = v.DurationSeconds,
+                IsMuted = v.IsMuted
+            }).ToList(),
             AddressId = x.AddressId?.ToString(),
             Address = x.AddressId.HasValue ? addressText : null,
             CreatedAt = FormatDateTimeText(x.CreatedAt),

@@ -74,7 +74,6 @@ public static class ProductQueryHelpers
             ViewsCount = x.ViewsCount,
             VideoPath = x.VideoPath,
             VideoDurationSeconds = x.VideoDurationSeconds,
-            IsVideoMuted = x.IsVideoMuted,
             CreatedAt = x.CreatedAt,
             CategoryName = x.Category != null ? x.Category.NameEn : null,
             CategoryNameAr = x.Category != null ? x.Category.NameAr : null,

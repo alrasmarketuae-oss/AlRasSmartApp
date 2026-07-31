@@ -46,12 +46,12 @@ ThemeData lightTheme(Locale locale) {
       ),
       iconTheme: const IconThemeData(color: Colors.black),
       systemOverlayStyle: const SystemUiOverlayStyle(
-        statusBarColor: Colors.white,
+        statusBarColor: Colors.transparent,
         statusBarBrightness: Brightness.light,
         statusBarIconBrightness: Brightness.dark,
         systemNavigationBarColor: Colors.white,
         systemNavigationBarIconBrightness: Brightness.dark,
-        systemNavigationBarDividerColor: Color.fromARGB(0, 133, 16, 16),
+        systemNavigationBarDividerColor: Colors.transparent,
       ),
     ),
     bottomNavigationBarTheme: BottomNavigationBarThemeData(

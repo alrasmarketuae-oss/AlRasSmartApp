@@ -15,6 +15,7 @@ namespace BusinessLayer.Services;
 
 public partial class ProductsAppService(
     IProductDataAccess productData,
+    IRasAlSouqDbContext dbContext,
     ITieredCache tieredCache,
     ProductCacheVersions productCacheVersions,
     IOpenAiVisionService openAiVisionService,
@@ -140,7 +141,6 @@ public partial class ProductsAppService(
             VideoDurationSeconds = input.ProductVideoFile is not null
                 ? input.VideoDurationSeconds
                 : null,
-            IsVideoMuted = input.IsVideoMuted ?? true,
             ShippingDuration = NormalizeShippingDuration(input.ShippingDuration),
             OfferDuration = NormalizeShippingDuration(input.OfferDuration),
             AddressId = addressId,
@@ -152,6 +152,19 @@ public partial class ProductsAppService(
         ApplyRetailPricingToProduct(product, input, refs, categoryId, productTypeId);
 
         product.ProductCode = await productData.InsertProductAsync(product, cancellationToken);
+        if (!string.IsNullOrWhiteSpace(videoPath))
+        {
+            await dbContext.ProductVideos.AddAsync(
+                new ProductVideo
+                {
+                    ProductId = product.ProductId,
+                    VideoPath = videoPath,
+                    VideoDurationSeconds = product.VideoDurationSeconds,
+                    IsMuted = true
+                },
+                cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
 
         // Attach already-uploaded draft media in one SaveChanges (mobile create+drafts path).
         if ((input.DraftImagePaths is { Count: > 0 })
@@ -456,13 +469,34 @@ public partial class ProductsAppService(
             product.SupplierNotesEn = input.SupplierNotesEn;
         }
         product.Negotiable = input.Negotiable ?? product.Negotiable ?? false;
+        var previousVideoPath = product.VideoPath;
         product.VideoPath = videoPath;
         product.VideoDurationSeconds = input.ProductVideoFile is not null
             ? input.VideoDurationSeconds
             : product.VideoDurationSeconds;
-        if (input.AllowAdminUpdate && input.IsVideoMuted.HasValue)
+        if (input.ProductVideoFile is not null && !string.IsNullOrWhiteSpace(videoPath))
         {
-            product.IsVideoMuted = input.IsVideoMuted.Value;
+            var primaryVideo = await dbContext.ProductVideos.FirstOrDefaultAsync(
+                x => x.ProductId == product.ProductId
+                    && x.VideoPath == previousVideoPath,
+                cancellationToken);
+            if (primaryVideo is null)
+            {
+                await dbContext.ProductVideos.AddAsync(
+                    new ProductVideo
+                    {
+                        ProductId = product.ProductId,
+                        VideoPath = videoPath,
+                        VideoDurationSeconds = input.VideoDurationSeconds,
+                        IsMuted = true
+                    },
+                    cancellationToken);
+            }
+            else
+            {
+                primaryVideo.VideoPath = videoPath;
+                primaryVideo.VideoDurationSeconds = input.VideoDurationSeconds;
+            }
         }
         // Empty/null duration or notes mean "leave unchanged" on owner edits
         // (Flutter update FormData used to send "" and wipe values → false re-review).

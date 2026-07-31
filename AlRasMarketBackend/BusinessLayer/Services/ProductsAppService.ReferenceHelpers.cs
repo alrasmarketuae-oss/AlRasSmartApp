@@ -251,8 +251,14 @@ public partial class ProductsAppService
         Product product,
         ProductReferenceBundle refs,
         string? addressText = null,
-        bool requiresAdminReview = true) =>
-        new
+        bool requiresAdminReview = true)
+    {
+        var videos = ProductVideoPathsHelper.ResolveVideoItems(
+            product.VideoPath,
+            product.VideoDurationSeconds,
+            product.ProductVideos);
+
+        return new
         {
             saved = true,
             productId = product.ProductId,
@@ -276,9 +282,17 @@ public partial class ProductsAppService
             destinationCountry = refs.DestinationCountry?.CountryNameEn,
             loadingPort = refs.LoadingPort?.PortNameEn,
             arrivalPort = refs.ArrivalPort?.PortNameEn,
-            product.VideoPath,
-            product.VideoDurationSeconds,
-            isVideoMuted = product.IsVideoMuted,
+            videoPath = videos.FirstOrDefault()?.Path,
+            videoPaths = videos.Select(x => x.Path),
+            videos = videos.Select(x => new
+            {
+                x.Id,
+                path = x.Path,
+                videoPath = x.Path,
+                durationSeconds = x.DurationSeconds,
+                isMuted = x.IsMuted
+            }),
+            videoDurationSeconds = videos.FirstOrDefault()?.DurationSeconds,
             shippingDuration = product.ShippingDuration,
             offerDuration = product.OfferDuration,
             addressId = product.AddressId,
@@ -296,6 +310,7 @@ public partial class ProductsAppService
             bookingPriceType = refs.BookingPriceType?.NameEn,
             bookingPriceTypeId = refs.BookingPriceType?.Id
         };
+    }
 
     private static decimal ApplyCustomerPrice(
         decimal usdPrice,

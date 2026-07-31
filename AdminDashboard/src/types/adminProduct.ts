@@ -61,6 +61,13 @@ export type AdminProductDocument = {
   path: string
 }
 
+export type AdminProductVideo = {
+  id: number
+  path: string
+  isMuted: boolean
+  durationSeconds?: number | null
+}
+
 export type AdminPendingProductEdit = {
   previousName: string | null
   proposedName: string | null
@@ -92,7 +99,7 @@ export type AdminProductDetail = AdminProduct & {
   videoPath: string | null
   videoPaths: string[]
   videoDurationSeconds: number | null
-  isVideoMuted: boolean
+  videos: AdminProductVideo[]
   images: AdminProductImage[]
   documents: AdminProductDocument[]
   pendingEdit?: AdminPendingProductEdit | null
@@ -118,7 +125,6 @@ export type AdminUpdateProductPayload = {
   productTypeName: string
   unitName: string
   supplierNotesEn?: string | null
-  isVideoMuted?: boolean
 }
 
 export type AdminProductsResponse = {

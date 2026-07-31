@@ -1,4 +1,9 @@
-import type { AdminProduct, AdminProductsResponse, AdminProductStats } from '../types/adminProduct'
+import type {
+  AdminProduct,
+  AdminProductVideo,
+  AdminProductsResponse,
+  AdminProductStats,
+} from '../types/adminProduct'
 import type {
   AdminOrder,
   AdminOrderStatusHistory,
@@ -341,6 +346,17 @@ type RawProductDocument = {
   Path?: string
 }
 
+type RawProductVideo = {
+  id?: number
+  Id?: number
+  path?: string
+  Path?: string
+  isMuted?: boolean
+  IsMuted?: boolean
+  durationSeconds?: number | null
+  DurationSeconds?: number | null
+}
+
 type RawProductDetail = RawProduct & {
   CategoryId?: number | null
   categoryId?: number | null
@@ -366,6 +382,8 @@ type RawProductDetail = RawProduct & {
   videoDurationSeconds?: number | null
   IsVideoMuted?: boolean
   isVideoMuted?: boolean
+  Videos?: RawProductVideo[] | null
+  videos?: RawProductVideo[] | null
   Images?: RawProductImage[]
   images?: RawProductImage[]
   Documents?: RawProductDocument[]
@@ -423,10 +441,39 @@ function normalizeProductImage(raw: RawProductImage) {
   }
 }
 
+function normalizeProductVideo(raw: RawProductVideo): AdminProductVideo | null {
+  const path = String(raw.path ?? raw.Path ?? '').trim()
+  if (!path) return null
+  return {
+    id: Number(raw.id ?? raw.Id ?? 0),
+    path,
+    isMuted: raw.isMuted ?? raw.IsMuted ?? true,
+    durationSeconds: raw.durationSeconds ?? raw.DurationSeconds ?? null,
+  }
+}
+
 export function normalizeProductDetail(raw: RawProductDetail) {
   const base = normalizeProduct(raw)
   const images = (raw.images ?? raw.Images ?? []).map(normalizeProductImage)
   const documents = (raw.documents ?? raw.Documents ?? []).map(normalizeProductDocument)
+  const videos = (raw.videos ?? raw.Videos ?? [])
+    .map(normalizeProductVideo)
+    .filter((video): video is AdminProductVideo => video != null)
+  const legacyVideoPaths = (raw.videoPaths ?? raw.VideoPaths ?? [])
+    .map((path) => (typeof path === 'string' ? path.trim() : ''))
+    .filter(Boolean)
+  const primaryVideoPath = String(raw.videoPath ?? raw.VideoPath ?? '').trim()
+  const videoPaths = videos.length > 0
+    ? videos.map((video) => video.path)
+    : primaryVideoPath && !legacyVideoPaths.some(
+          (path) => path.toLowerCase() === primaryVideoPath.toLowerCase(),
+        )
+      ? [primaryVideoPath, ...legacyVideoPaths]
+      : legacyVideoPaths.length > 0
+        ? legacyVideoPaths
+        : primaryVideoPath
+          ? [primaryVideoPath]
+          : []
 
   return {
     ...base,
@@ -438,20 +485,11 @@ export function normalizeProductDetail(raw: RawProductDetail) {
     ownerPhone: raw.ownerPhone ?? raw.OwnerPhone ?? null,
     ownerCity: raw.ownerCity ?? raw.OwnerCity ?? null,
     supplierNotesEn: raw.supplierNotesEn ?? raw.SupplierNotesEn ?? null,
-    videoPath: raw.videoPath ?? raw.VideoPath ?? null,
-    videoPaths: (() => {
-      const paths = (raw.videoPaths ?? raw.VideoPaths ?? [])
-        .map((p) => (typeof p === 'string' ? p.trim() : ''))
-        .filter(Boolean)
-      const primary = (raw.videoPath ?? raw.VideoPath ?? '')?.toString().trim()
-      if (primary && !paths.some((p) => p.toLowerCase() === primary.toLowerCase())) {
-        return [primary, ...paths]
-      }
-      return paths.length > 0 ? paths : primary ? [primary] : []
-    })(),
+    videoPath: raw.videoPath ?? raw.VideoPath ?? videos[0]?.path ?? null,
+    videoPaths,
     videoDurationSeconds:
       raw.videoDurationSeconds ?? raw.VideoDurationSeconds ?? null,
-    isVideoMuted: raw.isVideoMuted ?? raw.IsVideoMuted ?? true,
+    videos,
     images: images.length > 0
       ? images
       : base.imagePaths.map((path, index) => ({ id: index, path })),

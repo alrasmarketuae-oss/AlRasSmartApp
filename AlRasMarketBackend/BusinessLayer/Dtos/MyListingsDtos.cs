@@ -87,7 +87,7 @@ public sealed class MyProductListingDto
     public string VideoPath { get; set; } = string.Empty;
     public List<string> VideoPaths { get; set; } = [];
     public string VideoDurationSeconds { get; set; } = string.Empty;
-    public bool IsVideoMuted { get; set; } = true;
+    public IReadOnlyList<ProductVideoDto> Videos { get; set; } = [];
     public string? AddressId { get; set; }
     public string? Address { get; set; }
     public string CreatedAt { get; set; } = string.Empty;
@@ -113,6 +113,15 @@ public sealed class MyProductListingDto
     public string? BookingPriceTypeName { get; set; }
     public IReadOnlyList<string> Images { get; set; } = Array.Empty<string>();
     public IReadOnlyList<string> Documents { get; set; } = Array.Empty<string>();
+}
+
+public sealed class ProductVideoDto
+{
+    public long Id { get; set; }
+    public string Path { get; set; } = string.Empty;
+    public string VideoPath { get; set; } = string.Empty;
+    public byte? DurationSeconds { get; set; }
+    public bool IsMuted { get; set; }
 }
 
 public sealed class MyShippingPostListingDto

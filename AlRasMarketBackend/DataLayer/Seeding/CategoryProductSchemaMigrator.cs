@@ -167,16 +167,5 @@ public static class CategoryProductSchemaMigrator
                 cancellationToken).ConfigureAwait(false);
         }
 
-        if (!await SqlSchemaHelper.ColumnExistsAsync(connection, "Products", "IsVideoMuted", cancellationToken)
-                .ConfigureAwait(false))
-        {
-            await SqlSchemaHelper.ExecuteBatchAsync(connection,
-                """
-                ALTER TABLE dbo.Products
-                ADD IsVideoMuted BIT NOT NULL
-                    CONSTRAINT DF_Products_IsVideoMuted DEFAULT 1;
-                """,
-                cancellationToken).ConfigureAwait(false);
-        }
     }
 }

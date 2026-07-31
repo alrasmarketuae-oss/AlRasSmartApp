@@ -4,6 +4,28 @@ import 'package:alrasmarket/core/utils/utc_date_time.dart';
 
 import 'my_listing_shipping_model.dart';
 
+class ProductVideoMetadata {
+  const ProductVideoMetadata({
+    this.id = '',
+    required this.path,
+    this.durationSeconds,
+    this.isMuted = true,
+  });
+
+  final String id;
+  final String path;
+  final int? durationSeconds;
+  final bool isMuted;
+
+  Map<String, dynamic> toJson() => {
+        if (id.isNotEmpty) 'id': id,
+        'path': path,
+        'videoPath': path,
+        if (durationSeconds != null) 'durationSeconds': durationSeconds,
+        'isMuted': isMuted,
+      };
+}
+
 class MyListingProductModel {
   const MyListingProductModel({
     required this.productId,
@@ -48,8 +70,8 @@ class MyListingProductModel {
     this.shippingDuration = '',
     this.videoPath = '',
     this.videoPaths = const [],
+    this.videos = const [],
     this.videoDurationSeconds = '',
-    this.isVideoMuted = true,
     this.createdAt = '',
     this.updatedAt = '',
     this.ownerId = '',
@@ -208,8 +230,8 @@ class MyListingProductModel {
   final String shippingDuration;
   final String videoPath;
   final List<String> videoPaths;
+  final List<ProductVideoMetadata> videos;
   final String videoDurationSeconds;
-  final bool isVideoMuted;
   final String createdAt;
   final String updatedAt;
   final String ownerId;
@@ -344,6 +366,12 @@ class MyListingProductModel {
 
   List<String> get allVideoPaths {
     final paths = <String>[];
+    for (final video in videos) {
+      final path = video.path.trim();
+      if (path.isNotEmpty && !paths.contains(path)) {
+        paths.add(path);
+      }
+    }
     for (final path in videoPaths) {
       final trimmed = path.trim();
       if (trimmed.isNotEmpty && !paths.contains(trimmed)) {
@@ -355,6 +383,24 @@ class MyListingProductModel {
       paths.insert(0, primary);
     }
     return paths;
+  }
+
+  List<ProductVideoMetadata> get allVideos {
+    final videosByPath = <String, ProductVideoMetadata>{};
+    for (final video in videos) {
+      final path = video.path.trim();
+      if (path.isNotEmpty) videosByPath.putIfAbsent(path, () => video);
+    }
+    for (final path in allVideoPaths) {
+      videosByPath.putIfAbsent(
+        path,
+        () => ProductVideoMetadata(
+          path: path,
+          durationSeconds: int.tryParse(videoDurationSeconds),
+        ),
+      );
+    }
+    return videosByPath.values.toList(growable: false);
   }
 
   /// Duration / required-date value for edit preload (top-level or nested shipping).
@@ -416,6 +462,7 @@ class MyListingProductModel {
 
   factory MyListingProductModel.fromJson(Map<String, dynamic> json) {
     final images = _parseStringList(json['images']);
+    final videos = _parseVideos(json['videos'] ?? json['Videos']);
     final shippingJson = _asStringKeyMap(json['shipping'] ?? json['Shipping']);
     final createdLang = LocalizedProductText.createdLanguageOf(json);
 
@@ -794,14 +841,8 @@ class MyListingProductModel {
       }(),
       videoPath: json['videoPath']?.toString() ?? '',
       videoPaths: _parseStringList(json['videoPaths'] ?? json['VideoPaths']),
+      videos: videos,
       videoDurationSeconds: json['videoDurationSeconds']?.toString() ?? '',
-      isVideoMuted: (json['isVideoMuted'] ?? json['IsVideoMuted']) == null
-          ? true
-          : ((json['isVideoMuted'] ?? json['IsVideoMuted']) == true ||
-              (json['isVideoMuted'] ?? json['IsVideoMuted'])
-                      ?.toString()
-                      .toLowerCase() ==
-                  'true'),
       createdAt: json['createdAt']?.toString() ?? '',
       updatedAt: json['updatedAt']?.toString() ?? '',
       ownerId: json['ownerId']?.toString() ?? '',
@@ -911,6 +952,45 @@ class MyListingProductModel {
     if (value is bool) return value;
     final asString = value?.toString().trim().toLowerCase();
     return asString == 'true' || asString == '1' || asString == 'yes';
+  }
+
+  static List<ProductVideoMetadata> _parseVideos(dynamic value) {
+    if (value is! List) return const [];
+    final videos = <ProductVideoMetadata>[];
+    for (final item in value) {
+      if (item is! Map) continue;
+      final path = (item['path'] ??
+                  item['Path'] ??
+                  item['videoPath'] ??
+                  item['VideoPath'])
+              ?.toString()
+              .trim() ??
+          '';
+      if (path.isEmpty) continue;
+      final duration = int.tryParse(
+        (item['durationSeconds'] ?? item['DurationSeconds'])?.toString() ?? '',
+      );
+      videos.add(
+        ProductVideoMetadata(
+          id: (item['id'] ?? item['Id'])?.toString().trim() ?? '',
+          path: path,
+          durationSeconds: duration,
+          isMuted: _parseBoolOrDefault(
+            item['isMuted'] ?? item['IsMuted'],
+            defaultValue: true,
+          ),
+        ),
+      );
+    }
+    return videos;
+  }
+
+  static bool _parseBoolOrDefault(
+    dynamic value, {
+    required bool defaultValue,
+  }) {
+    if (value == null) return defaultValue;
+    return _parseBoolFlag(value);
   }
 
   static String? _extractProductIdFromAssetPaths(List<String> paths) {

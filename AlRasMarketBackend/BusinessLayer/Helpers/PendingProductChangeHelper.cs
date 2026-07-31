@@ -34,7 +34,6 @@ public sealed class PendingProductEditSnapshot
     public int? ArrivalPortId { get; set; }
     public string? VideoPath { get; set; }
     public byte? VideoDurationSeconds { get; set; }
-    public bool IsVideoMuted { get; set; }
     public string? ShippingDuration { get; set; }
     public string? OfferDuration { get; set; }
     public Guid? AddressId { get; set; }
@@ -121,7 +120,6 @@ public static class PendingProductChangeHelper
             ArrivalPortId = product.ArrivalPortId,
             VideoPath = product.VideoPath,
             VideoDurationSeconds = product.VideoDurationSeconds,
-            IsVideoMuted = product.IsVideoMuted,
             ShippingDuration = product.ShippingDuration,
             OfferDuration = product.OfferDuration,
             AddressId = product.AddressId,
@@ -177,7 +175,6 @@ public static class PendingProductChangeHelper
         product.ArrivalPortId = snapshot.ArrivalPortId;
         product.VideoPath = snapshot.VideoPath;
         product.VideoDurationSeconds = snapshot.VideoDurationSeconds;
-        product.IsVideoMuted = snapshot.IsVideoMuted;
         product.ShippingDuration = snapshot.ShippingDuration;
         product.OfferDuration = snapshot.OfferDuration;
         product.AddressId = snapshot.AddressId;

@@ -73,7 +73,7 @@ public partial class ProductsAppService
             .GroupBy(x => x.ProductId)
             .ToDictionary(
                 g => g.Key,
-                g => g.Select(x => x.Path).ToList());
+                g => g.ToList());
 
         var translations = await contentTranslationService.GetProductTranslationsAsync(
             productIds,
@@ -182,9 +182,11 @@ public partial class ProductsAppService
             var requestTypeNameEn = ResolveRequestTypeName(x.RequestTypeId, x.RequestTypeName);
             var requestTypeNameAr = CatalogLocalizationHelper.RequestTypeNameAr(x.RequestTypeId, requestTypeNameEn);
 
-            var videoPaths = ProductVideoPathsHelper.ResolveAll(
+            var videos = ProductVideoPathsHelper.ResolveVideoItems(
                 x.VideoPath,
+                x.VideoDurationSeconds,
                 extraVideosDict.GetValueOrDefault(x.ProductId));
+            var videoPaths = videos.Select(v => v.Path).ToList();
 
             translations.TryGetValue(x.ProductId, out var tr);
             var nameEn = FirstNonEmpty(tr?.NameEn, x.NameEn);
@@ -281,10 +283,17 @@ public partial class ProductsAppService
                 x.Negotiable,
                 x.IsFeatured,
                 x.ViewsCount,
+                videos = videos.Select(v => new
+                {
+                    v.Id,
+                    path = v.Path,
+                    videoPath = v.Path,
+                    durationSeconds = v.DurationSeconds,
+                    isMuted = v.IsMuted
+                }),
                 videoPath = videoPaths.FirstOrDefault(),
                 videoPaths,
-                x.VideoDurationSeconds,
-                isVideoMuted = x.IsVideoMuted,
+                videoDurationSeconds = videos.FirstOrDefault()?.DurationSeconds,
                 CreatedAt = UtcDateTimeHelper.FormatApiDateTime(x.CreatedAt),
                 categoryId = x.CategoryId,
                 categoryName = categoryNameEn,
