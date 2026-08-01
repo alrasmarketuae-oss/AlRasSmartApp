@@ -4,6 +4,7 @@ import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
+import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/core/widgets/primary_button.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_states.dart';
@@ -19,6 +20,7 @@ import 'package:alrasmarket/features/company/presentation/widgets/create_ad/crea
 import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_requests_fields_widget.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -602,6 +604,12 @@ class _AddOrderViewState extends State<AddOrderView> {
                                 child: TextFormField(
                                   controller: _quantityController,
                                   keyboardType: TextInputType.number,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.allow(
+                                      RegExp(r'[\d,\s٬]'),
+                                    ),
+                                    ThousandsSeparatorInputFormatter.quantity(),
+                                  ],
                                   validator: (value) {
                                     if (value == null ||
                                         value.trim().isEmpty) {
@@ -609,7 +617,7 @@ class _AddOrderViewState extends State<AddOrderView> {
                                           .of(context)
                                           .thisFieldIsRequired;
                                     }
-                                    if (int.tryParse(value.trim()) ==
+                                    if (ThousandsNumberInput.parseInt(value) ==
                                         null) {
                                       return S
                                           .of(context)

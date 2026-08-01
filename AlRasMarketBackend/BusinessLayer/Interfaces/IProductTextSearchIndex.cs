@@ -29,6 +29,9 @@ public sealed class ProductTextSearchHit
 {
     public Guid ProductId { get; set; }
     public long CreatedAtUnix { get; set; }
+    public string? NameEn { get; set; }
+    public string? NameAr { get; set; }
+    public string? ProductCode { get; set; }
 }
 
 public sealed class ProductTextSearchPage

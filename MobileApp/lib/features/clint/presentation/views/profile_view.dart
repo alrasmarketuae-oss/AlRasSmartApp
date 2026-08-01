@@ -210,12 +210,14 @@ class _ProfileViewState extends State<ProfileView> {
 
   Widget _accountItem(
     String title,
-    String iconPath, {
+    String? iconPath, {
+    IconData? icon,
     Color? color,
     VoidCallback? onTap,
     bool isArrow = true,
     int badgeCount = 0,
   }) {
+    assert(icon != null || iconPath != null);
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -241,13 +243,15 @@ class _ProfileViewState extends State<ProfileView> {
                   child: SizedBox(
                     width: 24.w,
                     height: 24.h,
-                    child: SvgPicture.asset(
-                      iconPath,
-                      colorFilter: const ColorFilter.mode(
-                        Colors.white,
-                        BlendMode.srcIn,
-                      ),
-                    ),
+                    child: icon != null
+                        ? Icon(icon, color: Colors.white, size: 22.sp)
+                        : SvgPicture.asset(
+                            iconPath!,
+                            colorFilter: const ColorFilter.mode(
+                              Colors.white,
+                              BlendMode.srcIn,
+                            ),
+                          ),
                   ),
                 ),
                 SizedBox(width: 12.w),
@@ -322,7 +326,7 @@ class _ProfileViewState extends State<ProfileView> {
           if (!context.mounted) return;
           context.read<ClintCubit>().setTab(0);
           context.read<CompanyCubit>().setTab(0);
-          context.go(AppRoutes.krecording);
+          context.go(AppRoutes.kLoginView);
         }
       },
       child: BlocBuilder<ClintCubit, ClintStates>(
@@ -466,6 +470,21 @@ class _ProfileViewState extends State<ProfileView> {
                                 ),
                               ),
                               SizedBox(height: 16.h),
+                              _accountItem(
+                                S.of(context).aiAssistantTitle,
+                                null,
+                                icon: Icons.auto_awesome_rounded,
+                                onTap: () {
+                                  if (AppRoutes.shouldSkipPush(
+                                    context,
+                                    AppRoutes.kAiAssistantView,
+                                  )) {
+                                    return;
+                                  }
+                                  context.push(AppRoutes.kAiAssistantView);
+                                },
+                              ),
+                              SizedBox(height: 13.h),
                               _accountItem(
                                 S.of(context).liveChat,
                                 AppAssets.profileMessageIcon,
@@ -640,7 +659,7 @@ class _ProfileViewState extends State<ProfileView> {
                                       if (!context.mounted) return;
                                       context.read<ClintCubit>().setTab(0);
                                       context.read<CompanyCubit>().setTab(0);
-                                      context.go(AppRoutes.krecording);
+                                      context.go(AppRoutes.kLoginView);
                                     },
                                     isArrow: false,
                                   ),

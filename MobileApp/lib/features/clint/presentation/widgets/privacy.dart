@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class TermsAndConditionsWidget extends StatelessWidget {
-  const TermsAndConditionsWidget({Key? key}) : super(key: key);
+  const TermsAndConditionsWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -81,6 +81,17 @@ class TermsAndConditionsWidget extends StatelessWidget {
         _buildBulletPoint(local.mechanismDeliveryConfirm, isNested: true),
         _buildBulletPoint(local.mechanismCodPolicy, isNested: true),
         _buildBulletPoint(local.mechanismFinancialIntermediary, isNested: true),
+        SizedBox(height: 20.h),
+
+        _buildSectionTitle(local.returnPolicySectionTitle),
+        _buildBulletPoint(local.returnPolicyWindow),
+        _buildBulletPoint(local.returnPolicyAccepted),
+        _buildBulletPoint(local.returnPolicyRejected),
+        _buildBulletPoint(local.returnPolicyRefund),
+        _buildBulletPoint(local.returnPolicyPayout),
+        _buildBulletPoint(local.paymentRetailOnline),
+        _buildBulletPoint(local.paymentCodAll),
+        _buildBulletPoint(local.supplierCollectionPolicy),
         SizedBox(height: 20.h),
 
         _buildSectionTitle(local.sixthRestrictions),

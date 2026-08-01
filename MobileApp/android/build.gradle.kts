@@ -59,7 +59,18 @@ subprojects {
             force("androidx.lifecycle:lifecycle-common:2.7.0")
             force("androidx.lifecycle:lifecycle-livedata-core:2.7.0")
             force("androidx.appcompat:appcompat:1.6.1")
+            // 1.7+ annotation jars are empty stubs; use classic jar with real classes.
+            force("androidx.annotation:annotation:1.3.0")
+            force("androidx.core:core:1.13.1")
+            force("androidx.core:core-ktx:1.13.1")
         }
+    }
+
+    // Many Flutter plugins import AndroidX types without declaring dependencies.
+    pluginManager.withPlugin("com.android.library") {
+        dependencies.add("compileOnly", "androidx.annotation:annotation:1.3.0")
+        dependencies.add("compileOnly", "androidx.lifecycle:lifecycle-common:2.7.0")
+        dependencies.add("compileOnly", "androidx.core:core:1.13.1")
     }
 }
 

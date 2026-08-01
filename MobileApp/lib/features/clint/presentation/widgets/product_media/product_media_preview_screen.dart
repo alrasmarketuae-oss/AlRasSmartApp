@@ -217,56 +217,61 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              PageView.builder(
-                controller: _pageController,
-                itemCount: widget.items.length,
-                onPageChanged: _onPageChanged,
-                itemBuilder: (context, index) {
-                  final item = widget.items[index];
-                  if (item.isVideo) {
-                    return _VideoPreviewBody(
-                      key: ValueKey(item.url),
-                      controller:
-                          index == _currentIndex ? _videoController : null,
-                      isInitializing:
-                          index == _currentIndex && _isVideoInitializing,
-                      failed: index == _currentIndex && _videoFailed,
-                      onRetry: index == _currentIndex
-                          ? () => _initVideoForIndex(index)
-                          : null,
-                      onTogglePlayPause: _togglePlayPause,
-                    );
-                  }
+              Directionality(
+                // Product order and navigation controls must stay physical:
+                // left = previous, right = next, even when the app is Arabic.
+                textDirection: TextDirection.ltr,
+                child: PageView.builder(
+                  controller: _pageController,
+                  itemCount: widget.items.length,
+                  onPageChanged: _onPageChanged,
+                  itemBuilder: (context, index) {
+                    final item = widget.items[index];
+                    if (item.isVideo) {
+                      return _VideoPreviewBody(
+                        key: ValueKey(item.url),
+                        controller:
+                            index == _currentIndex ? _videoController : null,
+                        isInitializing:
+                            index == _currentIndex && _isVideoInitializing,
+                        failed: index == _currentIndex && _videoFailed,
+                        onRetry: index == _currentIndex
+                            ? () => _initVideoForIndex(index)
+                            : null,
+                        onTogglePlayPause: _togglePlayPause,
+                      );
+                    }
 
-                  return InteractiveViewer(
-                    minScale: 0.8,
-                    maxScale: 4,
-                    child: Center(
-                      child: _isLocalPath(item.url)
-                          ? Image.file(
-                              File(item.url),
-                              fit: BoxFit.contain,
-                              errorBuilder: (_, __, ___) =>
-                                  const SizedBox.shrink(),
-                            )
-                          : CachedAppImage(
-                              imageUrl: item.url,
-                              fit: BoxFit.contain,
-                              placeholder: const Center(
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
+                    return InteractiveViewer(
+                      minScale: 0.8,
+                      maxScale: 4,
+                      child: Center(
+                        child: _isLocalPath(item.url)
+                            ? Image.file(
+                                File(item.url),
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) =>
+                                    const SizedBox.shrink(),
+                              )
+                            : CachedAppImage(
+                                imageUrl: item.url,
+                                fit: BoxFit.contain,
+                                placeholder: const Center(
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                // Never flash a broken-image icon over ads media.
+                                errorWidget: const Center(
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white54,
+                                  ),
                                 ),
                               ),
-                              // Never flash a broken-image icon over ads media.
-                              errorWidget: const Center(
-                                child: CircularProgressIndicator(
-                                  color: Colors.white54,
-                                ),
-                              ),
-                            ),
-                    ),
-                  );
-                },
+                      ),
+                    );
+                  },
+                ),
               ),
               SafeArea(
                 child: Stack(
@@ -376,21 +381,23 @@ class _NavMediaButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.black.withValues(alpha: enabled ? 0.55 : 0.25),
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: enabled ? onPressed : null,
-        child: SizedBox(
-          width: 48.w,
-          height: 48.w,
-          child: Icon(
-            icon,
-            color: Colors.white.withValues(alpha: enabled ? 1 : 0.35),
-            size: 32.sp,
+    return IconButton(
+      onPressed: enabled ? onPressed : null,
+      padding: EdgeInsets.zero,
+      constraints: BoxConstraints.tightFor(width: 48.w, height: 48.w),
+      icon: Icon(
+        icon,
+        // Do not mirror chevrons with the Arabic Directionality.
+        textDirection: TextDirection.ltr,
+        color: Colors.white.withValues(alpha: enabled ? 1 : 0.35),
+        size: 36.sp,
+        shadows: const [
+          Shadow(
+            color: Color.fromRGBO(0, 0, 0, 0.7),
+            blurRadius: 6,
+            offset: Offset(0, 1),
           ),
-        ),
+        ],
       ),
     );
   }

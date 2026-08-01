@@ -194,6 +194,35 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "afterDiscount": MessageLookupByLibrary.simpleMessage("بعد الخصم"),
     "agreeToTermsPrefix": MessageLookupByLibrary.simpleMessage("أوافق على "),
+    "aiAssistantBalanceHint": MessageLookupByLibrary.simpleMessage(
+      "رصيد المورد يزيد فوراً عند بيع Retail بفيزا. الدفع عند الاستلام يزيد الرصيد بعد التحصيل/الاستلام. السحب عبر IBAN خلال 7 أيام عمل بعد موافقة الدعم.",
+    ),
+    "aiAssistantFabLabel": MessageLookupByLibrary.simpleMessage("AI"),
+    "aiAssistantHint": MessageLookupByLibrary.simpleMessage(
+      "اسأل عن الإعلانات، الطلبات، الاسترجاع، البحث بالصور…",
+    ),
+    "aiAssistantImageSearchHint": MessageLookupByLibrary.simpleMessage(
+      "البحث بالصور: ارفع صورة منتج من شريط البحث ليجد النظام منتجات مشابهة في الكتالوج. التفاصيل في صفحة «تدريب نموذج البحث بالصور» من المساعدة والدعم.",
+    ),
+    "aiAssistantOutOfScope": MessageLookupByLibrary.simpleMessage(
+      "أقدر أساعدك في أمور سوق الراس فقط (حسابات، إعلانات، طلبات، دفع، استرجاع). جرّب سؤالاً عن المنصة.",
+    ),
+    "aiAssistantReturnPolicyHint": MessageLookupByLibrary.simpleMessage(
+      "للاسترجاع بسبب تلف أو انتهاء صلاحية أو اختلاف جوهري: أبلغ خلال 24 ساعة عمل من الاستلام مع صور. إن وافق الدعم يُعاد المبلغ خلال يوم عمل واحد، ويُخصم من رصيد المورد إن كان قد أُضيف.",
+    ),
+    "aiAssistantSubtitle": MessageLookupByLibrary.simpleMessage(
+      "مساعد معرفة المنصة — منفصل عن المحادثة المباشرة مع الدعم الفني.",
+    ),
+    "aiAssistantThinking": MessageLookupByLibrary.simpleMessage("يفكر…"),
+    "aiAssistantTitle": MessageLookupByLibrary.simpleMessage(
+      "مساعد الذكاء الاصطناعي",
+    ),
+    "aiAssistantUnsupportedLanguage": MessageLookupByLibrary.simpleMessage(
+      "ندعم العربية والإنجليزية حالياً. ترجمنا سؤالك للفهم إن أمكن، وسنرد بإحدى اللغتين المدعومتين.",
+    ),
+    "aiAssistantWelcome": MessageLookupByLibrary.simpleMessage(
+      "أهلاً بك. أنا مساعد سوق الراس. أقدر أساعدك في استخدام المنصة حسب نوع حسابك. المحادثة المباشرة مع موظف الدعم متاحة من الملف الشخصي.",
+    ),
     "aiCorrectedSearch": m3,
     "aiIdentifiedProduct": m4,
     "aiIdentifiedProducts": MessageLookupByLibrary.simpleMessage(
@@ -740,7 +769,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "يتم تحصيل المبلغ من العميل.",
     ),
     "mechanismCodPolicy": MessageLookupByLibrary.simpleMessage(
-      "تعتمد سياسة الدفع على الدفع بعد التسليم، ولا يتم تحويل أي مبالغ للمورد قبل ذلك.",
+      "الدفع الإلكتروني أونلاين متاح لطلبات التجزئة (Retail) فقط. الدفع عند الاستلام ينطبق على بقية التعاملات حسب آلية المنصة. لا تُحوَّل مستحقات المورد قبل التحقق وفق السياسة المعتمدة.",
     ),
     "mechanismCompanyCommitment": MessageLookupByLibrary.simpleMessage(
       "تلتزم الشركة بدفع مستحقات المورد فقط بعد: استلام العميل للبضاعة.",
@@ -763,6 +792,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "milk": MessageLookupByLibrary.simpleMessage("حليب"),
     "minimumOrder": MessageLookupByLibrary.simpleMessage("الطلب الأدنى"),
     "minimumOrderQuantityIs": m18,
+    "modelTrainingTitle": MessageLookupByLibrary.simpleMessage(
+      "تدريب نموذج البحث بالصور",
+    ),
     "mustAcceptTermsAndPrivacy": MessageLookupByLibrary.simpleMessage(
       "يرجى الموافقة على سياسة الشروط والخصوصية.",
     ),
@@ -925,12 +957,18 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "payWithVisa": MessageLookupByLibrary.simpleMessage("فيزا / بطاقة"),
     "payWithVisaButton": MessageLookupByLibrary.simpleMessage("الدفع بفيزا"),
+    "paymentCodAll": MessageLookupByLibrary.simpleMessage(
+      "الدفع عند الاستلام ينطبق على بقية أنواع التعاملات حسب آلية المنصة وفريق رأس السوق.",
+    ),
     "paymentMethods": MessageLookupByLibrary.simpleMessage("طرق الدفع"),
     "paymentOnDelivery": MessageLookupByLibrary.simpleMessage(
       "الدفع عند الاستلام",
     ),
     "paymentOnDeliveryDescription": MessageLookupByLibrary.simpleMessage(
       "يتم تحصيل المبلغ تلقائياً عند استلام الطلب. لا يلزم الدفع الإلكتروني.",
+    ),
+    "paymentRetailOnline": MessageLookupByLibrary.simpleMessage(
+      "الدفع الإلكتروني (أونلاين) متاح لطلبات التجزئة Retail فقط.",
     ),
     "pdfJpgPngMax10Mb": MessageLookupByLibrary.simpleMessage(
       "PDF, JPG, PNG الحد الأقصى 10 ميجابايت",
@@ -1172,6 +1210,24 @@ class MessageLookup extends MessageLookupByLibrary {
     "returnOrderConfirmTitle": MessageLookupByLibrary.simpleMessage(
       "إرجاع هذا الطلب؟",
     ),
+    "returnPolicyAccepted": MessageLookupByLibrary.simpleMessage(
+      "حالات مقبولة غالباً: بضاعة تالفة/بايظة، منتهية الصلاحية بخلاف الوصف، منتج مختلف جوهرياً، أو نقص كمية واضح.",
+    ),
+    "returnPolicyPayout": MessageLookupByLibrary.simpleMessage(
+      "تحويل أرباح/مستحقات المورد المعتمدة يتم خلال 7 أيام عمل وفق آلية المنصة.",
+    ),
+    "returnPolicyRefund": MessageLookupByLibrary.simpleMessage(
+      "إذا وافق الدعم الفني على الاسترجاع، يتم رد الأموال خلال يوم عمل واحد من الموافقة، ويُراجع رصيد المورد بالخصم إن كان قد أُضيف من نفس العملية.",
+    ),
+    "returnPolicyRejected": MessageLookupByLibrary.simpleMessage(
+      "حالات غير مقبولة عادةً: تغيير الرأي بعد الاستلام دون عيب، سوء تخزين بعد التسليم، أو استهلاك أغلب الكمية ثم طلب إرجاع دون عيب مثبت.",
+    ),
+    "returnPolicySectionTitle": MessageLookupByLibrary.simpleMessage(
+      "سياسة الاسترجاع والاسترداد",
+    ),
+    "returnPolicyWindow": MessageLookupByLibrary.simpleMessage(
+      "يجب الإبلاغ عن طلب الاسترجاع خلال 24 ساعة عمل من تأكيد الاستلام، مع صور/فيديو توضح السبب.",
+    ),
     "returnsFilter": MessageLookupByLibrary.simpleMessage("المرتجعات"),
     "rice": MessageLookupByLibrary.simpleMessage("أرز"),
     "saturdayThursday": MessageLookupByLibrary.simpleMessage("السبت - الخميس:"),
@@ -1321,6 +1377,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "sugar": MessageLookupByLibrary.simpleMessage("سكر"),
     "suggestedNames": MessageLookupByLibrary.simpleMessage("أسماء مقترحة"),
     "supplierAccount": MessageLookupByLibrary.simpleMessage("حساب مورد"),
+    "supplierCollectionPolicy": MessageLookupByLibrary.simpleMessage(
+      "تسليم المورد البضاعة إلى تطبيق أو فريق سوق الراس لا يعني دفع قيمتها فوراً؛ لا تُصرف مستحقاته إلا بعد تحصيل قيمة الطلب فعلياً من المشتري أو العميل. بعد التحصيل تصبح قابلة للتسوية، وتحويل الأرباح المعتمدة يتم خلال 7 أيام عمل.",
+    ),
     "supplierCommitmentHeader": MessageLookupByLibrary.simpleMessage(
       "يلتزم المورد بعدم عرض أو بيع:",
     ),

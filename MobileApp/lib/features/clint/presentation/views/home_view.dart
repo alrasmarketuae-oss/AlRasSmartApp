@@ -75,10 +75,7 @@ class _HomeViewState extends State<HomeView> {
     }
     // Guest browses category catalog (same feed path as company home).
     unawaited(cubit.preloadHomeFromDisk(isPerson: isPersonalCustomer));
-    cubit.refreshHomeFeed(
-      isPerson: isPersonalCustomer,
-      resetCached: isGuest,
-    );
+    cubit.refreshHomeFeed(isPerson: isPersonalCustomer, resetCached: isGuest);
   }
 
   @override
@@ -99,8 +96,8 @@ class _HomeViewState extends State<HomeView> {
           current is FetchHomeProductsErrorState,
       builder: (context, state) {
         final cubit = ClintCubit.get(context);
-        final isPersonalCustomer = AuthService.instance.isPersonalCustomerAccount;
-        final isGuest = AuthService.instance.isGuest;
+        final isPersonalCustomer =
+            AuthService.instance.isPersonalCustomerAccount;
         final displayProducts = cubit.homeProducts;
 
         // All service sections under banners (for every role).
@@ -175,20 +172,25 @@ class _HomeViewState extends State<HomeView> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              if (!isPersonalCustomer && !isGuest) ...[
+                              // Guests browse like company home (services + categories),
+                              // but protected actions still redirect to login.
+                              if (!isPersonalCustomer) ...[
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    for (var i = 0;
-                                        i < servicesIcons.length;
-                                        i++) ...[
+                                    for (
+                                      var i = 0;
+                                      i < servicesIcons.length;
+                                      i++
+                                    ) ...[
                                       if (i > 0) SizedBox(width: 8.w),
                                       Expanded(
                                         child: _ServiceIconItem(
                                           iconPath: servicesIcons[i].iconPath,
                                           name: servicesIcons[i].name,
-                                          onTap: () => context
-                                              .push(servicesIcons[i].screen),
+                                          onTap: () => context.push(
+                                            servicesIcons[i].screen,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -200,9 +202,8 @@ class _HomeViewState extends State<HomeView> {
                               if (!isPersonalCustomer) ...[
                                 _HomeSectionHeader(
                                   title: S.of(context).categories,
-                                  onViewAll: () => context.push(
-                                    AppRoutes.kCategoriesView,
-                                  ),
+                                  onViewAll: () =>
+                                      context.push(AppRoutes.kCategoriesView),
                                 ),
                                 SizedBox(height: 12.h),
                                 const _CategoriesStrip(),
@@ -236,8 +237,8 @@ class _HomeViewState extends State<HomeView> {
                                     onViewAll: isPersonalCustomer
                                         ? null
                                         : () => context.push(
-                                              AppRoutes.kOffersServiceView,
-                                            ),
+                                            AppRoutes.kOffersServiceView,
+                                          ),
                                   ),
                                   SizedBox(height: 12.h),
                                   if (isLoading && products.isEmpty)
@@ -245,8 +246,7 @@ class _HomeViewState extends State<HomeView> {
                                   else if (error != null && products.isEmpty)
                                     _HomeProductsSectionError(
                                       message: error,
-                                      onRetry: () => homeCubit
-                                          .refreshHomeFeed(
+                                      onRetry: () => homeCubit.refreshHomeFeed(
                                         isPerson: isPersonalCustomer,
                                         resetCached: true,
                                       ),
@@ -269,11 +269,12 @@ class _HomeViewState extends State<HomeView> {
                                       shrinkWrap: true,
                                       physics:
                                           const NeverScrollableScrollPhysics(),
-                                      gridDelegate:
-                                          ProductGridLayout.delegate(
+                                      gridDelegate: ProductGridLayout.delegate(
                                         context,
-                                        horizontalPadding: ProductGridLayout
-                                            .homeHorizontalPadding(context),
+                                        horizontalPadding:
+                                            ProductGridLayout.homeHorizontalPadding(
+                                              context,
+                                            ),
                                         crossAxisSpacing: 12.w,
                                         mainAxisSpacing: 12.h,
                                       ),
@@ -285,7 +286,8 @@ class _HomeViewState extends State<HomeView> {
                                               ? S.of(context).premiumSaffron
                                               : product.productName,
                                           product: product,
-                                          preferRetailChannel: isPersonalCustomer,
+                                          preferRetailChannel:
+                                              isPersonalCustomer,
                                         );
                                       },
                                     ),
@@ -463,36 +465,34 @@ class _CategoriesStripShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget cell() => Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFE5E7EB),
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-          child: Column(
-            children: [
-              AspectRatio(
-                aspectRatio: 1,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD1D5DB),
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(12.r),
-                    ),
-                  ),
-                ),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE5E7EB),
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Column(
+        children: [
+          AspectRatio(
+            aspectRatio: 1,
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFD1D5DB),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(12.r)),
               ),
-              SizedBox(height: 28.h),
-            ],
+            ),
           ),
-        );
+          SizedBox(height: 28.h),
+        ],
+      ),
+    );
 
     Widget row() => Row(
-          children: [
-            for (var i = 0; i < 4; i++) ...[
-              if (i > 0) SizedBox(width: 8.w),
-              Expanded(child: cell()),
-            ],
-          ],
-        );
+      children: [
+        for (var i = 0; i < 4; i++) ...[
+          if (i > 0) SizedBox(width: 8.w),
+          Expanded(child: cell()),
+        ],
+      ],
+    );
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -506,10 +506,7 @@ class _CategoriesStripShimmer extends StatelessWidget {
 }
 
 class _CategoriesStripError extends StatelessWidget {
-  const _CategoriesStripError({
-    required this.message,
-    required this.onRetry,
-  });
+  const _CategoriesStripError({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
@@ -533,10 +530,7 @@ class _CategoriesStripError extends StatelessWidget {
 }
 
 class _HomeSectionHeader extends StatelessWidget {
-  const _HomeSectionHeader({
-    required this.title,
-    this.onViewAll,
-  });
+  const _HomeSectionHeader({required this.title, this.onViewAll});
 
   final String title;
   final VoidCallback? onViewAll;
@@ -592,10 +586,7 @@ class _HomeSectionHeader extends StatelessWidget {
 }
 
 class _CategoryCard extends StatelessWidget {
-  const _CategoryCard({
-    required this.category,
-    required this.fallbackLabel,
-  });
+  const _CategoryCard({required this.category, required this.fallbackLabel});
 
   final CategoryModel? category;
   final String fallbackLabel;
@@ -639,9 +630,7 @@ class _CategoryCard extends StatelessWidget {
               child: CategoryImage(
                 imageUrl: category?.imageUrl,
                 fit: BoxFit.cover,
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(12.r),
-                ),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(12.r)),
               ),
             ),
             Padding(

@@ -241,10 +241,7 @@ class _LoginFormBodyState extends State<_LoginFormBody> {
                 TextButton(
                   onPressed: () {
                     try {
-                      context.push(
-                        AppRoutes.kRegisterView,
-                        extra: {'isCompany': false},
-                      );
+                      context.push(AppRoutes.krecording);
                     } catch (_) {}
                   },
                   child: Text(

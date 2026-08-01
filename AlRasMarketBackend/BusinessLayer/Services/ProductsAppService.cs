@@ -39,7 +39,8 @@ public partial class ProductsAppService(
     private const string ProductsByTypeCachePrefix = "products:by-type:v14:";
     private const string ProductsByCategoryCachePrefix = "products:by-category:v10:";
     private const string FeaturedProductsCacheKey = "products:featured:v7";
-    private const string SearchProductsCachePrefix = "products:search:v12:";
+    private const string SearchProductsCachePrefix = "products:search:v13:";
+    private static readonly TimeSpan SearchCardCacheTtl = TimeSpan.FromMinutes(10);
     private const string ProductByCodeCachePrefix = "products:by-code:v2:";
     private const string ProductByIdCachePrefix = "products:by-id:v7:";
 
@@ -50,6 +51,10 @@ public partial class ProductsAppService(
     private int SearchNameIndexCacheVersion => productCacheVersions.Get(ProductCacheVersions.SearchNameIndex);
     private int SearchProductsCacheVersion => productCacheVersions.Get(ProductCacheVersions.Search);
     private int ProductDetailCacheVersion => productCacheVersions.Get(ProductCacheVersions.Detail);
+
+    // Text search uses Meilisearch typo-tolerance (no sync OpenAI). Keep the client wired
+    // for image/vision and optional future background spell analytics.
+    private IOpenAiVisionService OpenAiVision => openAiVisionService;
 
     /// <summary>
     /// Busts every public product read cache (lists, search, detail, name index).

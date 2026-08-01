@@ -2359,10 +2359,10 @@ class S {
     );
   }
 
-  /// `Payment policy is cash on delivery; no funds are transferred to the supplier beforehand.`
+  /// `Online card payment is available for Retail orders only. Cash on delivery applies to other deal types per platform process. Supplier payouts follow the approved verification policy.`
   String get mechanismCodPolicy {
     return Intl.message(
-      'Payment policy is cash on delivery; no funds are transferred to the supplier beforehand.',
+      'Online card payment is available for Retail orders only. Cash on delivery applies to other deal types per platform process. Supplier payouts follow the approved verification policy.',
       name: 'mechanismCodPolicy',
       desc: '',
       args: [],
@@ -6256,6 +6256,211 @@ class S {
     return Intl.message(
       'Failed to load balance statement.',
       name: 'failedToLoadBalance',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `AI Assistant`
+  String get aiAssistantTitle {
+    return Intl.message(
+      'AI Assistant',
+      name: 'aiAssistantTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `AI`
+  String get aiAssistantFabLabel {
+    return Intl.message('AI', name: 'aiAssistantFabLabel', desc: '', args: []);
+  }
+
+  /// `Platform knowledge assistant — separate from live chat with support staff.`
+  String get aiAssistantSubtitle {
+    return Intl.message(
+      'Platform knowledge assistant — separate from live chat with support staff.',
+      name: 'aiAssistantSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Ask about ads, orders, returns, image search…`
+  String get aiAssistantHint {
+    return Intl.message(
+      'Ask about ads, orders, returns, image search…',
+      name: 'aiAssistantHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Welcome. I’m the Al Ras Market assistant. I can help you use the platform based on your account type. Live chat with a support agent is available from Profile.`
+  String get aiAssistantWelcome {
+    return Intl.message(
+      'Welcome. I’m the Al Ras Market assistant. I can help you use the platform based on your account type. Live chat with a support agent is available from Profile.',
+      name: 'aiAssistantWelcome',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Thinking…`
+  String get aiAssistantThinking {
+    return Intl.message(
+      'Thinking…',
+      name: 'aiAssistantThinking',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `We currently support Arabic and English. We may translate your question internally to understand it, then reply in a supported language.`
+  String get aiAssistantUnsupportedLanguage {
+    return Intl.message(
+      'We currently support Arabic and English. We may translate your question internally to understand it, then reply in a supported language.',
+      name: 'aiAssistantUnsupportedLanguage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `I can only help with Al Ras Market topics (accounts, ads, orders, payment, returns). Please ask something about the platform.`
+  String get aiAssistantOutOfScope {
+    return Intl.message(
+      'I can only help with Al Ras Market topics (accounts, ads, orders, payment, returns). Please ask something about the platform.',
+      name: 'aiAssistantOutOfScope',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Image search: upload a product photo from the search bar to find similar catalog matches. See “Image-search model training” under Help & Support for details.`
+  String get aiAssistantImageSearchHint {
+    return Intl.message(
+      'Image search: upload a product photo from the search bar to find similar catalog matches. See “Image-search model training” under Help & Support for details.',
+      name: 'aiAssistantImageSearchHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `For damaged, expired, or materially different goods: report within 24 business hours of receipt with photos. If support approves, refund is issued within 1 business day, and the supplier balance is adjusted if it was credited.`
+  String get aiAssistantReturnPolicyHint {
+    return Intl.message(
+      'For damaged, expired, or materially different goods: report within 24 business hours of receipt with photos. If support approves, refund is issued within 1 business day, and the supplier balance is adjusted if it was credited.',
+      name: 'aiAssistantReturnPolicyHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Supplier balance increases immediately on Retail card payments. Cash-on-delivery credits after collection/receipt. Withdrawals via IBAN are processed within 7 business days after support approval.`
+  String get aiAssistantBalanceHint {
+    return Intl.message(
+      'Supplier balance increases immediately on Retail card payments. Cash-on-delivery credits after collection/receipt. Withdrawals via IBAN are processed within 7 business days after support approval.',
+      name: 'aiAssistantBalanceHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Image-search model training`
+  String get modelTrainingTitle {
+    return Intl.message(
+      'Image-search model training',
+      name: 'modelTrainingTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Returns and refunds policy`
+  String get returnPolicySectionTitle {
+    return Intl.message(
+      'Returns and refunds policy',
+      name: 'returnPolicySectionTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Return requests must be reported within 24 business hours of confirmed receipt, with photos/video showing the issue.`
+  String get returnPolicyWindow {
+    return Intl.message(
+      'Return requests must be reported within 24 business hours of confirmed receipt, with photos/video showing the issue.',
+      name: 'returnPolicyWindow',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Usually accepted: damaged/spoiled goods, expired goods inconsistent with the listing, materially different product, or clear quantity shortage.`
+  String get returnPolicyAccepted {
+    return Intl.message(
+      'Usually accepted: damaged/spoiled goods, expired goods inconsistent with the listing, materially different product, or clear quantity shortage.',
+      name: 'returnPolicyAccepted',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Usually not accepted: change of mind without defect, poor storage after delivery, or consuming most of the quantity then requesting a return without a proven defect.`
+  String get returnPolicyRejected {
+    return Intl.message(
+      'Usually not accepted: change of mind without defect, poor storage after delivery, or consuming most of the quantity then requesting a return without a proven defect.',
+      name: 'returnPolicyRejected',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `If support approves the return, funds are refunded within 1 business day of approval, and the supplier balance is deducted if it was credited from the same order.`
+  String get returnPolicyRefund {
+    return Intl.message(
+      'If support approves the return, funds are refunded within 1 business day of approval, and the supplier balance is deducted if it was credited from the same order.',
+      name: 'returnPolicyRefund',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Approved supplier earnings transfers are completed within 7 business days per platform process.`
+  String get returnPolicyPayout {
+    return Intl.message(
+      'Approved supplier earnings transfers are completed within 7 business days per platform process.',
+      name: 'returnPolicyPayout',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Online card payment is available for Retail orders only.`
+  String get paymentRetailOnline {
+    return Intl.message(
+      'Online card payment is available for Retail orders only.',
+      name: 'paymentRetailOnline',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Cash on delivery applies to other deal types according to platform process and the Al Ras team.`
+  String get paymentCodAll {
+    return Intl.message(
+      'Cash on delivery applies to other deal types according to platform process and the Al Ras team.',
+      name: 'paymentCodAll',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `A supplier handing goods to the Al Ras Market app or team does not trigger immediate payment. Supplier funds are released only after the order value is actually collected from the buyer/customer. After collection, approved earnings are transferred within 7 business days.`
+  String get supplierCollectionPolicy {
+    return Intl.message(
+      'A supplier handing goods to the Al Ras Market app or team does not trigger immediate payment. Supplier funds are released only after the order value is actually collected from the buyer/customer. After collection, approved earnings are transferred within 7 business days.',
+      name: 'supplierCollectionPolicy',
       desc: '',
       args: [],
     );

@@ -199,6 +199,33 @@ class MessageLookup extends MessageLookupByLibrary {
     "agreeToTermsPrefix": MessageLookupByLibrary.simpleMessage(
       "I agree to the ",
     ),
+    "aiAssistantBalanceHint": MessageLookupByLibrary.simpleMessage(
+      "Supplier balance increases immediately on Retail card payments. Cash-on-delivery credits after collection/receipt. Withdrawals via IBAN are processed within 7 business days after support approval.",
+    ),
+    "aiAssistantFabLabel": MessageLookupByLibrary.simpleMessage("AI"),
+    "aiAssistantHint": MessageLookupByLibrary.simpleMessage(
+      "Ask about ads, orders, returns, image search…",
+    ),
+    "aiAssistantImageSearchHint": MessageLookupByLibrary.simpleMessage(
+      "Image search: upload a product photo from the search bar to find similar catalog matches. See “Image-search model training” under Help & Support for details.",
+    ),
+    "aiAssistantOutOfScope": MessageLookupByLibrary.simpleMessage(
+      "I can only help with Al Ras Market topics (accounts, ads, orders, payment, returns). Please ask something about the platform.",
+    ),
+    "aiAssistantReturnPolicyHint": MessageLookupByLibrary.simpleMessage(
+      "For damaged, expired, or materially different goods: report within 24 business hours of receipt with photos. If support approves, refund is issued within 1 business day, and the supplier balance is adjusted if it was credited.",
+    ),
+    "aiAssistantSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Platform knowledge assistant — separate from live chat with support staff.",
+    ),
+    "aiAssistantThinking": MessageLookupByLibrary.simpleMessage("Thinking…"),
+    "aiAssistantTitle": MessageLookupByLibrary.simpleMessage("AI Assistant"),
+    "aiAssistantUnsupportedLanguage": MessageLookupByLibrary.simpleMessage(
+      "We currently support Arabic and English. We may translate your question internally to understand it, then reply in a supported language.",
+    ),
+    "aiAssistantWelcome": MessageLookupByLibrary.simpleMessage(
+      "Welcome. I’m the Al Ras Market assistant. I can help you use the platform based on your account type. Live chat with a support agent is available from Profile.",
+    ),
     "aiCorrectedSearch": m3,
     "aiIdentifiedProduct": m4,
     "aiIdentifiedProducts": MessageLookupByLibrary.simpleMessage(
@@ -739,7 +766,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "The amount is collected from the client.",
     ),
     "mechanismCodPolicy": MessageLookupByLibrary.simpleMessage(
-      "Payment policy is cash on delivery; no funds are transferred to the supplier beforehand.",
+      "Online card payment is available for Retail orders only. Cash on delivery applies to other deal types per platform process. Supplier payouts follow the approved verification policy.",
     ),
     "mechanismCompanyCommitment": MessageLookupByLibrary.simpleMessage(
       "The company pays the supplier only after the client receives the goods.",
@@ -762,6 +789,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "milk": MessageLookupByLibrary.simpleMessage("Milk"),
     "minimumOrder": MessageLookupByLibrary.simpleMessage("Minimum order"),
     "minimumOrderQuantityIs": m18,
+    "modelTrainingTitle": MessageLookupByLibrary.simpleMessage(
+      "Image-search model training",
+    ),
     "mustAcceptTermsAndPrivacy": MessageLookupByLibrary.simpleMessage(
       "Please accept the terms and privacy policy.",
     ),
@@ -926,12 +956,18 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "payWithVisa": MessageLookupByLibrary.simpleMessage("Visa / Card"),
     "payWithVisaButton": MessageLookupByLibrary.simpleMessage("Pay with Visa"),
+    "paymentCodAll": MessageLookupByLibrary.simpleMessage(
+      "Cash on delivery applies to other deal types according to platform process and the Al Ras team.",
+    ),
     "paymentMethods": MessageLookupByLibrary.simpleMessage("Payment Methods"),
     "paymentOnDelivery": MessageLookupByLibrary.simpleMessage(
       "Payment on delivery",
     ),
     "paymentOnDeliveryDescription": MessageLookupByLibrary.simpleMessage(
       "Payment is collected automatically when you receive the order. No online payment is required.",
+    ),
+    "paymentRetailOnline": MessageLookupByLibrary.simpleMessage(
+      "Online card payment is available for Retail orders only.",
     ),
     "pdfJpgPngMax10Mb": MessageLookupByLibrary.simpleMessage(
       "PDF, JPG, PNG max 10MB",
@@ -1183,6 +1219,24 @@ class MessageLookup extends MessageLookupByLibrary {
     "returnOrderConfirmTitle": MessageLookupByLibrary.simpleMessage(
       "Return this order?",
     ),
+    "returnPolicyAccepted": MessageLookupByLibrary.simpleMessage(
+      "Usually accepted: damaged/spoiled goods, expired goods inconsistent with the listing, materially different product, or clear quantity shortage.",
+    ),
+    "returnPolicyPayout": MessageLookupByLibrary.simpleMessage(
+      "Approved supplier earnings transfers are completed within 7 business days per platform process.",
+    ),
+    "returnPolicyRefund": MessageLookupByLibrary.simpleMessage(
+      "If support approves the return, funds are refunded within 1 business day of approval, and the supplier balance is deducted if it was credited from the same order.",
+    ),
+    "returnPolicyRejected": MessageLookupByLibrary.simpleMessage(
+      "Usually not accepted: change of mind without defect, poor storage after delivery, or consuming most of the quantity then requesting a return without a proven defect.",
+    ),
+    "returnPolicySectionTitle": MessageLookupByLibrary.simpleMessage(
+      "Returns and refunds policy",
+    ),
+    "returnPolicyWindow": MessageLookupByLibrary.simpleMessage(
+      "Return requests must be reported within 24 business hours of confirmed receipt, with photos/video showing the issue.",
+    ),
     "returnsFilter": MessageLookupByLibrary.simpleMessage("Returns"),
     "rice": MessageLookupByLibrary.simpleMessage("Rice"),
     "saturdayThursday": MessageLookupByLibrary.simpleMessage(
@@ -1336,6 +1390,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "sugar": MessageLookupByLibrary.simpleMessage("Sugar"),
     "suggestedNames": MessageLookupByLibrary.simpleMessage("Suggested names"),
     "supplierAccount": MessageLookupByLibrary.simpleMessage("Supplier Account"),
+    "supplierCollectionPolicy": MessageLookupByLibrary.simpleMessage(
+      "A supplier handing goods to the Al Ras Market app or team does not trigger immediate payment. Supplier funds are released only after the order value is actually collected from the buyer/customer. After collection, approved earnings are transferred within 7 business days.",
+    ),
     "supplierCommitmentHeader": MessageLookupByLibrary.simpleMessage(
       "The supplier commits not to display or sell:",
     ),

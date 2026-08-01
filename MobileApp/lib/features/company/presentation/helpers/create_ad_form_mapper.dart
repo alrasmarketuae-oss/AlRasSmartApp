@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:alrasmarket/core/helper/cach_helper.dart';
 import 'package:alrasmarket/core/media/video_compressor.dart';
+import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/features/company/data/models/create_ad_product_request.dart';
 import 'package:alrasmarket/features/company/presentation/controller/cubit/create_ad_states.dart';
 import 'package:alrasmarket/features/company/presentation/models/create_ad_currency.dart';
@@ -318,8 +319,8 @@ class CreateAdFormMapper {
         : int.tryParse(offerDurationDaysText);
 
     final quantity = isEditMode
-        ? (qtyText.isEmpty ? null : int.tryParse(qtyText))
-        : (int.tryParse(qtyText) ?? 0);
+        ? (qtyText.isEmpty ? null : ThousandsNumberInput.parseInt(qtyText))
+        : (ThousandsNumberInput.parseInt(qtyText) ?? 0);
     final usdPrice = isEditMode
         ? _resolveUsdPriceNullable(
             state: state,
@@ -368,10 +369,10 @@ class CreateAdFormMapper {
         final retailQtyText = retailQuantityController?.text.trim() ?? '';
         retailPrice = retailPriceText.isEmpty
             ? (isEditMode ? null : 0)
-            : double.tryParse(retailPriceText);
+            : ThousandsNumberInput.parseDouble(retailPriceText);
         retailQuantity = retailQtyText.isEmpty
             ? (isEditMode ? null : 0)
-            : int.tryParse(retailQtyText);
+            : ThousandsNumberInput.parseInt(retailQtyText);
         retailUnitName = mapUnitName(state.selectedRetailUnit);
         retailPackaging = CreateAdPackingOptions.parseInput(
           retailPackingKgController?.text ?? '',
@@ -549,14 +550,14 @@ class CreateAdFormMapper {
       if (afterText.isEmpty) {
         final beforeText = beforeDiscountController.text.trim();
         if (beforeText.isEmpty) return null;
-        return double.tryParse(beforeText);
+        return ThousandsNumberInput.parseDouble(beforeText);
       }
-      return double.tryParse(afterText);
+      return ThousandsNumberInput.parseDouble(afterText);
     }
 
     final priceText = priceController.text.trim();
     if (priceText.isEmpty) return null;
-    return double.tryParse(priceText);
+    return ThousandsNumberInput.parseDouble(priceText);
   }
 
   static double _resolveUsdPrice({
@@ -566,14 +567,16 @@ class CreateAdFormMapper {
     required TextEditingController priceController,
   }) {
     if (state.selectedType == CreateAdType.offers.label) {
-      final after = double.tryParse(afterDiscountController.text.trim());
+      final after =
+          ThousandsNumberInput.parseDouble(afterDiscountController.text.trim());
       if (after != null && after > 0) return after;
-      final before = double.tryParse(beforeDiscountController.text.trim());
+      final before =
+          ThousandsNumberInput.parseDouble(beforeDiscountController.text.trim());
       if (before != null && before > 0) return before;
       return 0;
     }
 
-    return double.tryParse(priceController.text.trim()) ?? 0;
+    return ThousandsNumberInput.parseDouble(priceController.text.trim()) ?? 0;
   }
 
   static ({int percentage, int days})? _resolveDiscount({
@@ -584,8 +587,10 @@ class CreateAdFormMapper {
   }) {
     if (state.selectedType != CreateAdType.offers.label) return null;
 
-    final before = double.tryParse(beforeDiscountController.text.trim());
-    final after = double.tryParse(afterDiscountController.text.trim());
+    final before =
+        ThousandsNumberInput.parseDouble(beforeDiscountController.text.trim());
+    final after =
+        ThousandsNumberInput.parseDouble(afterDiscountController.text.trim());
     if (before == null ||
         after == null ||
         before <= 0 ||

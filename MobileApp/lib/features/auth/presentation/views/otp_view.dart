@@ -94,7 +94,7 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
   Future<void> _onLogout(BuildContext context) async {
     await AuthCubit.get(context).logout();
     if (!context.mounted) return;
-    context.go(AppRoutes.krecording);
+    context.go(AppRoutes.kLoginView);
   }
 
   @override

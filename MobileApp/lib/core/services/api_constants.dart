@@ -60,7 +60,8 @@ class ApiConstants {
     final mediaHost = Uri.tryParse(media)?.host.toLowerCase() ?? '';
     if (host == mediaHost) return trimmed;
 
-    final shouldRewrite = host == legacyMediaHost ||
+    final shouldRewrite =
+        host == legacyMediaHost ||
         (host == apiMediaHost && _isMediaObjectPath(uri.path));
     if (!shouldRewrite) return trimmed;
 
@@ -84,10 +85,12 @@ class ApiConstants {
     if (unwrapped.startsWith('http://') || unwrapped.startsWith('https://')) {
       return rewriteMediaUrl(unwrapped);
     }
-    final normalized =
-        unwrapped.startsWith('/') ? unwrapped.substring(1) : unwrapped;
+    final normalized = unwrapped.startsWith('/')
+        ? unwrapped.substring(1)
+        : unwrapped;
     return '$baseUrlForImages$normalized';
   }
+
   static String geoCountriesEndPoint = '/Geo/countries';
   static String geoCitiesByCountryEndPoint = '/Geo/cities';
   static String geoPortsByCountryEndPoint(String countryName) =>
@@ -107,6 +110,7 @@ class ApiConstants {
       '/InternalDomesticShipping/emirates';
   static String internalDomesticShippingPriceEndPoint =
       '/InternalDomesticShipping/price';
+  static String aiAssistantAskEndPoint = '/AiAssistant/ask';
 
   // Auth Endpoints
   static String loginEndPoint = '/Auth/login';
@@ -131,9 +135,11 @@ class ApiConstants {
   static String userProfileImageEndPoint = '/users/me/image';
   static String userPreferredLanguageEndPoint = '/UserPreferences/language';
   static String supplierBalanceEndPoint = '/supplier/balance';
-  static String supplierBalanceStatementEndPoint = '/supplier/balance/statement';
+  static String supplierBalanceStatementEndPoint =
+      '/supplier/balance/statement';
   static String supplierBalanceIbansEndPoint = '/supplier/balance/ibans';
-  static String supplierBalanceWithdrawalsEndPoint = '/supplier/balance/withdrawals';
+  static String supplierBalanceWithdrawalsEndPoint =
+      '/supplier/balance/withdrawals';
 
   static String categoriesEndPoint = '/Categories';
 
@@ -150,7 +156,10 @@ class ApiConstants {
       '/Products/by-type/${Uri.encodeComponent(productTypeName)}';
   static String productsByCategoryEndPoint(int categoryId) =>
       '/Products/by-category/$categoryId';
-  static String productByIdEndPoint(String productId, {bool asRetail = false}) =>
+  static String productByIdEndPoint(
+    String productId, {
+    bool asRetail = false,
+  }) =>
       asRetail ? '/Products/$productId?asRetail=true' : '/Products/$productId';
   static String productListingStatusEndPoint(String productId) =>
       '/Products/$productId/listing-status';
@@ -215,12 +224,14 @@ class ApiConstants {
   static String publicCommissionsEndPoint = '/settings/commissions';
 
   static String notificationsMineEndPoint = '/Notifications/mine';
-  static String notificationsUnreadCountEndPoint = '/Notifications/unread-count';
+  static String notificationsUnreadCountEndPoint =
+      '/Notifications/unread-count';
   static String notificationsMarkAllReadEndPoint = '/Notifications/read-all';
   static String notificationMarkReadEndPoint(String id) =>
       '/Notifications/$id/read';
 
   static String get chatHubUrl => '$apiOrigin/chathub';
+  static String get aiAssistantHubUrl => '$apiOrigin/aihub';
   static String get orderHubUrl => '$apiOrigin/orderhub';
   static const String supportAdminUserId =
       'BD469D54-8B82-47F3-A1F0-E1C5D91DDEB0';

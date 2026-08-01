@@ -11,6 +11,7 @@ import 'package:alrasmarket/core/error/failure.dart';
 import 'package:alrasmarket/core/media/media_compression_service.dart';
 import 'package:alrasmarket/core/media/video_compressor.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
+import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/serveses/catalog_sync_service.dart';
 import 'package:alrasmarket/features/clint/data/models/category_model.dart';
@@ -297,7 +298,8 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     final displayRetailDescription = product.editDisplayRetailDescription;
 
     productNameController.text = displayName;
-    quantityController.text = product.quantity;
+    quantityController.text =
+        ThousandsNumberInput.formatRaw(product.quantity, allowDecimal: false);
     specificationsController.text = displayDescription;
     _canonicalNameEn = nameEn.isNotEmpty ? nameEn : null;
     _canonicalDescriptionEn =
@@ -335,11 +337,13 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
           CreateAdFormMapper.normalizeOfferDurationForEdit(offerDays);
       priceController.clear();
     } else {
-      priceController.text = product.isRequestProduct
+      final rawPrice = product.isRequestProduct
           ? product.ownerListingPrice
           : (product.displayPrice.trim().isNotEmpty
               ? product.displayPrice
               : product.priceUsd);
+      priceController.text =
+          ThousandsNumberInput.formatRaw(rawPrice, allowDecimal: true);
       beforeDiscountController.clear();
       afterDiscountController.clear();
       shippingDurationController.text = product.resolvedShippingDuration;
@@ -364,9 +368,15 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
             (double.tryParse(product.retailPrice.trim()) ?? 0) > 0);
     if (hasRetail) {
       retailPriceController.text = product.retailPrice.trim().isNotEmpty
-          ? product.retailPrice.trim()
+          ? ThousandsNumberInput.formatRaw(
+              product.retailPrice,
+              allowDecimal: true,
+            )
           : '';
-      retailQuantityController.text = product.retailQuantity.trim();
+      retailQuantityController.text = ThousandsNumberInput.formatRaw(
+        product.retailQuantity,
+        allowDecimal: false,
+      );
     } else {
       retailPriceController.clear();
       retailQuantityController.clear();
@@ -547,10 +557,7 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
   }
 
   String _formatEditPrice(double value) {
-    if (value == value.roundToDouble()) {
-      return value.toInt().toString();
-    }
-    return value.toStringAsFixed(2);
+    return ThousandsNumberInput.format(value, allowDecimal: true);
   }
 
   /// Parses request required-receipt dates stored in ShippingDuration.
@@ -920,8 +927,14 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     }
 
     productNameController.text = productName.trim();
-    quantityController.text = quantity.trim();
-    priceController.text = targetPrice.trim();
+    quantityController.text = ThousandsNumberInput.formatRaw(
+      quantity,
+      allowDecimal: false,
+    );
+    priceController.text = ThousandsNumberInput.formatRaw(
+      targetPrice,
+      allowDecimal: true,
+    );
 
     final specs = specifications.trim();
     final notes = additionalNotes?.trim();

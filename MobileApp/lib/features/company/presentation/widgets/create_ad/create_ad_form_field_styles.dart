@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class CreateAdFormFieldStyles {
@@ -28,6 +29,7 @@ class CreateAdFormFieldStyles {
     required String fontFamily,
     TextInputType? keyboardType,
     String? Function(String?)? validator,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return SizedBox(
       height: rowFieldHeight,
@@ -35,6 +37,7 @@ class CreateAdFormFieldStyles {
       child: TextFormField(
         controller: controller,
         keyboardType: keyboardType,
+        inputFormatters: inputFormatters,
         // Single-line only: expands + maxLines:null draws typed text above the
         // border (especially in RTL / ScreenUtil layouts).
         maxLines: 1,

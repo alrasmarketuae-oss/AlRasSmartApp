@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/theme/app_fonts.dart';
+import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/features/company/presentation/helpers/create_ad_price_labels.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_currency_dropdown.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_field_column.dart';
@@ -7,6 +8,7 @@ import 'package:alrasmarket/features/company/presentation/widgets/create_ad/crea
 import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_unit_dropdown.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class CreateAdOffersPricingRowSection extends StatelessWidget {
@@ -59,6 +61,10 @@ class CreateAdOffersPricingRowSection extends StatelessWidget {
         TextFormField(
           controller: quantityController,
           keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[\d,\s٬]')),
+            ThousandsSeparatorInputFormatter.quantity(),
+          ],
           style: fieldTextStyle,
           decoration: CreateAdFormFieldStyles.decoration(
             hintText: s.quantity,
@@ -66,6 +72,9 @@ class CreateAdOffersPricingRowSection extends StatelessWidget {
           ),
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
+              return s.thisFieldIsRequired;
+            }
+            if (ThousandsNumberInput.parseInt(value) == null) {
               return s.thisFieldIsRequired;
             }
             return null;
@@ -123,11 +132,18 @@ class CreateAdOffersPricingRowSection extends StatelessWidget {
       child: CreateAdFormFieldStyles.buildRowTextFormField(
         controller: beforeDiscountController,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp(r'[\d.,\s٬]')),
+          ThousandsSeparatorInputFormatter.price(),
+        ],
         style: fieldTextStyle,
         hintText: s.beforeDiscount,
         fontFamily: fontFamily,
         validator: (value) {
           if (value == null || value.trim().isEmpty) {
+            return s.thisFieldIsRequired;
+          }
+          if (ThousandsNumberInput.parseDouble(value) == null) {
             return s.thisFieldIsRequired;
           }
           return null;
@@ -149,11 +165,18 @@ class CreateAdOffersPricingRowSection extends StatelessWidget {
       child: CreateAdFormFieldStyles.buildRowTextFormField(
         controller: afterDiscountController,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp(r'[\d.,\s٬]')),
+          ThousandsSeparatorInputFormatter.price(),
+        ],
         style: fieldTextStyle,
         hintText: priceHint,
         fontFamily: fontFamily,
         validator: (value) {
           if (value == null || value.trim().isEmpty) {
+            return s.thisFieldIsRequired;
+          }
+          if (ThousandsNumberInput.parseDouble(value) == null) {
             return s.thisFieldIsRequired;
           }
           return null;

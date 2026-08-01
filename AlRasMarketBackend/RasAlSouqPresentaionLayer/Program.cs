@@ -30,7 +30,9 @@ using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.ResponseCompression;
 using Prometheus;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
 using StackExchange.Redis;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -125,6 +127,8 @@ builder.Services.AddHttpClient<IOpenAiVisionService, OpenAiVisionService>(client
 builder.Services.Configure<QdrantOptions>(builder.Configuration.GetSection(QdrantOptions.SectionName));
 builder.Services.Configure<ImageEmbeddingOptions>(builder.Configuration.GetSection(ImageEmbeddingOptions.SectionName));
 builder.Services.Configure<MeilisearchOptions>(builder.Configuration.GetSection(MeilisearchOptions.SectionName));
+builder.Services.Configure<AiAssistantOptions>(
+    builder.Configuration.GetSection(AiAssistantOptions.SectionName));
 builder.Services.AddSingleton<IConfigurationAccessor, ConfigurationAccessor>();
 builder.Services.AddHttpClient<IImageEmbeddingService, ClipHttpEmbeddingService>(client =>
 {
@@ -137,6 +141,22 @@ builder.Services.AddHttpClient<IProductImageVectorIndex, QdrantProductImageVecto
     client.BaseAddress = new Uri((qdrant.Url ?? "http://localhost:6333").TrimEnd('/') + "/");
     client.Timeout = TimeSpan.FromSeconds(30);
 });
+builder.Services.AddHttpClient<IAiKnowledgeIndex, QdrantAiKnowledgeIndex>((sp, client) =>
+{
+    var ai = sp.GetRequiredService<
+        Microsoft.Extensions.Options.IOptions<AiAssistantOptions>>().Value;
+    client.BaseAddress = new Uri((ai.QdrantUrl ?? "http://localhost:6333").TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+builder.Services.AddHttpClient<IAiTextEmbeddingService, OpenAiTextEmbeddingService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+builder.Services.AddHttpClient<IAiAssistantAppService, AiAssistantAppService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(45);
+});
+builder.Services.AddHostedService<AiKnowledgeBootstrapHostedService>();
 builder.Services.AddHttpClient<IProductTextSearchIndex, MeilisearchProductTextSearchIndex>((sp, client) =>
 {
     var meili = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<MeilisearchOptions>>().Value;
@@ -215,6 +235,22 @@ builder.Services.AddSingleton<ITieredCache>(sp =>
         sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TieredCache>>(),
         sp.GetService<IConnectionMultiplexer>()));
 builder.Services.AddHttpClient();
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("ai-assistant", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.User.FindFirst("EntityId")?.Value
+                ?? context.Connection.RemoteIpAddress?.ToString()
+                ?? "anonymous",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 12,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
+});
 
 var jwt = builder.Configuration.GetSection("JwtSettings");
 builder.Services.AddAuthentication(options =>
@@ -239,7 +275,9 @@ builder.Services.AddAuthentication(options =>
         OnMessageReceived = context =>
         {
             var path = context.HttpContext.Request.Path;
-            if (!path.StartsWithSegments("/chathub") && !path.StartsWithSegments("/adminhub"))
+            if (!path.StartsWithSegments("/chathub")
+                && !path.StartsWithSegments("/adminhub")
+                && !path.StartsWithSegments("/aihub"))
             {
                 return Task.CompletedTask;
             }
@@ -526,10 +564,12 @@ app.UseStaticFiles(new StaticFileOptions
     },
 });
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseMiddleware<UserLanguageMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHub<ChatHub>("/chathub").RequireCors("AllowAdminDashboard");
+app.MapHub<AiAssistantHub>("/aihub").RequireCors("AllowAdminDashboard");
 app.MapHub<AdminNotificationHub>("/adminhub").RequireCors("AllowAdminDashboard");
 app.MapHub<OrderHub>("/orderhub").RequireCors("AllowAdminDashboard");
 

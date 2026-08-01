@@ -61,7 +61,7 @@ class _ShippingProfileViewState extends State<ShippingProfileView> {
   Future<void> _logout() async {
     await AuthService.instance.logout();
     if (!mounted) return;
-    context.go(AppRoutes.krecording);
+    context.go(AppRoutes.kLoginView);
   }
 
   @override

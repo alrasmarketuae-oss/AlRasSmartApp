@@ -80,52 +80,93 @@ public partial class ProductsAppService
             return cached;
         }
 
-        // Meilisearch finds IDs fast; SQL still builds the same public payload
-        // (images, videos, bilingual fields, ad-type projection). On miss/error → SQL.
-        var (products, totalCount) =
-            await SearchCatalogPreferMeiliAsync(queryText, page, pageSize, cancellationToken);
+        // Meilisearch typo-tolerance finds IDs; SQL/Redis hydrate lightweight cards.
+        // No synchronous OpenAI on the search hot path.
+        var catalog = await SearchCatalogPreferMeiliAsync(queryText, page, pageSize, cancellationToken);
 
-        // Strict whole-word can miss real catalog names (esp. Arabic/English mixes).
-        // Soft name LIKE before AI — only for queries long enough to avoid كو∈كوكو noise.
-        if (page == 1 && totalCount == 0 && queryText.Trim().Length >= 4)
+        // Soft name LIKE when Meili+strict SQL miss — only for longer queries.
+        if (page == 1 && catalog.TotalCount == 0 && queryText.Trim().Length >= 4)
         {
-            (products, totalCount) =
+            var (looseProducts, looseTotal) =
                 await SearchCatalogByNameLooseAsync(queryText, page, pageSize, cancellationToken);
+            catalog = new CatalogSearchHitPage(looseProducts, looseTotal, null, false);
         }
 
-        // AI spelling assist: only when the first page has no catalog hits.
-        if (page == 1 && totalCount == 0)
+        if (page == 1 && catalog.TotalCount == 0)
         {
-            var assisted = await TryApplyAiSearchAssistAsync(
+            await LogMissedProductSearchAsync(
                 queryText,
+                input.SearcherUserId,
+                "No catalog hits after Meilisearch typo-tolerance + SQL fallback.",
+                cancellationToken);
+
+            var empty = await BuildTypoAssistEmptySearchAsync(
+                queryText,
+                pageSize,
+                correctedQuery: null,
+                wasMisspelled: false,
+                cancellationToken);
+
+            // Empty pages are not cached so a later index sync can surface new ads quickly.
+            return empty;
+        }
+
+        var items = await BuildSearchProductCardItemsAsync(
+            catalog.Products,
+            cancellationToken);
+
+        object result;
+        if (catalog.WasMisspelled && !string.IsNullOrWhiteSpace(catalog.CorrectedQuery))
+        {
+            result = new
+            {
+                count = items.Count,
+                totalCount = catalog.TotalCount,
                 page,
                 pageSize,
-                input.SearcherUserId,
-                cancellationToken);
-            if (assisted is not null)
-            {
-                return assisted;
-            }
+                totalPages = catalog.TotalCount == 0
+                    ? 0
+                    : (int)Math.Ceiling(catalog.TotalCount / (double)pageSize),
+                items,
+                aiAssist = new
+                {
+                    applied = true,
+                    wasMisspelled = true,
+                    originalQuery = queryText,
+                    correctedQuery = catalog.CorrectedQuery,
+                    status = "corrected",
+                    messageAr = $"ربما قصدت «{catalog.CorrectedQuery}». عرضنا النتائج بناءً على التصحيح.",
+                    messageEn =
+                        $"Did you mean \"{catalog.CorrectedQuery}\"? Showing results for the corrected name."
+                }
+            };
         }
-
-        var result = await BuildPublicProductListPageAsync(
-            products,
-            totalCount,
-            page,
-            pageSize,
-            cancellationToken,
-            expandHybridSearchChannels: true);
-
-        // Do not cache empty pages so AI assist can still run on the next request.
-        if (totalCount > 0)
+        else
         {
-            await SetProductCacheAsync(cacheKey, result, TimeSpan.FromMinutes(2), cancellationToken);
+            result = new
+            {
+                count = items.Count,
+                totalCount = catalog.TotalCount,
+                page,
+                pageSize,
+                totalPages = catalog.TotalCount == 0
+                    ? 0
+                    : (int)Math.Ceiling(catalog.TotalCount / (double)pageSize),
+                items
+            };
         }
 
+        await SetProductCacheAsync(cacheKey, result, TimeSpan.FromMinutes(2), cancellationToken);
         return result;
     }
 
-    private async Task<(List<ProductPublicRow> Products, int TotalCount)> SearchCatalogPreferMeiliAsync(
+    private sealed record CatalogSearchHitPage(
+        List<ProductPublicRow> Products,
+        int TotalCount,
+        string? CorrectedQuery,
+        bool WasMisspelled);
+
+    private async Task<CatalogSearchHitPage> SearchCatalogPreferMeiliAsync(
         string queryText,
         int page,
         int pageSize,
@@ -147,14 +188,15 @@ public partial class ProductsAppService
             }
         }
 
-        return await SearchCatalogByTextAsync(queryText, page, pageSize, cancellationToken);
+        var (sqlProducts, sqlTotal) =
+            await SearchCatalogByTextAsync(queryText, page, pageSize, cancellationToken);
+        return new CatalogSearchHitPage(sqlProducts, sqlTotal, null, false);
     }
 
     /// <summary>
-    /// Meili ranks / filters IDs; hydrate + public filter + CreatedAt order from SQL
-    /// so response items match the existing catalog serializers.
+    /// Meili ranks IDs (typo-tolerant); hydrate from SQL in Meili order (Dictionary reorder in memory).
     /// </summary>
-    private async Task<(List<ProductPublicRow> Products, int TotalCount)> SearchCatalogViaMeiliAsync(
+    private async Task<CatalogSearchHitPage> SearchCatalogViaMeiliAsync(
         string queryText,
         int page,
         int pageSize,
@@ -166,11 +208,10 @@ public partial class ProductsAppService
             .ToList();
         if (tokens.Count == 0)
         {
-            return ([], 0);
+            return new CatalogSearchHitPage([], 0, null, false);
         }
 
-        // Synonyms are configured on the Meili index — do not expand into the query
-        // string (matchingStrategy=all would otherwise require every synonym).
+        // Synonyms live on the Meili index — do not expand into the query string.
         var meiliQuery = string.Join(' ', tokens);
         var hitPage = await productTextSearchIndex.SearchAsync(
             meiliQuery,
@@ -179,18 +220,21 @@ public partial class ProductsAppService
 
         if (hitPage.Hits.Count == 0)
         {
-            return ([], 0);
+            return new CatalogSearchHitPage([], 0, null, false);
         }
+
+        var (wasMisspelled, correctedQuery) = DetectMeiliTypoAssist(queryText, hitPage.Hits);
 
         var orderedIds = hitPage.Hits
             .Select(h => h.ProductId)
             .Distinct()
             .ToList();
 
+        // Batch IN via TVP (ADO) — no EF change-tracker overhead.
         var rows = await productData.GetProductsByIdsAsync(orderedIds, cancellationToken);
         var byId = rows.ToDictionary(x => x.ProductId);
 
-        // Same public visibility rules as SQL catalog search (expiry already gated at index time).
+        // Keep Meilisearch relevance order; do not re-sort by CreatedAt in SQL/memory.
         var publicOrdered = orderedIds
             .Where(byId.ContainsKey)
             .Select(id => byId[id])
@@ -198,19 +242,72 @@ public partial class ProductsAppService
                 (p.Status == ProductCatalogCodes.StatusActive
                     || (p.Status == ProductCatalogCodes.StatusUnderReview && p.IsApproved == true))
                 && (p.ProductTypeId != ProductCatalogCodes.TypeRequests || p.Quantity > 0))
-            .OrderByDescending(p => p.CreatedAt)
             .ToList();
 
         var totalCount = publicOrdered.Count;
         if (hitPage.EstimatedTotal > totalCount && orderedIds.Count >= Math.Max(page * pageSize, 100))
         {
-            // Meili had more hits than we hydrated — keep estimated total for paging UX.
             totalCount = hitPage.EstimatedTotal;
         }
 
         var skip = (page - 1) * pageSize;
         var pageRows = publicOrdered.Skip(skip).Take(pageSize).ToList();
-        return (pageRows, totalCount);
+        return new CatalogSearchHitPage(pageRows, totalCount, correctedQuery, wasMisspelled);
+    }
+
+    /// <summary>
+    /// Infer "did you mean" from Meili typo hits without calling OpenAI.
+    /// </summary>
+    private static (bool WasMisspelled, string? CorrectedQuery) DetectMeiliTypoAssist(
+        string originalQuery,
+        IReadOnlyList<ProductTextSearchHit> hits)
+    {
+        if (hits.Count == 0)
+        {
+            return (false, null);
+        }
+
+        var query = (originalQuery ?? string.Empty).Trim();
+        if (query.Length < 2)
+        {
+            return (false, null);
+        }
+
+        string? bestLabel = null;
+        var bestDistance = int.MaxValue;
+
+        foreach (var hit in hits.Take(5))
+        {
+            foreach (var candidate in new[] { hit.NameAr, hit.NameEn, hit.ProductCode })
+            {
+                var label = candidate?.Trim();
+                if (string.IsNullOrWhiteSpace(label))
+                {
+                    continue;
+                }
+
+                if (string.Equals(query, label, StringComparison.OrdinalIgnoreCase))
+                {
+                    return (false, null);
+                }
+
+                if (!IsPlausibleSpellingCorrection(query, label))
+                {
+                    continue;
+                }
+
+                var distance = LevenshteinDistance(
+                    query.ToLowerInvariant(),
+                    label.ToLowerInvariant());
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    bestLabel = label;
+                }
+            }
+        }
+
+        return bestLabel is null ? (false, null) : (true, bestLabel);
     }
 
     private async Task<(List<ProductPublicRow> Products, int TotalCount)> SearchCatalogByTextAsync(
@@ -293,136 +390,8 @@ public partial class ProductsAppService
         return new { suggestions = fallback };
     }
 
-    private async Task<object?> TryApplyAiSearchAssistAsync(
-        string originalQuery,
-        int page,
-        int pageSize,
-        string? searcherUserId,
-        CancellationToken cancellationToken)
-    {
-        ProductSearchSpellCheckResult spell;
-        try
-        {
-            spell = await openAiVisionService.CheckProductSearchSpellingAsync(originalQuery, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "AI product search spelling check failed for query {Query}", originalQuery);
-            return null;
-        }
-
-        if (spell.IsMisspelled && !string.IsNullOrWhiteSpace(spell.CorrectedName))
-        {
-            string correctedQuery;
-            try
-            {
-                correctedQuery = NormalizeSearchQuery(spell.CorrectedName);
-            }
-            catch (ArgumentException)
-            {
-                await LogMissedProductSearchAsync(
-                    originalQuery,
-                    searcherUserId,
-                    "AI suggested an invalid correction.",
-                    cancellationToken);
-                return await BuildAiAssistedEmptySearchAsync(
-                    originalQuery,
-                    pageSize,
-                    correctedQuery: null,
-                    wasMisspelled: false,
-                    cancellationToken);
-            }
-
-            if (!string.Equals(correctedQuery, originalQuery, StringComparison.OrdinalIgnoreCase))
-            {
-                var (correctedProducts, correctedTotal) =
-                    await SearchCatalogPreferMeiliAsync(correctedQuery, page, pageSize, cancellationToken);
-
-                // Whole-word search can miss valid catalog names after AI typo fixes
-                // (Arabic/English variants, punctuation). Fall back to name LIKE.
-                if (correctedTotal == 0)
-                {
-                    (correctedProducts, correctedTotal) =
-                        await SearchCatalogByNameLooseAsync(
-                            correctedQuery,
-                            page,
-                            pageSize,
-                            cancellationToken);
-                }
-
-                // If the corrected name exists in catalog, always return it (do not log as missed).
-                if (correctedTotal > 0)
-                {
-                    var items = await BuildPublicProductListItemsAsync(
-                        correctedProducts,
-                        cancellationToken,
-                        expandHybridSearchChannels: true);
-                    return new
-                    {
-                        count = items.Count,
-                        totalCount = correctedTotal,
-                        page,
-                        pageSize,
-                        totalPages = (int)Math.Ceiling(correctedTotal / (double)pageSize),
-                        items,
-                        aiAssist = new
-                        {
-                            applied = true,
-                            wasMisspelled = true,
-                            originalQuery,
-                            correctedQuery,
-                            status = "corrected",
-                            messageAr = $"ربما قصدت «{correctedQuery}». عرضنا النتائج بناءً على التصحيح.",
-                            messageEn = $"Did you mean \"{correctedQuery}\"? Showing results for the corrected name."
-                        }
-                    };
-                }
-
-                // Correction not in catalog: only log when the typo was a close spelling change.
-                // Unrelated AI guesses must not create missed-search noise or hide results.
-                if (IsPlausibleSpellingCorrection(originalQuery, correctedQuery))
-                {
-                    await LogMissedProductSearchAsync(
-                        correctedQuery,
-                        searcherUserId,
-                        $"Original query misspelled as '{originalQuery}'; corrected name also missing.",
-                        cancellationToken);
-
-                    return await BuildAiAssistedEmptySearchAsync(
-                        originalQuery,
-                        pageSize,
-                        correctedQuery,
-                        wasMisspelled: true,
-                        cancellationToken);
-                }
-
-                // Unrelated AI invention that is also missing: do not log as missed-search noise.
-                return await BuildAiAssistedEmptySearchAsync(
-                    originalQuery,
-                    pageSize,
-                    correctedQuery: null,
-                    wasMisspelled: false,
-                    cancellationToken);
-            }
-        }
-
-        await LogMissedProductSearchAsync(
-            originalQuery,
-            searcherUserId,
-            "AI confirmed spelling is correct; product not in catalog.",
-            cancellationToken);
-
-        return await BuildAiAssistedEmptySearchAsync(
-            originalQuery,
-            pageSize,
-            correctedQuery: null,
-            wasMisspelled: false,
-            cancellationToken);
-    }
-
     /// <summary>
-    /// Lenient name search for AI spelling assist: substring match on NameEn and
-    /// name translations only (no whole-word gate). Used after strict search returns 0.
+    /// Lenient name search: substring match on NameEn / translations when strict search returns 0.
     /// </summary>
     private Task<(List<ProductPublicRow> Products, int TotalCount)> SearchCatalogByNameLooseAsync(
         string queryText,
@@ -431,7 +400,7 @@ public partial class ProductsAppService
         CancellationToken cancellationToken) =>
         productData.SearchPublicCatalogByNameLooseAsync(queryText, page, pageSize, cancellationToken);
 
-    private Task<object> BuildAiAssistedEmptySearchAsync(
+    private Task<object> BuildTypoAssistEmptySearchAsync(
         string originalQuery,
         int pageSize,
         string? correctedQuery,

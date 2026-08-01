@@ -1,6 +1,7 @@
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
+import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/shipping_card.dart';
 import 'package:alrasmarket/features/company/domain/usecases/get_geo_usecases.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_location_details_section.dart';
@@ -9,6 +10,7 @@ import 'package:alrasmarket/features/shipping_company/presentation/controller/cu
 import 'package:alrasmarket/features/shipping_company/presentation/widgets/shipping_company_widgets.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -62,8 +64,14 @@ class _ShippingAdFormViewState extends State<ShippingAdFormView> {
       _toPort = post.toPort.trim().isNotEmpty ? post.toPort.trim() : null;
       _minDays.text = post.minDurationDays?.toString() ?? '';
       _maxDays.text = post.maxDurationDays?.toString() ?? '';
-      _price20.text = post.container20ftPriceUsd.toStringAsFixed(0);
-      _price40.text = post.container40ftPriceUsd.toStringAsFixed(0);
+      _price20.text = ThousandsNumberInput.format(
+        post.container20ftPriceUsd,
+        allowDecimal: true,
+      );
+      _price40.text = ThousandsNumberInput.format(
+        post.container40ftPriceUsd,
+        allowDecimal: true,
+      );
       _details.text = post.details;
 
       if (_fromCountry != null) {
@@ -195,8 +203,10 @@ class _ShippingAdFormViewState extends State<ShippingAdFormView> {
       'toCountryName': _toCountry?.trim() ?? '',
       'toPortName': _toPort?.trim() ?? '',
       'phoneNumber': phone,
-      'container20ftPriceUsd': double.tryParse(_price20.text.trim()) ?? 0,
-      'container40ftPriceUsd': double.tryParse(_price40.text.trim()) ?? 0,
+      'container20ftPriceUsd':
+          ThousandsNumberInput.parseDouble(_price20.text.trim()) ?? 0,
+      'container40ftPriceUsd':
+          ThousandsNumberInput.parseDouble(_price40.text.trim()) ?? 0,
       'minDurationDays': int.tryParse(_minDays.text.trim()),
       'maxDurationDays': int.tryParse(_maxDays.text.trim()),
       'details': _details.text.trim(),
@@ -301,7 +311,11 @@ class _ShippingAdFormViewState extends State<ShippingAdFormView> {
                 controller: _price20,
                 prefix: s.dollar,
                 icon: Icons.attach_money,
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[\d.,\s٬]')),
+                  ThousandsSeparatorInputFormatter.price(),
+                ],
               ),
               ShippingFormSectionLabel(label: s.price40ftLabel),
               ShippingFormField(
@@ -309,7 +323,11 @@ class _ShippingAdFormViewState extends State<ShippingAdFormView> {
                 controller: _price40,
                 prefix: s.dollar,
                 icon: Icons.attach_money,
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[\d.,\s٬]')),
+                  ThousandsSeparatorInputFormatter.price(),
+                ],
               ),
               ShippingFormSectionLabel(label: s.details),
               ShippingFormField(

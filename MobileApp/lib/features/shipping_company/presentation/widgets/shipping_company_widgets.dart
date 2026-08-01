@@ -1,6 +1,7 @@
 import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/widgets/language_button.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 const Color kShippingBg = Color(0xffF2F7FF);
@@ -377,6 +378,7 @@ class ShippingFormField extends StatelessWidget {
     this.prefix,
     this.icon = Icons.location_on_outlined,
     this.keyboardType,
+    this.inputFormatters,
     this.maxLines = 1,
   });
 
@@ -386,6 +388,7 @@ class ShippingFormField extends StatelessWidget {
   final String? prefix;
   final IconData icon;
   final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
   final int maxLines;
 
   @override
@@ -400,6 +403,7 @@ class ShippingFormField extends StatelessWidget {
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
+        inputFormatters: inputFormatters,
         maxLines: maxLines,
         decoration: InputDecoration(
           hintText: hint,

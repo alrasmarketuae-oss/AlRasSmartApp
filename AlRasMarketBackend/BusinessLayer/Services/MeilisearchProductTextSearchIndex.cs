@@ -112,7 +112,8 @@ public sealed class MeilisearchProductTextSearchIndex(
                 typoTolerance = new
                 {
                     enabled = true,
-                    minWordSizeForTypos = new { oneTypo = 5, twoTypos = 9 }
+                    // Lower thresholds help short Arabic/English product names.
+                    minWordSizeForTypos = new { oneTypo = 3, twoTypos = 7 }
                 },
                 pagination = new { maxTotalHits = Math.Max(1000, _options.MaxSearchHits) },
                 synonyms = new Dictionary<string, string[]>
@@ -235,7 +236,15 @@ public sealed class MeilisearchProductTextSearchIndex(
             limit = take,
             offset = 0,
             sort = new[] { "createdAtUnix:desc" },
-            attributesToRetrieve = new[] { "id", "productId", "createdAtUnix" },
+            attributesToRetrieve = new[]
+            {
+                "id",
+                "productId",
+                "createdAtUnix",
+                "nameEn",
+                "nameAr",
+                "productCode"
+            },
             matchingStrategy = "last"
         };
 
@@ -283,7 +292,10 @@ public sealed class MeilisearchProductTextSearchIndex(
                 hits.Add(new ProductTextSearchHit
                 {
                     ProductId = productId,
-                    CreatedAtUnix = created
+                    CreatedAtUnix = created,
+                    NameEn = hit.TryGetProperty("nameEn", out var ne) ? ne.GetString() : null,
+                    NameAr = hit.TryGetProperty("nameAr", out var na) ? na.GetString() : null,
+                    ProductCode = hit.TryGetProperty("productCode", out var pc) ? pc.GetString() : null
                 });
             }
         }

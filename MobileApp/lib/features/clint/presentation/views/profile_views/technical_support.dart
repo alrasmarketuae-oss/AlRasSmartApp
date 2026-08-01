@@ -126,6 +126,22 @@ class TechnicalSupportView extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       CallCard(
+                        icon: AppAssets.profileHelpSupportIcon,
+                        title: S.of(context).aiAssistantTitle,
+                        subtitle: S.of(context).aiAssistantSubtitle,
+                        buttonText: S.of(context).aiAssistantFabLabel,
+                        onTap: () => context.push(AppRoutes.kAiAssistantView),
+                      ),
+                      const SizedBox(height: 12),
+                      CallCard(
+                        icon: AppAssets.profilePrivacyPolicyIcon,
+                        title: S.of(context).modelTrainingTitle,
+                        subtitle: S.of(context).modelTrainingTitle,
+                        buttonText: S.of(context).gotIt,
+                        onTap: () => context.push(AppRoutes.kModelTrainingView),
+                      ),
+                      const SizedBox(height: 12),
+                      CallCard(
                         icon: AppAssets.profilePhoneIcon,
                         title: S.of(context).phoneCall,
                         subtitle: _supportPhoneDisplay,

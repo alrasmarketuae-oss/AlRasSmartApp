@@ -20,6 +20,8 @@ import 'package:alrasmarket/features/clint/presentation/views/profile_views/edit
 import 'package:alrasmarket/features/clint/presentation/views/profile_views/language_screen.dart';
 import 'package:alrasmarket/features/clint/presentation/views/profile_views/notification.dart';
 import 'package:alrasmarket/features/clint/presentation/views/profile_views/privacy_policy.dart';
+import 'package:alrasmarket/features/ai_assistant/presentation/views/ai_assistant_view.dart';
+import 'package:alrasmarket/features/clint/presentation/views/profile_views/model_training_view.dart';
 import 'package:alrasmarket/features/chat/presentation/views/support_chat_view.dart';
 import 'package:alrasmarket/features/clint/presentation/views/profile_views/technical_support.dart';
 import 'package:alrasmarket/features/clint/presentation/views/profile_views/supplier_balance_view.dart';
@@ -70,7 +72,8 @@ abstract class AppRoutes {
   static const String kCompanyHomeView = '/CompanyHomeView';
   static const String kShippingLoginView = '/ShippingLoginView';
   static const String kShippingRegisterView = '/ShippingRegisterView';
-  static const String kShippingCompletRegisterView = '/ShippingCompletRegisterView';
+  static const String kShippingCompletRegisterView =
+      '/ShippingCompletRegisterView';
   static const String kShippingCompanyHomeView = '/ShippingCompanyHomeView';
   static const String kShippingAddAdView = '/ShippingAddAdView';
   static const String kShippingEditAdView = '/ShippingEditAdView';
@@ -97,6 +100,8 @@ abstract class AppRoutes {
   static const String kTermsAndConditions = '/TermsAndConditions';
   static const String kTechnicalSupportView = '/TechnicalSupportView';
   static const String kSupportChatView = '/SupportChatView';
+  static const String kAiAssistantView = '/AiAssistantView';
+  static const String kModelTrainingView = '/ModelTrainingView';
   static const String kMyAdsView = '/MyAdsView';
   static const String kSupplierBalanceView = '/SupplierBalanceView';
   static const String kAdRequestOffersView = '/AdRequestOffersView';
@@ -312,9 +317,7 @@ abstract class AppRoutes {
           final extra = state.extra is Map<String, dynamic>
               ? state.extra as Map<String, dynamic>
               : const <String, dynamic>{};
-          return ConfirmCircalView(
-            productId: extra['productId'] as String?,
-          );
+          return ConfirmCircalView(productId: extra['productId'] as String?);
         },
       ),
       GoRoute(
@@ -352,6 +355,14 @@ abstract class AppRoutes {
       GoRoute(
         path: kSupportChatView,
         builder: (context, state) => const SupportChatView(),
+      ),
+      GoRoute(
+        path: kAiAssistantView,
+        builder: (context, state) => const AiAssistantView(),
+      ),
+      GoRoute(
+        path: kModelTrainingView,
+        builder: (context, state) => const ModelTrainingView(),
       ),
       GoRoute(
         path: kMyAdsView,
@@ -446,8 +457,7 @@ abstract class AppRoutes {
           return RetailProductDetailsView(
             product: extra['product'],
             isOffer: extra['isOffer'] as bool? ?? false,
-            preferRetailChannel:
-                extra['preferRetailChannel'] as bool? ?? false,
+            preferRetailChannel: extra['preferRetailChannel'] as bool? ?? false,
           );
         },
       ),

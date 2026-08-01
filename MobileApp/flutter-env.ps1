@@ -1,7 +1,7 @@
 $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
 $env:ANDROID_SDK_ROOT = $env:ANDROID_HOME
 $env:GRADLE_USER_HOME = "$env:USERPROFILE\.gradle"
-$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
+$env:JAVA_HOME = "C:\src\jdk-17"
 $env:Path = @(
   "C:\src\flutter\bin",
   "$env:ANDROID_HOME\platform-tools",

@@ -118,7 +118,7 @@ class RecordingView extends StatelessWidget {
                             SizedBox(height: 18.h),
                             _LoginButton(
                               label: s.login,
-                              onTap: () => context.push(AppRoutes.kLoginView),
+                              onTap: () => context.go(AppRoutes.kLoginView),
                             ),
                             SizedBox(height: 16.h),
                             _GuestEntry(
