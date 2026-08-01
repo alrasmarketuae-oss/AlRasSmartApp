@@ -9,7 +9,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// Shown only when a previous account enabled Face ID / fingerprint unlock.
 class BiometricUnlockButton extends StatefulWidget {
-  const BiometricUnlockButton({super.key});
+  /// [circular] renders the round fingerprint badge used on the login screen,
+  /// otherwise the full-width outlined button is used.
+  const BiometricUnlockButton({super.key, this.circular = false});
+
+  final bool circular;
 
   @override
   State<BiometricUnlockButton> createState() => _BiometricUnlockButtonState();
@@ -72,6 +76,8 @@ class _BiometricUnlockButtonState extends State<BiometricUnlockButton> {
   Widget build(BuildContext context) {
     if (!_visible) return const SizedBox.shrink();
 
+    if (widget.circular) return _buildCircular(context);
+
     return Column(
       children: [
         SizedBox(
@@ -109,6 +115,49 @@ class _BiometricUnlockButtonState extends State<BiometricUnlockButton> {
           ),
         ),
         SizedBox(height: 12.h),
+      ],
+    );
+  }
+
+  Widget _buildCircular(BuildContext context) {
+    return Column(
+      children: [
+        InkWell(
+          onTap: _busy ? null : _unlock,
+          customBorder: const CircleBorder(),
+          child: Container(
+            width: 54.w,
+            height: 54.w,
+            decoration: const BoxDecoration(
+              color: Color(0xFFE7F0FB),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: _busy
+                  ? SizedBox(
+                      width: 20.w,
+                      height: 20.w,
+                      child: const CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(
+                      Icons.fingerprint_rounded,
+                      size: 28.sp,
+                      color: const Color(0xFF2E77CC),
+                    ),
+            ),
+          ),
+        ),
+        SizedBox(height: 10.h),
+        Text(
+          S.of(context).signInWithBiometrics,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 13.sp,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF2E77CC),
+          ),
+        ),
+        SizedBox(height: 14.h),
       ],
     );
   }

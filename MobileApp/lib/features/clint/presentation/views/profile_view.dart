@@ -2,7 +2,6 @@ import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/serveses/profile_service.dart';
 import 'package:alrasmarket/core/services/biometric_auth_service.dart';
-import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/widgets/profile_avatar.dart';
@@ -19,6 +18,16 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
+
+const Color _kScreenBg = Color(0xFFF6F9FE);
+const Color _kTitleColor = Color(0xFF16233A);
+const Color _kSubtitleColor = Color(0xFF7B8794);
+const Color _kBlue = Color(0xFF2E77CC);
+const Color _kBlueDark = Color(0xFF1B5FB8);
+const Color _kGreen = Color(0xFF23C08B);
+const Color _kGreenDark = Color(0xFF12A874);
+const Color _kRed = Color(0xFFF05B54);
+const Color _kRedDark = Color(0xFFDE3F38);
 
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
@@ -143,164 +152,10 @@ class _ProfileViewState extends State<ProfileView> {
     return source.substring(0, 1).toUpperCase();
   }
 
-  Widget _biometricToggleItem() {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8.r),
-        color: Colors.white,
-      ),
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-      child: Row(
-        children: [
-          Container(
-            width: 40.w,
-            height: 40.h,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              color: LightColor.defaultColor,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.fingerprint_rounded,
-              color: Colors.white,
-              size: 22.sp,
-            ),
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  S.of(context).enableBiometricUnlock,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
-                    height: 1.3,
-                  ),
-                ),
-                SizedBox(height: 2.h),
-                Text(
-                  S.of(context).biometricUnlockSubtitle,
-                  style: TextStyle(
-                    fontSize: 11.sp,
-                    color: const Color(0xFF6B7280),
-                    height: 1.3,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (_biometricBusy)
-            SizedBox(
-              width: 22.w,
-              height: 22.w,
-              child: const CircularProgressIndicator(strokeWidth: 2),
-            )
-          else
-            Switch.adaptive(
-              value: _biometricEnabled,
-              onChanged: _toggleBiometric,
-              activeThumbColor: LightColor.defaultColor,
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _accountItem(
-    String title,
-    String? iconPath, {
-    IconData? icon,
-    Color? color,
-    VoidCallback? onTap,
-    bool isArrow = true,
-    int badgeCount = 0,
-  }) {
-    assert(icon != null || iconPath != null);
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        height: 72.h,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8.r),
-          color: Colors.white,
-        ),
-        padding: EdgeInsets.symmetric(horizontal: 16.w),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            Row(
-              children: [
-                Container(
-                  width: 40.w,
-                  height: 40.h,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: color ?? LightColor.defaultColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: SizedBox(
-                    width: 24.w,
-                    height: 24.h,
-                    child: icon != null
-                        ? Icon(icon, color: Colors.white, size: 22.sp)
-                        : SvgPicture.asset(
-                            iconPath!,
-                            colorFilter: const ColorFilter.mode(
-                              Colors.white,
-                              BlendMode.srcIn,
-                            ),
-                          ),
-                  ),
-                ),
-                SizedBox(width: 12.w),
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    letterSpacing: 0,
-                    fontWeight: FontWeight.normal,
-                    height: 1.5,
-                  ),
-                ),
-                if (badgeCount > 0) ...[
-                  SizedBox(width: 8.w),
-                  Container(
-                    constraints: BoxConstraints(minWidth: 20.w),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 6.w,
-                      vertical: 2.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE53935),
-                      borderRadius: BorderRadius.circular(10.r),
-                    ),
-                    child: Text(
-                      badgeCount > 99 ? '99+' : '$badgeCount',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w700,
-                        height: 1.1,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-            if (isArrow)
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 28.sp,
-                color: LightColor.defaultColor,
-              ),
-          ],
-        ),
-      ),
-    );
+  Future<void> _openEditProfile() async {
+    await context.push(AppRoutes.kEditProfileView);
+    if (!mounted) return;
+    await _loadProfile();
   }
 
   Future<void> _confirmDeleteAccount() async {
@@ -309,8 +164,18 @@ class _ProfileViewState extends State<ProfileView> {
     await context.read<AuthCubit>().deleteAccount(password: password);
   }
 
+  Future<void> _logout() async {
+    await AuthService.instance.logout();
+    if (!mounted) return;
+    context.read<ClintCubit>().setTab(0);
+    context.read<CompanyCubit>().setTab(0);
+    context.go(AppRoutes.kLoginView);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final s = S.of(context);
+
     return BlocListener<AuthCubit, AuthStates>(
       listenWhen: (_, current) =>
           current is DeleteAccountSuccessState ||
@@ -333,10 +198,13 @@ class _ProfileViewState extends State<ProfileView> {
         builder: (context, state) {
           final isDeletingAccount =
               context.watch<AuthCubit>().state is DeleteAccountLoadingState;
+          final isSupplier = AuthService.instance.isSupplierAccount;
+          final isCompany = AuthService.instance.currentUserIsCompanyAccount;
 
           return Stack(
             children: [
               Scaffold(
+                backgroundColor: _kScreenBg,
                 body: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -344,330 +212,155 @@ class _ProfileViewState extends State<ProfileView> {
                     SearchHeader(),
                     Expanded(
                       child: SingleChildScrollView(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 24.w),
-                          child: Column(
-                            children: [
-                              SizedBox(height: 8.h),
-                              Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(16.r),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: Color.fromRGBO(0, 0, 0, 0.15),
-                                      offset: Offset(0, 0),
-                                      blurRadius: 2,
-                                    ),
-                                  ],
-                                  color: Colors.white,
+                        padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 100.h),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _buildProfileCard(),
+                            SizedBox(height: 14.h),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _ShortcutCard(
+                                    title: s.aiAssistantTitle,
+                                    subtitle: s.aiAssistantCardSubtitle,
+                                    icon: Icons.auto_awesome_rounded,
+                                    onTap: () {
+                                      if (AppRoutes.shouldSkipPush(
+                                        context,
+                                        AppRoutes.kAiAssistantView,
+                                      )) {
+                                        return;
+                                      }
+                                      context.push(AppRoutes.kAiAssistantView);
+                                    },
+                                  ),
                                 ),
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 16.w,
-                                  vertical: 16.h,
+                                SizedBox(width: 12.w),
+                                Expanded(
+                                  child: _ShortcutCard(
+                                    title: s.liveChat,
+                                    subtitle: s.liveChatSubtitle,
+                                    assetIcon: AppAssets.profileMessageIcon,
+                                    onTap: () =>
+                                        context.push(AppRoutes.kSupportChatView),
+                                  ),
                                 ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: <Widget>[
-                                    Row(
-                                      children: <Widget>[
-                                        Expanded(
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: <Widget>[
-                                              Text(
-                                                _loading ? '...' : _name,
-                                                style: TextStyle(
-                                                  fontSize: 18.sp,
-                                                  letterSpacing: 0,
-                                                  fontWeight: FontWeight.bold,
-                                                  height: 1.5,
-                                                ),
-                                              ),
-                                              SizedBox(height: 8.h),
-                                              Text(
-                                                _roleLabel,
-                                                style: TextStyle(
-                                                  color: LightColor
-                                                      .greyTextColor60,
-                                                  fontSize: 14.sp,
-                                                  letterSpacing: 0,
-                                                  fontWeight: FontWeight.normal,
-                                                  height: 1.5,
-                                                ),
-                                              ),
-                                              SizedBox(height: 8.h),
-                                              Text(
-                                                _email,
-                                                style: TextStyle(
-                                                  color: LightColor
-                                                      .greyTextColor60,
-                                                  fontSize: 14.sp,
-                                                  letterSpacing: 0,
-                                                  fontWeight: FontWeight.normal,
-                                                  height: 1.5,
-                                                ),
-                                              ),
-                                              SizedBox(height: 8.h),
-                                              Text(
-                                                _phone.isNotEmpty
-                                                    ? _phone
-                                                    : '—',
-                                                style: TextStyle(
-                                                  color: LightColor
-                                                      .greyTextColor60,
-                                                  fontSize: 14.sp,
-                                                  letterSpacing: 0,
-                                                  fontWeight: FontWeight.normal,
-                                                  height: 1.5,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
+                              ],
+                            ),
+                            SizedBox(height: 22.h),
+                            _SectionTitle(s.account),
+                            SizedBox(height: 12.h),
+                            _SettingsTile(
+                              title: s.cart,
+                              subtitle: s.cartSubtitle,
+                              icon: Icons.shopping_bag_outlined,
+                              onTap: () => context.push(AppRoutes.kCartView),
+                            ),
+                            _SettingsTile(
+                              title: s.personalInformation,
+                              subtitle: s.personalInformationSubtitle,
+                              assetIcon: AppAssets.blueProfileIcon,
+                              onTap: _openEditProfile,
+                            ),
+                            _SettingsTile(
+                              title: s.changePassword,
+                              subtitle: s.changePasswordSubtitle,
+                              assetIcon: AppAssets.profileLockAltFillIcon,
+                              onTap: () =>
+                                  context.push(AppRoutes.kChangePasswordView),
+                            ),
+                            _SettingsTile(
+                              title: s.savedAddresses,
+                              subtitle: s.savedAddressesSubtitle,
+                              assetIcon: AppAssets.profileLocationIcon,
+                              onTap: () =>
+                                  context.push(AppRoutes.kSavedAddressesView),
+                            ),
+                            _SettingsTile(
+                              title: s.savedAds,
+                              subtitle: s.savedAdsSubtitle,
+                              assetIcon: AppAssets.profileAdsIcon,
+                              onTap: () => context.push(AppRoutes.kSavedAdsView),
+                            ),
+                            if (isSupplier)
+                              _SettingsTile(
+                                title: s.myBalance,
+                                subtitle: s.myBalanceSubtitle,
+                                assetIcon: AppAssets.profileBadgePercentIcon,
+                                onTap: () =>
+                                    context.push(AppRoutes.kSupplierBalanceView),
+                              ),
+                            if (isSupplier || isCompany)
+                              _SettingsTile(
+                                title: s.myAds,
+                                subtitle: s.myAdsSubtitle,
+                                assetIcon: AppAssets.profileAdsIcon,
+                                onTap: () => context.push(AppRoutes.kMyAdsView),
+                              ),
+                            SizedBox(height: 6.h),
+                            const _DataSafeBanner(),
+                            SizedBox(height: 22.h),
+                            _SectionTitle(s.settings),
+                            SizedBox(height: 12.h),
+                            _SettingsTile(
+                              title: s.language,
+                              subtitle: s.changeLanguageSubtitle,
+                              assetIcon: AppAssets.profileLanguageIcon,
+                              onTap: () => context.push(AppRoutes.kLanguageView),
+                            ),
+                            if (_biometricSupported)
+                              _SettingsTile(
+                                title: s.enableBiometricUnlock,
+                                subtitle: s.faceIdFingerprintSubtitle,
+                                icon: Icons.fingerprint_rounded,
+                                trailing: _biometricBusy
+                                    ? SizedBox(
+                                        width: 22.w,
+                                        height: 22.w,
+                                        child: const CircularProgressIndicator(
+                                          strokeWidth: 2,
                                         ),
-                                        SizedBox(width: 16.w),
-                                        ProfileAvatar(
-                                          size: 56.w,
-                                          imagePath: _imgPath,
-                                          fallbackText: _avatarInitial,
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 16.h),
-                                    SizedBox(
-                                      width: double.infinity,
-                                      height: 40.h,
-                                      child: TextButton(
-                                        style: TextButton.styleFrom(
-                                          backgroundColor: Color(0xffF5F5F5),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8.r),
-                                          ),
-                                        ),
-                                        onPressed: () async {
-                                          await context.push(
-                                            AppRoutes.kEditProfileView,
-                                          );
-                                          if (!mounted) return;
-                                          await _loadProfile();
-                                        },
-                                        child: Text(
-                                          S.of(context).editProfile,
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                            color: Colors.black,
-                                            fontSize: 14.sp,
-                                            letterSpacing: 0,
-                                            fontWeight: FontWeight.bold,
-                                            height: 1.5,
-                                          ),
-                                        ),
+                                      )
+                                    : Switch.adaptive(
+                                        value: _biometricEnabled,
+                                        onChanged: _toggleBiometric,
+                                        activeThumbColor: Colors.white,
+                                        activeTrackColor: _kBlue,
                                       ),
-                                    ),
-                                  ],
-                                ),
                               ),
-                              SizedBox(height: 16.h),
-                              _accountItem(
-                                S.of(context).aiAssistantTitle,
-                                null,
-                                icon: Icons.auto_awesome_rounded,
-                                onTap: () {
-                                  if (AppRoutes.shouldSkipPush(
-                                    context,
-                                    AppRoutes.kAiAssistantView,
-                                  )) {
-                                    return;
-                                  }
-                                  context.push(AppRoutes.kAiAssistantView);
-                                },
-                              ),
-                              SizedBox(height: 13.h),
-                              _accountItem(
-                                S.of(context).liveChat,
-                                AppAssets.profileMessageIcon,
-                                onTap: () {
-                                  context.push(AppRoutes.kSupportChatView);
-                                },
-                              ),
-                              SizedBox(height: 20.h),
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Text(
-                                    S.of(context).account,
-                                    textAlign: TextAlign.right,
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 16.sp,
-                                      letterSpacing: 0,
-                                      fontWeight: FontWeight.bold,
-                                      height: 1.5,
-                                    ),
-                                  ),
-                                  SizedBox(height: 13.h),
-                                  _accountItem(
-                                    S.of(context).cart,
-                                    AppAssets.profileLockAltFillIcon,
-                                    onTap: () {
-                                      context.push(AppRoutes.kCartView);
-                                    },
-                                  ),
-                                  SizedBox(height: 13.h),
-                                  _accountItem(
-                                    S.of(context).personalInformation,
-                                    AppAssets.blueProfileIcon,
-                                    onTap: () async {
-                                      await context.push(
-                                        AppRoutes.kEditProfileView,
-                                      );
-                                      if (!mounted) return;
-                                      await _loadProfile();
-                                    },
-                                  ),
-                                  SizedBox(height: 13.h),
-                                  _accountItem(
-                                    S.of(context).changePassword,
-                                    AppAssets.profileLockAltFillIcon,
-                                    onTap: () {
-                                      context.push(
-                                        AppRoutes.kChangePasswordView,
-                                      );
-                                    },
-                                  ),
-                                  SizedBox(height: 13.h),
-                                  _accountItem(
-                                    S.of(context).savedAddresses,
-                                    AppAssets.profileLocationIcon,
-                                    onTap: () {
-                                      context.push(
-                                        AppRoutes.kSavedAddressesView,
-                                      );
-                                    },
-                                  ),
-                                  SizedBox(height: 13.h),
-                                  _accountItem(
-                                    S.of(context).savedAds,
-                                    AppAssets.profileAdsIcon,
-                                    onTap: () {
-                                      context.push(AppRoutes.kSavedAdsView);
-                                    },
-                                  ),
-                                  if (AuthService
-                                      .instance
-                                      .isSupplierAccount) ...[
-                                    SizedBox(height: 13.h),
-                                    _accountItem(
-                                      S.of(context).myBalance,
-                                      AppAssets.profileBadgePercentIcon,
-                                      onTap: () {
-                                        context.push(
-                                          AppRoutes.kSupplierBalanceView,
-                                        );
-                                      },
-                                    ),
-                                    SizedBox(height: 13.h),
-                                    _accountItem(
-                                      S.of(context).myAds,
-                                      AppAssets.profileAdsIcon,
-                                      onTap: () {
-                                        context.push(AppRoutes.kMyAdsView);
-                                      },
-                                    ),
-                                  ] else if (AuthService
-                                      .instance
-                                      .currentUserIsCompanyAccount) ...[
-                                    SizedBox(height: 13.h),
-                                    _accountItem(
-                                      S.of(context).myAds,
-                                      AppAssets.profileAdsIcon,
-                                      onTap: () {
-                                        context.push(AppRoutes.kMyAdsView);
-                                      },
-                                    ),
-                                  ],
-                                ],
-                              ),
-                              SizedBox(height: 20.h),
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Text(
-                                    S.of(context).settings,
-                                    textAlign: TextAlign.right,
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 16.sp,
-                                      letterSpacing: 0,
-                                      fontWeight: FontWeight.bold,
-                                      height: 1.5,
-                                    ),
-                                  ),
-                                  SizedBox(height: 13.h),
-                                  _accountItem(
-                                    S.of(context).language,
-                                    AppAssets.profileLanguageIcon,
-                                    onTap: () {
-                                      context.push(AppRoutes.kLanguageView);
-                                    },
-                                  ),
-                                  if (_biometricSupported) ...[
-                                    SizedBox(height: 13.h),
-                                    _biometricToggleItem(),
-                                  ],
-                                  SizedBox(height: 13.h),
-                                  _accountItem(
-                                    onTap: () {
-                                      context.push(
-                                        AppRoutes.kTechnicalSupportView,
-                                      );
-                                    },
-                                    S.of(context).helpSupport,
-                                    AppAssets.profileHelpSupportIcon,
-                                  ),
-                                  SizedBox(height: 13.h),
-                                  _accountItem(
-                                    S.of(context).policyAndPrivacy,
-                                    AppAssets.profilePrivacyPolicyIcon,
-                                    onTap: () {
-                                      context.push(
-                                        AppRoutes.kTermsAndConditions,
-                                      );
-                                    },
-                                  ),
-                                  SizedBox(height: 13.h),
-                                  _accountItem(
-                                    S.of(context).deleteAccount,
-                                    AppAssets.profileLogOutIcon,
-                                    color: LightColor.defultRed,
-                                    onTap: isDeletingAccount
-                                        ? null
-                                        : _confirmDeleteAccount,
-                                    isArrow: false,
-                                  ),
-                                  SizedBox(height: 13.h),
-                                  _accountItem(
-                                    S.of(context).logOut,
-                                    AppAssets.profileLogOutIcon,
-                                    color: LightColor.defultRed,
-                                    onTap: () async {
-                                      await AuthService.instance.logout();
-                                      if (!context.mounted) return;
-                                      context.read<ClintCubit>().setTab(0);
-                                      context.read<CompanyCubit>().setTab(0);
-                                      context.go(AppRoutes.kLoginView);
-                                    },
-                                    isArrow: false,
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 20.h),
-                            ],
-                          ),
+                            _SettingsTile(
+                              title: s.helpSupport,
+                              subtitle: s.helpSupportSubtitle,
+                              assetIcon: AppAssets.profileHelpSupportIcon,
+                              onTap: () =>
+                                  context.push(AppRoutes.kTechnicalSupportView),
+                            ),
+                            _SettingsTile(
+                              title: s.policyAndPrivacy,
+                              subtitle: s.policyAndPrivacySubtitle,
+                              assetIcon: AppAssets.profilePrivacyPolicyIcon,
+                              iconColors: const [_kGreen, _kGreenDark],
+                              onTap: () =>
+                                  context.push(AppRoutes.kTermsAndConditions),
+                            ),
+                            _SettingsTile(
+                              title: s.deleteAccount,
+                              subtitle: s.deleteAccountSubtitle,
+                              assetIcon: AppAssets.profileTrashIcon,
+                              iconColors: const [_kRed, _kRedDark],
+                              onTap: isDeletingAccount
+                                  ? null
+                                  : _confirmDeleteAccount,
+                            ),
+                            _SettingsTile(
+                              title: s.logOut,
+                              subtitle: s.logOutSubtitle,
+                              assetIcon: AppAssets.profileLogOutIcon,
+                              iconColors: const [_kRed, _kRedDark],
+                              onTap: _logout,
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -683,6 +376,487 @@ class _ProfileViewState extends State<ProfileView> {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildProfileCard() {
+    final s = S.of(context);
+
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18.r),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF16233A).withValues(alpha: 0.06),
+            blurRadius: 18.r,
+            offset: Offset(0, 6.h),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _loading && _name.isEmpty ? '...' : _name,
+                      style: TextStyle(
+                        fontSize: 17.sp,
+                        fontWeight: FontWeight.w700,
+                        color: _kTitleColor,
+                        height: 1.3,
+                      ),
+                    ),
+                    if (_roleLabel.isNotEmpty) ...[
+                      SizedBox(height: 8.h),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10.w,
+                          vertical: 4.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F1FC),
+                          borderRadius: BorderRadius.circular(6.r),
+                        ),
+                        child: Text(
+                          _roleLabel,
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w600,
+                            color: _kBlue,
+                          ),
+                        ),
+                      ),
+                    ],
+                    SizedBox(height: 12.h),
+                    _ContactLine(
+                      icon: Icons.mail_outline_rounded,
+                      text: _email,
+                    ),
+                    SizedBox(height: 8.h),
+                    _ContactLine(
+                      icon: Icons.phone_outlined,
+                      text: _phone.isNotEmpty ? _phone : '—',
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: 12.w),
+              GestureDetector(
+                onTap: _openEditProfile,
+                child: SizedBox(
+                  width: 72.w,
+                  height: 72.w,
+                  child: Stack(
+                    children: [
+                      ProfileAvatar(
+                        size: 66.w,
+                        imagePath: _imgPath,
+                        fallbackText: _avatarInitial,
+                      ),
+                      PositionedDirectional(
+                        bottom: 0,
+                        end: 0,
+                        child: Container(
+                          width: 24.w,
+                          height: 24.w,
+                          decoration: BoxDecoration(
+                            color: _kBlue,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: Icon(
+                            Icons.edit,
+                            size: 11.sp,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.h),
+          SizedBox(
+            height: 46.h,
+            child: ElevatedButton.icon(
+              onPressed: _openEditProfile,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _kBlue,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+              ),
+              icon: Icon(Icons.edit_outlined, size: 18.sp),
+              label: Text(
+                s.editProfile,
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ContactLine extends StatelessWidget {
+  const _ContactLine({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 16.sp, color: _kBlue),
+        SizedBox(width: 8.w),
+        Expanded(
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF44526B),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(this.title);
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 4.w,
+          height: 18.h,
+          decoration: BoxDecoration(
+            color: _kBlue,
+            borderRadius: BorderRadius.circular(3.r),
+          ),
+        ),
+        SizedBox(width: 8.w),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 17.sp,
+            fontWeight: FontWeight.w700,
+            color: _kTitleColor,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ShortcutCard extends StatelessWidget {
+  const _ShortcutCard({
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.icon,
+    this.assetIcon,
+  });
+
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final IconData? icon;
+  final String? assetIcon;
+
+  @override
+  Widget build(BuildContext context) {
+    return _CardShell(
+      onTap: onTap,
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
+      child: Row(
+        children: [
+          _RoundIcon(icon: icon, assetIcon: assetIcon, size: 42),
+          SizedBox(width: 10.w),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w700,
+                    color: _kTitleColor,
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  subtitle,
+                  maxLines: 2,
+                  style: TextStyle(
+                    fontSize: 10.5.sp,
+                    height: 1.3,
+                    color: _kSubtitleColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _Chevron(size: 20.sp),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsTile extends StatelessWidget {
+  const _SettingsTile({
+    required this.title,
+    required this.subtitle,
+    this.icon,
+    this.assetIcon,
+    this.iconColors = const [_kBlue, _kBlueDark],
+    this.onTap,
+    this.trailing,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData? icon;
+  final String? assetIcon;
+  final List<Color> iconColors;
+  final VoidCallback? onTap;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12.h),
+      child: _CardShell(
+        onTap: onTap,
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
+        child: Row(
+          children: [
+            _RoundIcon(icon: icon, assetIcon: assetIcon, colors: iconColors),
+            SizedBox(width: 14.w),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14.5.sp,
+                      fontWeight: FontWeight.w700,
+                      color: _kTitleColor,
+                      height: 1.3,
+                    ),
+                  ),
+                  SizedBox(height: 3.h),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 11.5.sp,
+                      height: 1.35,
+                      color: _kSubtitleColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: 8.w),
+            trailing ?? _Chevron(size: 24.sp),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DataSafeBanner extends StatelessWidget {
+  const _DataSafeBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 16.h),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEAF2FE),
+        borderRadius: BorderRadius.circular(16.r),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.verified_user_rounded, size: 30.sp, color: _kBlue),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  s.dataSafeTitle,
+                  style: TextStyle(
+                    fontSize: 13.5.sp,
+                    fontWeight: FontWeight.w700,
+                    color: _kBlueDark,
+                  ),
+                ),
+                SizedBox(height: 3.h),
+                Text(
+                  s.dataSafeSubtitle,
+                  style: TextStyle(
+                    fontSize: 11.5.sp,
+                    height: 1.35,
+                    color: const Color(0xFF6C7C93),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 8.w),
+          Icon(
+            Icons.lock_rounded,
+            size: 32.sp,
+            color: _kBlue.withValues(alpha: 0.25),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CardShell extends StatelessWidget {
+  const _CardShell({
+    required this.child,
+    required this.padding,
+    this.onTap,
+  });
+
+  final Widget child;
+  final EdgeInsets padding;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(14.r);
+    return Material(
+      color: Colors.white,
+      borderRadius: radius,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: radius,
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            borderRadius: radius,
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF16233A).withValues(alpha: 0.05),
+                blurRadius: 14.r,
+                offset: Offset(0, 4.h),
+              ),
+            ],
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+class _RoundIcon extends StatelessWidget {
+  const _RoundIcon({
+    this.icon,
+    this.assetIcon,
+    this.colors = const [_kBlue, _kBlueDark],
+    this.size = 46,
+  });
+
+  final IconData? icon;
+  final String? assetIcon;
+  final List<Color> colors;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size.w,
+      height: size.w,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: colors,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colors.last.withValues(alpha: 0.30),
+            blurRadius: 10.r,
+            offset: Offset(0, 4.h),
+          ),
+        ],
+      ),
+      child: icon != null
+          ? Icon(icon, color: Colors.white, size: (size * 0.48).sp)
+          : SizedBox(
+              width: (size * 0.46).w,
+              height: (size * 0.46).w,
+              child: SvgPicture.asset(
+                assetIcon!,
+                colorFilter: const ColorFilter.mode(
+                  Colors.white,
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
+    );
+  }
+}
+
+class _Chevron extends StatelessWidget {
+  const _Chevron({required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
+    return Icon(
+      isRtl ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
+      size: size,
+      color: _kBlue,
     );
   }
 }

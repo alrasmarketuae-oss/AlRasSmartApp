@@ -199,6 +199,51 @@ class S {
     );
   }
 
+  /// `Welcome`
+  String get welcomeBack {
+    return Intl.message('Welcome', name: 'welcomeBack', desc: '', args: []);
+  }
+
+  /// `Sign in to continue`
+  String get signInToContinue {
+    return Intl.message(
+      'Sign in to continue',
+      name: 'signInToContinue',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Sign in with Google`
+  String get signInWithGoogle {
+    return Intl.message(
+      'Sign in with Google',
+      name: 'signInWithGoogle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Sign in with Apple`
+  String get signInWithApple {
+    return Intl.message(
+      'Sign in with Apple',
+      name: 'signInWithApple',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Sign in with fingerprint or face`
+  String get signInWithBiometrics {
+    return Intl.message(
+      'Sign in with fingerprint or face',
+      name: 'signInWithBiometrics',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Face ID / Fingerprint`
   String get enableBiometricUnlock {
     return Intl.message(
@@ -1844,6 +1889,176 @@ class S {
     return Intl.message(
       'Edit Profile',
       name: 'editProfile',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Change language`
+  String get changeLanguageSubtitle {
+    return Intl.message(
+      'Change language',
+      name: 'changeLanguageSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Get help and contact support`
+  String get helpSupportSubtitle {
+    return Intl.message(
+      'Get help and contact support',
+      name: 'helpSupportSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Read our policy and privacy`
+  String get policyAndPrivacySubtitle {
+    return Intl.message(
+      'Read our policy and privacy',
+      name: 'policyAndPrivacySubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Permanently delete your account`
+  String get deleteAccountSubtitle {
+    return Intl.message(
+      'Permanently delete your account',
+      name: 'deleteAccountSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Sign out from your account`
+  String get logOutSubtitle {
+    return Intl.message(
+      'Sign out from your account',
+      name: 'logOutSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `View and manage your cart`
+  String get cartSubtitle {
+    return Intl.message(
+      'View and manage your cart',
+      name: 'cartSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Manage your personal details`
+  String get personalInformationSubtitle {
+    return Intl.message(
+      'Manage your personal details',
+      name: 'personalInformationSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Update your password`
+  String get changePasswordSubtitle {
+    return Intl.message(
+      'Update your password',
+      name: 'changePasswordSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Manage your saved addresses`
+  String get savedAddressesSubtitle {
+    return Intl.message(
+      'Manage your saved addresses',
+      name: 'savedAddressesSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `View your saved advertisements`
+  String get savedAdsSubtitle {
+    return Intl.message(
+      'View your saved advertisements',
+      name: 'savedAdsSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Manage your advertisements`
+  String get myAdsSubtitle {
+    return Intl.message(
+      'Manage your advertisements',
+      name: 'myAdsSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Track your balance and withdrawals`
+  String get myBalanceSubtitle {
+    return Intl.message(
+      'Track your balance and withdrawals',
+      name: 'myBalanceSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Smart help at your fingertips`
+  String get aiAssistantCardSubtitle {
+    return Intl.message(
+      'Smart help at your fingertips',
+      name: 'aiAssistantCardSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Chat with our support team`
+  String get liveChatSubtitle {
+    return Intl.message(
+      'Chat with our support team',
+      name: 'liveChatSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Sign back in quickly after logout using Face ID or fingerprint. Only for this saved account.`
+  String get faceIdFingerprintSubtitle {
+    return Intl.message(
+      'Sign back in quickly after logout using Face ID or fingerprint. Only for this saved account.',
+      name: 'faceIdFingerprintSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Your data is safe with us`
+  String get dataSafeTitle {
+    return Intl.message(
+      'Your data is safe with us',
+      name: 'dataSafeTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `We use advanced security to protect your information.`
+  String get dataSafeSubtitle {
+    return Intl.message(
+      'We use advanced security to protect your information.',
+      name: 'dataSafeSubtitle',
       desc: '',
       args: [],
     );

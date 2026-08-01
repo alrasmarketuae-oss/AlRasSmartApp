@@ -89,7 +89,8 @@ class _ShippingProfileViewState extends State<ShippingProfileView> {
         final loading = state is ShippingCompanyActionLoadingState;
 
         return SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 24.h),
+          // Bottom clearance keeps the last row above the animated bottom nav bar.
+          padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 100.h),
           child: Column(
             children: [
               Container(

@@ -108,45 +108,47 @@ internal static class AiAssistantKnowledgeSource
             At any time you can ask me about any step, or use Live Chat for human help.
             """);
 
-        Add(chunks, "who-operates", "من يملك المنصة ومن يديرها", "ar", All,
+        Add(chunks, "who-operates", "من يملك المنصة ومن يديرها ومن بناها", "ar", All,
             """
-            سؤال: من صاحب التطبيق؟ من يدير المنصة؟ ما هي الشركة المشغلة؟
-            الإجابة: تشغّل منصة سوق الراس شركة ميرج سبايس لتجارة المواد الغذائية.
+            سؤال: من صاحب التطبيق؟ من بنى المنصة؟ من يدير المنصة؟ ما هي الشركة المشغلة؟
+            الإجابة: بنى وصمّم وبرمج تطبيقات ومنصة سوق الراس ناصر مصطفى محمد البربري، وهو أيضاً من درّب نموذج الذكاء الاصطناعي الخاص بها.
+            أما تشغيل منصة سوق الراس وإدارة عمليات السوق فتتولاهما شركة ميرج سبايس لتجارة المواد الغذائية.
             دور الشركة هو الوساطة وتنظيم العمليات التجارية بين الموردين والعملاء، وهي ليست مالكة للبضائع المعروضة على المنصة.
             المورد هو المسؤول عن بضاعته من حيث الجودة والكمية والوزن والتغليف ومطابقتها لوصف الإعلان.
             تخضع الشروط لقوانين دولة الإمارات العربية المتحدة وتختص محاكم دبي بالنزاعات.
             """);
-        Add(chunks, "who-operates", "Who owns and operates the platform", "en", All,
+        Add(chunks, "who-operates", "Who built, owns, and operates the platform", "en", All,
             """
-            Question: who owns the app? Who runs the platform? Which company operates it?
-            Answer: Al Ras Market is operated by Merge Spice Foodstuff Trading LLC.
+            Question: who owns the app? Who built the platform? Who runs it? Which company operates it?
+            Answer: Nasser Mostafa Mohamed Elbarbary built, designed, and programmed the Al Ras Market apps and platform, and he also trained its AI model.
+            The Al Ras Market marketplace and its commercial operations are operated by Merge Spice Foodstuff Trading LLC.
             The company's role is intermediation and organising trade between suppliers and customers; it does not own the goods listed on the platform.
             The supplier is responsible for their goods in terms of quality, quantity, weight, packaging, and matching the listing description.
             The Terms are governed by UAE law and Dubai courts have jurisdiction over disputes.
             """);
 
-        Add(chunks, "app-developer", "مين عامل البرنامج، مين المطور، مين صانع التطبيق، من برمج سوق الراس", "ar", All,
+        Add(chunks, "app-developer", "مين عامل البرنامج، مين المطور، مين صانع التطبيق، من برمج أو بنى سوق الراس، من درب النموذج", "ar", All,
             """
-            سؤال: مين عامل البرنامج ده؟ مين المطور؟ مين الصانع؟ من برمج التطبيق؟ من صمم وطور سوق الراس؟ عاوز أتواصل مع المطور.
-            الإجابة: مطوّر وصانع برنامج سوق الراس هو ناصر مصطفى محمد البربري.
+            سؤال: مين عامل البرنامج ده؟ مين المطور؟ مين الصانع؟ من برمج التطبيق أو بنى المنصة؟ من صمم وطور سوق الراس؟ من درّب نموذج الذكاء الاصطناعي؟ عاوز أتواصل مع المطور.
+            الإجابة: ناصر مصطفى محمد البربري هو الذي بنى وصمّم وبرمج تطبيقات ومنصة سوق الراس، وهو أيضاً الذي درّب نموذج الذكاء الاصطناعي الخاص بها.
             رقم الهاتف وواتساب: +971 56 916 6263.
             البريد الإلكتروني: nasermostafa.ma122@gmail.com
             للتواصل عبر واتساب يجب إظهار هذا الرابط بهذه الصيغة بالضبط: [اضغط هنا للتواصل عبر واتساب](https://wa.me/971569166263)
             للتواصل عبر البريد يجب إظهار هذا الرابط بهذه الصيغة بالضبط: [اضغط هنا لإرسال بريد إلكتروني](mailto:nasermostafa.ma122@gmail.com)
             يجب أن تكون عبارة «اضغط هنا» قابلة للضغط، ولا تعرض الرابط الخام وحده بدلاً منها.
-            تنبيه مهم: المطوّر هو الشخص الذي صمّم وبرمج التطبيق، أما الشركة المشغلة لمنصة سوق الراس فهي شركة ميرج سبايس لتجارة المواد الغذائية. لا تخلط بين المطوّر ومشغّل المنصة.
+            تنبيه مهم: ناصر هو باني ومصمم ومبرمج التطبيقات والمنصة ومدرّب نموذج الذكاء الاصطناعي، أما الشركة التي تشغّل السوق وتدير عملياته التجارية فهي شركة ميرج سبايس لتجارة المواد الغذائية. لا تخلط بين البناء والتطوير والتدريب وبين التشغيل التجاري.
             للاستفسارات التقنية والتواصل مع المطوّر استخدم بيانات ناصر أعلاه، أما مشكلات الطلبات والاسترجاع والرصيد والحساب فتُتابع مع دعم سوق الراس عبر Live Chat.
             """);
-        Add(chunks, "app-developer", "Who made the program, who is the developer, who built Al Ras Market", "en", All,
+        Add(chunks, "app-developer", "Who made the program, developed or built Al Ras Market, who trained the AI model", "en", All,
             """
-            Question: who made this program? Who is the developer? Who built or programmed the app? Who designed and developed Al Ras Market? I want to contact the developer.
-            Answer: The developer and creator of the Al Ras Market software is Nasser Mostafa Mohamed Elbarbary.
+            Question: who made this program? Who is the developer? Who built or programmed the app or platform? Who designed and developed Al Ras Market? Who trained its AI model? I want to contact the developer.
+            Answer: Nasser Mostafa Mohamed Elbarbary built, designed, and programmed the Al Ras Market apps and platform, and he also trained its AI model.
             Phone and WhatsApp: +971 56 916 6263.
             Email: nasermostafa.ma122@gmail.com
             For WhatsApp, show exactly: [Click here to contact via WhatsApp](https://wa.me/971569166263)
             For email, show exactly: [Click here to send an email](mailto:nasermostafa.ma122@gmail.com)
             “Click here” must be clickable; do not replace it with a raw URL alone.
-            Important distinction: the developer is the person who designed and programmed the app, while the Al Ras Market platform is operated by Merge Spice Foodstuff Trading LLC. Do not confuse the developer with the platform operator.
+            Important distinction: Nasser built and developed the apps and platform and trained the AI model, while Merge Spice Foodstuff Trading LLC operates the marketplace and its commercial activities. Do not confuse building, development, and AI training with commercial operation.
             Use Nasser's details above for technical enquiries or contacting the developer; order, return, balance, and account issues should go to Al Ras Market support through Live Chat.
             """);
 
@@ -1669,6 +1671,29 @@ internal static class AiAssistantKnowledgeSource
             After collection and confirmation the dues become settleable, and approved earnings are transferred within 7 business days.
             If the money is not collected from the customer, the supplier is not paid for those goods.
             This policy protects both sides and ensures transfers are made only against genuinely collected amounts.
+            """);
+
+        Add(chunks, "supplier-payout-timing", "هستلم فلوسي امتى بعد ما الشركة خدت بضاعتي، متى أقبض ثمن البضاعة", "ar", ["supplier", "public"],
+            """
+            سؤال: أنا عامل إعلان وجالي عليه طلب وسلمت البضاعة، هستلم فلوسي إمتى؟ الشركة خدت بضاعتي هقبض إمتى؟ متى أستلم ثمن الطن أو الشحنة؟ سلمت 5 طن فمتى تتحول لي الأموال؟ إمتى ينزل الفلوس في حسابي؟
+            الإجابة المختصرة: لا تُصرف أموالك بمجرد تسليم البضاعة، بل بعد أن يستلم العميل البضاعة وتُحصَّل قيمتها فعلياً، ثم تُحوَّل لك من سوق الراس.
+            التسلسل بالترتيب: تسلّم البضاعة لفريق سوق الراس أو تُشحن للعميل، ثم يستلمها العميل ويدفع قيمتها، ثم تتحول الأموال المحصّلة إلى مستحقات لك، ثم تنشئ طلب سحب من صفحة الرصيد، وبعد موافقة الدعم يتم التحويل خلال 7 أيام عمل.
+            تسليم البضاعة وحده لا يعني استحقاق الدفع، وإذا لم تُحصَّل الأموال من العميل فلا تُدفع لك قيمة البضاعة.
+            في طلبات Retail المدفوعة بالبطاقة يزيد رصيدك فور نجاح الدفع. أما الدفع عند الاستلام فلا يزيد الرصيد إلا بعد التحصيل وتأكيد الاستلام.
+            صفقات الجملة وBooking وRequest يتابعها فريق سوق الراس، وهو من ينسق التحصيل من العميل ثم تسوية مستحقاتك.
+            إذا اعتُمد طلب استرجاع لاحقاً يُخصم المبلغ من رصيدك.
+            لمعرفة موعد دقيق لطلب أو شحنة بعينها تواصل مع الدعم عبر Live Chat مع رقم الطلب.
+            """);
+        Add(chunks, "supplier-payout-timing", "When do I get paid after the company took my goods", "en", ["supplier", "public"],
+            """
+            Question: I posted a listing, received an order, and handed over the goods. When do I get my money? The company took my shipment, when am I paid? When do I receive the value of the tons I delivered?
+            Short answer: you are not paid simply for handing over the goods. Payment follows after the customer receives the goods and the order value is actually collected, and Al Ras Market then transfers it to you.
+            The sequence: you hand the goods to the Al Ras Market team or they ship to the customer, the customer receives and pays, the collected money becomes your dues, you create a withdrawal request from the Balance page, and after support approval the transfer is made within 7 business days.
+            Delivering goods alone does not create a right to payment, and if the money is never collected from the customer, you are not paid for those goods.
+            For Retail orders paid by card, your balance increases immediately after successful payment. For cash on delivery, it increases only after collection and confirmed receipt.
+            Wholesale, Booking, and Request deals are handled by the Al Ras Market team, which coordinates collection from the customer and then settles your dues.
+            If a return is later approved, the amount is deducted from your balance.
+            For the exact timing of a specific order or shipment, contact support via Live Chat with the order number.
             """);
 
         Add(chunks, "balance-not-credited", "لماذا لم يزد رصيدي بعد البيع", "ar", ["supplier"],

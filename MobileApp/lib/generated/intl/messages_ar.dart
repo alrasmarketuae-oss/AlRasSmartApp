@@ -197,6 +197,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "aiAssistantBalanceHint": MessageLookupByLibrary.simpleMessage(
       "رصيد المورد يزيد فوراً عند بيع Retail بفيزا. الدفع عند الاستلام يزيد الرصيد بعد التحصيل/الاستلام. السحب عبر IBAN خلال 7 أيام عمل بعد موافقة الدعم.",
     ),
+    "aiAssistantCardSubtitle": MessageLookupByLibrary.simpleMessage(
+      "مساعدة ذكية بين يديك",
+    ),
     "aiAssistantFabLabel": MessageLookupByLibrary.simpleMessage("AI"),
     "aiAssistantHint": MessageLookupByLibrary.simpleMessage(
       "اسأل عن الإعلانات، الطلبات، الاسترجاع، البحث بالصور…",
@@ -304,12 +307,21 @@ class MessageLookup extends MessageLookupByLibrary {
     "cart": MessageLookupByLibrary.simpleMessage("السلة"),
     "cartItemsCount": m6,
     "cartMaxAvailableInStock": m7,
+    "cartSubtitle": MessageLookupByLibrary.simpleMessage(
+      "استعرض سلتك وأدر عناصرها",
+    ),
     "cashOnDelivery": MessageLookupByLibrary.simpleMessage(
       "الدفع عند الاستلام",
     ),
     "categories": MessageLookupByLibrary.simpleMessage("الفئات"),
     "category": MessageLookupByLibrary.simpleMessage("الفئة"),
+    "changeLanguageSubtitle": MessageLookupByLibrary.simpleMessage(
+      "تغيير لغة التطبيق",
+    ),
     "changePassword": MessageLookupByLibrary.simpleMessage("تغيير كلمة المرور"),
+    "changePasswordSubtitle": MessageLookupByLibrary.simpleMessage(
+      "تحديث كلمة المرور",
+    ),
     "chatE2eNoticeBody": MessageLookupByLibrary.simpleMessage(
       "فقط الأشخاص في هذه المحادثة هم من يستطيعون قراءة أو الاستماع لهذه الرسائل.",
     ),
@@ -472,6 +484,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "كلمة المرور الحالية",
     ),
     "customerService": MessageLookupByLibrary.simpleMessage("خدمة العملاء"),
+    "dataSafeSubtitle": MessageLookupByLibrary.simpleMessage(
+      "نستخدم حماية متقدمة للحفاظ على معلوماتك.",
+    ),
+    "dataSafeTitle": MessageLookupByLibrary.simpleMessage(
+      "بياناتك في أمان معنا",
+    ),
     "dateOfBirth": MessageLookupByLibrary.simpleMessage("تاريخ الميلاد"),
     "dates": MessageLookupByLibrary.simpleMessage("تمور"),
     "dayUnit": MessageLookupByLibrary.simpleMessage("يوم"),
@@ -492,6 +510,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "deleteAccount": MessageLookupByLibrary.simpleMessage("حذف الحساب"),
     "deleteAccountConfirmMessage": MessageLookupByLibrary.simpleMessage(
       "سيتم حذف حسابك نهائياً مع إعلاناتك وطلباتك ورسائلك وعناوينك وجميع البيانات المرتبطة. لا يمكن التراجع عن هذا الإجراء.",
+    ),
+    "deleteAccountSubtitle": MessageLookupByLibrary.simpleMessage(
+      "حذف حسابك نهائيًا",
     ),
     "deleteAccountSuccess": MessageLookupByLibrary.simpleMessage(
       "تم حذف حسابك بنجاح.",
@@ -631,6 +652,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "exclusiveAgents": MessageLookupByLibrary.simpleMessage(
       "منتجات تخص وكلاء حصريين دون تفويض رسمي.",
     ),
+    "faceIdFingerprintSubtitle": MessageLookupByLibrary.simpleMessage(
+      "سجّل الدخول بسرعة بعد الخروج باستخدام Face ID أو البصمة. للحساب المحفوظ فقط.",
+    ),
     "failedToAddProductToCart": MessageLookupByLibrary.simpleMessage(
       "تعذر إضافة المنتج إلى السلة.",
     ),
@@ -691,6 +715,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "تخضع هذه الشروط والأحكام لقوانين دولة الإمارات العربية المتحدة، وتختص محاكم دبي بالنظر في أي نزاع.",
     ),
     "helpSupport": MessageLookupByLibrary.simpleMessage("الدعم والمساعدة"),
+    "helpSupportSubtitle": MessageLookupByLibrary.simpleMessage(
+      "احصل على المساعدة وتواصل مع الدعم",
+    ),
     "herbs": MessageLookupByLibrary.simpleMessage("أعشاب"),
     "highlightAd": MessageLookupByLibrary.simpleMessage("تمييز الإعلان"),
     "highlightAdDescription": MessageLookupByLibrary.simpleMessage(
@@ -744,10 +771,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "listingActive": MessageLookupByLibrary.simpleMessage("نشط"),
     "listingPaused": MessageLookupByLibrary.simpleMessage("متوقف"),
     "liveChat": MessageLookupByLibrary.simpleMessage("المحادثة المباشرة"),
+    "liveChatSubtitle": MessageLookupByLibrary.simpleMessage(
+      "تحدث مع فريق الدعم",
+    ),
     "loadingEllipsis": MessageLookupByLibrary.simpleMessage("جاري التحميل..."),
     "loadingPort": MessageLookupByLibrary.simpleMessage("ميناء التحميل"),
     "logOut": MessageLookupByLibrary.simpleMessage("تسجيل الخروج"),
-    "login": MessageLookupByLibrary.simpleMessage("تسجيل دخول"),
+    "logOutSubtitle": MessageLookupByLibrary.simpleMessage(
+      "تسجيل الخروج من حسابك",
+    ),
+    "login": MessageLookupByLibrary.simpleMessage("تسجيل الدخول"),
     "loginAsGuest": MessageLookupByLibrary.simpleMessage("دخول كزائر"),
     "loginError": MessageLookupByLibrary.simpleMessage("تسجيل الدخول بخطأ"),
     "loginSubtitle": MessageLookupByLibrary.simpleMessage("دخولك لحسابك"),
@@ -800,7 +833,11 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "muteVideo": MessageLookupByLibrary.simpleMessage("كتم الصوت"),
     "myAds": MessageLookupByLibrary.simpleMessage("إعلاناتي"),
+    "myAdsSubtitle": MessageLookupByLibrary.simpleMessage("إدارة إعلاناتك"),
     "myBalance": MessageLookupByLibrary.simpleMessage("رصيدي"),
+    "myBalanceSubtitle": MessageLookupByLibrary.simpleMessage(
+      "تتبع رصيدك وطلبات السحب",
+    ),
     "myOffers": MessageLookupByLibrary.simpleMessage("عروضي"),
     "myOrders": MessageLookupByLibrary.simpleMessage("طلباتي"),
     "myOrdersSubtitle": MessageLookupByLibrary.simpleMessage(
@@ -979,6 +1016,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "personalInformation": MessageLookupByLibrary.simpleMessage(
       "المعلومات الشخصية",
     ),
+    "personalInformationSubtitle": MessageLookupByLibrary.simpleMessage(
+      "إدارة بياناتك الشخصية",
+    ),
     "phoneCall": MessageLookupByLibrary.simpleMessage("الاتصال الهاتفي"),
     "phoneNumber": MessageLookupByLibrary.simpleMessage("رقم الهاتف"),
     "phoneNumberIsRequired": MessageLookupByLibrary.simpleMessage(
@@ -1027,6 +1067,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "policyAndPrivacy": MessageLookupByLibrary.simpleMessage(
       "السياسة والخصوصية",
+    ),
+    "policyAndPrivacySubtitle": MessageLookupByLibrary.simpleMessage(
+      "اطّلع على السياسات والخصوصية",
     ),
     "portOfArrival": MessageLookupByLibrary.simpleMessage("ميناء الوصول"),
     "postingDate": MessageLookupByLibrary.simpleMessage("تاريخ النشر"),
@@ -1235,7 +1278,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "saveChanges": MessageLookupByLibrary.simpleMessage("حفظ التغييرات"),
     "savePassword": MessageLookupByLibrary.simpleMessage("حفظ كلمة المرور"),
     "savedAddresses": MessageLookupByLibrary.simpleMessage("العناوين المحفوظة"),
+    "savedAddressesSubtitle": MessageLookupByLibrary.simpleMessage(
+      "إدارة عناوينك المحفوظة",
+    ),
     "savedAds": MessageLookupByLibrary.simpleMessage("الإعلانات المحفوظة"),
+    "savedAdsSubtitle": MessageLookupByLibrary.simpleMessage(
+      "استعرض إعلاناتك المحفوظة",
+    ),
     "savedSuccessfully": MessageLookupByLibrary.simpleMessage("تم الحفظ بنجاح"),
     "searchAgain": MessageLookupByLibrary.simpleMessage(
       "البحث مرة أخرى بالذكاء الاصطناعي",
@@ -1349,6 +1398,18 @@ class MessageLookup extends MessageLookupByLibrary {
     "showAll": MessageLookupByLibrary.simpleMessage("عرض الكل"),
     "showAllRequests": MessageLookupByLibrary.simpleMessage("عرض كل الطلبات"),
     "showNumber": MessageLookupByLibrary.simpleMessage("إظهار الرقم"),
+    "signInToContinue": MessageLookupByLibrary.simpleMessage(
+      "سجل دخولك للمتابعة",
+    ),
+    "signInWithApple": MessageLookupByLibrary.simpleMessage(
+      "تسجيل الدخول باستخدام Apple",
+    ),
+    "signInWithBiometrics": MessageLookupByLibrary.simpleMessage(
+      "تسجيل الدخول بالبصمة أو الوجه",
+    ),
+    "signInWithGoogle": MessageLookupByLibrary.simpleMessage(
+      "تسجيل الدخول باستخدام Google",
+    ),
     "signUp": MessageLookupByLibrary.simpleMessage("سجل الآن"),
     "similarAds": MessageLookupByLibrary.simpleMessage("إعلانات مشابهة"),
     "sinceHoursAgo": m29,
@@ -1517,6 +1578,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "viewOffers": MessageLookupByLibrary.simpleMessage("عرض العروض"),
     "website": MessageLookupByLibrary.simpleMessage("الموقع الإلكتروني"),
     "websiteHint": MessageLookupByLibrary.simpleMessage("https://"),
+    "welcomeBack": MessageLookupByLibrary.simpleMessage("مرحبًا بك"),
     "welcomeShippingCompany": MessageLookupByLibrary.simpleMessage(
       "مرحباً بك في لوحة تحكم شركة الشحن",
     ),

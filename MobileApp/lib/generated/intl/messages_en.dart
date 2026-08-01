@@ -202,6 +202,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "aiAssistantBalanceHint": MessageLookupByLibrary.simpleMessage(
       "Supplier balance increases immediately on Retail card payments. Cash-on-delivery credits after collection/receipt. Withdrawals via IBAN are processed within 7 business days after support approval.",
     ),
+    "aiAssistantCardSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Smart help at your fingertips",
+    ),
     "aiAssistantFabLabel": MessageLookupByLibrary.simpleMessage("AI"),
     "aiAssistantHint": MessageLookupByLibrary.simpleMessage(
       "Ask about ads, orders, returns, image search…",
@@ -311,10 +314,19 @@ class MessageLookup extends MessageLookupByLibrary {
     "cart": MessageLookupByLibrary.simpleMessage("Cart"),
     "cartItemsCount": m6,
     "cartMaxAvailableInStock": m7,
+    "cartSubtitle": MessageLookupByLibrary.simpleMessage(
+      "View and manage your cart",
+    ),
     "cashOnDelivery": MessageLookupByLibrary.simpleMessage("Cash on delivery"),
     "categories": MessageLookupByLibrary.simpleMessage("Categories"),
     "category": MessageLookupByLibrary.simpleMessage("Category"),
+    "changeLanguageSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Change language",
+    ),
     "changePassword": MessageLookupByLibrary.simpleMessage("Change Password"),
+    "changePasswordSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Update your password",
+    ),
     "chatE2eNoticeBody": MessageLookupByLibrary.simpleMessage(
       "Only people in this conversation can read or listen to these messages.",
     ),
@@ -469,6 +481,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "currentBalance": MessageLookupByLibrary.simpleMessage("Current balance"),
     "currentPassword": MessageLookupByLibrary.simpleMessage("Current Password"),
     "customerService": MessageLookupByLibrary.simpleMessage("Customer Service"),
+    "dataSafeSubtitle": MessageLookupByLibrary.simpleMessage(
+      "We use advanced security to protect your information.",
+    ),
+    "dataSafeTitle": MessageLookupByLibrary.simpleMessage(
+      "Your data is safe with us",
+    ),
     "dateOfBirth": MessageLookupByLibrary.simpleMessage("Date of Birth"),
     "dates": MessageLookupByLibrary.simpleMessage("Dates"),
     "dayUnit": MessageLookupByLibrary.simpleMessage("day"),
@@ -489,6 +507,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "deleteAccount": MessageLookupByLibrary.simpleMessage("Delete Account"),
     "deleteAccountConfirmMessage": MessageLookupByLibrary.simpleMessage(
       "This will permanently delete your account, ads, orders, messages, addresses, and all related data. This action cannot be undone.",
+    ),
+    "deleteAccountSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Permanently delete your account",
     ),
     "deleteAccountSuccess": MessageLookupByLibrary.simpleMessage(
       "Your account has been deleted successfully.",
@@ -630,6 +651,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "exclusiveAgents": MessageLookupByLibrary.simpleMessage(
       "Products belonging to exclusive agents without official authorization.",
     ),
+    "faceIdFingerprintSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Sign back in quickly after logout using Face ID or fingerprint. Only for this saved account.",
+    ),
     "failedToAddProductToCart": MessageLookupByLibrary.simpleMessage(
       "Failed to add product to cart.",
     ),
@@ -688,6 +712,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "These terms and conditions are governed by UAE laws, and Dubai courts have jurisdiction over any disputes.",
     ),
     "helpSupport": MessageLookupByLibrary.simpleMessage("Help & Support"),
+    "helpSupportSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Get help and contact support",
+    ),
     "herbs": MessageLookupByLibrary.simpleMessage("Herbs"),
     "highlightAd": MessageLookupByLibrary.simpleMessage("Highlight Ad"),
     "highlightAdDescription": MessageLookupByLibrary.simpleMessage(
@@ -739,9 +766,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "listingActive": MessageLookupByLibrary.simpleMessage("Active"),
     "listingPaused": MessageLookupByLibrary.simpleMessage("Paused"),
     "liveChat": MessageLookupByLibrary.simpleMessage("Live Chat"),
+    "liveChatSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Chat with our support team",
+    ),
     "loadingEllipsis": MessageLookupByLibrary.simpleMessage("Loading..."),
     "loadingPort": MessageLookupByLibrary.simpleMessage("Loading Port"),
     "logOut": MessageLookupByLibrary.simpleMessage("Log Out"),
+    "logOutSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Sign out from your account",
+    ),
     "login": MessageLookupByLibrary.simpleMessage("Login"),
     "loginAsGuest": MessageLookupByLibrary.simpleMessage("Login as Guest"),
     "loginError": MessageLookupByLibrary.simpleMessage("Login failed"),
@@ -797,7 +830,13 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "muteVideo": MessageLookupByLibrary.simpleMessage("Mute"),
     "myAds": MessageLookupByLibrary.simpleMessage("My Ads"),
+    "myAdsSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Manage your advertisements",
+    ),
     "myBalance": MessageLookupByLibrary.simpleMessage("My Balance"),
+    "myBalanceSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Track your balance and withdrawals",
+    ),
     "myOffers": MessageLookupByLibrary.simpleMessage("My Offers"),
     "myOrders": MessageLookupByLibrary.simpleMessage("My Orders"),
     "myOrdersSubtitle": MessageLookupByLibrary.simpleMessage(
@@ -978,6 +1017,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "personalInformation": MessageLookupByLibrary.simpleMessage(
       "Personal Information",
     ),
+    "personalInformationSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Manage your personal details",
+    ),
     "phoneCall": MessageLookupByLibrary.simpleMessage("Phone Call"),
     "phoneNumber": MessageLookupByLibrary.simpleMessage("Phone Number"),
     "phoneNumberIsRequired": MessageLookupByLibrary.simpleMessage(
@@ -1028,6 +1070,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "policyAndPrivacy": MessageLookupByLibrary.simpleMessage(
       "Policy and Privacy",
+    ),
+    "policyAndPrivacySubtitle": MessageLookupByLibrary.simpleMessage(
+      "Read our policy and privacy",
     ),
     "portOfArrival": MessageLookupByLibrary.simpleMessage("Port of Arrival"),
     "postingDate": MessageLookupByLibrary.simpleMessage("Posting Date"),
@@ -1246,7 +1291,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "saveChanges": MessageLookupByLibrary.simpleMessage("Save changes"),
     "savePassword": MessageLookupByLibrary.simpleMessage("Save Password"),
     "savedAddresses": MessageLookupByLibrary.simpleMessage("Saved Addresses"),
+    "savedAddressesSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Manage your saved addresses",
+    ),
     "savedAds": MessageLookupByLibrary.simpleMessage("Saved Ads"),
+    "savedAdsSubtitle": MessageLookupByLibrary.simpleMessage(
+      "View your saved advertisements",
+    ),
     "savedSuccessfully": MessageLookupByLibrary.simpleMessage(
       "Saved successfully",
     ),
@@ -1362,6 +1413,18 @@ class MessageLookup extends MessageLookupByLibrary {
       "Show all requests",
     ),
     "showNumber": MessageLookupByLibrary.simpleMessage("Show number"),
+    "signInToContinue": MessageLookupByLibrary.simpleMessage(
+      "Sign in to continue",
+    ),
+    "signInWithApple": MessageLookupByLibrary.simpleMessage(
+      "Sign in with Apple",
+    ),
+    "signInWithBiometrics": MessageLookupByLibrary.simpleMessage(
+      "Sign in with fingerprint or face",
+    ),
+    "signInWithGoogle": MessageLookupByLibrary.simpleMessage(
+      "Sign in with Google",
+    ),
     "signUp": MessageLookupByLibrary.simpleMessage("Sign Up"),
     "similarAds": MessageLookupByLibrary.simpleMessage("Similar ads"),
     "sinceHoursAgo": m29,
@@ -1536,6 +1599,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "viewOffers": MessageLookupByLibrary.simpleMessage("View Offers"),
     "website": MessageLookupByLibrary.simpleMessage("Website"),
     "websiteHint": MessageLookupByLibrary.simpleMessage("https://"),
+    "welcomeBack": MessageLookupByLibrary.simpleMessage("Welcome"),
     "welcomeShippingCompany": MessageLookupByLibrary.simpleMessage(
       "Welcome to your shipping company dashboard",
     ),
