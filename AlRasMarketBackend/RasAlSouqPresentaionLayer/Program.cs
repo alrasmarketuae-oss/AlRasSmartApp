@@ -14,6 +14,9 @@ using BusinessLayer.Interfaces;
 using BusinessLayer.LoginServices;
 using BusinessLayer.PasswordHelper;
 using BusinessLayer.Services;
+using BusinessLayer.Services.AiAssistant;
+using BusinessLayer.Services.AiAssistant.Mcp;
+using BusinessLayer.Services.ImageSearch;
 using BusinessLayer.TokenService;
 using BusinessLayer.Caching;
 using BusinessLayer.Options;
@@ -152,9 +155,11 @@ builder.Services.AddHttpClient<IAiTextEmbeddingService, OpenAiTextEmbeddingServi
 {
     client.Timeout = TimeSpan.FromSeconds(30);
 });
+builder.Services.AddScoped<IAiAssistantToolsService, AiAssistantMcpToolsService>();
+builder.Services.AddScoped<IAiAssistantMcpToolLoop, AiAssistantMcpToolLoop>();
 builder.Services.AddHttpClient<IAiAssistantAppService, AiAssistantAppService>(client =>
 {
-    client.Timeout = TimeSpan.FromSeconds(45);
+    client.Timeout = TimeSpan.FromSeconds(90);
 });
 builder.Services.AddHostedService<AiKnowledgeBootstrapHostedService>();
 builder.Services.AddHttpClient<IProductTextSearchIndex, MeilisearchProductTextSearchIndex>((sp, client) =>
@@ -453,8 +458,12 @@ await using (var scope = app.Services.CreateAsyncScope())
     // Schema columns (e.g. Categories.IsHide) must exist before any EF category queries.
     await CategoryProductSchemaMigrator.EnsureAsync(db);
     // Must run before any EF Products query (e.g. ProductCodeSchemaMigrator).
+    // RetailCode is mapped on Product; add the column before EF selects Products rows.
     await ProductReadyForAdminReviewSchemaMigrator.EnsureAsync(db);
     await PendingProductChangesSchemaMigrator.EnsureAsync(db);
+    await ProductRetailPricingSchemaMigrator.EnsureAsync(db);
+    await ProductRetailChannelDetailsSchemaMigrator.EnsureAsync(db);
+    await ProductRetailCodeSchemaMigrator.EnsureAsync(db);
     await ProductCodeSchemaMigrator.EnsureAsync(db);
     await ProductStoredProceduresSchemaMigrator.EnsureAsync(db);
     await OrderSchemaMigrator.EnsureAsync(db);
@@ -471,8 +480,6 @@ await using (var scope = app.Services.CreateAsyncScope())
     await OfferSchemaMigrator.EnsureAsync(db);
     await ProductOfferDurationSchemaMigrator.EnsureAsync(db);
     await ProductCreatedLanguageSchemaMigrator.EnsureAsync(db);
-    await ProductRetailPricingSchemaMigrator.EnsureAsync(db);
-    await ProductRetailChannelDetailsSchemaMigrator.EnsureAsync(db);
     await ProductVideoSchemaMigrator.EnsureAsync(db);
     await RequestTypeSchemaMigrator.EnsureAsync(db);
     await BookingPriceTypeSchemaMigrator.EnsureAsync(db);

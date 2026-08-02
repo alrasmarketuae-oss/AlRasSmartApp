@@ -20,6 +20,8 @@ public interface IAuthAppService
     Task<object> GetCompanyActivationStatusAsync(string email, string? fcmToken = null, CancellationToken cancellationToken = default);
     Task<object> GetAccountApprovalStatusAsync(string email, CancellationToken cancellationToken = default);
     Task<string> ChangePasswordAsync(string userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default);
+    /// <summary>Verifies the current password without issuing a new token (mobile sensitive gates).</summary>
+    Task VerifyPasswordAsync(string userId, string password, CancellationToken cancellationToken = default);
     Task<string> ForgotPasswordRequestAsync(string providerName, string destination, CancellationToken cancellationToken = default);
     Task<string> ForgotPasswordResetAsync(string providerName, string destination, string code, string newPassword, CancellationToken cancellationToken = default);
 }

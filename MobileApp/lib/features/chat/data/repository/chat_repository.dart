@@ -47,7 +47,7 @@ class ChatRepository {
     required String token,
   }) async {
     try {
-      await _hub.ensureStarted();
+      await _hub.enterChatScreen();
       if (!_hub.isConnected) {
         return const Left(ServerFailure('Failed to connect to chat server'));
       }
@@ -460,9 +460,9 @@ class ChatRepository {
     }
   }
 
-  /// Does not stop the shared hub — only clears active conversation.
-  void dispose() {
-    _hub.activeConversationOtherUserId = null;
+  /// Stops the shared ChatHub when leaving the support chat screen.
+  Future<void> dispose() async {
+    await _hub.leaveChatScreen();
   }
 
   String? _extractMessage(dynamic data) {

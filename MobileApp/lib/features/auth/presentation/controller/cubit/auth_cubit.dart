@@ -21,7 +21,6 @@ import 'package:go_router/go_router.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:alrasmarket/core/helper/cach_helper.dart';
-import 'package:alrasmarket/core/serveses/app_chat_listener_service.dart';
 import 'package:alrasmarket/core/serveses/user_preferences_service.dart';
 import '../../../domain/repository/base_auth_repository.dart';
 import '../../../domain/usecases/login_usecase.dart';
@@ -123,7 +122,6 @@ class AuthCubit extends Cubit<AuthStates> {
         shippingCompanyAccount: loginResponse.isShippingCompanyAccount,
         userPhone: loginResponse.phone,
       );
-      unawaited(AppChatListenerService.instance.start());
     }
   }
 
@@ -640,9 +638,6 @@ class AuthCubit extends Cubit<AuthStates> {
           isCustomerAcount: status.isCustomer,
           userPhone: status.phone,
         );
-        if (token.isNotEmpty) {
-          unawaited(AppChatListenerService.instance.start());
-        }
         emit(const AccountApprovalApprovedState());
       }
     });

@@ -2,7 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using BusinessLayer.Interfaces;
 
-namespace BusinessLayer.Services;
+namespace BusinessLayer.Services.AiAssistant;
 
 /// <summary>
 /// The assistant's entire grounding corpus. Every user-visible behaviour claimed here
@@ -48,7 +48,8 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "assistant-identity", "من أنت؟ عرفني بنفسك، انت مين، مين انت", "ar", All,
             """
             سؤال: من أنت؟ انت مين؟ عرفني بنفسك؟ ايه انت؟ مين بيكلمني؟ ما اسمك؟
-            الإجابة: أنا مساعد سوق الراس الذكي (AI Assistant)، مساعد رسمي داخل تطبيق سوق الراس.
+            الإجابة: أنا الراس الذكي (Alras Smart)، المساعد الرسمي داخل تطبيق سوق الراس.
+            اسمي بالعربية: الراس الذكي. واسمي بالإنجليزية: Alras Smart.
             مهمتي أن أشرح لك المنصة وأجيب عن أسئلتك عنها حسب نوع حسابك وصلاحياته.
             أستطيع مساعدتك في: أنواع الحسابات، والتسجيل وتسجيل الدخول، والتنقل داخل التطبيق، والبحث النصي والبحث بالصور، وأنواع الإعلانات وكيفية إنشائها، والشراء وطرق الدفع، وتتبع الطلبات وحالاتها، وسياسة الاسترجاع ورد الأموال، ورصيد المورد وطلبات السحب، وإعلانات الشحن، والشروط والخصوصية.
             أنا لست موظف دعم بشري: للحالات الفردية التي تحتاج تدخلاً بشرياً استخدم Live Chat من الملف الشخصي.
@@ -58,7 +59,8 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "assistant-identity", "Who are you? Introduce yourself, what are you", "en", All,
             """
             Question: who are you? What are you? Introduce yourself. Who am I talking to? What is your name?
-            Answer: I am the Al Ras Market AI Assistant, the official assistant inside the Al Ras Market app.
+            Answer: I am Alras Smart (الراس الذكي), the official AI agent inside the Al Ras Market app.
+            My English name is Alras Smart. My Arabic name is الراس الذكي.
             My job is to explain the platform and answer your questions about it according to your account type and its permissions.
             I can help with: account types, registration and sign-in, navigating the app, text and image search, ad types and how to create them, buying and payment methods, order tracking and statuses, the returns and refunds policy, supplier balance and withdrawals, shipping ads, and terms and privacy.
             I am not a human support agent: for individual cases needing human action, use Live Chat from Profile.
@@ -270,14 +272,14 @@ internal static class AiAssistantKnowledgeSource
             عند إنشاء إعلان تُختار وحدة القياس المناسبة للمنتج، ومن الوحدات المتاحة: طن، كيلو، قطعة، كرتون، درزن، كيس، صندوق.
             الكمية المدخلة هي المخزون المتاح للبيع، وعندما تصل إلى صفر يصبح الإعلان نافد المخزون ولا يمكن الشراء منه.
             يمكن للمعلن تحديد حد أدنى للطلب (Minimum Order Quantity) وحد أقصى، فلا يستطيع المشتري طلب كمية أقل من الحد الأدنى أو أكثر من الحد الأقصى.
-            إذا كان المنتج مفعّلاً للبيع بالتجزئة أيضاً، فله وحدة وكمية وسعر تجزئة منفصلة عن بيانات الجملة.
+            إذا كان المنتج مفعّلاً للبيع بالتجزئة أيضاً، فله وحدة وكمية وسعر تجزئة منفصلة عن بيانات الجملة، وله كود تجزئة (RetailCode) منفصل عن كود الجملة (ProductCode).
             """);
         Add(chunks, "units", "Units of measure and quantities", "en", All,
             """
             When creating an ad you choose the unit that fits the product; available units include ton, kilogram, piece, carton, dozen, bag, and box.
             The quantity entered is the sellable stock; when it reaches zero the listing becomes out of stock and cannot be purchased.
             The advertiser can set a Minimum Order Quantity and a maximum, so a buyer cannot order below the minimum or above the maximum.
-            If the product is also enabled for retail selling, it has a separate retail unit, retail quantity, and retail price independent of the wholesale data.
+            If the product is also enabled for retail selling, it has a separate retail unit, retail quantity, retail price, and a separate RetailCode distinct from the wholesale ProductCode.
             """);
     }
 
@@ -1696,6 +1698,25 @@ internal static class AiAssistantKnowledgeSource
             For the exact timing of a specific order or shipment, contact support via Live Chat with the order number.
             """);
 
+        Add(chunks, "ai-tools-voice-actions", "تعديل سعر أو كمية الإعلان بالصوت، أرخص منتج، مبيعاتي، فويس شات للذكاء الاصطناعي", "ar", All,
+            """
+            يمكن للمساعد الذكي تنفيذ إجراءات مباشرة عبر أدوات (MCP-style tools) عندما تكون مسجلاً دخولك:
+            1) تعديل سعر و/أو كمية إعلانك: اذكر اسم الإعلان أو ProductCode مع السعر أو الكمية الجديدة. إذا كان لديك أكثر من إعلان بنفس الاسم سيطلب منك المساعد ProductCode.
+            2) البحث عن أرخص منتج معتمد في السوق باسم المنتج.
+            3) معرفة عدد مبيعاتك كمورد: عدد الطلبات التي أنت مالك منتجها (ProductOwner / ToUserId) وحالتها تم الاستلام أو تم التسليم.
+            الفويس مع المساعد: المساعد هو من يستمع ويعالج الكلام؛ يظهر النص مباشرة أثناء الحديث، وبعد الانتهاء يصحّح الأخطاء اللغوية/الإملائية الناتجة عن التعرف على الصوت ثم يعرض النص النهائي في حقل الكتابة لتختار إرسال أو إلغاء.
+            شات المساعد يقبل حالياً النص والفويس فقط، ولا يدعم الصور أو الفيديو أو الملفات أو الموقع الآن، ومن المتوقع دعم الصور مستقبلاً. لإرسال صور/فيديو/ملفات/موقع استخدم Live Chat.
+            """);
+        Add(chunks, "ai-tools-voice-actions", "Update ad price quantity by voice, cheapest product, my sales, AI voice chat", "en", All,
+            """
+            The AI assistant can run live marketplace actions via tools when you are signed in:
+            1) Update your own ad price and/or quantity by ad name or ProductCode. If several of your ads share the same name, the assistant asks for the ProductCode.
+            2) Find the cheapest approved marketplace product by name.
+            3) Report your seller sales count: orders where you are the product owner (ToUserId) and status is received/delivered.
+            Voice with the assistant: the AI listens and processes speech; text appears live while you talk, then the AI corrects speech-recognition mistakes and puts the cleaned text in the field so you can send or cancel.
+            The AI chat currently accepts text and voice only — not images, video, files, or location yet; image support is expected later. To send images/video/files/location use Live Chat.
+            """);
+
         Add(chunks, "balance-not-credited", "لماذا لم يزد رصيدي بعد البيع", "ar", ["supplier"],
             """
             الأسباب الشائعة: الطلب بالدفع عند الاستلام ولم يتم تحصيل الأموال بعد، فالرصيد لا يزيد قبل التحصيل وتأكيد الاستلام.
@@ -1796,6 +1817,7 @@ internal static class AiAssistantKnowledgeSource
             بمجرد إرسال أول رسالة تُفتح جلسة بينك وبين أحد موظفي سوق الراس ويرد عليك.
             استخدم Live Chat للمشكلات التي تحتاج تدخلاً بشرياً: مشكلة في طلب معين، أو طلب استرجاع، أو تأخر تحويل رصيد، أو استفسار عن رفض إعلان أو حساب.
             عند التواصل اذكر رقم الطلب أو اسم الإعلان لتسريع المساعدة.
+            في Live Chat / شات الدعم الفني يمكنك إرسال: رسائل نصية، ورسائل صوتية (فويس)، وصور، وفيديوهات، وملفات/مستندات، وموقعك الجغرافي.
             """);
         Add(chunks, "live-chat", "Live Chat with human support", "en", SignedIn,
             """
@@ -1804,6 +1826,22 @@ internal static class AiAssistantKnowledgeSource
             Sending the first message opens a session between you and an Al Ras Market agent who replies to you.
             Use Live Chat for anything needing human action: a problem with a specific order, a return request, a delayed balance transfer, or a question about a rejected listing or account.
             Mention the order number or listing name to speed up the help you get.
+            In Live Chat / support chat you can send: text messages, voice messages, images, videos, files/documents, and your location.
+            """);
+
+        Add(chunks, "live-chat-media", "هل أقدر أرسل صوت أو صور أو فيديو أو ملفات أو موقع في شات الدعم Live Chat", "ar", All,
+            """
+            سؤال: هل يمكنني إرسال رسائل صوت أو صور وفيديوهات أو فايلات أو موقع لشات الدعم الفني أو Live Chat؟
+            الإجابة: نعم. في شات الدعم الفني (Live Chat) يمكنك إرسال رسائل نصية، ورسائل صوتية (فويس)، وصور، وفيديوهات، وملفات/مستندات، وموقعك الجغرافي.
+            أما شات المساعد الذكي (AI Assistant) فهو مختلف: يقبل حالياً الرسائل النصية والفويس فقط، ولا يدعم رفع الصور أو الفيديو أو الملفات أو الموقع الآن، ومن المتوقع إضافة الصور لاحقاً.
+            استخدم Live Chat عندما تحتاج إرفاق صورة مشكلة أو فيديو أو ملف أو إرسال موقعك لموظف الدعم البشري.
+            """);
+        Add(chunks, "live-chat-media", "Can I send voice images videos files or location in Live Chat support", "en", All,
+            """
+            Question: Can I send voice messages, images, videos, files, or a location to technical support chat or Live Chat?
+            Answer: Yes. In Live Chat / support chat you can send text, voice messages, images, videos, files/documents, and your location.
+            The AI Assistant chat is different: it currently accepts text and voice only, and does not support images, video, files, or location yet — image support is expected in the future.
+            Use Live Chat when you need to attach a problem photo, video, file, or share your location with a human support agent.
             """);
 
         Add(chunks, "help-support", "صفحة المساعدة والدعم", "ar", SignedIn,
@@ -1823,9 +1861,10 @@ internal static class AiAssistantKnowledgeSource
 
         Add(chunks, "assistant", "سياسة مساعد الذكاء الاصطناعي", "ar", All,
             """
-            AI Assistant يجيب عن أسئلة سوق الراس فقط، وفق نوع حسابك وصلاحياته.
-            لا ينفذ عمليات نيابة عنك: لا يلغي طلباً ولا يوافق على استرجاع ولا يحول أموالاً ولا يفتح بيانات طلب محدد.
-            هو مختلف عن Live Chat: المساعد يشرح المنصة وسياساتها، أما Live Chat فهو موظف دعم بشري يتدخل في الحالات الفردية.
+            الراس الذكي (Alras Smart) يجيب عن أسئلة سوق الراس فقط، وفق نوع حسابك وصلاحياته.
+            لا ينفذ عمليات نيابة عنك مثل إلغاء طلب أو الموافقة على استرجاع أو تحويل أموال، لكنه يستطيع عبر أدواته تحديث سعر/كمية إعلاناتك، وإيجاد أرخص منتج، وعرض عدد مبيعاتك.
+            هو مختلف عن Live Chat: المساعد يشرح المنصة وسياساتها وينفّذ أدوات محددة، أما Live Chat فهو موظف دعم بشري يتدخل في الحالات الفردية ويمكنه استقبال صوت وصور وفيديو وملفات وموقع.
+            شات المساعد يقبل حالياً الرسائل النصية والفويس فقط (والمساعد يصحّح نص الفويس بعد الاستماع)، ولا يدعم الصور أو الفيديو أو الملفات أو الموقع الآن، ومن المتوقع قبول الصور مستقبلاً.
             يرد المساعد بلغة رسالتك، فإذا كتبت بالعربية يرد بالعربية وإذا كتبت بالإنجليزية يرد بالإنجليزية، وإذا كتبت بلغة أخرى يفهمها داخلياً ويرد بلغة مدعومة.
             الأسئلة خارج نطاق المنصة تُرفض بلطف مع اقتراح مواضيع يمكنه المساعدة فيها.
             عند السؤال عن ميزة إنشاء مثل Booking يوضح المساعد أولاً هل نوع حسابك مسموح له أم لا.
@@ -1833,13 +1872,14 @@ internal static class AiAssistantKnowledgeSource
             """);
         Add(chunks, "assistant", "AI Assistant policy", "en", All,
             """
-            The AI Assistant answers questions about Al Ras Market only, according to your account type and its permissions.
-            It does not perform actions for you: it cannot cancel an order, approve a return, move money, or open a specific order's data.
-            It is different from Live Chat: the assistant explains the platform and its policies, while Live Chat is a human support agent who handles individual cases.
-            The assistant replies in the language of your message: Arabic in, Arabic out; English in, English out; another language is understood internally and answered in a supported language.
-            Questions outside the platform's scope are politely declined with suggestions of topics it can help with.
-            When asked about a creation feature such as Booking, the assistant first clarifies whether your account type is allowed.
-            Restrictions concern ad creation and balance only and never block order tracking, search, or support.
+            Alras Smart (الراس الذكي) answers questions about Al Ras Market only, according to your account type and its permissions.
+            It does not cancel orders, approve returns, or move money for you, but through its tools it can update your ad price/quantity, find the cheapest product, and report your sales count.
+            It is different from Live Chat: the assistant explains the platform and runs specific tools, while Live Chat is a human support agent who handles individual cases and can receive voice, images, video, files, and location.
+            The AI chat currently accepts text and voice only (and the AI corrects the voice transcript after listening); images, video, files, and location are not supported yet — image support is expected in the future.
+            The assistant replies in the language of your message: Arabic for Arabic, English for English, and for other languages it understands internally then replies in a supported language.
+            Out-of-scope questions are declined politely with suggested platform topics.
+            When asked how to create something like Booking, the assistant first checks whether your account type is allowed.
+            Restrictions cover only creating ads and the Balance page, and never block order tracking, search, or support.
             """);
     }
 
@@ -2172,7 +2212,7 @@ internal static class AiAssistantKnowledgeSource
             الرصيد (Balance): صفحة المورد لمتابعة مستحقاته وطلب سحبها.
             الآيبان (IBAN): رقم الحساب البنكي المستخدم في طلب السحب.
             Live Chat: محادثة مباشرة مع موظف دعم بشري.
-            AI Assistant: مساعد ذكي يشرح المنصة وسياساتها ولا ينفذ عمليات.
+            الراس الذكي (Alras Smart): مساعد ذكي يشرح المنصة وسياساتها وينفّذ أدوات محددة.
             """);
         Add(chunks, "glossary", "Platform glossary", "en", All,
             """
@@ -2188,7 +2228,7 @@ internal static class AiAssistantKnowledgeSource
             Balance: the supplier page for following dues and requesting withdrawals.
             IBAN: the bank account number used in a withdrawal request.
             Live Chat: a direct conversation with a human support agent.
-            AI Assistant: an assistant that explains the platform and its policies and does not perform actions.
+            Alras Smart (الراس الذكي): an AI agent that explains the platform and its policies and can run specific tools.
             """);
 
         Add(chunks, "assistant-scope", "ما الذي يستطيع المساعد الإجابة عنه", "ar", All,

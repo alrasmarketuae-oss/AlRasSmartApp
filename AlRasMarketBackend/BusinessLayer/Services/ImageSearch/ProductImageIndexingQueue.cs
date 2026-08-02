@@ -1,7 +1,7 @@
 using System.Threading.Channels;
 using BusinessLayer.Interfaces;
 
-namespace BusinessLayer.Services;
+namespace BusinessLayer.Services.ImageSearch;
 
 public sealed class ProductImageIndexingQueue : IProductImageIndexingQueue
 {

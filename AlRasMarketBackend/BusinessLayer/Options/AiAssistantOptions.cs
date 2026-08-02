@@ -11,6 +11,8 @@ public sealed class AiAssistantOptions
     public string EmbeddingModel { get; set; } = "text-embedding-3-small";
     public int EmbeddingDimensions { get; set; } = 1536;
     public string ChatModel { get; set; } = "gpt-4o-mini";
+    /// <summary>OpenAI audio transcription model (Whisper-class accuracy).</summary>
+    public string TranscriptionModel { get; set; } = "whisper-1";
     public int RetrievalLimit { get; set; } = 10;
     /// <summary>
     /// Cosine floor for retrieval. Kept low because short questions score poorly

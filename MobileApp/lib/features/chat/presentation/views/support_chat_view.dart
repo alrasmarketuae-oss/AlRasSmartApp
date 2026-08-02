@@ -7,7 +7,6 @@ import 'package:alrasmarket/features/chat/data/models/chat_message_type.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_support_session_model.dart';
 import 'package:alrasmarket/features/chat/presentation/controller/chat_cubit.dart';
 import 'package:alrasmarket/features/chat/presentation/controller/chat_states.dart';
-import 'package:alrasmarket/features/chat/presentation/widgets/chat_e2e_notice_banner.dart';
 import 'package:alrasmarket/features/chat/presentation/widgets/chat_input_bar.dart';
 import 'package:alrasmarket/features/chat/presentation/widgets/chat_message_bubble.dart';
 import 'package:alrasmarket/features/chat/presentation/widgets/chat_session_divider.dart';
@@ -216,7 +215,6 @@ class _SupportChatViewState extends State<SupportChatView> {
             ),
             body: Column(
               children: [
-                const ChatE2eNoticeBanner(),
                 Expanded(
                   child: isLoading
                       ? const Center(child: CircularProgressIndicator())

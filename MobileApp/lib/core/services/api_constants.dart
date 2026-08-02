@@ -111,6 +111,8 @@ class ApiConstants {
   static String internalDomesticShippingPriceEndPoint =
       '/InternalDomesticShipping/price';
   static String aiAssistantAskEndPoint = '/AiAssistant/ask';
+  static String aiAssistantCorrectDictationEndPoint = '/AiAssistant/correct-dictation';
+  static String aiAssistantTranscribeVoiceEndPoint = '/AiAssistant/transcribe-voice';
 
   // Auth Endpoints
   static String loginEndPoint = '/Auth/login';
@@ -126,6 +128,7 @@ class ApiConstants {
   static String forgotPasswordRequestEndPoint = '/Auth/forgot-password/request';
   static String forgotPasswordResetEndPoint = '/Auth/forgot-password/reset';
   static String changePasswordEndPoint = '/Auth/change-password';
+  static String verifyPasswordEndPoint = '/Auth/verify-password';
   static String accountApprovalStatusEndPoint(String email) =>
       '/Auth/account-approval-status?email=${Uri.encodeComponent(email)}';
   static String uploadCompanyLicenceEndPoint = '/CompanyLicence/upload';
@@ -245,6 +248,4 @@ class ApiConstants {
   static String chatKeysMeEndPoint = '/Chat/keys/me';
   static String chatKeysMePrivateEndPoint = '/Chat/keys/me/private';
   static String chatKeyByUserEndPoint(String userId) => '/Chat/keys/$userId';
-  static const String encryptedMessagesInfoUrl =
-      'https://www.alrasmarketapp.com/encrypted-messages';
 }

@@ -4,6 +4,11 @@ public class Product
 {
     public Guid ProductId { get; set; } = Guid.NewGuid();
     public string? ProductCode { get; set; }
+    /// <summary>
+    /// Separate public code for the retail channel on hybrid (category + retail) listings.
+    /// Null when retail pricing is not enabled.
+    /// </summary>
+    public string? RetailCode { get; set; }
     public string? NameEn { get; set; }
     /// <summary>
     /// App UI language when the seller authored the ad (<c>en</c> / <c>ar</c>).

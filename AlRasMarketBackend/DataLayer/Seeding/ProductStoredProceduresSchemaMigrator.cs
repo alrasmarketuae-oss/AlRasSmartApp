@@ -80,6 +80,7 @@ public static class ProductStoredProceduresSchemaMigrator
                 @RetailPackaging tinyint = NULL,
                 @RetailPackagingDetails nvarchar(255) = NULL,
                 @RetailDescriptionEn nvarchar(max) = NULL,
+                @RetailCode nvarchar(16) = NULL,
                 @IsFeatured bit = 0,
                 @ViewsCount bigint = 0,
                 @CreatedAt datetime,
@@ -156,6 +157,7 @@ public static class ProductStoredProceduresSchemaMigrator
                     RetailPackaging,
                     RetailPackagingDetails,
                     RetailDescriptionEn,
+                    RetailCode,
                     IsFeatured,
                     ViewsCount,
                     CreatedAt
@@ -203,6 +205,7 @@ public static class ProductStoredProceduresSchemaMigrator
                     @RetailPackaging,
                     @RetailPackagingDetails,
                     @RetailDescriptionEn,
+                    @RetailCode,
                     @IsFeatured,
                     @ViewsCount,
                     @CreatedAt
@@ -225,6 +228,7 @@ public static class ProductStoredProceduresSchemaMigrator
                 SELECT
                     p.ProductId,
                     p.ProductCode,
+                    p.RetailCode,
                     p.NameEn,
                     p.USDPrice,
                     p.OwnerId,

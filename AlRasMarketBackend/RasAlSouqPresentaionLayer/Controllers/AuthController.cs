@@ -383,6 +383,47 @@ public class AuthController(
     }
 
     /// <summary>
+    /// Verifies the current password for sensitive in-app gates. Does not issue a new token.
+    /// </summary>
+    [HttpPost("verify-password")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> VerifyPassword(
+        [FromBody] VerifyPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            await _authAppService.VerifyPasswordAsync(userId, request.Password, cancellationToken);
+            return Ok(new { ok = true });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Permanently deletes the authenticated user's account and all related data.
     /// </summary>
     [HttpPost("delete-account")]
@@ -654,6 +695,14 @@ public sealed class ChangePasswordRequest
     /// New account password.
     /// </summary>
     public string NewPassword { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Request body for verifying the current password without changing it.
+/// </summary>
+public sealed class VerifyPasswordRequest
+{
+    public string Password { get; set; } = string.Empty;
 }
 
 /// <summary>

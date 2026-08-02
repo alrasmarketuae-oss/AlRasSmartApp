@@ -5,7 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace BusinessLayer.Services;
+namespace BusinessLayer.Services.AiAssistant;
 
 public sealed class AiKnowledgeBootstrapHostedService(
     IServiceScopeFactory scopeFactory,

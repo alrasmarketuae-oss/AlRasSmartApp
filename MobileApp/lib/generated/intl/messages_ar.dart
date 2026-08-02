@@ -207,6 +207,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "aiAssistantImageSearchHint": MessageLookupByLibrary.simpleMessage(
       "البحث بالصور: ارفع صورة منتج من شريط البحث ليجد النظام منتجات مشابهة في الكتالوج. التفاصيل في صفحة «تدريب نموذج البحث بالصور» من المساعدة والدعم.",
     ),
+    "aiAssistantListening": MessageLookupByLibrary.simpleMessage(
+      "يستمع… تحدّث الآن",
+    ),
     "aiAssistantOutOfScope": MessageLookupByLibrary.simpleMessage(
       "أقدر أساعدك في أمور سوق الراس فقط (حسابات، إعلانات، طلبات، دفع، استرجاع). جرّب سؤالاً عن المنصة.",
     ),
@@ -214,17 +217,26 @@ class MessageLookup extends MessageLookupByLibrary {
       "للاسترجاع بسبب تلف أو انتهاء صلاحية أو اختلاف جوهري: أبلغ خلال 24 ساعة عمل من الاستلام مع صور. إن وافق الدعم يُعاد المبلغ خلال يوم عمل واحد، ويُخصم من رصيد المورد إن كان قد أُضيف.",
     ),
     "aiAssistantSubtitle": MessageLookupByLibrary.simpleMessage(
-      "مساعد معرفة المنصة — منفصل عن المحادثة المباشرة مع الدعم الفني.",
+      "الراس الذكي وكيل ذكاء اصطناعي وقد يخطئ.",
     ),
     "aiAssistantThinking": MessageLookupByLibrary.simpleMessage("يفكر…"),
-    "aiAssistantTitle": MessageLookupByLibrary.simpleMessage(
-      "مساعد الذكاء الاصطناعي",
-    ),
+    "aiAssistantTitle": MessageLookupByLibrary.simpleMessage("الراس الذكي"),
     "aiAssistantUnsupportedLanguage": MessageLookupByLibrary.simpleMessage(
       "ندعم العربية والإنجليزية حالياً. ترجمنا سؤالك للفهم إن أمكن، وسنرد بإحدى اللغتين المدعومتين.",
     ),
+    "aiAssistantVoiceCancel": MessageLookupByLibrary.simpleMessage("إلغاء"),
+    "aiAssistantVoiceCorrecting": MessageLookupByLibrary.simpleMessage(
+      "الذكاء الاصطناعي يصحّح كلامك…",
+    ),
+    "aiAssistantVoiceHint": MessageLookupByLibrary.simpleMessage(
+      "راجع النص ثم أرسل أو ألغِ",
+    ),
+    "aiAssistantVoiceSend": MessageLookupByLibrary.simpleMessage("إرسال"),
+    "aiAssistantVoiceUnavailable": MessageLookupByLibrary.simpleMessage(
+      "الإدخال الصوتي غير متاح على هذا الجهاز",
+    ),
     "aiAssistantWelcome": MessageLookupByLibrary.simpleMessage(
-      "أهلاً بك. أنا مساعد سوق الراس. أقدر أساعدك في استخدام المنصة حسب نوع حسابك. المحادثة المباشرة مع موظف الدعم متاحة من الملف الشخصي.",
+      "أهلاً بك. أنا الراس الذكي. أقدر أساعدك في استخدام المنصة حسب نوع حسابك. المحادثة المباشرة مع موظف الدعم متاحة من الملف الشخصي.",
     ),
     "aiCorrectedSearch": m3,
     "aiIdentifiedProduct": m4,
@@ -260,8 +272,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "backToHome": MessageLookupByLibrary.simpleMessage("العودة للرئيسية"),
     "balanceDeposit": MessageLookupByLibrary.simpleMessage("إيداع"),
+    "balanceDepositsSection": MessageLookupByLibrary.simpleMessage("الإيداعات"),
     "balanceOrderLabel": m5,
     "balanceWithdrawal": MessageLookupByLibrary.simpleMessage("سحب"),
+    "balanceWithdrawalsSection": MessageLookupByLibrary.simpleMessage(
+      "السحوبات",
+    ),
     "beauty": MessageLookupByLibrary.simpleMessage("تجميل"),
     "beforeDiscount": MessageLookupByLibrary.simpleMessage("قبل الخصم"),
     "biometricAuthReason": MessageLookupByLibrary.simpleMessage(
@@ -862,6 +878,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "noBalanceTransactions": MessageLookupByLibrary.simpleMessage(
       "لا توجد حركات رصيد بعد.",
     ),
+    "noDepositsYet": MessageLookupByLibrary.simpleMessage(
+      "لا توجد إيداعات من المنصة بعد.",
+    ),
     "noDetailsAvailable": MessageLookupByLibrary.simpleMessage(
       "لا توجد تفاصيل",
     ),
@@ -904,6 +923,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "noShippingOffersMatch": MessageLookupByLibrary.simpleMessage(
       "لا توجد عروض شحن مطابقة للتصفية.",
+    ),
+    "noWithdrawalsYet": MessageLookupByLibrary.simpleMessage(
+      "لا توجد طلبات سحب بعد.",
     ),
     "nonNegotiable": MessageLookupByLibrary.simpleMessage("غير قابل للتفاوض"),
     "notificationSettings": MessageLookupByLibrary.simpleMessage(
@@ -1337,6 +1359,28 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "sendPurchaseOrder": MessageLookupByLibrary.simpleMessage(
       "إرسال طلب الشراء",
+    ),
+    "sensitiveAccessBiometricReason": MessageLookupByLibrary.simpleMessage(
+      "تحقق من هويتك لفتح هذه الصفحة",
+    ),
+    "sensitiveAccessContinue": MessageLookupByLibrary.simpleMessage("متابعة"),
+    "sensitiveAccessPasswordHint": MessageLookupByLibrary.simpleMessage(
+      "أدخل كلمة المرور للمتابعة",
+    ),
+    "sensitiveAccessPasswordRequired": MessageLookupByLibrary.simpleMessage(
+      "هذا الحساب بلا كلمة مرور. فعّل Face ID / البصمة من الملف الشخصي، أو عيّن كلمة مرور من تغيير كلمة المرور، ثم حاول مجدداً.",
+    ),
+    "sensitiveAccessVerifyFailed": MessageLookupByLibrary.simpleMessage(
+      "فشل التحقق. حاول مرة أخرى.",
+    ),
+    "sensitiveAccessVerifyTitle": MessageLookupByLibrary.simpleMessage(
+      "أكد أنك أنت",
+    ),
+    "sensitiveAccessWarningBody": MessageLookupByLibrary.simpleMessage(
+      "دخول الراس الذكي أو الرصيد يتيح إدارة حسابك: تعديل أو إيقاف أو نفاد أو حذف الإعلانات، وتغيير الأسعار، وطلب سحب. تحقّق من هويتك قبل المتابعة.",
+    ),
+    "sensitiveAccessWarningTitle": MessageLookupByLibrary.simpleMessage(
+      "تحقق أمني",
     ),
     "setPassword": MessageLookupByLibrary.simpleMessage("تعيين كلمة المرور"),
     "setPasswordSocialHint": MessageLookupByLibrary.simpleMessage(

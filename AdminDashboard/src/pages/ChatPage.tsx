@@ -14,7 +14,6 @@ import {
 } from '../lib/chatOptimistic'
 import {
   decryptChatPayload,
-  encryptChatPayload,
   ensureSupportE2eKeys,
   isChatE2eEnvelope,
   resolveChatKeyWrapSecrets,
@@ -409,29 +408,11 @@ export default function ChatPage() {
     setActionError(null)
 
     try {
-      let wireContent = content
-      try {
-        const e2e = await ensureE2eReady()
-        if (e2e.supportUserId && e2e.publicKeyJwk) {
-          const peer = await fetchPublicKey(selectedUserId).unwrap()
-          if (peer.publicKeySpkiBase64) {
-            wireContent = await encryptChatPayload({
-              plaintext: content,
-              myUserId: e2e.supportUserId,
-              peerUserId: selectedUserId,
-              myPublicKeyJwk: e2e.publicKeyJwk,
-              peerPublicKeyJwk: peer.publicKeySpkiBase64,
-            })
-          }
-        }
-      } catch {
-        wireContent = content
-      }
-
+      // Support chat sends plaintext (E2E encryption disabled).
       const result = await sendMessage({
         toUserId: selectedUserId,
         messageType,
-        content: wireContent,
+        content,
       }).unwrap()
       replaceOptimisticMessage(optimisticId, { ...result, content })
       await invalidateChatCaches(selectedUserId)
@@ -615,6 +596,8 @@ export default function ChatPage() {
       setLockAgentName(null)
       setSupervisingAgentName(null)
       await invalidateChatCaches(selectedUserId)
+      // Conversation assignment released; SignalR hub itself stays only while on /chat
+      // and is fully stopped when the agent navigates away from the chat page.
     } catch (err) {
       setActionError(getRtkErrorMessage(err as never, t('chat.closeError')))
     }

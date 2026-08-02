@@ -61,13 +61,27 @@ public partial class ProductsAppService
                 pageSize,
                 cancellationToken);
 
-            var codeResult = await BuildPublicProductListPageAsync(
-                codeProducts,
-                codeProducts.Count,
-                page,
-                pageSize,
-                cancellationToken,
-                expandHybridSearchChannels: true);
+            var matchedRetailCode = codeProducts.Any(p =>
+                string.Equals(p.RetailCode, productCode, StringComparison.OrdinalIgnoreCase));
+
+            // RetailCode → retail channel only. ProductCode → both hybrid cards.
+            var codeResult = matchedRetailCode
+                ? await BuildPublicProductListPageAsync(
+                    codeProducts,
+                    codeProducts.Count,
+                    page,
+                    pageSize,
+                    cancellationToken,
+                    projectRetailAsPrimary: true,
+                    includeRetailFields: true,
+                    expandHybridSearchChannels: false)
+                : await BuildPublicProductListPageAsync(
+                    codeProducts,
+                    codeProducts.Count,
+                    page,
+                    pageSize,
+                    cancellationToken,
+                    expandHybridSearchChannels: true);
 
             await SetProductCacheAsync(codeCacheKey, codeResult, TimeSpan.FromMinutes(2), cancellationToken);
             return codeResult;
@@ -497,10 +511,22 @@ public partial class ProductsAppService
         var product = await productData.GetPublicProductByCodeExactAsync(normalizedCode, cancellationToken)
             ?? throw new KeyNotFoundException("Product not found.");
 
-        var items = await BuildPublicProductListItemsAsync([product], cancellationToken);
+        var matchedRetailCode = string.Equals(
+            product.RetailCode,
+            normalizedCode,
+            StringComparison.OrdinalIgnoreCase);
+
+        var items = await BuildPublicProductListItemsAsync(
+            [product],
+            cancellationToken,
+            projectRetailAsPrimary: matchedRetailCode
+                || (ProductTypeCodes.IsRetail(product.ProductTypeId)
+                    && !ProductTypeCodes.IsCategoryProduct(product.CategoryId, product.ProductTypeId)),
+            includeRetailFields: true);
         var result = new
         {
             productCode = normalizedCode,
+            searchListingChannel = matchedRetailCode ? "retail" : (string?)null,
             item = items.FirstOrDefault()
         };
 

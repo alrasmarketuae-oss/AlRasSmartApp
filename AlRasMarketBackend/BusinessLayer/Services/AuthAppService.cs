@@ -541,6 +541,34 @@ public class AuthAppService(
         return "Password changed successfully.";
     }
 
+    public async Task VerifyPasswordAsync(string userId, string password, CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(userId, out var parsedUserId))
+        {
+            throw new ArgumentException("Invalid user id.");
+        }
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            throw new ArgumentException("Password is required.");
+        }
+
+        var user = await dbContext.Users.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == parsedUserId, cancellationToken)
+            ?? throw new KeyNotFoundException("User not found.");
+
+        if (string.IsNullOrWhiteSpace(user.HashedPassword))
+        {
+            throw new InvalidOperationException(
+                "This account has no password. Use biometric unlock, or set a password first from Change Password.");
+        }
+
+        if (!passwordHasher.VerifyPassword(password, user.HashedPassword))
+        {
+            throw new UnauthorizedAccessException("Password is incorrect.");
+        }
+    }
+
     public async Task<string> ForgotPasswordRequestAsync(string providerName, string destination, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(providerName) || string.IsNullOrWhiteSpace(destination))

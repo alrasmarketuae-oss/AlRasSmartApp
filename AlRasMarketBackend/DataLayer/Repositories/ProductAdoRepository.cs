@@ -16,6 +16,7 @@ public sealed class ProductAdoRepository(
     {
         public Guid ProductId { get; set; }
         public string? ProductCode { get; set; }
+        public string? RetailCode { get; set; }
         public string? NameEn { get; set; }
         public decimal USDPrice { get; set; }
         public Guid? OwnerId { get; set; }
@@ -128,6 +129,7 @@ public sealed class ProductAdoRepository(
         AddParameter(command, "@RetailPackaging", DbType.Byte, product.RetailPackaging);
         AddParameter(command, "@RetailPackagingDetails", DbType.String, product.RetailPackagingDetails);
         AddParameter(command, "@RetailDescriptionEn", DbType.String, product.RetailDescriptionEn);
+        AddParameter(command, "@RetailCode", DbType.String, product.RetailCode);
         AddParameter(command, "@IsFeatured", DbType.Boolean, product.IsFeatured);
         AddParameter(command, "@ViewsCount", DbType.Int64, product.ViewsCount);
         AddParameter(command, "@CreatedAt", DbType.DateTime, product.CreatedAt);
@@ -229,6 +231,7 @@ public sealed class ProductAdoRepository(
         {
             ProductId = reader.GetGuid(reader.GetOrdinal("ProductId")),
             ProductCode = GetNullableString(reader, reader.GetOrdinal("ProductCode")),
+            RetailCode = GetNullableString(reader, reader.GetOrdinal("RetailCode")),
             NameEn = GetNullableString(reader, reader.GetOrdinal("NameEn")),
             USDPrice = reader.GetDecimal(reader.GetOrdinal("USDPrice")),
             OwnerId = reader.IsDBNull(reader.GetOrdinal("OwnerId")) ? null : reader.GetGuid(reader.GetOrdinal("OwnerId")),

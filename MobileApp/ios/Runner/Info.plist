@@ -65,7 +65,9 @@
 		<key>NSFaceIDUsageDescription</key>
 		<string>We use Face ID so you can unlock your saved account quickly and securely.</string>
 		<key>NSMicrophoneUsageDescription</key>
-		<string>We need microphone access to send voice messages in support chat.</string>
+		<string>We need microphone access for support voice messages and talking to the AI assistant.</string>
+		<key>NSSpeechRecognitionUsageDescription</key>
+		<string>We use speech recognition so you can dictate questions to the AI assistant.</string>
 		<key>NSCameraUsageDescription</key>
 		<string>We need camera access to take product photos for image search and support chat.</string>
 		<key>NSPhotoLibraryUsageDescription</key>

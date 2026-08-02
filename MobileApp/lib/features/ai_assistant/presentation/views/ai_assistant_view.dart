@@ -1,11 +1,21 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:alrasmarket/core/theme/colors.dart';
+import 'package:alrasmarket/core/services/api_constants.dart';
+import 'package:alrasmarket/core/services/dio_helper.dart';
+import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/features/ai_assistant/data/ai_assistant_realtime_service.dart';
 import 'package:alrasmarket/generated/l10n.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Assistant accent ramp, used across the header, avatars, and the send button
@@ -46,6 +56,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
 
   @override
   void dispose() {
+    // Mark closed before awaiting so an in-flight connect cannot revive the hub.
     unawaited(_realtime.close());
     _controller.dispose();
     _scrollController.dispose();
@@ -228,12 +239,18 @@ class _AiChatHeader extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      s.aiAssistantTitle,
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Text(
+                        s.aiAssistantTitle,
+                        maxLines: 1,
+                        softWrap: false,
+                        style: TextStyle(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                     SizedBox(height: 3.h),
@@ -284,9 +301,10 @@ class _AiChatHeader extends StatelessWidget {
                   child: Text(
                     s.aiAssistantSubtitle,
                     style: TextStyle(
-                      fontSize: 11.sp,
-                      height: 1.4,
-                      color: Colors.white.withValues(alpha: 0.95),
+                      fontSize: 10.sp,
+                      height: 1.35,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white.withValues(alpha: 0.92),
                     ),
                   ),
                 ),
@@ -363,12 +381,14 @@ class _MessageBubble extends StatelessWidget {
           ),
         ],
       ),
-      child: _LinkifiedMessageText(
-        text: message.text,
-        style: TextStyle(
-          color: isUser ? Colors.white : const Color(0xFF1F2937),
-          fontSize: 13.sp,
-          height: 1.5,
+      child: SelectionArea(
+        child: _LinkifiedMessageText(
+          text: message.text,
+          style: TextStyle(
+            color: isUser ? Colors.white : const Color(0xFF1F2937),
+            fontSize: 13.sp,
+            height: 1.5,
+          ),
         ),
       ),
     );
@@ -385,7 +405,25 @@ class _MessageBubble extends StatelessWidget {
             const _AiAvatar(size: 26),
             SizedBox(width: 8.w),
           ],
-          Flexible(child: bubble),
+          Flexible(
+            child: GestureDetector(
+              onLongPress: () async {
+                await Clipboard.setData(ClipboardData(text: message.text));
+                if (!context.mounted) return;
+                final isAr =
+                    Localizations.localeOf(context).languageCode == 'ar';
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      isAr ? 'تم نسخ الرسالة' : 'Message copied',
+                    ),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              },
+              child: bubble,
+            ),
+          ),
         ],
       ),
     );
@@ -542,7 +580,7 @@ class _ThinkingBubbleState extends State<_ThinkingBubble>
   }
 }
 
-class _AiComposer extends StatelessWidget {
+class _AiComposer extends StatefulWidget {
   const _AiComposer({
     required this.controller,
     required this.isThinking,
@@ -554,8 +592,209 @@ class _AiComposer extends StatelessWidget {
   final VoidCallback onSend;
 
   @override
+  State<_AiComposer> createState() => _AiComposerState();
+}
+
+class _AiComposerState extends State<_AiComposer> {
+  final AudioRecorder _recorder = AudioRecorder();
+  bool _listening = false;
+  bool _correcting = false;
+  bool _awaitingConfirm = false;
+  bool _finishing = false;
+  String _baseText = '';
+  String? _recordingPath;
+
+  @override
+  void dispose() {
+    if (_listening) {
+      unawaited(_recorder.stop());
+    }
+    unawaited(_recorder.dispose());
+    super.dispose();
+  }
+
+  Future<void> _toggleVoice() async {
+    final s = S.of(context);
+    if (widget.isThinking || _correcting) return;
+
+    if (_listening) {
+      await _finishListening();
+      return;
+    }
+
+    if (!await _recorder.hasPermission()) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(s.aiAssistantVoiceUnavailable)),
+      );
+      return;
+    }
+
+    _baseText = widget.controller.text.trim();
+    final dir = await getTemporaryDirectory();
+    final filePath =
+        p.join(dir.path, 'ai_voice_${DateTime.now().millisecondsSinceEpoch}.m4a');
+
+    try {
+      await _recorder.start(
+        const RecordConfig(encoder: AudioEncoder.aacLc, numChannels: 1),
+        path: filePath,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(s.aiAssistantVoiceUnavailable)),
+      );
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _listening = true;
+      _awaitingConfirm = false;
+      _correcting = false;
+      _recordingPath = filePath;
+      // Keep prior typed text visible; Whisper fills after stop.
+      widget.controller.text = _baseText;
+    });
+  }
+
+  Future<void> _finishListening() async {
+    if (_finishing) return;
+    if (!_listening && !_awaitingConfirm) return;
+    _finishing = true;
+
+    String? path;
+    try {
+      path = await _recorder.stop();
+    } catch (_) {
+      path = _recordingPath;
+    }
+
+    if (!mounted) {
+      _finishing = false;
+      return;
+    }
+
+    setState(() {
+      _listening = false;
+      _correcting = true;
+      _awaitingConfirm = false;
+    });
+
+    var finalSpoken = '';
+    final audioPath = path ?? _recordingPath;
+    if (audioPath != null && await File(audioPath).exists()) {
+      try {
+        final language =
+            Localizations.localeOf(context).languageCode == 'ar' ? 'ar' : 'en';
+        final formData = FormData.fromMap({
+          'language': language,
+          'audio': await MultipartFile.fromFile(
+            audioPath,
+            filename: p.basename(audioPath),
+            contentType: MediaType('audio', 'mp4'),
+          ),
+        });
+        final response = await DioHelper.uploadFile(
+          url: ApiConstants.aiAssistantTranscribeVoiceEndPoint,
+          formData: formData,
+          token: AuthService.instance.currentToken,
+        );
+        final data = response?.data;
+        if (data is Map) {
+          final transcribed = data['text']?.toString().trim();
+          if (transcribed != null && transcribed.isNotEmpty) {
+            finalSpoken = transcribed;
+          }
+        }
+      } catch (_) {
+        // Keep empty / base text if transcription fails.
+      } finally {
+        try {
+          await File(audioPath).delete();
+        } catch (_) {}
+      }
+    }
+
+    _recordingPath = null;
+
+    if (!mounted) {
+      _finishing = false;
+      return;
+    }
+
+    if (finalSpoken.isEmpty) {
+      setState(() {
+        _correcting = false;
+        _awaitingConfirm = false;
+        widget.controller.text = _baseText;
+        widget.controller.selection = TextSelection.collapsed(
+          offset: widget.controller.text.length,
+        );
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(S.of(context).aiAssistantVoiceUnavailable)),
+      );
+      _finishing = false;
+      return;
+    }
+
+    final combined = [
+      if (_baseText.isNotEmpty) _baseText,
+      finalSpoken,
+    ].join(' ').trim();
+
+    setState(() {
+      _correcting = false;
+      _awaitingConfirm = combined.isNotEmpty;
+      widget.controller.text = combined;
+      widget.controller.selection = TextSelection.collapsed(
+        offset: widget.controller.text.length,
+      );
+    });
+    _finishing = false;
+  }
+
+  void _cancelVoice() {
+    unawaited(() async {
+      try {
+        final path = await _recorder.stop();
+        final victim = path ?? _recordingPath;
+        if (victim != null) {
+          try {
+            await File(victim).delete();
+          } catch (_) {}
+        }
+      } catch (_) {}
+    }());
+    setState(() {
+      _listening = false;
+      _correcting = false;
+      _awaitingConfirm = false;
+      _finishing = false;
+      _recordingPath = null;
+      widget.controller.text = _baseText;
+      widget.controller.selection = TextSelection.collapsed(
+        offset: widget.controller.text.length,
+      );
+    });
+  }
+
+  void _confirmSend() {
+    setState(() {
+      _listening = false;
+      _correcting = false;
+      _awaitingConfirm = false;
+      _recordingPath = null;
+    });
+    widget.onSend();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final s = S.of(context);
+    final showStatus = _listening || _correcting || _awaitingConfirm;
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -565,74 +804,203 @@ class _AiComposer extends StatelessWidget {
         top: false,
         child: Padding(
           padding: EdgeInsets.fromLTRB(12.w, 10.h, 12.w, 10.h),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: TextField(
-                  controller: controller,
-                  minLines: 1,
-                  maxLines: 4,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: (_) => onSend(),
-                  style: TextStyle(fontSize: 13.sp),
-                  decoration: InputDecoration(
-                    hintText: s.aiAssistantHint,
-                    hintStyle: TextStyle(
-                      fontSize: 12.sp,
-                      color: const Color(0xFF9AA3B2),
-                    ),
-                    prefixIcon: Icon(
-                      Icons.auto_awesome_rounded,
-                      size: 16.sp,
-                      color: LightColor.defaultColor,
-                    ),
-                    prefixIconConstraints: BoxConstraints(minWidth: 38.w),
-                    filled: true,
-                    fillColor: const Color(0xFFF3F6FB),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 14.w,
-                      vertical: 12.h,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24.r),
-                      borderSide: const BorderSide(color: Color(0xFFE6EAF2)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24.r),
-                      borderSide: const BorderSide(
-                        color: LightColor.defaultColor,
+              if (showStatus)
+                Padding(
+                  padding: EdgeInsets.only(bottom: 8.h),
+                  child: Row(
+                    children: [
+                      if (_correcting)
+                        SizedBox(
+                          width: 14.w,
+                          height: 14.w,
+                          child: const CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      else
+                        Icon(
+                          _listening
+                              ? Icons.graphic_eq_rounded
+                              : Icons.edit_note_rounded,
+                          size: 16.sp,
+                          color: _listening
+                              ? const Color(0xFFE11D48)
+                              : LightColor.defaultColor,
+                        ),
+                      SizedBox(width: 6.w),
+                      Expanded(
+                        child: Text(
+                          _listening
+                              ? s.aiAssistantListening
+                              : _correcting
+                                  ? s.aiAssistantVoiceCorrecting
+                                  : s.aiAssistantVoiceHint,
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w600,
+                            color: _listening
+                                ? const Color(0xFFE11D48)
+                                : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ),
+                      if (_awaitingConfirm && !_correcting) ...[
+                        TextButton(
+                          onPressed: _cancelVoice,
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFF64748B),
+                            padding: EdgeInsets.symmetric(horizontal: 8.w),
+                            minimumSize: Size(0, 32.h),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: Text(
+                            s.aiAssistantVoiceCancel,
+                            style: TextStyle(fontSize: 12.sp),
+                          ),
+                        ),
+                        SizedBox(width: 4.w),
+                        TextButton(
+                          onPressed: widget.isThinking ? null : _confirmSend,
+                          style: TextButton.styleFrom(
+                            foregroundColor: LightColor.defaultColor,
+                            padding: EdgeInsets.symmetric(horizontal: 8.w),
+                            minimumSize: Size(0, 32.h),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: Text(
+                            s.aiAssistantVoiceSend,
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: widget.controller,
+                      minLines: 1,
+                      maxLines: 4,
+                      enabled: !_listening && !_correcting,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) {
+                        if (_awaitingConfirm) {
+                          _confirmSend();
+                        } else if (!_listening && !_correcting) {
+                          widget.onSend();
+                        }
+                      },
+                      style: TextStyle(fontSize: 13.sp),
+                      decoration: InputDecoration(
+                        hintText: s.aiAssistantHint,
+                        hintStyle: TextStyle(
+                          fontSize: 12.sp,
+                          color: const Color(0xFF9AA3B2),
+                        ),
+                        prefixIcon: Icon(
+                          Icons.auto_awesome_rounded,
+                          size: 16.sp,
+                          color: LightColor.defaultColor,
+                        ),
+                        prefixIconConstraints: BoxConstraints(minWidth: 38.w),
+                        filled: true,
+                        fillColor: _listening
+                            ? const Color(0xFFFFF1F2)
+                            : const Color(0xFFF3F6FB),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 14.w,
+                          vertical: 12.h,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24.r),
+                          borderSide: const BorderSide(color: Color(0xFFE6EAF2)),
+                        ),
+                        disabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24.r),
+                          borderSide: BorderSide(
+                            color: _listening
+                                ? const Color(0xFFFECACA)
+                                : const Color(0xFFE6EAF2),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24.r),
+                          borderSide: const BorderSide(
+                            color: LightColor.defaultColor,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
-              SizedBox(width: 8.w),
-              Opacity(
-                opacity: isThinking ? 0.5 : 1,
-                child: GestureDetector(
-                  onTap: isThinking ? null : onSend,
-                  child: Container(
-                    width: 44.w,
-                    height: 44.w,
-                    decoration: BoxDecoration(
-                      gradient: _aiGradient,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: LightColor.defaultColor.withValues(alpha: 0.35),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.send_rounded,
-                      size: 19.sp,
-                      color: Colors.white,
+                  SizedBox(width: 8.w),
+                  GestureDetector(
+                    onTap: (widget.isThinking || _correcting)
+                        ? null
+                        : _toggleVoice,
+                    child: Container(
+                      width: 44.w,
+                      height: 44.w,
+                      decoration: BoxDecoration(
+                        color: _listening
+                            ? const Color(0xFFE11D48)
+                            : const Color(0xFFE8F1FC),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        _listening ? Icons.stop_rounded : Icons.mic_none_rounded,
+                        size: 22.sp,
+                        color: _listening
+                            ? Colors.white
+                            : LightColor.defaultColor,
+                      ),
                     ),
                   ),
-                ),
+                  SizedBox(width: 8.w),
+                  Opacity(
+                    opacity: (widget.isThinking || _correcting || _listening)
+                        ? 0.5
+                        : 1,
+                    child: GestureDetector(
+                      onTap: (widget.isThinking || _correcting || _listening)
+                          ? null
+                          : () {
+                              if (_awaitingConfirm) {
+                                _confirmSend();
+                              } else {
+                                widget.onSend();
+                              }
+                            },
+                      child: Container(
+                        width: 44.w,
+                        height: 44.w,
+                        decoration: BoxDecoration(
+                          gradient: _aiGradient,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: LightColor.defaultColor
+                                  .withValues(alpha: 0.35),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.send_rounded,
+                          size: 19.sp,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -641,3 +1009,4 @@ class _AiComposer extends StatelessWidget {
     );
   }
 }
+

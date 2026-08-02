@@ -2,6 +2,7 @@ import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/serveses/profile_service.dart';
 import 'package:alrasmarket/core/services/biometric_auth_service.dart';
+import 'package:alrasmarket/core/services/sensitive_access_gate.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/widgets/profile_avatar.dart';
@@ -226,13 +227,10 @@ class _ProfileViewState extends State<ProfileView> {
                                     subtitle: s.aiAssistantCardSubtitle,
                                     icon: Icons.auto_awesome_rounded,
                                     onTap: () {
-                                      if (AppRoutes.shouldSkipPush(
+                                      SensitiveAccessGate.openProtectedRoute(
                                         context,
-                                        AppRoutes.kAiAssistantView,
-                                      )) {
-                                        return;
-                                      }
-                                      context.push(AppRoutes.kAiAssistantView);
+                                        route: AppRoutes.kAiAssistantView,
+                                      );
                                     },
                                   ),
                                 ),
@@ -289,7 +287,10 @@ class _ProfileViewState extends State<ProfileView> {
                                 subtitle: s.myBalanceSubtitle,
                                 assetIcon: AppAssets.profileBadgePercentIcon,
                                 onTap: () =>
-                                    context.push(AppRoutes.kSupplierBalanceView),
+                                    SensitiveAccessGate.openProtectedRoute(
+                                  context,
+                                  route: AppRoutes.kSupplierBalanceView,
+                                ),
                               ),
                             if (isSupplier || isCompany)
                               _SettingsTile(
@@ -606,14 +607,18 @@ class _ShortcutCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w700,
-                    color: _kTitleColor,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    softWrap: false,
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w700,
+                      color: _kTitleColor,
+                    ),
                   ),
                 ),
                 SizedBox(height: 2.h),

@@ -6,6 +6,7 @@ import {
   useRef,
   type ReactNode,
 } from 'react'
+import { useLocation } from 'react-router-dom'
 import { getAuthUser } from '../lib/authStorage'
 import { useChatHub } from '../hooks/useChatHub'
 import { adminApi, useGetChatUnreadCountQuery } from '../store/adminApi'
@@ -29,8 +30,13 @@ const ChatContext = createContext<ChatContextValue | null>(null)
 
 export function ChatProvider({ children }: { children: ReactNode }) {
   const dispatch = useAppDispatch()
+  const location = useLocation()
   const authUser = getAuthUser()
   const userId = authUser?.id ?? null
+  // Keep ChatHub only on the chat page; LeaveUserChat + stop when navigating away.
+  const isOnChatPage =
+    location.pathname === '/chat' || location.pathname.startsWith('/chat/')
+  const hubUserId = isOnChatPage ? userId : null
 
   const receiveListenersRef = useRef(new Set<(message: ChatMessage) => void>())
   const updatedListenersRef = useRef(new Set<(message: ChatMessage) => void>())
@@ -59,7 +65,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     [dispatch],
   )
 
-  useChatHub(userId, {
+  useChatHub(hubUserId, {
     onReceiveMessage: (message) => {
       receiveListenersRef.current.forEach((handler) => handler(message))
       invalidateChat()

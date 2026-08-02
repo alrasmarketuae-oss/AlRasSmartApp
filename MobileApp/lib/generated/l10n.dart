@@ -6476,10 +6476,50 @@ class S {
     );
   }
 
-  /// `AI Assistant`
+  /// `Deposits`
+  String get balanceDepositsSection {
+    return Intl.message(
+      'Deposits',
+      name: 'balanceDepositsSection',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Withdrawals`
+  String get balanceWithdrawalsSection {
+    return Intl.message(
+      'Withdrawals',
+      name: 'balanceWithdrawalsSection',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No deposits from the platform yet.`
+  String get noDepositsYet {
+    return Intl.message(
+      'No deposits from the platform yet.',
+      name: 'noDepositsYet',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No withdrawal requests yet.`
+  String get noWithdrawalsYet {
+    return Intl.message(
+      'No withdrawal requests yet.',
+      name: 'noWithdrawalsYet',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Alras Smart`
   String get aiAssistantTitle {
     return Intl.message(
-      'AI Assistant',
+      'Alras Smart',
       name: 'aiAssistantTitle',
       desc: '',
       args: [],
@@ -6491,10 +6531,10 @@ class S {
     return Intl.message('AI', name: 'aiAssistantFabLabel', desc: '', args: []);
   }
 
-  /// `Platform knowledge assistant — separate from live chat with support staff.`
+  /// `Alras Smart is an AI Agent and can make mistakes.`
   String get aiAssistantSubtitle {
     return Intl.message(
-      'Platform knowledge assistant — separate from live chat with support staff.',
+      'Alras Smart is an AI Agent and can make mistakes.',
       name: 'aiAssistantSubtitle',
       desc: '',
       args: [],
@@ -6511,10 +6551,10 @@ class S {
     );
   }
 
-  /// `Welcome. I’m the Al Ras Market assistant. I can help you use the platform based on your account type. Live chat with a support agent is available from Profile.`
+  /// `Welcome. I’m Alras Smart. I can help you use the platform based on your account type. Live chat with a support agent is available from Profile.`
   String get aiAssistantWelcome {
     return Intl.message(
-      'Welcome. I’m the Al Ras Market assistant. I can help you use the platform based on your account type. Live chat with a support agent is available from Profile.',
+      'Welcome. I’m Alras Smart. I can help you use the platform based on your account type. Live chat with a support agent is available from Profile.',
       name: 'aiAssistantWelcome',
       desc: '',
       args: [],
@@ -6526,6 +6566,66 @@ class S {
     return Intl.message(
       'Thinking…',
       name: 'aiAssistantThinking',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Listening… speak now`
+  String get aiAssistantListening {
+    return Intl.message(
+      'Listening… speak now',
+      name: 'aiAssistantListening',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `AI is correcting your speech…`
+  String get aiAssistantVoiceCorrecting {
+    return Intl.message(
+      'AI is correcting your speech…',
+      name: 'aiAssistantVoiceCorrecting',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Review the text, then send or cancel`
+  String get aiAssistantVoiceHint {
+    return Intl.message(
+      'Review the text, then send or cancel',
+      name: 'aiAssistantVoiceHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Cancel`
+  String get aiAssistantVoiceCancel {
+    return Intl.message(
+      'Cancel',
+      name: 'aiAssistantVoiceCancel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Send`
+  String get aiAssistantVoiceSend {
+    return Intl.message(
+      'Send',
+      name: 'aiAssistantVoiceSend',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Voice input is not available on this device`
+  String get aiAssistantVoiceUnavailable {
+    return Intl.message(
+      'Voice input is not available on this device',
+      name: 'aiAssistantVoiceUnavailable',
       desc: '',
       args: [],
     );
@@ -6576,6 +6676,86 @@ class S {
     return Intl.message(
       'Supplier balance increases immediately on Retail card payments. Cash-on-delivery credits after collection/receipt. Withdrawals via IBAN are processed within 7 business days after support approval.',
       name: 'aiAssistantBalanceHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Security check`
+  String get sensitiveAccessWarningTitle {
+    return Intl.message(
+      'Security check',
+      name: 'sensitiveAccessWarningTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Opening Alras Smart or Balance lets you manage your account: edit, pause, sell out, or delete ads, change prices, and request withdrawals. Verify your identity before continuing.`
+  String get sensitiveAccessWarningBody {
+    return Intl.message(
+      'Opening Alras Smart or Balance lets you manage your account: edit, pause, sell out, or delete ads, change prices, and request withdrawals. Verify your identity before continuing.',
+      name: 'sensitiveAccessWarningBody',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Continue`
+  String get sensitiveAccessContinue {
+    return Intl.message(
+      'Continue',
+      name: 'sensitiveAccessContinue',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Confirm it’s you`
+  String get sensitiveAccessVerifyTitle {
+    return Intl.message(
+      'Confirm it’s you',
+      name: 'sensitiveAccessVerifyTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enter your password to continue`
+  String get sensitiveAccessPasswordHint {
+    return Intl.message(
+      'Enter your password to continue',
+      name: 'sensitiveAccessPasswordHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Verification failed. Please try again.`
+  String get sensitiveAccessVerifyFailed {
+    return Intl.message(
+      'Verification failed. Please try again.',
+      name: 'sensitiveAccessVerifyFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This account has no password. Enable Face ID / Fingerprint in Profile, or set a password from Change Password, then try again.`
+  String get sensitiveAccessPasswordRequired {
+    return Intl.message(
+      'This account has no password. Enable Face ID / Fingerprint in Profile, or set a password from Change Password, then try again.',
+      name: 'sensitiveAccessPasswordRequired',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Verify it’s you to open this page`
+  String get sensitiveAccessBiometricReason {
+    return Intl.message(
+      'Verify it’s you to open this page',
+      name: 'sensitiveAccessBiometricReason',
       desc: '',
       args: [],
     );

@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:alrasmarket/core/cache/api_cache_store.dart';
 import 'package:alrasmarket/core/helper/cach_helper.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
-import 'package:alrasmarket/core/serveses/app_chat_listener_service.dart';
 import 'package:alrasmarket/core/serveses/product_search_index_service.dart';
 import 'package:alrasmarket/core/services/app_push_notification_service.dart';
 import 'package:alrasmarket/core/services/fcm_token_service.dart';
@@ -70,7 +69,6 @@ Future<void> _startAuthenticatedSideEffects() async {
   }
 
   if (AuthService.instance.isAuthenticated) {
-    unawaited(AppChatListenerService.instance.start());
     unawaited(sl<AuthCubit>().syncPreferredLanguageWithBackend());
   }
 }

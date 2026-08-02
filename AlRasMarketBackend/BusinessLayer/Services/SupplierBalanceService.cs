@@ -27,6 +27,7 @@ public interface ISupplierBalanceService
         Guid userId,
         int page = 1,
         int pageSize = 20,
+        byte? entryType = null,
         CancellationToken cancellationToken = default);
 
     Task RecordManualWithdrawalAsync(
@@ -126,11 +127,12 @@ public sealed class SupplierBalanceService(
         Guid userId,
         int page = 1,
         int pageSize = 20,
+        byte? entryType = null,
         CancellationToken cancellationToken = default)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
-        var cacheKey = StatementCacheKey(userId, page, pageSize);
+        var cacheKey = StatementCacheKey(userId, page, pageSize, entryType);
         var cached = await tieredCache.GetAsync(cacheKey, cancellationToken);
         if (TryReadStatement(cached, out var cachedPayload))
         {
@@ -138,8 +140,8 @@ public sealed class SupplierBalanceService(
         }
 
         var skip = (page - 1) * pageSize;
-        var totalCount = await balanceData.CountStatementAsync(userId, cancellationToken);
-        var rows = await balanceData.GetStatementAsync(userId, skip, pageSize, cancellationToken);
+        var totalCount = await balanceData.CountStatementAsync(userId, entryType, cancellationToken);
+        var rows = await balanceData.GetStatementAsync(userId, skip, pageSize, entryType, cancellationToken);
         var balance = await GetBalanceAsync(userId, cancellationToken);
 
         var payload = new
@@ -149,6 +151,7 @@ public sealed class SupplierBalanceService(
             pageSize,
             totalCount,
             totalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)pageSize),
+            entryType,
             items = rows.Select(x => new
             {
                 id = x.Id,
@@ -453,8 +456,8 @@ public sealed class SupplierBalanceService(
     private static string BalanceCacheKey(Guid userId) =>
         $"supplier-balance:{userId:N}:v{SupplierBalanceCacheVersions.Current(userId)}";
 
-    private static string StatementCacheKey(Guid userId, int page, int pageSize) =>
-        $"supplier-balance-statement:{userId:N}:p{page}:s{pageSize}:v{SupplierBalanceCacheVersions.Current(userId)}";
+    private static string StatementCacheKey(Guid userId, int page, int pageSize, byte? entryType) =>
+        $"supplier-balance-statement:{userId:N}:p{page}:s{pageSize}:t{(entryType?.ToString() ?? "all")}:v{SupplierBalanceCacheVersions.Current(userId)}";
 
     private static string Truncate(string value, int max) =>
         value.Length <= max ? value : value[..max];

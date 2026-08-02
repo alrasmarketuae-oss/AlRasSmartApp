@@ -127,6 +127,7 @@ public sealed class ProductTextSearchSyncService(
             {
                 x.ProductId,
                 x.ProductCode,
+                x.RetailCode,
                 x.NameEn,
                 x.DescriptionEn,
                 x.RetailDescriptionEn,
@@ -192,11 +193,13 @@ public sealed class ProductTextSearchSyncService(
         AddSuggest(nameEn);
         AddSuggest(nameAr);
         AddSuggest(row.ProductCode);
+        AddSuggest(row.RetailCode);
 
         return new ProductTextSearchDocument
         {
             ProductId = row.ProductId,
             ProductCode = row.ProductCode?.Trim(),
+            RetailCode = row.RetailCode?.Trim(),
             NameEn = nameEn,
             NameAr = nameAr?.Trim(),
             CategoryNameEn = row.CategoryNameEn?.Trim(),

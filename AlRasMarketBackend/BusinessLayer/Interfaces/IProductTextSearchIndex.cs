@@ -4,6 +4,7 @@ public sealed class ProductTextSearchDocument
 {
     public Guid ProductId { get; set; }
     public string? ProductCode { get; set; }
+    public string? RetailCode { get; set; }
     public string? NameEn { get; set; }
     public string? NameAr { get; set; }
     public string? CategoryNameEn { get; set; }

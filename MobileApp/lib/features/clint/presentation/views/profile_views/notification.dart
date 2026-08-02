@@ -18,66 +18,141 @@ class NotificationsView extends StatefulWidget {
 }
 
 class _NotificationsViewState extends State<NotificationsView> {
+  static const _pageSize = 20;
+  /// Load the next page when the user is within this distance of the bottom.
+  static const _loadMoreThreshold = 320.0;
+
+  final ScrollController _scrollController = ScrollController();
   List<AppNotificationModel> _items = [];
   bool _loading = true;
+  bool _loadingMore = false;
+  bool _hasMore = true;
+  int _page = 1;
   String? _error;
+  bool _markedAllRead = false;
 
   @override
   void initState() {
     super.initState();
-    _loadNotifications();
+    _scrollController.addListener(_onScroll);
+    _loadNotifications(reset: true);
   }
 
-  Future<void> _loadNotifications() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients || !_hasMore || _loadingMore || _loading) {
+      return;
+    }
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - _loadMoreThreshold) {
+      _loadMore();
+    }
+  }
+
+  Future<void> _loadNotifications({required bool reset}) async {
+    if (reset) {
+      setState(() {
+        _loading = true;
+        _error = null;
+        _page = 1;
+        _hasMore = true;
+        _markedAllRead = false;
+      });
+    }
 
     try {
-      final page = await NotificationsService.instance.fetchMine();
+      final page = await NotificationsService.instance.fetchMine(
+        page: 1,
+        pageSize: _pageSize,
+      );
       if (!mounted) return;
 
-      final hasUnread = page.unreadCount > 0 ||
-          page.items.any((item) => !item.isRead);
       var items = page.items;
-      if (hasUnread) {
+      if (!_markedAllRead &&
+          (page.unreadCount > 0 || items.any((item) => !item.isRead))) {
         try {
           await NotificationsService.instance.markAllRead();
-          items = items
-              .map(
-                (current) => AppNotificationModel(
-                  id: current.id,
-                  title: current.title,
-                  body: current.body,
-                  referenceId: current.referenceId,
-                  routeId: current.routeId,
-                  routeName: current.routeName,
-                  typeName: current.typeName,
-                  isRead: true,
-                  createdAt: current.createdAt,
-                ),
-              )
-              .toList();
+          _markedAllRead = true;
+          items = items.map(_asRead).toList();
         } catch (_) {
           // Keep fetched list even if mark-all fails.
         }
+      } else if (_markedAllRead) {
+        items = items.map(_asRead).toList();
       }
 
       if (!mounted) return;
       setState(() {
         _items = items;
+        _page = 1;
+        _hasMore = items.length < page.totalCount;
         _loading = false;
+        _error = null;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _items = [];
+        if (reset) {
+          _items = [];
+        }
         _error = e.toString();
         _loading = false;
       });
     }
   }
+
+  Future<void> _loadMore() async {
+    if (_loadingMore || !_hasMore || _loading) return;
+
+    setState(() => _loadingMore = true);
+    final nextPage = _page + 1;
+
+    try {
+      final page = await NotificationsService.instance.fetchMine(
+        page: nextPage,
+        pageSize: _pageSize,
+      );
+      if (!mounted) return;
+
+      final incoming = _markedAllRead
+          ? page.items.map(_asRead).toList()
+          : page.items;
+      final existingIds = _items.map((e) => e.id).toSet();
+      final appended = incoming
+          .where((item) => !existingIds.contains(item.id))
+          .toList();
+
+      setState(() {
+        _items = [..._items, ...appended];
+        _page = nextPage;
+        _hasMore = _items.length < page.totalCount && appended.isNotEmpty;
+        _loadingMore = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingMore = false);
+    }
+  }
+
+  AppNotificationModel _asRead(AppNotificationModel current) =>
+      AppNotificationModel(
+        id: current.id,
+        title: current.title,
+        body: current.body,
+        referenceId: current.referenceId,
+        routeId: current.routeId,
+        routeName: current.routeName,
+        typeName: current.typeName,
+        isRead: true,
+        createdAt: current.createdAt,
+      );
 
   String _iconFor(AppNotificationModel item) {
     final route = item.navigationRoute.toLowerCase();
@@ -104,7 +179,7 @@ class _NotificationsViewState extends State<NotificationsView> {
           SizedBox(height: 12.h),
           Expanded(
             child: RefreshIndicator(
-              onRefresh: _loadNotifications,
+              onRefresh: () => _loadNotifications(reset: true),
               child: _buildBody(),
             ),
           ),
@@ -124,7 +199,7 @@ class _NotificationsViewState extends State<NotificationsView> {
       );
     }
 
-    if (_error != null) {
+    if (_error != null && _items.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.all(24.w),
@@ -133,7 +208,7 @@ class _NotificationsViewState extends State<NotificationsView> {
           SizedBox(height: 16.h),
           Center(
             child: TextButton(
-              onPressed: _loadNotifications,
+              onPressed: () => _loadNotifications(reset: true),
               child: Text(S.of(context).retry),
             ),
           ),
@@ -141,12 +216,16 @@ class _NotificationsViewState extends State<NotificationsView> {
       );
     }
 
-    return ListView(
+    return ListView.builder(
+      controller: _scrollController,
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.symmetric(horizontal: 24.w),
-      children: [
-        if (_items.isEmpty)
-          Padding(
+      itemCount: _items.isEmpty
+          ? 1
+          : _items.length + 2, // header + optional loader
+      itemBuilder: (context, index) {
+        if (_items.isEmpty) {
+          return Padding(
             padding: EdgeInsets.symmetric(vertical: 48.h),
             child: Text(
               'No notifications yet.',
@@ -156,31 +235,48 @@ class _NotificationsViewState extends State<NotificationsView> {
                 color: Colors.grey,
               ),
             ),
-          )
-        else ...[
-          NotificationSectionHeader(
+          );
+        }
+
+        if (index == 0) {
+          return NotificationSectionHeader(
             title: S.of(context).notifications,
-          ),
-          ..._items.map(
-            (item) => Padding(
-              padding: EdgeInsets.only(bottom: 12.h),
-              child: NotificationsCard(
-                title: item.title,
-                subtitle: item.body,
-                time: item.createdAt == null
-                    ? ''
-                    : UtcDateTime.formatDateTimeLocal(
-                        item.createdAt!.toIso8601String(),
-                      ),
-                icon: _iconFor(item),
-                showUnreadDot: !item.isRead,
-                onTap: () => _onTap(item),
-              ),
+          );
+        }
+
+        final itemIndex = index - 1;
+        if (itemIndex < _items.length) {
+          final item = _items[itemIndex];
+          return Padding(
+            padding: EdgeInsets.only(bottom: 12.h),
+            child: NotificationsCard(
+              title: item.title,
+              subtitle: item.body,
+              time: item.createdAt == null
+                  ? ''
+                  : UtcDateTime.formatDateTimeLocal(
+                      item.createdAt!.toIso8601String(),
+                    ),
+              icon: _iconFor(item),
+              showUnreadDot: !item.isRead,
+              onTap: () => _onTap(item),
             ),
+          );
+        }
+
+        return Padding(
+          padding: EdgeInsets.symmetric(vertical: 16.h),
+          child: Center(
+            child: _loadingMore
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const SizedBox(height: 8),
           ),
-          SizedBox(height: 24.h),
-        ],
-      ],
+        );
+      },
     );
   }
 }

@@ -161,6 +161,7 @@ public partial class ProductsAppService
         {
             ProductId = x.ProductId.ToString(),
             ProductCode = x.ProductCode ?? string.Empty,
+            RetailCode = x.RetailCode,
             ProductName = displayName,
             NameEn = nameEn,
             NameAr = nameAr,

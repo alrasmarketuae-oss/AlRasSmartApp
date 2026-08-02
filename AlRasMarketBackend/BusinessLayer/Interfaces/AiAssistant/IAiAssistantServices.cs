@@ -20,6 +20,14 @@ public sealed class AiAssistantAskRequest
     public string Language { get; set; } = "en";
 }
 
+public sealed class AiAssistantCorrectDictationRequest
+{
+    public string Text { get; set; } = string.Empty;
+    public string Language { get; set; } = "en";
+}
+
+public sealed record AiAssistantCorrectDictationResult(string Text);
+
 public sealed record AiAssistantAnswer(
     string Answer,
     string Language,
@@ -58,5 +66,24 @@ public interface IAiAssistantAppService
         Guid? userId,
         AiAssistantAskRequest request,
         IReadOnlyList<AiAssistantHistoryMessage>? history = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Cleans speech-to-text mistakes so the AI "listens" and returns corrected text
+    /// for the user to review before sending.
+    /// </summary>
+    Task<AiAssistantCorrectDictationResult> CorrectDictationAsync(
+        AiAssistantCorrectDictationRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Transcribes raw microphone audio with OpenAI Whisper-class models
+    /// (much more accurate than on-device STT for Arabic and English).
+    /// </summary>
+    Task<AiAssistantCorrectDictationResult> TranscribeVoiceAsync(
+        Stream audioStream,
+        string fileName,
+        string? contentType,
+        string? language,
         CancellationToken cancellationToken = default);
 }

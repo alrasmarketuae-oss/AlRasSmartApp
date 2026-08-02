@@ -7,6 +7,7 @@ public sealed class ProductPublicRow
 {
     public Guid ProductId { get; set; }
     public string? ProductCode { get; set; }
+    public string? RetailCode { get; set; }
     public string? NameEn { get; set; }
     public decimal USDPrice { get; set; }
     public Guid? OwnerId { get; set; }

@@ -6,7 +6,7 @@ using BusinessLayer.Options;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 
-namespace BusinessLayer.Services;
+namespace BusinessLayer.Services.AiAssistant;
 
 public sealed class OpenAiTextEmbeddingService(
     HttpClient httpClient,

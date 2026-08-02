@@ -718,12 +718,13 @@ public partial class ProductsAppService
         _ = NormalizePackaging(input.RetailPackaging);
     }
 
-    private static void ApplyRetailPricingToProduct(
+    private async Task ApplyRetailPricingToProductAsync(
         Product product,
         CreateProductInput input,
         ProductReferenceBundle refs,
         byte? categoryId,
-        byte? productTypeId)
+        byte? productTypeId,
+        CancellationToken cancellationToken = default)
     {
         // Pure service-type listings (no category) never carry dual retail columns.
         if (!categoryId.HasValue)
@@ -734,6 +735,7 @@ public partial class ProductsAppService
             product.RetailPackaging = null;
             product.RetailPackagingDetails = null;
             product.RetailDescriptionEn = null;
+            product.RetailCode = null;
             return;
         }
 
@@ -745,6 +747,7 @@ public partial class ProductsAppService
             product.RetailPackaging = null;
             product.RetailPackagingDetails = null;
             product.RetailDescriptionEn = null;
+            product.RetailCode = null;
             // Category-only listing again (not dual Retail).
             if (product.ProductTypeId == ProductTypeCodes.Retail)
             {
@@ -798,6 +801,12 @@ public partial class ProductsAppService
 
         // Dual-list in Retail feed: CategoryId stays set + ProductTypeId = Retail (1).
         product.ProductTypeId = ProductTypeCodes.Retail;
+
+        if (string.IsNullOrWhiteSpace(product.RetailCode)
+            && ProductTypeCodes.HasRetailStockConfigured(product))
+        {
+            product.RetailCode = await AllocateProductCodeAsync(cancellationToken).ConfigureAwait(false);
+        }
     }
 
     /// <summary>

@@ -8,7 +8,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Processing;
 
-namespace BusinessLayer.Services;
+namespace BusinessLayer.Services.ImageSearch;
 
 /// <summary>
 /// CLIP image embeddings via the local clip-service.

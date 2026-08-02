@@ -35,17 +35,37 @@ public sealed class BalanceDataAccess(IRasAlSouqDbContext dbContext) : IBalanceD
         Guid userId,
         int skip,
         int take,
-        CancellationToken cancellationToken = default) =>
-        dbContext.Balances.AsNoTracking()
-            .Where(x => x.UserId == userId)
+        byte? entryType = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = dbContext.Balances.AsNoTracking()
+            .Where(x => x.UserId == userId);
+        if (entryType.HasValue)
+        {
+            query = query.Where(x => x.EntryType == entryType.Value);
+        }
+
+        return query
             .OrderByDescending(x => x.CreatedAtUtc)
             .Skip(skip)
             .Take(take)
             .ToListAsync(cancellationToken);
+    }
 
-    public Task<int> CountStatementAsync(Guid userId, CancellationToken cancellationToken = default) =>
-        dbContext.Balances.AsNoTracking()
-            .CountAsync(x => x.UserId == userId, cancellationToken);
+    public Task<int> CountStatementAsync(
+        Guid userId,
+        byte? entryType = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = dbContext.Balances.AsNoTracking()
+            .Where(x => x.UserId == userId);
+        if (entryType.HasValue)
+        {
+            query = query.Where(x => x.EntryType == entryType.Value);
+        }
+
+        return query.CountAsync(cancellationToken);
+    }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
         dbContext.SaveChangesAsync(cancellationToken);

@@ -41,7 +41,7 @@ public partial class ProductsAppService(
     private const string FeaturedProductsCacheKey = "products:featured:v7";
     private const string SearchProductsCachePrefix = "products:search:v13:";
     private static readonly TimeSpan SearchCardCacheTtl = TimeSpan.FromMinutes(10);
-    private const string ProductByCodeCachePrefix = "products:by-code:v2:";
+    private const string ProductByCodeCachePrefix = "products:by-code:v3:";
     private const string ProductByIdCachePrefix = "products:by-id:v7:";
 
     private int AllProductsCacheVersion => productCacheVersions.Get(ProductCacheVersions.All);
@@ -180,7 +180,7 @@ public partial class ProductsAppService(
             CreatedAt = UtcDateTimeHelper.UtcNow
         };
 
-        ApplyRetailPricingToProduct(product, input, refs, categoryId, productTypeId);
+        await ApplyRetailPricingToProductAsync(product, input, refs, categoryId, productTypeId, cancellationToken);
 
         product.ProductCode = await productData.InsertProductAsync(product, cancellationToken);
         if (!string.IsNullOrWhiteSpace(videoPath))
@@ -447,7 +447,8 @@ public partial class ProductsAppService(
             product.MaximumOrderQuantity = input.MaximumOrderQuantity;
         }
 
-        ApplyRetailPricingToProduct(product, input, refs, product.CategoryId, product.ProductTypeId);
+        await ApplyRetailPricingToProductAsync(
+            product, input, refs, product.CategoryId, product.ProductTypeId, cancellationToken);
 
         if (requiresAdminReapproval)
         {

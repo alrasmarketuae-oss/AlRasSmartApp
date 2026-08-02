@@ -3,8 +3,6 @@ import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/core/widgets/auth_header.dart';
-import 'package:alrasmarket/core/widgets/costomtextform.dart';
-import 'package:alrasmarket/core/widgets/primary_button.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_cubit.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_states.dart';
 import 'package:alrasmarket/features/auth/presentation/views/widgets/contry_code.dart';
@@ -16,6 +14,14 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+
+const Color _kBg = Color(0xFFF7FAFF);
+const Color _kTitle = Color(0xFF1B3B5F);
+const Color _kSubtitle = Color(0xFF8A97AB);
+const Color _kLabel = Color(0xFF33455C);
+const Color _kHint = Color(0xFF9AA6B8);
+const Color _kBorder = Color(0xFFE6ECF5);
+const Color _kPrimary = Color(0xFF3A7DC5);
 
 class RegisterView extends StatefulWidget {
   const RegisterView({super.key, required this.isSupplierCompany});
@@ -147,24 +153,31 @@ class _RegisterViewState extends State<RegisterView> {
         Text(
           addressLabel,
           style: TextStyle(
-            fontSize: 14.sp,
+            fontSize: 13.sp,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF333333),
+            color: _kLabel,
           ),
         ),
         SizedBox(height: 8.h),
         Material(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12.r),
+          borderRadius: BorderRadius.circular(14.r),
           child: InkWell(
             onTap: _resolvingAddress ? null : _fillAddressFromLocation,
-            borderRadius: BorderRadius.circular(12.r),
+            borderRadius: BorderRadius.circular(14.r),
             child: Container(
               width: double.infinity,
               padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: const Color(0xFFD0D5DD)),
+                borderRadius: BorderRadius.circular(14.r),
+                border: Border.all(color: _kBorder),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
@@ -172,7 +185,7 @@ class _RegisterViewState extends State<RegisterView> {
                     width: 40.w,
                     height: 40.w,
                     decoration: BoxDecoration(
-                      color: LightColor.defaultColor.withValues(alpha: 0.12),
+                      color: _kPrimary.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
                     child: _resolvingAddress
@@ -182,7 +195,7 @@ class _RegisterViewState extends State<RegisterView> {
                           )
                         : Icon(
                             Icons.my_location_rounded,
-                            color: LightColor.defaultColor,
+                            color: _kPrimary,
                             size: 22.sp,
                           ),
                   ),
@@ -196,7 +209,7 @@ class _RegisterViewState extends State<RegisterView> {
                           style: TextStyle(
                             fontSize: 14.sp,
                             fontWeight: FontWeight.w700,
-                            color: LightColor.defaultColor,
+                            color: _kPrimary,
                           ),
                         ),
                         SizedBox(height: 4.h),
@@ -208,7 +221,7 @@ class _RegisterViewState extends State<RegisterView> {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 12.sp,
-                            color: const Color(0xFF667085),
+                            color: _kSubtitle,
                             height: 1.35,
                           ),
                         ),
@@ -225,8 +238,6 @@ class _RegisterViewState extends State<RegisterView> {
             ),
           ),
         ),
-        // Keep a hidden/required text field so Form validation still works,
-        // while UI uses the location picker above.
         Opacity(
           opacity: 0,
           child: SizedBox(
@@ -242,7 +253,6 @@ class _RegisterViewState extends State<RegisterView> {
             ),
           ),
         ),
-        // Only show required hint when empty and form not yet validating via toast.
         ValueListenableBuilder<TextEditingValue>(
           valueListenable: _addressController,
           builder: (context, value, _) {
@@ -264,25 +274,25 @@ class _RegisterViewState extends State<RegisterView> {
       ],
     );
 
-    final licenseField = CustomTextFormField(
+    final licenseField = _iconField(
       controller: _licenseNumberController,
       label: s.tradeLicenseNumber,
-      addOptionalLabel: true,
       hintText: s.enterTradeLicenseNumber,
+      icon: Icons.badge_outlined,
     );
 
-    final taxField = CustomTextFormField(
+    final taxField = _iconField(
       controller: _taxNumberController,
       label: s.taxNumber,
       hintText: s.taxNumber,
-      addOptionalLabel: true,
+      icon: Icons.receipt_long_outlined,
     );
 
-    final websiteField = CustomTextFormField(
+    final websiteField = _iconField(
       controller: _websiteController,
       label: s.website,
       hintText: s.websiteHint,
-      addOptionalLabel: true,
+      icon: Icons.language_outlined,
       keyboardType: TextInputType.url,
       validator: (value) {
         final trimmed = value?.trim() ?? '';
@@ -304,16 +314,16 @@ class _RegisterViewState extends State<RegisterView> {
       children: [
         if (isArabic) ...[
           licenseField,
-          SizedBox(height: 12.h),
+          SizedBox(height: 14.h),
           locationPicker,
         ] else ...[
           locationPicker,
-          SizedBox(height: 12.h),
+          SizedBox(height: 14.h),
           licenseField,
         ],
-        SizedBox(height: 12.h),
+        SizedBox(height: 14.h),
         taxField,
-        SizedBox(height: 12.h),
+        SizedBox(height: 14.h),
         websiteField,
       ],
     );
@@ -377,15 +387,21 @@ class _RegisterViewState extends State<RegisterView> {
     final s = S.of(context);
 
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         SizedBox(
-          height: 24.h,
-          width: 24.w,
+          height: 22.h,
+          width: 22.w,
           child: Checkbox(
             value: _acceptedTermsAndPrivacy,
-            activeColor: LightColor.defaultColor,
-            side: BorderSide(color: LightColor.defaultColor, width: 1.5.w),
+            activeColor: _kPrimary,
+            checkColor: Colors.white,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            visualDensity: VisualDensity.compact,
+            side: BorderSide(color: _kPrimary, width: 1.5.w),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(4.r),
+            ),
             onChanged: (value) {
               setState(() {
                 _acceptedTermsAndPrivacy = value ?? false;
@@ -395,35 +411,110 @@ class _RegisterViewState extends State<RegisterView> {
         ),
         SizedBox(width: 8.w),
         Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(top: 2.h),
-            child: Wrap(
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Text(
-                  s.agreeToTermsPrefix,
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                s.agreeToTermsPrefix,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  color: _kLabel,
+                  height: 1.4,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              GestureDetector(
+                onTap: () => context.push(AppRoutes.kTermsAndConditions),
+                child: Text(
+                  s.policyAndPrivacy,
                   style: TextStyle(
                     fontSize: 13.sp,
-                    color: const Color(0xCC333333),
-                    height: 1.5,
-                    fontWeight: FontWeight.w500,
+                    color: _kPrimary,
+                    height: 1.4,
+                    fontWeight: FontWeight.w700,
+                    decoration: TextDecoration.underline,
+                    decorationColor: _kPrimary,
                   ),
                 ),
-                GestureDetector(
-                  onTap: () => context.push(AppRoutes.kTermsAndConditions),
-                  child: Text(
-                    s.policyAndPrivacy,
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      color: LightColor.defaultColor,
-                      height: 1.5,
-                      fontWeight: FontWeight.w700,
-                      decoration: TextDecoration.underline,
-                       decorationColor: LightColor.defaultColor,
-                    ),
-                  ),
-                ),
-              ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Field with Material prefix icon (mockup style) while reusing validators.
+  Widget _iconField({
+    required TextEditingController controller,
+    required String label,
+    required String hintText,
+    required IconData icon,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 13.sp,
+            fontWeight: FontWeight.w600,
+            color: _kLabel,
+          ),
+        ),
+        SizedBox(height: 8.h),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14.r),
+            border: Border.all(color: _kBorder),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: TextFormField(
+            controller: controller,
+            keyboardType: keyboardType,
+            validator: validator,
+            textAlign: isArabic ? TextAlign.right : TextAlign.left,
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w500,
+              color: _kTitle,
+            ),
+            decoration: InputDecoration(
+              hintText: hintText,
+              hintStyle: TextStyle(fontSize: 13.sp, color: _kHint),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 14.w,
+                vertical: 14.h,
+              ),
+              prefixIcon: Icon(icon, size: 20.sp, color: _kHint),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14.r),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14.r),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14.r),
+                borderSide: const BorderSide(color: _kPrimary, width: 1.2),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14.r),
+                borderSide: const BorderSide(color: Color(0xFFD92D20)),
+              ),
             ),
           ),
         ),
@@ -431,12 +522,245 @@ class _RegisterViewState extends State<RegisterView> {
     );
   }
 
+  Widget _passwordField() {
+    return _PasswordField(
+      controller: _passwordController,
+      label: S.of(context).password,
+      hintText: S.of(context).enterYourPassword,
+      validator: (value) {
+        if (value == null || value.trim().isEmpty) {
+          return S.of(context).thisFieldIsRequired;
+        }
+        if (value.trim().length < 6) {
+          return S.of(context).passwordMustBeAtLeast6Characters;
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _accountTypeSwitcher() {
+    final s = S.of(context);
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    return PopupMenuButton<String>(
+      padding: EdgeInsets.zero,
+      offset: Offset(0, 40.h),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14.r),
+      ),
+      color: Colors.white,
+      elevation: 8,
+      onSelected: (value) {
+        setState(() {
+          _isCustomerCompany = value == 'company';
+        });
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          value: 'person',
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+          child: _AccountTypeMenuItem(
+            selected: !_isCustomerCompany,
+            icon: Icons.person_outline_rounded,
+            iconColor: _kPrimary,
+            title: s.person,
+            subtitle: isAr ? 'للاستخدام الشخصي' : 'For personal use',
+          ),
+        ),
+        PopupMenuItem(
+          value: 'company',
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+          child: _AccountTypeMenuItem(
+            selected: _isCustomerCompany,
+            icon: Icons.storefront_outlined,
+            iconColor: const Color(0xFF22A06B),
+            title: s.company,
+            subtitle: isAr ? 'للأعمال والشركات' : 'For businesses',
+          ),
+        ),
+      ],
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22.r),
+          border: Border.all(color: _kBorder),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _isCustomerCompany
+                  ? Icons.storefront_outlined
+                  : Icons.person_outline_rounded,
+              size: 18.sp,
+              color: _isCustomerCompany
+                  ? const Color(0xFF22A06B)
+                  : _kPrimary,
+            ),
+            SizedBox(width: 6.w),
+            Text(
+              _accountTypeLabel(context),
+              style: TextStyle(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w700,
+                color: _kTitle,
+              ),
+            ),
+            SizedBox(width: 2.w),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: 20.sp,
+              color: _kPrimary,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _phoneRow() {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final code = CountryCodeField(
+      label: S.of(context).countryCode,
+      value: _selectedCountryCode,
+      onChanged: (value) {
+        setState(() {
+          _selectedCountryCode = value;
+        });
+      },
+    );
+    final phone = _iconField(
+      controller: _phoneController,
+      label: S.of(context).phoneNumber,
+      hintText: 'XX XXX XXXX',
+      icon: Icons.phone_outlined,
+      keyboardType: TextInputType.phone,
+      validator: (value) {
+        if (value == null || value.trim().isEmpty) {
+          return S.of(context).thisFieldIsRequired;
+        }
+        return null;
+      },
+    );
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: isArabic
+          ? [
+              Expanded(flex: 3, child: phone),
+              SizedBox(width: 12.w),
+              Expanded(flex: 2, child: code),
+            ]
+          : [
+              Expanded(flex: 2, child: code),
+              SizedBox(width: 12.w),
+              Expanded(flex: 3, child: phone),
+            ],
+    );
+  }
+
+  Widget _landlineRow() {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final code = CountryCodeField(
+      label: S.of(context).countryCode,
+      value: _selectedOtherCountryCode,
+      onChanged: (value) {
+        setState(() {
+          _selectedOtherCountryCode = value;
+        });
+      },
+    );
+    final phone = _iconField(
+      controller: _landlinePhoneController,
+      label: S.of(context).landlinePhone,
+      hintText: 'XX XXX XXXX',
+      icon: Icons.phone_in_talk_outlined,
+      keyboardType: TextInputType.phone,
+    );
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: isArabic
+          ? [
+              Expanded(flex: 3, child: phone),
+              SizedBox(width: 12.w),
+              Expanded(flex: 2, child: code),
+            ]
+          : [
+              Expanded(flex: 2, child: code),
+              SizedBox(width: 12.w),
+              Expanded(flex: 3, child: phone),
+            ],
+    );
+  }
+
+  Widget _signUpButton({required bool isLoading}) {
+    final isCompany = widget.isSupplierCompany || _isCustomerCompany;
+    final label = isCompany ? S.of(context).next : S.of(context).signUp;
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+
+    return SizedBox(
+      height: 50.h,
+      width: double.infinity,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _kPrimary,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+        ),
+        onPressed: isLoading ? null : _handleRegister,
+        child: isLoading
+            ? SizedBox(
+                width: 20.sp,
+                height: 20.sp,
+                child: const CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(width: 8.w),
+                  Icon(
+                    isAr ? Icons.arrow_back_rounded : Icons.arrow_forward_rounded,
+                    color: Colors.white,
+                    size: 20.sp,
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF2F7FF),
-        body: BlocConsumer<AuthCubit, AuthStates>(
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    final showPhoto =
+        !widget.isSupplierCompany && !_isCustomerCompany;
+
+    return Scaffold(
+      backgroundColor: _kBg,
+      body: SafeArea(
+        child: BlocConsumer<AuthCubit, AuthStates>(
           listener: (context, state) {
             if (state is RegisterClientSuccessState) {
               AppToast.showSuccess(
@@ -458,94 +782,64 @@ class _RegisterViewState extends State<RegisterView> {
             final isLoading = state is RegisterClientLoadingState;
 
             return SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+              padding: EdgeInsets.symmetric(horizontal: 22.w, vertical: 12.h),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const AuthHeader(),
-                    SizedBox(height: 24.h),
-                    Stack(
-                      alignment:
-                          Alignment.center, // هيخلي أي عنصر في النص بالظبط
+                    SizedBox(height: 20.h),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 1. النص في منتصف السطر تماماً
-                        Text(
-                          S.of(context).createAccount,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 19.sp,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF333333),
-                          ),
-                        ),
-
-                        // 2. القائمة المنسدلة على الطرف
-                        if (!widget.isSupplierCompany)
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              PopupMenuButton<String>(
-                                padding: EdgeInsets.zero,
-                                offset: Offset(0, 28.h),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8.r),
+                              Text(
+                                S.of(context).createAccount,
+                                style: TextStyle(
+                                  fontSize: 26.sp,
+                                  fontWeight: FontWeight.w800,
+                                  color: _kTitle,
+                                  height: 1.15,
                                 ),
-                                color: Colors.white,
-                                onSelected: (value) {
-                                  setState(() {
-                                    _isCustomerCompany = value == 'company';
-                                  });
-                                },
-                                itemBuilder: (context) {
-                                  return [
-                                    PopupMenuItem(
-                                      value: 'person',
-                                      child: Text(S.of(context).person),
-                                    ),
-                                    PopupMenuItem(
-                                      value: 'company',
-                                      child: Text(S.of(context).company),
-                                    ),
-                                  ];
-                                },
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      _accountTypeLabel(context),
-                                      style: TextStyle(
-                                        fontSize: 14.sp,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black,
-                                      ),
-                                    ),
-                                    SizedBox(width: 2.w),
-                                    Icon(
-                                      Icons.keyboard_arrow_down_rounded,
-                                      size: 20.sp,
-                                      color: LightColor.defaultColor,
-                                    ),
-                                  ],
+                              ),
+                              SizedBox(height: 6.h),
+                              Text(
+                                isAr
+                                    ? 'انضم إلينا وابدأ الآن'
+                                    : 'Join us and get started',
+                                style: TextStyle(
+                                  fontSize: 13.sp,
+                                  fontWeight: FontWeight.w500,
+                                  color: _kSubtitle,
                                 ),
                               ),
                             ],
                           ),
+                        ),
+                        if (!widget.isSupplierCompany) ...[
+                          SizedBox(width: 8.w),
+                          _accountTypeSwitcher(),
+                        ],
                       ],
                     ),
-                    SizedBox(height: 24.h),
-                    if (!widget.isSupplierCompany && !_isCustomerCompany) ...[
-                      Center(
+                    SizedBox(height: 22.h),
+                    if (showPhoto) ...[
+                      Align(
+                        alignment: isAr
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
                         child: AuthProfilePhotoPicker(
                           initialPath: _profileImagePath,
                           onChanged: (path) => _profileImagePath = path,
                         ),
                       ),
-                      SizedBox(height: 16.h),
+                      SizedBox(height: 18.h),
                     ],
-                    CustomTextFormField(
+                    _iconField(
                       controller: _companyNameController,
                       label: widget.isSupplierCompany || _isCustomerCompany
                           ? S.of(context).companyName
@@ -553,6 +847,9 @@ class _RegisterViewState extends State<RegisterView> {
                       hintText: widget.isSupplierCompany || _isCustomerCompany
                           ? S.of(context).enterCompanyName
                           : S.of(context).enterFullName,
+                      icon: widget.isSupplierCompany || _isCustomerCompany
+                          ? Icons.apartment_outlined
+                          : Icons.person_outline_rounded,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return S.of(context).thisFieldIsRequired;
@@ -561,153 +858,21 @@ class _RegisterViewState extends State<RegisterView> {
                       },
                     ),
                     if (widget.isSupplierCompany || _isCustomerCompany) ...[
-                      _buildCompanyLocationAndTaxSection(
-                        isArabic:
-                            Localizations.localeOf(context).languageCode == 'ar',
-                      ),
-                      SizedBox(height: 12.h),
+                      SizedBox(height: 14.h),
+                      _buildCompanyLocationAndTaxSection(isArabic: isAr),
                     ],
-                    if (Localizations.localeOf(context).languageCode == "en")
-                      Column(
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                flex: 2,
-                                child: CountryCodeField(
-                                  label: S.of(context).countryCode,
-                                  value: _selectedCountryCode,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _selectedCountryCode = value;
-                                    });
-                                  },
-                                ),
-                              ),
-                              SizedBox(width: 12.w),
-                              Expanded(
-                                flex: 3,
-                                child: CustomTextFormField(
-                                  controller: _phoneController,
-                                  label: S.of(context).phoneNumber,
-                                  hintText: 'XX XXX XXXX',
-                                  keyboardType: TextInputType.phone,
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return S.of(context).thisFieldIsRequired;
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                          if (widget.isSupplierCompany ||
-                              _isCustomerCompany) ...[
-                            SizedBox(height: 12.h),
-                            Row(
-                              children: [
-                                Expanded(
-                                  flex: 2,
-                                  child: CountryCodeField(
-                                    label: S.of(context).countryCode,
-                                    value: _selectedOtherCountryCode,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _selectedOtherCountryCode = value;
-                                      });
-                                    },
-                                  ),
-                                ),
-                                SizedBox(width: 12.w),
-                                Expanded(
-                                  flex: 3,
-                                  child: CustomTextFormField(
-                                    controller: _landlinePhoneController,
-                                    label: S.of(context).landlinePhone,
-                                    hintText: 'XX XXX XXXX',
-                                    addOptionalLabel: true,
-                                    keyboardType: TextInputType.phone,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ],
-                      ),
-                    if (Localizations.localeOf(context).languageCode == "ar")
-                      Column(
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                flex: 3,
-                                child: CustomTextFormField(
-                                  controller: _phoneController,
-                                  label: S.of(context).phoneNumber,
-                                  hintText: 'XX XXX XXXX',
-                                  keyboardType: TextInputType.phone,
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return S.of(context).thisFieldIsRequired;
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ),
-                              SizedBox(width: 12.w),
-                              Expanded(
-                                flex: 2,
-                                child: CountryCodeField(
-                                  label: S.of(context).countryCode,
-                                  value: _selectedCountryCode,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _selectedCountryCode = value;
-                                    });
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                          if (widget.isSupplierCompany ||
-                              _isCustomerCompany) ...[
-                            SizedBox(height: 12.h),
-                            Row(
-                              children: [
-                                Expanded(
-                                  flex: 3,
-                                  child: CustomTextFormField(
-                                    controller: _landlinePhoneController,
-                                    label: S.of(context).landlinePhone,
-                                    hintText: 'XX XXX XXXX',
-                                    addOptionalLabel: true,
-                                    keyboardType: TextInputType.phone,
-                                  ),
-                                ),
-                                SizedBox(width: 12.w),
-                                Expanded(
-                                  flex: 2,
-                                  child: CountryCodeField(
-                                    label: S.of(context).countryCode,
-                                    value: _selectedOtherCountryCode,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _selectedOtherCountryCode = value;
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ],
-                      ),
-                    SizedBox(height: 12.h),
-                    CustomTextFormField(
+                    SizedBox(height: 14.h),
+                    _phoneRow(),
+                    if (widget.isSupplierCompany || _isCustomerCompany) ...[
+                      SizedBox(height: 14.h),
+                      _landlineRow(),
+                    ],
+                    SizedBox(height: 14.h),
+                    _iconField(
                       controller: _emailController,
                       label: S.of(context).email,
                       hintText: S.of(context).enterYourEmail,
+                      icon: Icons.mail_outline_rounded,
                       keyboardType: TextInputType.emailAddress,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -719,34 +884,12 @@ class _RegisterViewState extends State<RegisterView> {
                         return null;
                       },
                     ),
-                    SizedBox(height: 12.h),
-                    CustomTextFormField(
-                      controller: _passwordController,
-                      label: S.of(context).password,
-                      hintText: S.of(context).enterYourPassword,
-                      isPassword: true,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return S.of(context).thisFieldIsRequired;
-                        }
-                        if (value.trim().length < 6) {
-                          return S.of(context).passwordMustBeAtLeast6Characters;
-                        }
-                        return null;
-                      },
-                    ),
+                    SizedBox(height: 14.h),
+                    _passwordField(),
                     SizedBox(height: 16.h),
                     _buildTermsAcceptanceRow(),
                     SizedBox(height: 20.h),
-                    PrimaryButton(
-                      text: widget.isSupplierCompany || _isCustomerCompany
-                          ? S.of(context).next
-                          : S.of(context).signUp,
-                      onPressed: isLoading ? null : _handleRegister,
-                      isLoading: isLoading,
-                      backgroundColor: LightColor.defaultColor,
-                      borderRadius: 10,
-                    ),
+                    _signUpButton(isLoading: isLoading),
                     SizedBox(height: 16.h),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -755,7 +898,7 @@ class _RegisterViewState extends State<RegisterView> {
                           S.of(context).noAccount,
                           style: TextStyle(
                             fontSize: 14.sp,
-                            color: const Color(0xCC333333),
+                            color: _kSubtitle,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -764,9 +907,9 @@ class _RegisterViewState extends State<RegisterView> {
                           child: Text(
                             S.of(context).login,
                             style: TextStyle(
-                              fontSize: 16.sp,
-                              color: LightColor.defaultColor,
-                              fontWeight: FontWeight.bold,
+                              fontSize: 15.sp,
+                              color: _kPrimary,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
                         ),
@@ -780,6 +923,181 @@ class _RegisterViewState extends State<RegisterView> {
           },
         ),
       ),
+    );
+  }
+}
+
+class _AccountTypeMenuItem extends StatelessWidget {
+  const _AccountTypeMenuItem({
+    required this.selected,
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final bool selected;
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 210.w,
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+      decoration: BoxDecoration(
+        color: selected
+            ? LightColor.defaultColor.withValues(alpha: 0.08)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(10.r),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36.w,
+            height: 36.w,
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10.r),
+            ),
+            child: Icon(icon, color: iconColor, size: 20.sp),
+          ),
+          SizedBox(width: 10.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
+                    color: _kTitle,
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    color: _kSubtitle,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (selected)
+            Icon(Icons.check_rounded, color: _kPrimary, size: 20.sp),
+        ],
+      ),
+    );
+  }
+}
+
+class _PasswordField extends StatefulWidget {
+  const _PasswordField({
+    required this.controller,
+    required this.label,
+    required this.hintText,
+    required this.validator,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final String hintText;
+  final String? Function(String?) validator;
+
+  @override
+  State<_PasswordField> createState() => _PasswordFieldState();
+}
+
+class _PasswordFieldState extends State<_PasswordField> {
+  bool _obscure = true;
+
+  @override
+  Widget build(BuildContext context) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.label,
+          style: TextStyle(
+            fontSize: 13.sp,
+            fontWeight: FontWeight.w600,
+            color: _kLabel,
+          ),
+        ),
+        SizedBox(height: 8.h),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14.r),
+            border: Border.all(color: _kBorder),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: TextFormField(
+            controller: widget.controller,
+            obscureText: _obscure,
+            validator: widget.validator,
+            textAlign: isArabic ? TextAlign.right : TextAlign.left,
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w500,
+              color: _kTitle,
+            ),
+            decoration: InputDecoration(
+              hintText: widget.hintText,
+              hintStyle: TextStyle(fontSize: 13.sp, color: _kHint),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 14.w,
+                vertical: 14.h,
+              ),
+              prefixIcon: Icon(
+                Icons.lock_outline_rounded,
+                size: 20.sp,
+                color: _kHint,
+              ),
+              suffixIcon: IconButton(
+                onPressed: () => setState(() => _obscure = !_obscure),
+                icon: Icon(
+                  _obscure
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  size: 20.sp,
+                  color: _kHint,
+                ),
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14.r),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14.r),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14.r),
+                borderSide: const BorderSide(color: _kPrimary, width: 1.2),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14.r),
+                borderSide: const BorderSide(color: Color(0xFFD92D20)),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -177,10 +177,16 @@ class SupplierBalanceService {
   Future<SupplierBalanceStatement> fetchStatement({
     int page = 1,
     int pageSize = 30,
+    int? entryType,
   }) async {
     final response = await DioHelper.getData(
       url: ApiConstants.supplierBalanceStatementEndPoint,
-      query: {'page': page, 'pageSize': pageSize, ..._cacheBustQuery()},
+      query: {
+        'page': page,
+        'pageSize': pageSize,
+        if (entryType != null) 'entryType': entryType,
+        ..._cacheBustQuery(),
+      },
       token: AuthService.instance.currentToken,
     );
     if (response?.statusCode != 200 || response?.data is! Map) {

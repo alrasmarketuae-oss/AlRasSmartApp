@@ -16,9 +16,19 @@ public sealed class AiAssistantHub(IAiAssistantAppService assistant) : Hub
     private const int MaxRequestsPerMinute = 12;
     private static readonly TimeSpan SessionLifetime = TimeSpan.FromMinutes(30);
     private static readonly ConcurrentDictionary<string, SessionState> Sessions = new();
+    private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, byte>> ConnectionSessions = new();
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
+        // Drop every AI history session owned by this connection immediately.
+        if (ConnectionSessions.TryRemove(Context.ConnectionId, out var keys))
+        {
+            foreach (var key in keys.Keys)
+            {
+                Sessions.TryRemove(key, out _);
+            }
+        }
+
         PruneExpiredSessions();
         await base.OnDisconnectedAsync(exception);
     }
@@ -37,7 +47,9 @@ public sealed class AiAssistantHub(IAiAssistantAppService assistant) : Hub
             return;
         }
 
-        var session = Sessions.GetOrAdd(ResolveSessionKey(sessionId), _ => new SessionState());
+        var sessionKey = ResolveSessionKey(sessionId);
+        TrackConnectionSession(sessionKey);
+        var session = Sessions.GetOrAdd(sessionKey, _ => new SessionState());
         if (!session.TryConsumeRequest())
         {
             await Clients.Caller.SendAsync(
@@ -115,9 +127,23 @@ public sealed class AiAssistantHub(IAiAssistantAppService assistant) : Hub
 
     public Task ClearSessionById(string? sessionId)
     {
-        Sessions.TryRemove(ResolveSessionKey(sessionId), out _);
+        var key = ResolveSessionKey(sessionId);
+        Sessions.TryRemove(key, out _);
+        if (ConnectionSessions.TryGetValue(Context.ConnectionId, out var keys))
+        {
+            keys.TryRemove(key, out _);
+        }
+
         PruneExpiredSessions();
         return Task.CompletedTask;
+    }
+
+    private void TrackConnectionSession(string sessionKey)
+    {
+        var keys = ConnectionSessions.GetOrAdd(
+            Context.ConnectionId,
+            _ => new ConcurrentDictionary<string, byte>(StringComparer.Ordinal));
+        keys[sessionKey] = 0;
     }
 
     /// <summary>

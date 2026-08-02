@@ -58,6 +58,7 @@ public sealed class OwnerListingRow
 {
     public Guid ProductId { get; set; }
     public string? ProductCode { get; set; }
+    public string? RetailCode { get; set; }
     public string? NameEn { get; set; }
     public string? CreatedLanguage { get; set; }
     public string? CategoryName { get; set; }

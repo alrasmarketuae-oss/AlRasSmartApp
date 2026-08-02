@@ -349,6 +349,8 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.HasIndex(x => new { x.IsApproved, x.CreatedAt });
             entity.HasIndex(x => new { x.ProductTypeId, x.Status, x.CreatedAt });
             entity.Property(x => x.NameEn).HasMaxLength(255);
+            entity.Property(x => x.ProductCode).HasMaxLength(16);
+            entity.Property(x => x.RetailCode).HasMaxLength(16);
             entity.Property(x => x.CreatedLanguage).HasMaxLength(5).IsUnicode(false).HasDefaultValue("en");
             entity.Property(x => x.USDPrice).HasColumnType("decimal(8,2)");
             entity.Property(x => x.RetailPrice).HasColumnType("decimal(8,2)");

@@ -42,8 +42,6 @@ class ChatCubit extends Cubit<ChatState> {
   String? otherUserId;
   ChatPresenceModel? otherUserPresence;
   bool _isConversationActive = false;
-  String? _myPublicKeyJwk;
-  String? _peerPublicKeyJwk;
 
   void _initialize() {
     _messageSubscription = _repository.messageStream.listen((message) {
@@ -150,6 +148,9 @@ class ChatCubit extends Cubit<ChatState> {
       if (activeAgentName?.toLowerCase() == session.agentName.toLowerCase()) {
         activeAgentName = null;
       }
+      // Agent closed the session — stop presence heartbeats to cut SignalR load.
+      _presenceTimer?.cancel();
+      _presenceTimer = null;
     }
 
     emit(ChatSessionsUpdated(List.from(supportSessions)));
@@ -197,17 +198,17 @@ class ChatCubit extends Cubit<ChatState> {
     );
 
     await loadMessages();
-    await _ensureE2eKeys(token: token, uid: uid, peerId: adminUserId);
+    await _ensureE2eKeys(token: token, uid: uid);
   }
 
   Future<void> _ensureE2eKeys({
     required String token,
     required String uid,
-    required String peerId,
   }) async {
     try {
+      // Keep local keys available so older encrypted messages can still decrypt.
       final secrets = await AuthService.instance.resolveChatKeyWrapSecrets();
-      _myPublicKeyJwk = await ChatE2eCrypto.ensurePublicKeyJwk(
+      await ChatE2eCrypto.ensurePublicKeyJwk(
         userId: uid,
         wrapSecrets: secrets,
         downloadKeyPair: () async {
@@ -226,34 +227,9 @@ class ChatCubit extends Cubit<ChatState> {
           uploaded.fold((_) {}, (_) {});
         },
       );
-
-      final peerKey = await _repository.getPublicKey(
-        token: token,
-        userId: peerId,
-      );
-      peerKey.fold(
-        (_) {},
-        (key) {
-          if (key != null && key.isNotEmpty) {
-            _peerPublicKeyJwk = key;
-          }
-        },
-      );
     } catch (_) {
-      // Chat still works; new sends fall back to plaintext if keys unavailable.
+      // Chat still works with plaintext messages.
     }
-  }
-
-  Future<void> _ensurePeerKeyForSend({
-    required String token,
-    required String uid,
-    required String peerId,
-  }) async {
-    if ((_myPublicKeyJwk?.isNotEmpty ?? false) &&
-        (_peerPublicKeyJwk?.isNotEmpty ?? false)) {
-      return;
-    }
-    await _ensureE2eKeys(token: token, uid: uid, peerId: peerId);
   }
 
   Future<ChatMessageModel> _decryptMessage(ChatMessageModel message) async {
@@ -622,48 +598,8 @@ class ChatCubit extends Cubit<ChatState> {
 
     emit(ChatMessageSending());
 
-    await _ensurePeerKeyForSend(token: token, uid: uid, peerId: oid);
-
-    var wireContent = content.trim();
-    final myPub = _myPublicKeyJwk;
-    final peerPub = _peerPublicKeyJwk;
-    if (myPub != null &&
-        peerPub != null &&
-        myPub.isNotEmpty &&
-        peerPub.isNotEmpty) {
-      try {
-        wireContent = await ChatE2eCrypto.encryptPlaintext(
-          plaintext: content.trim(),
-          myUserId: uid,
-          peerUserId: oid,
-          myPublicKeyJwk: myPub,
-          peerPublicKeyJwk: peerPub,
-        );
-      } catch (_) {
-        // Retry once after refreshing keys, then fall back to plaintext.
-        await _ensureE2eKeys(token: token, uid: uid, peerId: oid);
-        final myPubRetry = _myPublicKeyJwk;
-        final peerPubRetry = _peerPublicKeyJwk;
-        if (myPubRetry != null &&
-            peerPubRetry != null &&
-            myPubRetry.isNotEmpty &&
-            peerPubRetry.isNotEmpty) {
-          try {
-            wireContent = await ChatE2eCrypto.encryptPlaintext(
-              plaintext: content.trim(),
-              myUserId: uid,
-              peerUserId: oid,
-              myPublicKeyJwk: myPubRetry,
-              peerPublicKeyJwk: peerPubRetry,
-            );
-          } catch (_) {
-            wireContent = content.trim();
-          }
-        } else {
-          wireContent = content.trim();
-        }
-      }
-    }
+    // Support chat sends plaintext (E2E encryption disabled).
+    final wireContent = content.trim();
 
     final result = await _repository.sendMessage(
       token: token,
@@ -731,14 +667,14 @@ class ChatCubit extends Cubit<ChatState> {
   }
 
   @override
-  Future<void> close() {
+  Future<void> close() async {
     exitConversation();
-    _messageSubscription?.cancel();
-    _seenSubscription?.cancel();
-    _deliveredSubscription?.cancel();
-    _presenceSubscription?.cancel();
-    _sessionSubscription?.cancel();
-    _repository.dispose();
+    await _messageSubscription?.cancel();
+    await _seenSubscription?.cancel();
+    await _deliveredSubscription?.cancel();
+    await _presenceSubscription?.cancel();
+    await _sessionSubscription?.cancel();
+    await _repository.dispose();
     return super.close();
   }
 }

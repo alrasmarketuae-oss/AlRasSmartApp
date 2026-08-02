@@ -101,7 +101,11 @@ public partial class ProductsAppService
             }
             else
             {
-                projections.Add((product, projectRetailAsPrimary, includeRetailFields, null));
+                var channel = projectRetailAsPrimary
+                    && ProductTypeCodes.IsHybridDualListing(product.CategoryId, product.ProductTypeId)
+                        ? "retail"
+                        : null;
+                projections.Add((product, projectRetailAsPrimary, includeRetailFields, channel));
             }
         }
 
@@ -228,7 +232,10 @@ public partial class ProductsAppService
             return (object)new
             {
                 x.ProductId,
-                productCode = x.ProductCode,
+                productCode = useRetailPrimary
+                    ? (FirstNonEmpty(x.RetailCode, x.ProductCode))
+                    : x.ProductCode,
+                retailCode = x.RetailCode,
                 nameEn,
                 nameAr,
                 price = priced.Price,

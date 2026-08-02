@@ -8,6 +8,32 @@ namespace RasAlSouqPresentaionLayer.Hubs;
 [Authorize]
 public sealed class ChatHub(IChatAppService chatAppService, IHubContext<ChatHub> hubContext) : Hub
 {
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        var currentUserId = GetCurrentUserId();
+        if (!string.IsNullOrWhiteSpace(currentUserId))
+        {
+            try
+            {
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, GetGroupName(currentUserId));
+                var supportInboxOwnerId =
+                    await chatAppService.GetSupportInboxOwnerIdForViewerAsync(currentUserId);
+                if (!string.IsNullOrWhiteSpace(supportInboxOwnerId))
+                {
+                    await Groups.RemoveFromGroupAsync(
+                        Context.ConnectionId,
+                        GetGroupName(supportInboxOwnerId));
+                }
+            }
+            catch
+            {
+                // Best-effort cleanup; SignalR also drops group membership on disconnect.
+            }
+        }
+
+        await base.OnDisconnectedAsync(exception);
+    }
+
     public async Task JoinUserChat(string userId)
     {
         if (string.IsNullOrWhiteSpace(userId))

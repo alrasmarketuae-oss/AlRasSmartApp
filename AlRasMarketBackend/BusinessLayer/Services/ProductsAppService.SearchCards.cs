@@ -91,7 +91,7 @@ public partial class ProductsAppService
     }
 
     private string SearchCardCacheKey(Guid productId, string channel) =>
-        $"products:search-card:v13:v{SearchProductsCacheVersion}:{productId:D}:{channel}";
+        $"products:search-card:v14:v{SearchProductsCacheVersion}:{productId:D}:{channel}";
 
     private async Task<Dictionary<(Guid ProductId, string Channel), object>> BuildSearchCardsFromSqlAsync(
         IReadOnlyList<ProductPublicRow> products,
@@ -246,7 +246,10 @@ public partial class ProductsAppService
         return new
         {
             x.ProductId,
-            productCode = x.ProductCode,
+            productCode = channel == "retail"
+                ? (FirstNonEmpty(x.RetailCode, x.ProductCode))
+                : x.ProductCode,
+            retailCode = x.RetailCode,
             nameEn,
             nameAr,
             price = priced.Price,

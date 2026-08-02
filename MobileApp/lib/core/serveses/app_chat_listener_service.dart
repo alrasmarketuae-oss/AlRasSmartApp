@@ -14,7 +14,8 @@ import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 
-/// Single shared ChatHub connection for the whole app (notifications + open chat).
+/// Screen-scoped ChatHub: connects while SupportChatView is open, stops on exit.
+/// Foreground/background alerts outside the chat screen rely on FCM.
 class AppChatListenerService {
   AppChatListenerService._();
 
@@ -23,6 +24,7 @@ class AppChatListenerService {
   HubConnection? _hubConnection;
   String? _userId;
   bool _starting = false;
+  bool _chatScreenOpen = false;
 
   /// When set, the support chat screen is open with this peer (support admin id).
   String? activeConversationOtherUserId;
@@ -74,6 +76,7 @@ class AppChatListenerService {
                   AuthService.instance.currentToken ?? token,
             ),
           )
+          // Reconnect only while the support chat screen is open.
           .withAutomaticReconnect()
           .build();
 
@@ -86,10 +89,19 @@ class AppChatListenerService {
       _hubConnection!.on('supportSessionEnded', _onSupportSessionEnded);
 
       _hubConnection!.onreconnected(({connectionId}) async {
+        // If the support screen already closed, do not keep a zombie connection.
+        if (!_chatScreenOpen) {
+          await _stopConnectionOnly();
+          return;
+        }
         await _joinUserGroup();
       });
 
       await _hubConnection!.start();
+      if (!_chatScreenOpen) {
+        await _stopConnectionOnly();
+        return;
+      }
       await _joinUserGroup();
       debugPrint('AppChatListenerService connected');
     } catch (e) {
@@ -102,7 +114,23 @@ class AppChatListenerService {
 
   Future<void> stop() async {
     activeConversationOtherUserId = null;
+    _chatScreenOpen = false;
     _userId = null;
+    await _stopConnectionOnly();
+  }
+
+  /// Call when SupportChatView opens — ensures a live hub for this screen.
+  Future<void> enterChatScreen() async {
+    _chatScreenOpen = true;
+    await ensureStarted();
+  }
+
+  /// Call when SupportChatView closes or support ends the session while leaving.
+  /// Stops the ChatHub connection so it does not keep burning battery/CPU.
+  /// FCM still delivers messages while the app is backgrounded.
+  Future<void> leaveChatScreen() async {
+    activeConversationOtherUserId = null;
+    _chatScreenOpen = false;
     await _stopConnectionOnly();
   }
 
@@ -115,9 +143,14 @@ class AppChatListenerService {
           hub.state == HubConnectionState.Connected &&
           userId != null &&
           userId.isNotEmpty) {
-        await hub.invoke('LeaveUserChat', args: [userId]);
+        try {
+          await hub.invoke('LeaveUserChat', args: [userId]);
+        } catch (_) {}
       }
-      await hub?.stop();
+      // Disable reconnect before stop so the client does not revive the hub.
+      try {
+        await hub?.stop();
+      } catch (_) {}
     } catch (_) {}
     _hubConnection = null;
   }

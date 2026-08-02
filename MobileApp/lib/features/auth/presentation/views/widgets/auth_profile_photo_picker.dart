@@ -1,9 +1,9 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:alrasmarket/core/media/image_compressor.dart';
 import 'package:alrasmarket/core/media/image_source_picker.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
-import 'package:alrasmarket/core/widgets/profile_avatar.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -85,29 +85,56 @@ class _AuthProfilePhotoPickerState extends State<AuthProfilePhotoPicker> {
   Widget build(BuildContext context) {
     final s = S.of(context);
     final path = _localPath;
+    final size = 92.w;
 
     return Column(
       children: [
         Stack(
-          alignment: Alignment.bottomRight,
+          clipBehavior: Clip.none,
           children: [
             GestureDetector(
               onTap: _picking ? null : _pick,
-              child: path != null
-                  ? ClipOval(
-                      child: Image.file(
-                        File(path),
-                        width: 88.w,
-                        height: 88.w,
-                        fit: BoxFit.cover,
-                      ),
-                    )
-                  : ProfileAvatar(size: 88.w, fallbackText: '+'),
+              child: CustomPaint(
+                painter: _DashedCirclePainter(
+                  color: LightColor.defaultColor.withValues(alpha: 0.75),
+                  strokeWidth: 1.6,
+                ),
+                child: SizedBox(
+                  width: size,
+                  height: size,
+                  child: Center(
+                    child: path != null
+                        ? ClipOval(
+                            child: Image.file(
+                              File(path),
+                              width: size - 10.w,
+                              height: size - 10.w,
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : Container(
+                            width: 52.w,
+                            height: 52.w,
+                            decoration: BoxDecoration(
+                              color: LightColor.defaultColor.withValues(
+                                alpha: 0.12,
+                              ),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.photo_camera_outlined,
+                              color: LightColor.defaultColor,
+                              size: 26.sp,
+                            ),
+                          ),
+                  ),
+                ),
+              ),
             ),
             if (_picking)
               Positioned.fill(
                 child: Container(
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: Colors.black26,
                     shape: BoxShape.circle,
                   ),
@@ -117,29 +144,78 @@ class _AuthProfilePhotoPickerState extends State<AuthProfilePhotoPicker> {
                 ),
               ),
             if (path != null && !_picking)
-              GestureDetector(
-                onTap: _clear,
-                child: Container(
-                  padding: EdgeInsets.all(4.w),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
+              Positioned(
+                top: -2.h,
+                right: -2.w,
+                child: GestureDetector(
+                  onTap: _clear,
+                  child: Container(
+                    padding: EdgeInsets.all(4.w),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                    child: Icon(Icons.close, size: 14.sp, color: Colors.black54),
                   ),
-                  child: Icon(Icons.close, size: 16.sp, color: Colors.black54),
                 ),
               ),
           ],
         ),
-        SizedBox(height: 8.h),
-        TextButton.icon(
-          onPressed: _picking ? null : _pick,
-          icon: Icon(Icons.camera_alt_outlined, size: 18.sp),
-          label: Text(
+        SizedBox(height: 10.h),
+        GestureDetector(
+          onTap: _picking ? null : _pick,
+          child: Text(
             s.uploadProfilePhoto,
-            style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w600,
+              color: LightColor.defaultColor,
+              decoration: TextDecoration.underline,
+              decorationColor: LightColor.defaultColor,
+            ),
           ),
         ),
       ],
     );
   }
+}
+
+class _DashedCirclePainter extends CustomPainter {
+  _DashedCirclePainter({required this.color, required this.strokeWidth});
+
+  final Color color;
+  final double strokeWidth;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+    final radius = (math.min(size.width, size.height) / 2) - strokeWidth;
+    final center = Offset(size.width / 2, size.height / 2);
+    const dashCount = 28;
+    const gapFactor = 0.45;
+    final sweep = (2 * math.pi) / dashCount;
+    final dashSweep = sweep * (1 - gapFactor);
+    for (var i = 0; i < dashCount; i++) {
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        i * sweep,
+        dashSweep,
+        false,
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedCirclePainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.strokeWidth != strokeWidth;
 }

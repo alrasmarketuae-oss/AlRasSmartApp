@@ -1,0 +1,1577 @@
+using System.Text.Json;
+using BusinessLayer.Caching;
+using BusinessLayer.Helpers;
+using BusinessLayer.Interfaces;
+using BusinessLayer.Services;
+using DataLayer.Interfaces;
+using DataLayer.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+namespace BusinessLayer.Services.AiAssistant.Mcp;
+
+/// <summary>
+/// MCP-style backend tools the OpenAI model can request. Our API executes them (not the model).
+/// Flow: model returns tool_calls JSON → this service runs →
+/// tool JSON is sent back to the model → model writes the final user answer.
+/// </summary>
+public sealed partial class AiAssistantMcpToolsService(
+    IRasAlSouqDbContext dbContext,
+    IServiceScopeFactory scopeFactory,
+    ProductCacheVersions productCacheVersions,
+    ICommissionSettingsProvider commissionSettingsProvider,
+    ICategoryCommissionProvider categoryCommissionProvider,
+    IConfiguration configuration,
+    ILogger<AiAssistantMcpToolsService> logger) : IAiAssistantToolsService
+{
+    public IReadOnlyList<object> GetToolDefinitions() =>
+    [
+        new
+        {
+            type = "function",
+            function = new
+            {
+                name = "update_ad_price_quantity",
+                description =
+                    "Update price and/or quantity of EXACTLY ONE of the signed-in seller's own ads per turn. " +
+                    "NEVER update all ads, every ad, or multiple ads — even if the user asks. " +
+                    "If the user says change all / كل إعلاناتي / جميع الإعلانات, refuse and ask them to name ONE specific ad (or ProductCode). " +
+                    "For HYBRID ads (category + retail), you MUST pass channel=wholesale or channel=retail. " +
+                    "If the user did not say which channel, call the tool without channel (or the tool returns needs_channel_clarification) " +
+                    "and ASK: جملة ولا تجزئة؟ / wholesale or retail? Never update both channels. " +
+                    "Use the SELLER ADS CATALOG / list_my_ads names. If the spoken/typed name is a unique exact match AND channel is known, update immediately. " +
+                    "If the name is a slight typo or matches several ads, the tool returns needs_clarification with suggestions — " +
+                    "ask the user in their language: did you mean ad A or ad B? When they pick one, call again with that exact product_name or product_code.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        product_name = new
+                        {
+                            type = "string",
+                            description = "Ad/product name as the seller knows it (Arabic or English)."
+                        },
+                        product_code = new
+                        {
+                            type = "string",
+                            description =
+                                "Exact ProductCode (wholesale) or RetailCode (retail) when the user picked a specific ad."
+                        },
+                        channel = new
+                        {
+                            type = "string",
+                            description =
+                                "Required for hybrid ads when ambiguous: \"wholesale\" (category/ton) or \"retail\". " +
+                                "Omit only when ProductCode/RetailCode already identifies the channel, or the ad is not hybrid."
+                        },
+                        price = new
+                        {
+                            type = "number",
+                            description = "New price for the selected channel only. Omit to leave unchanged."
+                        },
+                        quantity = new
+                        {
+                            type = "integer",
+                            description =
+                                "New stock quantity for the selected channel only (ad unit; not grams unless unit is Gram). Omit to leave unchanged."
+                        }
+                    },
+                    additionalProperties = false
+                }
+            }
+        },
+        new
+        {
+            type = "function",
+            function = new
+            {
+                name = "list_my_ads",
+                description =
+                    "List all ads owned by the signed-in seller (names Arabic/English, ProductCode, price, quantity). " +
+                    "Call this when helping the seller pick which ad to update, or when the catalog may be incomplete.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new { },
+                    additionalProperties = false
+                }
+            }
+        },
+        new
+        {
+            type = "function",
+            function = new
+            {
+                name = "find_cheapest_product",
+                description =
+                    "Find the cheapest publicly active approved marketplace listing matching a product name " +
+                    "(Arabic or English; synonyms like هيل/cardamom are matched). " +
+                    "Compares BOTH wholesale/category and retail channels on hybrid ads as separate candidates. " +
+                    "Ranks by buyer-facing price AFTER commission markup. " +
+                    "Always report productCode from the winning channel (RetailCode for retail, ProductCode for wholesale), " +
+                    "customerPrice with currency, channel, and quantity with unitName (do not invent grams/kg).",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        product_name = new
+                        {
+                            type = "string",
+                            description = "Product name to search for (Arabic or English)."
+                        }
+                    },
+                    required = new[] { "product_name" },
+                    additionalProperties = false
+                }
+            }
+        },
+        new
+        {
+            type = "function",
+            function = new
+            {
+                name = "find_most_expensive_product",
+                description =
+                    "Find the most expensive publicly active approved marketplace listing matching a product name " +
+                    "(Arabic or English; synonyms matched). " +
+                    "Compares BOTH wholesale/category and retail channels on hybrid ads as separate candidates. " +
+                    "Ranks by buyer-facing price AFTER commission markup. " +
+                    "Always report productCode from the winning channel (RetailCode for retail, ProductCode for wholesale), " +
+                    "customerPrice with currency, channel, and quantity with unitName.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        product_name = new
+                        {
+                            type = "string",
+                            description = "Product name to search for (Arabic or English)."
+                        }
+                    },
+                    required = new[] { "product_name" },
+                    additionalProperties = false
+                }
+            }
+        },
+        new
+        {
+            type = "function",
+            function = new
+            {
+                name = "get_my_sales_count",
+                description =
+                    "Seller sales summary for the signed-in user: completed received/delivered sales count AND earnings (sum of order totals), " +
+                    "plus pending/open orders grouped by product name (e.g. there are pending orders on product X). " +
+                    "Always mention both completed sales/earnings and any pending orders by product name when present.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new { },
+                    additionalProperties = false
+                }
+            }
+        },
+        new
+        {
+            type = "function",
+            function = new
+            {
+                name = "set_ad_listing_status",
+                description =
+                    "Pause or reactivate EXACTLY ONE of the seller's own approved ads. " +
+                    "action must be \"pause\" or \"active\". Never change multiple ads in one turn. " +
+                    "Resolve the ad by product_code or unique product_name first.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        action = new
+                        {
+                            type = "string",
+                            description = "\"pause\" or \"active\"."
+                        },
+                        product_name = new { type = "string", description = "Ad name." },
+                        product_code = new { type = "string", description = "ProductCode or RetailCode." }
+                    },
+                    required = new[] { "action" },
+                    additionalProperties = false
+                }
+            }
+        },
+        new
+        {
+            type = "function",
+            function = new
+            {
+                name = "mark_ad_sold_out",
+                description =
+                    "Mark EXACTLY ONE ad channel as sold out (quantity = 0). " +
+                    "For hybrid ads pass channel=wholesale or channel=retail; if unknown, omit channel so the tool asks. " +
+                    "Never mark both channels unless the user clearly asked for both in separate turns.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        product_name = new { type = "string" },
+                        product_code = new { type = "string" },
+                        channel = new
+                        {
+                            type = "string",
+                            description = "\"wholesale\" or \"retail\" for hybrid ads."
+                        }
+                    },
+                    additionalProperties = false
+                }
+            }
+        },
+        new
+        {
+            type = "function",
+            function = new
+            {
+                name = "delete_ad",
+                description =
+                    "Permanently delete EXACTLY ONE of the seller's ads. " +
+                    "First call without confirm (or confirm=false) to preview; after the user explicitly agrees, call again with confirm=true. " +
+                    "Never delete without confirm=true.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        product_name = new { type = "string" },
+                        product_code = new { type = "string" },
+                        confirm = new
+                        {
+                            type = "boolean",
+                            description = "Must be true to actually delete after user confirmation."
+                        }
+                    },
+                    additionalProperties = false
+                }
+            }
+        },
+        new
+        {
+            type = "function",
+            function = new
+            {
+                name = "list_my_ibans",
+                description =
+                    "List the signed-in seller's saved IBANs (numbered 1..n) and available withdrawal balance. " +
+                    "Call this BEFORE create_withdrawal. If they want a different IBAN not in the list, " +
+                    "tell them to add it from the Balance page — do not invent IBANs.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new { },
+                    additionalProperties = false
+                }
+            }
+        },
+        new
+        {
+            type = "function",
+            function = new
+            {
+                name = "create_withdrawal",
+                description =
+                    "Create ONE withdrawal request for the signed-in seller. " +
+                    "Requires amount and either iban_choice (1-based index from list_my_ibans) or user_iban_id. " +
+                    "If they have not chosen an IBAN yet, call list_my_ibans and ask: رقم 1 أم 2 أم 3؟ " +
+                    "If they want another IBAN, direct them to the Balance page to add it.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        amount = new { type = "number", description = "Withdrawal amount (AED)." },
+                        iban_choice = new
+                        {
+                            type = "integer",
+                            description = "1-based index from the last list_my_ibans result."
+                        },
+                        user_iban_id = new
+                        {
+                            type = "string",
+                            description = "Exact UserIban Guid when known."
+                        },
+                        notes = new { type = "string", description = "Optional notes." }
+                    },
+                    required = new[] { "amount" },
+                    additionalProperties = false
+                }
+            }
+        }
+    ];
+
+    public async Task<AiToolResult> ExecuteAsync(
+        Guid? userId,
+        AiToolCall call,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var content = call.Name switch
+            {
+                "update_ad_price_quantity" => await UpdateAdPriceQuantityAsync(
+                    userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
+                "list_my_ads" => await ListMyAdsAsync(userId, cancellationToken).ConfigureAwait(false),
+                "find_cheapest_product" => await FindCheapestProductAsync(
+                    call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
+                "find_most_expensive_product" => await FindMostExpensiveProductAsync(
+                    call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
+                "get_my_sales_count" => await GetMySalesCountAsync(
+                    userId, cancellationToken).ConfigureAwait(false),
+                "set_ad_listing_status" => await SetAdListingStatusAsync(
+                    userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
+                "mark_ad_sold_out" => await MarkAdSoldOutAsync(
+                    userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
+                "delete_ad" => await DeleteAdAsync(
+                    userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
+                "list_my_ibans" => await ListMyIbansAsync(
+                    userId, cancellationToken).ConfigureAwait(false),
+                "create_withdrawal" => await CreateWithdrawalAsync(
+                    userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
+                _ => Json(new { ok = false, error = $"Unknown tool: {call.Name}" })
+            };
+            return new AiToolResult(call.Id, call.Name, content);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "AI tool {Tool} failed", call.Name);
+            return new AiToolResult(
+                call.Id,
+                call.Name,
+                Json(new { ok = false, error = ex.Message }));
+        }
+    }
+
+    private async Task<string> UpdateAdPriceQuantityAsync(
+        Guid? userId,
+        string argumentsJson,
+        CancellationToken cancellationToken)
+    {
+        if (!userId.HasValue)
+        {
+            return Json(new
+            {
+                ok = false,
+                error = "Sign in as the ad owner to update price or quantity."
+            });
+        }
+
+        using var args = JsonDocument.Parse(string.IsNullOrWhiteSpace(argumentsJson) ? "{}" : argumentsJson);
+        var root = args.RootElement;
+        var productCode = GetString(root, "product_code");
+        var productName = GetString(root, "product_name");
+        var channel = NormalizeUpdateChannel(GetString(root, "channel"))
+                      ?? InferUpdateChannelFromText(productName);
+        decimal? price = GetDecimal(root, "price");
+        long? quantity = GetLong(root, "quantity");
+
+        if (!price.HasValue && !quantity.HasValue)
+        {
+            return Json(new { ok = false, error = "Provide at least price or quantity to update." });
+        }
+
+        if (price is <= 0)
+        {
+            return Json(new { ok = false, error = "Price must be greater than zero." });
+        }
+
+        if (quantity is < 0)
+        {
+            return Json(new { ok = false, error = "Quantity cannot be negative." });
+        }
+
+        var owned = dbContext.Products.Where(p => p.OwnerId == userId.Value);
+
+        if (!string.IsNullOrWhiteSpace(productCode))
+        {
+            var code = productCode.Trim();
+            var product = await owned
+                .Include(p => p.Unit)
+                .Include(p => p.RetailUnit)
+                .FirstOrDefaultAsync(
+                    p => (p.ProductCode != null && p.ProductCode.ToLower() == code.ToLower())
+                         || (p.RetailCode != null && p.RetailCode.ToLower() == code.ToLower()),
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            if (product is null)
+            {
+                return Json(new
+                {
+                    ok = false,
+                    error = $"No ad with ProductCode '{code}' was found on your account."
+                });
+            }
+
+            channel ??= InferChannelFromProductCode(product, code);
+            return await ApplyPriceQuantityUpdateAsync(product, price, quantity, channel, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        if (string.IsNullOrWhiteSpace(productName))
+        {
+            return Json(new
+            {
+                ok = false,
+                error = "Provide product_code or product_name."
+            });
+        }
+
+        if (LooksLikeBulkUpdateRequest(productName))
+        {
+            return Json(new
+            {
+                ok = false,
+                blocked_bulk_update = true,
+                error =
+                    "Bulk updates are not allowed. Update only one specific ad. " +
+                    "Ask the user which single ad (name or ProductCode) they want to change."
+            });
+        }
+
+        var candidates = await LoadOwnerNameCandidatesAsync(userId.Value, cancellationToken)
+            .ConfigureAwait(false);
+        var ranked = RankOwnerAdsByName(productName, candidates);
+
+        if (ranked.Count == 0)
+        {
+            return Json(new
+            {
+                ok = false,
+                needs_clarification = true,
+                error = $"No ads named like '{productName.Trim()}' were found on your account.",
+                message =
+                    "Tell the user no close match was found. Ask which ad they meant using the SELLER ADS CATALOG / suggestions below by name.",
+                suggestions = candidates
+                    .OrderBy(x => x.NameEn)
+                    .Take(20)
+                    .Select(ToAdSuggestion)
+                    .ToList()
+            });
+        }
+
+        var best = ranked[0];
+        var secondScore = ranked.Count > 1 ? ranked[1].Score : 0;
+        var uniqueStrong =
+            best.Score >= 85
+            && (ranked.Count == 1 || best.Score - secondScore >= 12);
+
+        // Unique strong lexical match → resolve channel then update (or ask).
+        if (uniqueStrong && best.Score >= 85)
+        {
+            var strongPeers = ranked.Where(x => x.Score == best.Score).ToList();
+            if (strongPeers.Count == 1)
+            {
+                var tracked = await dbContext.Products
+                    .Include(p => p.Unit)
+                    .Include(p => p.RetailUnit)
+                    .FirstAsync(p => p.ProductId == best.ProductId, cancellationToken)
+                    .ConfigureAwait(false);
+
+                return await ApplyPriceQuantityUpdateAsync(
+                        tracked, price, quantity, channel, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+        }
+
+        // Typo / several close names → ask: did you mean this ad or that ad?
+        var suggestions = ranked.Take(5).Select(ToAdSuggestion).ToList();
+        return Json(new
+        {
+            ok = false,
+            needs_clarification = true,
+            message =
+                "Ask the user which ad they meant, listing each suggestion by display name " +
+                "(prefer Arabic name when speaking Arabic). Example: هل تقصد «X» أم «Y»؟ " +
+                "When they choose, call update_ad_price_quantity again with that product_code or exact product_name. Do not invent ads.",
+            query = productName.Trim(),
+            suggestions
+        });
+    }
+
+    private async Task<string> ApplyPriceQuantityUpdateAsync(
+        Product product,
+        decimal? price,
+        long? quantity,
+        string? channel,
+        CancellationToken cancellationToken)
+    {
+        var isHybrid = ProductTypeCodes.HasRetailStockConfigured(product);
+        var resolvedChannel = NormalizeUpdateChannel(channel);
+
+        if (isHybrid && resolvedChannel is null)
+        {
+            return Json(new
+            {
+                ok = false,
+                needs_channel_clarification = true,
+                productCode = product.ProductCode,
+                retailCode = product.RetailCode,
+                nameEn = product.NameEn,
+                wholesalePrice = product.USDPrice,
+                wholesaleQuantity = product.Quantity,
+                wholesaleUnit = product.Unit?.UnitNameEn,
+                retailPrice = product.RetailPrice,
+                retailQuantity = product.RetailQuantity,
+                retailUnit = product.RetailUnit?.UnitNameEn,
+                message =
+                    "This ad is hybrid (wholesale + retail). Do NOT update either channel yet. " +
+                    "Ask the user clearly: جملة ولا تجزئة؟ / wholesale or retail? " +
+                    "Then call again with channel=wholesale or channel=retail (and the same product_code/name). " +
+                    "Never update both channels in one request."
+            });
+        }
+
+        // Non-hybrid listings are always the wholesale/primary fields.
+        resolvedChannel ??= "wholesale";
+        if (resolvedChannel == "retail" && !isHybrid)
+        {
+            return Json(new
+            {
+                ok = false,
+                error = "This ad has no retail channel. Use channel=wholesale or omit channel."
+            });
+        }
+
+        if (resolvedChannel == "retail")
+        {
+            var beforeRetailPrice = product.RetailPrice;
+            var beforeRetailQty = product.RetailQuantity;
+            var retailUnitName = product.RetailUnit?.UnitNameEn;
+
+            if (price.HasValue) product.RetailPrice = price.Value;
+            if (quantity.HasValue) product.RetailQuantity = quantity.Value;
+            product.UpdatedAt = DateTime.UtcNow;
+
+            await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+            ProductsAppService.InvalidateProductListCaches(product.OwnerId);
+            productCacheVersions.BumpDetail();
+            QueueTextSearchSync(product.ProductId);
+            QueueOwnerUpdatedNotification(
+                product,
+                beforeRetailPrice ?? 0,
+                beforeRetailQty ?? 0,
+                price,
+                quantity);
+
+            return Json(new
+            {
+                ok = true,
+                channel = "retail",
+                productCode = product.RetailCode ?? product.ProductCode,
+                wholesaleProductCode = product.ProductCode,
+                retailCode = product.RetailCode,
+                name = product.NameEn,
+                previousPrice = beforeRetailPrice,
+                previousQuantity = beforeRetailQty,
+                price = product.RetailPrice,
+                quantity = product.RetailQuantity,
+                unitName = retailUnitName,
+                message =
+                    "Retail channel updated only. Wholesale price/quantity were NOT changed. " +
+                    "Always report quantity with unitName (do not convert units)."
+            });
+        }
+
+        var beforePrice = product.USDPrice;
+        var beforeQty = product.Quantity;
+        var unitName = product.Unit?.UnitNameEn;
+
+        if (price.HasValue) product.USDPrice = price.Value;
+        if (quantity.HasValue) product.Quantity = quantity.Value;
+        product.UpdatedAt = DateTime.UtcNow;
+
+        await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        ProductsAppService.InvalidateProductListCaches(product.OwnerId);
+        productCacheVersions.BumpDetail();
+        QueueTextSearchSync(product.ProductId);
+        QueueOwnerUpdatedNotification(product, beforePrice, beforeQty, price, quantity);
+
+        return Json(new
+        {
+            ok = true,
+            channel = "wholesale",
+            productCode = product.ProductCode,
+            retailCode = product.RetailCode,
+            name = product.NameEn,
+            previousPrice = beforePrice,
+            previousQuantity = beforeQty,
+            price = product.USDPrice,
+            quantity = product.Quantity,
+            unitName,
+            message =
+                isHybrid
+                    ? "Wholesale/category channel updated only. Retail price/quantity were NOT changed. Always report quantity with unitName."
+                    : "Ad updated successfully. Price/quantity changes do not require admin re-approval. Always report quantity with unitName (do not convert units)."
+        });
+    }
+
+    private static string? NormalizeUpdateChannel(string? channel)
+    {
+        if (string.IsNullOrWhiteSpace(channel)) return null;
+        var c = channel.Trim().ToLowerInvariant();
+        if (c is "wholesale" or "category" or "ton" or "جملة" or "الجملة") return "wholesale";
+        if (c is "retail" or "تجزئة" or "التجزئة") return "retail";
+        return null;
+    }
+
+    private static string? InferUpdateChannelFromText(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return null;
+        var t = text.Trim().ToLowerInvariant();
+        var hasRetail = t.Contains("retail", StringComparison.Ordinal)
+                        || t.Contains("تجزئه", StringComparison.Ordinal)
+                        || t.Contains("تجزئة", StringComparison.Ordinal);
+        var hasWholesale = t.Contains("wholesale", StringComparison.Ordinal)
+                           || t.Contains("category", StringComparison.Ordinal)
+                           || t.Contains("جمله", StringComparison.Ordinal)
+                           || t.Contains("جملة", StringComparison.Ordinal)
+                           || t.Contains("طن", StringComparison.Ordinal);
+        if (hasRetail && !hasWholesale) return "retail";
+        if (hasWholesale && !hasRetail) return "wholesale";
+        return null;
+    }
+
+    private static string? InferChannelFromProductCode(Product product, string code)
+    {
+        var matchesRetail = !string.IsNullOrWhiteSpace(product.RetailCode)
+            && string.Equals(product.RetailCode, code, StringComparison.OrdinalIgnoreCase);
+        var matchesWholesale = !string.IsNullOrWhiteSpace(product.ProductCode)
+            && string.Equals(product.ProductCode, code, StringComparison.OrdinalIgnoreCase);
+
+        if (matchesRetail && !matchesWholesale) return "retail";
+        if (matchesWholesale && !matchesRetail) return "wholesale";
+        return null;
+    }
+
+    private async Task<string> ListMyAdsAsync(Guid? userId, CancellationToken cancellationToken)
+    {
+        if (!userId.HasValue)
+        {
+            return Json(new
+            {
+                ok = false,
+                error = "Sign in as a seller to list your ads."
+            });
+        }
+
+        var ads = await LoadOwnerNameCandidatesAsync(userId.Value, cancellationToken)
+            .ConfigureAwait(false);
+        return Json(new
+        {
+            ok = true,
+            count = ads.Count,
+            ads = ads
+                .OrderBy(x => x.NameEn)
+                .Select(ToAdSuggestion)
+                .ToList(),
+            instruction =
+                "Use these exact names when the seller wants to update an ad. " +
+                "For hybrid ads ask جملة ولا تجزئة before updating. " +
+                "If their wording is slightly wrong, ask: did you mean ad A or ad B?"
+        });
+    }
+
+    public async Task<string?> BuildSellerAdsCatalogAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var ads = await LoadOwnerHybridCatalogAsync(userId, cancellationToken)
+            .ConfigureAwait(false);
+        if (ads.Count == 0) return null;
+
+        var lines = ads
+            .OrderBy(x => x.NameEn)
+            .Take(150)
+            .Select(a =>
+            {
+                var name = string.IsNullOrWhiteSpace(a.NameAr)
+                    ? (a.NameEn ?? "")
+                    : $"{a.NameEn} | {a.NameAr}";
+                if (a.HasRetail)
+                {
+                    return
+                        $"- {name} | hybrid | wholesaleCode={a.ProductCode} wholesalePrice={a.USDPrice} " +
+                        $"wholesaleQty={FormatQuantity(a.Quantity, a.UnitName)} | " +
+                        $"retailCode={a.RetailCode} retailPrice={a.RetailPrice} " +
+                        $"retailQty={FormatQuantity(a.RetailQuantity ?? 0, a.RetailUnitName)}";
+                }
+
+                return $"- {name} | code={a.ProductCode} | price={a.USDPrice} | qty={FormatQuantity(a.Quantity, a.UnitName)}";
+            });
+
+        return
+            $"SELLER ADS CATALOG ({Math.Min(ads.Count, 150)} of {ads.Count}):\n" +
+            string.Join("\n", lines) +
+            "\nUse this list when the seller asks to update an ad. " +
+            "Hybrid ads have separate wholesale and retail channels — ask which channel before updating. " +
+            "If their name has a slight typo, ask which catalog ad they meant before calling update.";
+    }
+
+    private static object ToAdSuggestion(NameCandidate m) => new
+    {
+        productCode = m.ProductCode,
+        nameEn = m.NameEn,
+        nameAr = m.NameAr,
+        price = m.USDPrice,
+        quantity = m.Quantity,
+        unitName = m.UnitName,
+        matchScore = m.Score
+    };
+
+    private Task<string> FindCheapestProductAsync(
+        string argumentsJson,
+        CancellationToken cancellationToken) =>
+        FindPricedProductAsync(argumentsJson, ascending: true, cancellationToken);
+
+    private Task<string> FindMostExpensiveProductAsync(
+        string argumentsJson,
+        CancellationToken cancellationToken) =>
+        FindPricedProductAsync(argumentsJson, ascending: false, cancellationToken);
+
+    private async Task<string> FindPricedProductAsync(
+        string argumentsJson,
+        bool ascending,
+        CancellationToken cancellationToken)
+    {
+        using var args = JsonDocument.Parse(string.IsNullOrWhiteSpace(argumentsJson) ? "{}" : argumentsJson);
+        var productName = GetString(args.RootElement, "product_name");
+        if (string.IsNullOrWhiteSpace(productName))
+        {
+            return Json(new { ok = false, error = "product_name is required." });
+        }
+
+        var commissionSettings = await commissionSettingsProvider.GetAsync(cancellationToken)
+            .ConfigureAwait(false);
+        var categoryCommissions = await categoryCommissionProvider.GetAsync(cancellationToken)
+            .ConfigureAwait(false);
+        var usdToAedRate = CurrencyConversionHelper.GetUsdToAedRate(configuration);
+
+        var rowsRaw = await (
+                from p in dbContext.Products.AsNoTracking()
+                join t in dbContext.ContentTranslations.AsNoTracking()
+                        .Where(x =>
+                            x.Scope == ContentTranslationScopes.Product &&
+                            x.Field == ContentTranslationFields.Name)
+                    on p.ProductId equals t.ProductId into tj
+                from t in tj.DefaultIfEmpty()
+                where p.IsApproved == true
+                      && (
+                          (p.USDPrice > 0 && p.Quantity > 0)
+                          || (p.CategoryId != null
+                              && p.RetailPrice != null
+                              && p.RetailPrice > 0
+                              && p.RetailUnitId != null
+                              && p.RetailQuantity != null
+                              && p.RetailQuantity > 0))
+                select new
+                {
+                    p.ProductId,
+                    p.ProductCode,
+                    p.RetailCode,
+                    p.NameEn,
+                    NameAr = t != null ? t.TextAr : null,
+                    p.USDPrice,
+                    p.Quantity,
+                    UnitName = p.Unit != null ? p.Unit.UnitNameEn : null,
+                    p.RetailPrice,
+                    p.RetailUnitId,
+                    p.RetailQuantity,
+                    RetailUnitName = p.RetailUnit != null ? p.RetailUnit.UnitNameEn : null,
+                    p.Currency,
+                    p.Status,
+                    p.IsApproved,
+                    p.CategoryId,
+                    p.ProductTypeId,
+                    SellerCompany = p.Owner != null ? p.Owner.CompanyName : null
+                })
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var channelRows = new List<NameCandidate>();
+        foreach (var r in rowsRaw)
+        {
+            if (r.USDPrice > 0 && r.Quantity > 0)
+            {
+                var commissionTypeId = ProductTypeCodes.WholesaleCommissionProductTypeId(
+                    r.CategoryId, r.ProductTypeId);
+                var commissionPercent = CustomerPriceCalculator.ResolveCommissionPercent(
+                    commissionTypeId, r.CategoryId, commissionSettings, categoryCommissions);
+                var markedUp = CustomerPriceCalculator.ApplyProductMarkup(
+                    r.USDPrice, commissionTypeId, r.CategoryId, commissionSettings, categoryCommissions);
+                var priced = ProductPricePresenter.Present(
+                    markedUp, commissionTypeId ?? r.ProductTypeId, r.Currency, usdToAedRate);
+
+                channelRows.Add(new NameCandidate(
+                    r.ProductId,
+                    r.ProductCode,
+                    r.NameEn,
+                    r.NameAr,
+                    r.USDPrice,
+                    priced.Price,
+                    priced.Currency,
+                    priced.PriceUsd,
+                    priced.PriceAed,
+                    commissionPercent,
+                    r.Quantity,
+                    r.UnitName,
+                    r.Currency,
+                    r.Status,
+                    r.IsApproved,
+                    r.CategoryId,
+                    r.ProductTypeId,
+                    r.SellerCompany,
+                    Channel: "wholesale"));
+            }
+
+            if (ProductTypeCodes.HasRetailPricing(
+                    r.CategoryId,
+                    r.ProductTypeId,
+                    r.RetailPrice,
+                    r.RetailUnitId,
+                    r.RetailQuantity)
+                && r.RetailPrice is > 0
+                && r.RetailQuantity is > 0)
+            {
+                var retailPrice = r.RetailPrice.Value;
+                var commissionPercent = CustomerPriceCalculator.ResolveCommissionPercent(
+                    ProductTypeCodes.Retail, categoryId: null, commissionSettings, categoryCommissions);
+                var markedUp = CustomerPriceCalculator.ApplyProductMarkup(
+                    retailPrice,
+                    ProductTypeCodes.Retail,
+                    categoryId: null,
+                    commissionSettings,
+                    categoryCommissions);
+                var priced = ProductPricePresenter.Present(
+                    markedUp, ProductTypeCodes.Retail, "AED", usdToAedRate);
+
+                channelRows.Add(new NameCandidate(
+                    r.ProductId,
+                    string.IsNullOrWhiteSpace(r.RetailCode) ? r.ProductCode : r.RetailCode,
+                    r.NameEn,
+                    r.NameAr,
+                    retailPrice,
+                    priced.Price,
+                    priced.Currency,
+                    priced.PriceUsd,
+                    priced.PriceAed,
+                    commissionPercent,
+                    r.RetailQuantity.Value,
+                    r.RetailUnitName,
+                    "AED",
+                    r.Status,
+                    r.IsApproved,
+                    r.CategoryId,
+                    ProductTypeCodes.Retail,
+                    r.SellerCompany,
+                    Channel: "retail"));
+            }
+        }
+
+        var publicRows = channelRows
+            .Where(r => ProductStatusCodes.IsPubliclyVisible(r.Status, r.IsApproved))
+            .ToList();
+
+        var rankedQuery = RankByName(productName, publicRows)
+            .Where(x => x.Score >= 50);
+
+        var ranked = (ascending
+                ? rankedQuery
+                    .OrderBy(x => x.CustomerPrice)
+                    .ThenByDescending(x => x.Score)
+                    .ThenBy(x => x.NameEn)
+                : rankedQuery
+                    .OrderByDescending(x => x.CustomerPrice)
+                    .ThenByDescending(x => x.Score)
+                    .ThenBy(x => x.NameEn))
+            .ToList();
+
+        if (ranked.Count == 0)
+        {
+            return Json(new
+            {
+                ok = false,
+                error = $"No approved in-stock products found matching '{productName.Trim()}'."
+            });
+        }
+
+        var top5 = ranked.Take(5).ToList();
+        var winner = top5[0];
+        var winnerKey = ascending ? "cheapest" : "mostExpensive";
+
+        return Json(new Dictionary<string, object?>
+        {
+            ["ok"] = true,
+            [winnerKey] = new
+            {
+                productCode = winner.ProductCode,
+                channel = winner.Channel,
+                nameEn = winner.NameEn,
+                nameAr = winner.NameAr,
+                basePrice = winner.USDPrice,
+                customerPrice = winner.CustomerPrice,
+                price = winner.CustomerPrice,
+                currency = winner.CustomerCurrency,
+                priceUsd = winner.CustomerPriceUsd,
+                priceAed = winner.CustomerPriceAed,
+                commissionPercent = winner.CommissionPercent,
+                quantity = winner.Quantity,
+                unitName = winner.UnitName,
+                quantityDisplay = FormatQuantity(winner.Quantity, winner.UnitName),
+                seller = winner.SellerCompany,
+                matchScore = winner.Score
+            },
+            ["alternatives"] = top5.Skip(1).Select(m => new
+            {
+                productCode = m.ProductCode,
+                channel = m.Channel,
+                nameEn = m.NameEn,
+                nameAr = m.NameAr,
+                basePrice = m.USDPrice,
+                customerPrice = m.CustomerPrice,
+                price = m.CustomerPrice,
+                currency = m.CustomerCurrency,
+                commissionPercent = m.CommissionPercent,
+                quantity = m.Quantity,
+                unitName = m.UnitName,
+                quantityDisplay = FormatQuantity(m.Quantity, m.UnitName)
+            }).ToList(),
+            ["instruction"] =
+                "Report customerPrice (buyer-facing, after commission) with currency and channel. " +
+                "Use the productCode from the winning channel (RetailCode for retail, ProductCode for wholesale). " +
+                "Never invent prices. Never say grams unless unitName is Gram."
+        });
+    }
+
+    private async Task<string> GetMySalesCountAsync(
+        Guid? userId,
+        CancellationToken cancellationToken)
+    {
+        if (!userId.HasValue)
+        {
+            return Json(new
+            {
+                ok = false,
+                error = "Sign in as a seller to view your sales count."
+            });
+        }
+
+        var sellerId = userId.Value;
+        var cancelled = OrderStatusCodes.Cancelled;
+        var returnApproved = OrderStatusCodes.ReturnApproved;
+
+        var orders = await (
+                from o in dbContext.Orders.AsNoTracking()
+                join p in dbContext.Products.AsNoTracking() on o.ProductId equals p.ProductId into pj
+                from p in pj.DefaultIfEmpty()
+                join t in dbContext.ContentTranslations.AsNoTracking()
+                        .Where(x =>
+                            x.Scope == ContentTranslationScopes.Product &&
+                            x.Field == ContentTranslationFields.Name)
+                    on p.ProductId equals t.ProductId into tj
+                from t in tj.DefaultIfEmpty()
+                where o.ToUserId == sellerId
+                select new
+                {
+                    o.StatusId,
+                    o.TotalPrice,
+                    ProductCode = p != null ? p.ProductCode : null,
+                    NameEn = p != null ? p.NameEn : null,
+                    NameAr = t != null ? t.TextAr : null,
+                    StatusEn = o.CustomStatusNameEn,
+                    StatusAr = o.CustomStatusNameAr
+                })
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var completed = orders
+            .Where(o => OrderStatusCodes.CountsAsDeliveredSale(o.StatusId))
+            .ToList();
+
+        var pending = orders
+            .Where(o =>
+                o.StatusId != cancelled
+                && o.StatusId != returnApproved
+                && !OrderStatusCodes.CountsAsDeliveredSale(o.StatusId))
+            .ToList();
+
+        var pendingByProduct = pending
+            .GroupBy(o => new
+            {
+                Code = o.ProductCode ?? "",
+                NameEn = string.IsNullOrWhiteSpace(o.NameEn) ? "Unknown product" : o.NameEn!.Trim(),
+                NameAr = string.IsNullOrWhiteSpace(o.NameAr) ? null : o.NameAr!.Trim()
+            })
+            .Select(g => new
+            {
+                productCode = string.IsNullOrWhiteSpace(g.Key.Code) ? null : g.Key.Code,
+                productNameEn = g.Key.NameEn,
+                productNameAr = g.Key.NameAr,
+                pendingOrderCount = g.Count(),
+                pendingOrdersValue = g.Sum(x => x.TotalPrice),
+                statuses = g
+                    .GroupBy(x => x.StatusId)
+                    .Select(sg => new
+                    {
+                        statusId = sg.Key,
+                        statusEn = sg.Select(x => x.StatusEn).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))
+                                   ?? OrderStatusCodes.GetNameEn(sg.Key),
+                        statusAr = sg.Select(x => x.StatusAr).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))
+                                   ?? OrderStatusCodes.GetNameAr(sg.Key),
+                        count = sg.Count()
+                    })
+                    .ToList()
+            })
+            .OrderByDescending(x => x.pendingOrderCount)
+            .ThenBy(x => x.productNameEn)
+            .ToList();
+
+        return Json(new
+        {
+            ok = true,
+            completedSalesCount = completed.Count,
+            completedSalesEarnings = completed.Sum(x => x.TotalPrice),
+            pendingOrdersCount = pending.Count,
+            pendingOrdersValue = pending.Sum(x => x.TotalPrice),
+            pendingByProduct,
+            statusLabelAr = "تم الاستلام",
+            statusLabelEn = "Received",
+            instruction =
+                "Tell the seller both: (1) completed received/delivered sales count and earnings total, " +
+                "and (2) if pendingByProduct is not empty, clearly say there are pending orders on each product by name " +
+                "(e.g. هناك طلبات معلّقة على منتج saffron). Do not invent products."
+        });
+    }
+
+    private async Task<List<OwnerCatalogAd>> LoadOwnerHybridCatalogAsync(
+        Guid ownerId,
+        CancellationToken cancellationToken)
+    {
+        var rows = await (
+                from p in dbContext.Products.AsNoTracking()
+                join t in dbContext.ContentTranslations.AsNoTracking()
+                        .Where(x =>
+                            x.Scope == ContentTranslationScopes.Product &&
+                            x.Field == ContentTranslationFields.Name)
+                    on p.ProductId equals t.ProductId into tj
+                from t in tj.DefaultIfEmpty()
+                where p.OwnerId == ownerId
+                select new OwnerCatalogAd(
+                    p.ProductId,
+                    p.ProductCode,
+                    p.RetailCode,
+                    p.NameEn,
+                    t != null ? t.TextAr : null,
+                    p.USDPrice,
+                    p.Quantity,
+                    p.Unit != null ? p.Unit.UnitNameEn : null,
+                    p.RetailPrice,
+                    p.RetailQuantity,
+                    p.RetailUnit != null ? p.RetailUnit.UnitNameEn : null,
+                    p.CategoryId,
+                    p.ProductTypeId,
+                    p.RetailUnitId))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return rows
+            .GroupBy(r => r.ProductId)
+            .Select(g => g.First())
+            .ToList();
+    }
+
+    private async Task<List<NameCandidate>> LoadOwnerNameCandidatesAsync(
+        Guid ownerId,
+        CancellationToken cancellationToken)
+    {
+        var rowsRaw = await (
+                from p in dbContext.Products.AsNoTracking()
+                join t in dbContext.ContentTranslations.AsNoTracking()
+                        .Where(x =>
+                            x.Scope == ContentTranslationScopes.Product &&
+                            x.Field == ContentTranslationFields.Name)
+                    on p.ProductId equals t.ProductId into tj
+                from t in tj.DefaultIfEmpty()
+                where p.OwnerId == ownerId
+                select new
+                {
+                    p.ProductId,
+                    p.ProductCode,
+                    p.NameEn,
+                    NameAr = t != null ? t.TextAr : null,
+                    p.USDPrice,
+                    p.Quantity,
+                    UnitName = p.Unit != null ? p.Unit.UnitNameEn : null,
+                    p.Currency,
+                    p.Status,
+                    p.IsApproved
+                })
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return rowsRaw
+            .Select(r => new NameCandidate(
+                r.ProductId,
+                r.ProductCode,
+                r.NameEn,
+                r.NameAr,
+                r.USDPrice,
+                CustomerPrice: r.USDPrice,
+                CustomerCurrency: r.Currency,
+                CustomerPriceUsd: r.USDPrice,
+                CustomerPriceAed: null,
+                CommissionPercent: 0,
+                r.Quantity,
+                r.UnitName,
+                r.Currency,
+                r.Status,
+                r.IsApproved,
+                CategoryId: null,
+                ProductTypeId: null,
+                null))
+            .GroupBy(r => r.ProductId)
+            .Select(g => g.First())
+            .ToList();
+    }
+
+    private static List<NameCandidate> RankByName(string query, IEnumerable<NameCandidate> candidates)
+    {
+        var terms = ExpandSearchTerms(query);
+        if (terms.Count == 0) return [];
+
+        return candidates
+            .Select(c => c with { Score = terms.Max(t => ScoreNameMatch(t, c.NameEn, c.NameAr)) })
+            .Where(c => c.Score > 0)
+            .OrderByDescending(c => c.Score)
+            .ThenBy(c => c.NameEn)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Owner-ad matching: lexical + slight-typo fuzzy so "safron" can suggest "saffron".
+    /// </summary>
+    private static List<NameCandidate> RankOwnerAdsByName(string query, IEnumerable<NameCandidate> candidates)
+    {
+        var q = NormalizeName(query);
+        if (string.IsNullOrEmpty(q)) return [];
+
+        var terms = ExpandSearchTerms(query);
+        return candidates
+            .Select(c =>
+            {
+                var lexical = terms.Count == 0
+                    ? 0
+                    : terms.Max(t => ScoreNameMatch(t, c.NameEn, c.NameAr));
+                var fuzzy = ScoreFuzzyName(q, c.NameEn, c.NameAr);
+                return c with { Score = Math.Max(lexical, fuzzy) };
+            })
+            .Where(c => c.Score > 0)
+            .OrderByDescending(c => c.Score)
+            .ThenBy(c => c.NameEn)
+            .ToList();
+    }
+
+    private static int ScoreFuzzyName(string queryNorm, string? nameEn, string? nameAr)
+    {
+        var best = 0;
+        foreach (var name in new[] { NormalizeName(nameEn), NormalizeName(nameAr) })
+        {
+            if (string.IsNullOrEmpty(name)) continue;
+            var dist = LevenshteinDistance(queryNorm, name);
+            var maxLen = Math.Max(queryNorm.Length, name.Length);
+            if (maxLen == 0) continue;
+
+            // Allow ~1 typo on short names, ~25% edits on longer ones.
+            var maxDist = Math.Max(1, Math.Min(3, maxLen / 4));
+            if (dist == 0) best = Math.Max(best, 100);
+            else if (dist <= maxDist)
+            {
+                // Below strong lexical tier (85) so unique exact/prefix still auto-updates,
+                // while typos go through clarification.
+                best = Math.Max(best, 72 - dist * 4);
+            }
+            else
+            {
+                // Also compare against individual tokens (e.g. query vs "cardamom myq").
+                foreach (var token in name.Split(
+                             [' ', '-', '_'],
+                             StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                {
+                    if (token.Length < 3) continue;
+                    var td = LevenshteinDistance(queryNorm, token);
+                    var tMax = Math.Max(1, Math.Min(2, token.Length / 4));
+                    if (td > 0 && td <= tMax)
+                    {
+                        best = Math.Max(best, 68 - td * 4);
+                    }
+                }
+            }
+        }
+
+        return best;
+    }
+
+    private static int LevenshteinDistance(string a, string b)
+    {
+        if (a.Length == 0) return b.Length;
+        if (b.Length == 0) return a.Length;
+
+        var prev = new int[b.Length + 1];
+        var curr = new int[b.Length + 1];
+        for (var j = 0; j <= b.Length; j++) prev[j] = j;
+
+        for (var i = 1; i <= a.Length; i++)
+        {
+            curr[0] = i;
+            for (var j = 1; j <= b.Length; j++)
+            {
+                var cost = a[i - 1] == b[j - 1] ? 0 : 1;
+                curr[j] = Math.Min(
+                    Math.Min(curr[j - 1] + 1, prev[j] + 1),
+                    prev[j - 1] + cost);
+            }
+
+            (prev, curr) = (curr, prev);
+        }
+
+        return prev[b.Length];
+    }
+
+    /// <summary>
+    /// Expand Arabic/English marketplace synonyms so "هيل" also matches "Cardamom".
+    /// </summary>
+    private static List<string> ExpandSearchTerms(string query)
+    {
+        var q = NormalizeName(query);
+        if (string.IsNullOrEmpty(q)) return [];
+
+        var terms = new HashSet<string>(StringComparer.Ordinal) { q };
+        foreach (var group in ProductNameSynonymGroups)
+        {
+            var normalizedGroup = group.Select(NormalizeName).Where(x => x.Length > 0).ToList();
+            if (normalizedGroup.Any(t =>
+                    t == q
+                    || t.StartsWith(q, StringComparison.Ordinal)
+                    || q.StartsWith(t, StringComparison.Ordinal)
+                    || t.Contains(q, StringComparison.Ordinal)
+                    || q.Contains(t, StringComparison.Ordinal)))
+            {
+                foreach (var t in normalizedGroup) terms.Add(t);
+            }
+        }
+
+        return terms.ToList();
+    }
+
+    private static readonly string[][] ProductNameSynonymGroups =
+    [
+        ["هيل", "حبهان", "cardamom", "cardamum", "elaichi"],
+        ["زعفران", "saffron"],
+        ["قرفه", "قرفة", "دارسين", "cinnamon"],
+        ["كمون", "cumin"],
+        ["كزبره", "كزبرة", "coriander", "cilantro"],
+        ["فلفل اسود", "black pepper"],
+        ["زنجبيل", "ginger"],
+        ["كركم", "turmeric"],
+        ["قرنفل", "clove", "cloves"],
+        ["يانسون", "anise", "aniseed"],
+        ["شمر", "fennel"],
+        ["فستق", "pistachio", "pistachios"],
+        ["لوز", "almond", "almonds"],
+        ["كسبر", "كسبرة"]
+    ];
+
+    private static int ScoreNameMatch(string queryNorm, string? nameEn, string? nameAr)
+    {
+        var en = NormalizeName(nameEn);
+        var ar = NormalizeName(nameAr);
+        var best = 0;
+
+        foreach (var name in new[] { en, ar })
+        {
+            if (string.IsNullOrEmpty(name)) continue;
+            if (name == queryNorm) best = Math.Max(best, 100);
+            else if (name.StartsWith(queryNorm, StringComparison.Ordinal) ||
+                     queryNorm.StartsWith(name, StringComparison.Ordinal))
+            {
+                best = Math.Max(best, 85);
+            }
+            else if (HasWordToken(name, queryNorm))
+            {
+                best = Math.Max(best, 80);
+            }
+            else if (name.Contains(queryNorm, StringComparison.Ordinal))
+            {
+                // Prefer shorter names for contains (closer to the query).
+                var penalty = Math.Min(30, Math.Abs(name.Length - queryNorm.Length));
+                best = Math.Max(best, 60 - penalty / 3);
+            }
+        }
+
+        return best;
+    }
+
+    private static bool HasWordToken(string nameNorm, string queryNorm)
+    {
+        if (queryNorm.Length < 2) return false;
+        foreach (var part in nameNorm.Split(
+                     [' ', '-', '_', '/', ',', '.', '(', ')'],
+                     StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (part == queryNorm) return true;
+            if (part.StartsWith(queryNorm, StringComparison.Ordinal) && queryNorm.Length >= 3)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string NormalizeName(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+        var s = value.Trim().ToLowerInvariant();
+        s = s
+            .Replace('أ', 'ا')
+            .Replace('إ', 'ا')
+            .Replace('آ', 'ا')
+            .Replace('ة', 'ه')
+            .Replace('ى', 'ي')
+            .Replace('ؤ', 'و')
+            .Replace('ئ', 'ي');
+        while (s.Contains("  ", StringComparison.Ordinal))
+        {
+            s = s.Replace("  ", " ", StringComparison.Ordinal);
+        }
+
+        return s;
+    }
+
+    private static string FormatQuantity(long quantity, string? unitName) =>
+        string.IsNullOrWhiteSpace(unitName)
+            ? quantity.ToString()
+            : $"{quantity} {unitName}";
+
+    private void QueueTextSearchSync(Guid productId)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await using var scope = scopeFactory.CreateAsyncScope();
+                var sync = scope.ServiceProvider.GetRequiredService<ProductTextSearchSyncService>();
+                await sync.UpsertProductAsync(productId).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "AI tool Meilisearch sync failed for {ProductId}", productId);
+            }
+        });
+    }
+
+    private void QueueOwnerUpdatedNotification(
+        Product product,
+        decimal beforePrice,
+        long beforeQty,
+        decimal? newPrice,
+        long? newQty)
+    {
+        var productId = product.ProductId;
+        if (!product.OwnerId.HasValue) return;
+        var ownerId = product.OwnerId.Value;
+        var productName = string.IsNullOrWhiteSpace(product.NameEn) ? "Your ad" : product.NameEn.Trim();
+        var unitName = product.Unit?.UnitNameEn;
+        var priceText = newPrice?.ToString("0.##") ?? product.USDPrice.ToString("0.##");
+        var qtyText = FormatQuantity(newQty ?? product.Quantity, unitName);
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await using var scope = scopeFactory.CreateAsyncScope();
+                var db = scope.ServiceProvider.GetRequiredService<IRasAlSouqDbContext>();
+                var fcm = scope.ServiceProvider.GetRequiredService<IFcmNotificationService>();
+                var productData = scope.ServiceProvider.GetRequiredService<IProductDataAccess>();
+
+                var owner = await db.Users.AsNoTracking()
+                    .Where(u => u.Id == ownerId)
+                    .Select(u => new { u.Id, u.FcmToken, u.PreferredLanguage })
+                    .FirstOrDefaultAsync()
+                    .ConfigureAwait(false);
+                if (owner is null) return;
+
+                var titleEn = "Ad updated";
+                var bodyEn = $"\"{productName}\" was updated. Price: {priceText}. Quantity: {qtyText}.";
+                var titleAr = "تم تحديث الإعلان";
+                var bodyAr = $"تم تحديث \"{productName}\". السعر: {priceText}. الكمية: {qtyText}.";
+
+                var routeId = await productData.GetOrCreateNotificationRouteIdAsync(
+                    "product-detail", CancellationToken.None).ConfigureAwait(false);
+                var typeId = await productData.GetOrCreateNotificationTypeIdAsync(
+                    "ad_updated", CancellationToken.None).ConfigureAwait(false);
+
+                await productData.AddInboxNotificationAsync(new Notification
+                {
+                    Id = Guid.NewGuid(),
+                    Title = titleEn,
+                    TitleAr = titleAr,
+                    Body = bodyEn,
+                    BodyAr = bodyAr,
+                    FromUserId = ownerId,
+                    ToUserId = ownerId,
+                    TypeId = typeId,
+                    RouteId = routeId,
+                    ReferenceId = productId.ToString(),
+                    IsRead = false,
+                    CreatedAt = DateTime.UtcNow
+                }).ConfigureAwait(false);
+                NotificationCacheVersions.Bump(ownerId);
+
+                if (!string.IsNullOrWhiteSpace(owner.FcmToken))
+                {
+                    var (pushTitle, pushBody) = NotificationMessages.PickOptional(
+                        owner.PreferredLanguage,
+                        titleEn,
+                        bodyEn,
+                        titleAr,
+                        bodyAr);
+                    await fcm.SendNotificationAsync(
+                        owner.FcmToken,
+                        new FcmNotificationPayload
+                        {
+                            Title = pushTitle,
+                            Body = pushBody,
+                            Type = "ad_updated",
+                            RouteId = "product-detail",
+                            ReferenceId = productId.ToString()
+                        }).ConfigureAwait(false);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "AI tool FCM/inbox notify failed for {ProductId}", productId);
+            }
+        });
+    }
+
+    private static bool LooksLikeBulkUpdateRequest(string productName)
+    {
+        var n = productName.Trim().ToLowerInvariant();
+        if (n.Length == 0) return false;
+
+        // Arabic / English phrasing that means "all my ads" rather than a product name.
+        string[] markers =
+        [
+            "كل اعلان", "كل إعلان", "كل الاعلان", "كل الإعلان",
+            "جميع اعلان", "جميع إعلان", "جميع الاعلان", "جميع الإعلان",
+            "كل حاجه", "كل حاجة", "كلها", "جميعها",
+            "all ads", "all my ads", "every ad", "all products", "all my products",
+            "update all", "change all", "set all"
+        ];
+
+        foreach (var marker in markers)
+        {
+            if (n.Contains(marker, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return n is "all" or "كل" or "جميع" or "الكل";
+    }
+
+    private static string? GetString(JsonElement root, string name) =>
+        root.TryGetProperty(name, out var el) && el.ValueKind == JsonValueKind.String
+            ? el.GetString()
+            : null;
+
+    private static decimal? GetDecimal(JsonElement root, string name)
+    {
+        if (!root.TryGetProperty(name, out var el)) return null;
+        if (el.ValueKind == JsonValueKind.Number && el.TryGetDecimal(out var d)) return d;
+        if (el.ValueKind == JsonValueKind.String &&
+            decimal.TryParse(el.GetString(), out var parsed))
+        {
+            return parsed;
+        }
+
+        return null;
+    }
+
+    private static long? GetLong(JsonElement root, string name)
+    {
+        if (!root.TryGetProperty(name, out var el)) return null;
+        if (el.ValueKind == JsonValueKind.Number && el.TryGetInt64(out var n)) return n;
+        if (el.ValueKind == JsonValueKind.String &&
+            long.TryParse(el.GetString(), out var parsed))
+        {
+            return parsed;
+        }
+
+        return null;
+    }
+
+    private static string Json(object value) =>
+        JsonSerializer.Serialize(value, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+
+    private sealed record NameCandidate(
+        Guid ProductId,
+        string? ProductCode,
+        string? NameEn,
+        string? NameAr,
+        decimal USDPrice,
+        decimal CustomerPrice,
+        string? CustomerCurrency,
+        decimal CustomerPriceUsd,
+        decimal? CustomerPriceAed,
+        decimal CommissionPercent,
+        long Quantity,
+        string? UnitName,
+        string? Currency,
+        byte? Status,
+        bool? IsApproved,
+        byte? CategoryId,
+        byte? ProductTypeId,
+        string? SellerCompany,
+        string? Channel = null,
+        int Score = 0);
+
+    private sealed record OwnerCatalogAd(
+        Guid ProductId,
+        string? ProductCode,
+        string? RetailCode,
+        string? NameEn,
+        string? NameAr,
+        decimal USDPrice,
+        long Quantity,
+        string? UnitName,
+        decimal? RetailPrice,
+        long? RetailQuantity,
+        string? RetailUnitName,
+        byte? CategoryId,
+        byte? ProductTypeId,
+        byte? RetailUnitId)
+    {
+        public bool HasRetail =>
+            ProductTypeCodes.HasRetailStockConfigured(
+                CategoryId, ProductTypeId, RetailPrice, RetailUnitId);
+    }
+}

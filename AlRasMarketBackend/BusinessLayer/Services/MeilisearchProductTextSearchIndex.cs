@@ -83,6 +83,7 @@ public sealed class MeilisearchProductTextSearchIndex(
                     "nameEn",
                     "nameAr",
                     "productCode",
+                    "retailCode",
                     "suggestLabels",
                     "categoryNameEn",
                     "categoryNameAr",
@@ -103,6 +104,7 @@ public sealed class MeilisearchProductTextSearchIndex(
                     "id",
                     "productId",
                     "productCode",
+                    "retailCode",
                     "nameEn",
                     "nameAr",
                     "suggestLabels",
@@ -243,7 +245,8 @@ public sealed class MeilisearchProductTextSearchIndex(
                 "createdAtUnix",
                 "nameEn",
                 "nameAr",
-                "productCode"
+                "productCode",
+                "retailCode"
             },
             matchingStrategy = "last"
         };
@@ -327,7 +330,7 @@ public sealed class MeilisearchProductTextSearchIndex(
             q = query.Trim(),
             filter = "isPublic = true",
             limit = Math.Max(take * 3, 12),
-            attributesToRetrieve = new[] { "suggestLabels", "nameEn", "nameAr", "productCode" },
+            attributesToRetrieve = new[] { "suggestLabels", "nameEn", "nameAr", "productCode", "retailCode" },
             matchingStrategy = "last"
         };
 
@@ -407,6 +410,7 @@ public sealed class MeilisearchProductTextSearchIndex(
             }
 
             TryAdd(hit.TryGetProperty("productCode", out var pc) ? pc.GetString() : null);
+            TryAdd(hit.TryGetProperty("retailCode", out var rc) ? rc.GetString() : null);
             if (suggestions.Count >= take)
             {
                 return suggestions;
@@ -450,6 +454,7 @@ public sealed class MeilisearchProductTextSearchIndex(
         id = d.ProductId.ToString("D"),
         productId = d.ProductId.ToString("D"),
         productCode = d.ProductCode,
+        retailCode = d.RetailCode,
         nameEn = d.NameEn,
         nameAr = d.NameAr,
         categoryNameEn = d.CategoryNameEn,

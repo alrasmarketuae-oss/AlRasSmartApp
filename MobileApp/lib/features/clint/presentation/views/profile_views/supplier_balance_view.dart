@@ -21,10 +21,12 @@ class SupplierBalanceView extends StatefulWidget {
 class _SupplierBalanceViewState extends State<SupplierBalanceView>
     with WidgetsBindingObserver {
   static const _liveRefreshInterval = Duration(seconds: 1);
+  static const _depositEntryType = 1;
   bool _loading = true;
   bool _submitting = false;
   String? _error;
-  SupplierBalanceStatement? _statement;
+  double _balance = 0;
+  List<SupplierBalanceEntry> _deposits = const [];
   List<UserIbanModel> _ibans = const [];
   List<WithdrawalRequestModel> _withdrawals = const [];
   Timer? _liveRefreshTimer;
@@ -64,19 +66,24 @@ class _SupplierBalanceViewState extends State<SupplierBalanceView>
     setState(() {
       _loading = true;
       _error = null;
-      _statement = null;
+      _deposits = const [];
       _ibans = const [];
       _withdrawals = const [];
     });
     try {
       final results = await Future.wait([
-        SupplierBalanceService.instance.fetchStatement(),
+        SupplierBalanceService.instance.fetchStatement(
+          entryType: _depositEntryType,
+          pageSize: 50,
+        ),
         SupplierBalanceService.instance.fetchIbans(),
         SupplierBalanceService.instance.fetchWithdrawals(),
       ]);
       if (!mounted) return;
+      final deposits = results[0] as SupplierBalanceStatement;
       setState(() {
-        _statement = results[0] as SupplierBalanceStatement;
+        _balance = deposits.balance;
+        _deposits = deposits.items;
         _ibans = results[1] as List<UserIbanModel>;
         _withdrawals = results[2] as List<WithdrawalRequestModel>;
         _loading = false;
@@ -107,28 +114,26 @@ class _SupplierBalanceViewState extends State<SupplierBalanceView>
 
     try {
       final results = await Future.wait([
-        SupplierBalanceService.instance.fetchStatement(),
+        SupplierBalanceService.instance.fetchStatement(
+          entryType: _depositEntryType,
+          pageSize: 50,
+        ),
         SupplierBalanceService.instance.fetchIbans(),
         SupplierBalanceService.instance.fetchWithdrawals(),
       ]);
       if (!mounted) return;
 
-      final statement = results[0] as SupplierBalanceStatement;
+      final deposits = results[0] as SupplierBalanceStatement;
       final ibans = results[1] as List<UserIbanModel>;
       final withdrawals = results[2] as List<WithdrawalRequestModel>;
-      final balanceChanged = _statement?.balance != statement.balance;
-      final withdrawalCountChanged = _withdrawals.length != withdrawals.length;
 
       setState(() {
-        _statement = statement;
+        _balance = deposits.balance;
+        _deposits = deposits.items;
         _ibans = ibans;
         _withdrawals = withdrawals;
         _error = null;
       });
-
-      if (balanceChanged || withdrawalCountChanged) {
-        // Force the visible balance/requests to reflect admin actions immediately.
-      }
     } catch (_) {
       // Keep the last visible state; next tick will retry.
     }
@@ -170,7 +175,6 @@ class _SupplierBalanceViewState extends State<SupplierBalanceView>
   }
 
   Future<void> _withdrawFlow() async {
-    if (_statement == null) return;
     if (_ibans.isEmpty) {
       await _addIbanFlow();
       if (!mounted) return;
@@ -181,7 +185,7 @@ class _SupplierBalanceViewState extends State<SupplierBalanceView>
       context: context,
       isScrollControlled: true,
       builder: (context) => _WithdrawSheet(
-        balance: _statement!.balance,
+        balance: _balance,
         ibans: _ibans,
       ),
     );
@@ -298,8 +302,7 @@ class _SupplierBalanceViewState extends State<SupplierBalanceView>
                                       ),
                                       SizedBox(height: 6.h),
                                       Text(
-                                        currency
-                                            .format(_statement?.balance ?? 0),
+                                        currency.format(_balance),
                                         style: TextStyle(
                                           fontSize: 24.sp,
                                           fontWeight: FontWeight.bold,
@@ -414,18 +417,149 @@ class _SupplierBalanceViewState extends State<SupplierBalanceView>
                                   ),
                                 ],
                                 SizedBox(height: 20.h),
-                                if (_withdrawals.isNotEmpty) ...[
-                                  Align(
-                                    alignment: AlignmentDirectional.centerStart,
-                                    child: Text(
-                                      isAr ? 'طلبات السحب' : 'Withdrawal requests',
-                                      style: TextStyle(
-                                        fontSize: 15.sp,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                Align(
+                                  alignment: AlignmentDirectional.centerStart,
+                                  child: Text(
+                                    S.of(context).balanceDepositsSection,
+                                    style: TextStyle(
+                                      fontSize: 15.sp,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                  SizedBox(height: 8.h),
+                                ),
+                                SizedBox(height: 8.h),
+                                if (_deposits.isEmpty)
+                                  Padding(
+                                    padding: EdgeInsets.only(bottom: 12.h),
+                                    child: Text(
+                                      S.of(context).noDepositsYet,
+                                      style: TextStyle(
+                                        fontSize: 13.sp,
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  ..._deposits.map((entry) {
+                                    final reason = isAr
+                                        ? (entry.reasonAr ?? entry.reasonEn)
+                                        : (entry.reasonEn ?? entry.reasonAr);
+                                    final dateText = entry.createdAtUtc == null
+                                        ? ''
+                                        : DateFormat.yMMMd().add_jm().format(
+                                            entry.createdAtUtc!.toLocal(),
+                                          );
+                                    return Container(
+                                      margin: EdgeInsets.only(bottom: 10.h),
+                                      padding: EdgeInsets.all(14.w),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: const Color(0xffE8E8E8),
+                                        ),
+                                        borderRadius:
+                                            BorderRadius.circular(10.r),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  isAr
+                                                      ? (entry.entryTypeNameAr
+                                                              .isNotEmpty
+                                                          ? entry
+                                                              .entryTypeNameAr
+                                                          : S
+                                                              .of(context)
+                                                              .balanceDeposit)
+                                                      : (entry.entryTypeNameEn
+                                                              .isNotEmpty
+                                                          ? entry
+                                                              .entryTypeNameEn
+                                                          : S
+                                                              .of(context)
+                                                              .balanceDeposit),
+                                                  style: TextStyle(
+                                                    fontSize: 15.sp,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                              Text(
+                                                '+${currency.format(entry.amount.abs())}',
+                                                style: TextStyle(
+                                                  fontSize: 15.sp,
+                                                  fontWeight: FontWeight.bold,
+                                                  color:
+                                                      const Color(0xff1B7F3A),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          if (entry.orderId != null) ...[
+                                            SizedBox(height: 6.h),
+                                            Text(
+                                              S.of(context).balanceOrderLabel(
+                                                entry.orderId.toString(),
+                                              ),
+                                              style: TextStyle(
+                                                fontSize: 13.sp,
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                          ],
+                                          if (reason != null &&
+                                              reason.trim().isNotEmpty) ...[
+                                            SizedBox(height: 4.h),
+                                            Text(
+                                              reason,
+                                              style: TextStyle(
+                                                fontSize: 12.sp,
+                                                color: Colors.black54,
+                                              ),
+                                            ),
+                                          ],
+                                          if (dateText.isNotEmpty) ...[
+                                            SizedBox(height: 6.h),
+                                            Text(
+                                              dateText,
+                                              style: TextStyle(
+                                                fontSize: 11.sp,
+                                                color: Colors.black45,
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    );
+                                  }),
+                                SizedBox(height: 16.h),
+                                Align(
+                                  alignment: AlignmentDirectional.centerStart,
+                                  child: Text(
+                                    S.of(context).balanceWithdrawalsSection,
+                                    style: TextStyle(
+                                      fontSize: 15.sp,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: 8.h),
+                                if (_withdrawals.isEmpty)
+                                  Padding(
+                                    padding: EdgeInsets.only(bottom: 24.h),
+                                    child: Text(
+                                      S.of(context).noWithdrawalsYet,
+                                      style: TextStyle(
+                                        fontSize: 13.sp,
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                  )
+                                else
                                   ..._withdrawals.map((request) {
                                     final dateText = request.requestedAtUtc == null
                                         ? ''
@@ -481,127 +615,14 @@ class _SupplierBalanceViewState extends State<SupplierBalanceView>
                                             style: TextStyle(
                                               fontSize: 14.sp,
                                               fontWeight: FontWeight.bold,
+                                              color: const Color(0xffC62828),
                                             ),
                                           ),
                                         ],
                                       ),
                                     );
                                   }),
-                                  SizedBox(height: 8.h),
-                                ],
-                                if ((_statement?.items.isEmpty ?? true))
-                                  Padding(
-                                    padding: EdgeInsets.only(top: 40.h),
-                                    child: Center(
-                                      child: Text(
-                                        S.of(context).noBalanceTransactions,
-                                        style: TextStyle(
-                                          fontSize: 14.sp,
-                                          color: Colors.black54,
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                else
-                                  ..._statement!.items.map((entry) {
-                                    final positive = entry.isDeposit;
-                                    final typeLabel = isAr
-                                        ? (entry.entryTypeNameAr.isNotEmpty
-                                            ? entry.entryTypeNameAr
-                                            : (positive
-                                                ? S.of(context).balanceDeposit
-                                                : S
-                                                    .of(context)
-                                                    .balanceWithdrawal))
-                                        : (entry.entryTypeNameEn.isNotEmpty
-                                            ? entry.entryTypeNameEn
-                                            : (positive
-                                                ? S.of(context).balanceDeposit
-                                                : S
-                                                    .of(context)
-                                                    .balanceWithdrawal));
-                                    final reason = isAr
-                                        ? (entry.reasonAr ?? entry.reasonEn)
-                                        : (entry.reasonEn ?? entry.reasonAr);
-                                    final dateText = entry.createdAtUtc == null
-                                        ? ''
-                                        : DateFormat.yMMMd().add_jm().format(
-                                            entry.createdAtUtc!.toLocal(),
-                                          );
-                                    return Container(
-                                      margin: EdgeInsets.only(bottom: 12.h),
-                                      padding: EdgeInsets.all(14.w),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(
-                                          color: const Color(0xffE8E8E8),
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(10.r),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  typeLabel,
-                                                  style: TextStyle(
-                                                    fontSize: 15.sp,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                              ),
-                                              Text(
-                                                '${positive ? '+' : ''}${currency.format(entry.amount)}',
-                                                style: TextStyle(
-                                                  fontSize: 15.sp,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: positive
-                                                      ? const Color(0xff1B7F3A)
-                                                      : const Color(0xffC62828),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          if (entry.orderId != null) ...[
-                                            SizedBox(height: 6.h),
-                                            Text(
-                                              S.of(context).balanceOrderLabel(
-                                                entry.orderId.toString(),
-                                              ),
-                                              style: TextStyle(
-                                                fontSize: 13.sp,
-                                                color: Colors.black87,
-                                              ),
-                                            ),
-                                          ],
-                                          if (reason != null &&
-                                              reason.trim().isNotEmpty) ...[
-                                            SizedBox(height: 4.h),
-                                            Text(
-                                              reason,
-                                              style: TextStyle(
-                                                fontSize: 12.sp,
-                                                color: Colors.black54,
-                                              ),
-                                            ),
-                                          ],
-                                          if (dateText.isNotEmpty) ...[
-                                            SizedBox(height: 6.h),
-                                            Text(
-                                              dateText,
-                                              style: TextStyle(
-                                                fontSize: 11.sp,
-                                                color: Colors.black45,
-                                              ),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                    );
-                                  }),
+                                SizedBox(height: 24.h),
                               ],
                             ),
                           ),

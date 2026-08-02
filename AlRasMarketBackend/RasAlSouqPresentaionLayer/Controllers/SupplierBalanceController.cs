@@ -31,6 +31,7 @@ public class SupplierBalanceController(
     public async Task<IActionResult> GetStatement(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
+        [FromQuery] byte? entryType = null,
         CancellationToken cancellationToken = default)
     {
         var userId = GetUserId();
@@ -43,6 +44,7 @@ public class SupplierBalanceController(
             userId.Value,
             page,
             pageSize,
+            entryType,
             cancellationToken);
         return Ok(statement);
     }

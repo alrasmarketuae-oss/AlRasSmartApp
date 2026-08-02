@@ -59,6 +59,28 @@ rm -f backend.tar.gz
 # Stale path from before ProductAdoRepository moved to DataLayer.
 rm -f BusinessLayer/DataAccess/ProductAdoRepository.cs
 rmdir BusinessLayer/DataAccess 2>/dev/null || true
+# Stale AI assistant paths before Services/AiAssistant (+ Mcp) move.
+rm -f BusinessLayer/Services/AiAssistantToolsService.cs
+rm -f BusinessLayer/Services/AiAssistantAppService.cs
+rm -f BusinessLayer/Services/AiAssistantKnowledgeSource.cs
+rm -f BusinessLayer/Services/QdrantAiKnowledgeIndex.cs
+rm -f BusinessLayer/Services/OpenAiTextEmbeddingService.cs
+rm -f BusinessLayer/Services/AiKnowledgeBootstrapHostedService.cs
+rm -f BusinessLayer/Services/AiAssistantMcpToolsService.cs
+rm -f BusinessLayer/Services/AiAssistantMcpToolLoop.cs
+rm -rf BusinessLayer/Services/Mcp
+# Stale image-search services before Services/ImageSearch move.
+rm -f BusinessLayer/Services/ClipHttpEmbeddingService.cs
+rm -f BusinessLayer/Services/OpenAiCatalogImageEmbeddingService.cs
+rm -f BusinessLayer/Services/QdrantProductImageVectorIndex.cs
+rm -f BusinessLayer/Services/ProductImageIndexingQueue.cs
+rm -f BusinessLayer/Services/ProductImageVectorIndexingProcessor.cs
+# Stale interfaces before Interfaces/AiAssistant and Interfaces/ImageSearch move.
+rm -f BusinessLayer/Interfaces/IAiAssistantServices.cs
+rm -f BusinessLayer/Interfaces/IAiAssistantMcpServices.cs
+rm -f BusinessLayer/Interfaces/IImageEmbeddingService.cs
+rm -f BusinessLayer/Interfaces/IProductImageIndexingQueue.cs
+rm -f BusinessLayer/Interfaces/IProductImageVectorIndex.cs
 mkdir -p deploy/certbot/conf deploy/certbot/www
 echo '==> Building & restarting...'
 if [ -n '$serviceList' ]; then

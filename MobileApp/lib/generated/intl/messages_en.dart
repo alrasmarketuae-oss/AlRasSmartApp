@@ -212,6 +212,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "aiAssistantImageSearchHint": MessageLookupByLibrary.simpleMessage(
       "Image search: upload a product photo from the search bar to find similar catalog matches. See “Image-search model training” under Help & Support for details.",
     ),
+    "aiAssistantListening": MessageLookupByLibrary.simpleMessage(
+      "Listening… speak now",
+    ),
     "aiAssistantOutOfScope": MessageLookupByLibrary.simpleMessage(
       "I can only help with Al Ras Market topics (accounts, ads, orders, payment, returns). Please ask something about the platform.",
     ),
@@ -219,15 +222,26 @@ class MessageLookup extends MessageLookupByLibrary {
       "For damaged, expired, or materially different goods: report within 24 business hours of receipt with photos. If support approves, refund is issued within 1 business day, and the supplier balance is adjusted if it was credited.",
     ),
     "aiAssistantSubtitle": MessageLookupByLibrary.simpleMessage(
-      "Platform knowledge assistant — separate from live chat with support staff.",
+      "Alras Smart is an AI Agent and can make mistakes.",
     ),
     "aiAssistantThinking": MessageLookupByLibrary.simpleMessage("Thinking…"),
-    "aiAssistantTitle": MessageLookupByLibrary.simpleMessage("AI Assistant"),
+    "aiAssistantTitle": MessageLookupByLibrary.simpleMessage("Alras Smart"),
     "aiAssistantUnsupportedLanguage": MessageLookupByLibrary.simpleMessage(
       "We currently support Arabic and English. We may translate your question internally to understand it, then reply in a supported language.",
     ),
+    "aiAssistantVoiceCancel": MessageLookupByLibrary.simpleMessage("Cancel"),
+    "aiAssistantVoiceCorrecting": MessageLookupByLibrary.simpleMessage(
+      "AI is correcting your speech…",
+    ),
+    "aiAssistantVoiceHint": MessageLookupByLibrary.simpleMessage(
+      "Review the text, then send or cancel",
+    ),
+    "aiAssistantVoiceSend": MessageLookupByLibrary.simpleMessage("Send"),
+    "aiAssistantVoiceUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Voice input is not available on this device",
+    ),
     "aiAssistantWelcome": MessageLookupByLibrary.simpleMessage(
-      "Welcome. I’m the Al Ras Market assistant. I can help you use the platform based on your account type. Live chat with a support agent is available from Profile.",
+      "Welcome. I’m Alras Smart. I can help you use the platform based on your account type. Live chat with a support agent is available from Profile.",
     ),
     "aiCorrectedSearch": m3,
     "aiIdentifiedProduct": m4,
@@ -267,8 +281,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "backToHome": MessageLookupByLibrary.simpleMessage("Back to Home"),
     "balanceDeposit": MessageLookupByLibrary.simpleMessage("Deposit"),
+    "balanceDepositsSection": MessageLookupByLibrary.simpleMessage("Deposits"),
     "balanceOrderLabel": m5,
     "balanceWithdrawal": MessageLookupByLibrary.simpleMessage("Withdrawal"),
+    "balanceWithdrawalsSection": MessageLookupByLibrary.simpleMessage(
+      "Withdrawals",
+    ),
     "beauty": MessageLookupByLibrary.simpleMessage("Beauty"),
     "beforeDiscount": MessageLookupByLibrary.simpleMessage("Before Discount"),
     "biometricAuthReason": MessageLookupByLibrary.simpleMessage(
@@ -861,6 +879,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "noBalanceTransactions": MessageLookupByLibrary.simpleMessage(
       "No balance transactions yet.",
     ),
+    "noDepositsYet": MessageLookupByLibrary.simpleMessage(
+      "No deposits from the platform yet.",
+    ),
     "noDetailsAvailable": MessageLookupByLibrary.simpleMessage("No details"),
     "noLiabilityAppLosses": MessageLookupByLibrary.simpleMessage(
       "Any losses due to misuse of the app",
@@ -901,6 +922,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "noShippingOffersMatch": MessageLookupByLibrary.simpleMessage(
       "No shipping offers match your filters.",
+    ),
+    "noWithdrawalsYet": MessageLookupByLibrary.simpleMessage(
+      "No withdrawal requests yet.",
     ),
     "nonNegotiable": MessageLookupByLibrary.simpleMessage("Non-Negotiable"),
     "notificationSettings": MessageLookupByLibrary.simpleMessage(
@@ -1348,6 +1372,28 @@ class MessageLookup extends MessageLookupByLibrary {
     "sendEmail": MessageLookupByLibrary.simpleMessage("Send Email"),
     "sendPurchaseOrder": MessageLookupByLibrary.simpleMessage(
       "Send Purchase Order",
+    ),
+    "sensitiveAccessBiometricReason": MessageLookupByLibrary.simpleMessage(
+      "Verify it’s you to open this page",
+    ),
+    "sensitiveAccessContinue": MessageLookupByLibrary.simpleMessage("Continue"),
+    "sensitiveAccessPasswordHint": MessageLookupByLibrary.simpleMessage(
+      "Enter your password to continue",
+    ),
+    "sensitiveAccessPasswordRequired": MessageLookupByLibrary.simpleMessage(
+      "This account has no password. Enable Face ID / Fingerprint in Profile, or set a password from Change Password, then try again.",
+    ),
+    "sensitiveAccessVerifyFailed": MessageLookupByLibrary.simpleMessage(
+      "Verification failed. Please try again.",
+    ),
+    "sensitiveAccessVerifyTitle": MessageLookupByLibrary.simpleMessage(
+      "Confirm it’s you",
+    ),
+    "sensitiveAccessWarningBody": MessageLookupByLibrary.simpleMessage(
+      "Opening Alras Smart or Balance lets you manage your account: edit, pause, sell out, or delete ads, change prices, and request withdrawals. Verify your identity before continuing.",
+    ),
+    "sensitiveAccessWarningTitle": MessageLookupByLibrary.simpleMessage(
+      "Security check",
     ),
     "setPassword": MessageLookupByLibrary.simpleMessage("Set Password"),
     "setPasswordSocialHint": MessageLookupByLibrary.simpleMessage(

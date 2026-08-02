@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/router/app_router.dart';
+import 'package:alrasmarket/core/services/sensitive_access_gate.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_cubit.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_states.dart';
@@ -130,7 +131,10 @@ class TechnicalSupportView extends StatelessWidget {
                         title: S.of(context).aiAssistantTitle,
                         subtitle: S.of(context).aiAssistantSubtitle,
                         buttonText: S.of(context).aiAssistantFabLabel,
-                        onTap: () => context.push(AppRoutes.kAiAssistantView),
+                        onTap: () => SensitiveAccessGate.openProtectedRoute(
+                          context,
+                          route: AppRoutes.kAiAssistantView,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       CallCard(

@@ -284,7 +284,11 @@ public sealed class AdminFinanceAppService(
     public async Task<object> GetCompanyBalanceStatementAsync(string userId, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var parsedUserId = UserIbanAppService.ParseUserId(userId);
-        return await supplierBalanceService.GetStatementAsync(parsedUserId, page, pageSize, cancellationToken);
+        return await supplierBalanceService.GetStatementAsync(
+            parsedUserId,
+            page,
+            pageSize,
+            cancellationToken: cancellationToken);
     }
 
     public async Task<object> MarkWithdrawalPaidAsync(

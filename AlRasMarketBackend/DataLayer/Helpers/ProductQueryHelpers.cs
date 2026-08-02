@@ -49,6 +49,7 @@ public static class ProductQueryHelpers
         {
             ProductId = x.ProductId,
             ProductCode = x.ProductCode,
+            RetailCode = x.RetailCode,
             NameEn = x.NameEn,
             USDPrice = x.USDPrice,
             OwnerId = x.OwnerId,

@@ -57,17 +57,23 @@ class AppNotificationsPageModel {
     required this.items,
     required this.totalCount,
     this.unreadCount = 0,
+    this.page = 1,
+    this.pageSize = 50,
   });
 
   final List<AppNotificationModel> items;
   final int totalCount;
   final int unreadCount;
+  final int page;
+  final int pageSize;
 
   factory AppNotificationsPageModel.fromJson(Map<String, dynamic> json) {
     final raw = json['items'] as List<dynamic>? ?? const [];
     return AppNotificationsPageModel(
       totalCount: int.tryParse(json['totalCount']?.toString() ?? '') ?? raw.length,
       unreadCount: int.tryParse(json['unreadCount']?.toString() ?? '') ?? 0,
+      page: int.tryParse(json['page']?.toString() ?? '') ?? 1,
+      pageSize: int.tryParse(json['pageSize']?.toString() ?? '') ?? raw.length,
       items: raw
           .whereType<Map>()
           .map((e) => AppNotificationModel.fromJson(Map<String, dynamic>.from(e)))

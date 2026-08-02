@@ -22,9 +22,13 @@ public interface IBalanceDataAccess
         Guid userId,
         int skip,
         int take,
+        byte? entryType = null,
         CancellationToken cancellationToken = default);
 
-    Task<int> CountStatementAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<int> CountStatementAsync(
+        Guid userId,
+        byte? entryType = null,
+        CancellationToken cancellationToken = default);
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

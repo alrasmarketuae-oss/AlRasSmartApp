@@ -11,7 +11,12 @@ class AiAssistantRealtimeService {
   /// SignalR connection, which changes id on every auto-reconnect.
   final String _sessionId = _newSessionId();
 
-  bool get isConnected => _hub?.state == HubConnectionState.Connected;
+  /// Set when the AI screen is leaving so an in-flight connect cannot orphan a hub.
+  bool _closed = false;
+  int _connectGeneration = 0;
+
+  bool get isConnected =>
+      !_closed && _hub?.state == HubConnectionState.Connected;
 
   Future<void> connect({
     required void Function(bool value) onThinking,
@@ -20,8 +25,12 @@ class AiAssistantRealtimeService {
     required void Function(String answer) onCompleted,
     required void Function(String message) onError,
   }) async {
+    if (_closed) return;
     if (isConnected) return;
-    await close();
+
+    final generation = ++_connectGeneration;
+    await _stopHubOnly();
+    if (_closed || generation != _connectGeneration) return;
 
     final token = AuthService.instance.currentToken?.trim();
     final builder = HubConnectionBuilder();
@@ -37,30 +46,49 @@ class AiAssistantRealtimeService {
       builder.withUrl(ApiConstants.aiAssistantHubUrl);
     }
 
-    _hub = builder.withAutomaticReconnect().build();
-    _hub!.on('aiThinking', (args) {
+    // No automatic reconnect: this hub is screen-scoped and must die on exit.
+    final hub = builder.build();
+    _hub = hub;
+
+    hub.on('aiThinking', (args) {
+      if (_closed || generation != _connectGeneration) return;
       final data = _map(args);
       onThinking(data?['isThinking'] == true);
     });
-    _hub!.on('aiResponseStarted', (_) => onResponseStarted());
-    _hub!.on('aiDelta', (args) {
+    hub.on('aiResponseStarted', (_) {
+      if (_closed || generation != _connectGeneration) return;
+      onResponseStarted();
+    });
+    hub.on('aiDelta', (args) {
+      if (_closed || generation != _connectGeneration) return;
       final value = _map(args)?['text']?.toString() ?? '';
       if (value.isNotEmpty) onDelta(value);
     });
-    _hub!.on('aiResponseCompleted', (args) {
+    hub.on('aiResponseCompleted', (args) {
+      if (_closed || generation != _connectGeneration) return;
       onCompleted(_map(args)?['answer']?.toString() ?? '');
     });
-    _hub!.on('aiError', (args) {
+    hub.on('aiError', (args) {
+      if (_closed || generation != _connectGeneration) return;
       onError(
         _map(args)?['message']?.toString() ??
             'AI Assistant is unavailable right now.',
       );
     });
 
-    await _hub!.start();
+    await hub.start();
+    if (_closed || generation != _connectGeneration || !identical(_hub, hub)) {
+      try {
+        await hub.stop();
+      } catch (_) {}
+      return;
+    }
   }
 
   Future<void> ask({required String message, required String language}) async {
+    if (_closed) {
+      throw StateError('AI Assistant session was closed.');
+    }
     final hub = _hub;
     if (hub == null || hub.state != HubConnectionState.Connected) {
       throw StateError('AI Assistant is not connected.');
@@ -68,7 +96,10 @@ class AiAssistantRealtimeService {
     await hub.invoke('AskInSession', args: [message, language, _sessionId]);
   }
 
+  /// Clears server session history and stops the SignalR connection.
   Future<void> close() async {
+    _closed = true;
+    _connectGeneration++;
     final hub = _hub;
     _hub = null;
     if (hub == null) return;
@@ -76,9 +107,16 @@ class AiAssistantRealtimeService {
       if (hub.state == HubConnectionState.Connected) {
         await hub.invoke('ClearSessionById', args: [_sessionId]);
       }
-    } catch (_) {
-      // The server also removes session history in OnDisconnected.
-    }
+    } catch (_) {}
+    try {
+      await hub.stop();
+    } catch (_) {}
+  }
+
+  Future<void> _stopHubOnly() async {
+    final hub = _hub;
+    _hub = null;
+    if (hub == null) return;
     try {
       await hub.stop();
     } catch (_) {}

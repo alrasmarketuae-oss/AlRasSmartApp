@@ -208,7 +208,7 @@ public sealed class ProductDataAccess(
         CancellationToken cancellationToken = default) =>
         ProductQueryHelpers.SelectPublicProductRows(
                 ProductQueryHelpers.ApplyPublicProductFilter(dbContext.Products.AsNoTracking())
-                    .Where(x => x.ProductCode == productCode))
+                    .Where(x => x.ProductCode == productCode || x.RetailCode == productCode))
             .OrderByDescending(x => x.CreatedAt)
             .Skip(skip)
             .Take(take)
@@ -227,7 +227,7 @@ public sealed class ProductDataAccess(
         CancellationToken cancellationToken = default) =>
         ProductQueryHelpers.SelectPublicProductRows(
                 ProductQueryHelpers.ApplyPublicProductFilter(dbContext.Products.AsNoTracking())
-                    .Where(x => x.ProductCode == productCode))
+                    .Where(x => x.ProductCode == productCode || x.RetailCode == productCode))
             .FirstOrDefaultAsync(cancellationToken);
 
     public async Task<(List<ProductPublicRow> Products, int TotalCount)> SearchPublicCatalogByTokenWordsAsync(
@@ -458,13 +458,18 @@ public sealed class ProductDataAccess(
             .ToList();
 
         var codes = await ProductQueryHelpers.ApplyPublicProductFilter(dbContext.Products.AsNoTracking())
-            .Where(x => !string.IsNullOrWhiteSpace(x.ProductCode))
-            .Select(x => x.ProductCode!.Trim())
-            .Distinct()
-            .OrderBy(x => x)
+            .Select(x => new { x.ProductCode, x.RetailCode })
             .ToListAsync(cancellationToken);
 
-        return new ProductSearchNameIndex { Names = names, ProductCodes = codes };
+        var productCodes = codes
+            .SelectMany(x => new[] { x.ProductCode, x.RetailCode })
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x!.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return new ProductSearchNameIndex { Names = names, ProductCodes = productCodes };
     }
 
     public async Task<(List<ProductPublicRow> Rows, int TotalCount)> GetProductsByTypePageAsync(
@@ -749,6 +754,7 @@ public sealed class ProductDataAccess(
             {
                 ProductId = x.ProductId,
                 ProductCode = x.ProductCode,
+                RetailCode = x.RetailCode,
                 NameEn = x.NameEn,
                 CreatedLanguage = x.CreatedLanguage,
                 CategoryName = x.Category != null ? x.Category.NameEn : null,
@@ -1154,6 +1160,7 @@ public sealed class ProductDataAccess(
     {
         ProductId = r.ProductId,
         ProductCode = r.ProductCode,
+        RetailCode = r.RetailCode,
         NameEn = r.NameEn,
         USDPrice = r.USDPrice,
         OwnerId = r.OwnerId,

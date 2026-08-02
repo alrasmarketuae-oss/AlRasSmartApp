@@ -1,4 +1,3 @@
-import 'package:alrasmarket/core/serveses/app_chat_listener_service.dart';
 import 'package:alrasmarket/core/services/biometric_auth_service.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
@@ -67,7 +66,6 @@ class _BiometricUnlockButtonState extends State<BiometricUnlockButton> {
       return;
     }
 
-    await AppChatListenerService.instance.start();
     if (!mounted) return;
     AuthCubit.navigateAfterBiometricUnlock(context);
   }
