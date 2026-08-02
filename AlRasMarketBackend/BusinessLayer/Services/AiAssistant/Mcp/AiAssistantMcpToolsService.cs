@@ -105,6 +105,40 @@ public sealed partial class AiAssistantMcpToolsService(
             type = "function",
             function = new
             {
+                name = "get_my_last_ad",
+                description =
+                    "Return the signed-in seller's MOST RECENTLY created ad (آخر إعلان نزلته / نشرته / أضفته / last ad I posted). " +
+                    "Ordered by Product.CreatedAt descending. Use for 'هات آخر إعلان' — NOT for last order/sale.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new { },
+                    additionalProperties = false
+                }
+            }
+        },
+        new
+        {
+            type = "function",
+            function = new
+            {
+                name = "get_my_first_ad",
+                description =
+                    "Return the signed-in seller's EARLIEST created ad (أول إعلان نزلته / نشرته / أضفته / first ad I posted). " +
+                    "Ordered by Product.CreatedAt ascending. Use for 'هات أول إعلان' — NOT for first order.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new { },
+                    additionalProperties = false
+                }
+            }
+        },
+        new
+        {
+            type = "function",
+            function = new
+            {
                 name = "find_cheapest_product",
                 description =
                     "Find the cheapest publicly active approved marketplace listing matching a product name " +
@@ -429,6 +463,8 @@ public sealed partial class AiAssistantMcpToolsService(
                 "update_ad_price_quantity" => await UpdateAdPriceQuantityAsync(
                     userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
                 "list_my_ads" => await ListMyAdsAsync(userId, cancellationToken).ConfigureAwait(false),
+                "get_my_last_ad" => await GetMyLastAdAsync(userId, cancellationToken).ConfigureAwait(false),
+                "get_my_first_ad" => await GetMyFirstAdAsync(userId, cancellationToken).ConfigureAwait(false),
                 "find_cheapest_product" => await FindCheapestProductAsync(
                     call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
                 "find_most_expensive_product" => await FindMostExpensiveProductAsync(

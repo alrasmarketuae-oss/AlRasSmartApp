@@ -1383,6 +1383,29 @@ internal static class AiAssistantKnowledgeSource
             From here you open any listing to edit it, pause or activate it, or update its quantity.
             """);
 
+        Add(chunks, "my-last-first-ad", "آخر إعلان وأول إعلان نزلته", "ar", ["supplier", "company_customer", "shipping"],
+            """
+            سؤال: هات آخر إعلان نزلته / آخر إعلان نشرته / آخر إعلان أضفته / أجدّ إعلان عندي؟
+            الإجابة: المقصود آخر إعلان أنشأته أنت (بحسب تاريخ الإنشاء)، وليس آخر طلب شراء ولا آخر طلب على إعلانك.
+            الوكيل يستدعي get_my_last_ad ويعرض الاسم والكود والحالة والسعر/الكمية وتاريخ الإنشاء من بياناتك الحية.
+
+            سؤال: هات أول إعلان نزلته / أول إعلان نشرته / أول إعلان أضفته / أقدم إعلان عندي؟
+            الإجابة: المقصود أول إعلان أنشأته (أقدم تاريخ إنشاء)، وليس أول طلب.
+            الوكيل يستدعي get_my_first_ad ويعرض نفس التفاصيل من بياناتك الحية.
+
+            لا تخلط بين «آخر إعلان» و«آخر اوردر / آخر طلب». إن كان السؤال غامضاً اسأل: تقصد آخر إعلان نشرته ولا آخر طلب؟
+            """);
+        Add(chunks, "my-last-first-ad", "My last ad and first ad I posted", "en", ["supplier", "company_customer", "shipping"],
+            """
+            Question: What is the last ad I posted / my newest listing / show my latest ad?
+            Answer: That means the seller's most recently created listing by creation date — not their last purchase order and not the last order on their ads.
+            The assistant calls get_my_last_ad and reports name, code, status, price/quantity, and created date from live data.
+
+            Question: What is the first ad I posted / my oldest listing?
+            Answer: That means the earliest created listing. The assistant calls get_my_first_ad.
+            Do not confuse "last ad" with "last order". If ambiguous, ask whether they mean a listing they published or an order.
+            """);
+
         Add(chunks, "ad-statuses", "معاني حالات الإعلان", "ar", ["supplier", "company_customer", "shipping", "public"],
             """
             حالات الإعلان ومعناها:

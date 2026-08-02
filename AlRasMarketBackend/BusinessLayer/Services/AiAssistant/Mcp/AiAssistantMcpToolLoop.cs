@@ -183,6 +183,8 @@ public sealed class AiAssistantMcpToolLoop(
             "find_cheapest_product" => "بستدعي أداة: أرخص منتج…",
             "find_most_expensive_product" => "بستدعي أداة: أغلى منتج…",
             "list_my_ads" => "بستدعي أداة: قائمة إعلاناتي…",
+            "get_my_last_ad" => "بستدعي أداة: آخر إعلان نزلته…",
+            "get_my_first_ad" => "بستدعي أداة: أول إعلان نزلته…",
             "update_ad_price_quantity" => "بستدعي أداة: تعديل السعر/الكمية…",
             "set_ad_listing_status" => "بستدعي أداة: إيقاف/تفعيل إعلان…",
             "mark_ad_sold_out" => "بستدعي أداة: تعليم نفاد الكمية…",
