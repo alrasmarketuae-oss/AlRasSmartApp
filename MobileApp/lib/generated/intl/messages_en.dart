@@ -1373,6 +1373,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "sendPurchaseOrder": MessageLookupByLibrary.simpleMessage(
       "Send Purchase Order",
     ),
+    "sensitiveAccessBalanceWarningBody": MessageLookupByLibrary.simpleMessage(
+      "Opening Balance shows your deposits and lets you add IBANs or request withdrawals. Verify your identity before continuing.",
+    ),
+    "sensitiveAccessBalanceWarningTitle": MessageLookupByLibrary.simpleMessage(
+      "Balance access",
+    ),
     "sensitiveAccessBiometricReason": MessageLookupByLibrary.simpleMessage(
       "Verify it’s you to open this page",
     ),
@@ -1390,7 +1396,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Confirm it’s you",
     ),
     "sensitiveAccessWarningBody": MessageLookupByLibrary.simpleMessage(
-      "Opening Alras Smart or Balance lets you manage your account: edit, pause, sell out, or delete ads, change prices, and request withdrawals. Verify your identity before continuing.",
+      "Alras Smart is an AI agent that can control important account actions such as creating withdrawal requests, changing prices, and deleting ads. Security verification is required. Thank you for your patience.",
     ),
     "sensitiveAccessWarningTitle": MessageLookupByLibrary.simpleMessage(
       "Security check",

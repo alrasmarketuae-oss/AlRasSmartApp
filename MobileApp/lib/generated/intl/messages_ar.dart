@@ -1360,6 +1360,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "sendPurchaseOrder": MessageLookupByLibrary.simpleMessage(
       "إرسال طلب الشراء",
     ),
+    "sensitiveAccessBalanceWarningBody": MessageLookupByLibrary.simpleMessage(
+      "فتح الرصيد يعرض إيداعاتك ويتيح إضافة IBAN أو طلب سحب. تحقّق من هويتك قبل المتابعة.",
+    ),
+    "sensitiveAccessBalanceWarningTitle": MessageLookupByLibrary.simpleMessage(
+      "الدخول للرصيد",
+    ),
     "sensitiveAccessBiometricReason": MessageLookupByLibrary.simpleMessage(
       "تحقق من هويتك لفتح هذه الصفحة",
     ),
@@ -1377,7 +1383,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "أكد أنك أنت",
     ),
     "sensitiveAccessWarningBody": MessageLookupByLibrary.simpleMessage(
-      "دخول الراس الذكي أو الرصيد يتيح إدارة حسابك: تعديل أو إيقاف أو نفاد أو حذف الإعلانات، وتغيير الأسعار، وطلب سحب. تحقّق من هويتك قبل المتابعة.",
+      "الراس الذكي هو وكيل ذكاء اصطناعي يستطيع التحكم في بعض المهام الهامة في حسابك مثل إنشاء طلبات سحب أموال وتعديل أسعار وحذف إعلانات، لذا التحقق الأمني مطلوب. وشكراً لصبركم.",
     ),
     "sensitiveAccessWarningTitle": MessageLookupByLibrary.simpleMessage(
       "تحقق أمني",

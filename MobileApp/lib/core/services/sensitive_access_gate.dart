@@ -46,6 +46,14 @@ class SensitiveAccessGate {
     }
 
     final l10n = S.of(context);
+    final isBalance = route == AppRoutes.kSupplierBalanceView;
+    final warningTitle = isBalance
+        ? l10n.sensitiveAccessBalanceWarningTitle
+        : l10n.sensitiveAccessWarningTitle;
+    final warningBody = isBalance
+        ? l10n.sensitiveAccessBalanceWarningBody
+        : l10n.sensitiveAccessWarningBody;
+
     final proceed = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -56,7 +64,7 @@ class SensitiveAccessGate {
             borderRadius: BorderRadius.circular(12.r),
           ),
           title: Text(
-            l10n.sensitiveAccessWarningTitle,
+            warningTitle,
             style: TextStyle(
               fontFamily: fontFamily,
               fontWeight: FontWeight.bold,
@@ -64,7 +72,7 @@ class SensitiveAccessGate {
             ),
           ),
           content: Text(
-            l10n.sensitiveAccessWarningBody,
+            warningBody,
             style: TextStyle(
               fontFamily: fontFamily,
               fontSize: 14.sp,
