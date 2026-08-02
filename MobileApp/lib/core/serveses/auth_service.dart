@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/cache/api_cache_store.dart';
 import '../../../core/helper/cach_helper.dart';
 import '../../../core/serveses/app_chat_listener_service.dart';
@@ -10,7 +9,6 @@ import '../../../core/services/api_constants.dart';
 import '../../../core/services/biometric_auth_service.dart';
 import '../../../core/services/dio_helper.dart';
 import '../../../core/services/fcm_token_service.dart';
-import '../../features/chat/data/utils/chat_e2e_crypto.dart';
 
 /// Centralized authentication service for managing user authentication state
 class AuthService {
@@ -18,13 +16,6 @@ class AuthService {
   static AuthService get instance => _instance ??= AuthService._();
 
   AuthService._();
-
-  static const _secureStorage = FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
-  );
-
-  /// In-memory copy of the chat key passphrase (login password / chat PIN).
-  String? _chatKeyPassphrase;
 
   /// Bumped whenever profile image changes so UI can refresh cached avatars.
   final ValueNotifier<int> profileImageRevision = ValueNotifier(0);
@@ -371,83 +362,8 @@ class AuthService {
     return adminRoutes.contains(routeName);
   }
 
-  /// Password / PIN used only client-side to wrap/unwrap the chat private key.
-  Future<void> setChatKeyPassphrase(String passphrase) async {
-    final trimmed = passphrase.trim();
-    if (trimmed.isEmpty) return;
-    _chatKeyPassphrase = trimmed;
-    final uid = id;
-    if (uid != null && uid.isNotEmpty) {
-      await _secureStorage.write(
-        key: 'chat_key_passphrase_${uid.toLowerCase()}',
-        value: trimmed,
-      );
-    }
-  }
-
-  /// Builds the wrap secret from password (hashed) or email — never prompted.
-  Future<void> setChatKeyWrapFromCredentials({
-    String? password,
-    String? email,
-    String? userId,
-  }) async {
-    final secret = ChatE2eCrypto.deriveWrapSecret(
-      password: password,
-      email: email ?? currentUserEmail,
-      userId: userId ?? id,
-    );
-    if (secret == null || secret.isEmpty) return;
-    await setChatKeyPassphrase(secret);
-  }
-
-  /// Secrets to try for unwrap: password-hash (if cached), then email-hash.
-  Future<List<String>> resolveChatKeyWrapSecrets() async {
-    final secrets = <String>[];
-    final cached = await getChatKeyPassphrase();
-    if (cached != null && cached.isNotEmpty) {
-      secrets.add(cached);
-    }
-    final emailSecret = ChatE2eCrypto.deriveWrapSecret(
-      email: currentUserEmail,
-      userId: id,
-    );
-    if (emailSecret != null &&
-        emailSecret.isNotEmpty &&
-        !secrets.contains(emailSecret)) {
-      secrets.add(emailSecret);
-    }
-    // Persist email secret so next app launch still works for social logins.
-    if (cached == null && emailSecret != null) {
-      await setChatKeyPassphrase(emailSecret);
-    }
-    return secrets;
-  }
-
-  Future<String?> getChatKeyPassphrase() async {
-    if (_chatKeyPassphrase != null && _chatKeyPassphrase!.isNotEmpty) {
-      return _chatKeyPassphrase;
-    }
-    final uid = id;
-    if (uid == null || uid.isEmpty) return null;
-    _chatKeyPassphrase = await _secureStorage.read(
-      key: 'chat_key_passphrase_${uid.toLowerCase()}',
-    );
-    return _chatKeyPassphrase;
-  }
-
-  Future<void> clearChatKeyPassphrase() async {
-    final uid = id;
-    _chatKeyPassphrase = null;
-    if (uid != null && uid.isNotEmpty) {
-      await _secureStorage.delete(
-        key: 'chat_key_passphrase_${uid.toLowerCase()}',
-      );
-    }
-  }
-
   /// Clear all authentication data
   Future<void> clearAuthData() async {
-    await clearChatKeyPassphrase();
     id = null;
     token = null;
     name = null;

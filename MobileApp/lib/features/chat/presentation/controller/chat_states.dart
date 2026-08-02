@@ -75,11 +75,3 @@ class ChatSessionsUpdated extends ChatState {
   @override
   List<Object?> get props => [sessions];
 }
-
-class ChatPassphraseRequired extends ChatState {
-  const ChatPassphraseRequired({this.invalid = false});
-  final bool invalid;
-
-  @override
-  List<Object?> get props => [invalid];
-}

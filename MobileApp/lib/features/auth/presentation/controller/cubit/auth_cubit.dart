@@ -172,19 +172,6 @@ class AuthCubit extends Cubit<AuthStates> {
     final isSocialLogin =
         loginProviderName == 'google' || loginProviderName == 'apple';
 
-    if (!isSocialLogin && password != null && password.isNotEmpty) {
-      await AuthService.instance.setChatKeyWrapFromCredentials(
-        password: password,
-        email: loginResponse.email ?? emailFallback,
-        userId: loginResponse.personId,
-      );
-    } else {
-      await AuthService.instance.setChatKeyWrapFromCredentials(
-        email: loginResponse.email ?? emailFallback,
-        userId: loginResponse.personId,
-      );
-    }
-
     if (loginResponse.isVerified != true && !isSocialLogin) {
       final userEmail = loginResponse.email ?? emailFallback;
       if (userEmail.isNotEmpty) {

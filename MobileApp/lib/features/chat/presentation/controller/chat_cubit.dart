@@ -7,7 +7,6 @@ import 'package:alrasmarket/features/chat/data/models/chat_message_type.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_presence_model.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_support_session_model.dart';
 import 'package:alrasmarket/features/chat/data/repository/chat_repository.dart';
-import 'package:alrasmarket/features/chat/data/utils/chat_e2e_crypto.dart';
 import 'package:alrasmarket/features/chat/data/utils/chat_media_helper.dart';
 import 'package:alrasmarket/features/chat/presentation/controller/chat_states.dart';
 import 'package:alrasmarket/generated/l10n.dart';
@@ -198,54 +197,6 @@ class ChatCubit extends Cubit<ChatState> {
     );
 
     await loadMessages();
-    await _ensureE2eKeys(token: token, uid: uid);
-  }
-
-  Future<void> _ensureE2eKeys({
-    required String token,
-    required String uid,
-  }) async {
-    try {
-      // Keep local keys available so older encrypted messages can still decrypt.
-      final secrets = await AuthService.instance.resolveChatKeyWrapSecrets();
-      await ChatE2eCrypto.ensurePublicKeyJwk(
-        userId: uid,
-        wrapSecrets: secrets,
-        downloadKeyPair: () async {
-          final result = await _repository.getMyKeyPair(token: token);
-          return result.fold((_) => null, (pair) => pair);
-        },
-        uploadKeyPair: ({
-          required String publicKeyJwk,
-          required String privateKeyJwk,
-        }) async {
-          final uploaded = await _repository.upsertMyKeyPair(
-            token: token,
-            publicKeyJwk: publicKeyJwk,
-            privateKeyJwk: privateKeyJwk,
-          );
-          uploaded.fold((_) {}, (_) {});
-        },
-      );
-    } catch (_) {
-      // Chat still works with plaintext messages.
-    }
-  }
-
-  Future<ChatMessageModel> _decryptMessage(ChatMessageModel message) async {
-    final uid = userId;
-    if (uid == null || !ChatE2eCrypto.isEnvelope(message.content)) {
-      return message;
-    }
-    try {
-      final clear = await ChatE2eCrypto.decryptEnvelope(
-        envelopeJson: message.content,
-        myUserId: uid,
-      );
-      return message.copyWith(content: clear);
-    } catch (_) {
-      return message.copyWith(content: '🔒');
-    }
   }
 
   Future<void> _ingestIncomingMessage(ChatMessageModel message) async {
@@ -253,29 +204,27 @@ class ChatCubit extends Cubit<ChatState> {
     final uid = userId;
     if (oid == null || uid == null) return;
 
-    final decrypted = await _decryptMessage(message);
-    final idx = messages.indexWhere((m) => m.messageId == decrypted.messageId);
+    final idx = messages.indexWhere((m) => m.messageId == message.messageId);
     if (idx >= 0) {
       final existing = messages[idx];
-      messages[idx] = decrypted.copyWith(
+      messages[idx] = message.copyWith(
         deliveryStatus:
             existing.deliveryStatus == MessageDeliveryStatus.sending
                 ? MessageDeliveryStatus.sent
                 : existing.deliveryStatus,
-        isDelivered: decrypted.isDelivered || existing.isDelivered,
-        isSeen: decrypted.isSeen || existing.isSeen,
-        content: ChatE2eCrypto.isEnvelope(existing.content)
-            ? decrypted.content
-            : (existing.content.isNotEmpty ? existing.content : decrypted.content),
+        isDelivered: message.isDelivered || existing.isDelivered,
+        isSeen: message.isSeen || existing.isSeen,
+        content:
+            existing.content.isNotEmpty ? existing.content : message.content,
       );
     } else {
-      messages.add(decrypted);
+      messages.add(message);
     }
     emit(ChatMessagesLoaded(List.from(messages)));
 
-    if (decrypted.fromUserId.toLowerCase() == oid.toLowerCase() &&
-        decrypted.toUserId.toLowerCase() == uid.toLowerCase()) {
-      emit(ChatNewIncomingMessage(decrypted));
+    if (message.fromUserId.toLowerCase() == oid.toLowerCase() &&
+        message.toUserId.toLowerCase() == uid.toLowerCase()) {
+      emit(ChatNewIncomingMessage(message));
       emit(ChatMessagesLoaded(List.from(messages)));
       unawaited(_markDeliveredAndSeen());
     }
@@ -318,11 +267,7 @@ class ChatCubit extends Cubit<ChatState> {
   }
 
   Future<void> _applyLoadedConversation(ChatConversationDetails details) async {
-    final decrypted = <ChatMessageModel>[];
-    for (final m in details.messages) {
-      decrypted.add(await _decryptMessage(m));
-    }
-    messages = decrypted;
+    messages = List<ChatMessageModel>.from(details.messages);
     supportSessions = details.supportSessions;
     activeAgentName = details.activeAgentName;
     emit(ChatSessionsUpdated(List.from(supportSessions)));

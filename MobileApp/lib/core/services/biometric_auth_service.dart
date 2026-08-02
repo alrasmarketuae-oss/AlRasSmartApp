@@ -196,11 +196,6 @@ class BiometricAuthService {
         await AuthService.instance.setLoginProviderName(provider);
       }
 
-      await AuthService.instance.setChatKeyWrapFromCredentials(
-        email: AuthService.instance.currentUserEmail,
-        userId: AuthService.instance.currentUserID,
-      );
-
       return AuthService.instance.isAuthenticated;
     } catch (e) {
       debugPrint('Biometric restore failed: $e');

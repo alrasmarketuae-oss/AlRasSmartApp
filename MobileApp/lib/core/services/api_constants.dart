@@ -245,7 +245,4 @@ class ApiConstants {
   static String chatDeliveredEndPoint = '/Chat/delivered';
   static String chatConversationEndPoint = '/Chat/conversation';
   static String chatUnreadCountEndPoint = '/Chat/unread-count';
-  static String chatKeysMeEndPoint = '/Chat/keys/me';
-  static String chatKeysMePrivateEndPoint = '/Chat/keys/me/private';
-  static String chatKeyByUserEndPoint(String userId) => '/Chat/keys/$userId';
 }

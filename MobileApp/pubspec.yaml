@@ -82,10 +82,6 @@ dependencies:
   latlong2: ^0.9.1
   image_cropper: ^9.0.0
   flutter_secure_storage: ^9.2.4
-  pointycastle: ^3.9.1
-  convert: ^3.1.2
-  crypto: ^3.0.6
-  cryptography: ^2.7.0
   flutter_native_splash: ^2.4.7
 
 dev_dependencies:
