@@ -94,7 +94,7 @@ internal static class AiAssistantKnowledgeSource
             سؤال: كيف أبدأ؟ ماذا أفعل أولاً؟ من أين أبدأ في التطبيق؟ كيف أستخدم التطبيق؟
             الإجابة: ابدأ بتسجيل الدخول أو إنشاء حساب، لأن معظم الإجراءات تحتاج حساباً.
             إن كنت مشترياً فرداً فأنشئ حسابك بجوجل أو أبل في ثوانٍ، ثم تصفح منتجات التجزئة في الصفحة الرئيسية أو ابحث عما تريد بالاسم أو بالصورة، ثم أضف إلى السلة وأكمل الشراء، وتابع طلبك من صفحة طلباتي.
-            إن كنت مورداً فأكمل التسجيل بالرخصة التجارية وصور الشركة وانتظر الاعتماد، ثم أنشئ إعلاناتك من زر إنشاء إعلان، وتابعها من صفحة الحساب، ورصيدك من صفحة الرصيد.
+            إن كنت مورداً فأكمل التسجيل بالرخصة التجارية وصور الشركة وانتظر الاعتماد، ثم أنشئ إعلاناتك من زر إنشاء إعلان، وتابعها من صفحة الحساب، ورصيدك من صفحة الرصيد. المورد يستطيع أيضاً الشراء وطلب البضائع مثل أي مشتري ويتابع مشترياته من صفحة طلباتي، بالإضافة لمتابعة الطلبات الواردة على إعلاناته.
             إن كنت شركة تشتري بالجملة فتصفح الأصناف، وإن لم تجد ما تريد فانشر إعلان Request من صفحة إنشاء طلب واستقبل العروض.
             إن كنت شركة شحن فأضف إعلان الشحن من الصفحة الرئيسية وأدر إعلاناتك من نفس المكان.
             في أي وقت يمكنك سؤالي عن أي خطوة، أو التواصل مع Live Chat لمساعدة بشرية.
@@ -104,7 +104,7 @@ internal static class AiAssistantKnowledgeSource
             Question: how do I start? What should I do first? Where do I begin in the app? How do I use the app?
             Answer: start by signing in or creating an account, because most actions require one.
             If you are an individual buyer, create your account with Google or Apple in seconds, then browse retail products on home or search by name or image, add to cart and complete the purchase, and follow your order from My Orders.
-            If you are a supplier, complete registration with your trade license and company images and wait for approval, then create listings from the Create Ad button, follow them from the Account page, and track earnings on the Balance page.
+            If you are a supplier, complete registration with your trade license and company images and wait for approval, then create listings from the Create Ad button, follow them from the Account page, and track earnings on the Balance page. Suppliers can also buy and place orders like any buyer and track those purchases from My Orders, in addition to incoming orders on their ads.
             If you are a company buying wholesale, browse the categories, and if you cannot find what you need publish a Request ad from the Create Order page and receive offers.
             If you are a shipping company, add your shipping ad from Home and manage your ads from the same place.
             At any time you can ask me about any step, or use Live Chat for human help.
@@ -160,6 +160,7 @@ internal static class AiAssistantKnowledgeSource
             الإجابة: كل مستخدم مسجل يستطيع: تصفح المنتجات المتاحة لنوع حسابه، والبحث بالنص أو بالصورة، وفتح تفاصيل الإعلانات، وحفظ الإعلانات المفضلة، وإدارة العناوين المحفوظة، وتعديل ملفه الشخصي وكلمة السر واللغة والبصمة، والتواصل مع Live Chat، وتصفح المساعدة والدعم.
             المشترون إضافة إلى ذلك: يشترون ويتابعون طلباتهم من صفحة طلباتي ويطلبون الاسترجاع للحالات المؤهلة.
             المورد داخل الإمارات ينشئ كل أنواع الإعلانات تقريباً. أما المورد المسجل برقم هاتف غير إماراتي والموجود خارج الإمارات فينشئ Booking فقط. ويدير المورد إعلانه من قسم إعلاناتي، ويتابع عروضه من قسم عروضي، ويتابع رصيده ويطلب السحب.
+            مهم: المورد يستطيع أيضاً الشراء وطلب المنتجات ومتابعة مشترياته من صفحة طلباتي مثل أي مشتري، فهذا غير مقتصر على العملاء فقط.
             عميل الشركة إضافة إلى ذلك: ينشر إعلانات Request ويستقبل العروض ويقبل أو يرفض.
             شركة الشحن: تضيف إعلانات الشحن وتديرها فقط.
             """);
@@ -169,6 +170,7 @@ internal static class AiAssistantKnowledgeSource
             Answer: every signed-in user can browse the products available to their account type, search by text or image, open listing details, save favourite listings, manage saved addresses, edit their profile, password, language, and biometric unlock, use Live Chat, and read Help and Support.
             Buyers additionally purchase, follow their orders from My Orders, and request returns for eligible cases.
             UAE-based suppliers additionally create almost all ad types. A supplier registered with a non-UAE phone number and located outside the UAE can create Booking ads only. Suppliers manage listings in My Ads, follow bids in My Offers, and track balance and request withdrawals.
+            Important: suppliers can also buy products, place orders, and track their purchases from My Orders like any buyer — buying is not limited to customer accounts.
             Company customers additionally publish Request ads and receive, accept, or reject offers.
             Shipping companies add and manage shipping ads only.
             """);
@@ -292,7 +294,7 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "account-types", "أنواع الحسابات في سوق الراس", "ar", All,
             """
             توجد خمس حالات للمستخدم: الزائر (غير مسجل)، والمورد (Supplier)، والعميل الفردي (Personal customer)، وعميل الشركة (Company customer)، وشركة الشحن (Shipping company).
-            المورد: شركة تبيع وتعرض بضائعها؛ المورد داخل الإمارات ينشئ معظم أنواع الإعلانات، والمورد خارج الإمارات المسجل برقم غير إماراتي ينشئ Booking فقط. والمورد هو الوحيد الذي لديه صفحة الرصيد.
+            المورد: شركة تبيع وتعرض بضائعها؛ المورد داخل الإمارات ينشئ معظم أنواع الإعلانات، والمورد خارج الإمارات المسجل برقم غير إماراتي ينشئ Booking فقط. والمورد هو الوحيد الذي لديه صفحة الرصيد. والمورد يستطيع أيضاً الشراء والطلب من المنصة ومتابعة مشترياته من طلباتي.
             العميل الفردي: مشترٍ أفراد، يشتري منتجات التجزئة فقط ولا ينشئ إعلانات.
             عميل الشركة: شركة تشتري بالجملة، تتصفح الأصناف وأنواع الإعلانات وتنشئ إعلان طلب (Request) فقط.
             شركة الشحن: تعرض خدمات الشحن من ميناء إلى ميناء فقط.
@@ -301,7 +303,7 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "account-types", "Account types on Al Ras Market", "en", All,
             """
             There are five user states: Guest (not signed in), Supplier, Personal customer, Company customer, and Shipping company.
-            Supplier: a company that sells and lists goods. A UAE-based supplier can create most ad types, while an overseas supplier registered with a non-UAE phone number can create Booking only. Supplier is the only account with a Balance page.
+            Supplier: a company that sells and lists goods. A UAE-based supplier can create most ad types, while an overseas supplier registered with a non-UAE phone number can create Booking only. Supplier is the only account with a Balance page. Suppliers can also buy from the marketplace and track their purchases in My Orders.
             Personal customer: an individual buyer who purchases retail products and cannot create ads.
             Company customer: a company that buys wholesale, browses categories and ad types, and can create Request ads only.
             Shipping company: publishes port-to-port shipping services only.
@@ -382,6 +384,7 @@ internal static class AiAssistantKnowledgeSource
             منتجات الصفحة الرئيسية هي منتجات الأصناف فقط، أي المنتجات التي لها CategoryId، وليست أنواع الخدمات وحدها.
             البار السفلي للمورد يشمل: الصفحة الرئيسية، إنشاء إعلان، طلباتي (My Orders)، الحساب (Account)، الملف الشخصي (Profile).
             صفحة الحساب تنقسم إلى قسمين: إعلاناتي (My Ads) وعروضي (My Offers).
+            صفحة طلباتي للمورد تعرض مشترياته (الطلبات التي اشتراها كمشترٍ)، والمورد يستطيع الشراء والطلب كأي مشتري بالإضافة لمتابعة الطلبات الواردة على إعلاناته.
             المورد هو النوع الوحيد الذي يرى صفحة الرصيد (Balance) داخل الملف الشخصي.
             """);
         Add(chunks, "supplier-nav", "Supplier interface and navigation", "en", ["supplier"],
@@ -390,6 +393,7 @@ internal static class AiAssistantKnowledgeSource
             Home products are category products only, meaning items that have a CategoryId, not the service types alone.
             The supplier bottom bar includes: Home, Create Ad, My Orders, Account, and Profile.
             The Account page has two sections: My Ads and My Offers.
+            My Orders for a supplier shows purchases they placed as a buyer; suppliers can buy and order like any buyer, in addition to incoming orders on their ads.
             Supplier is the only account type that sees the Balance page inside Profile.
             """);
 

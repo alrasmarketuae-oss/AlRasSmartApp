@@ -165,13 +165,56 @@ public sealed partial class AiAssistantMcpToolsService(
             {
                 name = "get_my_sales_count",
                 description =
-                    "Seller sales summary for the signed-in user: completed received/delivered sales count AND earnings (sum of order totals), " +
-                    "plus pending/open orders grouped by product name (e.g. there are pending orders on product X). " +
-                    "Always mention both completed sales/earnings and any pending orders by product name when present.",
+                    "SELLER ONLY — summary of customer orders ON THIS USER'S ADS (الطلبات على إعلاناتي / مبيعاتي): " +
+                    "completed received/delivered sales count AND earnings, plus pending/open orders grouped by product name. " +
+                    "NEVER use for My Orders / طلباتي (purchases this user made as a buyer). " +
+                    "Use when they ask about sales, orders on my ads, طلبات على إعلاناتي, مبيعاتي.",
                 parameters = new
                 {
                     type = "object",
                     properties = new { },
+                    additionalProperties = false
+                }
+            }
+        },
+        new
+        {
+            type = "function",
+            function = new
+            {
+                name = "get_last_order_on_my_ads",
+                description =
+                    "SELLER ONLY — the latest customer order placed ON this user's ads (آخر طلب على إعلاناتي). " +
+                    "NEVER use for My Orders / طلباتي. For the user's own purchase use get_my_last_order instead.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new { },
+                    additionalProperties = false
+                }
+            }
+        },
+        new
+        {
+            type = "function",
+            function = new
+            {
+                name = "explain_order_delay_on_my_ads",
+                description =
+                    "SELLER ONLY — explain why a customer order on this user's ads may be delayed. " +
+                    "Defaults to the latest incoming ad order; pass order_id for a specific one. " +
+                    "NEVER use for the user's own purchases (use explain_my_order_delay for طلباتي).",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        order_id = new
+                        {
+                            type = "string",
+                            description = "Optional numeric order id on the seller's ads."
+                        }
+                    },
                     additionalProperties = false
                 }
             }
@@ -317,8 +360,9 @@ public sealed partial class AiAssistantMcpToolsService(
             {
                 name = "get_my_purchase_summary",
                 description =
-                    "Buyer spending summary for the signed-in user: how much they bought/spent (goods + VAT + shipping), " +
-                    "order counts, and open vs delivered totals. Use for questions like اشتريت بكام / how much did I spend.",
+                    "AS BUYER — how much THIS USER spent on purchases they placed (My Orders / طلباتي / اشتريت بكام). " +
+                    "Works for suppliers too: suppliers can buy. " +
+                    "NEVER use for sales or orders customers placed on this user's ads (use get_my_sales_count).",
                 parameters = new
                 {
                     type = "object",
@@ -334,8 +378,9 @@ public sealed partial class AiAssistantMcpToolsService(
             {
                 name = "get_my_last_order",
                 description =
-                    "Return the signed-in buyer's most recent order with product, amount, status, payment, and delayAnalysis. " +
-                    "Use for هاتلي آخر اوردر / last order / my latest order.",
+                    "AS BUYER — THIS USER's most recent purchase in My Orders (طلباتي / هاتلي آخر اوردر). " +
+                    "Works for suppliers too: suppliers can place orders and track them here. " +
+                    "NEVER use for orders on the seller's ads (use get_last_order_on_my_ads).",
                 parameters = new
                 {
                     type = "object",
@@ -351,9 +396,10 @@ public sealed partial class AiAssistantMcpToolsService(
             {
                 name = "explain_my_order_delay",
                 description =
-                    "Explain why the buyer's order may still be pending/delayed using live status + timeline. " +
-                    "Defaults to the latest order; pass order_id when the user names a specific order. " +
-                    "Use for آخر اوردر متأخر ليه / why is my order late.",
+                    "AS BUYER — why THIS USER's purchase in My Orders may be delayed (آخر اوردر متأخر ليه in طلباتي). " +
+                    "Works for suppliers too when asking about an order they bought. " +
+                    "Defaults to latest buyer order; pass order_id if specified. " +
+                    "NEVER use for delays on ads (use explain_order_delay_on_my_ads).",
                 parameters = new
                 {
                     type = "object",
@@ -362,7 +408,7 @@ public sealed partial class AiAssistantMcpToolsService(
                         order_id = new
                         {
                             type = "string",
-                            description = "Optional numeric order id. Omit to use the latest buyer order."
+                            description = "Optional numeric order id from My Orders."
                         }
                     },
                     additionalProperties = false
@@ -389,6 +435,10 @@ public sealed partial class AiAssistantMcpToolsService(
                     call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
                 "get_my_sales_count" => await GetMySalesCountAsync(
                     userId, cancellationToken).ConfigureAwait(false),
+                "get_last_order_on_my_ads" => await GetLastOrderOnMyAdsAsync(
+                    userId, cancellationToken).ConfigureAwait(false),
+                "explain_order_delay_on_my_ads" => await ExplainOrderDelayOnMyAdsAsync(
+                    userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
                 "set_ad_listing_status" => await SetAdListingStatusAsync(
                     userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
                 "mark_ad_sold_out" => await MarkAdSoldOutAsync(
@@ -1108,6 +1158,10 @@ public sealed partial class AiAssistantMcpToolsService(
         return Json(new
         {
             ok = true,
+            perspective = "as_seller",
+            meaning =
+                "Customer orders ON this user's ads (الطلبات على إعلاناتي / مبيعاتي). " +
+                "Not this user's purchases in My Orders (طلباتي).",
             completedSalesCount = completed.Count,
             completedSalesEarnings = completed.Sum(x => x.TotalPrice),
             pendingOrdersCount = pending.Count,
@@ -1116,9 +1170,9 @@ public sealed partial class AiAssistantMcpToolsService(
             statusLabelAr = "تم الاستلام",
             statusLabelEn = "Received",
             instruction =
-                "Tell the seller both: (1) completed received/delivered sales count and earnings total, " +
-                "and (2) if pendingByProduct is not empty, clearly say there are pending orders on each product by name " +
-                "(e.g. هناك طلبات معلّقة على منتج saffron). Do not invent products."
+                "Speak as SELLER about orders on THEIR ads. Tell: (1) completed sales count + earnings, " +
+                "and (2) pending orders per product name if pendingByProduct is not empty. " +
+                "Never call these طلباتي / My Orders."
         });
     }
 

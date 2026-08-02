@@ -46,6 +46,8 @@ public sealed partial class AiAssistantMcpToolsService
         return Json(new
         {
             ok = true,
+            perspective = "as_buyer",
+            meaning = "Purchases this user made (My Orders / طلباتي). Not orders on their ads.",
             currency = "AED",
             orderCount = rows.Count,
             deliveredOrderCount = delivered.Count,
@@ -55,8 +57,8 @@ public sealed partial class AiAssistantMcpToolsService
             shippingTotal,
             estimatedChargedTotal = goodsTotal + vatTotal + shippingTotal,
             instruction =
-                "Answer how much the buyer spent using estimatedChargedTotal (goods + VAT + shipping) in AED. " +
-                "Also mention orderCount and openOrderCount when useful. Do not invent amounts."
+                "This is BUYER spend (طلباتي). Answer how much THEY bought using estimatedChargedTotal in AED. " +
+                "Do NOT confuse with sales on their ads. Do not invent amounts."
         });
     }
 
@@ -69,9 +71,10 @@ public sealed partial class AiAssistantMcpToolsService
             return Json(new { ok = false, error = "Sign in to view your last order." });
         }
 
-        var snapshot = await LoadBuyerOrderSnapshotAsync(
+        var snapshot = await LoadOrderSnapshotAsync(
                 userId.Value,
                 orderId: null,
+                asSeller: false,
                 cancellationToken)
             .ConfigureAwait(false);
         if (snapshot is null)
@@ -80,7 +83,8 @@ public sealed partial class AiAssistantMcpToolsService
             {
                 ok = true,
                 found = false,
-                message = "No orders found for this account as a buyer."
+                perspective = "as_buyer",
+                message = "No orders found for this account as a buyer (My Orders / طلباتي)."
             });
         }
 
@@ -88,10 +92,12 @@ public sealed partial class AiAssistantMcpToolsService
         {
             ok = true,
             found = true,
+            perspective = "as_buyer",
+            meaning = "Last purchase this user placed as a buyer (طلباتي). Not an order on their ads.",
             order = snapshot,
             instruction =
-                "Summarize the last order clearly: order id, product name, amount, status (AR/EN), " +
-                "payment method, and created date. If the user asked why it is delayed, use delayAnalysis."
+                "Summarize THIS USER's last BUYER order (طلباتي): order id, product, amount, status. " +
+                "Never present it as an order on their listings."
         });
     }
 
@@ -105,23 +111,11 @@ public sealed partial class AiAssistantMcpToolsService
             return Json(new { ok = false, error = "Sign in to check order status." });
         }
 
-        using var args = System.Text.Json.JsonDocument.Parse(
-            string.IsNullOrWhiteSpace(argumentsJson) ? "{}" : argumentsJson);
-        long? orderId = null;
-        var rawId = GetString(args.RootElement, "order_id");
-        if (!string.IsNullOrWhiteSpace(rawId) && long.TryParse(rawId.Trim(), out var parsed))
-        {
-            orderId = parsed;
-        }
-        else
-        {
-            var asLong = GetLong(args.RootElement, "order_id");
-            if (asLong is > 0) orderId = asLong;
-        }
-
-        var snapshot = await LoadBuyerOrderSnapshotAsync(
+        var orderId = ParseOptionalOrderId(argumentsJson);
+        var snapshot = await LoadOrderSnapshotAsync(
                 userId.Value,
                 orderId,
+                asSeller: false,
                 cancellationToken)
             .ConfigureAwait(false);
         if (snapshot is null)
@@ -130,9 +124,10 @@ public sealed partial class AiAssistantMcpToolsService
             {
                 ok = true,
                 found = false,
+                perspective = "as_buyer",
                 message = orderId.HasValue
-                    ? $"No buyer order #{orderId.Value} was found on this account."
-                    : "No orders found for this account as a buyer."
+                    ? $"No buyer order #{orderId.Value} was found in My Orders (طلباتي)."
+                    : "No orders found for this account as a buyer (طلباتي)."
             });
         }
 
@@ -140,17 +135,117 @@ public sealed partial class AiAssistantMcpToolsService
         {
             ok = true,
             found = true,
+            perspective = "as_buyer",
+            meaning = "Delay explanation for a purchase this user made (طلباتي).",
             order = snapshot,
             instruction =
-                "Explain the current status in plain language using delayAnalysis. " +
-                "Do not invent courier tracking numbers or private supplier reasons. " +
-                "If likelyDelayed is true, say it may be waiting on the stage in currentStageHint and suggest Live Chat if they need an update."
+                "Explain delay for THIS USER's BUYER order using delayAnalysis. " +
+                "Do not invent courier tracking. Do not treat this as a seller-ad order."
         });
     }
 
-    private async Task<object?> LoadBuyerOrderSnapshotAsync(
-        Guid buyerId,
+    private async Task<string> GetLastOrderOnMyAdsAsync(
+        Guid? userId,
+        CancellationToken cancellationToken)
+    {
+        if (!userId.HasValue)
+        {
+            return Json(new { ok = false, error = "Sign in to view orders on your ads." });
+        }
+
+        var snapshot = await LoadOrderSnapshotAsync(
+                userId.Value,
+                orderId: null,
+                asSeller: true,
+                cancellationToken)
+            .ConfigureAwait(false);
+        if (snapshot is null)
+        {
+            return Json(new
+            {
+                ok = true,
+                found = false,
+                perspective = "as_seller",
+                message = "No customer orders found on this account's ads (الطلبات على إعلاناتي)."
+            });
+        }
+
+        return Json(new
+        {
+            ok = true,
+            found = true,
+            perspective = "as_seller",
+            meaning =
+                "Last order a CUSTOMER placed on this seller's ads (الطلبات على إعلاناتي). " +
+                "Not this user's own purchases in My Orders.",
+            order = snapshot,
+            instruction =
+                "Summarize the last INCOMING order on the seller's ads: order id, product (their ad), amount, status. " +
+                "Never call this طلباتي / My Orders."
+        });
+    }
+
+    private async Task<string> ExplainOrderDelayOnMyAdsAsync(
+        Guid? userId,
+        string argumentsJson,
+        CancellationToken cancellationToken)
+    {
+        if (!userId.HasValue)
+        {
+            return Json(new { ok = false, error = "Sign in to check orders on your ads." });
+        }
+
+        var orderId = ParseOptionalOrderId(argumentsJson);
+        var snapshot = await LoadOrderSnapshotAsync(
+                userId.Value,
+                orderId,
+                asSeller: true,
+                cancellationToken)
+            .ConfigureAwait(false);
+        if (snapshot is null)
+        {
+            return Json(new
+            {
+                ok = true,
+                found = false,
+                perspective = "as_seller",
+                message = orderId.HasValue
+                    ? $"No seller-side order #{orderId.Value} was found on this account's ads."
+                    : "No customer orders found on this account's ads."
+            });
+        }
+
+        return Json(new
+        {
+            ok = true,
+            found = true,
+            perspective = "as_seller",
+            meaning = "Delay explanation for a customer order on the seller's ads.",
+            order = snapshot,
+            instruction =
+                "Explain why this INCOMING ad order may still be pending using delayAnalysis. " +
+                "Speak to the seller about their listing order, not their personal purchases."
+        });
+    }
+
+    private static long? ParseOptionalOrderId(string argumentsJson)
+    {
+        using var args = System.Text.Json.JsonDocument.Parse(
+            string.IsNullOrWhiteSpace(argumentsJson) ? "{}" : argumentsJson);
+        var rawId = GetString(args.RootElement, "order_id");
+        if (!string.IsNullOrWhiteSpace(rawId) && long.TryParse(rawId.Trim(), out var parsed))
+        {
+            return parsed;
+        }
+
+        var asLong = GetLong(args.RootElement, "order_id");
+        return asLong is > 0 ? asLong : null;
+    }
+
+    private async Task<object?> LoadOrderSnapshotAsync(
+        Guid userId,
         long? orderId,
+        bool asSeller,
         CancellationToken cancellationToken)
     {
         var query =
@@ -165,7 +260,7 @@ public sealed partial class AiAssistantMcpToolsService
             from t in tj.DefaultIfEmpty()
             join u in dbContext.Units.AsNoTracking() on o.UnitId equals u.Id into uj
             from u in uj.DefaultIfEmpty()
-            where o.FromUserId == buyerId
+            where asSeller ? o.ToUserId == userId : o.FromUserId == userId
             select new
             {
                 o.Id,
@@ -272,6 +367,7 @@ public sealed partial class AiAssistantMcpToolsService
 
         return new
         {
+            perspective = asSeller ? "as_seller" : "as_buyer",
             orderId = row.Id,
             productId = row.ProductId,
             productCode = row.ProductCode,
