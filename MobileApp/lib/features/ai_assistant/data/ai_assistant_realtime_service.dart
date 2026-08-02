@@ -20,6 +20,7 @@ class AiAssistantRealtimeService {
 
   Future<void> connect({
     required void Function(bool value) onThinking,
+    required void Function(String step) onThinkingStep,
     required void Function() onResponseStarted,
     required void Function(String value) onDelta,
     required void Function(String answer) onCompleted,
@@ -54,6 +55,11 @@ class AiAssistantRealtimeService {
       if (_closed || generation != _connectGeneration) return;
       final data = _map(args);
       onThinking(data?['isThinking'] == true);
+    });
+    hub.on('aiThinkingStep', (args) {
+      if (_closed || generation != _connectGeneration) return;
+      final value = _map(args)?['text']?.toString().trim() ?? '';
+      if (value.isNotEmpty) onThinkingStep(value);
     });
     hub.on('aiResponseStarted', (_) {
       if (_closed || generation != _connectGeneration) return;

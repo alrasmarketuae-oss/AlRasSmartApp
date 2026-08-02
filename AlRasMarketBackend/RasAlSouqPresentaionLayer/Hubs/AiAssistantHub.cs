@@ -70,6 +70,13 @@ public sealed class AiAssistantHub(IAiAssistantAppService assistant) : Hub
                 GetCurrentUserId(),
                 new AiAssistantAskRequest { Message = text, Language = language },
                 session.Snapshot(),
+                async (step, ct) =>
+                {
+                    await Clients.Caller.SendAsync(
+                        "aiThinkingStep",
+                        new { text = step },
+                        ct);
+                },
                 Context.ConnectionAborted);
 
             session.Add("user", text);

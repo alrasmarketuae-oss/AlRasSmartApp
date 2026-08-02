@@ -99,7 +99,9 @@ class MyOrderModel {
   final String chargedGrandTotalFormatted;
 
   double get displayTotalPrice {
+    // Prefer checkout snapshot fields; never invent from a drifted customerTotal alone.
     if (chargedGrandTotalAed > 0) return chargedGrandTotalAed;
+    if (totalPrice > 0) return totalPrice;
     if (customerTotalPrice > 0) return customerTotalPrice;
     return totalPrice;
   }

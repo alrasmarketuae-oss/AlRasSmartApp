@@ -32,6 +32,7 @@ public sealed class AiAssistantController(IAiAssistantAppService assistant) : Co
                 userId,
                 request,
                 history: null,
+                onThinkingStep: null,
                 cancellationToken);
             return Ok(result);
         }

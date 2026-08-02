@@ -204,6 +204,7 @@ public sealed class AiAssistantAppService(
         Guid? userId,
         AiAssistantAskRequest request,
         IReadOnlyList<AiAssistantHistoryMessage>? history = null,
+        Func<string, CancellationToken, Task>? onThinkingStep = null,
         CancellationToken cancellationToken = default)
     {
         var message = (request.Message ?? string.Empty).Trim();
@@ -219,8 +220,23 @@ public sealed class AiAssistantAppService(
         var greetingName = string.IsNullOrWhiteSpace(account.DisplayName)
             ? string.Empty
             : $" {account.DisplayName}";
+
+        var snippet = message.Length <= 120 ? message : message[..117] + "...";
+        await ReportThinkingAsync(
+                onThinkingStep,
+                language == "ar"
+                    ? $"المستخدم بيسأل: «{snippet}»"
+                    : $"The user is asking: \"{snippet}\"",
+                cancellationToken)
+            .ConfigureAwait(false);
+
         if (IsGreeting(message))
         {
+            await ReportThinkingAsync(
+                    onThinkingStep,
+                    language == "ar" ? "ده سلام — هرد ترحيب مباشر." : "This is a greeting — replying directly.",
+                    cancellationToken)
+                .ConfigureAwait(false);
             return new AiAssistantAnswer(
                 language == "ar"
                     ? $"أهلاً بيك{greetingName}. أنا وكيل الراس. أقدر أساعدك في الحسابات والإعلانات والطلبات والدفع والاسترجاع والبحث بالصور."
@@ -232,6 +248,13 @@ public sealed class AiAssistantAppService(
 
         if (IsClearlyOutOfScope(message))
         {
+            await ReportThinkingAsync(
+                    onThinkingStep,
+                    language == "ar"
+                        ? "السؤال برا نطاق سوق الراس — هوضّح الحدود."
+                        : "Question is outside Al Ras Market — explaining the scope.",
+                    cancellationToken)
+                .ConfigureAwait(false);
             return new AiAssistantAnswer(
                 language == "ar"
                     ? $"{(string.IsNullOrWhiteSpace(account.DisplayName) ? "" : account.DisplayName + "، ")}أقدر أساعدك في أمور سوق الراس بس، زي الحسابات والإعلانات والطلبات والدفع والاسترجاع والبحث."
@@ -244,6 +267,14 @@ public sealed class AiAssistantAppService(
         var audience = account.Audience;
         try
         {
+            await ReportThinkingAsync(
+                    onThinkingStep,
+                    language == "ar"
+                        ? "بدور في معرفة سوق الراس…"
+                        : "Searching Al Ras Market knowledge…",
+                    cancellationToken)
+                .ConfigureAwait(false);
+
             // Follow-ups like "and after that?" are meaningless alone, so retrieval
             // is done on the recent turns plus the new message.
             var retrievalQuery = BuildRetrievalQuery(message, history);
@@ -269,6 +300,26 @@ public sealed class AiAssistantAppService(
                     .ConfigureAwait(false);
             }
 
+            await ReportThinkingAsync(
+                    onThinkingStep,
+                    hits.Count > 0
+                        ? (language == "ar"
+                            ? $"لقيت {hits.Count} مصدر معرفة مناسب."
+                            : $"Found {hits.Count} relevant knowledge source(s).")
+                        : (language == "ar"
+                            ? "مفيش تطابق قوي في المعرفة — هكمّل بالأدوات الحية لو محتاج."
+                            : "No strong knowledge match — continuing with live tools if needed."),
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            await ReportThinkingAsync(
+                    onThinkingStep,
+                    language == "ar"
+                        ? "بسأل نموذج الراس الذكي وأشوف لو محتاج أدوات…"
+                        : "Asking Alras Smart and checking whether tools are needed…",
+                    cancellationToken)
+                .ConfigureAwait(false);
+
             // Still generate when knowledge is empty: tools (price/qty/sales/cheapest)
             // can answer live marketplace questions without RAG hits.
             var answer = await GenerateGroundedAnswerAsync(
@@ -278,6 +329,13 @@ public sealed class AiAssistantAppService(
                     hits,
                     history,
                     userId,
+                    onThinkingStep,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            await ReportThinkingAsync(
+                    onThinkingStep,
+                    language == "ar" ? "بجهّز الرد النهائي…" : "Preparing the final answer…",
                     cancellationToken)
                 .ConfigureAwait(false);
 
@@ -303,6 +361,7 @@ public sealed class AiAssistantAppService(
         IReadOnlyList<AiKnowledgeHit> hits,
         IReadOnlyList<AiAssistantHistoryMessage>? history,
         Guid? userId,
+        Func<string, CancellationToken, Task>? onThinkingStep,
         CancellationToken cancellationToken)
     {
         var apiKey = configuration["OpenAI:ApiKey"];
@@ -415,8 +474,22 @@ public sealed class AiAssistantAppService(
                 _options.ChatModel,
                 messages,
                 userId,
+                onThinkingStep,
                 cancellationToken)
             .ConfigureAwait(false);
+    }
+
+    private static async Task ReportThinkingAsync(
+        Func<string, CancellationToken, Task>? onThinkingStep,
+        string step,
+        CancellationToken cancellationToken)
+    {
+        if (onThinkingStep is null || string.IsNullOrWhiteSpace(step))
+        {
+            return;
+        }
+
+        await onThinkingStep(step.Trim(), cancellationToken).ConfigureAwait(false);
     }
 
     private static string BuildRetrievalQuery(

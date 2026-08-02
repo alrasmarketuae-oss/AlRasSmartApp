@@ -66,6 +66,7 @@ public interface IAiAssistantAppService
         Guid? userId,
         AiAssistantAskRequest request,
         IReadOnlyList<AiAssistantHistoryMessage>? history = null,
+        Func<string, CancellationToken, Task>? onThinkingStep = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>

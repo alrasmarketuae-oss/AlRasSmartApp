@@ -40,6 +40,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   final _realtime = AiAssistantRealtimeService();
   Future<void>? _connectFuture;
   bool _isThinking = false;
+  final List<String> _thinkingSteps = [];
 
   @override
   void initState() {
@@ -71,6 +72,13 @@ class _AiAssistantViewState extends State<AiAssistantView> {
       _messages.add(_ChatMessage(text: text, isUser: true));
       _controller.clear();
       _isThinking = true;
+      _thinkingSteps
+        ..clear()
+        ..add(
+          Localizations.localeOf(context).languageCode == 'ar'
+              ? 'بفكر في سؤالك…'
+              : 'Thinking about your question…',
+        );
     });
     _scrollToEnd();
 
@@ -91,21 +99,47 @@ class _AiAssistantViewState extends State<AiAssistantView> {
     await _realtime.connect(
       onThinking: (value) {
         if (!mounted) return;
-        setState(() => _isThinking = value);
+        setState(() {
+          _isThinking = value;
+          if (!value) {
+            // Keep steps until the answer bubble claims them.
+          }
+        });
+        _scrollToEnd();
+      },
+      onThinkingStep: (step) {
+        if (!mounted) return;
+        setState(() {
+          _isThinking = true;
+          if (_thinkingSteps.isEmpty || _thinkingSteps.last != step) {
+            _thinkingSteps.add(step);
+          }
+        });
         _scrollToEnd();
       },
       onResponseStarted: () {
         if (!mounted) return;
+        final trace = List<String>.from(_thinkingSteps);
         setState(() {
           _isThinking = false;
-          _messages.add(_ChatMessage(text: '', isUser: false));
+          _thinkingSteps.clear();
+          _messages.add(
+            _ChatMessage(text: '', isUser: false, thinkingSteps: trace),
+          );
         });
       },
       onDelta: (value) {
         if (!mounted) return;
         setState(() {
           if (_messages.isEmpty || _messages.last.isUser) {
-            _messages.add(_ChatMessage(text: value, isUser: false));
+            _messages.add(
+              _ChatMessage(
+                text: value,
+                isUser: false,
+                thinkingSteps: List<String>.from(_thinkingSteps),
+              ),
+            );
+            _thinkingSteps.clear();
           } else {
             _messages.last.text += value;
           }
@@ -122,10 +156,23 @@ class _AiAssistantViewState extends State<AiAssistantView> {
                   _messages.last.text.isEmpty)) {
             if (_messages.isNotEmpty && !_messages.last.isUser) {
               _messages.last.text = answer;
+              if (_messages.last.thinkingSteps.isEmpty &&
+                  _thinkingSteps.isNotEmpty) {
+                _messages.last.thinkingSteps
+                  ..clear()
+                  ..addAll(_thinkingSteps);
+              }
             } else {
-              _messages.add(_ChatMessage(text: answer, isUser: false));
+              _messages.add(
+                _ChatMessage(
+                  text: answer,
+                  isUser: false,
+                  thinkingSteps: List<String>.from(_thinkingSteps),
+                ),
+              );
             }
           }
+          _thinkingSteps.clear();
         });
         _scrollToEnd();
       },
@@ -138,6 +185,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
     setState(() {
       _isThinking = false;
+      _thinkingSteps.clear();
       _messages.add(
         _ChatMessage(
           text: isAr
@@ -174,7 +222,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
               itemCount: _messages.length + (_isThinking ? 1 : 0),
               itemBuilder: (context, index) {
                 if (_isThinking && index == _messages.length) {
-                  return const _ThinkingBubble();
+                  return _ThinkingBubble(steps: List<String>.from(_thinkingSteps));
                 }
                 return _MessageBubble(message: _messages[index]);
               },
@@ -346,9 +394,15 @@ class _AiAvatar extends StatelessWidget {
 }
 
 class _ChatMessage {
-  _ChatMessage({required this.text, required this.isUser});
+  _ChatMessage({
+    required this.text,
+    required this.isUser,
+    List<String>? thinkingSteps,
+  }) : thinkingSteps = thinkingSteps ?? <String>[];
+
   String text;
   final bool isUser;
+  final List<String> thinkingSteps;
 }
 
 class _MessageBubble extends StatelessWidget {
@@ -358,6 +412,7 @@ class _MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isUser = message.isUser;
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
     final bubble = Container(
       padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 11.h),
       constraints: BoxConstraints(maxWidth: 0.72.sw),
@@ -382,13 +437,27 @@ class _MessageBubble extends StatelessWidget {
         ],
       ),
       child: SelectionArea(
-        child: _LinkifiedMessageText(
-          text: message.text,
-          style: TextStyle(
-            color: isUser ? Colors.white : const Color(0xFF1F2937),
-            fontSize: 13.sp,
-            height: 1.5,
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!isUser && message.thinkingSteps.isNotEmpty) ...[
+              _ThinkingTrace(
+                steps: message.thinkingSteps,
+                title: isAr ? 'التفكير' : 'Thinking',
+                initiallyExpanded: false,
+              ),
+              SizedBox(height: 8.h),
+            ],
+            if (message.text.isNotEmpty)
+              _LinkifiedMessageText(
+                text: message.text,
+                style: TextStyle(
+                  color: isUser ? Colors.white : const Color(0xFF1F2937),
+                  fontSize: 13.sp,
+                  height: 1.5,
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -410,8 +479,6 @@ class _MessageBubble extends StatelessWidget {
               onLongPress: () async {
                 await Clipboard.setData(ClipboardData(text: message.text));
                 if (!context.mounted) return;
-                final isAr =
-                    Localizations.localeOf(context).languageCode == 'ar';
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
@@ -426,6 +493,98 @@ class _MessageBubble extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ThinkingTrace extends StatefulWidget {
+  const _ThinkingTrace({
+    required this.steps,
+    required this.title,
+    this.initiallyExpanded = true,
+    this.live = false,
+  });
+
+  final List<String> steps;
+  final String title;
+  final bool initiallyExpanded;
+  final bool live;
+
+  @override
+  State<_ThinkingTrace> createState() => _ThinkingTraceState();
+}
+
+class _ThinkingTraceState extends State<_ThinkingTrace> {
+  late bool _expanded = widget.initiallyExpanded;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.steps.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap: () => setState(() => _expanded = !_expanded),
+          borderRadius: BorderRadius.circular(8.r),
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 2.h),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  _expanded
+                      ? Icons.expand_more_rounded
+                      : Icons.chevron_right_rounded,
+                  size: 16.sp,
+                  color: const Color(0xFF9CA3AF),
+                ),
+                SizedBox(width: 2.w),
+                Text(
+                  widget.title,
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF6B7280),
+                  ),
+                ),
+                if (widget.live) ...[
+                  SizedBox(width: 6.w),
+                  Text(
+                    '…',
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      color: const Color(0xFF9CA3AF),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        if (_expanded)
+          Padding(
+            padding: EdgeInsetsDirectional.only(start: 4.w, top: 4.h),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final step in widget.steps)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: 4.h),
+                    child: Text(
+                      step,
+                      style: TextStyle(
+                        fontSize: 10.5.sp,
+                        height: 1.35,
+                        color: const Color(0xFF9CA3AF),
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }
@@ -486,7 +645,9 @@ class _LinkifiedMessageText extends StatelessWidget {
 }
 
 class _ThinkingBubble extends StatefulWidget {
-  const _ThinkingBubble();
+  const _ThinkingBubble({required this.steps});
+
+  final List<String> steps;
 
   @override
   State<_ThinkingBubble> createState() => _ThinkingBubbleState();
@@ -514,6 +675,7 @@ class _ThinkingBubbleState extends State<_ThinkingBubble>
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
     return Padding(
       padding: EdgeInsets.only(bottom: 12.h),
       child: Row(
@@ -521,57 +683,76 @@ class _ThinkingBubbleState extends State<_ThinkingBubble>
         children: [
           const _AiAvatar(size: 26),
           SizedBox(width: 8.w),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadiusDirectional.only(
-                topStart: Radius.circular(16.r),
-                topEnd: Radius.circular(16.r),
-                bottomEnd: Radius.circular(16.r),
-                bottomStart: Radius.circular(4.r),
+          Flexible(
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadiusDirectional.only(
+                  topStart: Radius.circular(16.r),
+                  topEnd: Radius.circular(16.r),
+                  bottomEnd: Radius.circular(16.r),
+                  bottomStart: Radius.circular(4.r),
+                ),
+                border: Border.all(color: const Color(0xFFE6EAF2)),
               ),
-              border: Border.all(color: const Color(0xFFE6EAF2)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  s.aiAssistantThinking,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: const Color(0xFF6B7280),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        s.aiAssistantThinking,
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF6B7280),
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      AnimatedBuilder(
+                        animation: _controller,
+                        builder: (context, _) {
+                          return Row(
+                            children: List.generate(3, (i) {
+                              final t = (_controller.value + i * 0.2) % 1.0;
+                              final opacity =
+                                  0.3 +
+                                  (0.7 *
+                                          (1 - (t - 0.5).abs() * 2)
+                                              .clamp(0.0, 1.0));
+                              return Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 2.w),
+                                child: Opacity(
+                                  opacity: opacity,
+                                  child: Container(
+                                    width: 6.w,
+                                    height: 6.w,
+                                    decoration: const BoxDecoration(
+                                      color: LightColor.defaultColor,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                          );
+                        },
+                      ),
+                    ],
                   ),
-                ),
-                SizedBox(width: 8.w),
-                AnimatedBuilder(
-                  animation: _controller,
-                  builder: (context, _) {
-                    return Row(
-                      children: List.generate(3, (i) {
-                        final t = (_controller.value + i * 0.2) % 1.0;
-                        final opacity =
-                            0.3 +
-                            (0.7 * (1 - (t - 0.5).abs() * 2).clamp(0.0, 1.0));
-                        return Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 2.w),
-                          child: Opacity(
-                            opacity: opacity,
-                            child: Container(
-                              width: 6.w,
-                              height: 6.w,
-                              decoration: const BoxDecoration(
-                                color: LightColor.defaultColor,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
-                    );
-                  },
-                ),
-              ],
+                  if (widget.steps.isNotEmpty) ...[
+                    SizedBox(height: 8.h),
+                    _ThinkingTrace(
+                      steps: widget.steps,
+                      title: isAr ? 'التفكير' : 'Thinking',
+                      initiallyExpanded: true,
+                      live: true,
+                    ),
+                  ],
+                ],
+              ),
             ),
           ),
         ],

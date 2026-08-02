@@ -42,64 +42,65 @@ public static class AdminOrderPricingHelper
             return;
         }
 
-        var supplierBasePrice = isRetailChannel && product.RetailPrice is > 0
-            ? product.RetailPrice.Value
-            : product.USDPrice;
-
-        var markedUpUsd = CustomerPriceCalculator.ApplyProductMarkup(
-            supplierBasePrice,
-            commissionProductTypeId,
-            commissionCategoryId,
-            settings,
-            categoryCommissions);
-
-        // Hybrids keep ProductTypeId=Retail; wholesale must present with category currency (USD).
+        // Buyer/admin order amounts must stay locked to checkout snapshot on the Order.
+        // Never reprice from the live Product listing — that drifts My Orders and stats
+        // whenever the seller later changes RetailPrice / USDPrice.
         var presentTypeId = isRetailChannel
             ? ProductTypeCodes.Retail
             : ProductTypeCodes.WholesaleCommissionProductTypeId(product.CategoryId, product.ProductTypeId);
         var presentCurrency = isRetailChannel
             ? "AED"
-            : product.Currency;
+            : ProductCurrencyHelper.Normalize(product.Currency, presentTypeId);
 
-        var supplierPrice = ProductPricePresenter.Present(
-            supplierBasePrice,
-            presentTypeId,
-            presentCurrency,
-            usdToAedRate);
+        var customerUnitPrice = decimal.Round(order.UnitPrice, 2, MidpointRounding.AwayFromZero);
+        var customerTotalPrice = decimal.Round(order.TotalPrice, 2, MidpointRounding.AwayFromZero);
+        if (customerUnitPrice <= 0 && customerTotalPrice > 0 && order.Quantity > 0)
+        {
+            customerUnitPrice = decimal.Round(
+                customerTotalPrice / order.Quantity,
+                2,
+                MidpointRounding.AwayFromZero);
+        }
+        else if (customerTotalPrice <= 0 && customerUnitPrice > 0)
+        {
+            customerTotalPrice = decimal.Round(
+                customerUnitPrice * order.Quantity,
+                2,
+                MidpointRounding.AwayFromZero);
+        }
 
-        var customerPrice = ProductPricePresenter.Present(
-            markedUpUsd,
-            presentTypeId,
-            presentCurrency,
-            usdToAedRate);
+        var supplierUnitPrice = CustomerPriceCalculator.RemovePercentMarkup(
+            customerUnitPrice,
+            commissionPercent);
+        var supplierTotalPrice = CustomerPriceCalculator.RemovePercentMarkup(
+            customerTotalPrice,
+            commissionPercent);
+        var appProfitAmount = decimal.Round(
+            customerTotalPrice - supplierTotalPrice,
+            2,
+            MidpointRounding.AwayFromZero);
 
-        var supplierUnitPrice = supplierPrice.Price;
-        var customerUnitPrice = customerPrice.Price;
-        var supplierTotalPrice = decimal.Round(supplierUnitPrice * order.Quantity, 2, MidpointRounding.AwayFromZero);
-        var customerTotalPrice = decimal.Round(customerUnitPrice * order.Quantity, 2, MidpointRounding.AwayFromZero);
-        var appProfitAmount = decimal.Round(customerTotalPrice - supplierTotalPrice, 2, MidpointRounding.AwayFromZero);
-
-        dto.Currency = customerPrice.Currency;
+        dto.Currency = presentCurrency;
         dto.CommissionPercent = commissionPercent;
         dto.SupplierUnitPrice = supplierUnitPrice;
         dto.SupplierTotalPrice = supplierTotalPrice;
         dto.CustomerUnitPrice = customerUnitPrice;
         dto.CustomerTotalPrice = customerTotalPrice;
         dto.AppProfitAmount = appProfitAmount;
-        dto.ChargedUnitPrice = order.UnitPrice;
+        dto.ChargedUnitPrice = customerUnitPrice;
         dto.ChargedTotalPrice = decimal.Round(order.TotalPrice + order.VatAed, 2, MidpointRounding.AwayFromZero);
-        dto.SupplierUnitPriceFormatted = FormatPrice(supplierUnitPrice, supplierPrice.Currency);
-        dto.SupplierTotalPriceFormatted = FormatPrice(supplierTotalPrice, supplierPrice.Currency);
-        dto.CustomerUnitPriceFormatted = FormatPrice(customerUnitPrice, customerPrice.Currency);
-        dto.CustomerTotalPriceFormatted = FormatPrice(customerTotalPrice, customerPrice.Currency);
-        dto.AppProfitFormatted = FormatPrice(appProfitAmount, customerPrice.Currency);
+        dto.SupplierUnitPriceFormatted = FormatPrice(supplierUnitPrice, presentCurrency);
+        dto.SupplierTotalPriceFormatted = FormatPrice(supplierTotalPrice, presentCurrency);
+        dto.CustomerUnitPriceFormatted = FormatPrice(customerUnitPrice, presentCurrency);
+        dto.CustomerTotalPriceFormatted = FormatPrice(customerTotalPrice, presentCurrency);
+        dto.AppProfitFormatted = FormatPrice(appProfitAmount, presentCurrency);
         dto.AmountFormatted = dto.CustomerTotalPriceFormatted;
 
         if (order.VatAed > 0)
         {
             var chargedTotal = dto.ChargedTotalPrice;
             dto.CustomerTotalPrice = chargedTotal;
-            dto.CustomerTotalPriceFormatted = FormatPrice(chargedTotal, customerPrice.Currency);
+            dto.CustomerTotalPriceFormatted = FormatPrice(chargedTotal, presentCurrency);
             dto.AmountFormatted = dto.CustomerTotalPriceFormatted;
         }
     }
@@ -115,13 +116,14 @@ public static class AdminOrderPricingHelper
             || ResolveCheckoutShippingAed(order) > 0
             || order.PendingOrderId.HasValue;
 
-        // Direct product orders (Requests offers / Booking / Offers): grand total =
-        // customer total with commission. Retail cart checkout keeps AED VAT/shipping path.
+        // Lock grand total to Order.TotalPrice (purchase snapshot), never live listing math.
         if (!hasAedCheckoutExtras)
         {
-            var productTotal = dto.CustomerTotalPrice > 0
-                ? dto.CustomerTotalPrice
-                : decimal.Round(order.TotalPrice, 2, MidpointRounding.AwayFromZero);
+            var productTotal = decimal.Round(order.TotalPrice, 2, MidpointRounding.AwayFromZero);
+            if (productTotal <= 0 && dto.CustomerTotalPrice > 0)
+            {
+                productTotal = dto.CustomerTotalPrice;
+            }
 
             dto.ChargedShippingAed = 0m;
             dto.ShippingCostAed = 0m;

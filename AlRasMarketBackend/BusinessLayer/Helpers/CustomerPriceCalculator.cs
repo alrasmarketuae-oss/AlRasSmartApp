@@ -41,6 +41,20 @@ public static class CustomerPriceCalculator
         return decimal.Round(basePrice * (1 + percent / 100m), 2, MidpointRounding.AwayFromZero);
     }
 
+    /// <summary>
+    /// Inverse of <see cref="ApplyPercentMarkup"/> for historical order economics
+    /// derived from locked customer (marked-up) amounts.
+    /// </summary>
+    public static decimal RemovePercentMarkup(decimal markedUpPrice, decimal percent)
+    {
+        if (markedUpPrice <= 0 || percent <= 0)
+        {
+            return markedUpPrice;
+        }
+
+        return decimal.Round(markedUpPrice / (1 + percent / 100m), 2, MidpointRounding.AwayFromZero);
+    }
+
     public static decimal ResolveCommissionPercent(
         byte? productTypeId,
         byte? categoryId,
