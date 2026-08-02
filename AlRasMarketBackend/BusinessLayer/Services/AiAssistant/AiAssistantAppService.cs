@@ -344,6 +344,9 @@ public sealed class AiAssistantAppService(
             - find_cheapest_product: find the cheapest approved public listing by product name (Arabic/English synonyms like هيل/cardamom). Hybrid ads expose wholesale and retail as separate candidates — use the tool's productCode for that channel (RetailCode when channel=retail). Report customerPrice AFTER commission with currency, channel, and quantity with unitName (never invent grams/kg).
             - find_most_expensive_product: same rules as find_cheapest_product but for the highest buyer-facing price.
             - get_my_sales_count: seller sales summary — completed received/delivered count + earnings, and pending/open orders grouped by product name. Always mention pending products by name when the tool returns them.
+            - get_my_purchase_summary: buyer spending — how much they bought/spent (estimatedChargedTotal in AED). Use for اشتريت بكام / how much did I spend.
+            - get_my_last_order: the buyer's most recent order with product, amount, status, and delayAnalysis. Use for هاتلي آخر اوردر / last order.
+            - explain_my_order_delay: explain why an order may still be pending using live status timeline. Defaults to last order; pass order_id if specified. Use for آخر اوردر متأخر ليه / why is my order late. Never invent courier tracking.
             Call tools when the user asks for those actions or facts. Trust tool results; do not invent prices, quantities, or units.
             When a SELLER ADS CATALOG message is present, treat it as the authoritative list of this seller's ads for update/disambiguation.
             Enforce account visibility: do not describe private features belonging to another audience as if this user can use them.

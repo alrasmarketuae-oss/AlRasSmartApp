@@ -309,6 +309,65 @@ public sealed partial class AiAssistantMcpToolsService(
                     additionalProperties = false
                 }
             }
+        },
+        new
+        {
+            type = "function",
+            function = new
+            {
+                name = "get_my_purchase_summary",
+                description =
+                    "Buyer spending summary for the signed-in user: how much they bought/spent (goods + VAT + shipping), " +
+                    "order counts, and open vs delivered totals. Use for questions like اشتريت بكام / how much did I spend.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new { },
+                    additionalProperties = false
+                }
+            }
+        },
+        new
+        {
+            type = "function",
+            function = new
+            {
+                name = "get_my_last_order",
+                description =
+                    "Return the signed-in buyer's most recent order with product, amount, status, payment, and delayAnalysis. " +
+                    "Use for هاتلي آخر اوردر / last order / my latest order.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new { },
+                    additionalProperties = false
+                }
+            }
+        },
+        new
+        {
+            type = "function",
+            function = new
+            {
+                name = "explain_my_order_delay",
+                description =
+                    "Explain why the buyer's order may still be pending/delayed using live status + timeline. " +
+                    "Defaults to the latest order; pass order_id when the user names a specific order. " +
+                    "Use for آخر اوردر متأخر ليه / why is my order late.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        order_id = new
+                        {
+                            type = "string",
+                            description = "Optional numeric order id. Omit to use the latest buyer order."
+                        }
+                    },
+                    additionalProperties = false
+                }
+            }
         }
     ];
 
@@ -339,6 +398,12 @@ public sealed partial class AiAssistantMcpToolsService(
                 "list_my_ibans" => await ListMyIbansAsync(
                     userId, cancellationToken).ConfigureAwait(false),
                 "create_withdrawal" => await CreateWithdrawalAsync(
+                    userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
+                "get_my_purchase_summary" => await GetMyPurchaseSummaryAsync(
+                    userId, cancellationToken).ConfigureAwait(false),
+                "get_my_last_order" => await GetMyLastOrderAsync(
+                    userId, cancellationToken).ConfigureAwait(false),
+                "explain_my_order_delay" => await ExplainMyOrderDelayAsync(
                     userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
                 _ => Json(new { ok = false, error = $"Unknown tool: {call.Name}" })
             };
