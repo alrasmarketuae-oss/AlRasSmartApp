@@ -46,9 +46,9 @@ public static class ProductQueryHelpers
 
     /// <summary>
     /// Category ads hidden from the home feed (GET /api/Products) but still available via by-category.
-    /// Canonical: Sweets=13, Canned=14, Beauty/Cosmetic=16.
+    /// Production DB ids: Cusmatic/Beauty=3, Canned=5, Sweets=6.
     /// </summary>
-    public static readonly short[] HomeFeedExcludedCategoryIds = [13, 14, 16];
+    public static readonly short[] HomeFeedExcludedCategoryIds = [3, 5, 6];
 
     public static IQueryable<Product> ExcludeHomeFeedCategories(IQueryable<Product> query)
     {

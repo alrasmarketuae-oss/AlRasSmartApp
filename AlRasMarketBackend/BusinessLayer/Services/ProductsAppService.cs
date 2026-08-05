@@ -35,7 +35,7 @@ public partial class ProductsAppService(
     IProductAssetsAppService productAssetsAppService,
     IProductTextSearchIndex productTextSearchIndex) : IProductsAppService
 {
-    private const string AllProductsCacheKey = "products:all:v16";
+    private const string AllProductsCacheKey = "products:all:v17";
     private const string ProductsByTypeCachePrefix = "products:by-type:v15:";
     private const string ProductsByCategoryCachePrefix = "products:by-category:v10:";
     private const string FeaturedProductsCacheKey = "products:featured:v7";
