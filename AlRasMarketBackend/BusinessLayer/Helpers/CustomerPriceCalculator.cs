@@ -4,6 +4,12 @@ namespace BusinessLayer.Helpers;
 
 public static class CustomerPriceCalculator
 {
+    /// <summary>
+    /// Display markdown for Request ads: customer-facing listing price is 1% below
+    /// the requester's entered target (e.g. 100 → 99). Stored <c>USDPrice</c> is unchanged.
+    /// </summary>
+    public const decimal RequestListingMarkdownPercent = 1m;
+
     public static decimal ApplyProductMarkup(
         decimal baseUsdPrice,
         byte? productTypeId,
@@ -11,11 +17,11 @@ public static class CustomerPriceCalculator
         CommissionSettingsSnapshot settings,
         IReadOnlyDictionary<byte, decimal> categoryCommissions)
     {
-        // Request ads show the customer's target price as entered.
-        // Platform commission is applied later on supplier offers, not on the ad listing.
+        // Request ads: show target price minus 1% on public/customer responses.
+        // Platform commission on supplier offers is applied separately at order time.
         if (productTypeId == ProductTypeCodes.Requests)
         {
-            return baseUsdPrice;
+            return ApplyPercentMarkdown(baseUsdPrice, RequestListingMarkdownPercent);
         }
 
         var percent = ResolveCommissionPercentInternal(productTypeId, categoryId, settings, categoryCommissions);
@@ -39,6 +45,25 @@ public static class CustomerPriceCalculator
         }
 
         return decimal.Round(basePrice * (1 + percent / 100m), 2, MidpointRounding.AwayFromZero);
+    }
+
+    /// <summary>
+    /// Subtracts <paramref name="percent"/> from <paramref name="basePrice"/>
+    /// (e.g. 1% of 100 → 99).
+    /// </summary>
+    public static decimal ApplyPercentMarkdown(decimal basePrice, decimal percent)
+    {
+        if (basePrice <= 0 || percent <= 0)
+        {
+            return basePrice;
+        }
+
+        if (percent >= 100m)
+        {
+            return 0m;
+        }
+
+        return decimal.Round(basePrice * (1 - percent / 100m), 2, MidpointRounding.AwayFromZero);
     }
 
     /// <summary>

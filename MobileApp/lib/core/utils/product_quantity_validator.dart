@@ -1,3 +1,4 @@
+import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/features/company/presentation/helpers/create_ad_form_mapper.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/generated/l10n.dart';
@@ -5,12 +6,8 @@ import 'package:alrasmarket/generated/l10n.dart';
 class ProductQuantityValidator {
   ProductQuantityValidator._();
 
-  static double? _parseQuantity(String? raw) {
-    if (raw == null) return null;
-    final trimmed = raw.replaceAll(',', '').trim();
-    if (trimmed.isEmpty) return null;
-    return double.tryParse(trimmed);
-  }
+  static double? _parseQuantity(String? raw) =>
+      ThousandsNumberInput.parseDouble(raw);
 
   static String _format(double quantity) {
     if (quantity == quantity.roundToDouble()) {

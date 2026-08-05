@@ -1,6 +1,7 @@
 import 'package:alrasmarket/core/widgets/currency_icon.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/core/utils/product_price_formatter.dart';
+import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -85,11 +86,8 @@ class ProductPriceText extends StatelessWidget {
     TextStyle? amountStyle,
     double iconSize = 16,
   }) {
-    final formatted = total % 1 == 0
-        ? total.toInt().toString()
-        : total.toStringAsFixed(2);
     return ProductPriceText(
-      amount: formatted,
+      amount: ThousandsNumberInput.format(total, allowDecimal: true),
       currency: ProductPriceFormatter.currencyCode(product),
       amountStyle: amountStyle,
       iconSize: iconSize,

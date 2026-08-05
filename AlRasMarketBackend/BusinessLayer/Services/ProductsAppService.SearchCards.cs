@@ -91,7 +91,7 @@ public partial class ProductsAppService
     }
 
     private string SearchCardCacheKey(Guid productId, string channel) =>
-        $"products:search-card:v14:v{SearchProductsCacheVersion}:{productId:D}:{channel}";
+        $"products:search-card:v15:v{SearchProductsCacheVersion}:{productId:D}:{channel}";
 
     private async Task<Dictionary<(Guid ProductId, string Channel), object>> BuildSearchCardsFromSqlAsync(
         IReadOnlyList<ProductPublicRow> products,

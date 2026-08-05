@@ -127,134 +127,163 @@ class _LoginFormBodyState extends State<_LoginFormBody> {
   Widget build(BuildContext context) {
     final s = S.of(context);
 
-    return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 24.h),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const _LoginTopBar(),
-            SizedBox(height: 40.h),
-            Text(
-              s.welcomeBack,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 26.sp,
-                fontWeight: FontWeight.w700,
-                color: _kTitleColor,
-              ),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              s.signInToContinue,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w500,
-                color: _kBodyColor,
-              ),
-            ),
-            SizedBox(height: 14.h),
-            const _AccentIndicator(),
-            SizedBox(height: 22.h),
-            _GlassCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _FieldLabel(s.email),
-                  SizedBox(height: 8.h),
-                  _AuthField(
-                    controller: _emailController,
-                    hintText: s.enterYourEmail,
-                    icon: Icons.mail_outline_rounded,
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return s.thisFieldIsRequired;
-                      }
-                      return null;
-                    },
-                  ),
-                  SizedBox(height: 18.h),
-                  _FieldLabel(s.password),
-                  SizedBox(height: 8.h),
-                  _AuthField(
-                    controller: _passwordController,
-                    hintText: s.enterYourPassword,
-                    icon: Icons.lock_outline_rounded,
-                    obscureText: _obscurePassword,
-                    trailing: IconButton(
-                      onPressed: () => setState(
-                        () => _obscurePassword = !_obscurePassword,
-                      ),
-                      splashRadius: 20.r,
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                        size: 20.sp,
-                        color: _kHintColor,
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return s.thisFieldIsRequired;
-                      }
-                      return null;
-                    },
-                  ),
-                  SizedBox(height: 10.h),
-                  Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: GestureDetector(
-                      onTap: () => context.push('/ForgotPasswordView'),
-                      behavior: HitTestBehavior.opaque,
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 2.h),
-                        child: Text(
-                          s.forgotPassword.trim(),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                // Keep scroll only when keyboard opens or screen is tiny;
+                // default content is compacted to fit without scrolling.
+                padding: EdgeInsets.fromLTRB(20.w, 4.h, 20.w, 8.h),
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const _LoginTopBar(),
+                        SizedBox(height: 16.h),
+                        Text(
+                          s.welcomeBack,
+                          textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w600,
-                            color: _kPrimaryLight,
+                            fontSize: 24.sp,
+                            fontWeight: FontWeight.w700,
+                            color: _kTitleColor,
                           ),
                         ),
-                      ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          s.signInToContinue,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w500,
+                            color: _kBodyColor,
+                          ),
+                        ),
+                        SizedBox(height: 10.h),
+                        const _AccentIndicator(),
+                        SizedBox(height: 14.h),
+                        _GlassCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _FieldLabel(s.email),
+                              SizedBox(height: 6.h),
+                              _AuthField(
+                                controller: _emailController,
+                                hintText: s.enterYourEmail,
+                                icon: Icons.mail_outline_rounded,
+                                keyboardType: TextInputType.emailAddress,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return s.thisFieldIsRequired;
+                                  }
+                                  return null;
+                                },
+                              ),
+                              SizedBox(height: 12.h),
+                              _FieldLabel(s.password),
+                              SizedBox(height: 6.h),
+                              _AuthField(
+                                controller: _passwordController,
+                                hintText: s.enterYourPassword,
+                                icon: Icons.lock_outline_rounded,
+                                obscureText: _obscurePassword,
+                                trailing: IconButton(
+                                  onPressed: () => setState(
+                                    () => _obscurePassword = !_obscurePassword,
+                                  ),
+                                  splashRadius: 20.r,
+                                  icon: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility_off_outlined
+                                        : Icons.visibility_outlined,
+                                    size: 20.sp,
+                                    color: _kHintColor,
+                                  ),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return s.thisFieldIsRequired;
+                                  }
+                                  return null;
+                                },
+                              ),
+                              SizedBox(height: 6.h),
+                              Align(
+                                alignment: AlignmentDirectional.centerStart,
+                                child: GestureDetector(
+                                  onTap: () =>
+                                      context.push('/ForgotPasswordView'),
+                                  behavior: HitTestBehavior.opaque,
+                                  child: Padding(
+                                    padding:
+                                        EdgeInsets.symmetric(vertical: 2.h),
+                                    child: Text(
+                                      s.forgotPassword.trim(),
+                                      style: TextStyle(
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.w600,
+                                        color: _kPrimaryLight,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 12.h),
+                              _GradientButton(
+                                label: s.login,
+                                onPressed:
+                                    widget.isLoading ? null : _handleLogin,
+                              ),
+                              SizedBox(height: 14.h),
+                              _OrDivider(label: s.or),
+                              SizedBox(height: 12.h),
+                              _SocialButton(
+                                label: s.signInWithGoogle,
+                                assetImage: AppAssets.googleIcon,
+                                onPressed: widget.isLoading
+                                    ? null
+                                    : () => AuthCubit.get(context)
+                                        .loginWithGoogle(),
+                              ),
+                              if (Platform.isIOS) ...[
+                                SizedBox(height: 10.h),
+                                _SocialButton(
+                                  label: s.signInWithApple,
+                                  assetImage: AppAssets.appleIcon,
+                                  onPressed: widget.isLoading
+                                      ? null
+                                      : () => AuthCubit.get(context)
+                                          .loginWithApple(),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 12.h),
+                        const BiometricUnlockButton(circular: true),
+                      ],
                     ),
                   ),
-                  SizedBox(height: 18.h),
-                  _GradientButton(
-                    label: s.login,
-                    onPressed: widget.isLoading ? null : _handleLogin,
-                  ),
-                  SizedBox(height: 20.h),
-                  _OrDivider(label: s.or),
-                  SizedBox(height: 18.h),
-                  _SocialButton(
-                    label: s.signInWithGoogle,
-                    assetImage: AppAssets.googleIcon,
-                    onPressed: widget.isLoading
-                        ? null
-                        : () => AuthCubit.get(context).loginWithGoogle(),
-                  ),
-                  if (Platform.isIOS) ...[
-                    SizedBox(height: 12.h),
-                    _SocialButton(
-                      label: s.signInWithApple,
-                      assetImage: AppAssets.appleIcon,
-                      onPressed: widget.isLoading
-                          ? null
-                          : () => AuthCubit.get(context).loginWithApple(),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            SizedBox(height: 22.h),
-            const BiometricUnlockButton(circular: true),
-            SizedBox(height: 6.h),
-            Row(
+                ),
+              );
+            },
+          ),
+        ),
+        // Always pinned — no need to scroll to reach sign-up.
+        SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(20.w, 4.h, 20.w, 10.h),
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
@@ -287,9 +316,9 @@ class _LoginFormBodyState extends State<_LoginFormBody> {
                 ),
               ],
             ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -382,7 +411,7 @@ class _GlassCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.fromLTRB(18.w, 22.h, 18.w, 22.h),
+      padding: EdgeInsets.fromLTRB(18.w, 16.h, 18.w, 16.h),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24.r),
@@ -482,7 +511,7 @@ class _AuthField extends StatelessWidget {
                   focusedErrorBorder: InputBorder.none,
                   isDense: true,
                   errorStyle: TextStyle(fontSize: 11.sp, height: 1.2),
-                  contentPadding: EdgeInsets.symmetric(vertical: 16.h),
+                  contentPadding: EdgeInsets.symmetric(vertical: 13.h),
                 ),
               ),
             ),
@@ -508,7 +537,7 @@ class _GradientButton extends StatelessWidget {
     return Opacity(
       opacity: onPressed == null ? 0.6 : 1,
       child: Container(
-        height: 54.h,
+        height: 48.h,
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [_kPrimaryDark, _kPrimaryLight],
@@ -531,7 +560,7 @@ class _GradientButton extends StatelessWidget {
               child: Text(
                 label,
                 style: TextStyle(
-                  fontSize: 16.sp,
+                  fontSize: 15.sp,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
                 ),
@@ -595,7 +624,7 @@ class _SocialButton extends StatelessWidget {
           onTap: onPressed,
           borderRadius: BorderRadius.circular(12.r),
           child: Container(
-            height: 52.h,
+            height: 46.h,
             padding: EdgeInsets.symmetric(horizontal: 16.w),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12.r),

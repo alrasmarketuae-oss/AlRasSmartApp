@@ -1,21 +1,31 @@
+import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 
 class ProductQuantityFormatter {
   ProductQuantityFormatter._();
 
+  static String _formatQuantityText(String qtyText) {
+    final trimmed = qtyText.trim();
+    if (trimmed.isEmpty) return '';
+    final formatted =
+        ThousandsNumberInput.formatRaw(trimmed, allowDecimal: true);
+    return formatted.isEmpty ? trimmed : formatted;
+  }
+
   static String availableQuantityLabel(MyListingProductModel product, S s) {
     final qtyText = product.quantity.trim();
     if (qtyText.isEmpty) return '';
 
-    final qty = double.tryParse(qtyText.replaceAll(',', ''));
+    final qty = ThousandsNumberInput.parseDouble(qtyText);
     if (qty != null && qty <= 0) {
       return s.soldOut;
     }
 
     final resolvedQty = qty ?? 1;
     final unit = _displayUnit(product.unitName.trim(), resolvedQty, s);
-    return '${s.availableQuantity}: $qtyText $unit';
+    final displayQty = _formatQuantityText(qtyText);
+    return '${s.availableQuantity}: $displayQty $unit';
   }
 
   static String quantityWithUnit({
@@ -26,11 +36,12 @@ class ProductQuantityFormatter {
     final qtyText = quantityText.trim();
     if (qtyText.isEmpty && unitName.trim().isEmpty) return '';
 
-    final qty = double.tryParse(qtyText.replaceAll(',', '')) ?? 1;
+    final qty = ThousandsNumberInput.parseDouble(qtyText) ?? 1;
     final unit = _displayUnit(unitName.trim(), qty, s);
-    if (qtyText.isEmpty) return unit;
-    if (unit.isEmpty) return qtyText;
-    return '$qtyText $unit';
+    final displayQty = _formatQuantityText(qtyText);
+    if (displayQty.isEmpty) return unit;
+    if (unit.isEmpty) return displayQty;
+    return '$displayQty $unit';
   }
 
   static String minimumOrderLabel(MyListingProductModel product, S s) {
@@ -40,9 +51,10 @@ class ProductQuantityFormatter {
     final unitName = product.unitName.trim();
     if (qtyText.isEmpty && unitName.isEmpty) return '${s.minimumOrder}: —';
 
-    final qty = double.tryParse(qtyText.replaceAll(',', '')) ?? 1;
+    final qty = ThousandsNumberInput.parseDouble(qtyText) ?? 1;
     final unit = _displayUnit(unitName, qty, s);
-    return '${s.minimumOrder}: $qtyText${unit.isNotEmpty ? ' $unit' : ''}';
+    final displayQty = _formatQuantityText(qtyText);
+    return '${s.minimumOrder}: $displayQty${unit.isNotEmpty ? ' $unit' : ''}';
   }
 
   /// Always show short client-facing labels (e.g. Kilogram → kg), never full DB names.

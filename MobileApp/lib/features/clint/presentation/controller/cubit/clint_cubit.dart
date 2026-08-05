@@ -14,6 +14,7 @@ import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/services/dio_helper.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/utils/localized_product_text.dart';
+import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_ownership_helper.dart';
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
 import 'package:alrasmarket/core/usecase/base_usecase.dart';
@@ -2280,6 +2281,16 @@ class ClintCubit extends Cubit<ClintStates> {
     emit(form.copyWith(productImages: images));
   }
 
+  void _emitSubmitOfferValidationError(
+    String message,
+    SubmitOfferFormState form,
+  ) {
+    // Toast listener needs SubmitOfferErrorState, then restore the form so
+    // image pick / submit keep working (ErrorState alone blanks the form).
+    emit(SubmitOfferErrorState(message));
+    emit(form.copyWith(isSubmitting: false));
+  }
+
   Future<void> submitOfferForm() async {
     if (!formKey.currentState!.validate()) return;
 
@@ -2288,12 +2299,17 @@ class ClintCubit extends Cubit<ClintStates> {
     if (form == null || product == null) return;
 
     if (ProductOwnershipHelper.isOwnedByCurrentUser(product)) {
-      emit(SubmitOfferErrorState(S.current.cannotOrderOwnProduct));
+      _emitSubmitOfferValidationError(
+        S.current.cannotOrderOwnProduct,
+        form,
+      );
       return;
     }
 
-    final quantity = double.tryParse(quantityController.text.trim()) ?? 0;
-    final price = double.tryParse(priceController.text.trim()) ?? 0;
+    // Fields use ThousandsSeparatorInputFormatter (e.g. 1000 → "1,000").
+    final quantity =
+        ThousandsNumberInput.parseDouble(quantityController.text) ?? 0;
+    final price = ThousandsNumberInput.parseDouble(priceController.text) ?? 0;
     final quantityError = ProductQuantityValidator.validateOfferAgainstRequiredQuantity(
       rawValue: quantityController.text,
       s: S.current,
@@ -2301,21 +2317,21 @@ class ClintCubit extends Cubit<ClintStates> {
       offerUnit: form.selectedUnit,
     );
     if (quantityError != null) {
-      emit(SubmitOfferErrorState(quantityError));
+      _emitSubmitOfferValidationError(quantityError, form);
       return;
     }
     if (quantity <= 0 || price <= 0) {
-      emit(
-        SubmitOfferErrorState(S.current.enterValidQuantityAndPrice),
+      _emitSubmitOfferValidationError(
+        S.current.enterValidQuantityAndPrice,
+        form,
       );
       return;
     }
 
     if (offerToUserId.trim().isEmpty) {
-      emit(
-        SubmitOfferErrorState(
-          S.current.requestOwnerMissingCannotSubmitOffer,
-        ),
+      _emitSubmitOfferValidationError(
+        S.current.requestOwnerMissingCannotSubmitOffer,
+        form,
       );
       return;
     }
@@ -2369,13 +2385,10 @@ class ClintCubit extends Cubit<ClintStates> {
       return;
     }
 
-    emit(
-      SubmitOfferErrorState(
-        result.error ?? 'Failed to submit offer. Please try again.',
-      ),
+    _emitSubmitOfferValidationError(
+      result.error ?? 'Failed to submit offer. Please try again.',
+      form,
     );
-    final latest = _submitFormState ?? form;
-    emit(latest.copyWith(isSubmitting: false));
   }
 
   Future<String?> _showOfferPickSourceSheet(

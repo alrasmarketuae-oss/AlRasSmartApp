@@ -1247,6 +1247,9 @@ export const enMessages = {
       errorDetail: 'Please try again or contact support.',
       noSession: 'Payment session ID is missing.',
       loginRequired: 'Please sign in to check payment status.',
+      returnToApp: 'Payment received',
+      returnToAppDetail:
+        'Your payment was submitted successfully. Return to the Al Ras Market app to track your order. Do not rely on this browser page as the final confirmation.',
       timeout: 'Verification timed out. Please check your order status later.',
       cancelled: 'Payment was cancelled',
       cancelledDetail: 'No charges were made. You can try again when placing your order.',

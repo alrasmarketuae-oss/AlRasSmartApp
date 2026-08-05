@@ -8,6 +8,7 @@ import 'package:alrasmarket/core/utils/product_price_formatter.dart';
 import 'package:alrasmarket/core/utils/product_quantity_formatter.dart';
 import 'package:alrasmarket/core/utils/product_stock.dart';
 import 'package:alrasmarket/core/utils/string_display_format.dart';
+import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/core/widgets/currency_icon.dart';
 import 'package:alrasmarket/core/widgets/product_price_text.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/booking_price_type_label.dart';
@@ -105,9 +106,7 @@ class _ProductCardMarketplaceLayoutState
   }
 
   String _formatAmount(double value) {
-    return value == value.roundToDouble()
-        ? value.toInt().toString()
-        : value.toStringAsFixed(2);
+    return ThousandsNumberInput.format(value, allowDecimal: true);
   }
 
   Widget _detailsText({

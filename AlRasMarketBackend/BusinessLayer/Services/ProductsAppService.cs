@@ -35,14 +35,14 @@ public partial class ProductsAppService(
     IProductAssetsAppService productAssetsAppService,
     IProductTextSearchIndex productTextSearchIndex) : IProductsAppService
 {
-    private const string AllProductsCacheKey = "products:all:v14";
-    private const string ProductsByTypeCachePrefix = "products:by-type:v14:";
+    private const string AllProductsCacheKey = "products:all:v15";
+    private const string ProductsByTypeCachePrefix = "products:by-type:v15:";
     private const string ProductsByCategoryCachePrefix = "products:by-category:v10:";
     private const string FeaturedProductsCacheKey = "products:featured:v7";
-    private const string SearchProductsCachePrefix = "products:search:v13:";
+    private const string SearchProductsCachePrefix = "products:search:v14:";
     private static readonly TimeSpan SearchCardCacheTtl = TimeSpan.FromMinutes(10);
     private const string ProductByCodeCachePrefix = "products:by-code:v3:";
-    private const string ProductByIdCachePrefix = "products:by-id:v7:";
+    private const string ProductByIdCachePrefix = "products:by-id:v8:";
 
     private int AllProductsCacheVersion => productCacheVersions.Get(ProductCacheVersions.All);
     private int FeaturedProductsCacheVersion => productCacheVersions.Get(ProductCacheVersions.Featured);

@@ -5,7 +5,13 @@ import PreferencesControls from '../components/layout/PreferencesControls'
 import { useAppPreferences } from '../context/AppPreferencesProvider'
 import { getPaymentAuthToken, saveCustomerAuthToken } from '../lib/authStorage'
 
-type PageState = 'loading' | 'pending' | 'processing' | 'completed' | 'error'
+type PageState =
+  | 'loading'
+  | 'pending'
+  | 'processing'
+  | 'completed'
+  | 'returnToApp'
+  | 'error'
 
 const MAX_POLLS = 30
 const POLL_INTERVAL_MS = 2000
@@ -53,6 +59,10 @@ export default function PaymentSuccessPage() {
       title: t('payment.completed'),
       detail: t('payment.completedDetail'),
     },
+    returnToApp: {
+      title: t('payment.returnToApp'),
+      detail: t('payment.returnToAppDetail'),
+    },
     error: {
       title: t('payment.error'),
       detail: t('payment.errorDetail'),
@@ -73,9 +83,11 @@ export default function PaymentSuccessPage() {
       saveCustomerAuthToken(tokenFromUrl)
     }
 
+    // Stripe redirects have no app/dashboard JWT. Do not show a red failure page —
+    // payment completion is confirmed by webhook + the mobile app poll.
     if (!getPaymentAuthToken()) {
-      setPageState('error')
-      setErrorMessage(t('payment.loginRequired'))
+      setPageState('returnToApp')
+      setErrorMessage(null)
       return
     }
 
@@ -152,7 +164,7 @@ export default function PaymentSuccessPage() {
             role="status"
             aria-label={t('loading')}
           />
-        ) : pageState === 'completed' ? (
+        ) : pageState === 'completed' || pageState === 'returnToApp' ? (
           <div
             className="mx-auto mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-green-600"
             aria-hidden

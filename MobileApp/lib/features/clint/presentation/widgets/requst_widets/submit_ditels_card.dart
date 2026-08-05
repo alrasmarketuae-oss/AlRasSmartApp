@@ -1,5 +1,6 @@
 import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
+import 'package:alrasmarket/core/utils/product_quantity_formatter.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
@@ -13,8 +14,15 @@ class OrderDetailsCardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
     final product = context.read<ClintCubit>().currentProduct;
+    final s = S.of(context);
 
     if (product == null) return const SizedBox.shrink();
+
+    final requestedQty = ProductQuantityFormatter.quantityWithUnit(
+      quantityText: product.quantity,
+      unitName: product.unitName,
+      s: s,
+    );
 
     return Container(
       width: double.infinity,
@@ -27,14 +35,16 @@ class OrderDetailsCardWidget extends StatelessWidget {
       child: Column(
         children: [
           _buildStaticRow(
-            S.of(context).product,
+            s.product,
             product.productName,
             fontFamily,
           ),
           const SizedBox(height: 24),
           _buildStaticRow(
-            S.of(context).requestedQuantity,
-            '${product.quantity} ${product.unitName}',
+            s.requestedQuantity,
+            requestedQty.isNotEmpty
+                ? requestedQty
+                : '${product.quantity} ${product.unitName}',
             fontFamily,
           ),
         ],

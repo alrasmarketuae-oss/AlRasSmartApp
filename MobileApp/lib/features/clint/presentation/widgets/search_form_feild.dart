@@ -5,8 +5,11 @@ import 'package:alrasmarket/core/serveses/product_search_index_service.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/widgets/costomtextform.dart';
+import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
+import 'package:alrasmarket/features/company/presentation/controller/cubit/company_cubit.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
@@ -124,11 +127,41 @@ class _SearchFormFiledState extends State<SearchFormFiled> {
 
   void _goBack() {
     FocusScope.of(context).unfocus();
+
+    // Profile / Orders / Ads tabs live in an IndexedStack — pop() does not
+    // switch to Home. Prefer bottom-nav tab 0 when we are on a shell layout.
+    final clint = _maybeReadClintCubit(context);
+    if (clint != null && clint.currentIndex != 0) {
+      clint.setTab(0);
+      return;
+    }
+    final company = _maybeReadCompanyCubit(context);
+    if (company != null && company.currentIndex != 0) {
+      company.setTab(0);
+      return;
+    }
+
     if (context.canPop()) {
       context.pop();
       return;
     }
     context.go(whereToGo());
+  }
+
+  static ClintCubit? _maybeReadClintCubit(BuildContext context) {
+    try {
+      return context.read<ClintCubit>();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static CompanyCubit? _maybeReadCompanyCubit(BuildContext context) {
+    try {
+      return context.read<CompanyCubit>();
+    } catch (_) {
+      return null;
+    }
   }
 
   void _pickSuggestion(String value) {

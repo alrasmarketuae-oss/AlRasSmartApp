@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/serveses/auth_service.dart';
+import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 
 class ProductPriceFormatter {
@@ -8,7 +9,15 @@ class ProductPriceFormatter {
     MyListingProductModel product, {
     bool preferRetail = false,
   }) {
-    return product.priceForChannel(preferRetail: preferRetail);
+    return formatAmountText(product.priceForChannel(preferRetail: preferRetail));
+  }
+
+  /// Formats a raw price string for display (e.g. `1150` → `1,150`).
+  static String formatAmountText(String? raw) {
+    final text = raw?.trim() ?? '';
+    if (text.isEmpty) return '';
+    final formatted = ThousandsNumberInput.formatRaw(text, allowDecimal: true);
+    return formatted.isEmpty ? text : formatted;
   }
 
   static String currencyCode(MyListingProductModel product) {
@@ -45,9 +54,7 @@ class ProductPriceFormatter {
   }
 
   static String totalLabel(MyListingProductModel product, double total) {
-    final formatted = total % 1 == 0
-        ? total.toInt().toString()
-        : total.toStringAsFixed(2);
+    final formatted = ThousandsNumberInput.format(total, allowDecimal: true);
     return '$formatted ${currencyCode(product)}';
   }
 }

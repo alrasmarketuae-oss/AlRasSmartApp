@@ -358,6 +358,49 @@ internal static class AiAssistantKnowledgeSource
             This restriction applies to ad creation only, never to browsing, buying, or order tracking.
             """);
 
+        Add(chunks, "ad-properties", "خصائص الإعلان حسب النوع — أضف إعلان / عاوز أنشر إعلان", "ar",
+            ["supplier", "company_customer", "shipping", "personal", "guest", "public"],
+            """
+            سؤال: أضف إعلان / عاوز أنشر إعلان / هنضيف إعلان / هل تقدر تضيف إعلان؟ / ساعدني أعمل إعلان.
+            الإجابة تعتمد على نوع الحساب الحالي:
+
+            المورد داخل الإمارات: يستطيع إضافة إعلانات Category وRetail وBooking وOffer بخصم وRequest.
+            اسأله أي نوع يريد إضافته، ثم وجّهه لزر إنشاء إعلان في البار السفلي واشرح خطوات النوع المختار فقط.
+            المورد خارج الإمارات برقم غير إماراتي: Booking فقط — أخبره بذلك ولا تعرض بقية الأنواع.
+
+            عميل الشركة: يضيف إعلان Request فقط (لا Booking ولا Retail ولا Category ولا Offer بخصم).
+            أخبره بذلك ووضّح المطلوب في طلب الشراء: اسم المنتج، الكمية والوحدة، السعر المستهدف، المواصفات، عنوان/مكان التسليم أو مسار Booking إن لزم، ثم النشر من صفحة إنشاء طلب / Create Order.
+
+            شركة الشحن: تضيف إعلان شحن فقط من الصفحة الرئيسية (ميناء إلى ميناء وأسعار 20ft و40ft).
+
+            العميل الفردي: لا يستطيع إنشاء أي إعلان؛ هو مشترٍ فقط. اشرح له أنه يتصفح ويشتري ويتابع طلباتي.
+
+            الزائر: يجب تسجيل الدخول أو إنشاء حساب أولاً قبل أي إنشاء إعلان.
+
+            لا تخترع صلاحيات غير موجودة في نوع الحساب، ولا تخلط بين إنشاء الإعلان والشراء أو تتبع الطلبات.
+            """);
+        Add(chunks, "ad-properties", "Ad creation by account type — add or publish an ad", "en",
+            ["supplier", "company_customer", "shipping", "personal", "guest", "public"],
+            """
+            Question: Add an ad / I want to publish an ad / can you add an ad? / help me create a listing.
+            Answer depends on the current account type:
+
+            UAE supplier: can create Category, Retail, Booking, discounted Offer, and Request.
+            Ask which type they want, then guide them to Create Ad in the bottom bar and explain only that type's steps.
+            Overseas supplier with a non-UAE phone: Booking only — say so and do not offer the other types.
+
+            Company customer: Request ads only (not Booking, Retail, Category, or discounted Offer).
+            Tell them that and list what a Request needs: product name, quantity and unit, target price, specifications, delivery address or Booking route if needed, then publish from Create Order.
+
+            Shipping company: shipping ads only from Home (port-to-port with 20ft and 40ft prices).
+
+            Personal customer: cannot create any ad; buyer only — browse, buy, and track My Orders.
+
+            Guest: must sign in or register before creating any ad.
+
+            Never invent permissions outside the account type, and never confuse creating an ad with buying or tracking orders.
+            """);
+
         Add(chunks, "guest", "صلاحيات الزائر غير المسجل", "ar", ["guest", "public"],
             """
             الزائر يستطيع مشاهدة البانرات وأنواع الإعلانات والأصناف والمنتجات، واستخدام البحث النصي والبحث بالصورة، وفتح تفاصيل الإعلانات.

@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/utils/string_display_format.dart';
+import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/core/utils/utc_date_time.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/features/company/presentation/models/create_ad_packing_options.dart';
@@ -47,7 +48,12 @@ class RequestDetailsMapper {
     if (quantity.isEmpty) return '';
 
     final unit = product.unitNameForChannel(preferRetail: preferRetail).trim();
-    return unit.isEmpty ? quantity : '$quantity $unit';
+    final displayQty = ThousandsNumberInput.formatRaw(
+      quantity,
+      allowDecimal: true,
+    );
+    final qty = displayQty.isEmpty ? quantity : displayQty;
+    return unit.isEmpty ? qty : '$qty $unit';
   }
 
   static String deliveryAddress(MyListingProductModel product) {
