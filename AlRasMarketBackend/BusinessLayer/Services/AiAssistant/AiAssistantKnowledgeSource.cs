@@ -1727,17 +1727,25 @@ internal static class AiAssistantKnowledgeSource
 
         Add(chunks, "balance-credit", "متى يزيد رصيد المورد", "ar", ["supplier"],
             """
-            إذا كان المورد ناشراً لإعلان في قسم Retail ودفع العميل عن طريق البطاقة (فيزا)، يزيد رصيد المورد فوراً بعد نجاح الدفع مع إرسال إشعار له.
-            أما إذا اختار العميل الدفع عند الاستلام، فلا يزيد رصيد المورد إلا بعد تحصيل الأموال فعلياً من العميل، أي بعد أن تصبح حالة الطلب تم الاستلام/التسليم.
-            إذا قدّم العميل طلب استرجاع لسبب مقبول ووافق الدعم عليه، يُخصم ذلك المبلغ من رصيد المورد.
-            سياسة عامة: تسليم البضاعة لا يعني استحقاق الدفع فوراً؛ لا تُصرف مستحقات المورد إلا بعد التحصيل الفعلي من المشتري.
+            فرّق دائماً بين طلبات التجزئة (Retail) وطلبات غير التجزئة (Category / Booking / Offer / Request / جملة).
+
+            غير التجزئة: مستحقاتك تُحتسب بعد أن يدفع المشتري قيمة الطلب فعلياً. لا تربط الصرف بتأكيد الاستلام من المشتري ولا بموافقته بعد التسليم — المعيار هو الدفع/التحصيل من المشتري. موافقتك على الطلب أو تسليم البضاعة وحدهما لا يكفيان لاستحقاق الفلوس.
+
+            Retail والدفع بالبطاقة (فيزا): يزيد رصيدك فوراً بعد نجاح الدفع مع إشعار.
+            Retail والدفع عند الاستلام: يزيد الرصيد بعد تحصيل الأموال فعلياً من العميل عند التسليم.
+
+            إذا اعتُمد استرجاع لاحقاً يُخصم المبلغ من رصيدك.
             """);
         Add(chunks, "balance-credit", "When a supplier's balance increases", "en", ["supplier"],
             """
-            If the supplier published a Retail listing and the customer paid by card, the supplier's balance increases immediately after a successful payment and a notification is sent.
-            If the customer chose cash on delivery, the balance increases only after the money is actually collected from the customer, that is once the order reaches received/delivered.
-            If the customer submits a return for an accepted reason and support approves it, that amount is deducted from the supplier's balance.
-            General policy: handing over goods does not create an immediate right to payment; supplier funds are released only after actual collection from the buyer.
+            Always distinguish Retail orders from non-Retail orders (Category / Booking / Offer / Request / wholesale).
+
+            Non-Retail: your dues are earned after the buyer actually pays the order value. Do NOT tie payout to the buyer confirming receipt or confirming the order after delivery — the trigger is the buyer's payment/collection. Accepting the order or delivering goods alone does not unlock payment.
+
+            Retail paid by card: balance increases immediately after successful payment with a notification.
+            Retail cash on delivery: balance increases after the money is actually collected from the customer at delivery.
+
+            If a return is later approved, the amount is deducted from your balance.
             """);
 
         Add(chunks, "withdraw", "عاوز أسحب فلوسي، سحب الأرباح، كيف أنشئ طلب سحب للرصيد", "ar", ["supplier"],
@@ -1769,42 +1777,50 @@ internal static class AiAssistantKnowledgeSource
 
         Add(chunks, "supplier-settlement", "سياسة تحصيل مستحقات المورد", "ar", ["supplier", "company_customer", "public"],
             """
-            تسليم المورد البضاعة إلى تطبيق أو فريق سوق الراس لا يعني استحقاق الدفع فوراً.
-            لا تُصرف مستحقات المورد إلا بعد تحصيل قيمة الطلب فعلياً من المشتري أو العميل.
-            بعد التحصيل وتأكيد العملية تصبح المستحقات قابلة للتسوية، ويتم تحويل الأرباح المعتمدة خلال 7 أيام عمل.
-            إذا لم تُحصَّل الأموال من العميل فلا تُدفع قيمة البضاعة للمورد.
-            هذه السياسة تحمي الطرفين وتضمن أن التحويلات تتم على مبالغ محصّلة فعلاً.
+            تسليم المورد البضاعة لا يعني استحقاق الدفع فوراً.
+            للطلبات غير التجزئة (جملة / Booking / Offer / Request / Category): تُصرف المستحقات بعد دفع المشتري لقيمة الطلب — وليس بعد «تأكيد الاستلام» أو «تأكيد الطلب» من المشتري.
+            لتجزئة Retail: البطاقة تزيد الرصيد فور الدفع؛ والدفع عند الاستلام بعد التحصيل الفعلي.
+            بعد أن تصبح المستحقات قابلة للتسوية، تحويل الأرباح المعتمدة خلال 7 أيام عمل من موافقة طلب السحب.
+            إذا لم يدفع المشتري / لم تُحصَّل الأموال فلا تُدفع قيمة البضاعة للمورد.
             """);
         Add(chunks, "supplier-settlement", "Supplier settlement and collection policy", "en", ["supplier", "company_customer", "public"],
             """
-            Handing goods to the Al Ras Market app or team does not create an immediate right to payment.
-            Supplier funds are released only after the order value is actually collected from the buyer or customer.
-            After collection and confirmation the dues become settleable, and approved earnings are transferred within 7 business days.
-            If the money is not collected from the customer, the supplier is not paid for those goods.
-            This policy protects both sides and ensures transfers are made only against genuinely collected amounts.
+            Handing over goods does not create an immediate right to payment.
+            For non-Retail orders (wholesale / Booking / Offer / Request / Category): dues are released after the buyer pays the order value — NOT after the buyer "confirms receipt" or "confirms the order".
+            For Retail: card credits balance immediately after payment; cash on delivery after actual collection.
+            Once dues are settleable, approved earnings transfer within 7 business days after withdrawal approval.
+            If the buyer has not paid / funds were not collected, the supplier is not paid for those goods.
             """);
 
         Add(chunks, "supplier-payout-timing", "هستلم فلوسي امتى بعد ما الشركة خدت بضاعتي، متى أقبض ثمن البضاعة", "ar", ["supplier", "public"],
             """
-            سؤال: أنا عامل إعلان وجالي عليه طلب وسلمت البضاعة، هستلم فلوسي إمتى؟ الشركة خدت بضاعتي هقبض إمتى؟ متى أستلم ثمن الطن أو الشحنة؟ سلمت 5 طن فمتى تتحول لي الأموال؟ إمتى ينزل الفلوس في حسابي؟
-            الإجابة المختصرة: لا تُصرف أموالك بمجرد تسليم البضاعة، بل بعد أن يستلم العميل البضاعة وتُحصَّل قيمتها فعلياً، ثم تُحوَّل لك من سوق الراس.
-            التسلسل بالترتيب: تسلّم البضاعة لفريق سوق الراس أو تُشحن للعميل، ثم يستلمها العميل ويدفع قيمتها، ثم تتحول الأموال المحصّلة إلى مستحقات لك، ثم تنشئ طلب سحب من صفحة الرصيد، وبعد موافقة الدعم يتم التحويل خلال 7 أيام عمل.
-            تسليم البضاعة وحده لا يعني استحقاق الدفع، وإذا لم تُحصَّل الأموال من العميل فلا تُدفع لك قيمة البضاعة.
-            في طلبات Retail المدفوعة بالبطاقة يزيد رصيدك فور نجاح الدفع. أما الدفع عند الاستلام فلا يزيد الرصيد إلا بعد التحصيل وتأكيد الاستلام.
-            صفقات الجملة وBooking وRequest يتابعها فريق سوق الراس، وهو من ينسق التحصيل من العميل ثم تسوية مستحقاتك.
-            إذا اعتُمد طلب استرجاع لاحقاً يُخصم المبلغ من رصيدك.
-            لمعرفة موعد دقيق لطلب أو شحنة بعينها تواصل مع الدعم عبر Live Chat مع رقم الطلب.
+            سؤال: أنا عامل إعلان وجالي عليه طلب ووافقت عليه وسلمت البضاعة، هستلم فلوسي إمتى؟ الشركة خدت بضاعتي هقبض إمتى؟ متى أستلم ثمن الطن أو الشحنة؟ سلمت 5 طن فمتى تتحول لي الأموال؟ إمتى ينزل الفلوس في حسابي؟
+            الإجابة حسب نوع الطلب — لا تخلط بينها:
+
+            1) طلب غير تجزئة (Category / Booking / Offer / Request / جملة): الفلوس/المستحقات بعد ما المشتري يدفع قيمة الطلب. لا تقل أبداً «بعد ما المشتري يأكد الطلب» أو «بعد تأكيد الاستلام من المشتري». موافقتك على الطلب أو تسليم البضاعة وحدهما لا يكفيان؛ المعيار هو دفع المشتري.
+            صفقات غير التجزئة يتابعها فريق سوق الراس وينسّق التحصيل/الدفع من المشتري ثم تسوية مستحقاتك.
+
+            2) طلب Retail مدفوع بالبطاقة: يزيد رصيدك فور نجاح الدفع.
+            3) طلب Retail بالدفع عند الاستلام: يزيد الرصيد بعد التحصيل الفعلي عند التسليم.
+
+            بعد ما يصير عندك رصيد محصّل: أنشئ طلب سحب من صفحة الرصيد، وبعد موافقة الدعم التحويل خلال 7 أيام عمل.
+            إذا اعتُمد استرجاع لاحقاً يُخصم من رصيدك.
+            لموعد دقيق لطلب بعينه تواصل مع الدعم عبر Live Chat مع رقم الطلب.
             """);
         Add(chunks, "supplier-payout-timing", "When do I get paid after the company took my goods", "en", ["supplier", "public"],
             """
-            Question: I posted a listing, received an order, and handed over the goods. When do I get my money? The company took my shipment, when am I paid? When do I receive the value of the tons I delivered?
-            Short answer: you are not paid simply for handing over the goods. Payment follows after the customer receives the goods and the order value is actually collected, and Al Ras Market then transfers it to you.
-            The sequence: you hand the goods to the Al Ras Market team or they ship to the customer, the customer receives and pays, the collected money becomes your dues, you create a withdrawal request from the Balance page, and after support approval the transfer is made within 7 business days.
-            Delivering goods alone does not create a right to payment, and if the money is never collected from the customer, you are not paid for those goods.
-            For Retail orders paid by card, your balance increases immediately after successful payment. For cash on delivery, it increases only after collection and confirmed receipt.
-            Wholesale, Booking, and Request deals are handled by the Al Ras Market team, which coordinates collection from the customer and then settles your dues.
-            If a return is later approved, the amount is deducted from your balance.
-            For the exact timing of a specific order or shipment, contact support via Live Chat with the order number.
+            Question: I have an ad, got an order, accepted it, delivered the goods — when do I get paid? When will the money hit my account after the company took my goods?
+            Answer by order type — do not mix them:
+
+            1) Non-Retail (Category / Booking / Offer / Request / wholesale): you get paid / dues after the buyer pays the order value. NEVER say "after the buyer confirms the order" or "after the buyer confirms receipt". Accepting the order or delivering alone is not enough; the trigger is the buyer's payment.
+            Non-Retail deals are followed by the Al Ras Market team, which coordinates collection/payment from the buyer then settles your dues.
+
+            2) Retail paid by card: balance increases immediately after successful payment.
+            3) Retail cash on delivery: balance increases after actual collection at delivery.
+
+            Once you have collected balance: create a withdrawal from the Balance page; after support approval, transfer within 7 business days.
+            If a return is later approved, it is deducted from your balance.
+            For an exact date on a specific order, contact support via Live Chat with the order number.
             """);
 
         Add(chunks, "ai-tools-voice-actions", "تعديل سعر أو كمية الإعلان بالصوت، أرخص منتج، مبيعاتي، فويس شات للذكاء الاصطناعي", "ar", All,
@@ -1828,16 +1844,18 @@ internal static class AiAssistantKnowledgeSource
 
         Add(chunks, "balance-not-credited", "لماذا لم يزد رصيدي بعد البيع", "ar", ["supplier"],
             """
-            الأسباب الشائعة: الطلب بالدفع عند الاستلام ولم يتم تحصيل الأموال بعد، فالرصيد لا يزيد قبل التحصيل وتأكيد الاستلام.
-            أو أن الطلب ما زال في مرحلة مبكرة ولم يكتمل تسليمه.
+            الأسباب الشائعة: الطلب غير التجزئة ولم يدفع المشتري بعد، فالرصيد لا يزيد قبل دفع المشتري.
+            أو طلب تجزئة بالدفع عند الاستلام ولم يتم التحصيل بعد.
+            أو أن الطلب ما زال في مرحلة مبكرة ولم يكتمل تنفيذه.
             أو أن العميل قدّم طلب استرجاع ووافق عليه الدعم فتم الخصم.
             أو أن الطلب أُلغي.
             راجع حالة الطلب من صفحة طلباتي وحركة الرصيد من صفحة الرصيد، فإن بقي الأمر غير واضح تواصل مع الدعم عبر Live Chat مع رقم الطلب.
             """);
         Add(chunks, "balance-not-credited", "Why my balance did not increase after a sale", "en", ["supplier"],
             """
-            Common reasons: the order is cash on delivery and the money has not been collected yet, and balance is never credited before collection and confirmed receipt.
-            Or the order is still at an early stage and delivery is not complete.
+            Common reasons: a non-Retail order where the buyer has not paid yet — balance does not increase before the buyer pays.
+            Or a Retail cash-on-delivery order that has not been collected yet.
+            Or the order is still at an early stage and fulfillment is not complete.
             Or the customer submitted a return that support approved, so the amount was deducted.
             Or the order was cancelled.
             Check the order status in My Orders and the balance movements on the Balance page; if it remains unclear, contact support via Live Chat with the order number.

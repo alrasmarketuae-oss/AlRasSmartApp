@@ -278,6 +278,18 @@ public sealed class AiAssistantAppService(
             return BuildCapabilitiesAnswer(language, account);
         }
 
+        if (IsSupplierPayoutTimingQuestion(message))
+        {
+            await ReportThinkingAsync(
+                    onThinkingStep,
+                    language == "ar"
+                        ? "سؤال عن موعد استلام الفلوس بعد البيع — هرد حسب نوع الطلب (تجزئة / غير تجزئة)."
+                        : "Payout-timing question — answering by Retail vs non-Retail rules.",
+                    cancellationToken)
+                .ConfigureAwait(false);
+            return BuildSupplierPayoutTimingAnswer(language, account);
+        }
+
         if (IsClearlyOutOfScope(message))
         {
             await ReportThinkingAsync(
@@ -453,6 +465,11 @@ public sealed class AiAssistantAppService(
             Keep marketplace facts accurate; only the wording/style should adapt. Do not switch dialect mid-answer without a user cue.
             The earlier messages in this conversation are real context: resolve follow-up questions, pronouns, and short replies such as "and then?" against them instead of asking the user to repeat.
             Use the supplied knowledge context for platform policy and how-to questions. Never invent policy, timing, permissions, or features.
+            CRITICAL supplier payout timing (هستلم فلوسي امتى / when do I get paid after I accepted and delivered):
+            - Non-Retail orders (Category / Booking / Offer / Request / wholesale): money/dues AFTER the buyer PAYS. Never say after the buyer confirms the order or confirms receipt.
+            - Retail card: balance immediately after successful payment.
+            - Retail COD: after actual collection at delivery.
+            Accepting an order or delivering goods alone does not unlock payment for non-Retail.
             You have tools for live marketplace actions:
             - list_my_ads: list every ad the signed-in seller owns (names + ProductCode). Use when choosing which ad to edit or manage.
             - get_my_last_ad: SELLER listing — their most recently created ad (آخر إعلان نزلته / نشرته / أضفته / هات آخر إعلان). NOT an order.
@@ -950,6 +967,65 @@ public sealed class AiAssistantAppService(
 
         return new AiAssistantAnswer(
             $"Welcome{nameEn}. I’m Alras Smart (الراس الذكي).\n{bodyEn}\nWhat I can do depends on your account type. For human support, use Live Chat from Profile.",
+            language,
+            false,
+            []);
+    }
+
+    private static bool IsSupplierPayoutTimingQuestion(string message)
+    {
+        var q = message.Trim().ToLowerInvariant();
+        string[] markers =
+        [
+            "هستلم فلوسي", "هستلم فلوس", "هقبض امتى", "هقبض إمتى", "هقبض متى",
+            "امتى الفلوس", "إمتى الفلوس", "متى الفلوس", "امتى الفلوس تجي", "إمتى الفلوس تجي",
+            "فلوس هتجيلي", "الفلوس هتجيلي", "فلوس تجيلي", "امتى ينزل", "إمتى ينزل",
+            "متى أقبض", "متى اقبض", "متى استلم ثمن", "متى أستلم ثمن",
+            "سلمت البضاع", "سلمت البضاعه", "سلمت البضاعة", "وافقت عليه وسلمت",
+            "when do i get paid", "when will i get paid", "when do i receive payment",
+            "when is my money", "when does the money", "payout after delivery",
+            "get paid after", "money after delivery", "when am i paid"
+        ];
+        if (!markers.Any(q.Contains)) return false;
+
+        // Avoid hijacking pure withdrawal-how-to questions ("ازاي أسحب").
+        string[] withdrawHowTo =
+            ["ازاي اسحب", "ازاي أسحب", "كيف اسحب", "كيف أسحب", "how do i withdraw", "create withdrawal"];
+        if (withdrawHowTo.Any(q.Contains) && !q.Contains("امتى") && !q.Contains("إمتى") && !q.Contains("متى")
+            && !q.Contains("when"))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static AiAssistantAnswer BuildSupplierPayoutTimingAnswer(string language, AccountContext account)
+    {
+        var nameAr = string.IsNullOrWhiteSpace(account.DisplayName) ? "" : $"{account.DisplayName}، ";
+        var nameEn = string.IsNullOrWhiteSpace(account.DisplayName) ? "" : $"{account.DisplayName}, ";
+
+        if (language == "ar")
+        {
+            return new AiAssistantAnswer(
+                $"{nameAr}حسب نوع الطلب:\n"
+                + "• طلب غير تجزئة (جملة / Category / Booking / Offer / Request): تستلم المستحقات بعد ما المشتري يدفع قيمة الطلب. "
+                + "مش بعد تأكيد الاستلام أو تأكيد الطلب من المشتري، ومش بمجرد موافقتك أو تسليم البضاعة.\n"
+                + "• طلب تجزئة (Retail) بالبطاقة: الرصيد يزيد فور نجاح الدفع.\n"
+                + "• طلب تجزئة بالدفع عند الاستلام: الرصيد يزيد بعد التحصيل الفعلي عند التسليم.\n"
+                + "بعد ما يصير عندك رصيد محصّل، اعمل طلب سحب من صفحة الرصيد؛ وبعد موافقة الدعم التحويل خلال 7 أيام عمل.",
+                language,
+                false,
+                []);
+        }
+
+        return new AiAssistantAnswer(
+            $"{nameEn}it depends on the order type:\n"
+            + "• Non-Retail (wholesale / Category / Booking / Offer / Request): you get paid after the buyer pays the order value — "
+            + "not after the buyer confirms receipt/order, and not merely because you accepted or delivered.\n"
+            + "• Retail paid by card: balance increases immediately after successful payment.\n"
+            + "• Retail cash on delivery: balance increases after actual collection at delivery.\n"
+            + "Once you have collected balance, create a withdrawal from the Balance page; after support approval, transfer within 7 business days.",
             language,
             false,
             []);
