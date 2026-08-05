@@ -678,6 +678,7 @@ type RawOrder = AdminOrder & {
   Notes?: string | null
   VideoPaths?: string[]
   Images?: RawOrderImage[]
+  Videos?: RawOrderImage[]
   DocumentPaths?: string[]
   ProductImagePaths?: string[]
   ProductDocumentPaths?: string[]
@@ -727,6 +728,13 @@ type RawOrder = AdminOrder & {
 }
 
 function normalizeOrderImage(raw: RawOrderImage) {
+  return {
+    id: raw.id ?? raw.Id ?? 0,
+    path: raw.path ?? raw.Path ?? '',
+  }
+}
+
+function normalizeOrderVideo(raw: RawOrderImage) {
   return {
     id: raw.id ?? raw.Id ?? 0,
     path: raw.path ?? raw.Path ?? '',
@@ -869,6 +877,7 @@ export function normalizeOrder(raw: RawOrder): AdminOrder {
     isAdminApproved: raw.isAdminApproved ?? raw.IsAdminApproved ?? false,
     notes: raw.notes ?? raw.Notes ?? null,
     videoPaths: raw.videoPaths ?? raw.VideoPaths ?? [],
+    videos: (raw.videos ?? raw.Videos ?? []).map((item) => normalizeOrderVideo(item)),
     images: (raw.images ?? raw.Images ?? []).map((item) => normalizeOrderImage(item)),
     documentPaths: (raw.documentPaths ?? raw.DocumentPaths ?? []) as string[],
     productImagePaths: (raw.productImagePaths ?? raw.ProductImagePaths ?? []) as string[],
@@ -996,6 +1005,9 @@ type RawShippingProvider = AdminShippingProvider & {
 
 type RawShippingDetail = AdminShippingProviderDetail & {
   FullName?: string
+  LandNumber?: string | null
+  CommercialRegister?: string | null
+  TaxNumber?: string | null
   FromCountryId?: number
   FromPortId?: number
   ToCountryId?: number
@@ -1090,6 +1102,9 @@ export function normalizeShippingProviderDetail(
   return {
     ...base,
     fullName: raw.fullName ?? raw.FullName ?? '',
+    landNumber: raw.landNumber ?? raw.LandNumber ?? null,
+    commercialRegister: raw.commercialRegister ?? raw.CommercialRegister ?? null,
+    taxNumber: raw.taxNumber ?? raw.TaxNumber ?? null,
     fromCountryId: raw.fromCountryId ?? raw.FromCountryId ?? 0,
     fromPortId: raw.fromPortId ?? raw.FromPortId ?? 0,
     toCountryId: raw.toCountryId ?? raw.ToCountryId ?? 0,

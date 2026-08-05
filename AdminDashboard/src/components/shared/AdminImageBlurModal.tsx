@@ -9,10 +9,14 @@ type BlurRect = {
   height: number
 }
 
+const DEFAULT_BLUR_PX = 30
+
 type AdminImageBlurModalProps = {
   open: boolean
   imageUrl: string
   isSaving?: boolean
+  /** Gaussian blur radius in pixels (default 30). */
+  blurPx?: number
   onClose: () => void
   onSave: (file: File) => Promise<void>
 }
@@ -59,6 +63,7 @@ export default function AdminImageBlurModal({
   open,
   imageUrl,
   isSaving = false,
+  blurPx = DEFAULT_BLUR_PX,
   onClose,
   onSave,
 }: AdminImageBlurModalProps) {
@@ -170,7 +175,7 @@ export default function AdminImageBlurModal({
             width: rect.width * scaleX,
             height: rect.height * scaleY,
           },
-          28,
+          blurPx,
         )
       }
 
@@ -244,9 +249,9 @@ export default function AdminImageBlurModal({
                   top: rect.y,
                   width: rect.width,
                   height: rect.height,
-                  backdropFilter: 'blur(20px)',
-                  WebkitBackdropFilter: 'blur(20px)',
-                  background: 'rgba(255,255,255,0.2)',
+                  backdropFilter: `blur(${Math.min(blurPx, 30)}px)`,
+                  WebkitBackdropFilter: `blur(${Math.min(blurPx, 30)}px)`,
+                  background: 'rgba(255,255,255,0.3)',
                 }}
               />
             ))}

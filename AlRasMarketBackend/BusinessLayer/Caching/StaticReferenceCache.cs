@@ -1,5 +1,6 @@
 using System.Text.Json;
 using BusinessLayer.Dtos;
+using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using DataLayer.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -335,10 +336,22 @@ public sealed class StaticReferenceCache(
             return byEnglishName;
         }
 
-        return _snapshot.Countries.FirstOrDefault(country =>
+        var byArabicOrIso = _snapshot.Countries.FirstOrDefault(country =>
             (!string.IsNullOrWhiteSpace(country.CountryNameAr)
              && country.CountryNameAr.Equals(trimmed, StringComparison.OrdinalIgnoreCase))
             || country.Iso2Code.Equals(trimmed, StringComparison.OrdinalIgnoreCase));
+        if (byArabicOrIso is not null)
+        {
+            return byArabicOrIso;
+        }
+
+        return _snapshot.GeoIndex.ResolveCountry(trimmed);
+    }
+
+    public IReadOnlyList<GeoCountrySnapshot> SuggestCountries(string input, int max = 5)
+    {
+        EnsureLoaded();
+        return _snapshot!.GeoIndex.SuggestCountries(input, max);
     }
 
     public IReadOnlyList<GeoPortSnapshot> GetPortsByCountryId(short countryId)
@@ -382,9 +395,15 @@ public sealed class StaticReferenceCache(
         }
 
         var trimmed = portName.Trim();
-        return GetPortsByCountryId(countryId).FirstOrDefault(port =>
+        var byArabic = GetPortsByCountryId(countryId).FirstOrDefault(port =>
             !string.IsNullOrWhiteSpace(port.PortNameAr)
             && port.PortNameAr.Equals(trimmed, StringComparison.OrdinalIgnoreCase));
+        if (byArabic is not null)
+        {
+            return byArabic;
+        }
+
+        return _snapshot.GeoIndex.ResolvePort(trimmed, countryId);
     }
 
     public GeoPortSnapshot? FindPortByEnglishName(string portName, IReadOnlyCollection<int> allowedPortIds)
@@ -424,9 +443,21 @@ public sealed class StaticReferenceCache(
             return byEnglishName;
         }
 
-        return _snapshot.PortsById.Values.FirstOrDefault(port =>
+        var byArabic = _snapshot.PortsById.Values.FirstOrDefault(port =>
             !string.IsNullOrWhiteSpace(port.PortNameAr)
             && port.PortNameAr.Equals(trimmed, StringComparison.OrdinalIgnoreCase));
+        if (byArabic is not null)
+        {
+            return byArabic;
+        }
+
+        return _snapshot.GeoIndex.ResolvePortGlobal(trimmed);
+    }
+
+    public IReadOnlyList<GeoPortSnapshot> SuggestPorts(string input, short countryId, int max = 8)
+    {
+        EnsureLoaded();
+        return _snapshot!.GeoIndex.SuggestPorts(input, countryId, max);
     }
 
     public object GetPortsByCountryNameResponse(string countryName)
@@ -815,6 +846,7 @@ public sealed class StaticReferenceCache(
         public required IReadOnlyList<UnitSnapshot> Units { get; init; }
         public required Dictionary<byte, UnitSnapshot> UnitsById { get; init; }
         public required Dictionary<string, UnitSnapshot> UnitsByName { get; init; }
+        public required GeoNameIndex GeoIndex { get; init; }
 
         public static ReferenceSnapshot Build(
             IReadOnlyList<GeoCountrySnapshot> countries,
@@ -881,7 +913,8 @@ public sealed class StaticReferenceCache(
                 RolesById = rolesById,
                 Units = units,
                 UnitsById = unitsById,
-                UnitsByName = unitsByName
+                UnitsByName = unitsByName,
+                GeoIndex = GeoNameIndex.Build(countries, ports),
             };
         }
     }

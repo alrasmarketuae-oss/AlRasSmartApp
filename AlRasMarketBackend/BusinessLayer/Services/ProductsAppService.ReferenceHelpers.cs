@@ -66,13 +66,15 @@ public partial class ProductsAppService
         if (!string.IsNullOrWhiteSpace(input.OriginCountryName))
         {
             originCountry = staticReferenceCache.FindCountryByName(input.OriginCountryName)
-                ?? throw new KeyNotFoundException($"Origin country '{input.OriginCountryName}' was not found.");
+                ?? throw BuildCountryNotFoundException("Origin country", input.OriginCountryName);
 
             if (!string.IsNullOrWhiteSpace(input.LoadingPortName))
             {
                 loadingPort = staticReferenceCache.FindPortByName(input.LoadingPortName, originCountry.Id)
-                    ?? throw new KeyNotFoundException(
-                        $"Loading port '{input.LoadingPortName}' was not found for country '{input.OriginCountryName}'.");
+                    ?? throw BuildPortNotFoundException(
+                        "Loading port",
+                        input.LoadingPortName,
+                        originCountry);
             }
         }
 
@@ -81,13 +83,15 @@ public partial class ProductsAppService
         if (!string.IsNullOrWhiteSpace(input.DestinationCountryName))
         {
             destinationCountry = staticReferenceCache.FindCountryByName(input.DestinationCountryName)
-                ?? throw new KeyNotFoundException($"Destination country '{input.DestinationCountryName}' was not found.");
+                ?? throw BuildCountryNotFoundException("Destination country", input.DestinationCountryName);
 
             if (!string.IsNullOrWhiteSpace(input.ArrivalPortName))
             {
                 arrivalPort = staticReferenceCache.FindPortByName(input.ArrivalPortName, destinationCountry.Id)
-                    ?? throw new KeyNotFoundException(
-                        $"Arrival port '{input.ArrivalPortName}' was not found for country '{input.DestinationCountryName}'.");
+                    ?? throw BuildPortNotFoundException(
+                        "Arrival port",
+                        input.ArrivalPortName,
+                        destinationCountry);
             }
         }
 
@@ -470,5 +474,33 @@ public partial class ProductsAppService
         }
 
         return parts.Count == 0 ? string.Empty : string.Join(", ", parts);
+    }
+
+    private KeyNotFoundException BuildCountryNotFoundException(string label, string input)
+    {
+        var suggestions = staticReferenceCache.SuggestCountries(input)
+            .Select(x => x.CountryNameEn)
+            .Take(5)
+            .ToList();
+        var hint = suggestions.Count > 0
+            ? $" Did you mean: {string.Join(", ", suggestions)}?"
+            : " Call lookup_create_ad_reference with lookup=countries.";
+        return new KeyNotFoundException($"{label} '{input}' was not found.{hint}");
+    }
+
+    private KeyNotFoundException BuildPortNotFoundException(
+        string label,
+        string input,
+        GeoCountrySnapshot country)
+    {
+        var suggestions = staticReferenceCache.SuggestPorts(input, country.Id)
+            .Select(x => x.PortNameEn)
+            .Take(8)
+            .ToList();
+        var hint = suggestions.Count > 0
+            ? $" Did you mean: {string.Join(", ", suggestions)}?"
+            : $" Call lookup_create_ad_reference with lookup=ports and country_name={country.CountryNameEn}.";
+        return new KeyNotFoundException(
+            $"{label} '{input}' was not found for country '{country.CountryNameEn}'.{hint}");
     }
 }

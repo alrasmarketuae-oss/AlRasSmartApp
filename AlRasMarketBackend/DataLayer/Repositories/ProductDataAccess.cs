@@ -190,7 +190,8 @@ public sealed class ProductDataAccess(
         int take,
         CancellationToken cancellationToken = default)
     {
-        var baseQuery = ProductQueryHelpers.ApplyHomeCatalogProductFilter(dbContext.Products.AsNoTracking());
+        var baseQuery = ProductQueryHelpers.ExcludeHomeFeedCategories(
+            ProductQueryHelpers.ApplyHomeCatalogProductFilter(dbContext.Products.AsNoTracking()));
         var totalCount = await baseQuery.CountAsync(cancellationToken);
         var rows = await ProductQueryHelpers.SelectPublicProductRows(baseQuery)
             .OrderByDescending(x => x.CreatedAt)

@@ -272,6 +272,8 @@ export default function BookingAdDetailView({
   onUploadImage,
   onDeleteImage,
   onDeleteVideo,
+  onTrimVideo,
+  trimmingVideoPath = null,
   onReplaceImage,
 }: CatalogAdDetailViewProps) {
   const { t, locale } = useAppPreferences()
@@ -937,6 +939,9 @@ export default function BookingAdDetailView({
               onDeleteVideo={onDeleteVideo}
               deleteLabel={t('ads.deleteVideo')}
               deletingPath={deletingVideoPath}
+              onTrimVideo={onTrimVideo}
+              trimLabel={t('ads.trimVideo')}
+              trimmingPath={trimmingVideoPath}
             />
           </Card>
 

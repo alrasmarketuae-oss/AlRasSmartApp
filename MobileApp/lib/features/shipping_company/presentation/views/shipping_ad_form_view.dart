@@ -19,9 +19,15 @@ class ShippingAdFormView extends StatefulWidget {
   const ShippingAdFormView({
     super.key,
     this.existingPost,
+    this.embedded = false,
+    this.onPublishSuccess,
+    this.onCancel,
   });
 
   final ShippingCompanyPostModel? existingPost;
+  final bool embedded;
+  final VoidCallback? onPublishSuccess;
+  final VoidCallback? onCancel;
 
   bool get isEdit => existingPost != null;
 
@@ -235,28 +241,22 @@ class _ShippingAdFormViewState extends State<ShippingAdFormView> {
     setState(() => _submitting = false);
 
     if (ok) {
-      AppToast.showSuccess(context, s.savedSuccessfully);
-      context.pop();
+      if (widget.embedded) {
+        AppToast.showSuccess(context, s.savedSuccessfully);
+        widget.onPublishSuccess?.call();
+      } else {
+        AppToast.showSuccess(context, s.savedSuccessfully);
+        context.pop();
+      }
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final s = S.of(context);
-    final companyName = context.read<ShippingCompanyCubit>().dashboard?.companyName ??
-        s.shippingCompany;
-
-    return ShippingCompanyShell(
-      companyName: companyName,
-      title: widget.isEdit ? s.editShippingAd : s.addShippingAd,
-      showBack: true,
-      child: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 24.h),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+  Widget _buildFormFields(S s) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
               ShippingFormSectionLabel(label: s.fromLabel),
               CreateAdLocationDetailsSection(
                 countryLabel: s.enterCountry,
@@ -337,14 +337,35 @@ class _ShippingAdFormViewState extends State<ShippingAdFormView> {
                 maxLines: 4,
               ),
               SizedBox(height: 12.h),
-              ShippingPrimaryButton(
-                label: s.publish,
-                loading: _submitting,
-                onPressed: _submit,
-              ),
-            ],
+          ShippingPrimaryButton(
+            label: s.publish,
+            loading: _submitting,
+            onPressed: _submit,
           ),
-        ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    final form = _buildFormFields(s);
+
+    if (widget.embedded) {
+      return form;
+    }
+
+    final companyName = context.read<ShippingCompanyCubit>().dashboard?.companyName ??
+        s.shippingCompany;
+
+    return ShippingCompanyShell(
+      companyName: companyName,
+      title: widget.isEdit ? s.editShippingAd : s.addShippingAd,
+      showBack: true,
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 24.h),
+        child: form,
       ),
     );
   }
@@ -399,7 +420,6 @@ class _ManageOfferCardState extends State<_ManageOfferCard> {
       carrierName: post.publisherName.isNotEmpty
           ? post.publisherName
           : (context.read<ShippingCompanyCubit>().dashboard?.companyName ?? ''),
-      rating: 4.5,
       routeCountryFrom: post.fromCountry,
       routeCountryTo: post.toCountry,
       routePortFrom: post.fromPort,

@@ -3,6 +3,11 @@ export type AdminOrderImage = {
   path: string
 }
 
+export type AdminOrderVideo = {
+  id: number
+  path: string
+}
+
 export type AdminOrderStatusHistory = {
   id: number
   statusId: number
@@ -71,6 +76,7 @@ export type AdminOrder = {
   isAdminApproved: boolean
   notes: string | null
   videoPaths: string[]
+  videos: AdminOrderVideo[]
   images: AdminOrderImage[]
   documentPaths: string[]
   productImagePaths: string[]

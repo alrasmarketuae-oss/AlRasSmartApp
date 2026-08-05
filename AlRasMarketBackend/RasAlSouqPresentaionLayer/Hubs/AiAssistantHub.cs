@@ -12,7 +12,7 @@ namespace RasAlSouqPresentaionLayer.Hubs;
 /// </summary>
 public sealed class AiAssistantHub(IAiAssistantAppService assistant) : Hub
 {
-    private const int MaxHistoryMessages = 8;
+    private const int MaxHistoryMessages = 15;
     private const int MaxRequestsPerMinute = 12;
     private static readonly TimeSpan SessionLifetime = TimeSpan.FromMinutes(30);
     private static readonly ConcurrentDictionary<string, SessionState> Sessions = new();

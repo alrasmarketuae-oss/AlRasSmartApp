@@ -4334,6 +4334,16 @@ class S {
     );
   }
 
+  /// `Exporting Country`
+  String get bookingExportingCountry {
+    return Intl.message(
+      'Exporting Country',
+      name: 'bookingExportingCountry',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Loading Port`
   String get loadingPort {
     return Intl.message(
@@ -6551,10 +6561,10 @@ class S {
     );
   }
 
-  /// `Welcome. I’m Alras Smart. I can help you use the platform based on your account type. Live chat with a support agent is available from Profile.`
+  /// `Welcome. I’m Alras Smart. Depending on your account type, I can create ads, update prices and quantities, search and compare products, find cheapest/most expensive listings, check shipping prices to a country, and show your ads, orders, sales, and pending orders. Live chat with support is available from Profile.`
   String get aiAssistantWelcome {
     return Intl.message(
-      'Welcome. I’m Alras Smart. I can help you use the platform based on your account type. Live chat with a support agent is available from Profile.',
+      'Welcome. I’m Alras Smart. Depending on your account type, I can create ads, update prices and quantities, search and compare products, find cheapest/most expensive listings, check shipping prices to a country, and show your ads, orders, sales, and pending orders. Live chat with support is available from Profile.',
       name: 'aiAssistantWelcome',
       desc: '',
       args: [],

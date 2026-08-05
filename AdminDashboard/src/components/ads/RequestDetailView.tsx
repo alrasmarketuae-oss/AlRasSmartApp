@@ -64,6 +64,8 @@ type RequestDetailViewProps = {
   onUploadImage: (file: File) => void
   onDeleteImage: (imageId: number) => void
   onDeleteVideo?: (path: string) => void
+  onTrimVideo?: (path: string) => void
+  trimmingVideoPath?: string | null
   onReplaceImage?: (imageId: number, file: File) => Promise<void>
 }
 
@@ -163,6 +165,8 @@ export default function RequestDetailView({
   onUploadImage,
   onDeleteImage,
   onDeleteVideo,
+  onTrimVideo,
+  trimmingVideoPath = null,
   onReplaceImage,
 }: RequestDetailViewProps) {
   const { t, locale } = useAppPreferences()
@@ -796,6 +800,9 @@ export default function RequestDetailView({
                     onDeleteVideo={onDeleteVideo}
                     deleteLabel={t('ads.deleteVideo')}
                     deletingPath={deletingVideoPath}
+                    onTrimVideo={onTrimVideo}
+                    trimLabel={t('ads.trimVideo')}
+                    trimmingPath={trimmingVideoPath}
                   />
                   {videoUrl && activeVideoPath ? (
                     <button
@@ -1051,6 +1058,9 @@ export default function RequestDetailView({
                       onDeleteVideo={onDeleteVideo}
                       deleteLabel={t('ads.deleteVideo')}
                       deletingPath={deletingVideoPath}
+                    onTrimVideo={onTrimVideo}
+                    trimLabel={t('ads.trimVideo')}
+                    trimmingPath={trimmingVideoPath}
                     />
                   </div>
                 ) : null}

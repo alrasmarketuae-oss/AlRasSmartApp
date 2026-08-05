@@ -172,6 +172,9 @@ public class AuthAppService(
             IsApproved = false,
             IsVerified = false,
             PhoneNumber = input.PhoneNumber.Trim(),
+            LandNumber = string.IsNullOrWhiteSpace(input.LandNumber)
+                ? null
+                : input.LandNumber.Trim(),
             CommercialRegister = string.IsNullOrWhiteSpace(input.CommercialRegister)
                 ? null
                 : input.CommercialRegister.Trim(),

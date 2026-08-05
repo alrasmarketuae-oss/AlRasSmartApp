@@ -18,6 +18,7 @@ class CartItemCard extends StatelessWidget {
     required this.onIncrement,
     required this.onDecrement,
     required this.onDelete,
+    this.onQuantityCommitted,
     this.isUpdating = false,
     this.showDelete = true,
   });
@@ -26,6 +27,7 @@ class CartItemCard extends StatelessWidget {
   final VoidCallback onIncrement;
   final VoidCallback onDecrement;
   final VoidCallback onDelete;
+  final ValueChanged<double>? onQuantityCommitted;
   final bool isUpdating;
   final bool showDelete;
 
@@ -95,9 +97,10 @@ class CartItemCard extends StatelessWidget {
                 Row(
                   children: [
                     CartQuantitySelector(
-                      quantity: item.quantity.round(),
+                      quantity: item.quantity,
                       onIncrement: onIncrement,
                       onDecrement: onDecrement,
+                      onQuantityCommitted: onQuantityCommitted,
                       isEnabled: !isUpdating,
                       canIncrement: item.canIncrement,
                     ),

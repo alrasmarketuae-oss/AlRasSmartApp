@@ -166,6 +166,11 @@ public static class AdminOrderMapper
             IsAdminApproved = x.IsAdminApproved,
             Notes = x.Notes,
             VideoPaths = ResolveVideoPaths(x, product),
+            Videos = x.Videos
+                .OrderByDescending(v => v.CreatedAt)
+                .Where(v => !string.IsNullOrWhiteSpace(v.VideoPath))
+                .Select(v => new AdminOrderVideoDto { Id = v.Id, Path = v.VideoPath })
+                .ToList(),
             Images = orderImages,
             DocumentPaths = orderDocuments,
             ProductImagePaths = productImagePaths,

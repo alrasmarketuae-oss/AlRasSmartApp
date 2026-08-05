@@ -448,7 +448,218 @@ public sealed partial class AiAssistantMcpToolsService(
                     additionalProperties = false
                 }
             }
-        }
+        },
+        new
+        {
+            type = "function",
+            function = new
+            {
+                name = "lookup_create_ad_reference",
+                description =
+                    "Lookup static create-ad reference data: units, product_types, categories, request_types (Local/Reexport), " +
+                    "countries, or ports (requires country_name). Use while collecting ad fields from the user.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        lookup = new
+                        {
+                            type = "string",
+                            description = "units | product_types | categories | request_types | countries | ports | booking_price_types"
+                        },
+                        query = new
+                        {
+                            type = "string",
+                            description = "Optional filter text (country/port/category name)."
+                        },
+                        country_name = new
+                        {
+                            type = "string",
+                            description = "Required when lookup=ports. Arabic or English country name."
+                        }
+                    },
+                    required = new[] { "lookup" },
+                    additionalProperties = false
+                }
+            }
+        },
+        new
+        {
+            type = "function",
+            function = new
+            {
+                name = "list_my_addresses",
+                description =
+                    "List the signed-in user's saved delivery addresses (id + label/city/lines). " +
+                    "REQUIRED before create_request_ad for company_customer: pick address_id from this list. " +
+                    "If empty, tell the user to add an address in Profile / Create Order first — never invent a GUID.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new { },
+                    additionalProperties = false
+                }
+            }
+        },
+        new
+        {
+            type = "function",
+            function = new
+            {
+                name = "create_request_ad",
+                description =
+                    "Create ONE Request ad (طلب / Request) using the same backend API as mobile Create Ad / Create Order. " +
+                    "Allowed audiences: supplier OR company_customer only. " +
+                    "Collect ALL required fields first: name, images optional (draft_image_paths), " +
+                    "target price, quantity, unit_name or unit_id, currency (USD/AED), negotiable, " +
+                    "request_type_name Local or Reexport (محلي / إعادة تصدير) — ALWAYS ask, " +
+                    "address_id from list_my_addresses (REQUIRED for company_customer; recommended for supplier), " +
+                    "specifications, packaging kg (ALWAYS ask; user may say none), " +
+                    "optional delivery_date (YYYY-MM-DD), optional media. " +
+                    "Never publish without Local/Reexport. Never invent address_id. " +
+                    "After the user confirms, call once with submit_for_review=true (default). " +
+                    "Only ONE ad per user message.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        name = new { type = "string", description = "Product/ad name." },
+                        price = new { type = "number", description = "Target price." },
+                        quantity = new { type = "integer", description = "Required quantity." },
+                        unit_name = new
+                        {
+                            type = "string",
+                            description = "Ton, Kilogram, Carton, Bag, Box, Piece, Gram, Dozen (Arabic ok). For 5 tons use quantity=5 and unit_name=Ton."
+                        },
+                        unit_id = new
+                        {
+                            type = "integer",
+                            description = "1=Ton, 2=Gram, 3=Kg, 4=Carton, 5=Bag, 6=Dozen, 7=Box, 8=Piece — NOT product type ids."
+                        },
+                        quantity_with_unit = new
+                        {
+                            type = "string",
+                            description = "Optional combined text like '5 ton' or '5 طن'."
+                        },
+                        currency = new { type = "string", description = "USD or AED." },
+                        negotiable = new { type = "boolean", description = "Is price negotiable?" },
+                        request_type_name = new
+                        {
+                            type = "string",
+                            description = "REQUIRED: Local or Reexport (محلي / إعادة تصدير)."
+                        },
+                        request_type_id = new { type = "integer", description = "1=Local, 2=Reexport" },
+                        address_id = new
+                        {
+                            type = "string",
+                            description =
+                                "Saved delivery address GUID from list_my_addresses. " +
+                                "Required for company_customer; recommended for supplier Request ads."
+                        },
+                        delivery_date = new
+                        {
+                            type = "string",
+                            description = "Optional required-delivery date YYYY-MM-DD."
+                        },
+                        specifications = new { type = "string", description = "Product specifications." },
+                        packaging = new { type = "integer", description = "Optional packing kg 1-255." },
+                        draft_image_paths = new
+                        {
+                            type = "array",
+                            items = new { type = "string" },
+                            description = "R2 draft image paths already uploaded (product-images/drafts/…)."
+                        },
+                        draft_video_path = new
+                        {
+                            type = "string",
+                            description = "Optional R2 draft video path (product-videos/drafts/…)."
+                        },
+                        draft_video_duration_seconds = new
+                        {
+                            type = "integer",
+                            description = "Required when draft_video_path is set."
+                        },
+                        created_language = new { type = "string", description = "ar or en." },
+                        submit_for_review = new
+                        {
+                            type = "boolean",
+                            description = "Default true — submit to admin review after create."
+                        }
+                    },
+                    required = new[]
+                    {
+                        "name", "price", "quantity", "unit_name", "request_type_name", "specifications"
+                    },
+                    additionalProperties = false
+                }
+            }
+        },
+        CreateAdToolDefinition(
+            "create_booking_ad",
+            "Create ONE Booking ad (supplier only). Currency is always USD. Collect BEFORE calling: product name, media, price, quantity, unit_name, FOB/CNF/CIF, exporting country (الدولة المصدرة), destination country, shipping_duration_days, negotiable, specifications, packaging kg (ALWAYS ask; user may say none). CRITICAL FOB: never ask/send ports. CNF/CIF: collect loading + arrival ports. Ask product name first.",
+            ["name", "price", "quantity", "unit_name", "origin_country_name", "destination_country_name", "booking_price_type_name", "shipping_duration_days", "specifications"]),
+        CreateAdToolDefinition(
+            "create_offer_ad",
+            "Create ONE Offer ad (supplier only). Collect BEFORE calling: product name, media, price_before, price_after, offer_duration_days, quantity, unit_name, currency, negotiable, Local/Reexport, specifications, packaging kg (ALWAYS ask; user may say none).",
+            ["name", "price_before", "price_after", "offer_duration_days", "quantity", "unit_name", "currency", "request_type_name", "specifications"]),
+        CreateAdToolDefinition(
+            "create_retail_ad",
+            "Create ONE Retail ad (supplier only). Currency is always AED. Collect BEFORE calling: product name, media, price, quantity, unit_name, delivery_days, negotiable, specifications, packaging kg (ALWAYS ask; user may say none).",
+            ["name", "price", "quantity", "unit_name", "delivery_days", "specifications"]),
+        CreateAdToolDefinition(
+            "create_category_ad",
+            "Create ONE Category ad (supplier only). Collect BEFORE calling: product name, category_id/name, media, wholesale price, quantity, unit_name, currency, negotiable, Local/Reexport, wholesale specifications, packaging kg (ALWAYS ask; user may say none). "
+            + "HYBRID (enable_retail_pricing=true): you MUST also ask and collect SEPARATE retail fields BEFORE calling the tool: retail_price (AED), retail_quantity, retail_unit_name, retail_specifications (مواصفات التجزئة — never skip; do NOT copy wholesale specs unless user says same), optional retail_packaging. "
+            + "Never call create_category_ad with enable_retail_pricing=true until retail_specifications is present.",
+            ["name", "price", "quantity", "unit_name", "category_id", "request_type_name", "specifications"]),
+        new
+        {
+            type = "function",
+            function = new
+            {
+                name = "search_shipping_prices",
+                description =
+                    "Search approved international shipping ads (أسعار الشحن) from one country to another. " +
+                    "Pass from_country_name and to_country_name (Arabic or English). Ports are optional. " +
+                    "Returns company names, 20ft/40ft USD prices (buyer-facing with markup), duration days, and route. " +
+                    "Use when the user asks shipping cost / سعر شحن / من دولة إلى دولة.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        from_country_name = new
+                        {
+                            type = "string",
+                            description = "Origin/export country (e.g. Egypt / مصر / UAE / الإمارات)."
+                        },
+                        to_country_name = new
+                        {
+                            type = "string",
+                            description = "Destination country (e.g. UAE / الإمارات / Saudi Arabia)."
+                        },
+                        from_port_name = new
+                        {
+                            type = "string",
+                            description = "Optional loading port filter."
+                        },
+                        to_port_name = new
+                        {
+                            type = "string",
+                            description = "Optional arrival port filter."
+                        }
+                    },
+                    required = new[] { "from_country_name", "to_country_name" },
+                    additionalProperties = false
+                }
+            }
+        },
+        CreateAdToolDefinition(
+            "create_shipping_ad",
+            "Create ONE shipping company ad (shipping audience only). Collect: from/to country + port, min/max shipping duration days, container 20ft/40ft USD prices, specifications/details. Uses profile phone if phone_number omitted.",
+            ["from_country_name", "from_port_name", "to_country_name", "to_port_name", "container_20ft_price_usd", "container_40ft_price_usd", "min_duration_days", "max_duration_days", "specifications"])
     ];
 
     public async Task<AiToolResult> ExecuteAsync(
@@ -490,6 +701,24 @@ public sealed partial class AiAssistantMcpToolsService(
                 "get_my_last_order" => await GetMyLastOrderAsync(
                     userId, cancellationToken).ConfigureAwait(false),
                 "explain_my_order_delay" => await ExplainMyOrderDelayAsync(
+                    userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
+                "lookup_create_ad_reference" => await LookupCreateAdReferenceAsync(
+                    call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
+                "list_my_addresses" => await ListMyAddressesAsync(
+                    userId, cancellationToken).ConfigureAwait(false),
+                "create_request_ad" => await CreateRequestAdAsync(
+                    userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
+                "create_booking_ad" => await CreateBookingAdAsync(
+                    userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
+                "create_offer_ad" => await CreateOfferAdAsync(
+                    userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
+                "create_retail_ad" => await CreateRetailAdAsync(
+                    userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
+                "create_category_ad" => await CreateCategoryAdAsync(
+                    userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
+                "search_shipping_prices" => await SearchShippingPricesAsync(
+                    call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
+                "create_shipping_ad" => await CreateShippingAdAsync(
                     userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
                 _ => Json(new { ok = false, error = $"Unknown tool: {call.Name}" })
             };

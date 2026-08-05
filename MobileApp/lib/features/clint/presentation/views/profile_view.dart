@@ -147,6 +147,17 @@ class _ProfileViewState extends State<ProfileView> {
     }
   }
 
+  bool _shouldShowRoleLabel() {
+    if (_roleLabel.trim().isEmpty) return false;
+    if (AuthService.instance.isSupplierAccount) return false;
+
+    final normalized = _roleLabel.trim().toLowerCase();
+    return normalized != 'seller' &&
+        normalized != 'supplier' &&
+        normalized != 'بائع' &&
+        normalized != 'مورد';
+  }
+
   String get _avatarInitial {
     final source = _name.trim().isNotEmpty ? _name : _email;
     if (source.isEmpty) return '?';
@@ -417,7 +428,7 @@ class _ProfileViewState extends State<ProfileView> {
                         height: 1.3,
                       ),
                     ),
-                    if (_roleLabel.isNotEmpty) ...[
+                    if (_shouldShowRoleLabel()) ...[
                       SizedBox(height: 8.h),
                       Container(
                         padding: EdgeInsets.symmetric(

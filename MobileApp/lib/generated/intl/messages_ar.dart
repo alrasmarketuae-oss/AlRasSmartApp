@@ -236,7 +236,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "الإدخال الصوتي غير متاح على هذا الجهاز",
     ),
     "aiAssistantWelcome": MessageLookupByLibrary.simpleMessage(
-      "أهلاً بك. أنا الراس الذكي. أقدر أساعدك في استخدام المنصة حسب نوع حسابك. المحادثة المباشرة مع موظف الدعم متاحة من الملف الشخصي.",
+      "أهلاً بك. أنا الراس الذكي. أقدر — حسب نوع حسابك — أضيف إعلانات، أعدّل الأسعار والكميات، أبحث وأقارن المنتجات، أجيبك بالأرخص والأغلى، أعرف أسعار الشحن لدولتك، وأجيبك بتفاصيل إعلاناتك وطلباتك ومبيعاتك والطلبات المعلّقة. المحادثة المباشرة مع الدعم من الملف الشخصي.",
     ),
     "aiCorrectedSearch": m3,
     "aiIdentifiedProduct": m4,
@@ -484,6 +484,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "country": MessageLookupByLibrary.simpleMessage("الدولة"),
     "countryCode": MessageLookupByLibrary.simpleMessage("كود الدولة"),
     "countryOfOrigin": MessageLookupByLibrary.simpleMessage("بلد المنشأ"),
+    "bookingExportingCountry": MessageLookupByLibrary.simpleMessage(
+      "الدولة المصدرة",
+    ),
     "createAccount": MessageLookupByLibrary.simpleMessage("إنشاء حساب"),
     "createAds": MessageLookupByLibrary.simpleMessage("إنشاء إعلان"),
     "createOrder": MessageLookupByLibrary.simpleMessage("إنشاء طلب"),

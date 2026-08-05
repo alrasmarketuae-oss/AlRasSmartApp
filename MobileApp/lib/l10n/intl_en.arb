@@ -569,6 +569,7 @@
     }
   },
   "countryOfOrigin": "Country of Origin",
+  "bookingExportingCountry": "Exporting Country",
   "loadingPort": "Loading Port",
   "destinationCountry": "Destination Country",
   "destinationPort": "Destination Port",
@@ -909,7 +910,7 @@
   "aiAssistantFabLabel": "AI",
   "aiAssistantSubtitle": "Alras Smart is an AI Agent and can make mistakes.",
   "aiAssistantHint": "Ask about ads, orders, returns, image search…",
-  "aiAssistantWelcome": "Welcome. I’m Alras Smart. I can help you use the platform based on your account type. Live chat with a support agent is available from Profile.",
+  "aiAssistantWelcome": "Welcome. I’m Alras Smart. Depending on your account type, I can create ads, update prices and quantities, search and compare products, find cheapest/most expensive listings, check shipping prices to a country, and show your ads, orders, sales, and pending orders. Live chat with support is available from Profile.",
   "aiAssistantThinking": "Thinking…",
   "aiAssistantListening": "Listening… speak now",
   "aiAssistantVoiceCorrecting": "AI is correcting your speech…",

@@ -699,10 +699,7 @@ public sealed class CreateOrderRequest
     public bool? IsSelfPickup { get; set; }
 }
 
-public sealed class UploadOrderVideoRequest
-{
-    public IFormFile? File { get; set; }
-}
+
 
 public sealed class UpdateOrderStatusRequest
 {

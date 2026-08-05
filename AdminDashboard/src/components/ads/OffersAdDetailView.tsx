@@ -297,6 +297,8 @@ export default function OffersAdDetailView({
   onUploadImage,
   onDeleteImage,
   onDeleteVideo,
+  onTrimVideo,
+  trimmingVideoPath = null,
   onReplaceImage,
 }: CatalogAdDetailViewProps) {
   const { t, locale } = useAppPreferences()
@@ -1087,6 +1089,9 @@ export default function OffersAdDetailView({
               onDeleteVideo={onDeleteVideo}
               deleteLabel={t('ads.deleteVideo')}
               deletingPath={deletingVideoPath}
+              onTrimVideo={onTrimVideo}
+              trimLabel={t('ads.trimVideo')}
+              trimmingPath={trimmingVideoPath}
             />
           </Card>
 

@@ -1,5 +1,6 @@
 import 'package:alrasmarket/features/company/presentation/controller/cubit/create_ad_cubit.dart';
 import 'package:alrasmarket/features/company/presentation/controller/cubit/create_ad_states.dart';
+import 'package:alrasmarket/features/company/presentation/models/booking_price_type.dart';
 import 'package:alrasmarket/features/company/presentation/models/negotiation_type.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/create_ad/booking_price_type_select_widget.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_location_details_section.dart';
@@ -36,13 +37,22 @@ class CreateAdBookingFieldsWidget extends StatelessWidget {
           previous.destinationPort != current.destinationPort ||
           previous.destinationCountry != current.destinationCountry ||
           previous.destinationPorts != current.destinationPorts ||
-          previous.isDestinationPortsLoading != current.isDestinationPortsLoading,
+          previous.isDestinationPortsLoading !=
+              current.isDestinationPortsLoading ||
+          previous.bookingPriceType != current.bookingPriceType,
       builder: (context, state) {
+        final showPorts = state.bookingPriceType != BookingPriceType.fob;
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            BookingPriceTypeSelectWidget(
+              selectedType: state.bookingPriceType,
+              onChanged: cubit.setBookingPriceType,
+            ),
+            SizedBox(height: 10.h),
             CreateAdLocationDetailsSection(
-              countryLabel: S.of(context).countryOfOrigin,
+              countryLabel: S.of(context).bookingExportingCountry,
               portLabel: S.of(context).loadingPort,
               selectedCountry: state.originCountry,
               ports: state.originPorts,
@@ -50,6 +60,7 @@ class CreateAdBookingFieldsWidget extends StatelessWidget {
               isPortsLoading: state.isOriginPortsLoading,
               onCountryChanged: cubit.setOriginCountry,
               onPortChanged: cubit.setOriginPort,
+              showPorts: showPorts,
             ),
             SizedBox(height: 10.h),
             CreateAdLocationDetailsSection(
@@ -61,17 +72,7 @@ class CreateAdBookingFieldsWidget extends StatelessWidget {
               isPortsLoading: state.isDestinationPortsLoading,
               onCountryChanged: cubit.setDestinationCountry,
               onPortChanged: cubit.setDestinationPort,
-            ),
-            SizedBox(height: 10.h),
-            BlocBuilder<CreateAdCubit, CreateAdFormState>(
-              buildWhen: (previous, current) =>
-                  previous.bookingPriceType != current.bookingPriceType,
-              builder: (context, priceTypeState) {
-                return BookingPriceTypeSelectWidget(
-                  selectedType: priceTypeState.bookingPriceType,
-                  onChanged: cubit.setBookingPriceType,
-                );
-              },
+              showPorts: showPorts,
             ),
             SizedBox(height: 10.h),
             CreateAdPriceNegotiationSection(

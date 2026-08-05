@@ -78,7 +78,7 @@ public class InternationalShippingAppService(
             Status = publisher.RoleId == RoleIds.ShippingCompany
                 ? ProductStatusCodes.UnderReview
                 : ProductStatusCodes.Active,
-            IsApproved = publisher.RoleId != RoleIds.ShippingCompany
+            IsApproved = true
         };
 
         await dbContext.InternationalShippingPosts.AddAsync(entity, cancellationToken);
@@ -128,10 +128,19 @@ public class InternationalShippingAppService(
 
         if (!string.IsNullOrWhiteSpace(input.FromCountryName))
         {
-            var value = input.FromCountryName.Trim().ToLower();
-            query = query.Where(x => x.FromCountry != null
-                && (x.FromCountry.CountryNameEn.ToLower() == value
-                    || (x.FromCountry.CountryNameAr != null && x.FromCountry.CountryNameAr.ToLower() == value)));
+            await geoReferenceCache.EnsureLoadedAsync(cancellationToken);
+            var fromCountry = geoReferenceCache.FindCountryByName(input.FromCountryName);
+            if (fromCountry is not null)
+            {
+                query = query.Where(x => x.FromCountryId == fromCountry.Id);
+            }
+            else
+            {
+                var value = input.FromCountryName.Trim().ToLower();
+                query = query.Where(x => x.FromCountry != null
+                    && (x.FromCountry.CountryNameEn.ToLower() == value
+                        || (x.FromCountry.CountryNameAr != null && x.FromCountry.CountryNameAr.ToLower() == value)));
+            }
         }
         if (!string.IsNullOrWhiteSpace(input.FromPortName))
         {
@@ -142,10 +151,19 @@ public class InternationalShippingAppService(
         }
         if (!string.IsNullOrWhiteSpace(input.ToCountryName))
         {
-            var value = input.ToCountryName.Trim().ToLower();
-            query = query.Where(x => x.ToCountry != null
-                && (x.ToCountry.CountryNameEn.ToLower() == value
-                    || (x.ToCountry.CountryNameAr != null && x.ToCountry.CountryNameAr.ToLower() == value)));
+            await geoReferenceCache.EnsureLoadedAsync(cancellationToken);
+            var toCountry = geoReferenceCache.FindCountryByName(input.ToCountryName);
+            if (toCountry is not null)
+            {
+                query = query.Where(x => x.ToCountryId == toCountry.Id);
+            }
+            else
+            {
+                var value = input.ToCountryName.Trim().ToLower();
+                query = query.Where(x => x.ToCountry != null
+                    && (x.ToCountry.CountryNameEn.ToLower() == value
+                        || (x.ToCountry.CountryNameAr != null && x.ToCountry.CountryNameAr.ToLower() == value)));
+            }
         }
         if (!string.IsNullOrWhiteSpace(input.ToPortName))
         {

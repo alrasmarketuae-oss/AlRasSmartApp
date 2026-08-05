@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import AdDetailView from '../components/ads/AdDetailView'
+import { resolveAssetUrl } from '../lib/assets'
 import { useAppPreferences } from '../context/AppPreferencesProvider'
 import { useReturnToListPath } from '../hooks/useReturnToListPath'
 import {
@@ -14,7 +15,9 @@ import {
   useRejectProductMutation,
   useUpdateAdminProductMutation,
   useUploadAdminProductImageMutation,
+  useUploadAdminProductVideoMutation,
 } from '../store'
+import AdminVideoTrimModal from '../components/shared/AdminVideoTrimModal'
 import { getRtkErrorMessage } from '../utils/rtkError'
 
 export default function AdDetailPage() {
@@ -27,6 +30,7 @@ export default function AdDetailPage() {
   const [actionError, setActionError] = useState<string | null>(null)
   const [deletingImageId, setDeletingImageId] = useState<number | null>(null)
   const [deletingVideoPath, setDeletingVideoPath] = useState<string | null>(null)
+  const [trimTargetPath, setTrimTargetPath] = useState<string | null>(null)
   const [isReplacingImage, setIsReplacingImage] = useState(false)
 
   const { data: product, error, isLoading } = useGetAdminProductDetailQuery(productId, {
@@ -46,6 +50,8 @@ export default function AdDetailPage() {
   const [uploadImage, { isLoading: isUploading }] = useUploadAdminProductImageMutation()
   const [deleteImage] = useDeleteAdminProductImageMutation()
   const [deleteVideo] = useDeleteAdminProductVideoMutation()
+  const [uploadProductVideo, { isLoading: isTrimmingVideo }] =
+    useUploadAdminProductVideoMutation()
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation()
 
   if (!productId) {
@@ -156,6 +162,27 @@ export default function AdDetailPage() {
     }
   }
 
+  async function handleTrimSave(file: File, durationSeconds: number) {
+    if (!trimTargetPath) return
+
+    setActionError(null)
+    setSuccessMessage(null)
+
+    try {
+      await uploadProductVideo({
+        productId,
+        file,
+        videoDurationSeconds: durationSeconds,
+      }).unwrap()
+      await deleteVideo({ productId, path: trimTargetPath }).unwrap()
+      setTrimTargetPath(null)
+      setSuccessMessage(t('ads.trimVideoSaveSuccess'))
+    } catch (err) {
+      setActionError(getRtkErrorMessage(err as never, t('ads.trimVideoSaveError')))
+      throw err
+    }
+  }
+
   async function handleDelete() {
     const confirmed = window.confirm(t('ads.deleteConfirm'))
     if (!confirmed) return
@@ -234,9 +261,19 @@ export default function AdDetailPage() {
           onUploadImage={(file) => void handleUploadImage(file)}
           onDeleteImage={(imageId) => void handleDeleteImage(imageId)}
           onDeleteVideo={(path) => void handleDeleteVideo(path)}
+          onTrimVideo={(path) => setTrimTargetPath(path)}
+          trimmingVideoPath={isTrimmingVideo ? trimTargetPath : null}
           onReplaceImage={(imageId, file) => handleReplaceImage(imageId, file)}
         />
       )}
+
+      <AdminVideoTrimModal
+        open={trimTargetPath != null}
+        videoUrl={trimTargetPath ? resolveAssetUrl(trimTargetPath) : ''}
+        isSaving={isTrimmingVideo}
+        onClose={() => setTrimTargetPath(null)}
+        onSave={handleTrimSave}
+      />
     </div>
   )
 }

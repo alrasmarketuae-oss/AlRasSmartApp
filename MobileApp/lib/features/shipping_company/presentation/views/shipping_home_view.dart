@@ -149,7 +149,6 @@ class _ShippingHomeViewState extends State<ShippingHomeView> {
                     child: ShippingCard(
                       data: ShippingCardData(
                         carrierName: dashboard.companyName,
-                        rating: 4.5,
                         routeCountryFrom: post.fromCountry,
                         routeCountryTo: post.toCountry,
                         routePortFrom: post.fromPort,

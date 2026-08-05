@@ -15,6 +15,7 @@ class CreateAdLocationDetailsSection extends StatelessWidget {
     required this.isPortsLoading,
     required this.onCountryChanged,
     required this.onPortChanged,
+    this.showPorts = true,
   });
 
   final String countryLabel;
@@ -25,6 +26,7 @@ class CreateAdLocationDetailsSection extends StatelessWidget {
   final bool isPortsLoading;
   final ValueChanged<String?> onCountryChanged;
   final ValueChanged<String?> onPortChanged;
+  final bool showPorts;
 
   @override
   Widget build(BuildContext context) {
@@ -36,33 +38,40 @@ class CreateAdLocationDetailsSection extends StatelessWidget {
       fontWeight: FontWeight.w600,
     );
 
+    final countryField = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(countryLabel, style: labelStyle),
+        SizedBox(height: 8.h),
+        AppCountrySearchField(
+          value: selectedCountry,
+          fontFamily: fontFamily,
+          hintText: S.of(context).enterCountry,
+          onChanged: onCountryChanged,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return S.of(context).thisFieldIsRequired;
+            }
+            return null;
+          },
+        ),
+      ],
+    );
+
+    if (!showPorts) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [countryField],
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(countryLabel, style: labelStyle),
-                  SizedBox(height: 8.h),
-                  AppCountrySearchField(
-                    value: selectedCountry,
-                    fontFamily: fontFamily,
-                    hintText: S.of(context).enterCountry,
-                    onChanged: onCountryChanged,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return S.of(context).thisFieldIsRequired;
-                      }
-                      return null;
-                    },
-                  ),
-                ],
-              ),
-            ),
+            Expanded(child: countryField),
             SizedBox(width: 8.w),
             Expanded(
               child: Column(
@@ -78,8 +87,7 @@ class CreateAdLocationDetailsSection extends StatelessWidget {
                     value: selectedPort,
                     items: ports,
                     isLoading: isPortsLoading,
-                    enabled:
-                        selectedCountry != null && ports.isNotEmpty,
+                    enabled: selectedCountry != null && ports.isNotEmpty,
                     onChanged: onPortChanged,
                     validator: (value) {
                       if (value == null || value.isEmpty) {

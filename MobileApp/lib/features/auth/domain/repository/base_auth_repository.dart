@@ -22,6 +22,7 @@ abstract class BaseAuthRepository {
     required String email,
     required String password,
     required String phoneNumber,
+    String landNumber = '',
     required String commercialRegister,
     required String taxNumber,
     String website = '',

@@ -28,9 +28,11 @@ class _ShippingRegisterViewState extends State<ShippingRegisterView> {
   final _taxNumberController = TextEditingController();
   final _websiteController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _landlineController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   String _selectedCountryCode = '+971';
+  String _selectedLandlineCountryCode = '+971';
   bool _acceptedTermsAndPrivacy = false;
 
   @override
@@ -40,6 +42,7 @@ class _ShippingRegisterViewState extends State<ShippingRegisterView> {
     _taxNumberController.dispose();
     _websiteController.dispose();
     _phoneController.dispose();
+    _landlineController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -63,6 +66,9 @@ class _ShippingRegisterViewState extends State<ShippingRegisterView> {
       email: _emailController.text.trim(),
       password: _passwordController.text.trim(),
       phoneNumber: '$_selectedCountryCode ${_phoneController.text.trim()}',
+      landNumber: _landlineController.text.trim().isEmpty
+          ? ''
+          : '$_selectedLandlineCountryCode ${_landlineController.text.trim()}',
       commercialRegister: _commercialRegisterController.text.trim(),
       taxNumber: _taxNumberController.text.trim(),
       website: _websiteController.text.trim(),
@@ -200,6 +206,32 @@ class _ShippingRegisterViewState extends State<ShippingRegisterView> {
                             keyboardType: TextInputType.phone,
                             validator: (v) =>
                                 v == null || v.trim().isEmpty ? s.thisFieldIsRequired : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16.h),
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: CountryCodeField(
+                            label: s.countryCode,
+                            value: _selectedLandlineCountryCode,
+                            onChanged: (value) => setState(
+                              () => _selectedLandlineCountryCode = value,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          flex: 3,
+                          child: CustomTextFormField(
+                            controller: _landlineController,
+                            label: s.landlinePhone,
+                            hintText: 'XX XXX XXXX',
+                            keyboardType: TextInputType.phone,
+                            addOptionalLabel: true,
                           ),
                         ),
                       ],

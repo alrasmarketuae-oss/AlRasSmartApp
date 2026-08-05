@@ -4,16 +4,28 @@ import { resolveAssetUrl } from '../../lib/assets'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import {
   useApproveRequestOfferMutation,
+  useDeleteAdminProductVideoMutation,
+  useDeleteOrderImageMutation,
+  useDeleteOrderVideoMutation,
   useMarkOrderReceivedMutation,
   useRejectRequestOfferMutation,
   useSetCustomOrderStatusMutation,
+  useUploadAdminProductVideoMutation,
+  useUploadOrderImageMutation,
+  useUploadOrderVideoMutation,
 } from '../../store'
+import { adminApi } from '../../store/adminApi'
+import { useAppDispatch } from '../../store/hooks'
 import type { AdminOrder } from '../../types/adminOrder'
+import AdminImageBlurModal from '../shared/AdminImageBlurModal'
+import AdminVideoTrimModal from '../shared/AdminVideoTrimModal'
+import ProductVideosPanel from '../ads/ProductVideosPanel'
 import ProductShippingPanel from '../shared/ProductShippingPanel'
 import ContactSupplierDialog, {
   type ContactTarget,
 } from '../shared/ContactSupplierDialog'
 import ConfirmDialog from '../ui/ConfirmDialog'
+import { getRtkErrorMessage } from '../../utils/rtkError'
 import OrderStatusHistoryStrip from './OrderStatusHistoryStrip'
 import {
   displayAdProductTypeName,
@@ -134,6 +146,7 @@ export default function RequestOfferDetailView({
   backToListPath,
 }: RequestOfferDetailViewProps) {
   const { t, locale } = useAppPreferences()
+  const dispatch = useAppDispatch()
   const location = useLocation()
   const resolvedBack =
     backToListPath ||
@@ -151,6 +164,17 @@ export default function RequestOfferDetailView({
   const [customStatusSuccess, setCustomStatusSuccess] = useState<string | null>(null)
   const [confirmMarkReceived, setConfirmMarkReceived] = useState(false)
   const [contactTarget, setContactTarget] = useState<ContactTarget | null>(null)
+  const [blurTarget, setBlurTarget] = useState<{ id: number; url: string } | null>(null)
+  const [blurError, setBlurError] = useState<string | null>(null)
+  const [blurSuccess, setBlurSuccess] = useState<string | null>(null)
+  const [deletingImageId, setDeletingImageId] = useState<number | null>(null)
+  const [deletingVideoPath, setDeletingVideoPath] = useState<string | null>(null)
+  const [trimTarget, setTrimTarget] = useState<{
+    path: string
+    orderVideoId?: number
+    source: 'order' | 'product'
+  } | null>(null)
+  const [selectedVideoIndex, setSelectedVideoIndex] = useState(0)
 
   const [approveRequestOffer, { isLoading: isApprovingOffer }] =
     useApproveRequestOfferMutation()
@@ -160,6 +184,16 @@ export default function RequestOfferDetailView({
     useSetCustomOrderStatusMutation()
   const [markOrderReceived, { isLoading: isMarkingReceived }] =
     useMarkOrderReceivedMutation()
+  const [uploadOrderImage, { isLoading: isUploadingBlur }] = useUploadOrderImageMutation()
+  const [deleteOrderImage, { isLoading: isDeletingBlur }] = useDeleteOrderImageMutation()
+  const [uploadOrderVideo, { isLoading: isUploadingOrderVideo }] =
+    useUploadOrderVideoMutation()
+  const [deleteOrderVideo, { isLoading: isDeletingOrderVideo }] =
+    useDeleteOrderVideoMutation()
+  const [uploadProductVideo, { isLoading: isUploadingProductVideo }] =
+    useUploadAdminProductVideoMutation()
+  const [deleteProductVideo, { isLoading: isDeletingProductVideo }] =
+    useDeleteAdminProductVideoMutation()
 
   const status = getOrderStatusStyle(order.statusId)
   const statusLabel =
@@ -171,12 +205,21 @@ export default function RequestOfferDetailView({
   const canSetCustomRequestStatus = canSetCustomTextStatus(order)
   const canMarkReceived = canMarkOrderReceived(order)
   const statusHistory = order.statusHistory ?? []
+  const isReplacingImage = isUploadingBlur || isDeletingBlur
+  const isTrimmingVideo = isUploadingOrderVideo || isUploadingProductVideo
+  const isDeletingVideo = isDeletingOrderVideo || isDeletingProductVideo
+  const trimmingVideoPath =
+    isTrimmingVideo && trimTarget ? trimTarget.path : null
   const isBusy =
     isUpdating ||
     isApprovingOffer ||
     isRejectingOffer ||
     isSettingCustomStatus ||
-    isMarkingReceived
+    isMarkingReceived ||
+    isReplacingImage ||
+    isTrimmingVideo ||
+    isDeletingVideo ||
+    deletingImageId != null
 
   const requiredQuantity = resolveRequiredQuantity(order)
   const offeredQuantity = resolveOfferedQuantity(order)
@@ -210,12 +253,146 @@ export default function RequestOfferDetailView({
   const buyerLabel = order.customerName?.trim() || '—'
   const buyerInitials = buyerLabel.slice(0, 2).toUpperCase()
 
-  const photoPaths = useMemo(() => {
-    const fromOrder = order.images.map((i) => i.path).filter(Boolean)
-    const fromProduct = order.productImagePaths ?? []
-    const primary = order.primaryImagePath ? [order.primaryImagePath] : []
-    return Array.from(new Set([...fromOrder, ...fromProduct, ...primary].filter(Boolean)))
+  const photoItems = useMemo(() => {
+    const byPath = new Map<string, { id?: number; path: string }>()
+    for (const image of order.images) {
+      if (!image.path) continue
+      byPath.set(image.path, { id: image.id, path: image.path })
+    }
+    for (const path of order.productImagePaths ?? []) {
+      if (!path || byPath.has(path)) continue
+      byPath.set(path, { path })
+    }
+    if (order.primaryImagePath && !byPath.has(order.primaryImagePath)) {
+      byPath.set(order.primaryImagePath, { path: order.primaryImagePath })
+    }
+    return Array.from(byPath.values())
   }, [order.images, order.productImagePaths, order.primaryImagePath])
+
+  const videoItems = useMemo(() => {
+    const byPath = new Map<
+      string,
+      { path: string; orderVideoId?: number; source: 'order' | 'product' }
+    >()
+    for (const video of order.videos ?? []) {
+      if (!video.path) continue
+      byPath.set(video.path, {
+        path: video.path,
+        orderVideoId: video.id,
+        source: 'order',
+      })
+    }
+    for (const path of order.videoPaths ?? []) {
+      if (!path || byPath.has(path)) continue
+      byPath.set(path, { path, source: 'product' })
+    }
+    return Array.from(byPath.values())
+  }, [order.videos, order.videoPaths])
+
+  const panelVideos = useMemo(
+    () => videoItems.map((item) => ({ path: item.path, isMuted: true })),
+    [videoItems],
+  )
+
+  function invalidateOrderDetail() {
+    dispatch(adminApi.util.invalidateTags([{ type: 'Orders', id: String(order.id) }]))
+  }
+
+  async function handleDeleteImage(imageId: number) {
+    if (!window.confirm(t('orders.deleteImageConfirm'))) return
+    setBlurError(null)
+    setBlurSuccess(null)
+    setDeletingImageId(imageId)
+    try {
+      await deleteOrderImage({ orderId: order.id, imageId }).unwrap()
+      setBlurSuccess(t('orders.imageDeleteSuccess'))
+    } catch (err) {
+      setBlurError(getRtkErrorMessage(err as never, t('orders.imageDeleteError')))
+    } finally {
+      setDeletingImageId(null)
+    }
+  }
+
+  async function handleDeleteVideo(path: string) {
+    if (!window.confirm(`${t('ads.deleteVideo')}?`)) return
+    const item = videoItems.find((video) => video.path === path)
+    if (!item) return
+
+    setBlurError(null)
+    setBlurSuccess(null)
+    setDeletingVideoPath(path)
+    try {
+      if (item.source === 'order' && item.orderVideoId) {
+        await deleteOrderVideo({ orderId: order.id, videoId: item.orderVideoId }).unwrap()
+      } else {
+        await deleteProductVideo({ productId: order.productId, path }).unwrap()
+        invalidateOrderDetail()
+      }
+      setBlurSuccess(t('ads.deleteVideoSuccess'))
+    } catch (err) {
+      setBlurError(getRtkErrorMessage(err as never, t('ads.deleteVideoError')))
+    } finally {
+      setDeletingVideoPath(null)
+    }
+  }
+
+  function openTrimVideo(path: string) {
+    const item = videoItems.find((video) => video.path === path)
+    if (!item) return
+    setBlurError(null)
+    setBlurSuccess(null)
+    setTrimTarget({
+      path: item.path,
+      orderVideoId: item.orderVideoId,
+      source: item.source,
+    })
+  }
+
+  async function handleTrimSave(file: File, durationSeconds: number) {
+    if (!trimTarget) return
+    setBlurError(null)
+    setBlurSuccess(null)
+    try {
+      if (trimTarget.source === 'order' && trimTarget.orderVideoId) {
+        await uploadOrderVideo({ orderId: order.id, file }).unwrap()
+        await deleteOrderVideo({
+          orderId: order.id,
+          videoId: trimTarget.orderVideoId,
+        }).unwrap()
+      } else {
+        await uploadProductVideo({
+          productId: order.productId,
+          file,
+          videoDurationSeconds: durationSeconds,
+        }).unwrap()
+        await deleteProductVideo({
+          productId: order.productId,
+          path: trimTarget.path,
+        }).unwrap()
+        invalidateOrderDetail()
+      }
+      setTrimTarget(null)
+      setBlurSuccess(t('ads.trimVideoSaveSuccess'))
+    } catch (err) {
+      setBlurError(getRtkErrorMessage(err as never, t('ads.trimVideoSaveError')))
+      throw err
+    }
+  }
+
+  async function handleBlurSave(file: File) {
+    if (!blurTarget) return
+    setBlurError(null)
+    setBlurSuccess(null)
+    try {
+      await uploadOrderImage({ orderId: order.id, file }).unwrap()
+      await deleteOrderImage({ orderId: order.id, imageId: blurTarget.id }).unwrap()
+      setBlurTarget(null)
+      setBlurSuccess(t('ads.blurSaveSuccess'))
+    } catch (err) {
+      setBlurError(getRtkErrorMessage(err as never, t('ads.blurSaveError')))
+      throw err
+    }
+  }
 
   const documentPaths = useMemo(() => {
     return Array.from(
@@ -311,6 +488,12 @@ export default function RequestOfferDetailView({
       ) : null}
       {requestOfferError ? (
         <div className="admin-alert-error print:hidden">{requestOfferError}</div>
+      ) : null}
+      {blurSuccess ? (
+        <div className="admin-alert-success print:hidden">{blurSuccess}</div>
+      ) : null}
+      {blurError ? (
+        <div className="admin-alert-error print:hidden">{blurError}</div>
       ) : null}
       {customStatusSuccess ? (
         <div className="admin-alert-success print:hidden">{customStatusSuccess}</div>
@@ -669,25 +852,53 @@ export default function RequestOfferDetailView({
 
               {activeTab === 'details' ? (
                 <>
-                  {photoPaths.length > 0 ? (
+                  {photoItems.length > 0 ? (
                     <section className="admin-card rounded-2xl p-5 shadow-sm lg:col-span-2">
                       <h3 className="admin-text mb-3 text-start text-sm font-bold">
                         {t('reqsOffers.productPhotos')}
                       </h3>
-                      <div className="flex flex-wrap gap-2">
-                        {photoPaths.map((path) => {
-                          const url = resolveAssetUrl(path)
-                          return url ? (
-                            <a
-                              key={path}
-                              href={url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="block h-14 w-14 overflow-hidden rounded-lg ring-1 ring-slate-200"
-                            >
-                              <img src={url} alt="" className="h-full w-full object-cover" />
-                            </a>
-                          ) : null
+                      <div className="flex flex-wrap gap-3">
+                        {photoItems.map((item) => {
+                          const url = resolveAssetUrl(item.path)
+                          if (!url) return null
+                          return (
+                            <div key={item.path} className="flex flex-col items-center gap-1.5">
+                              <a
+                                href={url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="block h-14 w-14 overflow-hidden rounded-lg ring-1 ring-slate-200"
+                              >
+                                <img src={url} alt="" className="h-full w-full object-cover" />
+                              </a>
+                              {typeof item.id === 'number' && item.id > 0 ? (
+                                <div className="flex flex-wrap gap-1">
+                                  <button
+                                    type="button"
+                                    disabled={isBusy}
+                                    onClick={() => {
+                                      setBlurError(null)
+                                      setBlurSuccess(null)
+                                      setBlurTarget({ id: item.id!, url })
+                                    }}
+                                    className="admin-border rounded-md border px-1.5 py-0.5 text-[10px] font-semibold disabled:opacity-50"
+                                  >
+                                    {t('ads.blurImage')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={isBusy || deletingImageId === item.id}
+                                    onClick={() => void handleDeleteImage(item.id!)}
+                                    className="rounded-md border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-700 disabled:opacity-50"
+                                  >
+                                    {deletingImageId === item.id
+                                      ? '…'
+                                      : t('orders.deleteImage')}
+                                  </button>
+                                </div>
+                              ) : null}
+                            </div>
+                          )
                         })}
                       </div>
                     </section>
@@ -794,40 +1005,77 @@ export default function RequestOfferDetailView({
               <h3 className="admin-text mb-3 text-start text-sm font-bold">
                 {t('reqsOffers.productPhotos')}
               </h3>
-              {photoPaths.length === 0 ? (
+              {photoItems.length === 0 ? (
                 <p className="admin-text-muted text-sm">{t('orders.noImages')}</p>
               ) : (
-                <div className="flex flex-wrap gap-2">
-                  {photoPaths.map((path) => {
-                    const url = resolveAssetUrl(path)
-                    return url ? (
-                      <a
-                        key={path}
-                        href={url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="h-14 w-14 overflow-hidden rounded-lg ring-1 ring-slate-200"
+                <div className="flex flex-wrap gap-3">
+                  {photoItems.map((item) => {
+                    const url = resolveAssetUrl(item.path)
+                    if (!url) return null
+                    return (
+                      <div
+                        key={item.path}
+                        className="flex w-28 flex-col gap-1.5 rounded-xl ring-1 ring-slate-200 p-2 dark:ring-slate-700"
                       >
-                        <img src={url} alt="" className="h-full w-full object-cover" />
-                      </a>
-                    ) : null
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="block aspect-square overflow-hidden rounded-lg"
+                        >
+                          <img src={url} alt="" className="h-full w-full object-cover" />
+                        </a>
+                        {typeof item.id === 'number' && item.id > 0 ? (
+                          <div className="flex flex-col gap-1">
+                            <button
+                              type="button"
+                              disabled={isBusy}
+                              onClick={() => {
+                                setBlurError(null)
+                                setBlurSuccess(null)
+                                setBlurTarget({ id: item.id!, url })
+                              }}
+                              className="admin-border rounded-lg border px-2 py-1 text-[10px] font-semibold disabled:opacity-50"
+                            >
+                              {t('ads.blurImage')}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isBusy || deletingImageId === item.id}
+                              onClick={() => void handleDeleteImage(item.id!)}
+                              className="rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-[10px] font-semibold text-red-700 disabled:opacity-50"
+                            >
+                              {deletingImageId === item.id
+                                ? '…'
+                                : t('orders.deleteImage')}
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+                    )
                   })}
                 </div>
               )}
-              {order.videoPaths?.length ? (
-                <div className="mt-4 space-y-2">
-                  <p className="admin-text text-sm font-bold">{t('orders.videos')}</p>
-                  {order.videoPaths.map((path) => (
-                    <a
-                      key={path}
-                      href={resolveAssetUrl(path)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="block text-sm font-semibold text-[#2563eb]"
-                    >
-                      {fileNameFromPath(path)}
-                    </a>
-                  ))}
+              {videoItems.length > 0 ? (
+                <div className="mt-6">
+                  <p className="admin-text mb-2 text-sm font-bold">{t('orders.videos')}</p>
+                  <ProductVideosPanel
+                    videos={panelVideos}
+                    selectedIndex={selectedVideoIndex}
+                    onSelectedIndexChange={setSelectedVideoIndex}
+                    onMuteChange={() => {}}
+                    muteLabel={t('ads.muteVideoInApp')}
+                    emptyLabel={t('orders.noVideos')}
+                    isBusy={isBusy}
+                    className="rounded-xl ring-1 ring-slate-200 p-3 dark:ring-slate-700"
+                    videoClassName="max-h-56 w-full rounded-lg bg-black"
+                    onDeleteVideo={(path) => void handleDeleteVideo(path)}
+                    deleteLabel={t('ads.deleteVideo')}
+                    deletingPath={deletingVideoPath}
+                    onTrimVideo={openTrimVideo}
+                    trimLabel={t('ads.trimVideo')}
+                    trimmingPath={trimmingVideoPath}
+                  />
                 </div>
               ) : null}
             </section>
@@ -1076,6 +1324,23 @@ export default function RequestOfferDetailView({
         open={contactTarget != null}
         target={contactTarget}
         onClose={() => setContactTarget(null)}
+      />
+
+      <AdminImageBlurModal
+        open={blurTarget != null}
+        imageUrl={blurTarget?.url ?? ''}
+        isSaving={isReplacingImage}
+        blurPx={30}
+        onClose={() => setBlurTarget(null)}
+        onSave={handleBlurSave}
+      />
+
+      <AdminVideoTrimModal
+        open={trimTarget != null}
+        videoUrl={trimTarget ? resolveAssetUrl(trimTarget.path) : ''}
+        isSaving={isTrimmingVideo}
+        onClose={() => setTrimTarget(null)}
+        onSave={handleTrimSave}
       />
     </div>
   )

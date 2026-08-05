@@ -10,7 +10,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 class ShippingCardData {
   const ShippingCardData({
     required this.carrierName,
-    required this.rating,
     required this.routeCountryFrom,
     required this.routeCountryTo,
     required this.routePortFrom,
@@ -26,7 +25,6 @@ class ShippingCardData {
   });
 
   final String carrierName;
-  final double rating;
   final String routeCountryFrom;
   final String routeCountryTo;
   final String routePortFrom;
@@ -164,35 +162,14 @@ class ShippingCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (showHeader) ...[
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Text(
-                  data.carrierName,
-                  style: TextStyle(
-                    color: _titleColor,
-                    fontSize: 16.sp,
-                    height: 1.5,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Icon(
-                Icons.star_rounded,
-                size: 18.sp,
-                color: const Color(0xFFFFB800),
-              ),
-              SizedBox(width: 4.w),
-              Text(
-                data.rating.toStringAsFixed(1),
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 14.sp,
-                  height: 1.5,
-                ),
-              ),
-            ],
+          Text(
+            data.carrierName,
+            style: TextStyle(
+              color: _titleColor,
+              fontSize: 16.sp,
+              height: 1.5,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           SizedBox(height: 16.h),
         ],

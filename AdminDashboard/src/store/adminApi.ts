@@ -723,6 +723,119 @@ export const adminApi = createApi({
       ],
     }),
 
+    uploadOrderVideo: builder.mutation<
+      { id: number; path: string },
+      { orderId: number; file: File }
+    >({
+      queryFn: async ({ orderId, file }) => {
+        const token = getAuthToken()
+        const form = new FormData()
+        form.append('File', file)
+
+        try {
+          const response = await fetch(
+            apiUrl(`/api/admin/orders/${orderId}/videos/upload`),
+            {
+              method: 'POST',
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+              body: form,
+            },
+          )
+
+          const data: unknown = await response.json().catch(() => ({}))
+
+          if (!response.ok) {
+            const error = data as { message?: string }
+            return {
+              error: {
+                status: response.status,
+                data: { message: error.message ?? 'تعذر رفع الفيديو.' },
+              },
+            }
+          }
+
+          const raw = data as { id?: number; Id?: number; path?: string; Path?: string }
+          return {
+            data: {
+              id: raw.id ?? raw.Id ?? 0,
+              path: raw.path ?? raw.Path ?? '',
+            },
+          }
+        } catch {
+          return {
+            error: {
+              status: 'FETCH_ERROR',
+              error: 'تعذر رفع الفيديو.',
+            },
+          }
+        }
+      },
+      invalidatesTags: (_result, _error, { orderId }) => [
+        { type: 'Orders', id: 'LIST' },
+        { type: 'Orders', id: String(orderId) },
+      ],
+    }),
+
+    deleteOrderVideo: builder.mutation<void, { orderId: number; videoId: number }>({
+      query: ({ orderId, videoId }) => ({
+        url: `/api/admin/orders/${orderId}/videos/${videoId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (_result, _error, { orderId }) => [
+        { type: 'Orders', id: 'LIST' },
+        { type: 'Orders', id: String(orderId) },
+      ],
+    }),
+
+    uploadAdminProductVideo: builder.mutation<
+      { path: string },
+      { productId: string; file: File; videoDurationSeconds: number }
+    >({
+      queryFn: async ({ productId, file, videoDurationSeconds }) => {
+        const token = getAuthToken()
+        const form = new FormData()
+        form.append('File', file)
+        form.append('VideoDurationSeconds', String(videoDurationSeconds))
+
+        try {
+          const response = await fetch(
+            apiUrl(`/api/admin/products/${productId}/videos/upload`),
+            {
+              method: 'POST',
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+              body: form,
+            },
+          )
+
+          const data: unknown = await response.json().catch(() => ({}))
+
+          if (!response.ok) {
+            const error = data as { message?: string }
+            return {
+              error: {
+                status: response.status,
+                data: { message: error.message ?? 'تعذر رفع الفيديو.' },
+              },
+            }
+          }
+
+          const raw = data as { path?: string; Path?: string }
+          return { data: { path: raw.path ?? raw.Path ?? '' } }
+        } catch {
+          return {
+            error: {
+              status: 'FETCH_ERROR',
+              error: 'تعذر رفع الفيديو.',
+            },
+          }
+        }
+      },
+      invalidatesTags: (_result, _error, { productId }) => [
+        { type: 'Products', id: productId },
+        { type: 'Products', id: 'LIST' },
+      ],
+    }),
+
     getShippingProviders: builder.query<
       ReturnType<typeof normalizeShippingProvidersResponse>,
       AdminShippingFilters
@@ -1754,6 +1867,9 @@ export const {
   useMarkOrderReceivedMutation,
   useUploadOrderImageMutation,
   useDeleteOrderImageMutation,
+  useUploadOrderVideoMutation,
+  useDeleteOrderVideoMutation,
+  useUploadAdminProductVideoMutation,
   useGetShippingProvidersQuery,
   useGetShippingProviderDetailQuery,
   useSetShippingProviderActiveMutation,

@@ -248,6 +248,49 @@ public class AdminProductsController(
         }
     }
 
+    [HttpPost("{productId}/videos/upload")]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(110 * 1024 * 1024)]
+    public async Task<IActionResult> UploadVideo(
+        string productId,
+        [FromForm] UploadAdminProductVideoRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            var root = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var result = await productAssetsAppService.UploadVideoAsync(new UploadProductVideoInput
+            {
+                ProductId = productId,
+                OwnerId = userId,
+                File = request.File,
+                VideoDurationSeconds = request.VideoDurationSeconds,
+                WebRootPath = root,
+                AllowAdminAccess = true
+            }, cancellationToken);
+
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
     [HttpDelete("{productId}/videos")]
     public async Task<IActionResult> DeleteVideo(
         string productId,
@@ -350,4 +393,10 @@ public class AdminProductsController(
             });
         }
     }
+}
+
+public sealed class UploadAdminProductVideoRequest
+{
+    public IFormFile? File { get; set; }
+    public byte VideoDurationSeconds { get; set; }
 }

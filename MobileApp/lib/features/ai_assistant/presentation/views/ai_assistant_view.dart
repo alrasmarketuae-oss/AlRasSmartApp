@@ -5,9 +5,14 @@ import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/services/dio_helper.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
+import 'package:alrasmarket/core/serveses/cached_constants.dart' as cache;
 import 'package:alrasmarket/features/ai_assistant/data/ai_assistant_realtime_service.dart';
+import 'package:alrasmarket/features/ai_assistant/presentation/widgets/ai_ad_plan_form.dart';
 import 'package:alrasmarket/generated/l10n.dart';
+import 'package:alrasmarket/core/services_locator/services_locator.dart';
+import 'package:alrasmarket/features/company/domain/usecases/create_ad_usecases.dart';
 import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -26,6 +31,89 @@ const _aiGradient = LinearGradient(
   colors: [LightColor.defaultColor, LightColor.lightBlue],
 );
 
+class _AiChatColors {
+  const _AiChatColors({required this.isDark, this.planMode = false});
+
+  final bool isDark;
+  final bool planMode;
+
+  factory _AiChatColors.of(BuildContext context) =>
+      const _AiChatColors(isDark: true);
+
+  Color get scaffoldBg => planMode
+      ? const Color(0xFF2A2208)
+      : (isDark ? const Color(0xFF0B1220) : const Color(0xFFF6F8FC));
+
+  Color get assistantBubbleBg =>
+      isDark ? const Color(0xFF111827) : Colors.white;
+
+  Color get assistantBorder =>
+      isDark ? const Color(0xFF1F2937) : const Color(0xFFE6EAF2);
+
+  Color get primaryText =>
+      isDark ? const Color(0xFFE5E7EB) : const Color(0xFF1F2937);
+
+  Color get mutedText =>
+      isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+
+  Color get composerBg =>
+      isDark ? const Color(0xFF0F172A) : Colors.white;
+
+  Color get composerBorder =>
+      isDark ? const Color(0xFF1F2937) : const Color(0xFFE6EAF2);
+
+  Color get thinkingPanelBg => planMode
+      ? const Color(0xFF3A2F10)
+      : const Color(0xFF151A26);
+
+  Color get thinkingPanelBorder => planMode
+      ? const Color(0xFFF0D48A)
+      : const Color(0xFF2A3142);
+
+  Color get pathCode =>
+      planMode ? const Color(0xFFE6A817) : const Color(0xFF34D399);
+}
+
+const _thinkingIntroPhrasesEn = [
+  'Thought briefly…',
+  'Planning next moves…',
+  'Reviewing your request…',
+  'Connecting the dots…',
+];
+
+const _thinkingIntroPhrasesAr = [
+  'فكرت للحظة…',
+  'بخطط الخطوة الجاية…',
+  'براجع طلبك…',
+  'بجمّع التفاصيل…',
+];
+
+const _adLargeTaskPhrasesAr = [
+  'هذه مهمة كبيرة — هقسمها لخطوات وأجمع البيانات بالترتيب…',
+  'أفكر بعمق في متطلبات هذا الإعلان قبل ما أبدأ…',
+  'طلب كبير شوية — هراجع نوع الإعلان والحقول المطلوبة أولاً…',
+  'خلّيني أخطط كويس قبل إضافة الإعلان…',
+  'بفكّر بهدوء: إيه الناقص عشان نقدر ننشر؟',
+  'مهمة مركّبة — هرتّب الخطوات ثم أرد عليك…',
+  'بأستكشف المتطلبات أولاً، وبعدين نكمّل إضافة الإعلان…',
+  'هتمهل شوية وأراجع البيانات المطلوبة لهذا النوع…',
+  'بفكّر خطوة بخطوة عشان ما يفوتناش حقل مهم…',
+  'ده طلب يحتاج تركيز — هجمع المطلوب ثم أحاول النشر…',
+];
+
+const _adLargeTaskPhrasesEn = [
+  'This is a large task — I’ll break it into steps and collect the data in order…',
+  'Thinking deeply about this ad’s requirements before I start…',
+  'Quite a big request — reviewing the ad type and required fields first…',
+  'Let me plan carefully before adding the ad…',
+  'Thinking calmly: what’s still missing so we can publish?',
+  'A complex task — I’ll organize the steps, then reply…',
+  'Exploring the requirements first, then we’ll finish creating the ad…',
+  'Taking a moment to review the fields needed for this type…',
+  'Working step by step so we don’t miss an important field…',
+  'This needs focus — I’ll gather what’s required, then try to publish…',
+];
+
 class AiAssistantView extends StatefulWidget {
   const AiAssistantView({super.key});
 
@@ -41,6 +129,16 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   Future<void>? _connectFuture;
   bool _isThinking = false;
   final List<String> _thinkingSteps = [];
+  DateTime? _thinkingStartedAt;
+  bool _pendingAdMediaButton = false;
+  final List<String> _draftImagePaths = [];
+  String? _draftVideoPath;
+  int? _draftVideoDurationSeconds;
+  bool _uploadingAdMedia = false;
+  final _imagePicker = ImagePicker();
+  final _draftOps = sl<ProductDraftOpsUseCase>();
+  bool _planMode = false;
+  AiAdPlanKind? _planInitialKind;
 
   @override
   void initState() {
@@ -65,33 +163,306 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   }
 
   Future<void> _send() async {
-    final text = _controller.text.trim();
-    if (text.isEmpty || _isThinking) return;
+    final visibleText = _controller.text.trim();
+    if (visibleText.isEmpty || _isThinking) return;
+
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+
+    // Ad-creation intent → yellow Plan Mode chat (same composer, AI asks for fields).
+    if (!_planMode && looksLikeAiAdCreationIntent(visibleText)) {
+      final auth = AuthService.instance;
+      final canCreate = auth.isSupplierAccount ||
+          auth.isCompanyCustomerAccount ||
+          cache.isShippingCompanyAccount == true;
+      final detected = detectAiAdPlanKind(visibleText);
+      final unauthorizedReason = _unauthorizedAdCreateReason(
+        isAr: isAr,
+        canCreate: canCreate,
+        detected: detected,
+        isCompanyCustomer: auth.isCompanyCustomerAccount,
+        isShipping: cache.isShippingCompanyAccount == true,
+      );
+      if (unauthorizedReason != null) {
+        setState(() {
+          _messages.add(_ChatMessage(text: visibleText, isUser: true));
+          _controller.clear();
+          _messages.add(
+            _ChatMessage(
+              text: unauthorizedReason,
+              isUser: false,
+            ),
+          );
+        });
+        return;
+      }
+      final locked = lockedKindForAccount();
+      setState(() {
+        _planMode = true;
+        _planInitialKind = locked ?? detected;
+        _pendingAdMediaButton = true;
+      });
+    } else if (_planMode) {
+      // Keep media upload available throughout plan-mode chat.
+      _pendingAdMediaButton = true;
+    }
+
+    // User wants to leave plan mode from chat.
+    if (_planMode && _looksLikeCancelPlan(visibleText)) {
+      setState(() {
+        _messages.add(_ChatMessage(text: visibleText, isUser: true));
+        _controller.clear();
+      });
+      _cancelAdPlan();
+      return;
+    }
+
+    var apiText = visibleText;
+    if (_planMode) {
+      final kind = planKindLabel(_planInitialKind);
+      final buffer = StringBuffer()..writeln('[PLAN_MODE]');
+      if (isAr) {
+        buffer.writeln(
+          kind != null
+              ? 'نوع الإعلان: $kind. ابق في وضع الخطة بالمحادثة ورد بالعربي فقط.'
+              : 'ابق في وضع الخطة بالمحادثة لإنشاء الإعلان ورد بالعربي فقط.',
+        );
+        buffer.writeln(
+          'اعرض كل الحقول المطلوبة بالعربي. إذا الرد ناقص، قل صراحة ما الناقص قبل استدعاء أداة الإنشاء.',
+        );
+      } else {
+        buffer.writeln(
+          kind != null
+              ? 'Ad type hint: $kind. Stay in conversational Plan Mode.'
+              : 'Stay in conversational Plan Mode for create-ad.',
+        );
+        buffer.writeln(
+          'List required fields clearly. If the user reply is incomplete, '
+          'explicitly say what is still missing before calling any create tool.',
+        );
+      }
+      buffer.writeln(visibleText);
+      apiText = buffer.toString();
+    }
+
+    if (_draftImagePaths.isNotEmpty || _draftVideoPath != null) {
+      final buffer = StringBuffer(apiText);
+      if (_draftImagePaths.isNotEmpty) {
+        buffer.writeln();
+        buffer.write('[draft_image_paths: ${_draftImagePaths.join(' | ')}]');
+      }
+      if (_draftVideoPath != null) {
+        buffer.writeln();
+        buffer.write(
+          '[draft_video_path: $_draftVideoPath'
+          '${_draftVideoDurationSeconds != null ? ', duration: $_draftVideoDurationSeconds' : ''}]',
+        );
+      }
+      apiText = buffer.toString();
+    }
+
+    final intro = (isAr ? _thinkingIntroPhrasesAr : _thinkingIntroPhrasesEn)[
+        DateTime.now().millisecond %
+            (isAr
+                ? _thinkingIntroPhrasesAr.length
+                : _thinkingIntroPhrasesEn.length)];
+    final adLargeTask = (isAr ? _adLargeTaskPhrasesAr : _adLargeTaskPhrasesEn)[
+        DateTime.now().microsecond %
+            (isAr
+                ? _adLargeTaskPhrasesAr.length
+                : _adLargeTaskPhrasesEn.length)];
 
     setState(() {
-      _messages.add(_ChatMessage(text: text, isUser: true));
+      _messages.add(_ChatMessage(text: visibleText, isUser: true));
       _controller.clear();
       _isThinking = true;
+      _thinkingStartedAt = DateTime.now();
       _thinkingSteps
         ..clear()
-        ..add(
-          Localizations.localeOf(context).languageCode == 'ar'
-              ? 'بفكر في سؤالك…'
-              : 'Thinking about your question…',
+        ..addAll(
+          _planMode
+              ? (isAr
+                  ? [
+                      adLargeTask,
+                      'أراجع الحقول المطلوبة وأقارنها بما زودتني به…',
+                    ]
+                  : [
+                      adLargeTask,
+                      'Reviewing required fields against what you provided…',
+                    ])
+              : [intro],
         );
+      _draftImagePaths.clear();
+      _draftVideoPath = null;
+      _draftVideoDurationSeconds = null;
     });
     _scrollToEnd();
 
     try {
-      final language = Localizations.localeOf(context).languageCode == 'ar'
-          ? 'ar'
-          : 'en';
+      final language = isAr ? 'ar' : 'en';
       await (_connectFuture ??= _connect());
-      await _realtime.ask(message: text, language: language);
+      await _realtime.ask(message: apiText, language: language);
     } catch (_) {
       _connectFuture = null;
       _showConnectionError();
     }
+    _scrollToEnd();
+  }
+
+  bool _looksLikeCancelPlan(String text) {
+    final q = text.trim().toLowerCase();
+    const markers = [
+      'الغاء',
+      'إلغاء',
+      'الغي',
+      'ألغي',
+      'cancel',
+      'exit plan',
+      'quit plan',
+      'خروج من الخطة',
+      'اقفل الخطة',
+    ];
+    return markers.any(q.contains);
+  }
+
+  String? _unauthorizedAdCreateReason({
+    required bool isAr,
+    required bool canCreate,
+    required AiAdPlanKind? detected,
+    required bool isCompanyCustomer,
+    required bool isShipping,
+  }) {
+    if (!canCreate) {
+      return isAr
+          ? 'حسابك غير مخوّل بإنشاء إعلانات. تقدر تتصفح وتشتري وتتبع طلباتك، ولو حابب تنشر إعلانات سجّل كحساب مورد أو شركة.'
+          : 'Your account is not authorized to create ads. You can browse, buy, and track orders; register as a supplier or company to publish ads.';
+    }
+    if (isCompanyCustomer &&
+        detected != null &&
+        detected != AiAdPlanKind.request) {
+      return isAr
+          ? 'حساب عميل الشركة غير مخوّل بإنشاء هذا النوع. المسموح لك فقط إعلان طلب (Request).'
+          : 'A company customer account is not authorized for that ad type. You can only create Request ads.';
+    }
+    if (isShipping &&
+        detected != null &&
+        detected != AiAdPlanKind.shipping) {
+      return isAr
+          ? 'حساب شركة الشحن غير مخوّل بإنشاء إعلانات المنتجات. المسموح لك فقط إعلان شحن.'
+          : 'A shipping company account is not authorized to create product ads. You can only create shipping ads.';
+    }
+    return null;
+  }
+
+  void _cancelAdPlan() {
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    setState(() {
+      _planMode = false;
+      _planInitialKind = null;
+      _pendingAdMediaButton = false;
+      _messages.add(
+        _ChatMessage(
+          text: isAr
+              ? 'تم إلغاء وضع الخطة. تقدر تكتب أي سؤال تاني.'
+              : 'Plan mode cancelled. You can ask anything else.',
+          isUser: false,
+        ),
+      );
+    });
+  }
+
+  Future<void> _pickAdMedia() async {
+    if (_uploadingAdMedia || _isThinking) return;
+    final token = AuthService.instance.currentToken;
+    if (token == null || token.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            Localizations.localeOf(context).languageCode == 'ar'
+                ? 'سجّل الدخول أولاً'
+                : 'Please sign in first',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    setState(() {
+      _uploadingAdMedia = true;
+      _isThinking = true;
+      _thinkingStartedAt ??= DateTime.now();
+      _thinkingSteps.add(
+        isAr ? 'جاري ضغط ورفع الصور…' : 'Compressing and uploading images…',
+      );
+    });
+    _scrollToEnd();
+
+    try {
+      final images = await _imagePicker.pickMultiImage(imageQuality: 85);
+      for (final image in images) {
+        final result = await _draftOps.uploadDraftImage(
+          filePath: image.path,
+          token: token,
+        );
+        result.fold(
+          (_) {},
+          (remotePath) {
+            if (!_draftImagePaths.contains(remotePath)) {
+              _draftImagePaths.add(remotePath);
+            }
+          },
+        );
+      }
+
+      if (!mounted) return;
+      if (_draftImagePaths.isNotEmpty) {
+        setState(() {
+          _thinkingSteps.add(
+            isAr
+                ? 'تم رفع ${_draftImagePaths.length} صورة بنجاح'
+                : 'Uploaded ${_draftImagePaths.length} image(s) successfully',
+          );
+        });
+      }
+
+      final video = await _imagePicker.pickVideo(source: ImageSource.gallery);
+      if (video != null) {
+        if (!mounted) return;
+        setState(() {
+          _thinkingSteps.add(
+            isAr ? 'جاري رفع الفيديو…' : 'Uploading video…',
+          );
+        });
+        final videoResult = await _draftOps.uploadDraftVideo(
+          filePath: video.path,
+          token: token,
+        );
+        videoResult.fold(
+          (_) {},
+          (remotePath) {
+            _draftVideoPath = remotePath;
+            _draftVideoDurationSeconds = 30;
+          },
+        );
+        if (!mounted) return;
+        if (_draftVideoPath != null) {
+          setState(() {
+            _thinkingSteps.add(
+              isAr ? 'تم رفع الفيديو بنجاح' : 'Video uploaded successfully',
+            );
+          });
+        }
+      }
+    } catch (_) {
+      // Ignore picker/upload errors; user can retry.
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _uploadingAdMedia = false;
+      _isThinking = false;
+    });
     _scrollToEnd();
   }
 
@@ -100,9 +471,16 @@ class _AiAssistantViewState extends State<AiAssistantView> {
       onThinking: (value) {
         if (!mounted) return;
         setState(() {
-          _isThinking = value;
-          if (!value) {
-            // Keep steps until the answer bubble claims them.
+          if (value) {
+            _isThinking = true;
+            _thinkingStartedAt ??= DateTime.now();
+          } else if (_messages.isEmpty ||
+              _messages.last.isUser ||
+              _messages.last.text.isEmpty) {
+            // Keep the live thinking bubble until streaming starts.
+            _isThinking = true;
+          } else {
+            _isThinking = false;
           }
         });
         _scrollToEnd();
@@ -120,12 +498,27 @@ class _AiAssistantViewState extends State<AiAssistantView> {
       onResponseStarted: () {
         if (!mounted) return;
         final trace = List<String>.from(_thinkingSteps);
+        final started = _thinkingStartedAt;
+        final durationMs = started == null
+            ? null
+            : DateTime.now().difference(started).inMilliseconds;
         setState(() {
           _isThinking = false;
           _thinkingSteps.clear();
+          _thinkingStartedAt = null;
           _messages.add(
-            _ChatMessage(text: '', isUser: false, thinkingSteps: trace),
+            _ChatMessage(
+              text: '',
+              isUser: false,
+              thinkingSteps: trace,
+              thinkingDurationMs: durationMs,
+              showMediaUpload: _pendingAdMediaButton || _planMode,
+            ),
           );
+          // Keep the button available for the whole plan-mode conversation.
+          if (!_planMode) {
+            _pendingAdMediaButton = false;
+          }
         });
       },
       onDelta: (value) {
@@ -148,24 +541,32 @@ class _AiAssistantViewState extends State<AiAssistantView> {
       },
       onCompleted: (answer) {
         if (!mounted) return;
+        final isAr = Localizations.localeOf(context).languageCode == 'ar';
+        var finalAnswer = answer;
+        if (looksLikeTemporaryAssistantFailure(answer) &&
+            _shouldIgnoreAssistantError()) {
+          finalAnswer = isAr
+              ? 'تم إنشاء الإعلان بنجاح وإرساله للمراجعة من الإدارة.'
+              : 'Your ad was created and submitted for admin review.';
+        }
         setState(() {
           _isThinking = false;
-          if (answer.isNotEmpty &&
-              (_messages.isEmpty ||
-                  _messages.last.isUser ||
-                  _messages.last.text.isEmpty)) {
+          if (finalAnswer.isNotEmpty) {
             if (_messages.isNotEmpty && !_messages.last.isUser) {
-              _messages.last.text = answer;
-              if (_messages.last.thinkingSteps.isEmpty &&
-                  _thinkingSteps.isNotEmpty) {
-                _messages.last.thinkingSteps
+              final last = _messages.last;
+              if (last.text.isEmpty ||
+                  looksLikeTemporaryAssistantFailure(last.text)) {
+                last.text = finalAnswer;
+              }
+              if (last.thinkingSteps.isEmpty && _thinkingSteps.isNotEmpty) {
+                last.thinkingSteps
                   ..clear()
                   ..addAll(_thinkingSteps);
               }
-            } else {
+            } else if (_messages.isEmpty || _messages.last.isUser) {
               _messages.add(
                 _ChatMessage(
-                  text: answer,
+                  text: finalAnswer,
                   isUser: false,
                   thinkingSteps: List<String>.from(_thinkingSteps),
                 ),
@@ -173,11 +574,56 @@ class _AiAssistantViewState extends State<AiAssistantView> {
             }
           }
           _thinkingSteps.clear();
+          if (_planMode && looksLikeAdCreateSuccess(finalAnswer)) {
+            _planMode = false;
+            _planInitialKind = null;
+            _pendingAdMediaButton = false;
+          } else if (_planMode &&
+              _messages.isNotEmpty &&
+              !_messages.last.isUser) {
+            // Ensure the upload button stays on the latest assistant bubble.
+            _messages.last.showMediaUpload = true;
+          }
         });
         _scrollToEnd();
       },
-      onError: (_) => _showConnectionError(),
+      onError: (message) {
+        if (_shouldIgnoreAssistantError()) return;
+        _showConnectionError();
+      },
     );
+  }
+
+  bool _shouldIgnoreAssistantError() {
+    for (final step in _thinkingSteps) {
+      if (_looksLikeAdCreationThinkingStep(step)) return true;
+    }
+
+    if (_messages.isEmpty || _messages.last.isUser) return false;
+
+    final last = _messages.last;
+    if (last.text.isNotEmpty && looksLikeAdCreateSuccess(last.text)) {
+      return true;
+    }
+
+    for (final step in last.thinkingSteps) {
+      if (_looksLikeAdCreationThinkingStep(step)) return true;
+    }
+
+    return false;
+  }
+
+  bool _looksLikeAdCreationThinkingStep(String step) {
+    final q = step.toLowerCase();
+    const markers = [
+      'تم إنشاء',
+      'تم رفع',
+      'جاري إنشاء',
+      'إرساله للمراجعة',
+      'ad created',
+      'uploaded',
+    ];
+    return markers.any(q.contains);
   }
 
   void _showConnectionError() {
@@ -210,11 +656,17 @@ class _AiAssistantViewState extends State<AiAssistantView> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = _planMode
+        ? const _AiChatColors(isDark: true, planMode: true)
+        : _AiChatColors.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FC),
+      backgroundColor: colors.scaffoldBg,
       body: Column(
         children: [
-          const _AiChatHeader(),
+          _AiChatHeader(
+            planMode: _planMode,
+            onCancelPlan: _planMode ? _cancelAdPlan : null,
+          ),
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
@@ -222,9 +674,18 @@ class _AiAssistantViewState extends State<AiAssistantView> {
               itemCount: _messages.length + (_isThinking ? 1 : 0),
               itemBuilder: (context, index) {
                 if (_isThinking && index == _messages.length) {
-                  return _ThinkingBubble(steps: List<String>.from(_thinkingSteps));
+                  return _ThinkingBubble(
+                    steps: List<String>.from(_thinkingSteps),
+                    startedAt: _thinkingStartedAt,
+                    colors: colors,
+                  );
                 }
-                return _MessageBubble(message: _messages[index]);
+                return _MessageBubble(
+                  message: _messages[index],
+                  colors: colors,
+                  onPickAdMedia: _pickAdMedia,
+                  uploadingAdMedia: _uploadingAdMedia,
+                );
               },
             ),
           ),
@@ -232,6 +693,12 @@ class _AiAssistantViewState extends State<AiAssistantView> {
             controller: _controller,
             isThinking: _isThinking,
             onSend: _send,
+            colors: colors,
+            planMode: _planMode,
+            onPickAdMedia: _planMode ? _pickAdMedia : null,
+            uploadingAdMedia: _uploadingAdMedia,
+            draftImageCount: _draftImagePaths.length,
+            hasDraftVideo: _draftVideoPath != null,
           ),
         ],
       ),
@@ -240,21 +707,33 @@ class _AiAssistantViewState extends State<AiAssistantView> {
 }
 
 class _AiChatHeader extends StatelessWidget {
-  const _AiChatHeader();
+  const _AiChatHeader({this.planMode = false, this.onCancelPlan});
+
+  final bool planMode;
+  final VoidCallback? onCancelPlan;
 
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
     final topInset = MediaQuery.paddingOf(context).top;
+    final gradient = planMode
+        ? const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFE6A817), Color(0xFFF0D48A)],
+          )
+        : _aiGradient;
 
     return Container(
       padding: EdgeInsets.fromLTRB(12.w, topInset + 10.h, 16.w, 16.h),
       decoration: BoxDecoration(
-        gradient: _aiGradient,
+        gradient: gradient,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(24.r)),
         boxShadow: [
           BoxShadow(
-            color: LightColor.defaultColor.withValues(alpha: 0.25),
+            color: (planMode ? AiAdPlanColors.accent : LightColor.defaultColor)
+                .withValues(alpha: 0.25),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -291,7 +770,9 @@ class _AiChatHeader extends StatelessWidget {
                       fit: BoxFit.scaleDown,
                       alignment: AlignmentDirectional.centerStart,
                       child: Text(
-                        s.aiAssistantTitle,
+                        planMode
+                            ? (isAr ? 'وضع الخطة' : 'Plan mode')
+                            : s.aiAssistantTitle,
                         maxLines: 1,
                         softWrap: false,
                         style: TextStyle(
@@ -307,14 +788,18 @@ class _AiChatHeader extends StatelessWidget {
                         Container(
                           width: 7.w,
                           height: 7.w,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF6EE7A8),
+                          decoration: BoxDecoration(
+                            color: planMode
+                                ? const Color(0xFFFFF8E7)
+                                : const Color(0xFF6EE7A8),
                             shape: BoxShape.circle,
                           ),
                         ),
                         SizedBox(width: 6.w),
                         Text(
-                          s.aiAssistantFabLabel,
+                          planMode
+                              ? (isAr ? 'إنشاء إعلان' : 'Create ad')
+                              : s.aiAssistantFabLabel,
                           style: TextStyle(
                             fontSize: 11.sp,
                             fontWeight: FontWeight.w600,
@@ -327,6 +812,23 @@ class _AiChatHeader extends StatelessWidget {
                   ],
                 ),
               ),
+              if (onCancelPlan != null)
+                TextButton(
+                  onPressed: onCancelPlan,
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(horizontal: 8.w),
+                    minimumSize: Size(0, 32.h),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    isAr ? 'إلغاء' : 'Cancel',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
             ],
           ),
           SizedBox(height: 12.h),
@@ -340,14 +842,18 @@ class _AiChatHeader extends StatelessWidget {
             child: Row(
               children: [
                 Icon(
-                  Icons.auto_awesome_rounded,
+                  planMode ? Icons.route_rounded : Icons.auto_awesome_rounded,
                   size: 14.sp,
                   color: Colors.white,
                 ),
                 SizedBox(width: 8.w),
                 Expanded(
                   child: Text(
-                    s.aiAssistantSubtitle,
+                    planMode
+                        ? (isAr
+                            ? 'قولّي البيانات اللي عندك — ولو نسيت حاجة هذكّرك بيها.'
+                            : 'Tell me what you have — if something is missing, I will list it.')
+                        : s.aiAssistantSubtitle,
                     style: TextStyle(
                       fontSize: 10.sp,
                       height: 1.35,
@@ -398,16 +904,28 @@ class _ChatMessage {
     required this.text,
     required this.isUser,
     List<String>? thinkingSteps,
+    this.thinkingDurationMs,
+    this.showMediaUpload = false,
   }) : thinkingSteps = thinkingSteps ?? <String>[];
 
   String text;
   final bool isUser;
   final List<String> thinkingSteps;
+  final int? thinkingDurationMs;
+  bool showMediaUpload;
 }
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.message});
+  const _MessageBubble({
+    required this.message,
+    required this.colors,
+    required this.onPickAdMedia,
+    required this.uploadingAdMedia,
+  });
   final _ChatMessage message;
+  final _AiChatColors colors;
+  final VoidCallback onPickAdMedia;
+  final bool uploadingAdMedia;
 
   @override
   Widget build(BuildContext context) {
@@ -418,19 +936,19 @@ class _MessageBubble extends StatelessWidget {
       constraints: BoxConstraints(maxWidth: 0.72.sw),
       decoration: BoxDecoration(
         gradient: isUser ? _aiGradient : null,
-        color: isUser ? null : Colors.white,
+        color: isUser ? null : colors.assistantBubbleBg,
         borderRadius: BorderRadiusDirectional.only(
           topStart: Radius.circular(16.r),
           topEnd: Radius.circular(16.r),
           bottomStart: Radius.circular(isUser ? 16.r : 4.r),
           bottomEnd: Radius.circular(isUser ? 4.r : 16.r),
         ),
-        border: isUser ? null : Border.all(color: const Color(0xFFE6EAF2)),
+        border: isUser ? null : Border.all(color: colors.assistantBorder),
         boxShadow: [
           BoxShadow(
             color: isUser
                 ? LightColor.defaultColor.withValues(alpha: 0.22)
-                : Colors.black.withValues(alpha: 0.04),
+                : Colors.black.withValues(alpha: colors.isDark ? 0.25 : 0.04),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -445,18 +963,44 @@ class _MessageBubble extends StatelessWidget {
                 steps: message.thinkingSteps,
                 title: isAr ? 'التفكير' : 'Thinking',
                 initiallyExpanded: false,
+                durationMs: message.thinkingDurationMs,
+                colors: colors,
               ),
               SizedBox(height: 8.h),
             ],
             if (message.text.isNotEmpty)
-              _LinkifiedMessageText(
-                text: message.text,
-                style: TextStyle(
-                  color: isUser ? Colors.white : const Color(0xFF1F2937),
-                  fontSize: 13.sp,
-                  height: 1.5,
+              Directionality(
+                textDirection: _detectTextDirection(message.text),
+                child: _LinkifiedMessageText(
+                  text: message.text,
+                  style: TextStyle(
+                    color: isUser ? Colors.white : colors.primaryText,
+                    fontSize: 13.sp,
+                    height: 1.5,
+                  ),
                 ),
               ),
+            if (!isUser && message.showMediaUpload) ...[
+              SizedBox(height: 10.h),
+              OutlinedButton.icon(
+                onPressed: uploadingAdMedia ? null : onPickAdMedia,
+                icon: uploadingAdMedia
+                    ? SizedBox(
+                        width: 14.w,
+                        height: 14.w,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Icon(Icons.photo_library_outlined, size: 16.sp),
+                label: Text(
+                  isAr ? 'إضافة صور / فيديو للإعلان' : 'Add ad photos / video',
+                  style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: LightColor.defaultColor,
+                  side: BorderSide(color: LightColor.defaultColor.withValues(alpha: 0.5)),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -501,14 +1045,18 @@ class _ThinkingTrace extends StatefulWidget {
   const _ThinkingTrace({
     required this.steps,
     required this.title,
-    this.initiallyExpanded = true,
+    required this.colors,
+    this.initiallyExpanded = false,
     this.live = false,
+    this.durationMs,
   });
 
   final List<String> steps;
   final String title;
+  final _AiChatColors colors;
   final bool initiallyExpanded;
   final bool live;
+  final int? durationMs;
 
   @override
   State<_ThinkingTrace> createState() => _ThinkingTraceState();
@@ -520,6 +1068,12 @@ class _ThinkingTraceState extends State<_ThinkingTrace> {
   @override
   Widget build(BuildContext context) {
     if (widget.steps.isEmpty) return const SizedBox.shrink();
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    final durationLabel = widget.durationMs == null
+        ? null
+        : (isAr
+            ? '(${((widget.durationMs! / 1000).toStringAsFixed(1))} ث)'
+            : '(${((widget.durationMs! / 1000).toStringAsFixed(1))}s)');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -537,7 +1091,7 @@ class _ThinkingTraceState extends State<_ThinkingTrace> {
                       ? Icons.expand_more_rounded
                       : Icons.chevron_right_rounded,
                   size: 16.sp,
-                  color: const Color(0xFF9CA3AF),
+                  color: widget.colors.mutedText,
                 ),
                 SizedBox(width: 2.w),
                 Text(
@@ -545,16 +1099,27 @@ class _ThinkingTraceState extends State<_ThinkingTrace> {
                   style: TextStyle(
                     fontSize: 11.sp,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF6B7280),
+                    color: widget.colors.mutedText,
                   ),
                 ),
+                if (durationLabel != null) ...[
+                  SizedBox(width: 4.w),
+                  Text(
+                    durationLabel,
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      color: widget.colors.mutedText,
+                    ),
+                  ),
+                ],
                 if (widget.live) ...[
                   SizedBox(width: 6.w),
-                  Text(
-                    '…',
-                    style: TextStyle(
-                      fontSize: 11.sp,
-                      color: const Color(0xFF9CA3AF),
+                  SizedBox(
+                    width: 12.w,
+                    height: 12.w,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: LightColor.defaultColor.withValues(alpha: 0.8),
                     ),
                   ),
                 ],
@@ -563,28 +1128,127 @@ class _ThinkingTraceState extends State<_ThinkingTrace> {
           ),
         ),
         if (_expanded)
-          Padding(
-            padding: EdgeInsetsDirectional.only(start: 4.w, top: 4.h),
+          Container(
+            width: double.infinity,
+            margin: EdgeInsetsDirectional.only(start: 4.w, top: 4.h),
+            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+            decoration: BoxDecoration(
+              color: widget.colors.thinkingPanelBg,
+              borderRadius: BorderRadius.circular(10.r),
+              border: Border.all(color: widget.colors.thinkingPanelBorder),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                for (final step in widget.steps)
+                for (var i = 0; i < widget.steps.length; i++)
                   Padding(
-                    padding: EdgeInsets.only(bottom: 4.h),
-                    child: Text(
-                      step,
-                      style: TextStyle(
-                        fontSize: 10.5.sp,
-                        height: 1.35,
-                        color: const Color(0xFF9CA3AF),
-                        fontStyle: FontStyle.italic,
-                      ),
+                    padding: EdgeInsets.only(bottom: 6.h),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: EdgeInsetsDirectional.only(top: 2.h, end: 6.w),
+                          child: widget.live && i == widget.steps.length - 1
+                              ? SizedBox(
+                                  width: 12.w,
+                                  height: 12.w,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 1.8,
+                                    color: LightColor.defaultColor.withValues(alpha: 0.85),
+                                  ),
+                                )
+                              : Icon(
+                                  Icons.check_circle_outline,
+                                  size: 13.sp,
+                                  color: widget.colors.pathCode.withValues(alpha: 0.9),
+                                ),
+                        ),
+                        Expanded(
+                          child: _ThinkingStepText(
+                            step: widget.steps[i],
+                            colors: widget.colors,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
               ],
             ),
           ),
       ],
+    );
+  }
+}
+
+class _ThinkingStepText extends StatelessWidget {
+  const _ThinkingStepText({required this.step, required this.colors});
+
+  final String step;
+  final _AiChatColors colors;
+
+  @override
+  Widget build(BuildContext context) {
+    final lines = step.split('\n');
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final line in lines)
+          _ThinkingLineText(line: line, colors: colors),
+      ],
+    );
+  }
+}
+
+class _ThinkingLineText extends StatelessWidget {
+  const _ThinkingLineText({required this.line, required this.colors});
+
+  final String line;
+  final _AiChatColors colors;
+
+  static final RegExp _pathLine = RegExp(
+    r'(product-(?:images|videos)/[^\s]+)',
+    caseSensitive: false,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final match = _pathLine.firstMatch(line);
+    if (match == null) {
+      return Text(
+        line,
+        style: TextStyle(
+          fontSize: 10.5.sp,
+          height: 1.35,
+          color: colors.mutedText,
+          fontStyle: FontStyle.italic,
+        ),
+      );
+    }
+
+    final start = match.start;
+    final end = match.end;
+    return Text.rich(
+      TextSpan(
+        style: TextStyle(
+          fontSize: 10.5.sp,
+          height: 1.35,
+          color: colors.mutedText,
+          fontStyle: FontStyle.italic,
+        ),
+        children: [
+          if (start > 0) TextSpan(text: line.substring(0, start)),
+          TextSpan(
+            text: line.substring(start, end),
+            style: TextStyle(
+              color: colors.pathCode,
+              fontFamily: 'monospace',
+              fontStyle: FontStyle.normal,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (end < line.length) TextSpan(text: line.substring(end)),
+        ],
+      ),
     );
   }
 }
@@ -600,13 +1264,47 @@ class _LinkifiedMessageText extends StatelessWidget {
     caseSensitive: false,
   );
 
+  static final RegExp _markdownBold = RegExp(r'\*\*(.+?)\*\*');
+
+  static String _isolateLatinRuns(String input) {
+    return input.replaceAllMapped(
+      RegExp(r'[A-Za-z0-9][A-Za-z0-9_\-./@:#%&*+=\(\)\[\],!? ]*'),
+      (match) {
+        final value = match.group(0)?.trimRight() ?? '';
+        if (value.isEmpty) return '';
+        return '\u2066$value\u2069';
+      },
+    );
+  }
+
+  List<InlineSpan> _parseSegment(String segment) {
+    final spans = <InlineSpan>[];
+    var cursor = 0;
+    for (final match in _markdownBold.allMatches(segment)) {
+      if (match.start > cursor) {
+        spans.add(TextSpan(text: _isolateLatinRuns(segment.substring(cursor, match.start))));
+      }
+      spans.add(
+        TextSpan(
+          text: _isolateLatinRuns(match.group(1)!),
+          style: style.copyWith(fontWeight: FontWeight.w700),
+        ),
+      );
+      cursor = match.end;
+    }
+    if (cursor < segment.length) {
+      spans.add(TextSpan(text: _isolateLatinRuns(segment.substring(cursor))));
+    }
+    return spans;
+  }
+
   @override
   Widget build(BuildContext context) {
     final spans = <InlineSpan>[];
     var cursor = 0;
     for (final match in _markdownLink.allMatches(text)) {
       if (match.start > cursor) {
-        spans.add(TextSpan(text: text.substring(cursor, match.start)));
+        spans.addAll(_parseSegment(text.substring(cursor, match.start)));
       }
       final label = match.group(1)!;
       final target = match.group(2)!;
@@ -631,10 +1329,13 @@ class _LinkifiedMessageText extends StatelessWidget {
       cursor = match.end;
     }
     if (cursor < text.length) {
-      spans.add(TextSpan(text: text.substring(cursor)));
+      spans.addAll(_parseSegment(text.substring(cursor)));
     }
 
-    return Text.rich(TextSpan(style: style, children: spans));
+    return Directionality(
+      textDirection: _detectTextDirection(text),
+      child: Text.rich(TextSpan(style: style, children: spans)),
+    );
   }
 
   Future<void> _openLink(String target) async {
@@ -645,9 +1346,15 @@ class _LinkifiedMessageText extends StatelessWidget {
 }
 
 class _ThinkingBubble extends StatefulWidget {
-  const _ThinkingBubble({required this.steps});
+  const _ThinkingBubble({
+    required this.steps,
+    required this.colors,
+    this.startedAt,
+  });
 
   final List<String> steps;
+  final _AiChatColors colors;
+  final DateTime? startedAt;
 
   @override
   State<_ThinkingBubble> createState() => _ThinkingBubbleState();
@@ -687,14 +1394,14 @@ class _ThinkingBubbleState extends State<_ThinkingBubble>
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: widget.colors.assistantBubbleBg,
                 borderRadius: BorderRadiusDirectional.only(
                   topStart: Radius.circular(16.r),
                   topEnd: Radius.circular(16.r),
                   bottomEnd: Radius.circular(16.r),
                   bottomStart: Radius.circular(4.r),
                 ),
-                border: Border.all(color: const Color(0xFFE6EAF2)),
+                border: Border.all(color: widget.colors.assistantBorder),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -707,7 +1414,7 @@ class _ThinkingBubbleState extends State<_ThinkingBubble>
                         style: TextStyle(
                           fontSize: 12.sp,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFF6B7280),
+                          color: widget.colors.mutedText,
                         ),
                       ),
                       SizedBox(width: 8.w),
@@ -749,10 +1456,70 @@ class _ThinkingBubbleState extends State<_ThinkingBubble>
                       title: isAr ? 'التفكير' : 'Thinking',
                       initiallyExpanded: true,
                       live: true,
+                      durationMs: widget.startedAt == null
+                          ? null
+                          : DateTime.now()
+                              .difference(widget.startedAt!)
+                              .inMilliseconds,
+                      colors: widget.colors,
                     ),
                   ],
                 ],
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+TextDirection _detectTextDirection(String text) {
+  var arabic = 0;
+  var latin = 0;
+  for (final codeUnit in text.codeUnits) {
+    if (codeUnit >= 0x0600 && codeUnit <= 0x06FF) {
+      arabic++;
+    } else if ((codeUnit >= 0x0041 && codeUnit <= 0x005A) ||
+        (codeUnit >= 0x0061 && codeUnit <= 0x007A)) {
+      latin++;
+    }
+  }
+  if (arabic == 0 && latin == 0) return TextDirection.ltr;
+  return arabic >= latin ? TextDirection.rtl : TextDirection.ltr;
+}
+
+class _AttachmentChip extends StatelessWidget {
+  const _AttachmentChip({
+    required this.icon,
+    required this.label,
+    required this.colors,
+  });
+
+  final IconData icon;
+  final String label;
+  final _AiChatColors colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+      decoration: BoxDecoration(
+        color: colors.thinkingPanelBg,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: colors.thinkingPanelBorder),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14.sp, color: colors.pathCode),
+          SizedBox(width: 6.w),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11.sp,
+              fontWeight: FontWeight.w600,
+              color: colors.primaryText,
             ),
           ),
         ],
@@ -766,11 +1533,23 @@ class _AiComposer extends StatefulWidget {
     required this.controller,
     required this.isThinking,
     required this.onSend,
+    required this.colors,
+    required this.draftImageCount,
+    required this.hasDraftVideo,
+    this.planMode = false,
+    this.onPickAdMedia,
+    this.uploadingAdMedia = false,
   });
 
   final TextEditingController controller;
   final bool isThinking;
   final VoidCallback onSend;
+  final _AiChatColors colors;
+  final int draftImageCount;
+  final bool hasDraftVideo;
+  final bool planMode;
+  final VoidCallback? onPickAdMedia;
+  final bool uploadingAdMedia;
 
   @override
   State<_AiComposer> createState() => _AiComposerState();
@@ -975,11 +1754,20 @@ class _AiComposerState extends State<_AiComposer> {
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
     final showStatus = _listening || _correcting || _awaitingConfirm;
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFE6EAF2))),
+      decoration: BoxDecoration(
+        color: widget.planMode
+            ? const Color(0xFF2A2208)
+            : widget.colors.composerBg,
+        border: Border(
+          top: BorderSide(
+            color: widget.planMode
+                ? AiAdPlanColors.border.withValues(alpha: 0.45)
+                : widget.colors.composerBorder,
+          ),
+        ),
       ),
       child: SafeArea(
         top: false,
@@ -988,6 +1776,47 @@ class _AiComposerState extends State<_AiComposer> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (widget.planMode)
+                Padding(
+                  padding: EdgeInsets.only(bottom: 8.h),
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(
+                      isAr
+                          ? 'وضع الخطة — اكتب البيانات في الشات'
+                          : 'Plan mode — type the details in chat',
+                      style: TextStyle(
+                        color: AiAdPlanColors.border,
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              if (widget.draftImageCount > 0 || widget.hasDraftVideo)
+                Padding(
+                  padding: EdgeInsets.only(bottom: 8.h),
+                  child: Wrap(
+                    spacing: 6.w,
+                    runSpacing: 6.h,
+                    children: [
+                      if (widget.draftImageCount > 0)
+                        _AttachmentChip(
+                          icon: Icons.image_outlined,
+                          label: isAr
+                              ? '${widget.draftImageCount} صورة مرفقة'
+                              : '${widget.draftImageCount} image(s) attached',
+                          colors: widget.colors,
+                        ),
+                      if (widget.hasDraftVideo)
+                        _AttachmentChip(
+                          icon: Icons.videocam_outlined,
+                          label: isAr ? 'فيديو مرفق' : 'Video attached',
+                          colors: widget.colors,
+                        ),
+                    ],
+                  ),
+                ),
               if (showStatus)
                 Padding(
                   padding: EdgeInsets.only(bottom: 8.h),
@@ -1064,6 +1893,44 @@ class _AiComposerState extends State<_AiComposer> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
+                  if (widget.onPickAdMedia != null) ...[
+                    GestureDetector(
+                      onTap: (widget.isThinking ||
+                              widget.uploadingAdMedia ||
+                              _listening ||
+                              _correcting)
+                          ? null
+                          : widget.onPickAdMedia,
+                      child: Container(
+                        width: 44.w,
+                        height: 44.w,
+                        decoration: BoxDecoration(
+                          color: widget.planMode
+                              ? AiAdPlanColors.accent.withValues(alpha: 0.18)
+                              : const Color(0xFFE8F1FC),
+                          shape: BoxShape.circle,
+                          border: widget.planMode
+                              ? Border.all(color: AiAdPlanColors.border)
+                              : null,
+                        ),
+                        child: widget.uploadingAdMedia
+                            ? Padding(
+                                padding: EdgeInsets.all(12.w),
+                                child: const CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Icon(
+                                Icons.photo_library_outlined,
+                                size: 22.sp,
+                                color: widget.planMode
+                                    ? AiAdPlanColors.accentDark
+                                    : LightColor.defaultColor,
+                              ),
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                  ],
                   Expanded(
                     child: TextField(
                       controller: widget.controller,

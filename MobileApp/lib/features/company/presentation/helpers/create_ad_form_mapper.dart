@@ -5,6 +5,7 @@ import 'package:alrasmarket/core/media/video_compressor.dart';
 import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/features/company/data/models/create_ad_product_request.dart';
 import 'package:alrasmarket/features/company/presentation/controller/cubit/create_ad_states.dart';
+import 'package:alrasmarket/features/company/presentation/models/booking_price_type.dart';
 import 'package:alrasmarket/features/company/presentation/models/create_ad_currency.dart';
 import 'package:alrasmarket/features/company/presentation/models/create_ad_packing_options.dart';
 import 'package:alrasmarket/features/company/presentation/models/create_ad_type.dart';
@@ -145,6 +146,11 @@ class CreateAdFormMapper {
       value = '/${value.replaceFirst(RegExp(r'^/+'), '')}';
     }
     return value;
+  }
+
+  static bool skipsPortsForBooking(CreateAdFormState state) {
+    return state.selectedType == CreateAdType.booking.label &&
+        state.bookingPriceType == BookingPriceType.fob;
   }
 
   static bool skipsGeoForState(CreateAdFormState state) {
@@ -311,6 +317,7 @@ class CreateAdFormMapper {
         state.selectedType == CreateAdType.booking.label ||
         state.selectedType == CreateAdType.retail.label;
     final skipsGeo = skipsGeoForState(state);
+    final skipsPorts = skipsPortsForBooking(state);
     final offerDurationDaysText = isOffers
         ? _normalizeOfferDurationDays(shippingDurationText)
         : null;
@@ -414,12 +421,12 @@ class CreateAdFormMapper {
                   value: state.destinationCountry,
                 )
               : state.destinationCountry),
-      loadingPortName: skipsGeo
+      loadingPortName: skipsGeo || skipsPorts
           ? null
           : (isEditMode
               ? _nullableGeoField(skipsGeo: false, value: state.originPort)
               : state.originPort),
-      arrivalPortName: skipsGeo
+      arrivalPortName: skipsGeo || skipsPorts
           ? null
           : (isEditMode
               ? _nullableGeoField(skipsGeo: false, value: state.destinationPort)

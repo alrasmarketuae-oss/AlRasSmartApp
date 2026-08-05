@@ -271,6 +271,8 @@ public sealed class AdminOrderListItemDto
     public bool IsAdminApproved { get; set; }
     public string? Notes { get; set; }
     public List<string> VideoPaths { get; set; } = [];
+    /// <summary>Order-attached videos with ids (for admin delete/trim). Empty when only product videos exist.</summary>
+    public List<AdminOrderVideoDto> Videos { get; set; } = [];
     public List<AdminOrderImageDto> Images { get; set; } = [];
     public List<string> DocumentPaths { get; set; } = [];
     public List<string> ProductImagePaths { get; set; } = [];
@@ -328,6 +330,12 @@ public sealed class AdminOrderStatusHistoryDto
 }
 
 public sealed class AdminOrderImageDto
+{
+    public long Id { get; set; }
+    public string Path { get; set; } = string.Empty;
+}
+
+public sealed class AdminOrderVideoDto
 {
     public long Id { get; set; }
     public string Path { get; set; } = string.Empty;
@@ -526,6 +534,9 @@ public sealed class AdminShippingProviderDetailDto
     public string? ImgPath { get; set; }
     public string Email { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
+    public string? LandNumber { get; set; }
+    public string? CommercialRegister { get; set; }
+    public string? TaxNumber { get; set; }
     public string? CityName { get; set; }
     public decimal Container20ftPriceUsd { get; set; }
     public decimal Container40ftPriceUsd { get; set; }

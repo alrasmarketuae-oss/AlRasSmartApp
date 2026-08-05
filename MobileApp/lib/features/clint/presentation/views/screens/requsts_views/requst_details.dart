@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/services/product_view_service.dart';
+import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_ownership_helper.dart';
@@ -41,6 +42,8 @@ class _RequestDetailsViewState extends State<RequestDetailsView> {
     final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
     final product = widget.product;
     final isOwnAd = ProductOwnershipHelper.isOwnedByCurrentUser(product);
+    final showSubmitOfferButton =
+        !AuthService.instance.isCompanyCustomerAccount;
 
     return Scaffold(
       backgroundColor: BookingDetailsDesign.pageBg,
@@ -56,48 +59,49 @@ class _RequestDetailsViewState extends State<RequestDetailsView> {
               ),
             ),
           ),
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 12.h),
-              child: SizedBox(
-                width: double.infinity,
-                height: 48.h,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    if (isOwnAd) {
-                      AppToast.showError(context, s.cannotOrderOwnProduct);
-                      return;
-                    }
-                    context.push(
-                      AppRoutes.kSubmitOfferView,
-                      extra: {
-                        'product': product,
-                        'toUserId': product.ownerId,
-                      },
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: BookingDetailsDesign.brand,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.r),
+          if (showSubmitOfferButton)
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 12.h),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 48.h,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      if (isOwnAd) {
+                        AppToast.showError(context, s.cannotOrderOwnProduct);
+                        return;
+                      }
+                      context.push(
+                        AppRoutes.kSubmitOfferView,
+                        extra: {
+                          'product': product,
+                          'toUserId': product.ownerId,
+                        },
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: BookingDetailsDesign.brand,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
                     ),
-                  ),
-                  icon: Icon(Icons.send_rounded, size: 18.sp),
-                  label: Text(
-                    s.submitOffer,
-                    style: TextStyle(
-                      fontFamily: fontFamily,
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w700,
+                    icon: Icon(Icons.send_rounded, size: 18.sp),
+                    label: Text(
+                      s.submitOffer,
+                      style: TextStyle(
+                        fontFamily: fontFamily,
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );

@@ -44,6 +44,20 @@ public static class ProductQueryHelpers
                 || (x.Status == ProductCatalogCodes.StatusUnderReview && x.IsApproved == true)));
     }
 
+    /// <summary>
+    /// Category ads hidden from the home feed (GET /api/Products) but still available via by-category.
+    /// Canonical: Sweets=13, Canned=14, Beauty/Cosmetic=16.
+    /// </summary>
+    public static readonly short[] HomeFeedExcludedCategoryIds = [13, 14, 16];
+
+    public static IQueryable<Product> ExcludeHomeFeedCategories(IQueryable<Product> query)
+    {
+        var excluded = HomeFeedExcludedCategoryIds;
+        return query.Where(x =>
+            !x.CategoryId.HasValue
+            || !excluded.Contains(x.CategoryId.Value));
+    }
+
     public static IQueryable<ProductPublicRow> SelectPublicProductRows(IQueryable<Product> source) =>
         source.Select(x => new ProductPublicRow
         {

@@ -63,12 +63,20 @@ class ProfileAvatar extends StatelessWidget {
 
   Widget _fallback() {
     final text = (fallbackText ?? '?').substring(0, 1).toUpperCase();
-    return Text(
-      text,
-      style: TextStyle(
-        color: Colors.white,
-        fontSize: size * 0.42,
-        fontWeight: FontWeight.w500,
+    return Center(
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        textHeightBehavior: const TextHeightBehavior(
+          applyHeightToFirstAscent: false,
+          applyHeightToLastDescent: false,
+        ),
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: size * 0.45,
+          fontWeight: FontWeight.w600,
+          height: 1,
+        ),
       ),
     );
   }
@@ -77,33 +85,19 @@ class ProfileAvatar extends StatelessWidget {
 class HeaderProfileAvatar extends StatelessWidget {
   const HeaderProfileAvatar({super.key});
 
+  static String _avatarInitial(AuthService auth) {
+    final source = (auth.currentUserName ?? auth.currentUserEmail ?? '').trim();
+    if (source.isEmpty) return '?';
+    return source.substring(0, 1).toUpperCase();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<int>(
-      valueListenable: AuthService.instance.profileImageRevision,
-      builder: (context, _, __) {
-        final url = AuthService.instance.currentProfileImageUrl;
-        return Container(
-          width: 30.w,
-          height: 30.h,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            color: Color(0xFFE9EEF5),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: url != null
-              ? CachedAppImage(
-                  key: ValueKey(url),
-                  imageUrl: url,
-                  fit: BoxFit.cover,
-                  width: 30.w,
-                  height: 30.h,
-                  errorWidget:
-                      Icon(Icons.person, size: 18.sp, color: Colors.grey),
-                )
-              : Icon(Icons.person, size: 18.sp, color: Colors.grey),
-        );
-      },
+    final auth = AuthService.instance;
+    return ProfileAvatar(
+      size: 30.w,
+      imagePath: auth.currentUserImagePath,
+      fallbackText: _avatarInitial(auth),
     );
   }
 }

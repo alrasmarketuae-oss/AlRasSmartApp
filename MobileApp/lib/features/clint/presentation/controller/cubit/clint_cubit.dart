@@ -3375,6 +3375,60 @@ class ClintCubit extends Cubit<ClintStates> {
     );
   }
 
+  Future<void> setCartItemQuantity({
+    required int cartItemId,
+    required String productId,
+    required String unitName,
+    required double quantity,
+  }) async {
+    final current = _cartLoadedState;
+    if (current == null) return;
+
+    final item = _findCartItem(current.cart, cartItemId);
+    if (item == null) return;
+
+    if (quantity <= 0) {
+      await removeCartItem(cartItemId: cartItemId);
+      return;
+    }
+
+    final max = item.availableQuantity;
+    final capped = max != null && quantity > max ? max : quantity;
+    final delta = capped - item.quantity;
+    if (delta == 0) return;
+
+    if (delta > 0) {
+      await _updateCartQuantity(
+        cartItemId: cartItemId,
+        productId: productId,
+        unitName: unitName,
+        quantity: delta,
+        optimisticCart:
+            _applyOptimisticQuantityChange(current.cart, cartItemId, delta),
+      );
+      return;
+    }
+
+    final token = AuthService.instance.currentToken;
+    if (token == null || token.isEmpty) {
+      emit(CartErrorState(S.current.pleaseLoginToManageYourCart));
+      return;
+    }
+
+    await _mutateCartItem(
+      cartItemId: cartItemId,
+      optimisticCart:
+          _applyOptimisticQuantityChange(current.cart, cartItemId, delta),
+      action: () => _reduceCartItemQuantityUseCase(
+        ReduceCartItemQuantityParams(
+          token: token,
+          cartItemId: cartItemId,
+          quantity: -delta,
+        ),
+      ),
+    );
+  }
+
   Future<void> removeCartItem({required int cartItemId}) async {
     final current = _cartLoadedState;
     if (current == null) return;

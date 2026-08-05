@@ -48,6 +48,7 @@ public class InternationalShippingController(IInternationalShippingAppService in
                 MinDurationDays = request.MinDurationDays,
                 MaxDurationDays = request.MaxDurationDays,
                 Details = request.Details
+               
             }, cancellationToken);
 
             return Ok(result);

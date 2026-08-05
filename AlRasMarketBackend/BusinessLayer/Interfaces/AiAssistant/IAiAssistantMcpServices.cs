@@ -35,6 +35,7 @@ public interface IAiAssistantMcpToolLoop
         string chatModel,
         IList<object> messages,
         Guid? userId,
+        string responseLanguage = "en",
         Func<string, CancellationToken, Task>? onThinkingStep = null,
         CancellationToken cancellationToken = default);
 }

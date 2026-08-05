@@ -252,6 +252,17 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
       emit(state.copyWith(clearBookingPriceType: true));
       return;
     }
+    // FOB does not use ports — clear any previously selected values.
+    if (type == BookingPriceType.fob) {
+      emit(
+        state.copyWith(
+          bookingPriceType: type,
+          clearOriginPort: true,
+          clearDestinationPort: true,
+        ),
+      );
+      return;
+    }
     emit(state.copyWith(bookingPriceType: type));
   }
 
@@ -947,7 +958,8 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
         selectedType: CreateAdType.requests.label,
         selectedUnit: unit,
         negotiationType: negotiationType,
-        requestFulfillmentType: RequestFulfillmentType.local,
+        requestFulfillmentType:
+            state.requestFulfillmentType ?? RequestFulfillmentType.local,
         requiredDeliveryDate: requiredDeliveryDate,
         address: address?.trim(),
         addressId: addressId?.trim(),
@@ -1013,8 +1025,10 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
       stateForRequest = state.copyWith(
         originCountry: geo.originCountry,
         originPort: geo.loadingPort,
+        clearOriginPort: geo.loadingPort == null,
         destinationCountry: geo.destinationCountry,
         destinationPort: geo.arrivalPort,
+        clearDestinationPort: geo.arrivalPort == null,
       );
     }
 
@@ -1628,30 +1642,37 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     ({
       String originCountry,
       String destinationCountry,
-      String loadingPort,
-      String arrivalPort,
+      String? loadingPort,
+      String? arrivalPort,
     })?
   >
   _resolveUserGeoForSubmit() async {
     final originCountry = state.originCountry;
-    final loadingPort = state.originPort;
     final destinationCountry = state.destinationCountry;
+    final loadingPort = state.originPort;
     final arrivalPort = state.destinationPort;
+    final isFob = state.bookingPriceType == BookingPriceType.fob;
 
-    if ([
-      originCountry,
-      loadingPort,
-      destinationCountry,
-      arrivalPort,
-    ].any((value) => value == null || value.isEmpty)) {
+    if (originCountry == null ||
+        originCountry.isEmpty ||
+        destinationCountry == null ||
+        destinationCountry.isEmpty) {
+      return null;
+    }
+
+    if (!isFob &&
+        (loadingPort == null ||
+            loadingPort.isEmpty ||
+            arrivalPort == null ||
+            arrivalPort.isEmpty)) {
       return null;
     }
 
     return (
-      originCountry: originCountry!,
-      destinationCountry: destinationCountry!,
-      loadingPort: loadingPort!,
-      arrivalPort: arrivalPort!,
+      originCountry: originCountry,
+      destinationCountry: destinationCountry,
+      loadingPort: isFob ? null : loadingPort,
+      arrivalPort: isFob ? null : arrivalPort,
     );
   }
 

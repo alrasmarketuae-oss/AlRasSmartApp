@@ -47,24 +47,24 @@ internal static class AiAssistantKnowledgeSource
         // written with the phrasings users actually type.
         Add(chunks, "assistant-identity", "من أنت؟ عرفني بنفسك، انت مين، مين انت", "ar", All,
             """
-            سؤال: من أنت؟ انت مين؟ عرفني بنفسك؟ ايه انت؟ مين بيكلمني؟ ما اسمك؟
+            سؤال: من أنت؟ انت مين؟ عرفني بنفسك؟ ايه انت؟ مين بيكلمني؟ ما اسمك؟ بتعرف تعمل ايه؟ تقدر تعمل ايه؟
             الإجابة: أنا الراس الذكي (Alras Smart)، المساعد الرسمي داخل تطبيق سوق الراس.
             اسمي بالعربية: الراس الذكي. واسمي بالإنجليزية: Alras Smart.
-            مهمتي أن أشرح لك المنصة وأجيب عن أسئلتك عنها حسب نوع حسابك وصلاحياته.
-            أستطيع مساعدتك في: أنواع الحسابات، والتسجيل وتسجيل الدخول، والتنقل داخل التطبيق، والبحث النصي والبحث بالصور، وأنواع الإعلانات وكيفية إنشائها، والشراء وطرق الدفع، وتتبع الطلبات وحالاتها، وسياسة الاسترجاع ورد الأموال، ورصيد المورد وطلبات السحب، وإعلانات الشحن، والشروط والخصوصية.
+            أقدر بدقة (حسب نوع حسابك): إضافة إعلانات، تعديل الأسعار والكميات، البحث في المنتجات ومقارنة الأسعار، جلب الأرخص والأغلى، معرفة أسعار الشحن إلى دولة معيّنة، جلب تفاصيل إعلاناتك وطلباتك، ومعرفة مبيعاتك والطلبات المعلّقة على إعلاناتك.
+            ما أقدر أعمله يعتمد على نوع الحساب: المورد ينشئ أنواع إعلانات متعددة ويدير الإعلانات والمبيعات والسحب؛ عميل الشركة ينشئ Request فقط؛ شركة الشحن تنشئ إعلان شحن فقط؛ العميل الفردي يشتري ويتابع الطلبات ولا ينشئ إعلانات.
+            إذا طلب أحد إنشاء إعلان وهو غير مخوّل، أرفض فوراً قبل جمع أي حقول.
             أنا لست موظف دعم بشري: للحالات الفردية التي تحتاج تدخلاً بشرياً استخدم Live Chat من الملف الشخصي.
-            لا أستطيع تنفيذ إجراءات نيابة عنك مثل إلغاء طلب أو الموافقة على استرجاع أو تحويل أموال.
             أرد بلغة رسالتك: تكتب بالعربية أرد بالعربية، وتكتب بالإنجليزية أرد بالإنجليزية.
             """);
         Add(chunks, "assistant-identity", "Who are you? Introduce yourself, what are you", "en", All,
             """
-            Question: who are you? What are you? Introduce yourself. Who am I talking to? What is your name?
+            Question: who are you? What are you? Introduce yourself. Who am I talking to? What is your name? What can you do?
             Answer: I am Alras Smart (الراس الذكي), the official AI agent inside the Al Ras Market app.
             My English name is Alras Smart. My Arabic name is الراس الذكي.
-            My job is to explain the platform and answer your questions about it according to your account type and its permissions.
-            I can help with: account types, registration and sign-in, navigating the app, text and image search, ad types and how to create them, buying and payment methods, order tracking and statuses, the returns and refunds policy, supplier balance and withdrawals, shipping ads, and terms and privacy.
+            Precisely, I can (depending on your account type): create ads, update prices and quantities, search products and compare prices, fetch the cheapest and most expensive listings, look up shipping prices to a country, fetch details of your ads and orders, and report your sales and pending orders on your ads.
+            What I can do depends on account type: suppliers can create multiple ad types and manage ads/sales/withdrawals; company customers can create Request only; shipping companies create shipping ads only; personal customers buy and track orders and cannot create ads.
+            If someone tries to create an ad they are not authorized for, I refuse immediately before collecting any fields.
             I am not a human support agent: for individual cases needing human action, use Live Chat from Profile.
-            I cannot perform actions for you such as cancelling an order, approving a return, or transferring money.
             I reply in the language of your message: Arabic in, Arabic out; English in, English out.
             """);
 
@@ -343,7 +343,7 @@ internal static class AiAssistantKnowledgeSource
             العميل الفردي لا يستطيع إنشاء أي إعلان إطلاقاً، وهو مشترٍ فقط.
             شركة الشحن تنشئ إعلان شحن فقط من ميناء إلى ميناء بأسعار 20ft و40ft، ولا تنشئ أي نوع آخر.
             الزائر لا ينشئ أي شيء قبل تسجيل الدخول.
-            عند سؤال مثل «كيف أضيف إعلان Booking؟» يجب أولاً تحديد هل نوع الحساب الحالي مسموح له؛ إن لم يكن مسموحاً يُقال إن هذا الحساب لا يدعم إنشاء Booking وإن المورد هو من يستطيع ذلك.
+            عند سؤال مثل «كيف أضيف إعلان Booking؟» يجب أولاً تحديد هل نوع الحساب الحالي مسموح له؛ إن لم يكن مسموحاً يُقال فوراً إن الحساب غير مخوّل قبل أي قائمة حقول.
             هذا القيد يخص إنشاء الإعلانات فقط ولا يخص التصفح أو الشراء أو تتبع الطلبات.
             """);
         Add(chunks, "ad-types-matrix", "Who can create each ad type", "en", All,
@@ -365,11 +365,12 @@ internal static class AiAssistantKnowledgeSource
             الإجابة تعتمد على نوع الحساب الحالي:
 
             المورد داخل الإمارات: يستطيع إضافة إعلانات Category وRetail وBooking وOffer بخصم وRequest.
-            اسأله أي نوع يريد إضافته، ثم وجّهه لزر إنشاء إعلان في البار السفلي واشرح خطوات النوع المختار فقط.
-            المورد خارج الإمارات برقم غير إماراتي: Booking فقط — أخبره بذلك ولا تعرض بقية الأنواع.
+            إذا طلب نشر إعلان داخل شات الراس الذكي والجمهور الحالي supplier، ساعده مباشرة عبر أدوات create_*_ad (مثل create_booking_ad لـ Booking) — لا ترفض ولا تقل "حسابك لا يسمح".
+            استخدم وضع الخطة بالحوار: اعرض قائمة الحقول المطلوبة، ولو نسي المستخدم شيئاً في رده أخبره صراحة بالحقول الناقصة، ثم استدعِ الأداة بعد اكتمالها. يمكن أيضاً الإنشاء يدوياً من زر إنشاء إعلان في البار السفلي.
+            المورد خارج الإمارات برقم غير إماراتي: Booking فقط — أخبره بذلك ولا تعرض بقية الأنواع، لكن Booking مسموح عبر create_booking_ad في الشات.
 
             عميل الشركة: يضيف إعلان Request فقط (لا Booking ولا Retail ولا Category ولا Offer بخصم).
-            أخبره بذلك ووضّح المطلوب في طلب الشراء: اسم المنتج، الكمية والوحدة، السعر المستهدف، المواصفات، عنوان/مكان التسليم أو مسار Booking إن لزم، ثم النشر من صفحة إنشاء طلب / Create Order.
+            أخبره بذلك ووضّح المطلوب: اسم المنتج، الكمية والوحدة، السعر المستهدف والعملة، قابل للتفاوض، محلي أو إعادة تصدير، عنوان التسليم من العناوين المحفوظة، تاريخ التسليم (اختياري)، صور (اختياري)، ثم النشر من إنشاء طلب أو شات الراس الذكي.
 
             شركة الشحن: تضيف إعلان شحن فقط من الصفحة الرئيسية (ميناء إلى ميناء وأسعار 20ft و40ft).
 
@@ -386,11 +387,12 @@ internal static class AiAssistantKnowledgeSource
             Answer depends on the current account type:
 
             UAE supplier: can create Category, Retail, Booking, discounted Offer, and Request.
-            Ask which type they want, then guide them to Create Ad in the bottom bar and explain only that type's steps.
-            Overseas supplier with a non-UAE phone: Booking only — say so and do not offer the other types.
+            If they ask to publish in Alras Smart chat and the current audience is supplier, help via create_*_ad tools (e.g. create_booking_ad for Booking) — never refuse or say the account is not allowed.
+            Use conversational Plan Mode: list required fields, explicitly call out anything still missing in their reply, then call the tool when complete. They may also use Create Ad in the bottom bar manually.
+            Overseas supplier with a non-UAE phone: Booking only — say so and do not offer the other types, but Booking is allowed via create_booking_ad in chat.
 
             Company customer: Request ads only (not Booking, Retail, Category, or discounted Offer).
-            Tell them that and list what a Request needs: product name, quantity and unit, target price, specifications, delivery address or Booking route if needed, then publish from Create Order.
+            Tell them that and list what a Request needs: product name, quantity and unit, target price and currency, negotiable, Local or Reexport, delivery address from saved addresses, optional delivery date and images, then publish from Create Order or Alras Smart chat.
 
             Shipping company: shipping ads only from Home (port-to-port with 20ft and 40ft prices).
 
@@ -399,6 +401,29 @@ internal static class AiAssistantKnowledgeSource
             Guest: must sign in or register before creating any ad.
 
             Never invent permissions outside the account type, and never confuse creating an ad with buying or tracking orders.
+            """);
+
+        Add(chunks, "create-ad-via-chat-supplier", "إنشاء إعلان Booking وغيره من شات الراس الذكي — مورد", "ar", ["supplier"],
+            """
+            سؤال: عاوز انشر إعلان Booking / أنشئ بوكينج / اضف إعلان booking / ساعدني أنشر إعلان.
+            إذا كان نوع الحساب الحالي مورد (supplier) فهذا مسموح تماماً.
+            لا تقل "حسابك لا يسمح" ولا ترفض ولا تطلب فتح فورم أو شاشة إنشاء إعلان.
+            ادخل وضع الخطة بالحوار: في أول رد اذكر قائمة الحقول المطلوبة لنوع الإعلان.
+            Booking المطلوب: اسم المنتج، الدولة المصدرة وبلد الوجهة، نوع السعر FOB/CNF/CIF، مدة الشحن بالأيام، السعر بالدولار، الكمية والوحدة، هل السعر قابل للتفاوض، المواصفات (اختياري)، الوسائط (اختياري). الموانئ (ميناء التحميل وميناء الوصول) مطلوبة فقط مع CNF أو CIF — ولا تُطلب أبداً مع FOB.
+            لو رد المستخدم ناقص، قل صراحة: "نسيت / لسه ناقص:" واذكر الحقول الناقصة فقط. لا تستدعِ create_booking_ad قبل اكتمال المطلوب.
+            بعد اكتمال الحقول استدعِ create_booking_ad مرة واحدة. عملة Booking دائماً USD.
+            نفس أسلوب الخطة الحوارية لـ Offer وRetail وCategory وRequest مع الحقول المناسبة لكل نوع.
+            """);
+        Add(chunks, "create-ad-via-chat-supplier", "Create Booking and other ads via Alras Smart chat — supplier", "en", ["supplier"],
+            """
+            Question: I want to publish a Booking ad / create booking / help me post a listing.
+            If the current account audience is supplier, this is fully allowed.
+            Never say the account is not allowed, and never ask the user to open a Create Ad form.
+            Use conversational Plan Mode: first reply with the full checklist of required fields for that ad type.
+            Booking needs: product name, origin country, destination country, FOB/CNF/CIF, shipping days, USD price, quantity and unit, negotiable yes/no, specs optional, media optional. Ports (loading + arrival) are required only for CNF/CIF — never for FOB.
+            If the user reply is incomplete, say clearly: "You still need to provide:" and list only the missing required fields. Do not call create_booking_ad until complete.
+            When complete, call create_booking_ad once. Booking currency is always USD.
+            Same conversational Plan Mode for Offer, Retail, Category, and Request with each type's fields.
             """);
 
         Add(chunks, "guest", "صلاحيات الزائر غير المسجل", "ar", ["guest", "public"],
@@ -840,7 +865,7 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "listing-types", "أنواع الإعلانات ومعانيها", "ar", All,
             """
             Retail (تجزئة): بيع بكميات صغيرة داخل دولة الإمارات، السعر بالدرهم، ويمكن للعميل الفردي الشراء منه.
-            Booking (حجز/شحنة): عرض شحنة دولية من ميناء إلى ميناء بالدولار مع بلد المنشأ وميناء التحميل وبلد الوجهة وميناء الوصول ونوع السعر FOB أو CNF أو CIF.
+            Booking (حجز/شحنة): عرض شحنة دولية من ميناء إلى ميناء بالدولار مع الدولة المصدرة وميناء التحميل وبلد الوجهة وميناء الوصول ونوع السعر FOB أو CNF أو CIF.
             Offers (عروض): إعلانات عليها نسبة خصم لمدة محددة.
             Requests (طلبات): إعلان يطلب فيه صاحبه بضاعة غير متوفرة لديه، ويتقدم الآخرون بعروضهم عليه.
             Shipping (شحن): خدمة شحن تنشرها شركة الشحن من ميناء إلى ميناء بسعر 20ft و40ft ومدة الرحلة.
@@ -874,7 +899,7 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "listing-details", "ماذا تحتوي صفحة تفاصيل الإعلان", "ar", All,
             """
             صفحة تفاصيل الإعلان تعرض صور المنتج والفيديو إن وُجد، واسم المنتج ووصفه ومواصفاته، والسعر والعملة، والكمية المتاحة والوحدة، والحد الأدنى للطلب إن وُجد، وتفاصيل التعبئة إن أضافها المعلن.
-            في إعلانات Booking تظهر إضافة إلى ذلك بلد المنشأ وميناء التحميل وبلد الوجهة وميناء الوصول ونوع السعر FOB أو CNF أو CIF.
+            في إعلانات Booking تظهر إضافة إلى ذلك الدولة المصدرة وميناء التحميل وبلد الوجهة وميناء الوصول ونوع السعر FOB أو CNF أو CIF.
             في إعلانات Offers تظهر نسبة الخصم ومدته.
             في إعلانات الشحن يظهر الميناءان ومدة الرحلة وسعر 20ft وسعر 40ft.
             من صفحة التفاصيل يمكنك الشراء أو الإضافة إلى السلة أو حفظ الإعلان حسب نوع الإعلان ونوع حسابك.
@@ -1257,7 +1282,7 @@ internal static class AiAssistantKnowledgeSource
             سؤال: أنا مورد خارج الإمارات، ما نوع الإعلان الذي أستطيع إضافته؟ رقمي غير إماراتي، لماذا لا تظهر أنواع الإعلانات؟ هل المورد الدولي يستطيع إضافة Retail أو Offer أو Request؟
             الإجابة: إذا كان حساب المورد مسجلاً برقم هاتف غير إماراتي وكان موقعه خارج دولة الإمارات، فإن نوع الإعلان المتاح له هو Booking فقط.
             لا يستطيع هذا المورد إنشاء Category أو Retail أو Offer بخصم أو Request، ولذلك لا تظهر له هذه الأنواع في صفحة إنشاء الإعلان.
-            إعلان Booking مناسب للتجارة والشحنات الدولية، ويجب فيه إدخال بلد المنشأ وميناء التحميل وبلد الوجهة وميناء الوصول، واختيار FOB أو CNF أو CIF، وتكون العملة بالدولار USD.
+            إعلان Booking مناسب للتجارة والشحنات الدولية، ويجب فيه إدخال الدولة المصدرة وميناء التحميل وبلد الوجهة وميناء الوصول، واختيار FOB أو CNF أو CIF، وتكون العملة بالدولار USD.
             أما المورد داخل الإمارات والمسجل برقم إماراتي فتتاح له أنواع الإعلانات الأخرى بحسب صلاحيات حساب المورد.
             هذا القيد يخص إنشاء الإعلانات فقط؛ ولا يمنع المورد خارج الإمارات من إدارة حسابه أو متابعة طلباته وإعلانات Booking الخاصة به أو استخدام الدعم.
             """);
@@ -1295,6 +1320,9 @@ internal static class AiAssistantKnowledgeSource
             أدخل اسم المنتج والوصف والمواصفات.
             أدخل الكمية المتاحة واختر الوحدة المناسبة: طن أو كيلو أو قطعة أو كرتون أو درزن أو كيس أو صندوق.
             أدخل السعر واختر العملة درهم AED أو دولار USD.
+            اختر نوع التلبية: محلي أو إعادة تصدير (إلزامي).
+            اسأل عن التعبئة بالكيلو جرام في كل إعلان (المستخدم قد يقول بدون).
+            إذا فعّل التجزئة (هجين): اجمع أيضاً سعر وكمية ووحدة ومواصفات التجزئة منفصلة قبل النشر — لا تنسَ مواصفات التجزئة.
             يمكنك اختيارياً تحديد حد أدنى وحد أقصى للطلب.
             أضف صور المنتج والفيديو إن وُجد، والتعبئة اختيارية.
             احفظ الإعلان، وسيدخل المراجعة ثم يظهر داخل الصنف الذي اخترته في الصفحة الرئيسية.
@@ -1306,6 +1334,9 @@ internal static class AiAssistantKnowledgeSource
             Enter the product name, description, and specifications.
             Enter the available quantity and choose the unit: ton, kilogram, piece, carton, dozen, bag, or box.
             Enter the price and choose the currency, AED or USD.
+            Choose fulfillment type: Local or Reexport (required).
+            Always ask packaging in kg for every ad (user may say none).
+            If enabling retail (hybrid): also collect separate retail price, quantity, unit, and retail specifications before publish — never skip retail specs.
             Optionally set a minimum and maximum order quantity.
             Add product images and a video if available; packaging details are optional.
             Save the ad; it enters review and then appears inside the category you selected on the home page.
@@ -1313,28 +1344,30 @@ internal static class AiAssistantKnowledgeSource
 
         Add(chunks, "create-retail-ad", "كيف يفعّل المورد البيع بالتجزئة", "ar", ["supplier"],
             """
-            أثناء إنشاء إعلان داخل صنف يمكن للمورد اختيارياً تفعيل البيع بالتجزئة لنفس المنتج.
-            عند التفعيل يجب إدخال بيانات التجزئة منفصلة: كمية التجزئة، وسعر التجزئة، ووحدة التجزئة، ومواصفات التجزئة.
-            سعر التجزئة يكون بالدرهم AED دائماً لأن البيع بالتجزئة داخل دولة الإمارات، ولا يمكن تغيير العملة.
-            بعد التفعيل يظهر المنتج في مكانين: داخل الصنف ببيانات الجملة، وداخل قسم Retail ببيانات التجزئة، ولكل قناة بياناتها الخاصة.
-            هذا يتيح للمورد بيع نفس المنتج بالجملة للشركات وبالتجزئة للأفراد في الوقت نفسه.
+            أثناء إنشاء إعلان داخل صنف يمكن للمورد اختيارياً تفعيل البيع بالتجزئة لنفس المنتج (إعلان هجين جملة+تجزئة).
+            عند التفعيل يجب إدخال بيانات التجزئة منفصلة قبل النشر: كمية التجزئة، وسعر التجزئة (AED)، ووحدة التجزئة، ومواصفات التجزئة — لا تُنسخ مواصفات الجملة تلقائياً.
+            اسأل أيضاً عن تعبئة الجملة وتعبئة التجزئة (كجم) حتى لو قال المستخدم لاحقاً بدون.
+            سعر التجزئة بالدرهم AED دائماً.
+            بعد التفعيل يظهر المنتج في مكانين: داخل الصنف ببيانات الجملة، وداخل قسم Retail ببيانات التجزئة.
+            في شات الراس الذكي: لا تستدعِ create_category_ad مع enable_retail_pricing قبل جمع مواصفات التجزئة.
             """);
         Add(chunks, "create-retail-ad", "How a supplier enables retail selling", "en", ["supplier"],
             """
-            While creating a category listing, a supplier can optionally enable retail selling for the same product.
-            When enabled, separate retail data must be entered: retail quantity, retail price, retail unit, and retail specifications.
-            The retail price is always in AED because retail selling happens inside the UAE, and the currency cannot be changed.
-            Once enabled, the product appears in two places: inside its category with the wholesale data, and inside the Retail section with the retail data, each channel showing its own values.
-            This lets a supplier sell the same product wholesale to companies and retail to individuals at the same time.
+            While creating a category listing, a supplier can optionally enable retail selling (hybrid wholesale+retail).
+            When enabled, collect separate retail data BEFORE publishing: retail quantity, retail price (AED), retail unit, and retail specifications — do not silently copy wholesale specs.
+            Also ask for wholesale packaging and retail packaging (kg); the user may answer none.
+            Retail price is always AED.
+            Once enabled, the product appears in the category (wholesale) and in Retail (retail).
+            In Alras Smart chat: never call create_category_ad with enable_retail_pricing until retail_specifications is collected.
             """);
 
         Add(chunks, "create-booking-ad", "كيف ينشئ المورد إعلان Booking", "ar", ["supplier"],
             """
             لإضافة إعلان Booking كمورد: افتح إنشاء إعلان واختر نوع Booking.
             العملة في Booking هي الدولار USD دائماً ولا يمكن تحويلها إلى درهم.
-            أدخل بلد المنشأ وميناء التحميل.
-            أدخل بلد الوجهة التي تذهب إليها الشحنة وميناء الوصول.
-            اختر نوع السعر: FOB أو CNF أو CIF.
+            اختر نوع السعر أولاً: FOB أو CNF أو CIF.
+            أدخل الدولة المصدرة وبلد الوجهة.
+            إذا كان النوع CNF أو CIF فأدخل أيضاً ميناء التحميل وميناء الوصول. أما FOB فلا تظهر الموانئ ولا تُطلب.
             أدخل الكمية والوحدة والسعر.
             أضف صور المنتج والفيديو والمواصفات، والتعبئة اختيارية.
             احفظ وانشر الإعلان ليدخل المراجعة ثم يظهر ضمن قسم Booking.
@@ -1344,9 +1377,9 @@ internal static class AiAssistantKnowledgeSource
             """
             To create a Booking ad as a supplier: open Create Ad and choose Booking.
             Booking currency is always USD and cannot be switched to AED.
-            Enter the origin country and the loading port.
-            Enter the destination country the shipment is going to and the arrival port.
-            Choose the price type: FOB, CNF, or CIF.
+            Choose the price type first: FOB, CNF, or CIF.
+            Enter the exporting/origin country and the destination country.
+            If the type is CNF or CIF, also enter the loading port and arrival port. For FOB, ports are hidden and not required.
             Enter the quantity, unit, and price.
             Add product images, video, and specifications; packaging is optional.
             Save and publish so the ad enters review and then appears under the Booking section.
@@ -1357,6 +1390,7 @@ internal static class AiAssistantKnowledgeSource
             """
             افتح إنشاء إعلان واختر نوع Offer.
             أدخل بيانات المنتج المعتادة: الاسم والوصف والمواصفات والكمية والوحدة والسعر والعملة.
+            اختر محلي أو إعادة تصدير (إلزامي).
             حدد نسبة الخصم ومدة الخصم بالأيام.
             أضف الصور والفيديو والمواصفات، والتعبئة اختيارية.
             بعد الاعتماد يظهر الإعلان في قسم Offers مع نسبة الخصم.
@@ -1366,6 +1400,7 @@ internal static class AiAssistantKnowledgeSource
             """
             Open Create Ad and choose the Offer type.
             Enter the usual product data: name, description, specifications, quantity, unit, price, and currency.
+            Choose Local or Reexport (required).
             Set the discount percentage and the discount duration in days.
             Add images, video, and specifications; packaging is optional.
             After approval the ad appears in the Offers section with its discount.
@@ -1575,40 +1610,44 @@ internal static class AiAssistantKnowledgeSource
 
         Add(chunks, "create-request-company", "كيف ينشئ عميل الشركة إعلان Request", "ar", ["company_customer"],
             """
-            من البار السفلي اختر إنشاء طلب (Create Order)، وهي الصفحة المخصصة لإعلان Request.
-            أدخل اسم البضاعة المطلوبة ووصفها ومواصفاتها بدقة حتى تصلك عروض مناسبة.
-            حدد الكمية المطلوبة والوحدة، والسعر المستهدف والعملة إن رغبت.
-            أضف صوراً توضيحية للبضاعة المطلوبة إن توفرت.
-            انشر الطلب، وبعد المراجعة يظهر في قسم Requests ليتقدم الموردون بعروضهم.
-            تابع العروض الواردة من صفحة الحساب واقبل العرض المناسب أو ارفضه.
+            من البار السفلي اختر إنشاء طلب (Create Order)، أو انشر من شات الراس الذكي عبر create_request_ad.
+            الحقول المطلوبة:
+            اسم المنتج، المواصفات، الكمية والوحدة، السعر المستهدف والعملة (USD أو AED)، هل السعر قابل للتفاوض،
+            نوع التلبية: محلي أو إعادة تصدير (إلزامي)، عنوان التسليم من العناوين المحفوظة (إلزامي — إن لم يوجد عنوان أضفه من الملف الشخصي أولاً)،
+            تاريخ التسليم المطلوب (اختياري)، صور توضيحية (اختياري).
+            بعد اكتمال الحقول انشر الطلب؛ وبعد المراجعة يظهر في قسم Requests ليتقدم الموردون بعروضهم.
+            تابع العروض من صفحة الحساب واقبل العرض المناسب أو ارفضه.
             حسابك يستطيع إنشاء Request فقط ولا يستطيع إنشاء Booking أو Retail أو Category أو Offer بخصم.
             """);
         Add(chunks, "create-request-company", "How a company customer creates a Request ad", "en", ["company_customer"],
             """
-            From the bottom bar choose Create Order, the page dedicated to Request ads.
-            Enter the requested goods' name, description, and specifications precisely so you receive suitable offers.
-            Set the required quantity and unit, and a target price and currency if you wish.
-            Add reference images of the requested goods if you have any.
-            Publish the request; after review it appears in the Requests section so suppliers can submit offers.
-            Follow incoming offers from the Account page and accept the suitable one or reject the others.
-            Your account can create Requests only and cannot create Booking, Retail, Category, or discounted Offer ads.
+            From the bottom bar choose Create Order, or publish in Alras Smart chat via create_request_ad.
+            Required fields:
+            product name, specifications, quantity and unit, target price and currency (USD or AED), negotiable yes/no,
+            fulfillment type: Local or Reexport (required), delivery address from saved addresses (required — add one in Profile first if empty),
+            required delivery date (optional), reference images (optional).
+            When complete, publish; after review it appears in Requests so suppliers can offer.
+            Follow offers from the Account page and accept or reject.
+            Your account can create Requests only — not Booking, Retail, Category, or discounted Offer.
             """);
 
         Add(chunks, "create-request-supplier", "كيف ينشئ المورد إعلان Request", "ar", ["supplier"],
             """
             يستطيع المورد أيضاً نشر إعلان Request عندما يحتاج بضاعة غير متوفرة لديه.
-            افتح إنشاء إعلان واختر نوع Request.
-            أدخل وصف البضاعة المطلوبة والكمية والوحدة والمواصفات وأضف صوراً إن أمكن.
+            افتح إنشاء إعلان واختر نوع Request، أو انشر من الشات عبر create_request_ad.
+            الحقول المطلوبة: اسم المنتج، المواصفات، الكمية والوحدة، السعر المستهدف والعملة، قابل للتفاوض،
+            محلي أو إعادة تصدير (إلزامي)، عنوان التسليم إن وُجد من العناوين المحفوظة (مستحسن)، تاريخ التسليم (اختياري)، صور (اختياري).
             بعد المراجعة يظهر الطلب في قسم Requests ويتقدم الآخرون بعروضهم عليه.
             تابع العروض من صفحة الحساب واقبل الأنسب.
             """);
         Add(chunks, "create-request-supplier", "How a supplier creates a Request ad", "en", ["supplier"],
             """
             A supplier can also publish a Request ad when they need goods they do not stock.
-            Open Create Ad and choose the Request type.
-            Enter the requested goods' description, quantity, unit, and specifications, and add images if possible.
-            After review the request appears in the Requests section and others submit their offers on it.
-            Follow the offers from the Account page and accept the most suitable one.
+            Open Create Ad and choose Request, or publish in chat via create_request_ad.
+            Required fields: product name, specifications, quantity and unit, target price and currency, negotiable,
+            Local or Reexport (required), delivery address from saved addresses when available (recommended), delivery date (optional), images (optional).
+            After review the request appears in Requests and others submit offers.
+            Follow offers from the Account page and accept the most suitable one.
             """);
 
         Add(chunks, "submit-offer", "كيف أقدم عرضاً على إعلان Request", "ar", ["supplier", "company_customer"],
@@ -1937,7 +1976,9 @@ internal static class AiAssistantKnowledgeSource
             شات المساعد يقبل حالياً الرسائل النصية والفويس فقط (والمساعد يصحّح نص الفويس بعد الاستماع)، ولا يدعم الصور أو الفيديو أو الملفات أو الموقع الآن، ومن المتوقع قبول الصور مستقبلاً.
             يرد المساعد بلغة رسالتك، فإذا كتبت بالعربية يرد بالعربية وإذا كتبت بالإنجليزية يرد بالإنجليزية، وإذا كتبت بلغة أخرى يفهمها داخلياً ويرد بلغة مدعومة.
             الأسئلة خارج نطاق المنصة تُرفض بلطف مع اقتراح مواضيع يمكنه المساعدة فيها.
-            عند السؤال عن ميزة إنشاء مثل Booking يوضح المساعد أولاً هل نوع حسابك مسموح له أم لا.
+            عند السؤال عن إنشاء إعلان، يطبّق المساعد صلاحيات نوع حسابك الحالي فقط — لا يطبّق قيود أنواع حسابات أخرى.
+            المورد يستطيع إنشاء Booking وغيره مباشرة من الشات عبر create_booking_ad وغيرها؛ لا يرفض المورد طلب Booking.
+            عميل الشركة يستطيع Request فقط عبر create_request_ad.
             القيود تخص إنشاء الإعلانات والرصيد فقط، ولا تمنع تتبع الطلبات أو البحث أو الدعم.
             """);
         Add(chunks, "assistant", "AI Assistant policy", "en", All,
@@ -1948,7 +1989,9 @@ internal static class AiAssistantKnowledgeSource
             The AI chat currently accepts text and voice only (and the AI corrects the voice transcript after listening); images, video, files, and location are not supported yet — image support is expected in the future.
             The assistant replies in the language of your message: Arabic for Arabic, English for English, and for other languages it understands internally then replies in a supported language.
             Out-of-scope questions are declined politely with suggested platform topics.
-            When asked how to create something like Booking, the assistant first checks whether your account type is allowed.
+            When asked to create an ad, the assistant applies ONLY your current account type's permissions — never rules meant for other account types.
+            Suppliers can create Booking and other types directly in chat via create_booking_ad and related tools; a supplier's Booking request is never refused.
+            Company customers can create Request only via create_request_ad.
             Restrictions cover only creating ads and the Balance page, and never block order tracking, search, or support.
             """);
     }
@@ -1962,7 +2005,7 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "incoterms", "معنى FOB وCNF وCIF في إعلانات Booking", "ar", All,
             """
             أنواع السعر في إعلان Booking تحدد ما الذي يشمله السعر المعروض.
-            FOB (تسليم ظهر السفينة): السعر يشمل قيمة البضاعة وتكاليف إيصالها وتحميلها على السفينة في ميناء التحميل، ولا يشمل أجرة الشحن البحري ولا التأمين، ويتحملهما المشتري.
+            FOB (تسليم ظهر السفينة): السعر يشمل قيمة البضاعة وتكاليف إيصالها وتحميلها على السفينة، ولا يشمل أجرة الشحن البحري ولا التأمين، ويتحملهما المشتري. عند إنشاء إعلان FOB لا تُطلب الموانئ.
             CNF أو CFR (التكلفة وأجرة الشحن): السعر يشمل قيمة البضاعة وأجرة الشحن البحري حتى ميناء الوصول، ولا يشمل التأمين.
             CIF (التكلفة والتأمين وأجرة الشحن): السعر يشمل قيمة البضاعة وأجرة الشحن البحري والتأمين حتى ميناء الوصول.
             المورد هو من يختار نوع السعر عند إنشاء إعلان Booking، ويظهر للمشتري في تفاصيل الإعلان.
@@ -1971,7 +2014,7 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "incoterms", "What FOB, CNF, and CIF mean on Booking ads", "en", All,
             """
             The price type on a Booking ad defines what the quoted price covers.
-            FOB (Free On Board): the price covers the goods and the cost of delivering and loading them onto the vessel at the loading port; sea freight and insurance are not included and are paid by the buyer.
+            FOB (Free On Board): the price covers the goods and the cost of delivering and loading them onto the vessel; sea freight and insurance are not included and are paid by the buyer. When creating a FOB ad, ports are not collected.
             CNF or CFR (Cost and Freight): the price covers the goods and the sea freight to the arrival port, but not insurance.
             CIF (Cost, Insurance and Freight): the price covers the goods, the sea freight, and the insurance up to the arrival port.
             The supplier chooses the price type when creating the Booking ad, and it is shown to buyers in the listing details.
@@ -1980,16 +2023,20 @@ internal static class AiAssistantKnowledgeSource
 
         Add(chunks, "booking-ports", "الموانئ وبلدان الشحن في إعلان Booking", "ar", All,
             """
-            كل إعلان Booking يحدد أربع معلومات جغرافية: بلد المنشأ، وميناء التحميل الذي تغادر منه الشحنة، وبلد الوجهة التي تذهب إليها الشحنة، وميناء الوصول.
-            بلد المنشأ يوضح مصدر البضاعة، وهو مهم لبعض المشترين لأسباب تنظيمية أو تفضيلية.
-            ميناء التحميل وميناء الوصول يحددان مسار الشحنة ويؤثران على المدة والتكلفة.
+            كل إعلان Booking يحدد الدولة المصدرة وبلد الوجهة.
+            إذا كان نوع السعر CNF أو CIF يظهر أيضاً ميناء التحميل وميناء الوصول.
+            أما إذا كان نوع السعر FOB فلا تُطلب الموانئ ولا تظهر في نموذج الإضافة.
+            الدولة المصدرة توضح مصدر البضاعة، وهي مهمة لبعض المشترين لأسباب تنظيمية أو تفضيلية.
+            ميناء التحميل وميناء الوصول (عند CNF/CIF) يحددان مسار الشحنة ويؤثران على المدة والتكلفة.
             إذا كنت تبحث عن شحن من ميناء إلى ميناء بشكل منفصل عن البضاعة نفسها، فهذه خدمة تعرضها شركات الشحن في قسم Shipping.
             """);
         Add(chunks, "booking-ports", "Ports and countries on a Booking ad", "en", All,
             """
-            Every Booking ad specifies four geographic details: the origin country, the loading port the shipment departs from, the destination country the shipment is going to, and the arrival port.
+            Every Booking ad specifies the origin/exporting country and the destination country.
+            When the price type is CNF or CIF, the loading port and arrival port are also required.
+            When the price type is FOB, ports are not required and are hidden on the create-ad form.
             The origin country identifies where the goods come from, which matters to some buyers for regulatory or preference reasons.
-            The loading and arrival ports define the route and affect both transit time and cost.
+            The loading and arrival ports (for CNF/CIF) define the route and affect both transit time and cost.
             If you are looking for port-to-port freight separately from the goods themselves, that service is published by shipping companies in the Shipping section.
             """);
 

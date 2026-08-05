@@ -36,6 +36,9 @@ export type AdminShippingProvider = {
 
 export type AdminShippingProviderDetail = AdminShippingProvider & {
   fullName: string
+  landNumber: string | null
+  commercialRegister: string | null
+  taxNumber: string | null
   fromCountryId: number
   fromPortId: number
   toCountryId: number

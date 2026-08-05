@@ -40,6 +40,7 @@ public interface IStaticReferenceCache
     GeoCountrySnapshot? FindCountryById(short id);
     GeoCountrySnapshot? FindCountryByEnglishName(string countryName);
     GeoCountrySnapshot? FindCountryByName(string countryName);
+    IReadOnlyList<GeoCountrySnapshot> SuggestCountries(string input, int max = 5);
 
     IReadOnlyList<GeoPortSnapshot> GetPortsByCountryId(short countryId);
     GeoPortSnapshot? FindPortById(int id);
@@ -48,6 +49,7 @@ public interface IStaticReferenceCache
     GeoPortSnapshot? FindPortByEnglishName(string portName, IReadOnlyCollection<int> allowedPortIds);
     GeoPortSnapshot? FindPortByEnglishName(string portName);
     GeoPortSnapshot? FindPortByName(string portName);
+    IReadOnlyList<GeoPortSnapshot> SuggestPorts(string input, short countryId, int max = 8);
     object GetPortsByCountryNameResponse(string countryName);
 
     IReadOnlyList<GeoCitySnapshot> GetCities();

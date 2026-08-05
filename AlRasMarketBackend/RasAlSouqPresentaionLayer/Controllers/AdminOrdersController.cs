@@ -371,11 +371,88 @@ public class AdminOrdersController(
         }
     }
 
+    [HttpPost("{orderId:long}/videos/upload")]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(50 * 1024 * 1024)]
+    public async Task<IActionResult> UploadOrderVideo(
+        [FromRoute] long orderId,
+        [FromForm] UploadOrderVideoRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            var root = environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var result = await ordersAppService.UploadOrderVideoAsync(new UploadOrderVideoInput
+            {
+                UserId = userId,
+                OrderId = orderId,
+                File = request.File,
+                WebRootPath = root
+            }, cancellationToken);
+
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+    }
+
+    [HttpDelete("{orderId:long}/videos/{videoId:long}")]
+    public async Task<IActionResult> DeleteOrderVideo(
+        [FromRoute] long orderId,
+        [FromRoute] long videoId,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            await ordersAppService.DeleteOrderVideoAsync(userId, orderId, videoId, cancellationToken);
+            return NoContent();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+    }
+
     private string? GetUserId() =>
         User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 }
 
 public sealed class UploadOrderImageRequest
+{
+    public IFormFile? File { get; set; }
+}
+
+public sealed class UploadOrderVideoRequest
 {
     public IFormFile? File { get; set; }
 }

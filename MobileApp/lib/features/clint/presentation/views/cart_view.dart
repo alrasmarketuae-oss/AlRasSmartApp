@@ -227,6 +227,12 @@ class _CartViewState extends State<CartView> {
                         onDecrement: () => cubit.decrementItem(
                           cartItemId: item.id,
                         ),
+                        onQuantityCommitted: (quantity) => cubit.setCartItemQuantity(
+                          cartItemId: item.id,
+                          productId: item.productId,
+                          unitName: item.unitName,
+                          quantity: quantity,
+                        ),
                         onDelete: () => cubit.removeCartItem(
                           cartItemId: item.id,
                         ),

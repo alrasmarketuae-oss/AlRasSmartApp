@@ -97,6 +97,8 @@ export default function UserDetailView({
   const [rejectReason, setRejectReason] = useState('')
   const isBusy = isApproving || isRejecting || isDeactivating || isDeleting
   const isSupplier = user.roleId === 2
+  const isShippingCompany = user.roleId === 5
+  const showCompanyDocs = isSupplier || isShippingCompany
 
   const typeLabel = localizeTypeLabel(user.typeLabelAr, locale)
   const statusLabel = localizeStatusLabel(user.statusLabelAr, locale)
@@ -308,16 +310,18 @@ export default function UserDetailView({
             </section>
           ) : null}
 
-          {isSupplier ? (
+          {showCompanyDocs ? (
             <section className="admin-card rounded-2xl p-5 sm:p-6">
               <h2 className="admin-text mb-5 text-right text-lg font-bold">
                 {t('users.companyDocuments')}
               </h2>
               <dl className="mb-6 space-y-4">
-                <InfoRow
-                  label={t('users.licenseNumber')}
-                  value={user.licenseNumber?.trim() || '—'}
-                />
+                {isSupplier ? (
+                  <InfoRow
+                    label={t('users.licenseNumber')}
+                    value={user.licenseNumber?.trim() || '—'}
+                  />
+                ) : null}
                 <InfoRow
                   label={t('users.commercialRegister')}
                   value={user.commercialRegister?.trim() || '—'}
@@ -325,6 +329,7 @@ export default function UserDetailView({
                 <InfoRow label={t('users.taxNumber')} value={user.taxNumber?.trim() || '—'} />
               </dl>
 
+              {isSupplier ? (
               <div className="space-y-6">
                 <div>
                   <h3 className="admin-text-muted mb-3 text-right text-sm font-semibold">
@@ -394,6 +399,7 @@ export default function UserDetailView({
                   )}
                 </div>
               </div>
+              ) : null}
             </section>
           ) : null}
         </div>
