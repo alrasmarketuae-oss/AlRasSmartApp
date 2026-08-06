@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import { resolveAssetUrl } from '../../lib/assets'
+import { whatsappHref } from '../../utils/whatsapp'
 
 export type ContactTarget = {
   displayName: string
@@ -14,17 +15,6 @@ type ContactSupplierDialogProps = {
   open: boolean
   target: ContactTarget | null
   onClose: () => void
-}
-
-function digitsOnly(phone: string): string {
-  return phone.replace(/\D/g, '')
-}
-
-function whatsappHref(phone: string | null | undefined): string | null {
-  if (!phone?.trim()) return null
-  const digits = digitsOnly(phone)
-  if (digits.length < 8) return null
-  return `https://wa.me/${digits}`
 }
 
 function mailtoHref(email: string | null | undefined): string | null {

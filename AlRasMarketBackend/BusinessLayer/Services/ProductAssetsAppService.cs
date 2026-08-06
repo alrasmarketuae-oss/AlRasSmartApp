@@ -678,7 +678,7 @@ public class ProductAssetsAppService(
             .FirstOrDefaultAsync(x => x.ProductId == productId, cancellationToken)
             ?? throw new KeyNotFoundException("Product not found.");
 
-        EnsureVideoSlotAvailable(product);
+        EnsureVideoSlotAvailable(product, input.ReplaceVideoPath);
 
         var extension = Path.GetExtension(input.File.FileName).ToLowerInvariant();
         EnsureAllowedVideoExtension(extension);
@@ -690,13 +690,34 @@ public class ProductAssetsAppService(
             fileName,
             cancellationToken: cancellationToken);
 
-        return await CompleteVideoRegistrationAsync(
+        var result = await CompleteVideoRegistrationAsync(
             product,
             productId,
             videoPath,
             input.VideoDurationSeconds!.Value,
             input.AllowAdminAccess,
             cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(input.ReplaceVideoPath))
+        {
+            try
+            {
+                // Reload product videos after insert so delete finds the old path.
+                await DeleteVideoByPathAsync(
+                    input.ProductId,
+                    input.ReplaceVideoPath,
+                    input.OwnerId,
+                    input.WebRootPath,
+                    input.AllowAdminAccess,
+                    cancellationToken);
+            }
+            catch (KeyNotFoundException)
+            {
+                // Old path already gone — trimmed upload still succeeded.
+            }
+        }
+
+        return result;
     }
 
     public async Task<object> PresignVideoUploadAsync(
@@ -944,9 +965,21 @@ public class ProductAssetsAppService(
         }
     }
 
-    private static void EnsureVideoSlotAvailable(Product product)
+    private static void EnsureVideoSlotAvailable(Product product, string? replaceVideoPath = null)
     {
-        var existingCount = ProductVideoPathsHelper.ResolveAll(product).Count;
+        var existing = ProductVideoPathsHelper.ResolveAll(product);
+        var existingCount = existing.Count;
+        if (!string.IsNullOrWhiteSpace(replaceVideoPath)
+            && existing.Any(path =>
+                string.Equals(
+                    NormalizeAssetPath(path),
+                    NormalizeAssetPath(replaceVideoPath),
+                    StringComparison.OrdinalIgnoreCase)))
+        {
+            // Replacing an existing clip does not consume an extra slot.
+            existingCount--;
+        }
+
         if (existingCount >= ProductVideoPathsHelper.MaxProductVideos)
         {
             throw new InvalidOperationException(

@@ -11,6 +11,8 @@ import 'package:alrasmarket/features/ai_assistant/presentation/widgets/ai_ad_pla
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
 import 'package:alrasmarket/features/company/domain/usecases/create_ad_usecases.dart';
+import 'package:alrasmarket/features/company/presentation/helpers/create_ad_form_mapper.dart';
+import 'package:alrasmarket/core/media/video_compressor.dart';
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
@@ -126,6 +128,8 @@ class _AiAssistantViewState extends State<AiAssistantView> {
     final visibleText = _controller.text.trim();
     if (visibleText.isEmpty || _isThinking) return;
 
+    FocusManager.instance.primaryFocus?.unfocus();
+
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
 
     // Ad-creation intent → yellow Plan Mode chat (same composer, AI asks for fields).
@@ -199,6 +203,18 @@ class _AiAssistantViewState extends State<AiAssistantView> {
           'List required fields clearly. If the user reply is incomplete, '
           'explicitly say what is still missing before calling any create tool.',
         );
+      }
+      if (_planInitialKind == AiAdPlanKind.booking) {
+        final priorUserTexts = _messages
+            .where((m) => m.isUser)
+            .map((m) => m.text)
+            .toList()
+            .reversed;
+        final incoterm = resolveBookingPriceTypeFromChat(
+          priorUserTexts,
+          visibleText,
+        );
+        buffer.writeln(bookingIncotermPlanHint(incoterm: incoterm, isAr: isAr));
       }
       buffer.writeln(visibleText);
       apiText = buffer.toString();
@@ -330,16 +346,38 @@ class _AiAssistantViewState extends State<AiAssistantView> {
       _isThinking = true;
       _thinkingStartedAt ??= DateTime.now();
       _thinkingSteps.add(
-        isAr ? 'جاري ضغط ورفع الصور…' : 'Compressing and uploading images…',
+        isAr ? 'جاري رفع الوسائط…' : 'Uploading media…',
       );
     });
     _scrollToEnd();
 
     try {
-      final images = await _imagePicker.pickMultiImage(imageQuality: 85);
-      for (final image in images) {
+      final picked = await _imagePicker.pickMultipleMedia();
+      if (picked.isEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _uploadingAdMedia = false;
+          _isThinking = false;
+        });
+        return;
+      }
+
+      final imagePaths = <String>[];
+      final videoPaths = <String>[];
+      for (final item in picked) {
+        final path = item.path;
+        if (path.isEmpty) continue;
+        if (CreateAdFormMapper.isVideoPath(path)) {
+          videoPaths.add(path);
+        } else {
+          imagePaths.add(path);
+        }
+      }
+
+      var uploadedImages = 0;
+      for (final imagePath in imagePaths) {
         final result = await _draftOps.uploadDraftImage(
-          filePath: image.path,
+          filePath: imagePath,
           token: token,
         );
         result.fold(
@@ -347,49 +385,55 @@ class _AiAssistantViewState extends State<AiAssistantView> {
           (remotePath) {
             if (!_draftImagePaths.contains(remotePath)) {
               _draftImagePaths.add(remotePath);
+              uploadedImages++;
             }
           },
         );
       }
 
-      if (!mounted) return;
-      if (_draftImagePaths.isNotEmpty) {
-        setState(() {
-          _thinkingSteps.add(
-            isAr
-                ? 'تم رفع ${_draftImagePaths.length} صورة بنجاح'
-                : 'Uploaded ${_draftImagePaths.length} image(s) successfully',
-          );
-        });
-      }
-
-      final video = await _imagePicker.pickVideo(source: ImageSource.gallery);
-      if (video != null) {
+      if (videoPaths.isNotEmpty) {
         if (!mounted) return;
         setState(() {
           _thinkingSteps.add(
             isAr ? 'جاري رفع الفيديو…' : 'Uploading video…',
           );
         });
+        final videoPath = videoPaths.first;
         final videoResult = await _draftOps.uploadDraftVideo(
-          filePath: video.path,
+          filePath: videoPath,
           token: token,
         );
+        String? uploadedVideoPath;
         videoResult.fold(
           (_) {},
-          (remotePath) {
-            _draftVideoPath = remotePath;
-            _draftVideoDurationSeconds = 30;
-          },
+          (remotePath) => uploadedVideoPath = remotePath,
         );
-        if (!mounted) return;
-        if (_draftVideoPath != null) {
-          setState(() {
+        if (uploadedVideoPath != null) {
+          _draftVideoPath = uploadedVideoPath;
+          final duration = await VideoCompressor.readDurationSecondsRounded(
+            videoPath,
+            maxSeconds: CreateAdFormMapper.maxProductVideoDurationSeconds,
+          );
+          _draftVideoDurationSeconds = duration > 0 ? duration : 30;
+        }
+      }
+
+      if (!mounted) return;
+      if (uploadedImages > 0 || _draftVideoPath != null) {
+        setState(() {
+          if (uploadedImages > 0) {
+            _thinkingSteps.add(
+              isAr
+                  ? 'تم رفع $uploadedImages صورة بنجاح'
+                  : 'Uploaded $uploadedImages image(s) successfully',
+            );
+          }
+          if (_draftVideoPath != null) {
             _thinkingSteps.add(
               isAr ? 'تم رفع الفيديو بنجاح' : 'Video uploaded successfully',
             );
-          });
-        }
+          }
+        });
       }
     } catch (_) {
       // Ignore picker/upload errors; user can retry.
@@ -912,7 +956,7 @@ class _MessageBubble extends StatelessWidget {
                   text: message.text,
                   style: TextStyle(
                     color: isUser ? Colors.white : colors.primaryText,
-                    fontSize: 13.sp,
+                    fontSize: 15.sp,
                     height: 1.5,
                   ),
                 ),
@@ -1882,11 +1926,11 @@ class _AiComposerState extends State<_AiComposer> {
                           widget.onSend();
                         }
                       },
-                      style: TextStyle(fontSize: 13.sp),
+                      style: TextStyle(fontSize: 15.sp),
                       decoration: InputDecoration(
                         hintText: s.aiAssistantHint,
                         hintStyle: TextStyle(
-                          fontSize: 12.sp,
+                          fontSize: 13.sp,
                           color: const Color(0xFF9AA3B2),
                         ),
                         prefixIcon: Icon(

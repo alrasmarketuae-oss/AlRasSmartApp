@@ -13,6 +13,7 @@ import {
 import type { AdminOrder } from '../../types/adminOrder'
 import ProductShippingPanel from '../shared/ProductShippingPanel'
 import CountryFlag from '../shared/CountryFlag'
+import WhatsAppPhoneLink from '../shared/WhatsAppPhoneLink'
 import {
   IconInfoField,
   IconInfoSectionTitle,
@@ -1441,9 +1442,7 @@ export default function OffersOrderDetailView({
               </div>
               <p className="flex items-center gap-2 text-sm" dir="ltr">
                 <CountryFlag phone={order.customerPhone} city={order.deliveryCityName} size={20} />
-                <span className="admin-text font-semibold">
-                  {order.customerPhone?.trim() || '—'}
-                </span>
+                <WhatsAppPhoneLink phone={order.customerPhone} />
               </p>
               <p className="admin-text break-all text-sm">{order.customerEmail || '—'}</p>
               <p className="flex items-center gap-2 text-sm">
@@ -1488,9 +1487,7 @@ export default function OffersOrderDetailView({
                   countryName={order.originCountryName}
                   size={20}
                 />
-                <span className="admin-text font-semibold">
-                  {order.supplierPhone?.trim() || '—'}
-                </span>
+                <WhatsAppPhoneLink phone={order.supplierPhone} />
               </p>
               <p className="admin-text break-all text-sm">{order.supplierEmail || '—'}</p>
               {order.supplierUserId ? (

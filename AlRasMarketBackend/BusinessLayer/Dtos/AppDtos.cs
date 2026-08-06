@@ -100,6 +100,8 @@ public sealed class UploadProductVideoInput
     public byte? VideoDurationSeconds { get; set; }
     public string WebRootPath { get; set; } = string.Empty;
     public bool AllowAdminAccess { get; set; }
+    /// <summary>When set, upload replaces this existing video path (frees the max-videos slot).</summary>
+    public string? ReplaceVideoPath { get; set; }
 }
 
 public sealed class PresignProductImageInput

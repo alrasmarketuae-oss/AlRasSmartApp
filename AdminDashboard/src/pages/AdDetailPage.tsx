@@ -173,8 +173,8 @@ export default function AdDetailPage() {
         productId,
         file,
         videoDurationSeconds: durationSeconds,
+        replaceVideoPath: trimTargetPath,
       }).unwrap()
-      await deleteVideo({ productId, path: trimTargetPath }).unwrap()
       setTrimTargetPath(null)
       setSuccessMessage(t('ads.trimVideoSaveSuccess'))
     } catch (err) {

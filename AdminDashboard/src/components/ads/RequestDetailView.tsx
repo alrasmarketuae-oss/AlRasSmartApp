@@ -7,6 +7,7 @@ import PendingProductEditPanel from './PendingProductEditPanel'
 import ProductVideosPanel, { resolveProductVideoPaths } from './ProductVideosPanel'
 import type { Category } from '../../types/category'
 import CountryFlag from '../shared/CountryFlag'
+import WhatsAppPhoneLink from '../shared/WhatsAppPhoneLink'
 import RequestOffersPanel from './RequestOffersPanel'
 import AdminImageBlurModal from '../shared/AdminImageBlurModal'
 import ImageGallery, { type GalleryMediaItem } from '../ui/ImageGallery'
@@ -1139,9 +1140,7 @@ export default function RequestDetailView({
               <div className="admin-border space-y-3 border-t pt-3 text-sm">
                 <p className="flex items-center gap-2" dir="ltr">
                   <CountryFlag phone={product.ownerPhone} city={product.ownerCity} size={20} />
-                  <span className="admin-text break-all">
-                    {product.ownerPhone?.trim() || '—'}
-                  </span>
+                  <WhatsAppPhoneLink phone={product.ownerPhone} className="break-all" />
                 </p>
                 <p className="admin-text break-all">{product.ownerEmail || '—'}</p>
                 <p className="flex items-center gap-2">

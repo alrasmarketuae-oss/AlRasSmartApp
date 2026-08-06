@@ -24,6 +24,7 @@ import ProductShippingPanel from '../shared/ProductShippingPanel'
 import ContactSupplierDialog, {
   type ContactTarget,
 } from '../shared/ContactSupplierDialog'
+import WhatsAppPhoneLink from '../shared/WhatsAppPhoneLink'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import { getRtkErrorMessage } from '../../utils/rtkError'
 import OrderStatusHistoryStrip from './OrderStatusHistoryStrip'
@@ -364,10 +365,7 @@ export default function RequestOfferDetailView({
           productId: order.productId,
           file,
           videoDurationSeconds: durationSeconds,
-        }).unwrap()
-        await deleteProductVideo({
-          productId: order.productId,
-          path: trimTarget.path,
+          replaceVideoPath: trimTarget.path,
         }).unwrap()
         invalidateOrderDetail()
       }
@@ -657,9 +655,12 @@ export default function RequestOfferDetailView({
                         </span>
                       ) : null}
                     </div>
-                    <p className="admin-text-muted mt-1 text-xs">
-                      {[order.supplierPhone, order.supplierEmail].filter(Boolean).join(' · ') ||
-                        '—'}
+                    <p className="admin-text-muted mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                      <WhatsAppPhoneLink phone={order.supplierPhone} className="text-xs" />
+                      {order.supplierEmail ? (
+                        <span className="admin-text-muted">{order.supplierEmail}</span>
+                      ) : null}
+                      {!order.supplierPhone?.trim() && !order.supplierEmail ? '—' : null}
                     </p>
                   </div>
                 </div>
@@ -722,13 +723,10 @@ export default function RequestOfferDetailView({
                   </button>
                 ) : null}
                 {order.supplierPhone ? (
-                  <a
-                    href={`tel:${order.supplierPhone}`}
-                    className="admin-border inline-flex h-10 items-center justify-center rounded-xl border bg-white px-3 text-xs font-bold text-slate-600 transition hover:bg-slate-50"
-                    dir="ltr"
-                  >
-                    {order.supplierPhone}
-                  </a>
+                  <WhatsAppPhoneLink
+                    phone={order.supplierPhone}
+                    className="admin-border inline-flex h-10 items-center justify-center rounded-xl border bg-white px-3 text-xs font-bold transition hover:bg-slate-50"
+                  />
                 ) : null}
               </div>
             </div>
@@ -1213,8 +1211,8 @@ export default function RequestOfferDetailView({
                   <p className="admin-text text-sm font-bold">{buyerLabel}</p>
                 </div>
               </div>
-              <p className="admin-text text-sm" dir="ltr">
-                {order.customerPhone?.trim() || '—'}
+              <p className="text-sm" dir="ltr">
+                <WhatsAppPhoneLink phone={order.customerPhone} />
               </p>
               <p className="admin-text break-all text-sm">{order.customerEmail || '—'}</p>
               {order.customerEmail ? (

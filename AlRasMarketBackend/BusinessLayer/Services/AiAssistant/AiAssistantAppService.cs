@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using BusinessLayer.Options;
@@ -489,6 +490,16 @@ public sealed class AiAssistantAppService(
                     content = x.Content.Length <= 1200 ? x.Content : x.Content[..1200]
                 }));
         }
+        if (isAdCreation && IsBookingAdCreationContext(message, history))
+        {
+            var incoterm = DetectBookingIncoterm(message, history);
+            messages.Add(new
+            {
+                role = "system",
+                content = BuildBookingIncotermHint(incoterm, language)
+            });
+        }
+
         messages.Add(new { role = "user", content = message });
 
         return await mcpToolLoop.CompleteWithToolsAsync(
@@ -540,6 +551,116 @@ public sealed class AiAssistantAppService(
         }
 
         return false;
+    }
+
+    private static bool IsBookingAdCreationContext(
+        string message,
+        IReadOnlyList<AiAssistantHistoryMessage>? history)
+    {
+        if (string.Equals(DetectRequestedAdType(message), "booking", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (message.Contains("Booking", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("بوكينج", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("حجز", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (history is not { Count: > 0 }) return false;
+
+        foreach (var entry in history.Where(x => x.Role == "user"))
+        {
+            if (string.Equals(DetectRequestedAdType(entry.Content), "booking", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (entry.Content.Contains("Booking", StringComparison.OrdinalIgnoreCase)
+                || entry.Content.Contains("بوكينج", StringComparison.OrdinalIgnoreCase)
+                || entry.Content.Contains("حجز", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string? DetectBookingIncoterm(
+        string message,
+        IReadOnlyList<AiAssistantHistoryMessage>? history)
+    {
+        var fromMessage = DetectBookingIncotermInText(message);
+        if (fromMessage is not null) return fromMessage;
+
+        if (history is not { Count: > 0 }) return null;
+
+        foreach (var entry in history.Where(x => x.Role == "user").Reverse())
+        {
+            var found = DetectBookingIncotermInText(entry.Content);
+            if (found is not null) return found;
+        }
+
+        return null;
+    }
+
+    private static string? DetectBookingIncotermInText(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return null;
+
+        if (Regex.IsMatch(text, @"\bFOB\b", RegexOptions.IgnoreCase)
+            || text.Contains("فوب", StringComparison.OrdinalIgnoreCase))
+        {
+            return "FOB";
+        }
+
+        if (Regex.IsMatch(text, @"\bCIF\b", RegexOptions.IgnoreCase)
+            || text.Contains("سيف", StringComparison.OrdinalIgnoreCase))
+        {
+            return "CIF";
+        }
+
+        if (Regex.IsMatch(text, @"\bCNF\b", RegexOptions.IgnoreCase)
+            || Regex.IsMatch(text, @"\bC\s*&\s*F\b", RegexOptions.IgnoreCase)
+            || text.Contains("سي اند اف", StringComparison.OrdinalIgnoreCase))
+        {
+            return "CNF";
+        }
+
+        return null;
+    }
+
+    private static string BuildBookingIncotermHint(string? incoterm, string language)
+    {
+        if (language == "ar")
+        {
+            return incoterm switch
+            {
+                "FOB" =>
+                    "BOOKING FOB: اجمع الدولة المصدرة فقط. ممنوع طلب أو إرسال بلد الوجهة أو ميناء التحميل أو ميناء الوصول.",
+                "CNF" =>
+                    "BOOKING CNF: يجب جمع الدولة المصدرة + ميناء التحميل + بلد الوجهة + ميناء الوصول — كلها إلزامية. لا تتصرف كما لو كان FOB.",
+                "CIF" =>
+                    "BOOKING CIF: يجب جمع الدولة المصدرة + ميناء التحميل + بلد الوجهة + ميناء الوصول — كلها إلزامية. لا تتصرف كما لو كان FOB.",
+                _ =>
+                    "BOOKING: اسأل نوع السعر FOB أو CNF أو CIF أولاً. FOB = الدولة المصدرة فقط. CNF/CIF = الدولة المصدرة + الموانئ + بلد الوجهة."
+            };
+        }
+
+        return incoterm switch
+        {
+            "FOB" =>
+                "Active BOOKING FOB: collect exporting country only. Never ask or send destination country or ports.",
+            "CNF" =>
+                "Active BOOKING CNF: MUST collect origin country, loading port, destination country, and arrival port. Do NOT behave like FOB.",
+            "CIF" =>
+                "Active BOOKING CIF: MUST collect origin country, loading port, destination country, and arrival port. Do NOT behave like FOB.",
+            _ =>
+                "BOOKING: ask FOB/CNF/CIF first. FOB = exporting country only. CNF/CIF = origin + ports + destination country."
+        };
     }
 
     private static string ExtractUserVisibleText(string message)

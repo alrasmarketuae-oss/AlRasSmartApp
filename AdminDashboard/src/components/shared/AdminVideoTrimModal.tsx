@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import { fetchAdminAssetBlob } from '../../utils/downloadAsset'
+import { getRtkErrorMessage } from '../../utils/rtkError'
 import { trimVideoToFile } from '../../utils/videoTrim'
 
 type AdminVideoTrimModalProps = {
@@ -28,16 +29,19 @@ export default function AdminVideoTrimModal({
   const videoRef = useRef<HTMLVideoElement>(null)
   const [duration, setDuration] = useState(0)
   const [startSec, setStartSec] = useState(0)
-  const [endSec, setEndSec] = useState(0)
+  const [clipLength, setClipLength] = useState(30)
   const [ready, setReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isExporting, setIsExporting] = useState(false)
+
+  const endSec = Math.min(duration || clipLength, startSec + clipLength)
+  const trimDuration = Math.max(0, endSec - startSec)
 
   useEffect(() => {
     if (!open) return
     setDuration(0)
     setStartSec(0)
-    setEndSec(0)
+    setClipLength(30)
     setReady(false)
     setError(null)
     setIsExporting(false)
@@ -54,44 +58,45 @@ export default function AdminVideoTrimModal({
     const d = video.duration
     setDuration(d)
     setStartSec(0)
-    setEndSec(Math.min(d, 180))
+    setClipLength(Math.min(30, Math.max(1, Math.floor(d))))
     setReady(true)
   }
 
   function handleStartChange(value: number) {
-    const next = Math.max(0, Math.min(value, endSec - 0.5))
+    const maxStart = Math.max(0, duration - 0.5)
+    const next = Math.max(0, Math.min(value, maxStart))
     setStartSec(next)
+    const maxLen = Math.min(180, duration - next)
+    if (clipLength > maxLen) setClipLength(Math.max(0.5, maxLen))
     const video = videoRef.current
     if (video) video.currentTime = next
   }
 
-  function handleEndChange(value: number) {
-    const maxEnd = Math.min(duration, startSec + 180)
-    const next = Math.max(startSec + 0.5, Math.min(value, maxEnd))
-    setEndSec(next)
+  function handleLengthChange(value: number) {
+    const maxLen = Math.min(180, Math.max(0.5, duration - startSec))
+    setClipLength(Math.max(0.5, Math.min(value, maxLen)))
   }
 
   async function handleSave() {
-    if (!ready || endSec <= startSec) return
+    if (!ready || trimDuration < 0.5) return
     setIsExporting(true)
     setError(null)
     try {
       const blob = await fetchAdminAssetBlob(videoUrl)
       const { file, durationSeconds } = await trimVideoToFile(blob, startSec, endSec)
       await onSave(file, durationSeconds)
-    } catch {
-      setError(t('ads.trimVideoSaveError'))
+    } catch (err) {
+      setError(getRtkErrorMessage(err as never, t('ads.trimVideoSaveError')))
     } finally {
       setIsExporting(false)
     }
   }
 
   const busy = isSaving || isExporting
-  const trimDuration = Math.max(0, endSec - startSec)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="admin-card flex max-h-[95vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl shadow-xl">
+      <div className="admin-card flex max-h-[95vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl shadow-xl">
         <div className="admin-border flex items-center justify-between border-b px-4 py-3">
           <h3 className="admin-text text-sm font-bold">{t('ads.trimVideoTitle')}</h3>
           <button
@@ -112,45 +117,49 @@ export default function AdminVideoTrimModal({
             src={videoUrl}
             controls
             preload="metadata"
-            className="mx-auto block max-h-[50vh] w-full rounded-lg bg-black"
+            className="mx-auto block max-h-[42vh] w-full rounded-lg bg-black"
             onLoadedMetadata={handleLoadedMetadata}
             onError={() => setError(t('ads.trimVideoLoadError'))}
           />
 
           {ready ? (
-            <div className="mt-4 space-y-3">
-              <div className="flex justify-between text-xs font-semibold">
-                <span className="admin-text-muted">{t('ads.trimVideoStart')}</span>
-                <span className="admin-text">{formatTime(startSec)}</span>
+            <div className="mt-4 space-y-4">
+              <div>
+                <div className="mb-1 flex justify-between text-xs font-semibold">
+                  <span className="admin-text-muted">{t('ads.trimVideoStart')}</span>
+                  <span className="admin-text">{formatTime(startSec)}</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={Math.max(0.5, duration - 0.5)}
+                  step={0.1}
+                  value={startSec}
+                  disabled={busy}
+                  onChange={(e) => handleStartChange(Number(e.target.value))}
+                  className="w-full accent-[#3B7FC7]"
+                />
               </div>
-              <input
-                type="range"
-                min={0}
-                max={Math.max(0.5, endSec - 0.5)}
-                step={0.1}
-                value={startSec}
-                disabled={busy}
-                onChange={(e) => handleStartChange(Number(e.target.value))}
-                className="w-full"
-              />
 
-              <div className="flex justify-between text-xs font-semibold">
-                <span className="admin-text-muted">{t('ads.trimVideoEnd')}</span>
-                <span className="admin-text">{formatTime(endSec)}</span>
+              <div>
+                <div className="mb-1 flex justify-between text-xs font-semibold">
+                  <span className="admin-text-muted">{t('ads.trimVideoLength')}</span>
+                  <span className="admin-text">{trimDuration.toFixed(1)}s</span>
+                </div>
+                <input
+                  type="range"
+                  min={0.5}
+                  max={Math.min(180, Math.max(0.5, duration - startSec))}
+                  step={0.5}
+                  value={clipLength}
+                  disabled={busy}
+                  onChange={(e) => handleLengthChange(Number(e.target.value))}
+                  className="w-full accent-[#3B7FC7]"
+                />
               </div>
-              <input
-                type="range"
-                min={startSec + 0.5}
-                max={Math.min(duration, startSec + 180)}
-                step={0.1}
-                value={endSec}
-                disabled={busy}
-                onChange={(e) => handleEndChange(Number(e.target.value))}
-                className="w-full"
-              />
 
-              <p className="admin-text-muted text-center text-xs">
-                {t('ads.trimVideoDuration', { seconds: trimDuration.toFixed(1) })}
+              <p className="admin-text text-center text-sm font-bold">
+                {formatTime(startSec)} → {formatTime(endSec)}
               </p>
             </div>
           ) : null}
@@ -169,7 +178,7 @@ export default function AdminVideoTrimModal({
           </button>
           <button
             type="button"
-            disabled={busy || !ready || trimDuration < 0.5 || Boolean(error)}
+            disabled={busy || !ready || trimDuration < 0.5}
             onClick={() => void handleSave()}
             className="keep-white rounded-lg bg-[#3B7FC7] px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
           >

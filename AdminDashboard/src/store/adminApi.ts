@@ -789,13 +789,21 @@ export const adminApi = createApi({
 
     uploadAdminProductVideo: builder.mutation<
       { path: string },
-      { productId: string; file: File; videoDurationSeconds: number }
+      {
+        productId: string
+        file: File
+        videoDurationSeconds: number
+        replaceVideoPath?: string
+      }
     >({
-      queryFn: async ({ productId, file, videoDurationSeconds }) => {
+      queryFn: async ({ productId, file, videoDurationSeconds, replaceVideoPath }) => {
         const token = getAuthToken()
         const form = new FormData()
         form.append('File', file)
         form.append('VideoDurationSeconds', String(videoDurationSeconds))
+        if (replaceVideoPath?.trim()) {
+          form.append('ReplaceVideoPath', replaceVideoPath.trim())
+        }
 
         try {
           const response = await fetch(

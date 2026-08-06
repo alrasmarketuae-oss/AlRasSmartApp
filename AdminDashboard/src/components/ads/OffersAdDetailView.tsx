@@ -5,6 +5,7 @@ import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import PendingProductEditPanel from './PendingProductEditPanel'
 import ProductVideosPanel from './ProductVideosPanel'
 import CountryFlag from '../shared/CountryFlag'
+import WhatsAppPhoneLink from '../shared/WhatsAppPhoneLink'
 import AdminImageBlurModal from '../shared/AdminImageBlurModal'
 import ImageGallery, { type GalleryMediaItem } from '../ui/ImageGallery'
 import { downloadAsset, filenameFromAssetPath } from '../../utils/downloadAsset'
@@ -564,9 +565,7 @@ export default function OffersAdDetailView({
         <div className="space-y-1.5 border-t pt-2 text-xs" style={{ borderColor: C.border }}>
           <p className="flex items-center gap-1.5" dir="ltr">
             <span style={{ color: C.blue }}>{I.phone}</span>
-            <span className="font-normal" style={{ color: '#64748B' }}>
-              {product.ownerPhone?.trim() || '—'}
-            </span>
+            <WhatsAppPhoneLink phone={product.ownerPhone} className="text-xs font-normal" />
           </p>
           <p className="flex items-center gap-1.5 break-all">
             <span style={{ color: C.blue }}>{I.mail}</span>

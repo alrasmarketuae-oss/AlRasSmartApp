@@ -272,7 +272,8 @@ public class AdminProductsController(
                 File = request.File,
                 VideoDurationSeconds = request.VideoDurationSeconds,
                 WebRootPath = root,
-                AllowAdminAccess = true
+                AllowAdminAccess = true,
+                ReplaceVideoPath = request.ReplaceVideoPath
             }, cancellationToken);
 
             return Ok(result);
@@ -399,4 +400,5 @@ public sealed class UploadAdminProductVideoRequest
 {
     public IFormFile? File { get; set; }
     public byte VideoDurationSeconds { get; set; }
+    public string? ReplaceVideoPath { get; set; }
 }

@@ -22,6 +22,7 @@ import { getRtkErrorMessage } from '../../utils/rtkError'
 import ContactSupplierDialog, {
   type ContactTarget,
 } from '../shared/ContactSupplierDialog'
+import WhatsAppPhoneLink from '../shared/WhatsAppPhoneLink'
 
 type RequestOffersPanelProps = {
   productId: string
@@ -190,6 +191,10 @@ export default function RequestOffersPanel({
                             {offer.supplierName}
                           </p>
                           <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                            <WhatsAppPhoneLink
+                              phone={offer.supplierPhone}
+                              className="text-[11px]"
+                            />
                             {offer.isAdminApproved ? (
                               <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
                                 {t('reqsOffers.verifiedSupplier')}
