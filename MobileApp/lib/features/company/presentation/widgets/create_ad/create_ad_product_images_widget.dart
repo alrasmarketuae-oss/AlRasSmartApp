@@ -52,27 +52,29 @@ class CreateAdProductImagesWidget extends StatelessWidget {
             ],
           ),
           SizedBox(height: 8.h),
-          InkWell(
-            onTap: onPickTap,
-            borderRadius: BorderRadius.circular(12.r),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CustomPaint(
-                  painter: _DashedRRectPainter(
-                    color: CreateAdDesign.brand.withValues(alpha: 0.45),
-                    radius: 12.r,
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              CustomPaint(
+                painter: _DashedRRectPainter(
+                  color: CreateAdDesign.brand.withValues(alpha: 0.45),
+                  radius: 12.r,
+                ),
+                child: Container(
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 12.w, vertical: 18.h),
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: CreateAdDesign.iconBg.withValues(alpha: 0.35),
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
-                  child: Container(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 12.w, vertical: 18.h),
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: CreateAdDesign.iconBg.withValues(alpha: 0.35),
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    child: productImages.isEmpty
-                        ? Column(
+                  // Keep gallery ListView outside the pick InkWell — nesting
+                  // scroll + tap gestures often freezes the upload control.
+                  child: productImages.isEmpty
+                      ? InkWell(
+                          onTap: isCompressingMedia ? null : onPickTap,
+                          borderRadius: BorderRadius.circular(12.r),
+                          child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Container(
@@ -111,53 +113,58 @@ class CreateAdProductImagesWidget extends StatelessWidget {
                                 textAlign: TextAlign.center,
                               ),
                             ],
-                          )
-                        : Column(
-                            children: [
-                              SizedBox(
-                                height: 100.h,
-                                child: ListView.separated(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: productImages.length,
-                                  separatorBuilder: (_, __) =>
-                                      SizedBox(width: 10.w),
-                                  itemBuilder: (context, index) {
-                                    final filePath = productImages[index];
-                                    final isVideo = _isVideoPath(filePath);
-                                    return Stack(
-                                      children: [
-                                        Container(
-                                          width: 100.w,
-                                          height: 100.h,
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFF5F5F5),
-                                            borderRadius:
-                                                BorderRadius.circular(12.r),
-                                          ),
-                                          child: ClipRRect(
-                                            borderRadius:
-                                                BorderRadius.circular(12.r),
-                                            child: isVideo
-                                                ? ProductVideoThumbnail(
-                                                    videoUrl:
-                                                        _resolveVideoSource(
-                                                      filePath,
-                                                    ),
-                                                    width: 100.w,
-                                                    height: 100.h,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                      12.r,
-                                                    ),
-                                                  )
-                                                : _buildImagePreview(filePath),
-                                          ),
+                          ),
+                        )
+                      : Column(
+                          children: [
+                            SizedBox(
+                              height: 100.h,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: productImages.length,
+                                separatorBuilder: (_, __) =>
+                                    SizedBox(width: 10.w),
+                                itemBuilder: (context, index) {
+                                  final filePath = productImages[index];
+                                  final isVideo = _isVideoPath(filePath);
+                                  return Stack(
+                                    children: [
+                                      Container(
+                                        width: 100.w,
+                                        height: 100.h,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF5F5F5),
+                                          borderRadius:
+                                              BorderRadius.circular(12.r),
                                         ),
-                                        Positioned(
-                                          top: 4.h,
-                                          right: 4.w,
+                                        child: ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(12.r),
+                                          child: isVideo
+                                              ? ProductVideoThumbnail(
+                                                  videoUrl:
+                                                      _resolveVideoSource(
+                                                    filePath,
+                                                  ),
+                                                  width: 100.w,
+                                                  height: 100.h,
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                    12.r,
+                                                  ),
+                                                )
+                                              : _buildImagePreview(filePath),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        top: 4.h,
+                                        right: 4.w,
+                                        child: Material(
+                                          color: Colors.transparent,
                                           child: InkWell(
                                             onTap: () => onRemove(index),
+                                            customBorder:
+                                                const CircleBorder(),
                                             child: Container(
                                               padding: EdgeInsets.all(4.w),
                                               decoration: BoxDecoration(
@@ -175,80 +182,99 @@ class CreateAdProductImagesWidget extends StatelessWidget {
                                             ),
                                           ),
                                         ),
-                                      ],
-                                    );
-                                  },
-                                ),
+                                      ),
+                                    ],
+                                  );
+                                },
                               ),
-                              SizedBox(height: 10.h),
-                              Text(
-                                S.of(context).selectedMedia(
-                                      productImages.length.toString(),
-                                    ),
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  fontFamily: fontFamily,
-                                  color: CreateAdDesign.text,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                  ),
-                ),
-                if (isCompressingMedia)
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.92),
-                        borderRadius: BorderRadius.circular(14.r),
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 24.w),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
+                            ),
+                            SizedBox(height: 10.h),
                             Text(
-                              mediaCompressionLabel ?? 'Compressing...',
+                              S.of(context).selectedMedia(
+                                    productImages.length.toString(),
+                                  ),
                               style: TextStyle(
                                 fontSize: 14.sp,
                                 fontFamily: fontFamily,
                                 color: CreateAdDesign.text,
                                 fontWeight: FontWeight.w600,
                               ),
+                              textAlign: TextAlign.center,
                             ),
-                            SizedBox(height: 16.h),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8.r),
-                              child: LinearProgressIndicator(
-                                value:
-                                    mediaCompressionProgress.clamp(0.0, 1.0),
-                                minHeight: 8.h,
-                                backgroundColor: const Color(0xFFE8EEF5),
-                                valueColor:
-                                    const AlwaysStoppedAnimation<Color>(
-                                  CreateAdDesign.brand,
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 10.h),
-                            Text(
-                              '${(mediaCompressionProgress.clamp(0.0, 1.0) * 100).round()}%',
-                              style: TextStyle(
-                                fontSize: 13.sp,
-                                fontFamily: fontFamily,
+                            SizedBox(height: 12.h),
+                            TextButton.icon(
+                              onPressed:
+                                  isCompressingMedia ? null : onPickTap,
+                              icon: Icon(
+                                Icons.add_photo_alternate_outlined,
+                                size: 18.sp,
                                 color: CreateAdDesign.brand,
-                                fontWeight: FontWeight.w700,
+                              ),
+                              label: Text(
+                                S.of(context).tapToUploadImageOrVideo,
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  fontFamily: fontFamily,
+                                  color: CreateAdDesign.brand,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ],
                         ),
+                ),
+              ),
+              if (isCompressingMedia)
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.92),
+                      borderRadius: BorderRadius.circular(14.r),
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24.w),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            mediaCompressionLabel ?? 'Compressing...',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              fontFamily: fontFamily,
+                              color: CreateAdDesign.text,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(height: 16.h),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8.r),
+                            child: LinearProgressIndicator(
+                              value:
+                                  mediaCompressionProgress.clamp(0.0, 1.0),
+                              minHeight: 8.h,
+                              backgroundColor: const Color(0xFFE8EEF5),
+                              valueColor:
+                                  const AlwaysStoppedAnimation<Color>(
+                                CreateAdDesign.brand,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 10.h),
+                          Text(
+                            '${(mediaCompressionProgress.clamp(0.0, 1.0) * 100).round()}%',
+                            style: TextStyle(
+                              fontSize: 13.sp,
+                              fontFamily: fontFamily,
+                              color: CreateAdDesign.brand,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         ],
       ),

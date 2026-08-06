@@ -103,6 +103,18 @@ public static class NotificationMessages
             "تحديث حالة الطلب",
             $"تم تحديث طلبك رقم {orderId} إلى: {statusAr}.");
 
+    public static (string Title, string Body) OrderStatusUpdatedSeller(
+        string? language,
+        long orderId,
+        string statusEn,
+        string statusAr) =>
+        Pick(
+            language,
+            "Order status updated",
+            $"Order #{orderId} is now: {statusEn}.",
+            "تحديث حالة الطلب",
+            $"تم تحديث الطلب رقم {orderId} إلى: {statusAr}.");
+
     public static (string Title, string Body) OrderAcceptedBySellerBuyer(string? language, long orderId) =>
         Pick(
             language,
@@ -118,6 +130,48 @@ public static class NotificationMessages
             $"Your offer #{orderId} was rejected by the advertiser.",
             "تم رفض العرض",
             $"تم رفض عرضك رقم {orderId} من قبل المعلن.");
+
+    public static (string Title, string Body) OfferRejectedByAdmin(
+        string? language,
+        long orderId,
+        string? reasonEn,
+        string? reasonAr)
+    {
+        var reasonE = string.IsNullOrWhiteSpace(reasonEn)
+            ? "Please review your offer details and resubmit."
+            : reasonEn.Trim();
+        var reasonA = string.IsNullOrWhiteSpace(reasonAr)
+            ? "يرجى مراجعة تفاصيل عرضك وإعادة الإرسال."
+            : reasonAr.Trim();
+
+        return Pick(
+            language,
+            "Offer not approved",
+            $"Your offer #{orderId} was not approved. Reason: {reasonE}",
+            "لم تتم الموافقة على العرض",
+            $"لم تتم الموافقة على عرضك رقم {orderId}. السبب: {reasonA}");
+    }
+
+    public static (string Title, string Body) OrderRejectedByAdmin(
+        string? language,
+        long orderId,
+        string? reasonEn,
+        string? reasonAr)
+    {
+        var reasonE = string.IsNullOrWhiteSpace(reasonEn)
+            ? "Please review your order details and resubmit."
+            : reasonEn.Trim();
+        var reasonA = string.IsNullOrWhiteSpace(reasonAr)
+            ? "يرجى مراجعة تفاصيل طلبك وإعادة الإرسال."
+            : reasonAr.Trim();
+
+        return Pick(
+            language,
+            "Order not approved",
+            $"Your order #{orderId} was not approved. Reason: {reasonE}",
+            "لم تتم الموافقة على الطلب",
+            $"لم تتم الموافقة على طلبك رقم {orderId}. السبب: {reasonA}");
+    }
 
     public static (string Title, string Body) OrderRefundProcessedBuyer(string? language, long orderId) =>
         Pick(
@@ -332,15 +386,16 @@ public static class NotificationMessages
     {
         var safeName = string.IsNullOrWhiteSpace(productName) ? DefaultAdName(language) : productName.Trim();
         var reasonEn = string.IsNullOrWhiteSpace(adminNotesEn)
-            ? "Please review your ad details and contact support if needed."
+            ? "Please edit your ad details and resubmit."
             : adminNotesEn.Trim();
         var reasonAr = string.IsNullOrWhiteSpace(adminNotesAr)
-            ? "يرجى مراجعة تفاصيل الإعلان والتواصل مع الدعم عند الحاجة."
+            ? "يرجى تعديل تفاصيل إعلانك وإعادة الإرسال."
             : adminNotesAr.Trim();
 
         if (IsArabic(language))
         {
-            var body = $"لم تتم الموافقة على إعلانك \"{safeName}\". {reasonAr}";
+            var body =
+                $"لم تتم الموافقة على إعلانك \"{safeName}\". السبب: {reasonAr} يمكنك تعديله وإعادة الإرسال.";
             return (
                 "لم تتم الموافقة على إعلانك - Al Ras Smart",
                 BuildAdDecisionEmailHtml(false, safeName, reasonAr, body, language),
@@ -348,7 +403,8 @@ public static class NotificationMessages
                 body);
         }
 
-        var bodyEn = $"Your ad \"{safeName}\" was not approved. {reasonEn}";
+        var bodyEn =
+            $"Your ad \"{safeName}\" was not approved. Reason: {reasonEn} You can edit it and resubmit.";
         return (
             "Your ad was not approved - Al Ras Smart",
             BuildAdDecisionEmailHtml(false, safeName, reasonEn, bodyEn, language),

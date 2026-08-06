@@ -47,7 +47,12 @@ public interface IOrdersAppService
     Task<object> RequestOrderReturnAsync(RequestOrderReturnInput input, CancellationToken cancellationToken = default);
     Task<object> RespondToOrderReturnAsync(RespondToOrderReturnInput input, CancellationToken cancellationToken = default);
     Task<object> ApproveRequestOfferForAdminAsync(string adminUserId, long orderId, CancellationToken cancellationToken = default);
-    Task<object> RejectRequestOfferForAdminAsync(string adminUserId, long orderId, CancellationToken cancellationToken = default);
+    Task<object> RejectRequestOfferForAdminAsync(
+        string adminUserId,
+        long orderId,
+        string? reasonEn = null,
+        string? reasonAr = null,
+        CancellationToken cancellationToken = default);
     Task<object> SetCustomOrderStatusAsync(
         string adminUserId,
         long orderId,

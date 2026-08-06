@@ -357,7 +357,7 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.Property(x => x.Currency).HasMaxLength(3).IsUnicode(false).HasDefaultValue("AED");
             entity.Property(x => x.DescriptionEn).HasColumnType("nvarchar(max)");
             entity.Property(x => x.ShippingDescriptionEn).HasMaxLength(255);
-            entity.Property(x => x.SupplierNotesEn).HasMaxLength(255);
+            entity.Property(x => x.SupplierNotesEn).HasMaxLength(1000);
             entity.Property(x => x.PackagingDetails).HasMaxLength(255);
             entity.Property(x => x.RetailPackagingDetails).HasMaxLength(255);
             entity.Property(x => x.RetailDescriptionEn).HasColumnType("nvarchar(max)");

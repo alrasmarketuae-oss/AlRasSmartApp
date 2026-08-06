@@ -63,7 +63,7 @@ public static class ProductStoredProceduresSchemaMigrator
                 @DiscountPercentage tinyint = NULL,
                 @DiscountDays smallint = NULL,
                 @ShippingDescriptionEn nvarchar(255) = NULL,
-                @SupplierNotesEn nvarchar(255) = NULL,
+                @SupplierNotesEn nvarchar(1000) = NULL,
                 @Packaging tinyint = NULL,
                 @PackagingDetails nvarchar(255) = NULL,
                 @Negotiable bit = NULL,

@@ -5,6 +5,7 @@ import 'package:alrasmarket/core/search/search_history_entry.dart';
 import 'package:alrasmarket/core/search/user_search_history_service.dart';
 import 'package:alrasmarket/core/media/image_compressor.dart';
 import 'package:alrasmarket/core/media/image_source_picker.dart';
+import 'package:alrasmarket/core/media/media_compression_service.dart';
 import 'package:alrasmarket/core/error/failure.dart';
 import 'package:alrasmarket/core/constants/uae_retail_emirates.dart';
 import 'package:alrasmarket/core/cache/api_cache_keys.dart';
@@ -2242,36 +2243,56 @@ class ClintCubit extends Cubit<ClintStates> {
     emit(form.copyWith(selectedCurrency: _normalizeOfferCurrency(currency)));
   }
 
+  bool _isPickingOfferMedia = false;
+
   Future<void> pickProductImages(BuildContext context) async {
+    if (_isPickingOfferMedia) return;
     final form = _submitFormState;
     if (form == null) return;
 
-    final choice = await _showOfferPickSourceSheet(context, includeVideo: true);
-    if (!context.mounted || choice == null) return;
+    _isPickingOfferMedia = true;
+    try {
+      final choice = await _showOfferPickSourceSheet(context, includeVideo: true);
+      if (!context.mounted || choice == null) return;
 
-    final pickedPaths = await _pickOfferAssetPaths(
-      context: context,
-      choice: choice,
-    );
-    if (pickedPaths.isEmpty) return;
+      // Let the bottom sheet finish dismissing before opening the system picker
+      // (avoids Android gesture / activity freeze on the upload control).
+      await Future<void>.delayed(const Duration(milliseconds: 350));
+      if (!context.mounted) return;
 
-    final currentImages =
-        form.productImages.where((path) => !_isVideoPath(path)).length;
-    final incomingImages =
-        pickedPaths.where((path) => !_isVideoPath(path)).length;
-    if (currentImages + incomingImages > CreateAdFormMapper.maxProductImages) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(S.current.maxProductImagesExceeded)),
-        );
+      final pickedPaths = await _pickOfferAssetPaths(
+        context: context,
+        choice: choice,
+      );
+      if (pickedPaths.isEmpty) return;
+
+      final latest = _submitFormState;
+      if (latest == null) return;
+
+      final currentImages =
+          latest.productImages.where((path) => !_isVideoPath(path)).length;
+      final incomingImages =
+          pickedPaths.where((path) => !_isVideoPath(path)).length;
+      if (currentImages + incomingImages > CreateAdFormMapper.maxProductImages) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(S.current.maxProductImagesExceeded)),
+          );
+        }
       }
-    }
 
-    _appendUniquePaths(
-      current: form.productImages,
-      picked: pickedPaths,
-      onUpdate: (paths) => emit(form.copyWith(productImages: paths)),
-    );
+      _appendUniquePaths(
+        current: latest.productImages,
+        picked: pickedPaths,
+        onUpdate: (paths) {
+          final live = _submitFormState;
+          if (live == null) return;
+          emit(live.copyWith(productImages: paths));
+        },
+      );
+    } finally {
+      _isPickingOfferMedia = false;
+    }
   }
 
   void removeProductImage(int index) {
@@ -2438,12 +2459,23 @@ class ClintCubit extends Cubit<ClintStates> {
     final pickedPaths = <String>[];
 
     if (choice == 'gallery') {
-      final images = await _imagePicker.pickMultiImage(imageQuality: 85);
-      pickedPaths.addAll(images.map((image) => image.path).whereType<String>());
+      // Avoid imageQuality here — compressing during pick can freeze the UI.
+      // pickMultipleMedia matches create-ad and allows image+video in one open.
+      final media = await _imagePicker.pickMultipleMedia();
+      pickedPaths.addAll(
+        media
+            .map((item) => item.path)
+            .where((path) => path.isNotEmpty)
+            .where(
+              (path) =>
+                  MediaCompressionService.isImagePath(path) ||
+                  MediaCompressionService.isVideoPath(path) ||
+                  _isVideoPath(path),
+            ),
+      );
     } else if (choice == 'camera') {
       final image = await _imagePicker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 85,
       );
       if (image?.path != null) pickedPaths.add(image!.path);
     } else if (choice == 'video') {

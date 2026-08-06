@@ -1,6 +1,7 @@
 import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/utils/product_grid_layout.dart';
+import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/features/company/presentation/controller/cubit/company_cubit.dart';
 import 'package:alrasmarket/features/company/presentation/controller/cubit/company_states.dart';
 import 'package:alrasmarket/features/company/presentation/models/my_ads_filter.dart';
@@ -14,9 +15,13 @@ class MyAdsListPlaceholderWidget extends StatefulWidget {
   const MyAdsListPlaceholderWidget({
     super.key,
     this.highlightProductId,
+    this.onHighlightedProductFound,
   });
 
   final String? highlightProductId;
+
+  /// Called once when the highlighted listing is found (e.g. to light its type filter).
+  final ValueChanged<MyListingProductModel>? onHighlightedProductFound;
 
   /// Account My Ads: phone = 2 columns, tablet = 3.
   static int _crossAxisCount(BuildContext context) =>
@@ -31,6 +36,7 @@ class _MyAdsListPlaceholderWidgetState
     extends State<MyAdsListPlaceholderWidget> {
   final ScrollController _scrollController = ScrollController();
   String? _scrolledForId;
+  String? _notifiedHighlightId;
 
   @override
   void dispose() {
@@ -59,6 +65,15 @@ class _MyAdsListPlaceholderWidgetState
     if (index < 0) return;
 
     _scrolledForId = targetId;
+    final matched = products[index];
+    if (_notifiedHighlightId == null ||
+        !_idsMatch(_notifiedHighlightId!, targetId)) {
+      _notifiedHighlightId = targetId;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.onHighlightedProductFound?.call(matched);
+      });
+    }
+
     final row = index ~/ columns;
     final offset = row * (cellHeight + mainSpacing);
 
@@ -137,7 +152,7 @@ class _MyAdsListPlaceholderWidgetState
         final mainSpacing = 12.h;
         final columns = MyAdsListPlaceholderWidget._crossAxisCount(context);
         final isTablet = ProductGridLayout.isTablet(context);
-        final cellHeight = isTablet ? 350.h : 290.h;
+        final cellHeight = isTablet ? 370.h : 320.h;
         final highlightId = widget.highlightProductId?.trim() ?? '';
 
         _scrollToHighlightIfNeeded(

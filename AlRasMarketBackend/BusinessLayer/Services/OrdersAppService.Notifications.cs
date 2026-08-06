@@ -221,6 +221,11 @@ public partial class OrdersAppService
         }
     }
 
+    /// <summary>
+    /// Status-update notifications:
+    /// - Retail orders → buyer only
+    /// - All other order types → buyer + seller
+    /// </summary>
     private async Task NotifyBuyerOrderStatusAsync(
         Order order,
         Guid fromUserId,
@@ -228,35 +233,108 @@ public partial class OrdersAppService
     {
         var buyer = await orderData.GetUserNotifyByIdAsync(order.FromUserId, cancellationToken);
 
-        if (buyer is null)
-        {
-            return;
-        }
-
         var isSellerAction = fromUserId == order.ToUserId
             || fromUserId == (order.Product?.OwnerId ?? Guid.Empty);
         var statusEn = RequestOfferStatusLabels.ResolveNameEn(order);
         var statusAr = RequestOfferStatusLabels.ResolveNameAr(order);
         var isRequestOffer = order.Product?.ProductTypeId == ProductTypeCodes.Requests;
+        var isRetail = ProductTypeCodes.IsRetailOrder(order);
+
+        if (buyer is not null)
+        {
+            try
+            {
+                await SendUserAlertAsync(
+                    toUserId: buyer.Id,
+                    fromUserId: fromUserId,
+                    email: buyer.Email,
+                    fcmToken: buyer.FcmToken,
+                    messageFactory: lang => isSellerAction switch
+                    {
+                        true when order.StatusId == OrderStatusCodes.Approved =>
+                            NotificationMessages.OrderAcceptedBySellerBuyer(lang, order.Id),
+                        true when order.StatusId == OrderStatusCodes.Cancelled =>
+                            NotificationMessages.OrderRejectedBySellerBuyer(lang, order.Id),
+                        _ => NotificationMessages.OrderStatusUpdatedBuyer(lang, order.Id, statusEn, statusAr)
+                    },
+                    preferredLanguage: buyer.PreferredLanguage,
+                    type: "order_status_updated",
+                    routeName: isRequestOffer ? "my_offers" : "track_order",
+                    referenceId: order.Id.ToString(),
+                    cancellationToken: cancellationToken);
+            }
+            catch
+            {
+                // Notification failure must not roll back order updates.
+            }
+        }
+
+        // Retail: buyer only. Wholesale / booking / offers / requests: also notify seller.
+        if (!isRetail)
+        {
+            var sellerId = order.Product?.OwnerId ?? order.ToUserId;
+            if (sellerId != Guid.Empty && sellerId != order.FromUserId)
+            {
+                var seller = await orderData.GetUserNotifyByIdAsync(sellerId, cancellationToken);
+                if (seller is not null)
+                {
+                    try
+                    {
+                        await SendUserAlertAsync(
+                            toUserId: seller.Id,
+                            fromUserId: fromUserId,
+                            email: seller.Email,
+                            fcmToken: seller.FcmToken,
+                            messageFactory: lang => NotificationMessages.OrderStatusUpdatedSeller(
+                                lang,
+                                order.Id,
+                                statusEn,
+                                statusAr),
+                            preferredLanguage: seller.PreferredLanguage,
+                            type: "order_status_updated",
+                            routeName: isRequestOffer ? "my_ads" : "orders",
+                            referenceId: order.Id.ToString(),
+                            cancellationToken: cancellationToken);
+                    }
+                    catch
+                    {
+                        // Notification failure must not roll back order updates.
+                    }
+                }
+            }
+        }
+
+        await PublishOrderRealtimeAsync(order, cancellationToken);
+    }
+
+    private async Task NotifyOfferRejectedByAdminAsync(
+        Order order,
+        Guid fromUserId,
+        string? reasonEn,
+        string? reasonAr,
+        CancellationToken cancellationToken)
+    {
+        var buyer = await orderData.GetUserNotifyByIdAsync(order.FromUserId, cancellationToken);
+        if (buyer is null)
+        {
+            await PublishOrderRealtimeAsync(order, cancellationToken);
+            return;
+        }
 
         try
         {
+            var isRequestOffer = ProductTypeCodes.IsRequests(order.Product?.ProductTypeId);
             await SendUserAlertAsync(
                 toUserId: buyer.Id,
                 fromUserId: fromUserId,
                 email: buyer.Email,
                 fcmToken: buyer.FcmToken,
-                messageFactory: lang => isSellerAction switch
-                {
-                    true when order.StatusId == OrderStatusCodes.Approved =>
-                        NotificationMessages.OrderAcceptedBySellerBuyer(lang, order.Id),
-                    true when order.StatusId == OrderStatusCodes.Cancelled =>
-                        NotificationMessages.OrderRejectedBySellerBuyer(lang, order.Id),
-                    _ => NotificationMessages.OrderStatusUpdatedBuyer(lang, order.Id, statusEn, statusAr)
-                },
+                messageFactory: lang => isRequestOffer
+                    ? NotificationMessages.OfferRejectedByAdmin(lang, order.Id, reasonEn, reasonAr)
+                    : NotificationMessages.OrderRejectedByAdmin(lang, order.Id, reasonEn, reasonAr),
                 preferredLanguage: buyer.PreferredLanguage,
-                type: "order_status_updated",
-                routeName: isRequestOffer ? "my_offers" : "track_order",
+                type: isRequestOffer ? "offer_rejected" : "order_rejected",
+                routeName: isRequestOffer ? "my_offers" : "orders",
                 referenceId: order.Id.ToString(),
                 cancellationToken: cancellationToken);
         }

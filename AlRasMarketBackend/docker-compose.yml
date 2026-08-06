@@ -30,6 +30,8 @@ services:
       ImageEmbedding__ClipServiceUrl: "http://clip:8088"
       ImageEmbedding__EmbeddingDimensions: "512"
       ImageEmbedding__MaxConcurrentIndexingJobs: "1"
+      AdAutoModeration__Enabled: "true"
+      AdAutoModeration__MaxImagesToScan: "0"
       Meilisearch__Enabled: "true"
       Meilisearch__Url: "http://meilisearch:7700"
       Meilisearch__ApiKey: "${MEILI_MASTER_KEY:-alras-meili-master-key-change-me}"

@@ -348,7 +348,7 @@ public partial class OrdersAppService
                 IsSelfPickup = fulfillment?.IsSelfPickup ?? false,
                 DeliveryAddressLine = fulfillment?.DeliveryAddressLine,
                 DeliveryCityName = fulfillment?.DeliveryCityName,
-                CreatedAt = UtcDateTimeHelper.UtcNow,
+                CreatedAt = DateTime.SpecifyKind(UtcDateTimeHelper.UtcNow, DateTimeKind.Utc),
             };
 
             RequestOfferStatusLabels.ApplyAwaitingSeller(order);

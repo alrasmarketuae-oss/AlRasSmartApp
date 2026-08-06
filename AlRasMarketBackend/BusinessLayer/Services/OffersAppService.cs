@@ -105,7 +105,8 @@ public class OffersAppService(
             UnitId = unit.Id,
             UnitPrice = customerUnitPrice,
             TotalPrice = customerTotalPrice,
-            StatusId = 1
+            StatusId = 1,
+            CreatedAt = DateTime.SpecifyKind(UtcDateTimeHelper.UtcNow, DateTimeKind.Utc),
         };
 
         foreach (var path in imagePaths)
@@ -243,7 +244,8 @@ public class OffersAppService(
             UnitId = unit.Id,
             BaseUnitPrice = input.BaseUnitPrice,
             RequestedQuantity = input.RequestedQuantity,
-            StatusId = 1
+            StatusId = 1,
+            CreatedAt = DateTime.SpecifyKind(UtcDateTimeHelper.UtcNow, DateTimeKind.Utc),
         };
 
         await dbContext.OffersOnNegotiable.AddAsync(entity, cancellationToken);

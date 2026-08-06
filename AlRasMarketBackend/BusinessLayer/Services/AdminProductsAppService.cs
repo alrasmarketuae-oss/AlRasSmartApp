@@ -534,6 +534,8 @@ public class AdminProductsAppService(
         {
             product.IsApproved = false;
             product.Status = ProductStatusCodes.Rejected;
+            // Allow a later SubmitForAdminReview after the seller edits (wasReady must be false).
+            product.IsReadyForAdminReview = false;
             product.SupplierNotesEn = !string.IsNullOrWhiteSpace(adminNotesEn)
                 ? adminNotesEn
                 : adminNotesAr;
@@ -541,6 +543,22 @@ public class AdminProductsAppService(
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await contentTranslationService.UpsertProductSupplierNotesBilingualAsync(
+                product.ProductId,
+                adminNotesEn,
+                adminNotesAr,
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex,
+                "Failed to persist bilingual rejection notes for product {ProductId}",
+                product.ProductId);
+        }
+
         ProductsAppService.InvalidateListingCaches(product.OwnerId);
         QueueTextSearchSync(product.ProductId);
         await adminRealtimeNotificationService.BroadcastCountsAsync(cancellationToken);

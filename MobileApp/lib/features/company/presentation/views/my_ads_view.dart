@@ -5,6 +5,7 @@ import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_states.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/order_card.dart';
+import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/features/company/presentation/controller/cubit/company_cubit.dart';
 import 'package:alrasmarket/features/company/presentation/models/my_ads_filter.dart';
 import 'package:alrasmarket/features/company/presentation/models/my_ads_listing_status_filter.dart';
@@ -86,6 +87,24 @@ class _MyAdsViewState extends State<MyAdsView> {
     context.read<CompanyCubit>().setMyListingsStatusFilter(value);
   }
 
+  void _onHighlightedProductFound(MyListingProductModel product) {
+    final filter = _filterForProduct(product);
+    final index = MyAdsFilter.values.indexOf(filter);
+    if (index < 0 || index == _selectedTypeFilterIndex) return;
+    // Keep "All" if we can't map — otherwise light the matching type chip in blue.
+    if (filter == MyAdsFilter.all) return;
+    _onTypeFilterSelected(index);
+  }
+
+  MyAdsFilter _filterForProduct(MyListingProductModel product) {
+    if (product.isCategoryCatalogProduct) return MyAdsFilter.categories;
+    if (product.isRequestProduct) return MyAdsFilter.requests;
+    if (product.isOfferProduct) return MyAdsFilter.offers;
+    if (product.isBookingProduct) return MyAdsFilter.booking;
+    if (product.productTypeId == 1) return MyAdsFilter.retail;
+    return MyAdsFilter.all;
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
@@ -134,6 +153,7 @@ class _MyAdsViewState extends State<MyAdsView> {
                 Expanded(
                   child: _MyAdsRefreshableList(
                     highlightProductId: widget.highlightProductId,
+                    onHighlightedProductFound: _onHighlightedProductFound,
                   ),
                 ),
               ] else
@@ -229,9 +249,13 @@ class _AccountSectionTabs extends StatelessWidget {
 }
 
 class _MyAdsRefreshableList extends StatelessWidget {
-  const _MyAdsRefreshableList({this.highlightProductId});
+  const _MyAdsRefreshableList({
+    this.highlightProductId,
+    this.onHighlightedProductFound,
+  });
 
   final String? highlightProductId;
+  final ValueChanged<MyListingProductModel>? onHighlightedProductFound;
 
   @override
   Widget build(BuildContext context) {
@@ -239,6 +263,7 @@ class _MyAdsRefreshableList extends StatelessWidget {
       onRefresh: () => context.read<CompanyCubit>().reloadMyListings(),
       child: MyAdsListPlaceholderWidget(
         highlightProductId: highlightProductId,
+        onHighlightedProductFound: onHighlightedProductFound,
       ),
     );
   }

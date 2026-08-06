@@ -211,6 +211,8 @@ internal static class AiAssistantKnowledgeSource
             """
             يُمنع على المنصة: المنتجات غير القانونية أو المحظورة، المنتجات المقلدة أو المخالفة للعلامات التجارية، السلع منتهية الصلاحية أو غير الصالحة للاستهلاك، والمنتجات التي لا تطابق وصف الإعلان.
             يُمنع أيضاً وضع رقم هاتف أو بريد أو اسم الشركة أو أي وسيلة تواصل داخل صور الإعلان أو الوصف بهدف تحويل الصفقة خارج المنصة.
+            كما يُمنع ظهور شعارات الشركات أو ماركات تجارية واضحة على العبوات في صور الإعلان.
+            مسموح ذكر بلد المنشأ والمواصفات في الاسم والوصف (مثل: حبوب سودانية، هيل هندي، أرز مصري، درجة أولى).
             يُمنع استخدام صور لا يملك المعلن حقوقها أو صور مضللة لا تمثل المنتج الحقيقي.
             مخالفة هذه القواعد قد تؤدي إلى رفض الإعلان أو إيقافه أو تعليق الحساب.
             """);
@@ -218,6 +220,9 @@ internal static class AiAssistantKnowledgeSource
             """
             Prohibited on the platform: illegal or restricted products, counterfeit or trademark-infringing goods, expired or unsafe food, and products that do not match the listing description.
             Also prohibited: placing a phone number, email, company name, or any contact channel inside listing images or descriptions in order to move the deal off-platform.
+            Product brand logos or clear commercial trademarks on packaging in listing photos are prohibited.
+            Origin country and product specifications in the title/description are allowed
+            (e.g. Sudanese peanuts, Indian cardamom, Egyptian rice, Grade A).
             Using images the advertiser does not own, or misleading images that do not represent the actual product, is not allowed.
             Violations can lead to listing rejection, listing suspension, or account suspension.
             """);
@@ -1412,6 +1417,8 @@ internal static class AiAssistantKnowledgeSource
             صور المنتج والفيديو والمواصفات مطلوبة في كل أنواع الإعلانات، أما تفاصيل التعبئة فاختيارية.
             يجب أن تمثل الصور المنتج الحقيقي المعروض ولا تكون مضللة.
             يُمنع منعاً باتاً وضع رقم هاتف أو بريد أو اسم شركة أو أي وسيلة تواصل داخل الصور أو الوصف.
+            كما يُمنع ظهور شعارات الشركات أو ماركات تجارية واضحة على العبوات في صور الإعلان.
+            مسموح ذكر بلد المنشأ والمواصفات في الاسم والوصف (مثل: حبوب سودانية، هيل هندي، أرز مصري، درجة أولى).
             يجب أن تكون الصور واضحة وبإضاءة جيدة، فهي تُستخدم أيضاً في تحسين البحث بالصور مما يزيد ظهور منتجك.
             الإعلان الذي يخالف هذه القواعد قد يُرفض في المراجعة.
             """);
@@ -1420,6 +1427,9 @@ internal static class AiAssistantKnowledgeSource
             Product images, video, and specifications are required across all ad types, while packaging details are optional.
             Images must represent the actual product on offer and must not be misleading.
             Placing a phone number, email, company name, or any contact channel inside the images or description is strictly prohibited.
+            Product brand logos or clear commercial trademarks on packaging must not appear in listing photos.
+            Origin country and product specifications in the title/description are allowed
+            (e.g. Sudanese peanuts, Indian cardamom, Egyptian rice, Grade A).
             Images should be clear and well lit, since they also feed image-search quality, which increases your product's visibility.
             A listing that breaks these rules can be rejected during review.
             """);

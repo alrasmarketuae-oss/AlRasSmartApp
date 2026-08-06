@@ -101,6 +101,8 @@ builder.Services.AddHostedService<AdminPushNotificationWorker>();
 builder.Services.AddHostedService<BusinessLayer.Services.DraftMediaCleanupWorker>();
 builder.Services.AddScoped<IProductImageVectorIndexingProcessor, ProductImageVectorIndexingProcessor>();
 builder.Services.AddScoped<IAdminProductsAppService, AdminProductsAppService>();
+builder.Services.AddScoped<IProductAutoModerationService, ProductAutoModerationService>();
+builder.Services.AddScoped<IOrderOfferAutoModerationService, OrderOfferAutoModerationService>();
 builder.Services.AddScoped<IAdminSettingsAppService, AdminSettingsAppService>();
 builder.Services.AddScoped<IInternalDomesticShippingAppService, InternalDomesticShippingAppService>();
 builder.Services.AddScoped<IUserPreferencesAppService, UserPreferencesAppService>();
@@ -129,6 +131,7 @@ builder.Services.AddHttpClient<IOpenAiVisionService, OpenAiVisionService>(client
 });
 builder.Services.Configure<QdrantOptions>(builder.Configuration.GetSection(QdrantOptions.SectionName));
 builder.Services.Configure<ImageEmbeddingOptions>(builder.Configuration.GetSection(ImageEmbeddingOptions.SectionName));
+builder.Services.Configure<AdAutoModerationOptions>(builder.Configuration.GetSection(AdAutoModerationOptions.SectionName));
 builder.Services.Configure<MeilisearchOptions>(builder.Configuration.GetSection(MeilisearchOptions.SectionName));
 builder.Services.Configure<AiAssistantOptions>(
     builder.Configuration.GetSection(AiAssistantOptions.SectionName));
@@ -214,19 +217,25 @@ if (useRedisStreams)
     builder.Services.AddSingleton<IProductTranslationQueue, RedisStreamProductTranslationQueue>();
     builder.Services.AddSingleton<IProductBackgroundEventQueue, DirectProductBackgroundEventQueue>();
     builder.Services.AddSingleton<IProductImageIndexingQueue, RedisStreamProductImageIndexingQueue>();
-    Console.WriteLine("Product background queues: Redis Streams (translate + CLIP).");
+    builder.Services.AddSingleton<IProductAutoModerationQueue, RedisStreamProductAutoModerationQueue>();
+    builder.Services.AddSingleton<IOrderOfferAutoModerationQueue, RedisStreamOrderOfferAutoModerationQueue>();
+    Console.WriteLine("Product background queues: Redis Streams (translate + CLIP + auto-moderation).");
 }
 else
 {
     builder.Services.AddSingleton<IProductBackgroundEventQueue, ProductBackgroundEventQueue>();
     builder.Services.AddSingleton<IProductTranslationQueue, ProductTranslationQueue>();
     builder.Services.AddSingleton<IProductImageIndexingQueue, ProductImageIndexingQueue>();
+    builder.Services.AddSingleton<IProductAutoModerationQueue, ProductAutoModerationQueue>();
+    builder.Services.AddSingleton<IOrderOfferAutoModerationQueue, OrderOfferAutoModerationQueue>();
     builder.Services.AddHostedService<ProductCreatedEventWorker>();
     Console.WriteLine("Product background queues: in-process Channels (Redis Streams unavailable).");
 }
 
 builder.Services.AddHostedService<ProductTranslationWorker>();
 builder.Services.AddHostedService<ProductImageIndexingWorker>();
+builder.Services.AddHostedService<ProductAutoModerationWorker>();
+builder.Services.AddHostedService<OrderOfferAutoModerationWorker>();
 
 builder.Services.AddSingleton<ProductCacheVersions>(sp =>
     new ProductCacheVersions(

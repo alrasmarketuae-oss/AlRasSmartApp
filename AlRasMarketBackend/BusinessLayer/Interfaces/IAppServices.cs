@@ -474,6 +474,21 @@ public interface IOpenAiVisionService
 
     Task<(string NameEn, string NameAr)> EnsureBilingualStatusNameAsync(
         string statusName, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Checks whether an ad image contains seller contact info, phone numbers, or seller logos/watermarks.
+    /// </summary>
+    Task<AdImagePolicyScanResult> ScanAdImageForPolicyViolationsAsync(
+        Stream imageStream,
+        string fileName,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Checks ad title/description/specs text for contact info, insults, or other policy violations.
+    /// </summary>
+    Task<AdTextPolicyScanResult> ScanAdTextForPolicyViolationsAsync(
+        string combinedText,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed class PortNameTranslationItem
@@ -531,6 +546,13 @@ public interface IContentTranslationService
     Task UpsertOrderOfferNotesAsync(
         long orderId,
         string? notes,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Stores bilingual admin/auto-moderation rejection notes without AI translation.</summary>
+    Task UpsertProductSupplierNotesBilingualAsync(
+        Guid productId,
+        string? notesEn,
+        string? notesAr,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyDictionary<Guid, ProductFieldTranslations>> GetProductTranslationsAsync(

@@ -94,8 +94,8 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
   }
 
   Future<void> _runBlink() async {
-    for (var i = 0; i < 4; i++) {
-      if (!mounted || !widget.highlighted) return;
+    // Keep pulsing while highlighted so the blue glow stays obvious from notifications.
+    while (mounted && widget.highlighted) {
       await _blink.forward();
       if (!mounted || !widget.highlighted) return;
       await _blink.reverse();
@@ -243,16 +243,19 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
               ),
             ),
           ],
-          if (product.pendingOffersCount > 0) ...[
+          if (product.pendingOffersCount > 0 || widget.highlighted) ...[
             SizedBox(height: 6.h),
-            _Badge(
-              label: (product.isRequestProduct ||
-                      adType == CreateAdType.requests)
-                  ? S.of(context).offersAvailable(product.pendingOffersCount)
-                  : S.of(context).ordersAvailable(product.pendingOffersCount),
-              background: const Color(0xFFE8F4FD),
-              foreground: const Color(0xFF3A7DC5),
+            _OrdersActionChip(
+              label: product.pendingOffersCount > 0
+                  ? ((product.isRequestProduct ||
+                          adType == CreateAdType.requests)
+                      ? S.of(context).offersAvailable(product.pendingOffersCount)
+                      : S.of(context).ordersAvailable(product.pendingOffersCount))
+                  : viewOrdersLabel,
               compact: compact,
+              emphasized: true,
+              pulse: widget.highlighted ? _blink : null,
+              onTap: product.productId.isNotEmpty ? _onOpenAdDetails : null,
             ),
           ],
           SizedBox(height: 6.h),
@@ -300,63 +303,29 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
             ),
             if (ProductPriceFormatter.amount(product).isNotEmpty) ...[
               SizedBox(height: 4.h),
-              Align(
-                alignment: AlignmentDirectional.centerEnd,
-                child: ProductPriceText.unitPrice(
-                  product,
-                  amountStyle: TextStyle(
-                    color: LightColor.defaultColor,
-                    fontFamily: AppFonts.cairo,
-                    fontSize: compact ? 14.sp : 16.sp,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  matchCurrencyToAmount: true,
-                ),
+              _PriceWithTypeRow(
+                product: product,
+                adType: adType,
+                preferRetail: preferRetail,
+                isAr: isAr,
+                fontFamily: fontFamily,
+                bodySize: bodySize,
+                compact: compact,
+                amountAlignEnd: true,
               ),
             ],
           ],
           if (adType != CreateAdType.requests) ...[
-            Row(
-              children: [
-                Flexible(
-                  child: ProductPriceText.unitPrice(
-                    product,
-                    preferRetail: preferRetail,
-                    amountStyle: TextStyle(
-                      color: LightColor.defaultColor,
-                      fontFamily: AppFonts.cairo,
-                      fontSize: compact ? 14.sp : 16.sp,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    matchCurrencyToAmount: true,
-                  ),
-                ),
-                if (adType == CreateAdType.booking) ...[
-                  SizedBox(width: 4.w),
-                  Flexible(
-                    child: Text(
-                      '${product.shipping.routeFromCountry} → ${product.shipping.routeToCountry}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: fontFamily,
-                        fontSize: bodySize,
-                        color: _textDark,
-                      ),
-                    ),
-                  ),
-                ],
-                if (showDiscount) ...[
-                  SizedBox(width: 4.w),
-                  DiscountBadge(
-                    discountPercentage:
-                        product.discountPercentage.trim().isNotEmpty
-                            ? product.discountPercentage.trim()
-                            : product.discountPercentValue.toString(),
-                    compact: compact,
-                  ),
-                ],
-              ],
+            _PriceWithTypeRow(
+              product: product,
+              adType: adType,
+              preferRetail: preferRetail,
+              isAr: isAr,
+              fontFamily: fontFamily,
+              bodySize: bodySize,
+              compact: compact,
+              showBookingRoute: adType == CreateAdType.booking,
+              showDiscount: showDiscount,
             ),
             if (product
                 .quantityForChannel(preferRetail: preferRetail)
@@ -383,40 +352,6 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
               ),
             ],
           ],
-          if (() {
-            final type = adType;
-            return type == CreateAdType.booking ||
-                type == CreateAdType.categories ||
-                type == CreateAdType.offers ||
-                type == CreateAdType.requests ||
-                (product.categoryId != null && product.categoryId! > 0);
-          }()) ...[
-            Builder(
-              builder: (context) {
-                final priceType = adType == CreateAdType.booking
-                    ? BookingPriceTypeLabel.fromProduct(product)
-                    : ProductPriceTypeLabel.fromProduct(
-                        product,
-                        isAr: isAr,
-                      );
-                if (priceType.isEmpty) return const SizedBox.shrink();
-                return Padding(
-                  padding: EdgeInsets.only(top: 4.h),
-                  child: Text(
-                    priceType,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontFamily: fontFamily,
-                      fontSize: compact ? 10.sp : 12.sp,
-                      fontWeight: FontWeight.w600,
-                      color: LightColor.defaultColor,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ],
         ],
       ),
     );
@@ -424,18 +359,24 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
     return AnimatedBuilder(
       animation: _blink,
       builder: (context, child) {
-        final t = widget.highlighted ? _blink.value : 0.0;
-        final borderColor = Color.lerp(
-          _borderGray,
-          const Color(0xFF3A7DC5),
-          t,
-        )!;
-        final bgColor = Color.lerp(
-          Colors.white,
-          const Color(0xFFE8F4FD),
-          t,
-        )!;
-        final glow = const Color(0xFF3A7DC5).withValues(alpha: 0.1 + 0.22 * t);
+        final t = widget.highlighted ? (0.55 + 0.45 * _blink.value) : 0.0;
+        final borderColor = widget.highlighted
+            ? Color.lerp(
+                const Color(0xFF7EB6E8),
+                const Color(0xFF1E6BB8),
+                _blink.value,
+              )!
+            : _borderGray;
+        final bgColor = widget.highlighted
+            ? Color.lerp(
+                const Color(0xFFE8F4FD),
+                const Color(0xFFD6EBFA),
+                _blink.value,
+              )!
+            : Colors.white;
+        final glow = widget.highlighted
+            ? const Color(0xFF3A7DC5).withValues(alpha: 0.28 + 0.35 * t)
+            : Colors.black.withValues(alpha: 0.15);
 
         return Container(
           width: double.infinity,
@@ -446,14 +387,13 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
             borderRadius: BorderRadius.circular(9.r),
             border: Border.all(
               color: borderColor,
-              width: widget.highlighted ? 1.5 + t * 0.5 : 1,
+              width: widget.highlighted ? 2.5 : 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: widget.highlighted
-                    ? glow
-                    : Colors.black.withValues(alpha: 0.15),
-                blurRadius: widget.highlighted ? 4.r + 6.r * t : 4.r,
+                color: glow,
+                blurRadius: widget.highlighted ? 10.r + 8.r * t : 4.r,
+                spreadRadius: widget.highlighted ? 1.r : 0,
                 offset: Offset.zero,
               ),
             ],
@@ -788,6 +728,225 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
           foreground: Color(0xFF3A7DC5),
         );
     }
+  }
+}
+
+class _PriceWithTypeRow extends StatelessWidget {
+  const _PriceWithTypeRow({
+    required this.product,
+    required this.adType,
+    required this.preferRetail,
+    required this.isAr,
+    required this.fontFamily,
+    required this.bodySize,
+    required this.compact,
+    this.showBookingRoute = false,
+    this.showDiscount = false,
+    this.amountAlignEnd = false,
+  });
+
+  final MyListingProductModel product;
+  final CreateAdType? adType;
+  final bool preferRetail;
+  final bool isAr;
+  final String fontFamily;
+  final double bodySize;
+  final bool compact;
+  final bool showBookingRoute;
+  final bool showDiscount;
+  final bool amountAlignEnd;
+
+  String get _priceTypeLabel {
+    final showType = adType == CreateAdType.booking ||
+        adType == CreateAdType.categories ||
+        adType == CreateAdType.offers ||
+        adType == CreateAdType.requests ||
+        (product.categoryId != null && product.categoryId! > 0);
+    if (!showType) return '';
+    return adType == CreateAdType.booking
+        ? BookingPriceTypeLabel.fromProduct(product)
+        : ProductPriceTypeLabel.fromProduct(product, isAr: isAr);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final priceType = _priceTypeLabel;
+    final price = ProductPriceText.unitPrice(
+      product,
+      preferRetail: preferRetail,
+      amountStyle: TextStyle(
+        color: LightColor.defaultColor,
+        fontFamily: AppFonts.cairo,
+        fontSize: compact ? 14.sp : 16.sp,
+        fontWeight: FontWeight.w700,
+      ),
+      matchCurrencyToAmount: true,
+    );
+
+    return Row(
+      children: [
+        Flexible(
+          child: amountAlignEnd
+              ? Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: price,
+                )
+              : price,
+        ),
+        if (priceType.isNotEmpty) ...[
+          SizedBox(width: 6.w),
+          Flexible(
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: compact ? 6.w : 8.w,
+                vertical: compact ? 2.h : 3.h,
+              ),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F4FD),
+                borderRadius: BorderRadius.circular(6.r),
+                border: Border.all(color: const Color(0xFF3A7DC5), width: 1),
+              ),
+              child: Text(
+                priceType,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: fontFamily,
+                  fontSize: compact ? 10.sp : 12.sp,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF1E6BB8),
+                ),
+              ),
+            ),
+          ),
+        ],
+        if (showBookingRoute) ...[
+          SizedBox(width: 4.w),
+          Flexible(
+            child: Text(
+              '${product.shipping.routeFromCountry} → ${product.shipping.routeToCountry}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: fontFamily,
+                fontSize: bodySize,
+                color: const Color(0xFF333333),
+              ),
+            ),
+          ),
+        ],
+        if (showDiscount) ...[
+          SizedBox(width: 4.w),
+          DiscountBadge(
+            discountPercentage: product.discountPercentage.trim().isNotEmpty
+                ? product.discountPercentage.trim()
+                : product.discountPercentValue.toString(),
+            compact: compact,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _OrdersActionChip extends StatelessWidget {
+  const _OrdersActionChip({
+    required this.label,
+    required this.compact,
+    required this.emphasized,
+    required this.onTap,
+    this.pulse,
+  });
+
+  final String label;
+  final bool compact;
+  final bool emphasized;
+  final VoidCallback? onTap;
+  final Animation<double>? pulse;
+
+  @override
+  Widget build(BuildContext context) {
+    final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
+    final base = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10.r),
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? 8.w : 12.w,
+            vertical: compact ? 7.h : 10.h,
+          ),
+          decoration: BoxDecoration(
+            color: const Color(0xFF3A7DC5),
+            borderRadius: BorderRadius.circular(10.r),
+            border: Border.all(color: const Color(0xFF1E6BB8), width: 1.5),
+            boxShadow: emphasized
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF3A7DC5).withValues(alpha: 0.45),
+                      blurRadius: 10.r,
+                      spreadRadius: 1.r,
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.notifications_active_rounded,
+                size: compact ? 14.sp : 16.sp,
+                color: Colors.white,
+              ),
+              SizedBox(width: 6.w),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontFamily: fontFamily,
+                    fontSize: compact ? 11.sp : 13.sp,
+                    fontWeight: FontWeight.w700,
+                    height: 1.2,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (pulse == null) return base;
+
+    return AnimatedBuilder(
+      animation: pulse!,
+      builder: (context, child) {
+        final t = pulse!.value;
+        return Transform.scale(
+          scale: 1.0 + 0.04 * t,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12.r),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF3A7DC5).withValues(alpha: 0.35 + 0.4 * t),
+                  blurRadius: 8.r + 10.r * t,
+                  spreadRadius: 1.r + 2.r * t,
+                ),
+              ],
+            ),
+            child: child,
+          ),
+        );
+      },
+      child: base,
+    );
   }
 }
 

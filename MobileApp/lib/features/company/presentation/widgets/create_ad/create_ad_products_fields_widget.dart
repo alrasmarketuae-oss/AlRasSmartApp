@@ -61,9 +61,7 @@ class CreateAdProductsFieldsWidget extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    hybrid
-                        ? (isAr ? 'معلومات الجملة' : 'Wholesale details')
-                        : s.wholesalePrice,
+                    isAr ? 'معلومات الجملة' : 'Wholesale details',
                     style: TextStyle(
                       color: CreateAdDesign.text,
                       fontFamily: fontFamily,

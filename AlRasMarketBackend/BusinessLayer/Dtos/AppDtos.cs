@@ -368,6 +368,22 @@ public sealed class ImageProductVisionResult
         !string.IsNullOrWhiteSpace(DetectedProductName);
 }
 
+/// <summary>Vision result for ad image policy checks (phone / logo / contact overlays).</summary>
+public sealed class AdImagePolicyScanResult
+{
+    public bool HasViolation { get; init; }
+    public IReadOnlyList<string> ViolationKinds { get; init; } = Array.Empty<string>();
+    public string? Summary { get; init; }
+}
+
+/// <summary>LLM result for ad title/specs text policy (contact, insults, etc.).</summary>
+public sealed class AdTextPolicyScanResult
+{
+    public bool HasViolation { get; init; }
+    public IReadOnlyList<string> ViolationKinds { get; init; } = Array.Empty<string>();
+    public string? Summary { get; init; }
+}
+
 public sealed class AddAddressInput
 {
     public string UserId { get; set; } = string.Empty;

@@ -24,7 +24,8 @@ public partial class OrdersAppService(
     IServiceProvider serviceProvider,
     ILogger<OrdersAppService> logger,
     IMediaStorageService mediaStorage,
-    ISupplierBalanceService supplierBalanceService) : IOrdersAppService
+    ISupplierBalanceService supplierBalanceService,
+    IOrderOfferAutoModerationQueue orderOfferAutoModerationQueue) : IOrdersAppService
 {
     public async Task<object> PlaceBookingOrderAsync(CreateDirectOrderInput input, CancellationToken cancellationToken = default)
     {
@@ -203,7 +204,7 @@ public partial class OrdersAppService(
             Notes = notes,
             StockQuantityDeducted = false,
             PortId = orderPort?.Id,
-            CreatedAt = UtcDateTimeHelper.UtcNow,
+            CreatedAt = DateTime.SpecifyKind(UtcDateTimeHelper.UtcNow, DateTimeKind.Utc),
         };
 
         if (ProductTypeCodes.IsRequests(product.ProductTypeId))
@@ -296,6 +297,13 @@ public partial class OrdersAppService(
         ProductsAppService.InvalidateListingCaches();
         await NotifyOrderPartiesAsync([order], cancellationToken);
 
+        // Requests / Offers / Booking / Category pending admin review → same auto-moderation as ads.
+        if (!isAdminApproved
+            && ProductTypeCodes.RequiresAdminModerationBeforeSellerApproval(product))
+        {
+            QueueOrderOfferAutoModeration(order.Id);
+        }
+
         var commissionSettings = await commissionSettingsProvider.GetAsync(cancellationToken);
         var categoryCommissions = await categoryCommissionProvider.GetAsync(cancellationToken);
 
@@ -308,6 +316,23 @@ public partial class OrdersAppService(
                 categoryCommissions),
             availableQuantity = product.Quantity
         };
+    }
+
+    private void QueueOrderOfferAutoModeration(long orderId)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await orderOfferAutoModerationQueue.EnqueueAsync(
+                        new OrderOfferAutoModerationWorkItem(orderId))
+                    .ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to enqueue offer auto-moderation for order {OrderId}", orderId);
+            }
+        });
     }
 
     private async Task TryTranslateOrderNotesAsync(long orderId, string? notes, CancellationToken cancellationToken)

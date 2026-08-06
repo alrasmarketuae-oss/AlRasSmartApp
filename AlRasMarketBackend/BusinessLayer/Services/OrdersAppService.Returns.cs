@@ -223,6 +223,8 @@ public partial class OrdersAppService
     public async Task<object> RejectRequestOfferForAdminAsync(
         string adminUserId,
         long orderId,
+        string? reasonEn = null,
+        string? reasonAr = null,
         CancellationToken cancellationToken = default)
     {
         if (!Guid.TryParse(adminUserId, out var adminId))
@@ -246,17 +248,29 @@ public partial class OrdersAppService
         EnsurePendingAdminModerationReview(order);
 
         order.StatusId = OrderStatusCodes.Cancelled;
-        if (order.Product?.ProductTypeId == ProductTypeCodes.Requests)
+        RequestOfferStatusLabels.ApplyRejectedByAdmin(order);
+
+        var trimmedEn = reasonEn?.Trim();
+        var trimmedAr = reasonAr?.Trim();
+        if (!string.IsNullOrWhiteSpace(trimmedEn) || !string.IsNullOrWhiteSpace(trimmedAr))
         {
-            RequestOfferStatusLabels.ApplyRejectedByAdmin(order);
+            var reasonBlock = string.Join(
+                "\n",
+                new[] { trimmedEn, trimmedAr }.Where(x => !string.IsNullOrWhiteSpace(x)));
+            order.Notes = string.IsNullOrWhiteSpace(order.Notes)
+                ? reasonBlock
+                : $"{order.Notes}\n---\n{reasonBlock}";
         }
 
         await orderData.SaveChangesAsync(cancellationToken);
 
-        if (order.Product?.ProductTypeId == ProductTypeCodes.Requests)
-        {
-            await NotifyBuyerOrderStatusAsync(order, adminId, cancellationToken);
-        }
+        // Notify buyer for all moderated order types (Requests offers + Booking/Category/Offers).
+        await NotifyOfferRejectedByAdminAsync(
+            order,
+            adminId,
+            trimmedEn,
+            trimmedAr,
+            cancellationToken);
 
         var commissionSettings = await commissionSettingsProvider.GetAsync(cancellationToken);
         var categoryCommissions = await categoryCommissionProvider.GetAsync(cancellationToken);

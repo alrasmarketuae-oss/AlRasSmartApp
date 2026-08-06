@@ -104,6 +104,60 @@ public class ContentTranslationService(
             cancellationToken);
     }
 
+    public async Task UpsertProductSupplierNotesBilingualAsync(
+        Guid productId,
+        string? notesEn,
+        string? notesAr,
+        CancellationToken cancellationToken = default)
+    {
+        var trimmedEn = notesEn?.Trim();
+        var trimmedAr = notesAr?.Trim();
+        if (string.IsNullOrWhiteSpace(trimmedEn) && string.IsNullOrWhiteSpace(trimmedAr))
+        {
+            return;
+        }
+
+        // Prefer English hash when both exist so re-rejects with same EN update AR too.
+        var sourceLang = !string.IsNullOrWhiteSpace(trimmedEn) ? "en" : "ar";
+        var hashSource = !string.IsNullOrWhiteSpace(trimmedEn) ? trimmedEn! : trimmedAr!;
+        var hash = ComputeHash(hashSource);
+
+        var existing = await dbContext.ContentTranslations
+            .FirstOrDefaultAsync(
+                x => x.Scope == ContentTranslationScopes.Product
+                    && x.ProductId == productId
+                    && x.Field == ContentTranslationFields.SupplierNotes,
+                cancellationToken);
+
+        if (existing is null)
+        {
+            await dbContext.ContentTranslations.AddAsync(
+                new ContentTranslation
+                {
+                    Id = Guid.NewGuid(),
+                    Scope = ContentTranslationScopes.Product,
+                    ProductId = productId,
+                    Field = ContentTranslationFields.SupplierNotes,
+                    TextEn = trimmedEn,
+                    TextAr = trimmedAr,
+                    SourceLanguage = sourceLang,
+                    SourceHash = hash,
+                    UpdatedAtUtc = DateTime.UtcNow
+                },
+                cancellationToken);
+        }
+        else
+        {
+            existing.TextEn = trimmedEn ?? existing.TextEn;
+            existing.TextAr = trimmedAr ?? existing.TextAr;
+            existing.SourceLanguage = sourceLang;
+            existing.SourceHash = hash;
+            existing.UpdatedAtUtc = DateTime.UtcNow;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyDictionary<Guid, ProductFieldTranslations>> GetProductTranslationsAsync(
         IEnumerable<Guid> productIds,
         CancellationToken cancellationToken = default)

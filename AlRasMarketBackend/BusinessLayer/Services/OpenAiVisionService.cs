@@ -618,4 +618,246 @@ public class OpenAiVisionService(
             _ => "image/jpeg"
         };
     }
+
+    public async Task<AdImagePolicyScanResult> ScanAdImageForPolicyViolationsAsync(
+        Stream imageStream,
+        string fileName,
+        CancellationToken cancellationToken = default)
+    {
+        var apiKey = configuration["OpenAI:ApiKey"];
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            logger.LogWarning("OpenAI ApiKey missing — skipping ad image policy scan.");
+            return new AdImagePolicyScanResult();
+        }
+
+        byte[] jpegBytes;
+        await using (var buffered = new MemoryStream())
+        {
+            await imageStream.CopyToAsync(buffered, cancellationToken).ConfigureAwait(false);
+            buffered.Position = 0;
+            try
+            {
+                jpegBytes = await ImageFileHelper.CompressToJpegBytesAsync(
+                    buffered,
+                    ImageCompressionOptions.SearchVision,
+                    cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Ad moderation: failed to compress image; using raw bytes.");
+                jpegBytes = buffered.ToArray();
+            }
+        }
+
+        if (jpegBytes.Length == 0)
+        {
+            return new AdImagePolicyScanResult();
+        }
+
+        var dataUrl = $"data:image/jpeg;base64,{Convert.ToBase64String(jpegBytes)}";
+        var prompt =
+            "You moderate marketplace product photos for Al Ras Smart (B2B food wholesale).\n" +
+            "REJECT the image only if ANY of these are clearly visible:\n" +
+            "- phone numbers, WhatsApp, emails, social handles, websites, QR codes for contact\n" +
+            "- seller company logos or watermarks overlaid on the photo\n" +
+            "- commercial product brand logos/trademarks (e.g. Nestle, Almarai, MDH, Everest)\n" +
+            "ALLOWED (do NOT reject for these):\n" +
+            "- origin country or region (Sudanese peanuts, Indian cardamom, Egyptian rice, Product of Sudan)\n" +
+            "- product type, grade, size, color, packing type, weight, and other commodity specs\n" +
+            "- plain commodity photos without a commercial brand mark\n" +
+            "Return ONLY JSON:\n" +
+            "{\n" +
+            "  \"hasViolation\": false,\n" +
+            "  \"violationKinds\": [],\n" +
+            "  \"summary\": \"\"\n" +
+            "}\n" +
+            "violationKinds examples: phone, whatsapp, email, url, social, seller_logo, watermark, " +
+            "qr_contact, product_brand, brand_logo.\n" +
+            "Origin country text is NOT a brand. If unsure whether a mark is a commercial brand vs origin/spec text, " +
+            "prefer hasViolation=false unless a clear commercial logo is visible. No markdown.";
+
+        var payload = new
+        {
+            model = "gpt-4o-mini",
+            temperature = 0,
+            response_format = new { type = "json_object" },
+            messages = new object[]
+            {
+                new
+                {
+                    role = "user",
+                    content = new object[]
+                    {
+                        new { type = "text", text = prompt },
+                        new { type = "image_url", image_url = new { url = dataUrl, detail = "low" } }
+                    }
+                }
+            }
+        };
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+        request.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(TimeSpan.FromSeconds(35));
+
+        using var response = await httpClient.SendAsync(request, timeoutCts.Token).ConfigureAwait(false);
+        var body = await response.Content.ReadAsStringAsync(timeoutCts.Token).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            logger.LogWarning("Ad image policy scan failed: {Status} {Body}", (int)response.StatusCode, body);
+            return new AdImagePolicyScanResult();
+        }
+
+        using var doc = JsonDocument.Parse(body);
+        var content = doc.RootElement
+            .GetProperty("choices")[0]
+            .GetProperty("message")
+            .GetProperty("content")
+            .GetString();
+
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return new AdImagePolicyScanResult();
+        }
+
+        using var parsed = JsonDocument.Parse(content);
+        var root = parsed.RootElement;
+        var hasViolation = root.TryGetProperty("hasViolation", out var hv) && hv.ValueKind == JsonValueKind.True;
+        var kinds = new List<string>();
+        if (root.TryGetProperty("violationKinds", out var vk) && vk.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in vk.EnumerateArray())
+            {
+                var value = item.GetString();
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    kinds.Add(value.Trim());
+                }
+            }
+        }
+
+        var summary = root.TryGetProperty("summary", out var s) ? s.GetString() : null;
+        return new AdImagePolicyScanResult
+        {
+            HasViolation = hasViolation,
+            ViolationKinds = kinds,
+            Summary = summary
+        };
+    }
+
+    public async Task<AdTextPolicyScanResult> ScanAdTextForPolicyViolationsAsync(
+        string combinedText,
+        CancellationToken cancellationToken = default)
+    {
+        var text = combinedText?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return new AdTextPolicyScanResult();
+        }
+
+        var apiKey = configuration["OpenAI:ApiKey"];
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            logger.LogWarning("OpenAI ApiKey missing — skipping ad text policy scan.");
+            return new AdTextPolicyScanResult();
+        }
+
+        // Cap payload size for cost/latency.
+        if (text.Length > 4000)
+        {
+            text = text[..4000];
+        }
+
+        var prompt =
+            "You moderate marketplace ad TEXT for Al Ras Smart (B2B food wholesale).\n" +
+            "The text is labeled. ALWAYS inspect the Ad title fields first, then specifications.\n" +
+            "This applies on first publish AND when the seller edits/resubmits the ad.\n" +
+            "REJECT (hasViolation=true) if ANY field (especially Ad title) contains:\n" +
+            "- insults, swear words, hate speech, sexual harassment, or abusive language " +
+            "(Arabic or English, including disguised/leet forms)\n" +
+            "- phone numbers, WhatsApp, emails, social handles, websites meant for off-platform contact\n" +
+            "- seller company name, trade name, or branding used as contact/promotion " +
+            "(not a commodity/product type name)\n" +
+            "ALLOWED (hasViolation=false):\n" +
+            "- normal product title/type and origin (e.g. Sudanese peanuts, Indian cardamom, Grade A)\n" +
+            "- packing, weight, grade, and other commodity specs\n" +
+            "- polite commercial language\n" +
+            "Return ONLY JSON:\n" +
+            "{\n" +
+            "  \"hasViolation\": false,\n" +
+            "  \"violationKinds\": [],\n" +
+            "  \"summary\": \"\"\n" +
+            "}\n" +
+            "violationKinds examples: insult, profanity, hate, phone, whatsapp, email, url, social, " +
+            "seller_company_name, brand_name.\n" +
+            "If any insult/profanity OR contact channel OR seller company name is present in the title " +
+            "or specs, hasViolation MUST be true. No markdown.\n\n" +
+            "Ad text:\n" + text;
+
+        var payload = new
+        {
+            model = "gpt-4o-mini",
+            temperature = 0,
+            response_format = new { type = "json_object" },
+            messages = new object[]
+            {
+                new { role = "user", content = prompt }
+            }
+        };
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+        request.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(TimeSpan.FromSeconds(25));
+
+        using var response = await httpClient.SendAsync(request, timeoutCts.Token).ConfigureAwait(false);
+        var body = await response.Content.ReadAsStringAsync(timeoutCts.Token).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            logger.LogWarning("Ad text policy scan failed: {Status} {Body}", (int)response.StatusCode, body);
+            // Fail closed: treat API failure as needing human review (caller checks ScanFailed).
+            return new AdTextPolicyScanResult { HasViolation = false, Summary = "scan_failed" };
+        }
+
+        using var doc = JsonDocument.Parse(body);
+        var content = doc.RootElement
+            .GetProperty("choices")[0]
+            .GetProperty("message")
+            .GetProperty("content")
+            .GetString();
+
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return new AdTextPolicyScanResult { Summary = "scan_failed" };
+        }
+
+        using var parsed = JsonDocument.Parse(content);
+        var root = parsed.RootElement;
+        var hasViolation = root.TryGetProperty("hasViolation", out var hv) && hv.ValueKind == JsonValueKind.True;
+        var kinds = new List<string>();
+        if (root.TryGetProperty("violationKinds", out var vk) && vk.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in vk.EnumerateArray())
+            {
+                var value = item.GetString();
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    kinds.Add(value.Trim());
+                }
+            }
+        }
+
+        var summary = root.TryGetProperty("summary", out var s) ? s.GetString() : null;
+        return new AdTextPolicyScanResult
+        {
+            HasViolation = hasViolation,
+            ViolationKinds = kinds,
+            Summary = summary
+        };
+    }
 }

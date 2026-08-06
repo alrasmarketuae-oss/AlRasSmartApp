@@ -215,7 +215,7 @@ public class AdminOrdersAppService(
         var result = await _ordersAppService.RejectRequestOfferForAdminAsync(
             adminUserId,
             orderId,
-            cancellationToken);
+            cancellationToken: cancellationToken);
 
         await adminRealtimeNotificationService.BroadcastCountsAsync(cancellationToken);
         await WriteOrderAuditAsync(

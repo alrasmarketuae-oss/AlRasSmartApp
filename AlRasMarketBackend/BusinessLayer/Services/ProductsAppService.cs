@@ -1,4 +1,4 @@
-using BusinessLayer.Caching;
+﻿using BusinessLayer.Caching;
 using BusinessLayer.Dtos;
 using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
@@ -24,6 +24,7 @@ public partial class ProductsAppService(
     ICategoryCommissionProvider categoryCommissionProvider,
     IStaticReferenceCache staticReferenceCache,
     IProductBackgroundEventQueue productBackgroundEventQueue,
+    IProductAutoModerationQueue productAutoModerationQueue,
     IConfiguration configuration,
     IServiceScopeFactory scopeFactory,
     ILogger<ProductsAppService> logger,
@@ -220,7 +221,7 @@ public partial class ProductsAppService(
         InvalidateProductCaches(ownerId);
         QueueTextSearchSync(product.ProductId);
 
-        // Do not notify admin yet — media uploads happen after create.
+        // Do not notify admin yet â€” media uploads happen after create.
         // Client calls SubmitForAdminReviewAsync when uploads complete.
 
         var addressLookup = await LoadAddressTextLookupAsync([product.AddressId], cancellationToken);
@@ -351,7 +352,7 @@ public partial class ProductsAppService(
 
         // Snapshot MUST run before overwriting NameEn/Description/etc.
         // Keep an existing snapshot only when it came from a previously approved live ad.
-        // Replace create-time / junk snapshots so previous ≠ proposed after a real edit.
+        // Replace create-time / junk snapshots so previous â‰  proposed after a real edit.
         if (requiresAdminReapproval)
         {
             var keepExistingSnapshot = PendingProductChangeHelper.IndicatesPreviouslyApprovedEdit(
@@ -360,7 +361,7 @@ public partial class ProductsAppService(
             {
                 var media = await productData.GetProductMediaPathsForSnapshotAsync(productId, cancellationToken);
 
-                // Copy scalar values now — before any field assignment below.
+                // Copy scalar values now â€” before any field assignment below.
                 var snapshot = PendingProductChangeHelper.Capture(
                     product,
                     media.ImagePaths,
@@ -532,7 +533,7 @@ public partial class ProductsAppService(
             }
         }
         // Empty/null duration or notes mean "leave unchanged" on owner edits
-        // (Flutter update FormData used to send "" and wipe values → false re-review).
+        // (Flutter update FormData used to send "" and wipe values â†’ false re-review).
         if (!string.IsNullOrWhiteSpace(input.ShippingDuration) || input.AllowAdminUpdate)
         {
             var nextShippingDuration = NormalizeShippingDuration(input.ShippingDuration);
@@ -584,6 +585,10 @@ public partial class ProductsAppService(
         {
             // Alert + live counts already run inside Notify*; do not await on the publish path.
             QueueAdminAdAlert(product, isEdit: true);
+
+            // Same auto-moderation as first submit (edit / post-reject fix).
+            // SubmitForAdminReview may also re-queue after late media uploads.
+            QueueAutoModeration(product.ProductId, requireManualReview: false);
 
             var owner = await productData.GetUserByIdAsync(ownerId, tracked: false, cancellationToken);
             var productName = string.IsNullOrWhiteSpace(product.NameEn) ? string.Empty : product.NameEn.Trim();
@@ -639,7 +644,7 @@ public partial class ProductsAppService(
         }
 
         // Price-only (and similar) updates keep IsApproved=true and never enter UnderReview.
-        // Mobile still calls this endpoint after every edit — treat as a no-op.
+        // Mobile still calls this endpoint after every edit â€” treat as a no-op.
         if (product.IsApproved == true
             && product.Status != ProductStatusCodes.UnderReview
             && !PendingProductChangeHelper.IndicatesPreviouslyApprovedEdit(product.PendingProductChanges))
@@ -657,7 +662,9 @@ public partial class ProductsAppService(
         var wasReady = product.IsReadyForAdminReview;
         if (wasReady)
         {
-            QueueProductImagesForClipIndexing(product.ProductId);
+            // Already marked ready (e.g. after Update). Re-run the same auto-moderation
+            // scan so post-reject edits and late media uploads are checked again.
+            QueueAutoModeration(product.ProductId, requireManualReview: false);
             return new
             {
                 productId = product.ProductId.ToString("D"),
@@ -687,9 +694,10 @@ public partial class ProductsAppService(
         QueueTextSearchSync(product.ProductId);
 
         // Same admin alert/counts as before — off the HTTP critical path.
+        // Same path for Offers / Requests / Booking / Category:
+        // violations → reject; video → admin dashboard; clean no-video → auto-approve.
         QueueAdminAdAlert(product, isEdit: isEditResubmit);
-
-        QueueProductImagesForClipIndexing(product.ProductId);
+        QueueAutoModeration(product.ProductId, requireManualReview: false);
 
         return new
         {
@@ -700,7 +708,30 @@ public partial class ProductsAppService(
     }
 
     /// <summary>
-    /// Enqueues CLIP/Qdrant indexing in the background after the HTTP response path —
+    /// Enqueues auto-moderation without blocking the seller upload/submit response.
+    /// CLIP indexing runs after the moderation worker finishes (not on this path).
+    /// </summary>
+    private void QueueAutoModeration(Guid productId, bool requireManualReview)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await productAutoModerationQueue.EnqueueAsync(
+                        new ProductAutoModerationWorkItem(productId, requireManualReview))
+                    .ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to enqueue auto-moderation for product {ProductId}", productId);
+                // Fallback: still index images so search is not stuck.
+                QueueProductImagesForClipIndexing(productId);
+            }
+        });
+    }
+
+    /// <summary>
+    /// Enqueues CLIP/Qdrant indexing in the background after the HTTP response path â€”
     /// never awaits embedding so publish stays fast for the user.
     /// </summary>
     private void QueueProductImagesForClipIndexing(Guid productId)
@@ -736,7 +767,6 @@ public partial class ProductsAppService(
             }
         });
     }
-
     public async Task<object> DeleteAsync(DeleteProductInput input, CancellationToken cancellationToken = default)
     {
         if (!Guid.TryParse(input.ProductId, out var productId))
