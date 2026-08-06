@@ -69,14 +69,15 @@ public sealed partial class AiAssistantMcpToolsService
 
         var isFob = string.Equals(bookingPriceType, "FOB", StringComparison.OrdinalIgnoreCase);
         if (string.IsNullOrWhiteSpace(originCountry)
-            || string.IsNullOrWhiteSpace(destinationCountry)
-            || (!isFob && (string.IsNullOrWhiteSpace(loadingPort) || string.IsNullOrWhiteSpace(arrivalPort))))
+            || (!isFob && (string.IsNullOrWhiteSpace(destinationCountry)
+                || string.IsNullOrWhiteSpace(loadingPort)
+                || string.IsNullOrWhiteSpace(arrivalPort))))
         {
             return Json(new
             {
                 ok = false,
                 error = isFob
-                    ? "origin_country_name and destination_country_name are required for FOB (ports are not used)."
+                    ? "origin_country_name (الدولة المصدرة) is required for FOB. Do not ask for or send destination_country_name, loading_port_name, or arrival_port_name."
                     : "origin_country_name, loading_port_name, destination_country_name, and arrival_port_name are required."
             });
         }
@@ -110,7 +111,7 @@ public sealed partial class AiAssistantMcpToolsService
             DescriptionEn = specifications,
             OriginCountryName = originCountry.Trim(),
             LoadingPortName = isFob ? null : loadingPort!.Trim(),
-            DestinationCountryName = destinationCountry.Trim(),
+            DestinationCountryName = isFob ? null : destinationCountry!.Trim(),
             ArrivalPortName = isFob ? null : arrivalPort!.Trim(),
             BookingPriceTypeName = bookingPriceType,
             ShippingDuration = shippingDays.Trim(),

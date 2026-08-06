@@ -409,7 +409,7 @@ internal static class AiAssistantKnowledgeSource
             إذا كان نوع الحساب الحالي مورد (supplier) فهذا مسموح تماماً.
             لا تقل "حسابك لا يسمح" ولا ترفض ولا تطلب فتح فورم أو شاشة إنشاء إعلان.
             ادخل وضع الخطة بالحوار: في أول رد اذكر قائمة الحقول المطلوبة لنوع الإعلان.
-            Booking المطلوب: اسم المنتج، الدولة المصدرة وبلد الوجهة، نوع السعر FOB/CNF/CIF، مدة الشحن بالأيام، السعر بالدولار، الكمية والوحدة، هل السعر قابل للتفاوض، المواصفات (اختياري)، الوسائط (اختياري). الموانئ (ميناء التحميل وميناء الوصول) مطلوبة فقط مع CNF أو CIF — ولا تُطلب أبداً مع FOB.
+            Booking المطلوب: اسم المنتج، الدولة المصدرة، نوع السعر FOB/CNF/CIF، مدة الشحن بالأيام، السعر بالدولار، الكمية والوحدة، هل السعر قابل للتفاوض، المواصفات (اختياري)، الوسائط (اختياري). بلد الوجهة والموانئ مطلوبة فقط مع CNF أو CIF — ولا تُطلب أبداً مع FOB.
             لو رد المستخدم ناقص، قل صراحة: "نسيت / لسه ناقص:" واذكر الحقول الناقصة فقط. لا تستدعِ create_booking_ad قبل اكتمال المطلوب.
             بعد اكتمال الحقول استدعِ create_booking_ad مرة واحدة. عملة Booking دائماً USD.
             نفس أسلوب الخطة الحوارية لـ Offer وRetail وCategory وRequest مع الحقول المناسبة لكل نوع.
@@ -420,7 +420,7 @@ internal static class AiAssistantKnowledgeSource
             If the current account audience is supplier, this is fully allowed.
             Never say the account is not allowed, and never ask the user to open a Create Ad form.
             Use conversational Plan Mode: first reply with the full checklist of required fields for that ad type.
-            Booking needs: product name, origin country, destination country, FOB/CNF/CIF, shipping days, USD price, quantity and unit, negotiable yes/no, specs optional, media optional. Ports (loading + arrival) are required only for CNF/CIF — never for FOB.
+            Booking needs: product name, origin/exporting country, FOB/CNF/CIF, shipping days, USD price, quantity and unit, negotiable yes/no, specs optional, media optional. Destination country and ports are required only for CNF/CIF — never for FOB.
             If the user reply is incomplete, say clearly: "You still need to provide:" and list only the missing required fields. Do not call create_booking_ad until complete.
             When complete, call create_booking_ad once. Booking currency is always USD.
             Same conversational Plan Mode for Offer, Retail, Category, and Request with each type's fields.
@@ -1366,8 +1366,8 @@ internal static class AiAssistantKnowledgeSource
             لإضافة إعلان Booking كمورد: افتح إنشاء إعلان واختر نوع Booking.
             العملة في Booking هي الدولار USD دائماً ولا يمكن تحويلها إلى درهم.
             اختر نوع السعر أولاً: FOB أو CNF أو CIF.
-            أدخل الدولة المصدرة وبلد الوجهة.
-            إذا كان النوع CNF أو CIF فأدخل أيضاً ميناء التحميل وميناء الوصول. أما FOB فلا تظهر الموانئ ولا تُطلب.
+            أدخل الدولة المصدرة.
+            إذا كان النوع CNF أو CIF فأدخل أيضاً بلد الوجهة وميناء التحميل وميناء الوصول. أما FOB فلا تظهر بلد الوجهة ولا الموانئ ولا تُطلب.
             أدخل الكمية والوحدة والسعر.
             أضف صور المنتج والفيديو والمواصفات، والتعبئة اختيارية.
             احفظ وانشر الإعلان ليدخل المراجعة ثم يظهر ضمن قسم Booking.
@@ -1378,8 +1378,8 @@ internal static class AiAssistantKnowledgeSource
             To create a Booking ad as a supplier: open Create Ad and choose Booking.
             Booking currency is always USD and cannot be switched to AED.
             Choose the price type first: FOB, CNF, or CIF.
-            Enter the exporting/origin country and the destination country.
-            If the type is CNF or CIF, also enter the loading port and arrival port. For FOB, ports are hidden and not required.
+            Enter the exporting/origin country.
+            If the type is CNF or CIF, also enter the destination country, loading port, and arrival port. For FOB, destination country and ports are hidden and not required.
             Enter the quantity, unit, and price.
             Add product images, video, and specifications; packaging is optional.
             Save and publish so the ad enters review and then appears under the Booking section.
@@ -2023,7 +2023,7 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "incoterms", "معنى FOB وCNF وCIF في إعلانات Booking", "ar", All,
             """
             أنواع السعر في إعلان Booking تحدد ما الذي يشمله السعر المعروض.
-            FOB (تسليم ظهر السفينة): السعر يشمل قيمة البضاعة وتكاليف إيصالها وتحميلها على السفينة، ولا يشمل أجرة الشحن البحري ولا التأمين، ويتحملهما المشتري. عند إنشاء إعلان FOB لا تُطلب الموانئ.
+            FOB (تسليم ظهر السفينة): السعر يشمل قيمة البضاعة وتكاليف إيصالها وتحميلها على السفينة، ولا يشمل أجرة الشحن البحري ولا التأمين، ويتحملهما المشتري. عند إنشاء إعلان FOB لا تُطلب بلد الوجهة ولا الموانئ.
             CNF أو CFR (التكلفة وأجرة الشحن): السعر يشمل قيمة البضاعة وأجرة الشحن البحري حتى ميناء الوصول، ولا يشمل التأمين.
             CIF (التكلفة والتأمين وأجرة الشحن): السعر يشمل قيمة البضاعة وأجرة الشحن البحري والتأمين حتى ميناء الوصول.
             المورد هو من يختار نوع السعر عند إنشاء إعلان Booking، ويظهر للمشتري في تفاصيل الإعلان.
@@ -2032,7 +2032,7 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "incoterms", "What FOB, CNF, and CIF mean on Booking ads", "en", All,
             """
             The price type on a Booking ad defines what the quoted price covers.
-            FOB (Free On Board): the price covers the goods and the cost of delivering and loading them onto the vessel; sea freight and insurance are not included and are paid by the buyer. When creating a FOB ad, ports are not collected.
+            FOB (Free On Board): the price covers the goods and the cost of delivering and loading them onto the vessel; sea freight and insurance are not included and are paid by the buyer. When creating a FOB ad, destination country and ports are not collected.
             CNF or CFR (Cost and Freight): the price covers the goods and the sea freight to the arrival port, but not insurance.
             CIF (Cost, Insurance and Freight): the price covers the goods, the sea freight, and the insurance up to the arrival port.
             The supplier chooses the price type when creating the Booking ad, and it is shown to buyers in the listing details.
@@ -2043,7 +2043,7 @@ internal static class AiAssistantKnowledgeSource
             """
             كل إعلان Booking يحدد الدولة المصدرة وبلد الوجهة.
             إذا كان نوع السعر CNF أو CIF يظهر أيضاً ميناء التحميل وميناء الوصول.
-            أما إذا كان نوع السعر FOB فلا تُطلب الموانئ ولا تظهر في نموذج الإضافة.
+            أما إذا كان نوع السعر FOB فلا تُطلب بلد الوجهة ولا الموانئ ولا تظهر في نموذج الإضافة.
             الدولة المصدرة توضح مصدر البضاعة، وهي مهمة لبعض المشترين لأسباب تنظيمية أو تفضيلية.
             ميناء التحميل وميناء الوصول (عند CNF/CIF) يحددان مسار الشحنة ويؤثران على المدة والتكلفة.
             إذا كنت تبحث عن شحن من ميناء إلى ميناء بشكل منفصل عن البضاعة نفسها، فهذه خدمة تعرضها شركات الشحن في قسم Shipping.
@@ -2052,7 +2052,7 @@ internal static class AiAssistantKnowledgeSource
             """
             Every Booking ad specifies the origin/exporting country and the destination country.
             When the price type is CNF or CIF, the loading port and arrival port are also required.
-            When the price type is FOB, ports are not required and are hidden on the create-ad form.
+            When the price type is FOB, destination country and ports are not required and are hidden on the create-ad form.
             The origin country identifies where the goods come from, which matters to some buyers for regulatory or preference reasons.
             The loading and arrival ports (for CNF/CIF) define the route and affect both transit time and cost.
             If you are looking for port-to-port freight separately from the goods themselves, that service is published by shipping companies in the Shipping section.

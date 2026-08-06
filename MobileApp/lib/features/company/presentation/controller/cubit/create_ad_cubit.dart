@@ -252,13 +252,16 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
       emit(state.copyWith(clearBookingPriceType: true));
       return;
     }
-    // FOB does not use ports — clear any previously selected values.
+    // FOB does not use destination country or ports — clear any previous values.
     if (type == BookingPriceType.fob) {
+      destinationCountryController.clear();
       emit(
         state.copyWith(
           bookingPriceType: type,
           clearOriginPort: true,
+          clearDestinationCountry: true,
           clearDestinationPort: true,
+          destinationPorts: const [],
         ),
       );
       return;
@@ -1026,7 +1029,10 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
         originCountry: geo.originCountry,
         originPort: geo.loadingPort,
         clearOriginPort: geo.loadingPort == null,
-        destinationCountry: geo.destinationCountry,
+        destinationCountry: geo.destinationCountry.isEmpty
+            ? null
+            : geo.destinationCountry,
+        clearDestinationCountry: geo.destinationCountry.isEmpty,
         destinationPort: geo.arrivalPort,
         clearDestinationPort: geo.arrivalPort == null,
       );
@@ -1653,15 +1659,14 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     final arrivalPort = state.destinationPort;
     final isFob = state.bookingPriceType == BookingPriceType.fob;
 
-    if (originCountry == null ||
-        originCountry.isEmpty ||
-        destinationCountry == null ||
-        destinationCountry.isEmpty) {
+    if (originCountry == null || originCountry.isEmpty) {
       return null;
     }
 
     if (!isFob &&
-        (loadingPort == null ||
+        (destinationCountry == null ||
+            destinationCountry.isEmpty ||
+            loadingPort == null ||
             loadingPort.isEmpty ||
             arrivalPort == null ||
             arrivalPort.isEmpty)) {
@@ -1670,7 +1675,7 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
 
     return (
       originCountry: originCountry,
-      destinationCountry: destinationCountry,
+      destinationCountry: isFob ? '' : destinationCountry!,
       loadingPort: isFob ? null : loadingPort,
       arrivalPort: isFob ? null : arrivalPort,
     );

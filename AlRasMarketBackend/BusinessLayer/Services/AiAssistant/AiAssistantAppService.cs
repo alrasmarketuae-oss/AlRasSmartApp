@@ -491,7 +491,7 @@ public sealed class AiAssistantAppService(
             - lookup_create_ad_reference: resolve units, product_types, categories, Local/Reexport, countries, ports while collecting ad fields.
             - list_my_addresses: list saved delivery addresses (address_id + label). Use before create_request_ad for company_customer.
             - create_request_ad: create ONE Request ad (supplier OR company_customer). Required checklist: product name, specifications, quantity + unit, target price + currency (USD/AED), negotiable, Local/Reexport (محلي / إعادة تصدير), address_id from list_my_addresses (mandatory for company_customer), packaging kg (ALWAYS ask; user may say none/لا), optional delivery_date, optional media. Never skip Local/Reexport or address for company.
-            - create_booking_ad: supplier only. USD locked. Ask name, FOB/CNF/CIF first, then geo (countries always; ports ONLY for CNF/CIF — never ask ports when FOB), shipping days, price, qty, unit, negotiable, specs, packaging (ALWAYS ask), media.
+            - create_booking_ad: supplier only. USD locked. Ask name, FOB/CNF/CIF first, then geo: الدولة المصدرة always; for FOB never ask destination country or ports; for CNF/CIF ask destination country + ports, shipping days, price, qty, unit, negotiable, specs, packaging (ALWAYS ask), media.
             - create_offer_ad: supplier only. Ask name, before/after price, offer duration days, qty, unit, currency, negotiable, Local/Reexport, specs, packaging (ALWAYS ask), media.
             - create_retail_ad: supplier only. AED locked. Ask name, price, qty, unit, delivery days, negotiable, specs, packaging (ALWAYS ask), media.
             - create_category_ad: supplier only. Ask name, category, wholesale price/qty/unit/currency, negotiable, Local/Reexport, wholesale specs, packaging (ALWAYS ask), media. If hybrid (جملة+تجزئة / enable_retail_pricing): ALSO ask BEFORE create — retail_price AED, retail_quantity, retail_unit, retail_specifications (مواصفات التجزئة منفصلة), retail packaging. Never call the tool for hybrid without retail_specifications.
@@ -501,7 +501,7 @@ public sealed class AiAssistantAppService(
             When the user message contains [PLAN_MODE] OR asks to create/publish an ad:
             1) Stay in chat. Do NOT tell the user to open a form, yellow form, Create Ad screen, or fill fields outside chat.
             2) First reply: clearly list EVERY required field for the target ad type as a checklist (same fields as Create Ad). ALWAYS include التعبئة/packaging (kg) in the checklist for every ad type — ask even if the user may answer none. Optional: media, Request delivery_date.
-            3) Request checklist must ALWAYS include: محلي أم إعادة تصدير + عنوان التسليم (من العناوين المحفوظة عبر list_my_addresses) + التعبئة. Offer/Category checklists must include محلي/إعادة تصدير + التعبئة. Booking must include الوحدة + الدولة المصدرة + بلد الوجهة + التعبئة (+ موانئ فقط لـ CNF/CIF).
+            3) Request checklist must ALWAYS include: محلي أم إعادة تصدير + عنوان التسليم (من العناوين المحفوظة عبر list_my_addresses) + التعبئة. Offer/Category checklists must include محلي/إعادة تصدير + التعبئة. Booking must include الوحدة + الدولة المصدرة + التعبئة; for CNF/CIF also بلد الوجهة + موانئ; for FOB never list بلد الوجهة or ports.
             4) Category hybrid checklist: when user wants جملة+تجزئة, list wholesale fields AND retail fields including مواصفات التجزئة separately — never assume wholesale specs equal retail specs.
             5) When the user replies with data: extract what they gave. If anything required is still missing (including retail_specifications for hybrid, or packaging not asked yet), reply explicitly like:
                "نسيت / لسه ناقص: …" (Arabic) or "You still need to provide: …" (English) and list ONLY the missing required fields. Do not call create_* until complete.
@@ -514,7 +514,7 @@ public sealed class AiAssistantAppService(
             When the user says "5 طن" or "5 tons", set quantity=5 and unit_name=Ton (unit id 1). NEVER set unit_id=5 for tons (5 is Bag). NEVER default to Piece when the user said ton/طن.
             Booking currency is USD; Retail is AED — do not ask for currency on those types. Request accepts USD or AED.
             Booking field labels in Arabic: الدولة المصدرة (origin/export country — NOT بلد المنشأ or Country of Origin), ميناء التحميل, بلد الوجهة, ميناء الوصول.
-            Booking FOB rule: when price type is FOB, do NOT list or ask for loading/arrival ports — only الدولة المصدرة and بلد الوجهة. Ports apply only for CNF and CIF.
+            Booking FOB rule: when price type is FOB, do NOT list or ask for بلد الوجهة (destination country), loading port, or arrival port — only الدولة المصدرة. Destination country and ports apply only for CNF and CIF.
             - shipping audience → shipping ad fields only (no type question).
             - company_customer → Request ads only (no type question).
             - supplier → ask which type (Category, Retail, Booking, Offer, Request) unless they already named it.

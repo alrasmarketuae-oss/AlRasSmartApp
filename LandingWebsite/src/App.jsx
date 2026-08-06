@@ -28,6 +28,8 @@ function AppShell() {
         <Routes>
           <Route path="/" element={<Home lang={lang} />} />
           <Route path="/terms" element={<Terms lang={lang} />} />
+          <Route path="/privacy" element={<Terms lang={lang} privacyOnly />} />
+          <Route path="/privacy-policy" element={<Terms lang={lang} privacyOnly />} />
           <Route path="/model-training" element={<ModelTraining lang={lang} />} />
           <Route path="/delete-account" element={<DeleteAccount lang={lang} />} />
           <Route path="/encrypted-messages" element={<EncryptedMessages lang={lang} />} />

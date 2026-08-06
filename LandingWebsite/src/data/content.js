@@ -56,7 +56,11 @@ export const content = {
     },
     termsPage: {
       heading: 'السياسة والخصوصية',
-      intro: 'هذه الشروط والأحكام هي نفس المحتوى المعروض داخل تطبيق سوق الراس.',
+      intro:
+        'تتضمن هذه الصفحة سياسة الخصوصية الكاملة (مطلوبة لمتاجر التطبيقات) ثم شروط الاستخدام. نفس المحتوى يظهر داخل تطبيق الراس الذكي.',
+      privacyHeading: 'سياسة الخصوصية',
+      privacyIntro:
+        'تشرح هذه الصفحة البيانات التي يجمعها التطبيق، ولماذا، وكيف تُحمى وتُشارك وتُحذف، وحقوق المستخدم — وفق متطلبات Google Play وApple.',
     },
     modelTrainingPage: {
       badge: 'البحث بالصور',
@@ -193,7 +197,11 @@ export const content = {
     },
     termsPage: {
       heading: 'Policy & Privacy',
-      intro: 'These terms are the same content shown inside the Al Ras Market mobile app.',
+      intro:
+        'This page includes the full Privacy Policy (required by app stores) followed by the Terms of Use. The same content is shown inside the Al Ras Smart mobile app.',
+      privacyHeading: 'Privacy Policy',
+      privacyIntro:
+        'This page explains what data the app collects, why, how it is protected and shared, how it is deleted, and your rights — aligned with Google Play and Apple requirements.',
     },
     modelTrainingPage: {
       badge: 'Image search',

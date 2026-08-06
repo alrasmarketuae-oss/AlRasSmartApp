@@ -42,6 +42,7 @@ class CreateAdBookingFieldsWidget extends StatelessWidget {
           previous.bookingPriceType != current.bookingPriceType,
       builder: (context, state) {
         final showPorts = state.bookingPriceType != BookingPriceType.fob;
+        final showDestination = state.bookingPriceType != BookingPriceType.fob;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -62,18 +63,20 @@ class CreateAdBookingFieldsWidget extends StatelessWidget {
               onPortChanged: cubit.setOriginPort,
               showPorts: showPorts,
             ),
-            SizedBox(height: 10.h),
-            CreateAdLocationDetailsSection(
-              countryLabel: S.of(context).destinationCountry,
-              portLabel: S.of(context).destinationPort,
-              selectedCountry: state.destinationCountry,
-              ports: state.destinationPorts,
-              selectedPort: state.destinationPort,
-              isPortsLoading: state.isDestinationPortsLoading,
-              onCountryChanged: cubit.setDestinationCountry,
-              onPortChanged: cubit.setDestinationPort,
-              showPorts: showPorts,
-            ),
+            if (showDestination) ...[
+              SizedBox(height: 10.h),
+              CreateAdLocationDetailsSection(
+                countryLabel: S.of(context).destinationCountry,
+                portLabel: S.of(context).destinationPort,
+                selectedCountry: state.destinationCountry,
+                ports: state.destinationPorts,
+                selectedPort: state.destinationPort,
+                isPortsLoading: state.isDestinationPortsLoading,
+                onCountryChanged: cubit.setDestinationCountry,
+                onPortChanged: cubit.setDestinationPort,
+                showPorts: showPorts,
+              ),
+            ],
             SizedBox(height: 10.h),
             CreateAdPriceNegotiationSection(
               quantityController: quantityController,

@@ -1,3 +1,4 @@
+import 'package:alrasmarket/features/clint/presentation/widgets/app_privacy_policy.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -8,10 +9,39 @@ class TermsAndConditionsWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final local = S.of(context);
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text(
+          AppPrivacyPolicy.title(isAr),
+          style: TextStyle(
+            color: const Color(0xFF333333),
+            fontFamily: 'Cairo',
+            fontSize: 16.sp,
+            fontWeight: FontWeight.bold,
+            height: 1.5,
+          ),
+        ),
+        SizedBox(height: 8.h),
+        Text(
+          AppPrivacyPolicy.lastUpdated(isAr),
+          style: TextStyle(
+            color: const Color(0x99333333),
+            fontFamily: 'Cairo',
+            fontSize: 12.sp,
+          ),
+        ),
+        SizedBox(height: 10.h),
+        _buildBulletPoint(AppPrivacyPolicy.intro(isAr)),
+        SizedBox(height: 12.h),
+        for (final section in AppPrivacyPolicy.sections(isAr)) ...[
+          _buildSectionTitle(section.title),
+          for (final item in section.items) _buildBulletPoint(item),
+          SizedBox(height: 12.h),
+        ],
+        Divider(height: 32.h, color: const Color(0x22333333)),
         Text(
           local.termsTitle,
           style: TextStyle(
@@ -23,31 +53,26 @@ class TermsAndConditionsWidget extends StatelessWidget {
           ),
         ),
         SizedBox(height: 20.h),
-
         _buildSectionTitle(local.firstDefinitions),
         _buildBulletPoint(local.defApp),
         _buildBulletPoint(local.defCompany),
         _buildBulletPoint(local.defSupplier),
         _buildBulletPoint(local.defClient),
         SizedBox(height: 20.h),
-
         _buildSectionTitle(local.secondNature),
         _buildBulletPoint(local.natureIntermediary),
         _buildBulletPoint(local.natureMediator),
         SizedBox(height: 20.h),
-
         _buildSectionTitle(local.commissionSectionTitle),
         _buildBulletPoint(local.commissionIntro),
         _buildBulletPoint(local.commissionExample),
         _buildBulletPoint(local.commissionChangeNotice),
         SizedBox(height: 20.h),
-
         _buildSectionTitle(local.productImagesSectionTitle),
         _buildBulletPoint(local.productImagesOwnership),
         _buildBulletPoint(local.productImagesTraining),
         _buildBulletPoint(local.productImagesConsent),
         SizedBox(height: 20.h),
-
         _buildSectionTitle(local.thirdSupplierObligations),
         _buildBulletPoint(local.supplierObligation1),
         _buildBulletPoint(local.supplierObligation2),
@@ -62,13 +87,11 @@ class TermsAndConditionsWidget extends StatelessWidget {
         _buildBulletPoint(local.supplierIdentifyingInfo),
         _buildBulletPoint(local.forbiddenBackgrounds),
         SizedBox(height: 20.h),
-
         _buildSectionTitle(local.fourthClientObligations),
         _buildBulletPoint(local.clientObligation1),
         _buildBulletPoint(local.clientObligation2),
         _buildBulletPoint(local.clientObligation3),
         SizedBox(height: 20.h),
-
         _buildSectionTitle(local.fifthSalesMechanism),
         _buildSubHeader(local.orderConfirmationHeader),
         _buildBulletPoint(local.mechanismInvoiceIssue, isNested: true),
@@ -82,7 +105,6 @@ class TermsAndConditionsWidget extends StatelessWidget {
         _buildBulletPoint(local.mechanismCodPolicy, isNested: true),
         _buildBulletPoint(local.mechanismFinancialIntermediary, isNested: true),
         SizedBox(height: 20.h),
-
         _buildSectionTitle(local.returnPolicySectionTitle),
         _buildBulletPoint(local.returnPolicyWindow),
         _buildBulletPoint(local.returnPolicyAccepted),
@@ -93,7 +115,6 @@ class TermsAndConditionsWidget extends StatelessWidget {
         _buildBulletPoint(local.paymentCodAll),
         _buildBulletPoint(local.supplierCollectionPolicy),
         SizedBox(height: 20.h),
-
         _buildSectionTitle(local.sixthRestrictions),
         _buildSubHeader(local.restrictionsHeader),
         _buildBulletPoint(local.restriction1),
@@ -101,7 +122,6 @@ class TermsAndConditionsWidget extends StatelessWidget {
         _buildBulletPoint(local.restriction3),
         _buildBulletPoint(local.restriction4),
         SizedBox(height: 20.h),
-
         _buildSectionTitle(local.seventhLiability),
         _buildSubHeader(local.supplierLiabilityHeader),
         _buildBulletPoint(local.liabilityQuality, isNested: true),
@@ -116,15 +136,12 @@ class TermsAndConditionsWidget extends StatelessWidget {
         SizedBox(height: 10.h),
         _buildBulletPoint(local.companyRights),
         SizedBox(height: 20.h),
-
         _buildSectionTitle(local.eighthAmendments),
         _buildBulletPoint(local.amendment1),
         SizedBox(height: 20.h),
-
         _buildSectionTitle(local.ninthGoverningLaw),
         _buildBulletPoint(local.governingLawText),
         SizedBox(height: 20.h),
-
         _buildSectionTitle(local.tenthAcceptance),
         _buildBulletPoint(local.acceptanceText),
       ],

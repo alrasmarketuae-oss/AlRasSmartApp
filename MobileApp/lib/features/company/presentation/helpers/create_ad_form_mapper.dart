@@ -153,6 +153,11 @@ class CreateAdFormMapper {
         state.bookingPriceType == BookingPriceType.fob;
   }
 
+  /// FOB Booking: destination country is hidden and must not be submitted.
+  static bool skipsDestinationForBooking(CreateAdFormState state) {
+    return skipsPortsForBooking(state);
+  }
+
   static bool skipsGeoForState(CreateAdFormState state) {
     final selectedType = state.selectedType;
     if (selectedType == CreateAdType.offers.label ||
@@ -318,6 +323,7 @@ class CreateAdFormMapper {
         state.selectedType == CreateAdType.retail.label;
     final skipsGeo = skipsGeoForState(state);
     final skipsPorts = skipsPortsForBooking(state);
+    final skipsDestination = skipsDestinationForBooking(state);
     final offerDurationDaysText = isOffers
         ? _normalizeOfferDurationDays(shippingDurationText)
         : null;
@@ -413,7 +419,7 @@ class CreateAdFormMapper {
           : (isEditMode
               ? _nullableGeoField(skipsGeo: false, value: state.originCountry)
               : state.originCountry),
-      destinationCountryName: skipsGeo
+      destinationCountryName: skipsGeo || skipsDestination
           ? null
           : (isEditMode
               ? _nullableGeoField(

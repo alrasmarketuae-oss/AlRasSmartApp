@@ -144,6 +144,7 @@ class CreateAdFormState extends Equatable {
     bool clearSubmitNavigateProductId = false,
     bool clearOriginPort = false,
     bool clearOriginPorts = false,
+    bool clearDestinationCountry = false,
     bool clearDestinationPort = false,
     bool clearDestinationPorts = false,
     bool clearSelectedCategory = false,
@@ -176,7 +177,9 @@ class CreateAdFormState extends Equatable {
       originPort: clearOriginPort ? null : (originPort ?? this.originPort),
       originPorts: clearOriginPorts ? const [] : (originPorts ?? this.originPorts),
       isOriginPortsLoading: isOriginPortsLoading ?? this.isOriginPortsLoading,
-      destinationCountry: destinationCountry ?? this.destinationCountry,
+      destinationCountry: clearDestinationCountry
+          ? null
+          : (destinationCountry ?? this.destinationCountry),
       destinationPort:
           clearDestinationPort ? null : (destinationPort ?? this.destinationPort),
       destinationPorts: clearDestinationPorts

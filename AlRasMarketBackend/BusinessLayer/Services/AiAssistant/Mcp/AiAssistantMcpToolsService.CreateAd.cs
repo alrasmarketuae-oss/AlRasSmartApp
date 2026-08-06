@@ -785,7 +785,12 @@ public sealed partial class AiAssistantMcpToolsService
                             type = "string",
                             description = "Loading port — required for CNF/CIF only. Omit entirely when booking_price_type_name is FOB."
                         },
-                        ["destination_country_name"] = new { type = "string" },
+                        ["destination_country_name"] = new
+                        {
+                            type = "string",
+                            description =
+                                "Destination country — required for CNF/CIF only. Omit entirely when booking_price_type_name is FOB."
+                        },
                         ["arrival_port_name"] = new
                         {
                             type = "string",

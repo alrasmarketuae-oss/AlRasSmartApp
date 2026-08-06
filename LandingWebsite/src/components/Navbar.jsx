@@ -20,6 +20,9 @@ export default function Navbar({ lang, setLang }) {
           <a href="/#features" className="transition hover:text-slate-900">{t.features}</a>
           <a href="/#download" className="transition hover:text-slate-900">{t.download}</a>
           <Link to="/terms" className="transition hover:text-slate-900">{t.terms}</Link>
+          <Link to="/privacy" className="transition hover:text-slate-900">
+            {lang === 'ar' ? 'الخصوصية' : 'Privacy'}
+          </Link>
           <Link to="/delete-account" className="transition hover:text-slate-900">{t.deleteAccount}</Link>
           <Link to="/model-training" className="transition hover:text-slate-900">{t.modelTraining}</Link>
           <Link to="/encrypted-messages" className="transition hover:text-slate-900">{t.encryptedChat}</Link>
