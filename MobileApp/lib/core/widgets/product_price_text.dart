@@ -2,6 +2,7 @@ import 'package:alrasmarket/core/widgets/currency_icon.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/core/utils/product_price_formatter.dart';
 import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
+import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -11,6 +12,9 @@ class ProductPriceText extends StatelessWidget {
     required this.amount,
     required this.currency,
     this.suffix,
+    this.unitProduct,
+    this.preferRetail = false,
+    this.withUnit = false,
     this.amountStyle,
     this.iconSize = 14,
     this.maxLines = 1,
@@ -21,6 +25,9 @@ class ProductPriceText extends StatelessWidget {
   final String amount;
   final String currency;
   final String? suffix;
+  final MyListingProductModel? unitProduct;
+  final bool preferRetail;
+  final bool withUnit;
   final TextStyle? amountStyle;
   final double iconSize;
   final int maxLines;
@@ -45,12 +52,9 @@ class ProductPriceText extends StatelessWidget {
         preferRetail: preferRetail,
       ),
       currency: ProductPriceFormatter.currencyCode(product),
-      suffix: withUnit
-          ? ProductPriceFormatter.unitSuffix(
-              product,
-              preferRetail: preferRetail,
-            )
-          : null,
+      unitProduct: withUnit ? product : null,
+      preferRetail: preferRetail,
+      withUnit: withUnit,
       amountStyle: amountStyle,
       iconSize: iconSize,
       maxLines: maxLines,
@@ -108,6 +112,14 @@ class ProductPriceText extends StatelessWidget {
         ? (resolvedAmountStyle.fontSize ?? iconSize)
         : iconSize;
 
+    final resolvedSuffix = withUnit && unitProduct != null
+        ? ProductPriceFormatter.unitSuffix(
+            unitProduct!,
+            preferRetail: preferRetail,
+            s: S.of(context),
+          )
+        : suffix;
+
     if (scaleToFit) {
       return Row(
         mainAxisSize: MainAxisSize.min,
@@ -120,8 +132,8 @@ class ProductPriceText extends StatelessWidget {
             size: resolvedIconSize,
             matchTextSize: matchCurrencyToAmount,
           ),
-          if (suffix != null && suffix!.isNotEmpty)
-            Text(suffix!, style: resolvedAmountStyle),
+          if (resolvedSuffix != null && resolvedSuffix.isNotEmpty)
+            Text(resolvedSuffix, style: resolvedAmountStyle),
         ],
       );
     }
@@ -145,11 +157,11 @@ class ProductPriceText extends StatelessWidget {
           size: resolvedIconSize,
           matchTextSize: matchCurrencyToAmount,
         ),
-        if (suffix != null && suffix!.isNotEmpty) ...[
+        if (resolvedSuffix != null && resolvedSuffix.isNotEmpty) ...[
           Flexible(
             fit: FlexFit.loose,
             child: Text(
-              suffix!,
+              resolvedSuffix,
               maxLines: maxLines,
               overflow: TextOverflow.ellipsis,
               style: resolvedAmountStyle,

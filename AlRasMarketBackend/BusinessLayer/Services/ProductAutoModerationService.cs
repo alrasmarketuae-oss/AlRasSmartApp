@@ -181,10 +181,7 @@ public sealed class ProductAutoModerationService(
         {
             await adminProducts.ApproveProductAsync(
                     workItem.ProductId.ToString("D"),
-                    new AdminRejectProductRequest
-                    {
-                        SupplierNotesEn = "Auto-approved: no contact info or seller logo detected in images/specs."
-                    },
+                    new AdminRejectProductRequest(),
                     cancellationToken)
                 .ConfigureAwait(false);
 

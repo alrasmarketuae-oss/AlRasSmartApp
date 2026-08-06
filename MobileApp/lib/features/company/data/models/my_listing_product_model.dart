@@ -274,7 +274,7 @@ class MyListingProductModel {
     return s == 'approved' || s.contains('معتمد');
   }
 
-  bool get isNegotiable => negotiable.toLowerCase() == 'yes';
+  bool get isNegotiable => _parseBoolFlag(negotiable);
 
   bool get isCreatedInArabic =>
       createdLanguage.trim().toLowerCase().startsWith('ar');
@@ -362,7 +362,7 @@ class MyListingProductModel {
     return displayPrice.trim();
   }
 
-  bool get isFeaturedListing => isFeatured.toLowerCase() == 'yes';
+  bool get isFeaturedListing => _parseBoolFlag(isFeatured);
 
   List<String> get allVideoPaths {
     final paths = <String>[];
@@ -642,8 +642,12 @@ class MyListingProductModel {
         if (localized.isNotEmpty) return localized;
         return json['approvalStatus']?.toString() ?? '';
       }(),
-      negotiable: json['negotiable']?.toString() ?? '',
-      isFeatured: json['isFeatured']?.toString() ?? '',
+      negotiable: _parseBoolFlag(json['negotiable'] ?? json['Negotiable'])
+          ? 'Yes'
+          : 'No',
+      isFeatured: _parseBoolFlag(json['isFeatured'] ?? json['IsFeatured'])
+          ? 'Yes'
+          : 'No',
       viewsCount: json['viewsCount']?.toString() ?? '',
       images: images,
       documents: _parseStringList(json['documents']),

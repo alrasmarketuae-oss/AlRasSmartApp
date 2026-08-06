@@ -466,7 +466,7 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
                         ? CreateAdCurrency.aed
                         : product.currency,
                   ),
-        negotiationType: product.negotiable.toLowerCase() == 'yes'
+        negotiationType: product.isNegotiable
             ? NegotiationType.negotiable
             : NegotiationType.nonNegotiable,
         requestFulfillmentType: requestFulfillment,

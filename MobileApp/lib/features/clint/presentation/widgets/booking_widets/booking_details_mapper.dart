@@ -98,7 +98,7 @@ class BookingDetailsMapper {
   static String priceLabel(MyListingProductModel product, S s) {
     final amount = ProductPriceFormatter.amount(product);
     if (amount.isEmpty) return '${s.dollar} —';
-    return ProductPriceFormatter.unitPriceLabel(product);
+    return ProductPriceFormatter.unitPriceLabel(product, s: s);
   }
 
   static List<String> specificationItems(MyListingProductModel product) {
@@ -126,7 +126,19 @@ class BookingDetailsMapper {
   }
 
   static String supplierNotesText(MyListingProductModel product) {
-    return product.supplierNotes.trim();
+    final notes = product.supplierNotes.trim();
+    if (notes.isEmpty || isInternalModerationNote(notes)) return '';
+    return notes;
+  }
+
+  /// Admin/auto-moderation system notes must not appear on public ad details.
+  static bool isInternalModerationNote(String notes) {
+    final normalized = notes.trim().toLowerCase();
+    if (normalized.isEmpty) return false;
+    return normalized.startsWith('auto-approved') ||
+        normalized.contains('auto-approved:') ||
+        normalized.startsWith('موافقة تلقائية') ||
+        normalized.contains('auto approved');
   }
 
   static String descriptionText(MyListingProductModel product) {

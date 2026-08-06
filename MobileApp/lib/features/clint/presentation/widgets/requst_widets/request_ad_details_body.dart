@@ -36,6 +36,7 @@ class RequestAdDetailsBody extends StatelessWidget {
     final mediaItems = BookingDetailsMapper.mediaItems(product);
     final category = product.categoryName.trim();
     final unit = product.unitName.trim();
+    final supplierNotes = BookingDetailsMapper.supplierNotesText(product);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,14 +104,14 @@ class RequestAdDetailsBody extends StatelessWidget {
             ),
           ),
         ],
-        if (product.supplierNotes.trim().isNotEmpty) ...[
+        if (supplierNotes.isNotEmpty) ...[
           SizedBox(height: 14.h),
           BookingDetailsSectionCard(
             title: s.supplierNotes,
             icon: Icons.notes_outlined,
             fontFamily: fontFamily,
             child: Text(
-              product.supplierNotes.trim(),
+              supplierNotes,
               style: TextStyle(
                 color: BookingDetailsDesign.muted,
                 fontFamily: fontFamily,

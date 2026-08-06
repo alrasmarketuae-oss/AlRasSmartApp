@@ -1,6 +1,8 @@
 import 'package:alrasmarket/core/serveses/auth_service.dart';
+import 'package:alrasmarket/core/utils/product_quantity_formatter.dart';
 import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
+import 'package:alrasmarket/generated/l10n.dart';
 
 class ProductPriceFormatter {
   static bool get canShowPrices => AuthService.instance.isAuthenticated;
@@ -28,9 +30,13 @@ class ProductPriceFormatter {
   static String unitSuffix(
     MyListingProductModel product, {
     bool preferRetail = false,
+    S? s,
   }) {
     final unit = product.unitNameForChannel(preferRetail: preferRetail).trim();
-    final displayUnit = unit.toLowerCase() == 'kilogram' ? 'kg' : unit;
+    if (unit.isEmpty) return '';
+    final displayUnit = s != null
+        ? ProductQuantityFormatter.singularUnitLabel(unit, s)
+        : ProductQuantityFormatter.compactUnitLabel(unit);
     return displayUnit.isEmpty ? '' : ' / $displayUnit';
   }
 
@@ -46,10 +52,11 @@ class ProductPriceFormatter {
   static String unitPriceLabel(
     MyListingProductModel product, {
     bool preferRetail = false,
+    S? s,
   }) {
     final price = amount(product, preferRetail: preferRetail);
     if (price.isEmpty) return '';
-    final suffix = unitSuffix(product, preferRetail: preferRetail);
+    final suffix = unitSuffix(product, preferRetail: preferRetail, s: s);
     return '$price ${currencyCode(product)}$suffix';
   }
 

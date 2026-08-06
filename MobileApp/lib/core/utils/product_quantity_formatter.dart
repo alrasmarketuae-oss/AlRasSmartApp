@@ -84,6 +84,41 @@ class ProductQuantityFormatter {
       case 'اطنان':
       case 'أطنان':
         return s?.unitTon ?? 'Ton';
+      case 'piece':
+      case 'pieces':
+      case 'pcs':
+      case 'pc':
+      case 'قطعة':
+      case 'قطع':
+      case 'قطعه':
+      case 'حبة':
+      case 'حبه':
+        return s?.unitPiece ?? 'Piece';
+      case 'box':
+      case 'boxes':
+      case 'صندوق':
+      case 'صناديق':
+        return s?.unitBox ?? 'Box';
+      case 'carton':
+      case 'cartons':
+      case 'كرتون':
+        return s?.unitCarton ?? 'Carton';
+      case 'bag':
+      case 'bags':
+      case 'كيس':
+      case 'أكياس':
+        return s?.unitBag ?? 'Bag';
+      case 'dozen':
+      case 'dozens':
+      case 'دزينة':
+        return s?.unitDozen ?? 'Dozen';
+      case 'liter':
+      case 'liters':
+      case 'litre':
+      case 'litres':
+      case 'لتر':
+      case 'لترات':
+        return s?.unitLiter ?? 'Liter';
       default:
         return unitName.trim();
     }
@@ -146,6 +181,9 @@ class ProductQuantityFormatter {
       case 'pc':
       case 'قطعة':
       case 'قطع':
+      case 'قطعه':
+      case 'حبة':
+      case 'حبه':
         return plural ? s.unitPieces : s.unitPiece;
       case 'liter':
       case 'liters':

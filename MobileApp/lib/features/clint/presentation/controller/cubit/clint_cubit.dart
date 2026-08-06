@@ -2136,9 +2136,13 @@ class ClintCubit extends Cubit<ClintStates> {
 
   String _normalizeBooleanToYesNo(dynamic value) {
     if (value is bool) return value ? 'Yes' : 'No';
-    final asString = value?.toString().toLowerCase();
-    if (asString == 'true') return 'Yes';
-    if (asString == 'false') return 'No';
+    final asString = value?.toString().trim().toLowerCase();
+    if (asString == 'true' || asString == '1' || asString == 'yes') {
+      return 'Yes';
+    }
+    if (asString == 'false' || asString == '0' || asString == 'no') {
+      return 'No';
+    }
     return 'No';
   }
 

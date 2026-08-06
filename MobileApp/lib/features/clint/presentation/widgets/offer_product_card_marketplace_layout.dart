@@ -244,7 +244,7 @@ class _OfferProductCardMarketplaceLayoutState
                     child: ProductPriceText(
                       amount: _formatAmount(displayPrice),
                       currency: currency,
-                      suffix: ProductPriceFormatter.unitSuffix(product),
+                      suffix: ProductPriceFormatter.unitSuffix(product, s: s),
                       amountStyle: TextStyle(
                         fontFamily: fontFamily,
                         fontSize: priceFontSize,

@@ -71,6 +71,9 @@ class CreateAdUnitOptions {
       case 'pcs':
       case 'قطعة':
       case 'قطع':
+      case 'قطعه':
+      case 'حبة':
+      case 'حبه':
         return 'Piece';
       case 'carton':
       case 'cartons':

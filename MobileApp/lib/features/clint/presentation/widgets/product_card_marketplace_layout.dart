@@ -249,7 +249,10 @@ class _ProductCardMarketplaceLayoutState
     final currency = ProductPriceFormatter.currencyCode(widget.product);
     final sale = widget.product.salePriceValue;
     final original = widget.product.originalPriceValue;
-    final unit = ProductPriceFormatter.unitSuffix(widget.product);
+    final unit = ProductPriceFormatter.unitSuffix(
+      widget.product,
+      s: S.of(context),
+    );
 
     final titleWidget = Text(
       displayTitle.isEmpty ? 'Product' : displayTitle,
