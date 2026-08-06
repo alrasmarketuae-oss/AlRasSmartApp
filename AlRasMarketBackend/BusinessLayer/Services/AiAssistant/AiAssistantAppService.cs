@@ -218,14 +218,8 @@ public sealed class AiAssistantAppService(
         var account = await ResolveAccountContextAsync(userId, cancellationToken)
             .ConfigureAwait(false);
 
-        var snippet = message.Length <= 120 ? message : message[..117] + "...";
-        await ReportThinkingAsync(
-                onThinkingStep,
-                language == "ar"
-                    ? $"المستخدم بيسأل: «{snippet}»"
-                    : $"The user is asking: \"{snippet}\"",
-                cancellationToken)
-            .ConfigureAwait(false);
+        // Thinking steps (large/random phrases) are emitted only when MCP tools run
+        // inside CompleteWithToolsAsync — never for plain Q&A / RAG / greetings.
 
         // Unauthorized create-ad: refuse immediately — never collect fields or enter plan flow.
         if (LooksLikeCreateAdIntent(message)
@@ -238,67 +232,22 @@ public sealed class AiAssistantAppService(
                 account.DisplayName);
             if (denial is not null)
             {
-                await ReportThinkingAsync(
-                        onThinkingStep,
-                        language == "ar"
-                            ? "أتحقق من صلاحية إنشاء الإعلان لهذا الحساب أولاً…"
-                            : "Checking whether this account is allowed to create this ad…",
-                        cancellationToken)
-                    .ConfigureAwait(false);
                 return denial;
             }
         }
 
-        if (IsAdCreationContext(message, history))
-        {
-            await ReportThinkingAsync(
-                    onThinkingStep,
-                    PickAdLargeTaskThinking(language),
-                    cancellationToken)
-                .ConfigureAwait(false);
-        }
-        else if (LooksLikeAdCreation(message))
-        {
-            await ReportThinkingAsync(
-                    onThinkingStep,
-                    PickAdLargeTaskThinking(language),
-                    cancellationToken)
-                .ConfigureAwait(false);
-        }
-
         if (IsGreeting(message) || IsCapabilitiesQuestion(message))
         {
-            await ReportThinkingAsync(
-                    onThinkingStep,
-                    language == "ar"
-                        ? "سؤال عن هويتي/قدراتي — هرد بقائمة ما أقدر أعمله حسب نوع الحساب."
-                        : "Identity/capabilities question — answering with what I can do for this account type.",
-                    cancellationToken)
-                .ConfigureAwait(false);
             return BuildCapabilitiesAnswer(language, account);
         }
 
         if (IsSupplierPayoutTimingQuestion(message))
         {
-            await ReportThinkingAsync(
-                    onThinkingStep,
-                    language == "ar"
-                        ? "سؤال عن موعد استلام الفلوس بعد البيع — هرد حسب نوع الطلب (تجزئة / غير تجزئة)."
-                        : "Payout-timing question — answering by Retail vs non-Retail rules.",
-                    cancellationToken)
-                .ConfigureAwait(false);
             return BuildSupplierPayoutTimingAnswer(language, account);
         }
 
         if (IsClearlyOutOfScope(message))
         {
-            await ReportThinkingAsync(
-                    onThinkingStep,
-                    language == "ar"
-                        ? "السؤال برا نطاق سوق الراس — هوضّح الحدود."
-                        : "Question is outside Al Ras Market — explaining the scope.",
-                    cancellationToken)
-                .ConfigureAwait(false);
             return new AiAssistantAnswer(
                 language == "ar"
                     ? $"{(string.IsNullOrWhiteSpace(account.DisplayName) ? "" : account.DisplayName + "، ")}أقدر أساعدك في أمور سوق الراس بس، زي الإعلانات والأسعار والطلبات والبحث وأسعار الشحن."
@@ -311,14 +260,6 @@ public sealed class AiAssistantAppService(
         var audience = account.Audience;
         try
         {
-            await ReportThinkingAsync(
-                    onThinkingStep,
-                    language == "ar"
-                        ? "بدور في معرفة سوق الراس…"
-                        : "Searching Al Ras Market knowledge…",
-                    cancellationToken)
-                .ConfigureAwait(false);
-
             // Follow-ups like "and after that?" are meaningless alone, so retrieval
             // is done on the recent turns plus the new message.
             var retrievalQuery = BuildRetrievalQuery(message, history);
@@ -344,39 +285,9 @@ public sealed class AiAssistantAppService(
                     .ConfigureAwait(false);
             }
 
-            await ReportThinkingAsync(
-                    onThinkingStep,
-                    hits.Count > 0
-                        ? (language == "ar"
-                            ? $"لقيت {hits.Count} مصدر معرفة مناسب."
-                            : $"Found {hits.Count} relevant knowledge source(s).")
-                        : (language == "ar"
-                            ? "مفيش تطابق قوي في المعرفة — هكمّل بالأدوات الحية لو محتاج."
-                            : "No strong knowledge match — continuing with live tools if needed."),
-                    cancellationToken)
-                .ConfigureAwait(false);
-
-            await ReportThinkingAsync(
-                    onThinkingStep,
-                    language == "ar"
-                        ? "بسأل نموذج الراس الذكي وأشوف لو محتاج أدوات…"
-                        : "Asking Alras Smart and checking whether tools are needed…",
-                    cancellationToken)
-                .ConfigureAwait(false);
-
             // Still generate when knowledge is empty: tools (price/qty/sales/cheapest)
             // can answer live marketplace questions without RAG hits.
             var isAdCreation = IsAdCreationContext(message, history);
-            if (isAdCreation)
-            {
-                await ReportThinkingAsync(
-                        onThinkingStep,
-                        language == "ar"
-                            ? "أراجع الحقول المطلوبة لهذا النوع وأقارنها بما زودني به المستخدم…"
-                            : "Reviewing required fields for this ad type against what the user provided…",
-                        cancellationToken)
-                    .ConfigureAwait(false);
-            }
 
             var answer = await GenerateGroundedAnswerAsync(
                     message,
@@ -387,12 +298,6 @@ public sealed class AiAssistantAppService(
                     userId,
                     isAdCreation,
                     onThinkingStep,
-                    cancellationToken)
-                .ConfigureAwait(false);
-
-            await ReportThinkingAsync(
-                    onThinkingStep,
-                    language == "ar" ? "بجهّز الرد النهائي…" : "Preparing the final answer…",
                     cancellationToken)
                 .ConfigureAwait(false);
 
@@ -586,17 +491,6 @@ public sealed class AiAssistantAppService(
         }
         messages.Add(new { role = "user", content = message });
 
-        if (isAdCreation)
-        {
-            await ReportThinkingAsync(
-                    onThinkingStep,
-                    language == "ar"
-                        ? "أحاول إضافة الإعلان عند اكتمال البيانات…"
-                        : "Will attempt to add the ad once all required data is complete…",
-                    cancellationToken)
-                .ConfigureAwait(false);
-        }
-
         return await mcpToolLoop.CompleteWithToolsAsync(
                 httpClient,
                 apiKey,
@@ -686,19 +580,6 @@ public sealed class AiAssistantAppService(
 
         var visible = string.Join("\n", userLines).Trim();
         return string.IsNullOrWhiteSpace(visible) ? message : visible;
-    }
-
-    private static async Task ReportThinkingAsync(
-        Func<string, CancellationToken, Task>? onThinkingStep,
-        string step,
-        CancellationToken cancellationToken)
-    {
-        if (onThinkingStep is null || string.IsNullOrWhiteSpace(step))
-        {
-            return;
-        }
-
-        await onThinkingStep(step.Trim(), cancellationToken).ConfigureAwait(false);
     }
 
     private static string BuildRetrievalQuery(
@@ -1045,40 +926,6 @@ public sealed class AiAssistantAppService(
         string[] terms =
             ["what time", "time now", "weather", "news today", "الساعة كام", "الساعه كام", "الطقس", "أخبار اليوم", "اخبار اليوم"];
         return terms.Any(q.Contains);
-    }
-
-    private static readonly string[] AdLargeTaskPhrasesAr =
-    [
-        "هذه مهمة كبيرة — هقسمها لخطوات وأجمع البيانات بالترتيب…",
-        "أفكر بعمق في متطلبات هذا الإعلان قبل ما أبدأ…",
-        "طلب كبير شوية — هراجع نوع الإعلان والحقول المطلوبة أولاً…",
-        "خلّيني أخطط كويس قبل إضافة الإعلان…",
-        "بفكّر بهدوء: إيه الناقص عشان نقدر ننشر؟",
-        "مهمة مركّبة — هرتّب الخطوات ثم أرد عليك…",
-        "بأستكشف المتطلبات أولاً، وبعدين نكمّل إضافة الإعلان…",
-        "هتمهل شوية وأراجع البيانات المطلوبة لهذا النوع…",
-        "بفكّر خطوة بخطوة عشان ما يفوتناش حقل مهم…",
-        "ده طلب يحتاج تركيز — هجمع المطلوب ثم أحاول النشر…"
-    ];
-
-    private static readonly string[] AdLargeTaskPhrasesEn =
-    [
-        "This is a large task — I’ll break it into steps and collect the data in order…",
-        "Thinking deeply about this ad’s requirements before I start…",
-        "Quite a big request — reviewing the ad type and required fields first…",
-        "Let me plan carefully before adding the ad…",
-        "Thinking calmly: what’s still missing so we can publish?",
-        "A complex task — I’ll organize the steps, then reply…",
-        "Exploring the requirements first, then we’ll finish creating the ad…",
-        "Taking a moment to review the fields needed for this type…",
-        "Working step by step so we don’t miss an important field…",
-        "This needs focus — I’ll gather what’s required, then try to publish…"
-    ];
-
-    private static string PickAdLargeTaskThinking(string language)
-    {
-        var pool = language == "ar" ? AdLargeTaskPhrasesAr : AdLargeTaskPhrasesEn;
-        return pool[Random.Shared.Next(pool.Length)];
     }
 
     private sealed record AccountContext(string Audience, string? DisplayName);

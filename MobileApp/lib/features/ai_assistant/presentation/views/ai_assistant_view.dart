@@ -74,46 +74,6 @@ class _AiChatColors {
       planMode ? const Color(0xFFE6A817) : const Color(0xFF34D399);
 }
 
-const _thinkingIntroPhrasesEn = [
-  'Thought briefly…',
-  'Planning next moves…',
-  'Reviewing your request…',
-  'Connecting the dots…',
-];
-
-const _thinkingIntroPhrasesAr = [
-  'فكرت للحظة…',
-  'بخطط الخطوة الجاية…',
-  'براجع طلبك…',
-  'بجمّع التفاصيل…',
-];
-
-const _adLargeTaskPhrasesAr = [
-  'هذه مهمة كبيرة — هقسمها لخطوات وأجمع البيانات بالترتيب…',
-  'أفكر بعمق في متطلبات هذا الإعلان قبل ما أبدأ…',
-  'طلب كبير شوية — هراجع نوع الإعلان والحقول المطلوبة أولاً…',
-  'خلّيني أخطط كويس قبل إضافة الإعلان…',
-  'بفكّر بهدوء: إيه الناقص عشان نقدر ننشر؟',
-  'مهمة مركّبة — هرتّب الخطوات ثم أرد عليك…',
-  'بأستكشف المتطلبات أولاً، وبعدين نكمّل إضافة الإعلان…',
-  'هتمهل شوية وأراجع البيانات المطلوبة لهذا النوع…',
-  'بفكّر خطوة بخطوة عشان ما يفوتناش حقل مهم…',
-  'ده طلب يحتاج تركيز — هجمع المطلوب ثم أحاول النشر…',
-];
-
-const _adLargeTaskPhrasesEn = [
-  'This is a large task — I’ll break it into steps and collect the data in order…',
-  'Thinking deeply about this ad’s requirements before I start…',
-  'Quite a big request — reviewing the ad type and required fields first…',
-  'Let me plan carefully before adding the ad…',
-  'Thinking calmly: what’s still missing so we can publish?',
-  'A complex task — I’ll organize the steps, then reply…',
-  'Exploring the requirements first, then we’ll finish creating the ad…',
-  'Taking a moment to review the fields needed for this type…',
-  'Working step by step so we don’t miss an important field…',
-  'This needs focus — I’ll gather what’s required, then try to publish…',
-];
-
 class AiAssistantView extends StatefulWidget {
   const AiAssistantView({super.key});
 
@@ -260,37 +220,14 @@ class _AiAssistantViewState extends State<AiAssistantView> {
       apiText = buffer.toString();
     }
 
-    final intro = (isAr ? _thinkingIntroPhrasesAr : _thinkingIntroPhrasesEn)[
-        DateTime.now().millisecond %
-            (isAr
-                ? _thinkingIntroPhrasesAr.length
-                : _thinkingIntroPhrasesEn.length)];
-    final adLargeTask = (isAr ? _adLargeTaskPhrasesAr : _adLargeTaskPhrasesEn)[
-        DateTime.now().microsecond %
-            (isAr
-                ? _adLargeTaskPhrasesAr.length
-                : _adLargeTaskPhrasesEn.length)];
-
+    // Do not seed fake "thinking" copy here. Steps come only from backend MCP
+    // tool calls (aiThinkingStep). Ordinary Q&A shows a spinner with no steps.
     setState(() {
       _messages.add(_ChatMessage(text: visibleText, isUser: true));
       _controller.clear();
       _isThinking = true;
       _thinkingStartedAt = DateTime.now();
-      _thinkingSteps
-        ..clear()
-        ..addAll(
-          _planMode
-              ? (isAr
-                  ? [
-                      adLargeTask,
-                      'أراجع الحقول المطلوبة وأقارنها بما زودتني به…',
-                    ]
-                  : [
-                      adLargeTask,
-                      'Reviewing required fields against what you provided…',
-                    ])
-              : [intro],
-        );
+      _thinkingSteps.clear();
       _draftImagePaths.clear();
       _draftVideoPath = null;
       _draftVideoDurationSeconds = null;
