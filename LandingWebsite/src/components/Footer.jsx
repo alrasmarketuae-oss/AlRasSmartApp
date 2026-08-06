@@ -13,7 +13,7 @@ export default function Footer({ lang }) {
           <div className="mb-4 flex items-center gap-3">
             <img src="/logo.png" alt="" className="h-12 w-12 rounded-xl object-cover" />
             <div>
-              <p className="font-bold text-white">{isAr ? 'سوق الراس' : 'Al Ras Market'}</p>
+              <p className="font-bold text-white">{isAr ? 'الراس الذكي' : 'Al Ras Smart'}</p>
               <p className="text-sm text-blue-200">{t.tagline}</p>
             </div>
           </div>

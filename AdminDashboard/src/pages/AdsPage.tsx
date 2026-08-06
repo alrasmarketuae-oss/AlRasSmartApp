@@ -31,7 +31,7 @@ const defaultFilters: AppliedFilters = {
 }
 
 export default function AdsPage() {
-  const { t } = useAppPreferences()
+  const { t, locale } = useAppPreferences()
   const location = useLocation()
   const navigate = useNavigate()
   const searchParams = new URLSearchParams(location.search)
@@ -77,8 +77,9 @@ export default function AdsPage() {
       createdFrom: createdOnValue || undefined,
       createdTo: createdOnValue || undefined,
       editResubmitOnly: adEditsOnly ? true : undefined,
+      lang: locale,
     }
-  }, [page, pageSize, appliedFilters, adEditsOnly])
+  }, [page, pageSize, appliedFilters, adEditsOnly, locale])
 
   const {
     data: productsData,

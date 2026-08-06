@@ -9,9 +9,9 @@ export default function Navbar({ lang, setLang }) {
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
         <Link to="/" className="flex items-center gap-3">
-          <img src="/logo.png" alt="Al Ras Market" className="h-10 w-10 rounded-xl bg-white object-cover p-1 shadow-lg ring-1 ring-slate-200" />
+          <img src="/logo.png" alt="Al Ras Smart" className="h-10 w-10 rounded-xl bg-white object-cover p-1 shadow-lg ring-1 ring-slate-200" />
           <div className={isAr ? 'text-right' : 'text-left'}>
-            <p className="text-sm font-bold text-slate-900">{isAr ? 'سوق الراس' : 'Al Ras Market'}</p>
+            <p className="text-sm font-bold text-slate-900">{isAr ? 'الراس الذكي' : 'Al Ras Smart'}</p>
             <p className="text-xs text-slate-600">{isAr ? 'تجارة الجملة' : 'Wholesale Trade'}</p>
           </div>
         </Link>

@@ -208,6 +208,7 @@ public interface IAdminProductsAppService
         DateTime? createdTo,
         bool? hasPendingOffers = null,
         bool? editResubmitOnly = null,
+        string? language = null,
         CancellationToken cancellationToken = default);
 
     Task<AdminProductStatsDto> GetProductStatsAsync(CancellationToken cancellationToken = default);
@@ -225,7 +226,10 @@ public interface IAdminProductsAppService
         AdminRejectProductRequest request,
         CancellationToken cancellationToken = default);
 
-    Task<AdminProductDetailDto> GetProductByIdAsync(string productId, CancellationToken cancellationToken = default);
+    Task<AdminProductDetailDto> GetProductByIdAsync(
+        string productId,
+        string? language = null,
+        CancellationToken cancellationToken = default);
 
     Task<object> UpdateProductAsync(
         string productId,

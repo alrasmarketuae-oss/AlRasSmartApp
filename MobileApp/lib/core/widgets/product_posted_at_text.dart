@@ -1,5 +1,6 @@
 import 'package:alrasmarket/core/utils/assets.dart';
-import 'package:alrasmarket/core/utils/utc_date_time.dart';
+import 'package:alrasmarket/core/utils/relative_time_formatter.dart';
+import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -23,7 +24,7 @@ class ProductPostedAtText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = UtcDateTime.formatDateTimeLocal(createdAt);
+    final text = RelativeTimeFormatter.format(S.of(context), createdAt);
     if (text.isEmpty) return const SizedBox.shrink();
 
     final size = fontSize ?? 11.sp;

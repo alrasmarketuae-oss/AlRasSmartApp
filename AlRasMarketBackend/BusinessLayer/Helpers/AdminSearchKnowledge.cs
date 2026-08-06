@@ -61,9 +61,9 @@ public static class AdminSearchKnowledge
         new("settings-app-name", "settings", "/settings", "App name", "اسم التطبيق",
             "app name", "application name", "brand name", "app title", "platform name",
             "اسم التطبيق", "اسم البرنامج", "اسم المنصة", "اسم", "تطبيق", "التطبيق",
-            "سوق الراس", "سوق راس", "راس السوق", "ras al souq", "ras alsouq", "Ras Al Souq",
+            "الراس الذكي", "سوق راس", "راس السوق", "ras al souq", "ras alsouq", "Ras Al Souq",
             "RasAlSouq", "rasalsouq", "راس", "الراس", "سوق", "معلومات التطبيق", "app info",
-            "تطبيق الراس", "Al Ras App", "al ras app", "AlRasApp"),
+            "تطبيق الراس الذكي", "Al Ras Smart", "al ras app", "AlRasApp"),
 
         new("settings-support", "settings", "/settings", "Support contact", "بيانات الدعم",
             "support email", "support phone", "contact email", "phone number", "landline", "timezone", "address",

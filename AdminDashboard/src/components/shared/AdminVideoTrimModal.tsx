@@ -6,7 +6,8 @@ import { trimVideoToFile } from '../../utils/videoTrim'
 
 type AdminVideoTrimModalProps = {
   open: boolean
-  videoUrl: string
+  videoPath: string
+  knownDurationSeconds?: number | null
   isSaving?: boolean
   onClose: () => void
   onSave: (file: File, durationSeconds: number) => Promise<void>
@@ -18,15 +19,80 @@ function formatTime(seconds: number): string {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
+async function probeVideoDuration(
+  video: HTMLVideoElement,
+  fallbackSeconds?: number | null,
+): Promise<number> {
+  if (
+    Number.isFinite(video.duration) &&
+    video.duration > 0 &&
+    video.duration !== Number.POSITIVE_INFINITY
+  ) {
+    return video.duration
+  }
+
+  if (fallbackSeconds != null && fallbackSeconds > 0) {
+    return fallbackSeconds
+  }
+
+  return new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      cleanup()
+      if (fallbackSeconds != null && fallbackSeconds > 0) {
+        resolve(fallbackSeconds)
+        return
+      }
+      reject(new Error('Could not load video'))
+    }, 15000)
+
+    const onDurationChange = () => {
+      if (
+        Number.isFinite(video.duration) &&
+        video.duration > 0 &&
+        video.duration !== Number.POSITIVE_INFINITY
+      ) {
+        cleanup()
+        resolve(video.duration)
+      }
+    }
+
+    const onSeeked = () => {
+      if (Number.isFinite(video.currentTime) && video.currentTime > 0) {
+        const duration = video.currentTime
+        cleanup()
+        video.pause()
+        video.currentTime = 0
+        resolve(duration)
+      }
+    }
+
+    const cleanup = () => {
+      window.clearTimeout(timeout)
+      video.removeEventListener('durationchange', onDurationChange)
+      video.removeEventListener('seeked', onSeeked)
+    }
+
+    video.addEventListener('durationchange', onDurationChange)
+    video.addEventListener('seeked', onSeeked)
+    video.currentTime = 1e10
+  })
+}
+
 export default function AdminVideoTrimModal({
   open,
-  videoUrl,
+  videoPath,
+  knownDurationSeconds = null,
   isSaving = false,
   onClose,
   onSave,
 }: AdminVideoTrimModalProps) {
   const { t } = useAppPreferences()
   const videoRef = useRef<HTMLVideoElement>(null)
+  const sourceBlobRef = useRef<Blob | null>(null)
+  const previewUrlRef = useRef<string | null>(null)
+  const loadTokenRef = useRef(0)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [isLoadingSource, setIsLoadingSource] = useState(false)
   const [duration, setDuration] = useState(0)
   const [startSec, setStartSec] = useState(0)
   const [clipLength, setClipLength] = useState(30)
@@ -38,28 +104,82 @@ export default function AdminVideoTrimModal({
   const trimDuration = Math.max(0, endSec - startSec)
 
   useEffect(() => {
-    if (!open) return
-    setDuration(0)
-    setStartSec(0)
-    setClipLength(30)
-    setReady(false)
-    setError(null)
-    setIsExporting(false)
-  }, [open, videoUrl])
+    if (!open || !videoPath.trim()) return
+
+    const loadToken = ++loadTokenRef.current
+    let cancelled = false
+
+    function revokePreviewUrl() {
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current)
+        previewUrlRef.current = null
+      }
+    }
+
+    async function loadSource() {
+      setDuration(0)
+      setStartSec(0)
+      setClipLength(30)
+      setReady(false)
+      setError(null)
+      setIsExporting(false)
+      setIsLoadingSource(true)
+      revokePreviewUrl()
+      sourceBlobRef.current = null
+      setPreviewUrl(null)
+
+      try {
+        const blob = await fetchAdminAssetBlob(videoPath)
+        if (cancelled || loadToken !== loadTokenRef.current) return
+
+        sourceBlobRef.current = blob
+        const objectUrl = URL.createObjectURL(blob)
+        previewUrlRef.current = objectUrl
+        setPreviewUrl(objectUrl)
+      } catch {
+        if (!cancelled && loadToken === loadTokenRef.current) {
+          setError(t('ads.trimVideoLoadError'))
+        }
+      } finally {
+        if (!cancelled && loadToken === loadTokenRef.current) {
+          setIsLoadingSource(false)
+        }
+      }
+    }
+
+    void loadSource()
+
+    return () => {
+      cancelled = true
+      sourceBlobRef.current = null
+      revokePreviewUrl()
+      setPreviewUrl(null)
+    }
+  }, [open, videoPath, t])
 
   if (!open) return null
 
-  function handleLoadedMetadata() {
+  async function handleVideoReady() {
     const video = videoRef.current
-    if (!video || !Number.isFinite(video.duration) || video.duration <= 0) {
+    if (!video) return
+
+    try {
+      const d = await probeVideoDuration(video, knownDurationSeconds)
+      if (!Number.isFinite(d) || d <= 0) {
+        setError(t('ads.trimVideoLoadError'))
+        setReady(false)
+        return
+      }
+
+      setDuration(d)
+      setStartSec(0)
+      setClipLength(Math.min(30, Math.max(1, Math.floor(d))))
+      setReady(true)
+      setError(null)
+    } catch {
       setError(t('ads.trimVideoLoadError'))
-      return
+      setReady(false)
     }
-    const d = video.duration
-    setDuration(d)
-    setStartSec(0)
-    setClipLength(Math.min(30, Math.max(1, Math.floor(d))))
-    setReady(true)
   }
 
   function handleStartChange(value: number) {
@@ -78,11 +198,11 @@ export default function AdminVideoTrimModal({
   }
 
   async function handleSave() {
-    if (!ready || trimDuration < 0.5) return
+    const blob = sourceBlobRef.current
+    if (!ready || !blob || trimDuration < 0.5) return
     setIsExporting(true)
     setError(null)
     try {
-      const blob = await fetchAdminAssetBlob(videoUrl)
       const { file, durationSeconds } = await trimVideoToFile(blob, startSec, endSec)
       await onSave(file, durationSeconds)
     } catch (err) {
@@ -92,7 +212,7 @@ export default function AdminVideoTrimModal({
     }
   }
 
-  const busy = isSaving || isExporting
+  const busy = isSaving || isExporting || isLoadingSource
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
@@ -112,15 +232,24 @@ export default function AdminVideoTrimModal({
         <p className="admin-text-muted px-4 py-2 text-xs">{t('ads.trimVideoHint')}</p>
 
         <div className="flex-1 overflow-auto px-4 pb-2">
-          <video
-            ref={videoRef}
-            src={videoUrl}
-            controls
-            preload="metadata"
-            className="mx-auto block max-h-[42vh] w-full rounded-lg bg-black"
-            onLoadedMetadata={handleLoadedMetadata}
-            onError={() => setError(t('ads.trimVideoLoadError'))}
-          />
+          {isLoadingSource ? (
+            <div className="flex min-h-[200px] items-center justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#3B7FC7] border-t-transparent" />
+            </div>
+          ) : previewUrl ? (
+            <video
+              key={previewUrl}
+              ref={videoRef}
+              src={previewUrl}
+              controls
+              preload="auto"
+              className="mx-auto block max-h-[42vh] w-full rounded-lg bg-black"
+              onLoadedMetadata={() => void handleVideoReady()}
+              onDurationChange={() => {
+                if (!ready) void handleVideoReady()
+              }}
+            />
+          ) : null}
 
           {ready ? (
             <div className="mt-4 space-y-4">

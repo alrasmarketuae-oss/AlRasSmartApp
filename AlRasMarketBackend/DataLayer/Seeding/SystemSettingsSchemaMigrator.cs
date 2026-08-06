@@ -41,9 +41,9 @@ public static class SystemSettingsSchemaMigrator
             IF OBJECT_ID(N'dbo.SystemSettings', N'U') IS NOT NULL
             BEGIN
                 UPDATE dbo.SystemSettings
-                SET AppName = N'تطبيق الراس',
+                SET AppName = N'تطبيق الراس الذكي',
                     UpdatedAt = GETUTCDATE()
-                WHERE AppName IN (N'سوق الراس', N'راس السوق', N'Al Ras Market', N'Ras Al Souq');
+                WHERE AppName IN (N'سوق الراس', N'راس السوق', N'Al Ras Market', N'Ras Al Souq', N'تطبيق الراس', N'Al Ras Smart');
             END
             """, cancellationToken).ConfigureAwait(false);
     }

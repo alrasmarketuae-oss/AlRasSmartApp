@@ -4,6 +4,7 @@ import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/widgets/primary_button.dart';
 import 'package:alrasmarket/core/utils/product_quantity_formatter.dart';
+import 'package:alrasmarket/core/utils/relative_time_formatter.dart';
 import 'package:alrasmarket/core/widgets/cached_app_image.dart';
 import 'package:alrasmarket/core/widgets/product_price_text.dart';
 import 'package:alrasmarket/core/utils/string_display_format.dart';
@@ -285,7 +286,7 @@ class _OrderCardState extends State<OrderCard>
                   child: _StatCell(
                     label: s.orderDate,
                     child: Text(
-                      _formatCreatedAt(order.createdAt),
+                      RelativeTimeFormatter.format(s, order.createdAt),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -314,14 +315,6 @@ class _OrderCardState extends State<OrderCard>
         ),
       ),
     );
-  }
-
-  String _formatCreatedAt(String raw) {
-    final parsed = DateTime.tryParse(raw);
-    if (parsed == null) return raw;
-    return '${parsed.day.toString().padLeft(2, '0')}/'
-        '${parsed.month.toString().padLeft(2, '0')}/'
-        '${parsed.year}';
   }
 }
 

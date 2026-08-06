@@ -3,7 +3,7 @@ export const content = {
     nav: { home: 'الرئيسية', features: 'المميزات', download: 'تحميل', terms: 'الشروط والخصوصية', modelTraining: 'تدريب النموذج', deleteAccount: 'حذف الحساب', contact: 'تواصل معنا', encryptedChat: 'تشفير المحادثات' },
     hero: {
       badge: 'منصة تجارة الجملة بين الشركات',
-      title: 'سوق الراس',
+      title: 'الراس الذكي',
       subtitle: 'منصة إلكترونية تربط الموردين والعملاء في تجارة المواد الغذائية والبقالة — طلبات، عروض، تجزئة، شحن، وتتبع كامل للطلبات من مكان واحد.',
       cta: 'حمّل التطبيق الآن',
       stats: [
@@ -17,7 +17,7 @@ export const content = {
       subtitle: 'اختر منصتك وابدأ التجارة بسهولة وأمان',
       androidBtn: 'تحميل أندرويد',
       iosBtn: 'تحميل iOS',
-      screenTitle: 'سوق الراس',
+      screenTitle: 'الراس الذكي',
       screenSubtitle: 'تجارة الجملة الذكية',
     },
     features: {
@@ -47,11 +47,11 @@ export const content = {
       items: ['توابل', 'بقوليات', 'مكسرات', 'قهوة', 'تمور', 'أرز', 'سكر', 'طحين', 'مجمدات', 'دواجن', 'حلويات', 'معلبات'],
     },
     cta: {
-      title: 'ابدأ رحلتك مع سوق الراس اليوم',
+      title: 'ابدأ رحلتك مع الراس الذكي اليوم',
       subtitle: 'حمّل التطبيق وانضم إلى منصة تجارة الجملة الرائدة في الإمارات',
     },
     footer: {
-      rights: '© 2026 سوق الراس — شركة ميرج سبايس لتجارة المواد الغذائية',
+      rights: '© 2026 الراس الذكي — شركة ميرج سبايس لتجارة المواد الغذائية',
       tagline: 'منصة آمنة وموثوقة لتجارة الجملة',
     },
     termsPage: {
@@ -81,7 +81,7 @@ export const content = {
       badge: 'أمان المحادثات',
       heading: 'الرسائل مشفّرة تشفيرًا تامًا بين الطرفين',
       intro:
-        'في سوق الراس، محادثة الدعم محمية بتشفير هجين (مفتاح عام/خاص + مفتاح جلسة AES). فقط الأشخاص داخل هذه المحادثة يستطيعون القراءة أو الاستماع بعد فك التشفير على أجهزتهم.',
+        'في الراس الذكي، محادثة الدعم محمية بتشفير هجين (مفتاح عام/خاص + مفتاح جلسة AES). فقط الأشخاص داخل هذه المحادثة يستطيعون القراءة أو الاستماع بعد فك التشفير على أجهزتهم.',
     },
     contactPage: {
       heading: 'تواصل معنا',
@@ -144,7 +144,7 @@ export const content = {
     nav: { home: 'Home', features: 'Features', download: 'Download', terms: 'Terms & Privacy', modelTraining: 'Model training', deleteAccount: 'Delete account', contact: 'Contact', encryptedChat: 'Encrypted chat' },
     hero: {
       badge: 'B2B wholesale marketplace',
-      title: 'Al Ras Market',
+      title: 'Al Ras Smart',
       subtitle: 'An electronic platform connecting suppliers and clients in food & grocery trade — requests, offers, retail, shipping, and full order tracking in one app.',
       cta: 'Download the App',
       stats: [
@@ -158,7 +158,7 @@ export const content = {
       subtitle: 'Choose your platform and start trading securely',
       androidBtn: 'Download Android',
       iosBtn: 'Download iOS',
-      screenTitle: 'Al Ras Market',
+      screenTitle: 'Al Ras Smart',
       screenSubtitle: 'Smart wholesale trade',
     },
     features: {
@@ -188,11 +188,11 @@ export const content = {
       items: ['Spices', 'Pulses', 'Nuts', 'Coffee', 'Dates', 'Rice', 'Sugar', 'Flour', 'Frozen', 'Poultry', 'Sweets', 'Canned'],
     },
     cta: {
-      title: 'Start your journey with Al Ras Market today',
+      title: 'Start your journey with Al Ras Smart today',
       subtitle: 'Download the app and join the leading wholesale platform in the UAE',
     },
     footer: {
-      rights: '© 2026 Al Ras Market — Merge Spice Foodstuff Trading LLC',
+      rights: '© 2026 Al Ras Smart — Merge Spice Foodstuff Trading LLC',
       tagline: 'A secure and trusted wholesale marketplace',
     },
     termsPage: {
@@ -222,7 +222,7 @@ export const content = {
       badge: 'Chat security',
       heading: 'Messages are end-to-end encrypted',
       intro:
-        'In Al Ras Market, support chat uses hybrid encryption (public/private keys + AES session keys). Only people in the conversation can read or listen after decrypting on their devices.',
+        'In Al Ras Smart, support chat uses hybrid encryption (public/private keys + AES session keys). Only people in the conversation can read or listen after decrypting on their devices.',
     },
     contactPage: {
       heading: 'Contact Us',

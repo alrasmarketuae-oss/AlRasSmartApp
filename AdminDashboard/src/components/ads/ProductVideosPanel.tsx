@@ -1,7 +1,7 @@
 import { resolveAssetUrl } from '../../lib/assets'
 
 type ProductVideosPanelProps = {
-  videos: { path: string; isMuted?: boolean }[]
+  videos: { path: string; isMuted?: boolean; durationSeconds?: number | null }[]
   selectedIndex: number
   onSelectedIndexChange: (index: number) => void
   onMuteChange: (path: string, muted: boolean) => void
@@ -64,14 +64,21 @@ export default function ProductVideosPanel({
   return (
     <div className={className}>
       {activeUrl ? (
-        <video
-          key={activePath}
-          controls
-          muted={activeVideo.isMuted ?? true}
-          preload="metadata"
-          className={videoClassName}
-          src={activeUrl}
-        />
+        <div className="space-y-1">
+          <video
+            key={activePath}
+            controls
+            muted={activeVideo.isMuted ?? true}
+            preload="metadata"
+            className={videoClassName}
+            src={activeUrl}
+          />
+          {activeVideo.durationSeconds != null && activeVideo.durationSeconds > 0 ? (
+            <p className="text-center text-[10px] font-semibold text-slate-500">
+              {activeVideo.durationSeconds}s
+            </p>
+          ) : null}
+        </div>
       ) : null}
 
       {count > 1 ? (

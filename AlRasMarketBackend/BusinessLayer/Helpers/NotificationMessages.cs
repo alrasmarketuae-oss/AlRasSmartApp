@@ -274,10 +274,10 @@ public static class NotificationMessages
         {
             var body = hasNotes
                 ? $"تمت الموافقة على إعلانك \"{safeName}\". ملاحظات الإدارة: {notes}"
-                : $"تمت الموافقة على إعلانك \"{safeName}\" وهو متاح الآن على تطبيق الراس.";
+                : $"تمت الموافقة على إعلانك \"{safeName}\" وهو متاح الآن على تطبيق الراس الذكي.";
 
             return (
-                "تمت الموافقة على إعلانك - Al Ras App",
+                "تمت الموافقة على إعلانك - Al Ras Smart",
                 BuildAdDecisionEmailHtml(true, safeName, adminNotes, body, language),
                 "تمت الموافقة على الإعلان",
                 body);
@@ -285,10 +285,10 @@ public static class NotificationMessages
 
         var bodyEn = hasNotes
             ? $"Your ad \"{safeName}\" has been approved. Admin notes: {notes}"
-            : $"Your ad \"{safeName}\" has been approved and is now live on Al Ras App.";
+            : $"Your ad \"{safeName}\" has been approved and is now live on Al Ras Smart.";
 
         return (
-            "Your ad was approved - Al Ras App",
+            "Your ad was approved - Al Ras Smart",
             BuildAdDecisionEmailHtml(true, safeName, adminNotes, bodyEn, language),
             "Ad Approved",
             bodyEn);
@@ -304,7 +304,7 @@ public static class NotificationMessages
         {
             var body = $"تم استلام تعديلاتك على إعلان \"{safeName}\". الإعلان قيد المراجعة وسنُبلغك عند الموافقة أو الرفض.";
             return (
-                "تم إرسال تعديلات الإعلان للمراجعة - تطبيق الراس",
+                "تم إرسال تعديلات الإعلان للمراجعة - تطبيق الراس الذكي",
                 BrandEmailLayout.Headline("الإعلان قيد المراجعة") +
                 BrandEmailLayout.Paragraph(body) +
                 BrandEmailLayout.InfoCard("الإعلان", safeName) +
@@ -315,7 +315,7 @@ public static class NotificationMessages
 
         var bodyEn = $"Your edits to \"{safeName}\" were received. The ad is under review and we will notify you when it is approved or rejected.";
         return (
-            "Ad edits submitted for review - Al Ras App",
+            "Ad edits submitted for review - Al Ras Smart",
             BrandEmailLayout.Headline("Ad under review") +
             BrandEmailLayout.Paragraph(bodyEn) +
             BrandEmailLayout.InfoCard("Ad", safeName) +
@@ -342,7 +342,7 @@ public static class NotificationMessages
         {
             var body = $"لم تتم الموافقة على إعلانك \"{safeName}\". {reasonAr}";
             return (
-                "لم تتم الموافقة على إعلانك - Al Ras App",
+                "لم تتم الموافقة على إعلانك - Al Ras Smart",
                 BuildAdDecisionEmailHtml(false, safeName, reasonAr, body, language),
                 "لم تتم الموافقة على الإعلان",
                 body);
@@ -350,7 +350,7 @@ public static class NotificationMessages
 
         var bodyEn = $"Your ad \"{safeName}\" was not approved. {reasonEn}";
         return (
-            "Your ad was not approved - Al Ras App",
+            "Your ad was not approved - Al Ras Smart",
             BuildAdDecisionEmailHtml(false, safeName, reasonEn, bodyEn, language),
             "Ad Not Approved",
             bodyEn);
@@ -362,19 +362,19 @@ public static class NotificationMessages
         if (IsArabic(language))
         {
             return (
-                "تمت الموافقة على حساب شركتك - تطبيق الراس",
+                "تمت الموافقة على حساب شركتك - تطبيق الراس الذكي",
                 BrandEmailLayout.Headline("تمت الموافقة على حسابك") +
                 BrandEmailLayout.StatusPill("موافَق", BrandEmailLayout.Green) +
-                BrandEmailLayout.Paragraph("تمت الموافقة على حساب شركتك. يمكنك تسجيل الدخول واستخدام تطبيق الراس الآن."),
+                BrandEmailLayout.Paragraph("تمت الموافقة على حساب شركتك. يمكنك تسجيل الدخول واستخدام تطبيق الراس الذكي الآن."),
                 "تمت الموافقة على الحساب",
                 "تمت الموافقة على حساب شركتك. يمكنك تسجيل الدخول الآن.");
         }
 
         return (
-            "Your company account has been approved - Al Ras App",
+            "Your company account has been approved - Al Ras Smart",
             BrandEmailLayout.Headline("Your account is approved") +
             BrandEmailLayout.StatusPill("Approved", BrandEmailLayout.Green) +
-            BrandEmailLayout.Paragraph("Your company account is now approved. You can log in and start using Al Ras App."),
+            BrandEmailLayout.Paragraph("Your company account is now approved. You can log in and start using Al Ras Smart."),
             "Account Approved",
             "Your company account is approved. You can now log in.");
     }
@@ -385,7 +385,7 @@ public static class NotificationMessages
         if (IsArabic(language))
         {
             return (
-                "تمت الموافقة على تحديث بيانات شركتك - تطبيق الراس",
+                "تمت الموافقة على تحديث بيانات شركتك - تطبيق الراس الذكي",
                 BrandEmailLayout.Headline("تم اعتماد تحديث البيانات") +
                 BrandEmailLayout.StatusPill("موافَق", BrandEmailLayout.Green) +
                 BrandEmailLayout.Paragraph("تمت الموافقة على التعديلات التي طلبتها. ستظهر البيانات الجديدة مباشرة في حسابك."),
@@ -394,7 +394,7 @@ public static class NotificationMessages
         }
 
         return (
-            "Your profile update was approved - Al Ras App",
+            "Your profile update was approved - Al Ras Smart",
             BrandEmailLayout.Headline("Profile update approved") +
             BrandEmailLayout.StatusPill("Approved", BrandEmailLayout.Green) +
             BrandEmailLayout.Paragraph("Your requested profile changes were approved. The new data is now active on your account."),
@@ -411,7 +411,7 @@ public static class NotificationMessages
         if (IsArabic(language))
         {
             return (
-                "رفض تحديث بيانات شركتك - تطبيق الراس",
+                "رفض تحديث بيانات شركتك - تطبيق الراس الذكي",
                 BrandEmailLayout.Headline("لم تتم الموافقة على التحديث") +
                 BrandEmailLayout.StatusPill("مرفوض", BrandEmailLayout.Red) +
                 BrandEmailLayout.Paragraph("لم تتم الموافقة على تعديلات ملفك.") +
@@ -422,7 +422,7 @@ public static class NotificationMessages
         }
 
         return (
-            "Your profile update was rejected - Al Ras App",
+            "Your profile update was rejected - Al Ras Smart",
             BrandEmailLayout.Headline("Profile update not approved") +
             BrandEmailLayout.StatusPill("Rejected", BrandEmailLayout.Red) +
             BrandEmailLayout.Paragraph("Your requested profile changes were not approved.") +
@@ -441,10 +441,10 @@ public static class NotificationMessages
         if (IsArabic(language))
         {
             return (
-                "لم تتم الموافقة على حساب شركتك - تطبيق الراس",
+                "لم تتم الموافقة على حساب شركتك - تطبيق الراس الذكي",
                 BrandEmailLayout.Headline("لم تتم الموافقة على التسجيل") +
                 BrandEmailLayout.StatusPill("مرفوض", BrandEmailLayout.Red) +
-                BrandEmailLayout.Paragraph("لم تتم الموافقة على تسجيل حساب شركتك على تطبيق الراس.") +
+                BrandEmailLayout.Paragraph("لم تتم الموافقة على تسجيل حساب شركتك على تطبيق الراس الذكي.") +
                 BrandEmailLayout.InfoCard("السبب", safeReason) +
                 BrandEmailLayout.Paragraph("يرجى تحديث مستنداتك وإعادة التسجيل، أو التواصل مع الدعم إذا كان لديك أي استفسار."),
                 "لم تتم الموافقة على الحساب",
@@ -452,10 +452,10 @@ public static class NotificationMessages
         }
 
         return (
-            "Your company account was not approved - Al Ras App",
+            "Your company account was not approved - Al Ras Smart",
             BrandEmailLayout.Headline("Registration not approved") +
             BrandEmailLayout.StatusPill("Rejected", BrandEmailLayout.Red) +
-            BrandEmailLayout.Paragraph("Your company account registration on Al Ras App was not approved.") +
+            BrandEmailLayout.Paragraph("Your company account registration on Al Ras Smart was not approved.") +
             BrandEmailLayout.InfoCard("Reason", safeReason) +
             BrandEmailLayout.Paragraph("Please update your documents and register again, or contact support if you have questions."),
             "Account Not Approved",
@@ -466,7 +466,7 @@ public static class NotificationMessages
         IsArabic(language) ? "رسالة جديدة" : "New message";
 
     public static string ChatAdminSenderName(string? language) =>
-        IsArabic(language) ? "تطبيق الراس - الإدارة" : "Al Ras App - Admin";
+        IsArabic(language) ? "تطبيق الراس الذكي - الإدارة" : "Al Ras Smart - Admin";
 
     public static string ChatUserFallbackName(string? language) =>
         IsArabic(language) ? "مستخدم" : "User";

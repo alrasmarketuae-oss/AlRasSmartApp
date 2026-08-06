@@ -174,6 +174,7 @@ export default function RequestOfferDetailView({
     path: string
     orderVideoId?: number
     source: 'order' | 'product'
+    durationSeconds?: number | null
   } | null>(null)
   const [selectedVideoIndex, setSelectedVideoIndex] = useState(0)
 
@@ -1335,7 +1336,8 @@ export default function RequestOfferDetailView({
 
       <AdminVideoTrimModal
         open={trimTarget != null}
-        videoUrl={trimTarget ? resolveAssetUrl(trimTarget.path) : ''}
+        videoPath={trimTarget?.path ?? ''}
+        knownDurationSeconds={trimTarget?.durationSeconds}
         isSaving={isTrimmingVideo}
         onClose={() => setTrimTarget(null)}
         onSave={handleTrimSave}

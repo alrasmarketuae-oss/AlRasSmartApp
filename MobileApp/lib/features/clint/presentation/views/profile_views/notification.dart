@@ -1,6 +1,6 @@
 import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/serveses/notifications_service.dart';
-import 'package:alrasmarket/core/utils/utc_date_time.dart';
+import 'package:alrasmarket/core/utils/relative_time_formatter.dart';
 import 'package:alrasmarket/features/clint/data/models/app_notification_model.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/notification_navigation_helper.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/notification_card.dart';
@@ -254,8 +254,9 @@ class _NotificationsViewState extends State<NotificationsView> {
               subtitle: item.body,
               time: item.createdAt == null
                   ? ''
-                  : UtcDateTime.formatDateTimeLocal(
-                      item.createdAt!.toIso8601String(),
+                  : RelativeTimeFormatter.formatFromUtc(
+                      S.of(context),
+                      item.createdAt!.toUtc(),
                     ),
               icon: _iconFor(item),
               showUnreadDot: !item.isRead,

@@ -1,7 +1,7 @@
 export const modelTrainingAr = {
-  title: 'كيف يتدرب نموذج البحث بالصور في سوق الراس',
+  title: 'كيف يتدرب نموذج البحث بالصور في الراس الذكي',
   intro:
-    'يعتمد سوق الراس على نموذج ذكاء اصطناعي للبحث بالصور حتى يجد المستخدم منتجات مشابهة بسرعة ودقة. هذه الصفحة تشرح بأسلوب مبسط كيف يُبنى النموذج، وكيف تُستخدم صور الإعلانات، ولماذا نهتم دائماً بنتائج صحيحة.',
+    'يعتمد الراس الذكي على نموذج ذكاء اصطناعي للبحث بالصور حتى يجد المستخدم منتجات مشابهة بسرعة ودقة. هذه الصفحة تشرح بأسلوب مبسط كيف يُبنى النموذج، وكيف تُستخدم صور الإعلانات، ولماذا نهتم دائماً بنتائج صحيحة.',
   sections: [
     {
       title: '1) الهدف من النموذج',
@@ -46,7 +46,7 @@ export const modelTrainingAr = {
     {
       title: '6) التحسين المستمر والدقة',
       paragraphs: [
-        'النموذج لا يتوقف عند نسخة واحدة؛ مع إضافة إعلانات وصور جديدة تتحسن تغطية المنتجات ويزداد فهم النموذج لأنواع البضائع المعروضة في سوق الراس.',
+        'النموذج لا يتوقف عند نسخة واحدة؛ مع إضافة إعلانات وصور جديدة تتحسن تغطية المنتجات ويزداد فهم النموذج لأنواع البضائع المعروضة في الراس الذكي.',
         'نراجع جودة النتائج باستمرار لأن هدفنا نتائج صحيحة ومتسقة، خاصة في فئات المنتجات المتشابهة بصرياً.',
         'كلما كانت صور الإعلان أوضح وأقرب للمنتج الحقيقي، ساعد ذلك النموذج على إعطاء نتائج أفضل للجميع.',
       ],
@@ -71,9 +71,9 @@ export const modelTrainingAr = {
 }
 
 export const modelTrainingEn = {
-  title: 'How Al Ras Market trains its image-search model',
+  title: 'How Al Ras Smart trains its image-search model',
   intro:
-    'Al Ras Market uses an AI image-search model so users can find similar products quickly and accurately. This page explains, in plain language, how the model is built, how listing images are used, and why correct results always matter to us.',
+    'Al Ras Smart uses an AI image-search model so users can find similar products quickly and accurately. This page explains, in plain language, how the model is built, how listing images are used, and why correct results always matter to us.',
   sections: [
     {
       title: '1) Purpose of the model',
@@ -118,7 +118,7 @@ export const modelTrainingEn = {
     {
       title: '6) Continuous improvement and accuracy',
       paragraphs: [
-        'The model is not frozen at one version; as new ads and images are added, product coverage grows and the model better understands the types of goods listed on Al Ras Market.',
+        'The model is not frozen at one version; as new ads and images are added, product coverage grows and the model better understands the types of goods listed on Al Ras Smart.',
         'We continuously care about result quality because our goal is correct, consistent matches—especially in visually similar categories.',
         'Clearer listing photos that represent the real product help the model deliver better results for everyone.',
       ],

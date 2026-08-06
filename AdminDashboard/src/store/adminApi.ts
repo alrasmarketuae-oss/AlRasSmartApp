@@ -212,6 +212,7 @@ export const adminApi = createApi({
           createdTo: params.createdTo,
           hasPendingOffers: params.hasPendingOffers === true ? true : undefined,
           editResubmitOnly: params.editResubmitOnly === true ? true : undefined,
+          lang: params.lang,
         },
       }),
       transformResponse: normalizeProductsResponse,
@@ -272,11 +273,14 @@ export const adminApi = createApi({
 
     getAdminProductDetail: builder.query<
       ReturnType<typeof normalizeProductDetail>,
-      string
+      { productId: string; lang?: 'ar' | 'en' }
     >({
-      query: (productId) => `/api/admin/products/${productId}`,
+      query: ({ productId, lang }) => ({
+        url: `/api/admin/products/${productId}`,
+        params: lang ? { lang } : undefined,
+      }),
       transformResponse: normalizeProductDetail,
-      providesTags: (_r, _e, productId) => [{ type: 'Products', id: productId }],
+      providesTags: (_r, _e, { productId }) => [{ type: 'Products', id: productId }],
     }),
 
     getAdminProductLookups: builder.query<AdminProductLookups, void>({

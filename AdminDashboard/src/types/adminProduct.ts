@@ -150,6 +150,7 @@ export type AdminProductsFilters = {
   hasPendingOffers?: boolean
   /** Seller re-submitted an edited ad for approval. */
   editResubmitOnly?: boolean
+  lang?: 'ar' | 'en'
 }
 
 export type AdminProductStats = {

@@ -1,7 +1,7 @@
 import 'package:alrasmarket/core/utils/product_price_formatter.dart';
 import 'package:alrasmarket/core/utils/product_quantity_formatter.dart';
 import 'package:alrasmarket/core/utils/product_stock.dart';
-import 'package:alrasmarket/core/utils/utc_date_time.dart';
+import 'package:alrasmarket/core/utils/relative_time_formatter.dart';
 import 'package:alrasmarket/core/widgets/product_price_text.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/booking_widets/booking_details_card.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_price_type_label.dart';
@@ -214,7 +214,7 @@ class ProductDetailFactsCard extends StatelessWidget {
     if (postedAt.isNotEmpty) {
       addRow(
         label: isAr ? 'تاريخ ووقت الإضافة' : 'Posted date & time',
-        value: UtcDateTime.formatDateTimeLocal(postedAt),
+        value: RelativeTimeFormatter.format(s, postedAt),
       );
     }
 

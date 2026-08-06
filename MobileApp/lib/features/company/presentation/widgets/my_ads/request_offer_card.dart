@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/utils/product_quantity_formatter.dart';
+import 'package:alrasmarket/core/utils/relative_time_formatter.dart';
 import 'package:alrasmarket/core/widgets/cached_app_image.dart';
 import 'package:alrasmarket/core/widgets/product_price_text.dart';
 import 'package:alrasmarket/features/clint/presentation/models/product_media_item.dart';
@@ -65,6 +66,8 @@ class RequestOfferCard extends StatelessWidget {
       offer.statusId,
       fallbackName: offer.statusName,
     );
+    final orderTime = RelativeTimeFormatter.format(s, offer.createdAt);
+    final showOrderMeta = offer.orderId > 0 || orderTime.isNotEmpty;
 
     return Container(
       width: double.infinity,
@@ -122,6 +125,37 @@ class RequestOfferCard extends StatelessWidget {
               ),
             ],
           ),
+          if (showOrderMeta) ...[
+            SizedBox(height: 8.h),
+            Row(
+              children: [
+                if (offer.orderId > 0)
+                  Expanded(
+                    child: Text(
+                      '${s.orderNumber}: #${offer.orderId}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _textDark.withValues(alpha: 0.65),
+                        fontFamily: fontFamily,
+                        fontSize: 12.sp,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                if (orderTime.isNotEmpty)
+                  Text(
+                    orderTime,
+                    style: TextStyle(
+                      color: _textDark.withValues(alpha: 0.55),
+                      fontFamily: fontFamily,
+                      fontSize: 12.sp,
+                      height: 1.4,
+                    ),
+                  ),
+              ],
+            ),
+          ],
           SizedBox(height: 14.h),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,

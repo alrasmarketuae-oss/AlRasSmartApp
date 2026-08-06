@@ -294,7 +294,7 @@ export async function exportDashboardOrdersExcel(params: {
   const returnCount = params.orders.filter(isReturnOrder).length
   const L = labelsFor(locale, rate)
   const workbook = new ExcelJS.Workbook()
-  workbook.creator = 'Al Ras Market Admin'
+  workbook.creator = 'Al Ras Smart Admin'
   workbook.created = new Date()
 
   const sheet = workbook.addWorksheet(L.sheetOrders, {

@@ -1,7 +1,7 @@
 import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/utils/product_price_formatter.dart';
-import 'package:alrasmarket/core/utils/utc_date_time.dart';
+import 'package:alrasmarket/core/utils/relative_time_formatter.dart';
 import 'package:alrasmarket/core/widgets/product_price_text.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_price_type_label.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/booking_widets/booking_details_mapper.dart';
@@ -205,7 +205,7 @@ class AdRequestOrderInfoCard extends StatelessWidget {
                   SizedBox(height: 12.h),
                   _InfoRow(
                     label: isAr ? 'تاريخ ووقت الإضافة' : 'Posted date & time',
-                    value: UtcDateTime.formatDateTimeLocal(product.createdAt),
+                    value: RelativeTimeFormatter.format(s, product.createdAt),
                     fontFamily: fontFamily,
                   ),
                 ],

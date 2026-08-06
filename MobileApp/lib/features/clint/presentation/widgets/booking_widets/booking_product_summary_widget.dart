@@ -2,7 +2,7 @@ import 'package:alrasmarket/core/utils/product_price_formatter.dart';
 import 'package:alrasmarket/core/utils/product_quantity_formatter.dart';
 import 'package:alrasmarket/core/utils/product_stock.dart';
 import 'package:alrasmarket/core/utils/string_display_format.dart';
-import 'package:alrasmarket/core/utils/utc_date_time.dart';
+import 'package:alrasmarket/core/utils/relative_time_formatter.dart';
 import 'package:alrasmarket/core/widgets/product_price_text.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/booking_widets/booking_bullet_row.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/booking_widets/booking_details_design.dart';
@@ -333,7 +333,7 @@ class _BookingAdDetailsGrid extends StatelessWidget {
           icon: Icons.calendar_today_outlined,
           label: isAr ? 'تاريخ ووقت الإضافة' : 'Posted date & time',
           fontFamily: fontFamily,
-          value: UtcDateTime.formatDateTimeLocal(postedAt),
+          value: RelativeTimeFormatter.format(s, postedAt),
         ),
       );
     }

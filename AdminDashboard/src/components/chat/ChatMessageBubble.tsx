@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useAppPreferences } from '../../context/AppPreferencesProvider'
+import { formatChatRelativeTime } from '../../utils/formatChatRelativeTime'
 import { apiUrl } from '../../config/api.js'
 import { resolveAssetUrl } from '../../lib/assets'
 import VoiceAudioPlayer from './VoiceAudioPlayer'
@@ -17,6 +19,10 @@ type ChatMessageBubbleProps = {
 }
 
 export default function ChatMessageBubble({ message, isMine }: ChatMessageBubbleProps) {
+  const { t, locale } = useAppPreferences()
+  const timeLabel =
+    formatChatRelativeTime(message.sentAtUtc, locale) || message.relativeTime
+
   return (
     <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
       <div
@@ -32,8 +38,8 @@ export default function ChatMessageBubble({ message, isMine }: ChatMessageBubble
             isMine ? 'opacity-80' : 'text-slate-500 dark:text-slate-400'
           }`}
         >
-          <span>{message.relativeTime}</span>
-          {message.isEdited ? <span>· معدّلة</span> : null}
+          <span>{timeLabel}</span>
+          {message.isEdited ? <span>· {t('chat.edited')}</span> : null}
           {isMine ? <DeliveryIndicator message={message} /> : null}
         </div>
       </div>

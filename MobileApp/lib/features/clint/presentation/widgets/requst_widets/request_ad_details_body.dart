@@ -1,7 +1,7 @@
 import 'package:alrasmarket/core/utils/product_price_formatter.dart';
 import 'package:alrasmarket/core/utils/product_quantity_formatter.dart';
 import 'package:alrasmarket/core/utils/product_stock.dart';
-import 'package:alrasmarket/core/utils/utc_date_time.dart';
+import 'package:alrasmarket/core/utils/relative_time_formatter.dart';
 import 'package:alrasmarket/core/widgets/product_price_text.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_price_type_label.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/booking_widets/booking_details_design.dart';
@@ -381,7 +381,7 @@ class _RequestFactsCard extends StatelessWidget {
         icon: Icons.calendar_today_outlined,
         iconColor: BookingDetailsDesign.brandSoft,
         label: isAr ? 'تاريخ ووقت الإضافة' : 'Posted Date & Time',
-        value: UtcDateTime.formatDateTimeLocal(postedAt),
+        value: RelativeTimeFormatter.format(s, postedAt),
       );
     }
 
@@ -476,7 +476,7 @@ class _RequestLogisticsCard extends StatelessWidget {
       );
     }
 
-    final postingDate = RequestDetailsMapper.formattedPostingDate(product);
+    final postingDate = RequestDetailsMapper.formattedPostingDate(product, s);
     addRow(
       icon: Icons.calendar_month_outlined,
       iconColor: BookingDetailsDesign.brandSoft,

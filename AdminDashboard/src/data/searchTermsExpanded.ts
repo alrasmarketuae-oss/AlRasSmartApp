@@ -145,7 +145,7 @@ const MANUAL_SYNONYMS: Array<{ route: string; section: string; labelAr: string; 
       'اسم التطبيق',
       'اسم البرنامج',
       'اسم المنصة',
-      'سوق الراس',
+      'الراس الذكي',
       'سوق راس',
       'راس السوق',
       'ras al souq',

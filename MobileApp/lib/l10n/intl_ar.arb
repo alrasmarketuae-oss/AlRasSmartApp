@@ -93,7 +93,7 @@
     "smartAlRasAppFull": "تطبيق الراس الذكي",
     "appWord": "تطبيق",
     "platformForWholesaleTradeBetweenCompanies": "منصة تجارة الجملة بين الشركات",
-    "welcomeTagline": "منصة ذكية تربط الموردين والمشترين داخل سوق الراس وخارجه",
+    "welcomeTagline": "منصة ذكية تربط الموردين والمشترين داخل الراس الذكي وخارجه",
     "registerSupplier": "تسجيل مورد",
     "registerSupplierSubtitle": "اعرض منتجاتك ووصل لعملائك",
     "registerClient": "تسجيل عميل",
@@ -286,9 +286,9 @@
     "englishLabel": "الإنجليزية",
     "languagePreferenceHint": "اختر لغتك المفضلة. سيتم تحديث التطبيق فوراً.",
 "PolicyandPrivacy": "السياسة و الخصوصية",
-    "termsTitle": "سياسة الاستخدام والشروط والأحكام لتطبيق \"سوق الراس\"",
+    "termsTitle": "سياسة الاستخدام والشروط والأحكام لتطبيق \"الراس الذكي\"",
     "firstDefinitions": "أولاً: التعريفات",
-    "defApp": "يقصد بـ التطبيق: منصة سوق الراس الإلكترونية.",
+    "defApp": "يقصد بـ التطبيق: منصة الراس الذكي الإلكترونية.",
     "defCompany": "يقصد بـ الشركة: شركة ميرج سبايس لتجارة المواد الغذائية (Merge Spice Foodstuff Trading LLC).",
     "defSupplier": "يقصد بـ المورد: أي شركة أو فرد يقوم بعرض منتجاته عبر التطبيق.",
     "defClient": "يقصد بـ العميل: أي مستخدم يقوم بشراء المنتجات عبر التطبيق.",
@@ -411,7 +411,7 @@
         "shippingCompanyLogin": "تسجيل دخول شركة الشحن",
         "shippingCompanyLoginSubtitle": "سجّل دخولك لإدارة عروض الشحن والطلبات",
         "shippingCompanyRegister": "إنشاء حساب شركة شحن",
-        "shippingCompanyRegisterSubtitle": "أنشئ حسابك كشركة شحن على منصة سوق الراس",
+        "shippingCompanyRegisterSubtitle": "أنشئ حسابك كشركة شحن على منصة الراس الذكي",
         "shippingCompanyName": "اسم شركة الشحن",
         "enterShippingCompanyName": "ادخل اسم شركة الشحن",
         "shippingCompanyDashboard": "لوحة شركة الشحن",
@@ -439,7 +439,7 @@
   "product": "المنتج",
   "productCode": "رمز المنتج",
   "shareProduct": "مشاركة المنتج",
-  "shareProductHint": "ابحث عن هذا المنتج في سوق الراس.",
+  "shareProductHint": "ابحث عن هذا المنتج في الراس الذكي.",
   "shareProductSearchHint": "ابحث عن هذا الرمز في التطبيق لفتح المنتج.",
   "requestedQuantity": "الكمية المطلوبة",
   "offerDetails": "تفاصيل العرض",
@@ -769,8 +769,51 @@
   "uploadProfilePhoto": "رفع صورة الملف الشخصي",
   "clearAll": "مسح الكل",
   "justNow": "الآن",
+  "oneSecondAgo": "منذ ثانية",
+  "secondsAgo": "منذ {count} ثانية",
+  "@secondsAgo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "oneMinuteAgo": "منذ دقيقة",
+  "minutesAgo": "منذ {count} دقيقة",
+  "@minutesAgo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "oneHourAgo": "منذ ساعة",
+  "hoursAgoRelative": "منذ {count} ساعة",
+  "@hoursAgoRelative": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "oneDayAgo": "منذ يوم",
   "daysAgo": "منذ {days} أيام",
+  "oneWeekAgo": "منذ أسبوع",
+  "weeksAgo": "منذ {count} أسبوع",
+  "@weeksAgo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "oneMonthAgo": "منذ شهر",
+  "twoMonthsAgo": "منذ شهرين",
+  "monthsAgo": "منذ {count} شهر",
+  "@monthsAgo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "oneYearAgo": "منذ سنة",
+  "yearsAgo": "منذ {count} سنة",
+  "@yearsAgo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "sinceMinutesAgo": "منذ {minutes} دقيقة",
   "deliveryEmirate": "إمارة التوصيل",
   "selectDeliveryEmirate": "اختر إمارة التوصيل",
@@ -919,7 +962,7 @@
   "aiAssistantVoiceSend": "إرسال",
   "aiAssistantVoiceUnavailable": "الإدخال الصوتي غير متاح على هذا الجهاز",
   "aiAssistantUnsupportedLanguage": "ندعم العربية والإنجليزية حالياً. ترجمنا سؤالك للفهم إن أمكن، وسنرد بإحدى اللغتين المدعومتين.",
-  "aiAssistantOutOfScope": "أقدر أساعدك في أمور سوق الراس فقط (حسابات، إعلانات، طلبات، دفع، استرجاع). جرّب سؤالاً عن المنصة.",
+  "aiAssistantOutOfScope": "أقدر أساعدك في أمور الراس الذكي فقط (حسابات، إعلانات، طلبات، دفع، استرجاع). جرّب سؤالاً عن المنصة.",
   "aiAssistantImageSearchHint": "البحث بالصور: ارفع صورة منتج من شريط البحث ليجد النظام منتجات مشابهة في الكتالوج. التفاصيل في صفحة «تدريب نموذج البحث بالصور» من المساعدة والدعم.",
   "aiAssistantReturnPolicyHint": "للاسترجاع بسبب تلف أو انتهاء صلاحية أو اختلاف جوهري: أبلغ خلال 24 ساعة عمل من الاستلام مع صور. إن وافق الدعم يُعاد المبلغ خلال يوم عمل واحد، ويُخصم من رصيد المورد إن كان قد أُضيف.",
   "aiAssistantBalanceHint": "رصيد المورد يزيد فوراً عند بيع Retail بفيزا. الدفع عند الاستلام يزيد الرصيد بعد التحصيل/الاستلام. السحب عبر IBAN خلال 7 أيام عمل بعد موافقة الدعم.",
@@ -942,5 +985,5 @@
   "returnPolicyPayout": "تحويل أرباح/مستحقات المورد المعتمدة يتم خلال 7 أيام عمل وفق آلية المنصة.",
   "paymentRetailOnline": "الدفع الإلكتروني (أونلاين) متاح لطلبات التجزئة Retail فقط.",
   "paymentCodAll": "الدفع عند الاستلام ينطبق على بقية أنواع التعاملات حسب آلية المنصة وفريق رأس السوق.",
-  "supplierCollectionPolicy": "تسليم المورد البضاعة إلى تطبيق أو فريق سوق الراس لا يعني دفع قيمتها فوراً؛ لا تُصرف مستحقاته إلا بعد تحصيل قيمة الطلب فعلياً من المشتري أو العميل. بعد التحصيل تصبح قابلة للتسوية، وتحويل الأرباح المعتمدة يتم خلال 7 أيام عمل."
+  "supplierCollectionPolicy": "تسليم المورد البضاعة إلى تطبيق أو فريق الراس الذكي لا يعني دفع قيمتها فوراً؛ لا تُصرف مستحقاته إلا بعد تحصيل قيمة الطلب فعلياً من المشتري أو العميل. بعد التحصيل تصبح قابلة للتسوية، وتحويل الأرباح المعتمدة يتم خلال 7 أيام عمل."
 }

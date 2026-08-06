@@ -54,6 +54,7 @@ public class AdminProductsController(
         [FromQuery] DateTime? createdTo = null,
         [FromQuery] bool? hasPendingOffers = null,
         [FromQuery] bool? editResubmitOnly = null,
+        [FromQuery] string? lang = null,
         CancellationToken cancellationToken = default)
     {
         var result = await adminProductsAppService.GetProductsAsync(
@@ -69,6 +70,7 @@ public class AdminProductsController(
             createdTo,
             hasPendingOffers,
             editResubmitOnly,
+            lang,
             cancellationToken);
         return Ok(result);
     }
@@ -81,11 +83,14 @@ public class AdminProductsController(
     }
 
     [HttpGet("{productId}")]
-    public async Task<IActionResult> GetById(string productId, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetById(
+        string productId,
+        [FromQuery] string? lang = null,
+        CancellationToken cancellationToken = default)
     {
         try
         {
-            var result = await adminProductsAppService.GetProductByIdAsync(productId, cancellationToken);
+            var result = await adminProductsAppService.GetProductByIdAsync(productId, lang, cancellationToken);
             return Ok(result);
         }
         catch (ArgumentException ex)
@@ -129,7 +134,7 @@ public class AdminProductsController(
         [FromQuery] int pageSize = 20,
         [FromQuery] string? search = null,
         CancellationToken cancellationToken = default) =>
-        GetProducts(page, pageSize, search, "pending", null, null, null, null, null, null, null, null, cancellationToken);
+        GetProducts(page, pageSize, search, "pending", null, null, null, null, null, null, null, null, null, cancellationToken);
 
     [HttpPost("{productId}/approve")]
     public async Task<IActionResult> Approve(

@@ -122,12 +122,8 @@ public sealed class AiAssistantMcpToolLoop(
                                 DescribeToolCall(name, isArabic),
                                 cancellationToken)
                             .ConfigureAwait(false);
-                    }
-
-                    if (AdCreationToolNames.Contains(name) && onThinkingStep is not null)
-                    {
                         await onThinkingStep(
-                                PickAdCreateToolThinking(isArabic),
+                                PickMcpToolThinking(isArabic),
                                 cancellationToken)
                             .ConfigureAwait(false);
                     }
@@ -269,6 +265,23 @@ public sealed class AiAssistantMcpToolLoop(
     private static string DescribeToolCallEn(string toolName) =>
         toolName switch
         {
+            "get_my_last_order" => "Calling tool: your latest purchase (My Orders)…",
+            "get_my_purchase_summary" => "Calling tool: purchase summary / how much you spent…",
+            "explain_my_order_delay" => "Calling tool: why your order may be delayed…",
+            "get_my_sales_count" => "Calling tool: sales and orders on your ads…",
+            "get_last_order_on_my_ads" => "Calling tool: latest order on your ads…",
+            "explain_order_delay_on_my_ads" => "Calling tool: delay on an ad order…",
+            "find_cheapest_product" => "Calling tool: cheapest product match…",
+            "find_most_expensive_product" => "Calling tool: most expensive product match…",
+            "list_my_ads" => "Calling tool: your ad catalog…",
+            "get_my_last_ad" => "Calling tool: your most recent ad…",
+            "get_my_first_ad" => "Calling tool: your earliest ad…",
+            "update_ad_price_quantity" => "Calling tool: update price/quantity…",
+            "set_ad_listing_status" => "Calling tool: pause or activate an ad…",
+            "mark_ad_sold_out" => "Calling tool: mark sold out…",
+            "delete_ad" => "Calling tool: delete an ad…",
+            "list_my_ibans" => "Calling tool: balance and saved IBANs…",
+            "create_withdrawal" => "Calling tool: create withdrawal request…",
             "lookup_create_ad_reference" => "Exploring ad requirements (units/countries/port)…",
             "list_my_addresses" => "Listing saved delivery addresses…",
             "create_request_ad" => "Creating the Request ad on the server…",
@@ -440,7 +453,7 @@ public sealed class AiAssistantMcpToolLoop(
         }
     }
 
-    private static readonly string[] AdCreateToolThinkingAr =
+    private static readonly string[] McpToolThinkingAr =
     [
         "الشبكة العصبية تراجع السياق الكامل للبيانات…",
         "أجري استدلالًا أعمق عبر التفاصيل المجمّعة…",
@@ -474,7 +487,7 @@ public sealed class AiAssistantMcpToolLoop(
         "الذكاء الاصطناعي أوشك على إنهاء التحليل — أثبّت النتيجة الآن…"
     ];
 
-    private static readonly string[] AdCreateToolThinkingEn =
+    private static readonly string[] McpToolThinkingEn =
     [
         "The neural network is reviewing the full context of the data…",
         "Running deeper reasoning across the collected details…",
@@ -508,9 +521,9 @@ public sealed class AiAssistantMcpToolLoop(
         "The AI has nearly completed its analysis — locking in the result now…"
     ];
 
-    private static string PickAdCreateToolThinking(bool isArabic)
+    private static string PickMcpToolThinking(bool isArabic)
     {
-        var pool = isArabic ? AdCreateToolThinkingAr : AdCreateToolThinkingEn;
+        var pool = isArabic ? McpToolThinkingAr : McpToolThinkingEn;
         return pool[Random.Shared.Next(pool.Length)];
     }
 }

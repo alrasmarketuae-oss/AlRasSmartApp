@@ -4,6 +4,7 @@ import 'package:alrasmarket/core/search/app_search_actions.dart';
 import 'package:alrasmarket/core/search/search_history_entry.dart';
 import 'package:alrasmarket/core/search/user_search_history_service.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
+import 'package:alrasmarket/core/utils/relative_time_formatter.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -57,20 +58,10 @@ class _SearchHistorySheetState extends State<_SearchHistorySheet> {
   }
 
   String _timeAgo(BuildContext context, int createdAtMs) {
-    final diff = DateTime.now().difference(
-      DateTime.fromMillisecondsSinceEpoch(createdAtMs),
+    return RelativeTimeFormatter.formatFromLocalMs(
+      S.of(context),
+      createdAtMs,
     );
-    final s = S.of(context);
-    if (diff.inDays >= 1) {
-      return diff.inDays == 1 ? s.oneDayAgo : s.daysAgo(diff.inDays);
-    }
-    if (diff.inHours >= 1) {
-      return s.sinceHoursAgo(diff.inHours);
-    }
-    if (diff.inMinutes >= 1) {
-      return s.sinceMinutesAgo(diff.inMinutes);
-    }
-    return s.justNow;
   }
 
   IconData _iconFor(SearchHistoryType type) {

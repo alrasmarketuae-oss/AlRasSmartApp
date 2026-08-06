@@ -376,59 +376,6 @@ public partial class OrdersAppService
     }
 
 
-    private async Task NotifyOrderPartiesCustomStatusAsync(
-        Order order,
-        Guid fromUserId,
-        CancellationToken cancellationToken)
-    {
-        var statusEn = RequestOfferStatusLabels.ResolveNameEn(order);
-        var statusAr = RequestOfferStatusLabels.ResolveNameAr(order);
-        var partyIds = new[]
-            {
-                order.FromUserId,
-                order.Product?.OwnerId ?? order.ToUserId
-            }
-            .Distinct()
-            .ToList();
-
-        var parties = await orderData.GetUsersByIdsAsync(partyIds, cancellationToken);
-
-        foreach (var party in parties)
-        {
-            try
-            {
-                var isBuyer = party.Id == order.FromUserId;
-                var isRequestOffer = ProductTypeCodes.IsRequests(order.Product?.ProductTypeId);
-                var routeName = isBuyer
-                    ? (isRequestOffer ? "my_offers" : "track_order")
-                    : "my_ads";
-
-                await SendUserAlertAsync(
-                    toUserId: party.Id,
-                    fromUserId: fromUserId,
-                    email: party.Email,
-                    fcmToken: party.FcmToken,
-                    messageFactory: lang => NotificationMessages.OrderStatusUpdatedBuyer(
-                        lang,
-                        order.Id,
-                        statusEn,
-                        statusAr),
-                    preferredLanguage: party.PreferredLanguage,
-                    type: "order_status_updated",
-                    routeName: routeName,
-                    referenceId: order.Id.ToString(),
-                    cancellationToken: cancellationToken);
-            }
-            catch
-            {
-                // Notification failure must not roll back status updates.
-            }
-        }
-
-        await PublishOrderRealtimeAsync(order, cancellationToken);
-    }
-
-
     private async Task NotifyRequestOwnerOfApprovedOfferAsync(Order order, CancellationToken cancellationToken)
     {
         await NotifyAdvertiserOfAdminApprovedOrderAsync(order, cancellationToken);
@@ -544,7 +491,8 @@ public partial class OrdersAppService
                 cancellationToken: cancellationToken);
         }
 
-        var supplier = await orderData.GetUserNotifyByIdAsync(order.ToUserId, cancellationToken);
+        var supplierId = order.Product?.OwnerId ?? order.ToUserId;
+        var supplier = await orderData.GetUserNotifyByIdAsync(supplierId, cancellationToken);
         if (supplier is not null)
         {
             await SendUserAlertAsync(
@@ -592,7 +540,8 @@ public partial class OrdersAppService
                 cancellationToken: cancellationToken);
         }
 
-        var supplier = await orderData.GetUserNotifyByIdAsync(order.ToUserId, cancellationToken);
+        var supplierId = order.Product?.OwnerId ?? order.ToUserId;
+        var supplier = await orderData.GetUserNotifyByIdAsync(supplierId, cancellationToken);
         if (supplier is not null)
         {
             await SendUserAlertAsync(

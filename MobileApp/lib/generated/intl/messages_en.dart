@@ -55,49 +55,61 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m14(unit) => "Enter price per ${unit}";
 
-  static String m15(maxSize) => "jpg, png, mp4 (max ${maxSize} MB for video)";
+  static String m15(count) => "${count} hours ago";
 
-  static String m16(maxCount) => "You can upload at most ${maxCount} videos.";
+  static String m16(maxSize) => "jpg, png, mp4 (max ${maxSize} MB for video)";
 
-  static String m17(quantity) => "Maximum order quantity is ${quantity}.";
+  static String m17(maxCount) => "You can upload at most ${maxCount} videos.";
 
-  static String m18(quantity) => "Minimum order quantity is ${quantity}.";
+  static String m18(quantity) => "Maximum order quantity is ${quantity}.";
 
-  static String m19(unit) => "Offer price per ${unit}";
+  static String m19(quantity) => "Minimum order quantity is ${quantity}.";
 
-  static String m20(count) => "${count} offers available";
+  static String m20(count) => "${count} minutes ago";
 
-  static String m21(count) => "${count} orders available";
+  static String m21(count) => "${count} months ago";
 
-  static String m22(unit) => "Price per ${unit}";
+  static String m22(unit) => "Offer price per ${unit}";
 
-  static String m23(percent) => "Preparing video… ${percent}%";
+  static String m23(count) => "${count} offers available";
 
-  static String m24(required) =>
+  static String m24(count) => "${count} orders available";
+
+  static String m25(unit) => "Price per ${unit}";
+
+  static String m26(percent) => "Preparing video… ${percent}%";
+
+  static String m27(required) =>
       "Quantity cannot exceed the required quantity (${required}).";
 
-  static String m25(requested, available) =>
+  static String m28(requested, available) =>
       "Requested quantity (${requested}) exceeds available quantity (${available}).";
 
-  static String m26(count) => "Selected Documents (${count})";
+  static String m29(count) => "${count} seconds ago";
 
-  static String m27(count) => "Selected Media (${count})";
+  static String m30(count) => "Selected Documents (${count})";
 
-  static String m28(from, to) => "Shipping time: ${from}-${to} days";
+  static String m31(count) => "Selected Media (${count})";
 
-  static String m29(hours) => "${hours} hours ago";
+  static String m32(from, to) => "Shipping time: ${from}-${to} days";
 
-  static String m30(minutes) => "${minutes} min ago";
+  static String m33(hours) => "${hours} hours ago";
 
-  static String m31(unit) => "Target price per ${unit}";
+  static String m34(minutes) => "${minutes} min ago";
 
-  static String m32(maxMb) =>
+  static String m35(unit) => "Target price per ${unit}";
+
+  static String m36(maxMb) =>
       "Could not compress video below ${maxMb} MB. Try a shorter video.";
 
-  static String m33(sizeMb) => "Video compressed to ${sizeMb} MB.";
+  static String m37(sizeMb) => "Video compressed to ${sizeMb} MB.";
 
-  static String m34(sizeMb, maxMb) =>
+  static String m38(sizeMb, maxMb) =>
       "Video size is ${sizeMb} MB. Maximum allowed size is ${maxMb} MB.";
+
+  static String m39(count) => "${count} weeks ago";
+
+  static String m40(count) => "${count} years ago";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -216,7 +228,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Listening… speak now",
     ),
     "aiAssistantOutOfScope": MessageLookupByLibrary.simpleMessage(
-      "I can only help with Al Ras Market topics (accounts, ads, orders, payment, returns). Please ask something about the platform.",
+      "I can only help with Al Ras Smart topics (accounts, ads, orders, payment, returns). Please ask something about the platform.",
     ),
     "aiAssistantReturnPolicyHint": MessageLookupByLibrary.simpleMessage(
       "For damaged, expired, or materially different goods: report within 24 business hours of receipt with photos. If support approves, refund is issued within 1 business day, and the supplier balance is adjusted if it was credited.",
@@ -314,6 +326,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "Sign back in quickly after logout using Face ID or fingerprint. Only for this saved account.",
     ),
     "booking": MessageLookupByLibrary.simpleMessage("Booking"),
+    "bookingExportingCountry": MessageLookupByLibrary.simpleMessage(
+      "Exporting Country",
+    ),
     "callNow": MessageLookupByLibrary.simpleMessage("Call Now"),
     "camera": MessageLookupByLibrary.simpleMessage("Camera"),
     "cancel": MessageLookupByLibrary.simpleMessage("Cancel"),
@@ -489,9 +504,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "countryOfOrigin": MessageLookupByLibrary.simpleMessage(
       "Country of Origin",
     ),
-    "bookingExportingCountry": MessageLookupByLibrary.simpleMessage(
-      "Exporting Country",
-    ),
     "createAccount": MessageLookupByLibrary.simpleMessage("Create Account"),
     "createAds": MessageLookupByLibrary.simpleMessage("Create Ad"),
     "createOrder": MessageLookupByLibrary.simpleMessage("Create Order"),
@@ -513,7 +525,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "dayUnit": MessageLookupByLibrary.simpleMessage("day"),
     "daysAgo": m12,
     "defApp": MessageLookupByLibrary.simpleMessage(
-      "The app refers to the Souq Al Ras electronic platform.",
+      "The app refers to the Al Ras Smart electronic platform.",
     ),
     "defClient": MessageLookupByLibrary.simpleMessage(
       "The client refers to any user purchasing products through the app.",
@@ -745,6 +757,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "highlightAdOldPrice": MessageLookupByLibrary.simpleMessage("199 AED"),
     "home": MessageLookupByLibrary.simpleMessage("Home"),
     "hoursAgo": MessageLookupByLibrary.simpleMessage("hours ago"),
+    "hoursAgoRelative": m15,
     "howCanIPlaceAnOrder": MessageLookupByLibrary.simpleMessage(
       "How can I place an order?",
     ),
@@ -763,7 +776,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "imageSelectedFromGallery": MessageLookupByLibrary.simpleMessage(
       "Image selected from gallery",
     ),
-    "imageVideoFormatsHint": m15,
+    "imageVideoFormatsHint": m16,
     "inProgress": MessageLookupByLibrary.simpleMessage("In Progress"),
     "invalidEmail": MessageLookupByLibrary.simpleMessage("Invalid email"),
     "invalidWebsite": MessageLookupByLibrary.simpleMessage(
@@ -814,8 +827,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "maxProductImagesExceeded": MessageLookupByLibrary.simpleMessage(
       "You can upload at most 15 images.",
     ),
-    "maxProductVideosExceeded": m16,
-    "maximumOrderQuantityIs": m17,
+    "maxProductVideosExceeded": m17,
+    "maximumOrderQuantityIs": m18,
     "mechanismAmountCollected": MessageLookupByLibrary.simpleMessage(
       "The amount is collected from the client.",
     ),
@@ -842,10 +855,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "milk": MessageLookupByLibrary.simpleMessage("Milk"),
     "minimumOrder": MessageLookupByLibrary.simpleMessage("Minimum order"),
-    "minimumOrderQuantityIs": m18,
+    "minimumOrderQuantityIs": m19,
+    "minutesAgo": m20,
     "modelTrainingTitle": MessageLookupByLibrary.simpleMessage(
       "Image-search model training",
     ),
+    "monthsAgo": m21,
     "mustAcceptTermsAndPrivacy": MessageLookupByLibrary.simpleMessage(
       "Please accept the terms and privacy policy.",
     ),
@@ -938,7 +953,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "offerDetails": MessageLookupByLibrary.simpleMessage("Offer Details"),
     "offerDuration": MessageLookupByLibrary.simpleMessage("Offer Duration"),
     "offerPrice": MessageLookupByLibrary.simpleMessage("Offer Price"),
-    "offerPricePerUnit": m19,
+    "offerPricePerUnit": m22,
     "offerSentNotifyWhenReviewed": MessageLookupByLibrary.simpleMessage(
       "We will notify you when the offer is accepted or rejected",
     ),
@@ -949,9 +964,15 @@ class MessageLookup extends MessageLookupByLibrary {
       "The offer has been sent\nsuccessfully",
     ),
     "offers": MessageLookupByLibrary.simpleMessage("Offers"),
-    "offersAvailable": m20,
+    "offersAvailable": m23,
     "offersInfo": MessageLookupByLibrary.simpleMessage("Offers"),
     "oneDayAgo": MessageLookupByLibrary.simpleMessage("1 day ago"),
+    "oneHourAgo": MessageLookupByLibrary.simpleMessage("1 hour ago"),
+    "oneMinuteAgo": MessageLookupByLibrary.simpleMessage("1 minute ago"),
+    "oneMonthAgo": MessageLookupByLibrary.simpleMessage("1 month ago"),
+    "oneSecondAgo": MessageLookupByLibrary.simpleMessage("1 second ago"),
+    "oneWeekAgo": MessageLookupByLibrary.simpleMessage("1 week ago"),
+    "oneYearAgo": MessageLookupByLibrary.simpleMessage("1 year ago"),
     "optional": MessageLookupByLibrary.simpleMessage(" (optional)"),
     "or": MessageLookupByLibrary.simpleMessage("Or"),
     "order": MessageLookupByLibrary.simpleMessage("Order"),
@@ -993,7 +1014,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "orderSummary": MessageLookupByLibrary.simpleMessage("Order Summary"),
     "ordered": MessageLookupByLibrary.simpleMessage("Ordered"),
     "orders": MessageLookupByLibrary.simpleMessage("Orders"),
-    "ordersAvailable": m21,
+    "ordersAvailable": m24,
     "ordersInfo": MessageLookupByLibrary.simpleMessage("Orders Info"),
     "otherPhone": MessageLookupByLibrary.simpleMessage(
       "Other Phone (optional)",
@@ -1111,7 +1132,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "price": MessageLookupByLibrary.simpleMessage("Price"),
     "price20ftLabel": MessageLookupByLibrary.simpleMessage("Price 20ft"),
     "price40ftLabel": MessageLookupByLibrary.simpleMessage("Price 40ft"),
-    "pricePerUnit": m22,
+    "pricePerUnit": m25,
     "pricePerUnitGeneric": MessageLookupByLibrary.simpleMessage(
       "Price per unit",
     ),
@@ -1178,7 +1199,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "publishStepPreparingImages": MessageLookupByLibrary.simpleMessage(
       "Preparing photos…",
     ),
-    "publishStepPreparingVideo": m23,
+    "publishStepPreparingVideo": m26,
     "publishStepUploadingDocuments": MessageLookupByLibrary.simpleMessage(
       "Uploading files…",
     ),
@@ -1191,7 +1212,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "pulses": MessageLookupByLibrary.simpleMessage("Pulses"),
     "purchaseOrder": MessageLookupByLibrary.simpleMessage("Purchase Order"),
     "quantity": MessageLookupByLibrary.simpleMessage("Quantity"),
-    "quantityExceedsRequired": m24,
+    "quantityExceedsRequired": m27,
     "quantityTypeManuallyHint": MessageLookupByLibrary.simpleMessage(
       "You can also type the quantity manually",
     ),
@@ -1239,7 +1260,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "requestedQuantity": MessageLookupByLibrary.simpleMessage(
       "Requested Quantity",
     ),
-    "requestedQuantityExceedsAvailable": m25,
+    "requestedQuantityExceedsAvailable": m28,
     "requestedReceiptDate": MessageLookupByLibrary.simpleMessage(
       "Requested Receipt Date",
     ),
@@ -1347,6 +1368,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "secondNature": MessageLookupByLibrary.simpleMessage(
       "Second: Nature of the App\'s Work",
     ),
+    "secondsAgo": m29,
     "selectAnOption": MessageLookupByLibrary.simpleMessage("Select an option"),
     "selectCategory": MessageLookupByLibrary.simpleMessage("Select Category"),
     "selectCountryFirst": MessageLookupByLibrary.simpleMessage(
@@ -1365,8 +1387,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "selectRequestFulfillment": MessageLookupByLibrary.simpleMessage(
       "Select local or rexport",
     ),
-    "selectedDocuments": m26,
-    "selectedMedia": m27,
+    "selectedDocuments": m30,
+    "selectedMedia": m31,
     "selection": MessageLookupByLibrary.simpleMessage("Selection"),
     "selfPickup": MessageLookupByLibrary.simpleMessage("Self Pickup"),
     "selfPickupHint": MessageLookupByLibrary.simpleMessage(
@@ -1414,7 +1436,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "shareProduct": MessageLookupByLibrary.simpleMessage("Share product"),
     "shareProductHint": MessageLookupByLibrary.simpleMessage(
-      "Find this product on Al Ras Market.",
+      "Find this product on Al Ras Smart.",
     ),
     "shareProductSearchHint": MessageLookupByLibrary.simpleMessage(
       "Search for this code in the app to open the product.",
@@ -1443,7 +1465,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Create Shipping Company Account",
     ),
     "shippingCompanyRegisterSubtitle": MessageLookupByLibrary.simpleMessage(
-      "Register your shipping company on Al Ras Market",
+      "Register your shipping company on Al Ras Smart",
     ),
     "shippingCompanySubtitle": MessageLookupByLibrary.simpleMessage(
       "Reliable and fast shipping solutions",
@@ -1462,7 +1484,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "shippingProfileReviewNote": MessageLookupByLibrary.simpleMessage(
       "Please ensure the entered data is correct. Any changes to shipping company data will be reviewed before approval.",
     ),
-    "shippingTimeRange": m28,
+    "shippingTimeRange": m32,
     "showAll": MessageLookupByLibrary.simpleMessage("Show All"),
     "showAllRequests": MessageLookupByLibrary.simpleMessage(
       "Show all requests",
@@ -1482,8 +1504,8 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "signUp": MessageLookupByLibrary.simpleMessage("Sign Up"),
     "similarAds": MessageLookupByLibrary.simpleMessage("Similar ads"),
-    "sinceHoursAgo": m29,
-    "sinceMinutesAgo": m30,
+    "sinceHoursAgo": m33,
+    "sinceMinutesAgo": m34,
     "sixthRestrictions": MessageLookupByLibrary.simpleMessage(
       "Sixth: Restrictions and Prohibitions",
     ),
@@ -1509,7 +1531,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "suggestedNames": MessageLookupByLibrary.simpleMessage("Suggested names"),
     "supplierAccount": MessageLookupByLibrary.simpleMessage("Supplier Account"),
     "supplierCollectionPolicy": MessageLookupByLibrary.simpleMessage(
-      "A supplier handing goods to the Al Ras Market app or team does not trigger immediate payment. Supplier funds are released only after the order value is actually collected from the buyer/customer. After collection, approved earnings are transferred within 7 business days.",
+      "A supplier handing goods to the Al Ras Smart app or team does not trigger immediate payment. Supplier funds are released only after the order value is actually collected from the buyer/customer. After collection, approved earnings are transferred within 7 business days.",
     ),
     "supplierCommitmentHeader": MessageLookupByLibrary.simpleMessage(
       "The supplier commits not to display or sell:",
@@ -1554,7 +1576,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Tap to upload image or video",
     ),
     "targetPrice": MessageLookupByLibrary.simpleMessage("Target Price"),
-    "targetPricePerUnit": m31,
+    "targetPricePerUnit": m35,
     "targetPricePerUnitGeneric": MessageLookupByLibrary.simpleMessage(
       "Target price per unit",
     ),
@@ -1563,7 +1585,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Tenth: Acceptance",
     ),
     "termsTitle": MessageLookupByLibrary.simpleMessage(
-      "Terms of Use and Conditions for the \"Souq Al Ras\" App",
+      "Terms of Use and Conditions for the \"Al Ras Smart\" App",
     ),
     "theSupportTeamIsAlwaysHereToAssistYou":
         MessageLookupByLibrary.simpleMessage(
@@ -1591,6 +1613,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "tradeLicenseSelected": MessageLookupByLibrary.simpleMessage(
       "Trade license selected",
     ),
+    "twoMonthsAgo": MessageLookupByLibrary.simpleMessage("2 months ago"),
     "underReview": MessageLookupByLibrary.simpleMessage("Under Review"),
     "underReviewAds": MessageLookupByLibrary.simpleMessage("Under review"),
     "unitBag": MessageLookupByLibrary.simpleMessage("Bag"),
@@ -1631,8 +1654,8 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "vatFivePercent": MessageLookupByLibrary.simpleMessage("VAT (5%)"),
     "video": MessageLookupByLibrary.simpleMessage("Video"),
-    "videoCompressFailed": m32,
-    "videoCompressedToMb": m33,
+    "videoCompressFailed": m36,
+    "videoCompressedToMb": m37,
     "videoDurationUnreadable": MessageLookupByLibrary.simpleMessage(
       "Could not read video duration. Please try another file.",
     ),
@@ -1648,12 +1671,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "videoSelectedFromGallery": MessageLookupByLibrary.simpleMessage(
       "Video selected from gallery",
     ),
-    "videoSizeExceeded": m34,
+    "videoSizeExceeded": m38,
     "viewAll": MessageLookupByLibrary.simpleMessage("View All"),
     "viewDetails": MessageLookupByLibrary.simpleMessage("View Details"),
     "viewOffers": MessageLookupByLibrary.simpleMessage("View Offers"),
     "website": MessageLookupByLibrary.simpleMessage("Website"),
     "websiteHint": MessageLookupByLibrary.simpleMessage("https://"),
+    "weeksAgo": m39,
     "welcomeBack": MessageLookupByLibrary.simpleMessage("Welcome"),
     "welcomeShippingCompany": MessageLookupByLibrary.simpleMessage(
       "Welcome to your shipping company dashboard",
@@ -1662,7 +1686,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Welcome to your shipping company control panel",
     ),
     "welcomeTagline": MessageLookupByLibrary.simpleMessage(
-      "A smart platform connecting suppliers and buyers inside and outside Al Ras market",
+      "A smart platform connecting suppliers and buyers inside and outside Al Ras Smart",
     ),
     "welcomeTo": MessageLookupByLibrary.simpleMessage("Welcome to"),
     "whatPaymentMethodsAreAvailable": MessageLookupByLibrary.simpleMessage(
@@ -1676,6 +1700,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "wholesalePrice": MessageLookupByLibrary.simpleMessage("Wholesale price"),
     "workingHours": MessageLookupByLibrary.simpleMessage("Working Hours"),
+    "yearsAgo": m40,
     "yourAccountIsUnderReviewWeWillNotifyYouOnceItIsApproved":
         MessageLookupByLibrary.simpleMessage(
           "Your account is under review. We will notify you once it is approved.",

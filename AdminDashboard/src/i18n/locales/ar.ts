@@ -1,5 +1,5 @@
 export const arMessages = {
-    appName: 'Al Ras Market',
+    appName: 'Al Ras Smart',
     appSubtitle: 'الإدارة',
     generalManager: 'المدير العام',
     search: 'بحث ذكي في كل الأقسام...',
@@ -196,7 +196,7 @@ export const arMessages = {
       },
     },
     login: {
-      title: 'سوق الراس - الإدارة',
+      title: 'الراس الذكي - الإدارة',
       subtitle: 'تسجيل الدخول للوحة التحكم',
       email: 'البريد الإلكتروني',
       emailPlaceholder: 'ادخل البريد الإلكتروني',
@@ -1151,6 +1151,7 @@ export const arMessages = {
       send: 'إرسال',
       sending: 'جاري الإرسال...',
       failed: 'فشل الإرسال',
+      edited: 'معدّلة',
       loadingMessages: 'جاري تحميل الرسائل...',
       refreshing: 'جاري التحديث...',
       sendError: 'تعذر إرسال الرسالة',
@@ -1240,7 +1241,7 @@ export const arMessages = {
       unmuteSound: 'تشغيل صوت التنبيهات',
     },
     payment: {
-      appName: 'سوق الراس',
+      appName: 'الراس الذكي',
       confirmTitle: 'تأكيد الدفع',
       cancelTitle: 'إلغاء الدفع',
       loading: 'جاري التحقق من الدفع...',
@@ -1256,7 +1257,7 @@ export const arMessages = {
       loginRequired: 'يرجى تسجيل الدخول للتحقق من حالة الدفع.',
       returnToApp: 'تم استلام الدفع',
       returnToAppDetail:
-        'تم سحب المبلغ بنجاح. ارجع إلى تطبيق سوق الراس لمتابعة طلبك. لا تعتمد على هذه الصفحة كتأكيد نهائي.',
+        'تم سحب المبلغ بنجاح. ارجع إلى تطبيق الراس الذكي لمتابعة طلبك. لا تعتمد على هذه الصفحة كتأكيد نهائي.',
       timeout: 'انتهت مهلة التحقق. يرجى التحقق من حالة الطلب لاحقاً.',
       cancelled: 'تم إلغاء عملية الدفع',
       cancelledDetail: 'لم يتم خصم أي مبلغ. يمكنك المحاولة مرة أخرى عند إتمام الطلب.',

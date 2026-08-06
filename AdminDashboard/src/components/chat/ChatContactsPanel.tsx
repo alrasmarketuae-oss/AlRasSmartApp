@@ -1,4 +1,6 @@
 import { PROJECT_IMAGES } from '../../constants/projectImages'
+import { useAppPreferences } from '../../context/AppPreferencesProvider'
+import { formatChatRelativeTime } from '../../utils/formatChatRelativeTime'
 import { IconSearch } from '../icons'
 import { resolveAssetUrl } from '../../lib/assets'
 import type { ChatContact } from '../../types/chat'
@@ -30,6 +32,8 @@ export default function ChatContactsPanel({
   className = '',
   t,
 }: ChatContactsPanelProps) {
+  const { locale } = useAppPreferences()
+
   return (
     <aside
       className={`flex h-full min-h-0 w-full shrink-0 flex-col overflow-hidden border-e border-[#d1d7db] bg-white dark:border-slate-700 dark:bg-slate-900 lg:w-80 xl:w-96 ${className}`}
@@ -119,7 +123,9 @@ export default function ChatContactsPanel({
                           {contact.displayName}
                         </span>
                         <span className="shrink-0 text-[11px] text-[#667781]">
-                          {contact.lastMessageRelativeTime}
+                          {(contact.lastMessageSentAtUtc
+                            ? formatChatRelativeTime(contact.lastMessageSentAtUtc, locale)
+                            : null) || contact.lastMessageRelativeTime}
                         </span>
                       </div>
                       <div className="mt-0.5 flex items-center justify-between gap-2">

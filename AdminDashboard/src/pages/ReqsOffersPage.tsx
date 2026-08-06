@@ -118,8 +118,9 @@ export default function ReqsOffersPage() {
       hasPendingOffers: requestFilter === 'hasNewOffers' ? true : undefined,
       createdFrom: dateFilter,
       createdTo: dateFilter,
+      lang: locale,
     }),
-    [requestPage, pageSize, urlSearch, requestFilter, dateFilter],
+    [requestPage, pageSize, urlSearch, requestFilter, dateFilter, locale],
   )
 
   const offerQuery = useMemo((): AdminOrdersFilters => {
@@ -151,7 +152,7 @@ export default function ReqsOffersPage() {
     isFetching: offersFetching,
   } = useGetAdminOrdersQuery(offerQuery, { skip: activeTab !== 'offers' })
 
-  const statsBase = { page: 1, pageSize: 1, productTypeId: PRODUCT_TYPE_REQUESTS }
+  const statsBase = { page: 1, pageSize: 1, productTypeId: PRODUCT_TYPE_REQUESTS, lang: locale }
   const { data: totalRequestsData, isLoading: totalRequestsLoading } =
     useGetAdminProductsQuery({ ...statsBase, approval: 'all' })
   const { data: newRequestsData, isLoading: newRequestsLoading } =

@@ -344,7 +344,7 @@ public partial class OrdersAppService
         RequestOfferStatusLabels.Apply(order, nameEn, nameAr, adminId);
         await orderData.SaveChangesAsync(cancellationToken);
 
-        await NotifyOrderPartiesCustomStatusAsync(order, adminId, cancellationToken);
+        await NotifyBuyerOrderStatusAsync(order, adminId, cancellationToken);
 
         var commissionSettings = await commissionSettingsProvider.GetAsync(cancellationToken);
         var categoryCommissions = await categoryCommissionProvider.GetAsync(cancellationToken);
@@ -406,7 +406,7 @@ public partial class OrdersAppService
         await orderData.SaveChangesAsync(cancellationToken);
 
         await supplierBalanceService.TryCreditRetailOrderOnReceivedAsync(order, cancellationToken);
-        await NotifyOrderPartiesCustomStatusAsync(order, adminId, cancellationToken);
+        await NotifyBuyerOrderStatusAsync(order, adminId, cancellationToken);
 
         var commissionSettings = await commissionSettingsProvider.GetAsync(cancellationToken);
         var categoryCommissions = await categoryCommissionProvider.GetAsync(cancellationToken);

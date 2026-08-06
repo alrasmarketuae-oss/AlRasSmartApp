@@ -49,14 +49,14 @@ public sealed class AiAssistantAppService(
         var system =
             language == "ar"
                 ? """
-                  You correct speech-to-text transcripts for the Al Ras Market AI Assistant.
+                  You correct speech-to-text transcripts for the Al Ras Smart AI Assistant.
                   The user spoke in Arabic. Return ONLY corrected natural Arabic script in the same spoken register/dialect they used (Egyptian عامية, Gulf, Levantine, MSA, etc.) — do not force formal MSA if they spoke colloquially.
                   If the transcript is Latin letters, English words, Franco-Arab, or broken STT, rewrite it as clear Arabic matching the spoken marketplace intent (e.g. هاتلي أرخص هيل، اشتريت بكام، غيّر السعر).
                   Fix recognition errors; do not answer the question; no quotes, labels, or English output.
                   Keep marketplace terms such as ProductCode, Booking, Retail, Live Chat, IBAN when clearly intended.
                   """
                 : """
-                  You correct speech-to-text transcripts for the Al Ras Market AI Assistant.
+                  You correct speech-to-text transcripts for the Al Ras Smart AI Assistant.
                   The user spoke in English. Return ONLY corrected English text.
                   Fix recognition errors, missing words, and broken spelling while preserving intent.
                   Do not answer the question. Do not add greetings. Do not invent facts. No quotes or labels.
@@ -160,8 +160,8 @@ public sealed class AiAssistantAppService(
         form.Add(
             new StringContent(
                 lang == "ar"
-                    ? "سوق الراس، أرخص هيل، زعفران، عدل السعر، كمية، ProductCode، مبيعاتي، Live Chat"
-                    : "Al Ras Market, cheapest cardamom, saffron, update price, quantity, ProductCode, my sales, Live Chat"),
+                    ? "الراس الذكي، أرخص هيل، زعفران، عدل السعر، كمية، ProductCode، مبيعاتي، Live Chat"
+                    : "Al Ras Smart, cheapest cardamom, saffron, update price, quantity, ProductCode, my sales, Live Chat"),
             "prompt");
 
         using var httpRequest = new HttpRequestMessage(
@@ -219,7 +219,7 @@ public sealed class AiAssistantAppService(
         var account = await ResolveAccountContextAsync(userId, cancellationToken)
             .ConfigureAwait(false);
 
-        // Thinking steps (large/random phrases) are emitted only when MCP tools run
+        // Thinking steps (large/random phrases) are emitted when MCP tools run
         // inside CompleteWithToolsAsync — never for plain Q&A / RAG / greetings.
 
         // Unauthorized create-ad: refuse immediately — never collect fields or enter plan flow.
@@ -251,8 +251,8 @@ public sealed class AiAssistantAppService(
         {
             return new AiAssistantAnswer(
                 language == "ar"
-                    ? $"{(string.IsNullOrWhiteSpace(account.DisplayName) ? "" : account.DisplayName + "، ")}أقدر أساعدك في أمور سوق الراس بس، زي الإعلانات والأسعار والطلبات والبحث وأسعار الشحن."
-                    : $"{(string.IsNullOrWhiteSpace(account.DisplayName) ? "" : account.DisplayName + ", ")}I can only help with Al Ras Market topics such as ads, prices, orders, search, and shipping rates.",
+                    ? $"{(string.IsNullOrWhiteSpace(account.DisplayName) ? "" : account.DisplayName + "، ")}أقدر أساعدك في أمور الراس الذكي بس، زي الإعلانات والأسعار والطلبات والبحث وأسعار الشحن."
+                    : $"{(string.IsNullOrWhiteSpace(account.DisplayName) ? "" : account.DisplayName + ", ")}I can only help with Al Ras Smart topics such as ads, prices, orders, search, and shipping rates.",
                 language,
                 false,
                 []);
@@ -344,7 +344,7 @@ public sealed class AiAssistantAppService(
         var signedIn = userId.HasValue ? "yes" : "no";
         var system =
             $"""
-            You are Alras Smart (الراس الذكي), the official in-app AI agent for Al Ras Market.
+            You are Alras Smart (الراس الذكي), the official in-app AI agent for Al Ras Smart.
             Your name in English is Alras Smart. Your name in Arabic is الراس الذكي.
             Never call yourself "مساعد سوق العرس" or invent similar wrong names.
             The current account audience is: {account.Audience}.
@@ -764,8 +764,8 @@ public sealed class AiAssistantAppService(
         return
         new(
             language == "ar"
-                ? $"{prefixAr}السؤال ممكن يكون برا نطاق سوق الراس أو معنديش معلومات موثّقة كفاية. أقدر أساعدك في الحسابات والإعلانات والطلبات والدفع والاسترجاع؛ ولو محتاج مساعدة أكتر كلم Live Chat من الملف الشخصي."
-                : $"{prefixEn}the question may be outside Al Ras Market or I may not have enough verified information. I can help with accounts, ads, orders, payments, and returns; for more help, contact Live Chat from Profile.",
+                ? $"{prefixAr}السؤال ممكن يكون برا نطاق الراس الذكي أو معنديش معلومات موثّقة كفاية. أقدر أساعدك في الحسابات والإعلانات والطلبات والدفع والاسترجاع؛ ولو محتاج مساعدة أكتر كلم Live Chat من الملف الشخصي."
+                : $"{prefixEn}the question may be outside Al Ras Smart or I may not have enough verified information. I can help with accounts, ads, orders, payments, and returns; for more help, contact Live Chat from Profile.",
             language,
             false,
             []);

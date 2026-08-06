@@ -729,10 +729,10 @@ class S {
     );
   }
 
-  /// `A smart platform connecting suppliers and buyers inside and outside Al Ras market`
+  /// `A smart platform connecting suppliers and buyers inside and outside Al Ras Smart`
   String get welcomeTagline {
     return Intl.message(
-      'A smart platform connecting suppliers and buyers inside and outside Al Ras market',
+      'A smart platform connecting suppliers and buyers inside and outside Al Ras Smart',
       name: 'welcomeTagline',
       desc: '',
       args: [],
@@ -2224,10 +2224,10 @@ class S {
     );
   }
 
-  /// `Terms of Use and Conditions for the "Souq Al Ras" App`
+  /// `Terms of Use and Conditions for the "Al Ras Smart" App`
   String get termsTitle {
     return Intl.message(
-      'Terms of Use and Conditions for the "Souq Al Ras" App',
+      'Terms of Use and Conditions for the "Al Ras Smart" App',
       name: 'termsTitle',
       desc: '',
       args: [],
@@ -2244,10 +2244,10 @@ class S {
     );
   }
 
-  /// `The app refers to the Souq Al Ras electronic platform.`
+  /// `The app refers to the Al Ras Smart electronic platform.`
   String get defApp {
     return Intl.message(
-      'The app refers to the Souq Al Ras electronic platform.',
+      'The app refers to the Al Ras Smart electronic platform.',
       name: 'defApp',
       desc: '',
       args: [],
@@ -3214,10 +3214,10 @@ class S {
     );
   }
 
-  /// `Register your shipping company on Al Ras Market`
+  /// `Register your shipping company on Al Ras Smart`
   String get shippingCompanyRegisterSubtitle {
     return Intl.message(
-      'Register your shipping company on Al Ras Market',
+      'Register your shipping company on Al Ras Smart',
       name: 'shippingCompanyRegisterSubtitle',
       desc: '',
       args: [],
@@ -3464,10 +3464,10 @@ class S {
     );
   }
 
-  /// `Find this product on Al Ras Market.`
+  /// `Find this product on Al Ras Smart.`
   String get shareProductHint {
     return Intl.message(
-      'Find this product on Al Ras Market.',
+      'Find this product on Al Ras Smart.',
       name: 'shareProductHint',
       desc: '',
       args: [],
@@ -5741,6 +5741,61 @@ class S {
     return Intl.message('Just now', name: 'justNow', desc: '', args: []);
   }
 
+  /// `1 second ago`
+  String get oneSecondAgo {
+    return Intl.message(
+      '1 second ago',
+      name: 'oneSecondAgo',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count} seconds ago`
+  String secondsAgo(int count) {
+    return Intl.message(
+      '$count seconds ago',
+      name: 'secondsAgo',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `1 minute ago`
+  String get oneMinuteAgo {
+    return Intl.message(
+      '1 minute ago',
+      name: 'oneMinuteAgo',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count} minutes ago`
+  String minutesAgo(int count) {
+    return Intl.message(
+      '$count minutes ago',
+      name: 'minutesAgo',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `1 hour ago`
+  String get oneHourAgo {
+    return Intl.message('1 hour ago', name: 'oneHourAgo', desc: '', args: []);
+  }
+
+  /// `{count} hours ago`
+  String hoursAgoRelative(int count) {
+    return Intl.message(
+      '$count hours ago',
+      name: 'hoursAgoRelative',
+      desc: '',
+      args: [count],
+    );
+  }
+
   /// `1 day ago`
   String get oneDayAgo {
     return Intl.message('1 day ago', name: 'oneDayAgo', desc: '', args: []);
@@ -5753,6 +5808,61 @@ class S {
       name: 'daysAgo',
       desc: '',
       args: [days],
+    );
+  }
+
+  /// `1 week ago`
+  String get oneWeekAgo {
+    return Intl.message('1 week ago', name: 'oneWeekAgo', desc: '', args: []);
+  }
+
+  /// `{count} weeks ago`
+  String weeksAgo(int count) {
+    return Intl.message(
+      '$count weeks ago',
+      name: 'weeksAgo',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `1 month ago`
+  String get oneMonthAgo {
+    return Intl.message('1 month ago', name: 'oneMonthAgo', desc: '', args: []);
+  }
+
+  /// `2 months ago`
+  String get twoMonthsAgo {
+    return Intl.message(
+      '2 months ago',
+      name: 'twoMonthsAgo',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count} months ago`
+  String monthsAgo(int count) {
+    return Intl.message(
+      '$count months ago',
+      name: 'monthsAgo',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `1 year ago`
+  String get oneYearAgo {
+    return Intl.message('1 year ago', name: 'oneYearAgo', desc: '', args: []);
+  }
+
+  /// `{count} years ago`
+  String yearsAgo(int count) {
+    return Intl.message(
+      '$count years ago',
+      name: 'yearsAgo',
+      desc: '',
+      args: [count],
     );
   }
 
@@ -6651,10 +6761,10 @@ class S {
     );
   }
 
-  /// `I can only help with Al Ras Market topics (accounts, ads, orders, payment, returns). Please ask something about the platform.`
+  /// `I can only help with Al Ras Smart topics (accounts, ads, orders, payment, returns). Please ask something about the platform.`
   String get aiAssistantOutOfScope {
     return Intl.message(
-      'I can only help with Al Ras Market topics (accounts, ads, orders, payment, returns). Please ask something about the platform.',
+      'I can only help with Al Ras Smart topics (accounts, ads, orders, payment, returns). Please ask something about the platform.',
       name: 'aiAssistantOutOfScope',
       desc: '',
       args: [],
@@ -6881,10 +6991,10 @@ class S {
     );
   }
 
-  /// `A supplier handing goods to the Al Ras Market app or team does not trigger immediate payment. Supplier funds are released only after the order value is actually collected from the buyer/customer. After collection, approved earnings are transferred within 7 business days.`
+  /// `A supplier handing goods to the Al Ras Smart app or team does not trigger immediate payment. Supplier funds are released only after the order value is actually collected from the buyer/customer. After collection, approved earnings are transferred within 7 business days.`
   String get supplierCollectionPolicy {
     return Intl.message(
-      'A supplier handing goods to the Al Ras Market app or team does not trigger immediate payment. Supplier funds are released only after the order value is actually collected from the buyer/customer. After collection, approved earnings are transferred within 7 business days.',
+      'A supplier handing goods to the Al Ras Smart app or team does not trigger immediate payment. Supplier funds are released only after the order value is actually collected from the buyer/customer. After collection, approved earnings are transferred within 7 business days.',
       name: 'supplierCollectionPolicy',
       desc: '',
       args: [],

@@ -1,6 +1,6 @@
-/** Privacy Policy for Al Ras Smart / Al Ras Market (Google Play & App Store). */
+/** Privacy Policy for Al Ras Smart (Google Play & App Store). */
 export const privacyAr = {
-  title: 'سياسة الخصوصية — تطبيق الراس الذكي (Al Ras Smart / سوق الراس)',
+  title: 'سياسة الخصوصية — تطبيق الراس الذكي (Al Ras Smart / الراس الذكي)',
   lastUpdated: 'آخر تحديث: 6 أغسطس 2026',
   intro:
     'تشرح هذه السياسة ما البيانات التي يجمعها تطبيق الراس الذكي (حزمة التطبيق com.mergespice.alrasmarket) وكيف نستخدمها ونحفظها ونشاركها ونحذفها. بتشغيل التطبيق أو إنشاء حساب فإنك توافق على هذه السياسة. المشغّل: شركة ميرج سبايس لتجارة المواد الغذائية (Merge Spice Foodstuff Trading LLC) — دبي، الإمارات العربية المتحدة.',
@@ -119,7 +119,7 @@ export const privacyAr = {
 }
 
 export const privacyEn = {
-  title: 'Privacy Policy — Al Ras Smart (Al Ras Market / سوق الراس)',
+  title: 'Privacy Policy — Al Ras Smart (الراس الذكي)',
   lastUpdated: 'Last updated: 6 August 2026',
   intro:
     'This Privacy Policy explains what data the Al Ras Smart app (package com.mergespice.alrasmarket) collects, why we collect it, how we store and protect it, with whom we share it, and how you can access or delete it. By using the app or creating an account you agree to this Policy. Operator: Merge Spice Foodstuff Trading LLC — Dubai, United Arab Emirates.',
@@ -127,7 +127,7 @@ export const privacyEn = {
     {
       title: '1) Who we are and scope',
       items: [
-        'Al Ras Smart / Al Ras Market is a B2B/B2C food marketplace for suppliers, personal customers, company customers, and shipping companies.',
+        'Al Ras Smart is a B2B/B2C food marketplace for suppliers, personal customers, company customers, and shipping companies.',
         'Features include registration, browsing and search (text/image), creating ads and orders, cart and payment where applicable, tracking, supplier balance and withdrawals, the AI assistant, push notifications, and Live Chat support.',
         'This Policy applies to the mobile app, related websites, and support pages (including /terms, /privacy, and /delete-account).',
       ],

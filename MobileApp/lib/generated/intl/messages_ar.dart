@@ -55,50 +55,62 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m14(unit) => "أدخل السعر لكل ${unit}";
 
-  static String m15(maxSize) =>
+  static String m15(count) => "منذ ${count} ساعة";
+
+  static String m16(maxSize) =>
       "jpg, png, mp4 (حد أقصى ${maxSize} ميجا للفيديو)";
 
-  static String m16(maxCount) => "يمكنك رفع ${maxCount} فيديوهات كحد أقصى.";
+  static String m17(maxCount) => "يمكنك رفع ${maxCount} فيديوهات كحد أقصى.";
 
-  static String m17(quantity) => "الحد الأقصى للطلب هو ${quantity}.";
+  static String m18(quantity) => "الحد الأقصى للطلب هو ${quantity}.";
 
-  static String m18(quantity) => "الحد الأدنى للطلب هو ${quantity}.";
+  static String m19(quantity) => "الحد الأدنى للطلب هو ${quantity}.";
 
-  static String m19(unit) => "سعر العرض لكل ${unit}";
+  static String m20(count) => "منذ ${count} دقيقة";
 
-  static String m20(count) => "${count} عروض متاحة";
+  static String m21(count) => "منذ ${count} شهر";
 
-  static String m21(count) => "${count} طلبات متاحة";
+  static String m22(unit) => "سعر العرض لكل ${unit}";
 
-  static String m22(unit) => "السعر لكل ${unit}";
+  static String m23(count) => "${count} عروض متاحة";
 
-  static String m23(percent) => "تجهيز الفيديو… ${percent}%";
+  static String m24(count) => "${count} طلبات متاحة";
 
-  static String m24(required) =>
+  static String m25(unit) => "السعر لكل ${unit}";
+
+  static String m26(percent) => "تجهيز الفيديو… ${percent}%";
+
+  static String m27(required) =>
       "لا يمكن أن تتجاوز الكمية الكمية المطلوبة (${required}).";
 
-  static String m25(requested, available) =>
+  static String m28(requested, available) =>
       "الكمية المطلوبة (${requested}) تتجاوز الكمية المتاحة (${available}).";
 
-  static String m26(count) => "المستندات المختارة (${count})";
+  static String m29(count) => "منذ ${count} ثانية";
 
-  static String m27(count) => "الوسائط المختارة (${count})";
+  static String m30(count) => "المستندات المختارة (${count})";
 
-  static String m28(from, to) => "مدة الشحن: ${from}-${to} يوم";
+  static String m31(count) => "الوسائط المختارة (${count})";
 
-  static String m29(hours) => "منذ ${hours} ساعات";
+  static String m32(from, to) => "مدة الشحن: ${from}-${to} يوم";
 
-  static String m30(minutes) => "منذ ${minutes} دقيقة";
+  static String m33(hours) => "منذ ${hours} ساعات";
 
-  static String m31(unit) => "السعر المستهدف لكل ${unit}";
+  static String m34(minutes) => "منذ ${minutes} دقيقة";
 
-  static String m32(maxMb) =>
+  static String m35(unit) => "السعر المستهدف لكل ${unit}";
+
+  static String m36(maxMb) =>
       "تعذر ضغط الفيديو إلى أقل من ${maxMb} ميجا. جرّب فيديو أقصر.";
 
-  static String m33(sizeMb) => "تم ضغط الفيديو إلى ${sizeMb} ميجا.";
+  static String m37(sizeMb) => "تم ضغط الفيديو إلى ${sizeMb} ميجا.";
 
-  static String m34(sizeMb, maxMb) =>
+  static String m38(sizeMb, maxMb) =>
       "حجم الفيديو ${sizeMb} ميجا. الحد الأقصى المسموح ${maxMb} ميجا.";
+
+  static String m39(count) => "منذ ${count} أسبوع";
+
+  static String m40(count) => "منذ ${count} سنة";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -211,7 +223,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "يستمع… تحدّث الآن",
     ),
     "aiAssistantOutOfScope": MessageLookupByLibrary.simpleMessage(
-      "أقدر أساعدك في أمور سوق الراس فقط (حسابات، إعلانات، طلبات، دفع، استرجاع). جرّب سؤالاً عن المنصة.",
+      "أقدر أساعدك في أمور الراس الذكي فقط (حسابات، إعلانات، طلبات، دفع، استرجاع). جرّب سؤالاً عن المنصة.",
     ),
     "aiAssistantReturnPolicyHint": MessageLookupByLibrary.simpleMessage(
       "للاسترجاع بسبب تلف أو انتهاء صلاحية أو اختلاف جوهري: أبلغ خلال 24 ساعة عمل من الاستلام مع صور. إن وافق الدعم يُعاد المبلغ خلال يوم عمل واحد، ويُخصم من رصيد المورد إن كان قد أُضيف.",
@@ -305,6 +317,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "سجّل الدخول بسرعة بعد الخروج باستخدام Face ID أو البصمة. يظهر فقط للحساب المحفوظ.",
     ),
     "booking": MessageLookupByLibrary.simpleMessage("بوكينج"),
+    "bookingExportingCountry": MessageLookupByLibrary.simpleMessage(
+      "الدولة المصدرة",
+    ),
     "callNow": MessageLookupByLibrary.simpleMessage("اتصل الآن"),
     "camera": MessageLookupByLibrary.simpleMessage("الكاميرا"),
     "cancel": MessageLookupByLibrary.simpleMessage("إلغاء"),
@@ -484,9 +499,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "country": MessageLookupByLibrary.simpleMessage("الدولة"),
     "countryCode": MessageLookupByLibrary.simpleMessage("كود الدولة"),
     "countryOfOrigin": MessageLookupByLibrary.simpleMessage("بلد المنشأ"),
-    "bookingExportingCountry": MessageLookupByLibrary.simpleMessage(
-      "الدولة المصدرة",
-    ),
     "createAccount": MessageLookupByLibrary.simpleMessage("إنشاء حساب"),
     "createAds": MessageLookupByLibrary.simpleMessage("إنشاء إعلان"),
     "createOrder": MessageLookupByLibrary.simpleMessage("إنشاء طلب"),
@@ -514,7 +526,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "dayUnit": MessageLookupByLibrary.simpleMessage("يوم"),
     "daysAgo": m12,
     "defApp": MessageLookupByLibrary.simpleMessage(
-      "يقصد بـ التطبيق: منصة سوق الراس الإلكترونية.",
+      "يقصد بـ التطبيق: منصة الراس الذكي الإلكترونية.",
     ),
     "defClient": MessageLookupByLibrary.simpleMessage(
       "يقصد بـ العميل: أي مستخدم يقوم بشراء المنتجات عبر التطبيق.",
@@ -746,6 +758,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "highlightAdOldPrice": MessageLookupByLibrary.simpleMessage("199 درهم"),
     "home": MessageLookupByLibrary.simpleMessage("الرئيسية"),
     "hoursAgo": MessageLookupByLibrary.simpleMessage("ساعات مضت"),
+    "hoursAgoRelative": m15,
     "howCanIPlaceAnOrder": MessageLookupByLibrary.simpleMessage(
       "كيف يمكنني طلب المنتج؟",
     ),
@@ -764,7 +777,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "imageSelectedFromGallery": MessageLookupByLibrary.simpleMessage(
       "صورة محددة من المعرض",
     ),
-    "imageVideoFormatsHint": m15,
+    "imageVideoFormatsHint": m16,
     "inProgress": MessageLookupByLibrary.simpleMessage("قيد التنفيذ"),
     "invalidEmail": MessageLookupByLibrary.simpleMessage(
       "بريد إلكتروني غير صالح",
@@ -815,8 +828,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "maxProductImagesExceeded": MessageLookupByLibrary.simpleMessage(
       "يمكنك رفع 15 صورة كحد أقصى.",
     ),
-    "maxProductVideosExceeded": m16,
-    "maximumOrderQuantityIs": m17,
+    "maxProductVideosExceeded": m17,
+    "maximumOrderQuantityIs": m18,
     "mechanismAmountCollected": MessageLookupByLibrary.simpleMessage(
       "يتم تحصيل المبلغ من العميل.",
     ),
@@ -843,10 +856,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "milk": MessageLookupByLibrary.simpleMessage("حليب"),
     "minimumOrder": MessageLookupByLibrary.simpleMessage("الطلب الأدنى"),
-    "minimumOrderQuantityIs": m18,
+    "minimumOrderQuantityIs": m19,
+    "minutesAgo": m20,
     "modelTrainingTitle": MessageLookupByLibrary.simpleMessage(
       "تدريب نموذج البحث بالصور",
     ),
+    "monthsAgo": m21,
     "mustAcceptTermsAndPrivacy": MessageLookupByLibrary.simpleMessage(
       "يرجى الموافقة على سياسة الشروط والخصوصية.",
     ),
@@ -939,7 +954,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "offerDetails": MessageLookupByLibrary.simpleMessage("تفاصيل العرض"),
     "offerDuration": MessageLookupByLibrary.simpleMessage("مدة العرض"),
     "offerPrice": MessageLookupByLibrary.simpleMessage("سعر العرض"),
-    "offerPricePerUnit": m19,
+    "offerPricePerUnit": m22,
     "offerSentNotifyWhenReviewed": MessageLookupByLibrary.simpleMessage(
       "سنُعلمك عند قبول العرض أو رفضه",
     ),
@@ -950,9 +965,15 @@ class MessageLookup extends MessageLookupByLibrary {
       "تم إرسال العرض\nبنجاح",
     ),
     "offers": MessageLookupByLibrary.simpleMessage("عروض"),
-    "offersAvailable": m20,
+    "offersAvailable": m23,
     "offersInfo": MessageLookupByLibrary.simpleMessage("العروض"),
     "oneDayAgo": MessageLookupByLibrary.simpleMessage("منذ يوم"),
+    "oneHourAgo": MessageLookupByLibrary.simpleMessage("منذ ساعة"),
+    "oneMinuteAgo": MessageLookupByLibrary.simpleMessage("منذ دقيقة"),
+    "oneMonthAgo": MessageLookupByLibrary.simpleMessage("منذ شهر"),
+    "oneSecondAgo": MessageLookupByLibrary.simpleMessage("منذ ثانية"),
+    "oneWeekAgo": MessageLookupByLibrary.simpleMessage("منذ أسبوع"),
+    "oneYearAgo": MessageLookupByLibrary.simpleMessage("منذ سنة"),
     "optional": MessageLookupByLibrary.simpleMessage(" (اختياري)"),
     "or": MessageLookupByLibrary.simpleMessage("أو"),
     "order": MessageLookupByLibrary.simpleMessage("طلب"),
@@ -992,7 +1013,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "orderSummary": MessageLookupByLibrary.simpleMessage("ملخص الطلب"),
     "ordered": MessageLookupByLibrary.simpleMessage("تم الطلب"),
     "orders": MessageLookupByLibrary.simpleMessage("طلبات"),
-    "ordersAvailable": m21,
+    "ordersAvailable": m24,
     "ordersInfo": MessageLookupByLibrary.simpleMessage(" العروض"),
     "otherPhone": MessageLookupByLibrary.simpleMessage("رقم أخرى (اختياري)"),
     "otherPhoneIsRequired": MessageLookupByLibrary.simpleMessage(
@@ -1106,7 +1127,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "price": MessageLookupByLibrary.simpleMessage("السعر"),
     "price20ftLabel": MessageLookupByLibrary.simpleMessage("السعر 20 قدم"),
     "price40ftLabel": MessageLookupByLibrary.simpleMessage("السعر 40 قدم"),
-    "pricePerUnit": m22,
+    "pricePerUnit": m25,
     "pricePerUnitGeneric": MessageLookupByLibrary.simpleMessage(
       "السعر لكل وحدة",
     ),
@@ -1171,7 +1192,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "publishStepPreparingImages": MessageLookupByLibrary.simpleMessage(
       "تجهيز الصور…",
     ),
-    "publishStepPreparingVideo": m23,
+    "publishStepPreparingVideo": m26,
     "publishStepUploadingDocuments": MessageLookupByLibrary.simpleMessage(
       "رفع الملفات…",
     ),
@@ -1184,7 +1205,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "pulses": MessageLookupByLibrary.simpleMessage("بقوليات"),
     "purchaseOrder": MessageLookupByLibrary.simpleMessage("طلب الشراء"),
     "quantity": MessageLookupByLibrary.simpleMessage("الكمية"),
-    "quantityExceedsRequired": m24,
+    "quantityExceedsRequired": m27,
     "quantityTypeManuallyHint": MessageLookupByLibrary.simpleMessage(
       "يمكنك أيضاً كتابة الكمية يدوياً",
     ),
@@ -1228,7 +1249,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "requestedQuantity": MessageLookupByLibrary.simpleMessage(
       "الكمية المطلوبة",
     ),
-    "requestedQuantityExceedsAvailable": m25,
+    "requestedQuantityExceedsAvailable": m28,
     "requestedReceiptDate": MessageLookupByLibrary.simpleMessage(
       "تاريخ الاستلام المطلوب",
     ),
@@ -1332,6 +1353,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "secondNature": MessageLookupByLibrary.simpleMessage(
       "ثانياً: طبيعة عمل التطبيق",
     ),
+    "secondsAgo": m29,
     "selectAnOption": MessageLookupByLibrary.simpleMessage("اختر خياراً"),
     "selectCategory": MessageLookupByLibrary.simpleMessage("اختر الفئة"),
     "selectCountryFirst": MessageLookupByLibrary.simpleMessage(
@@ -1350,8 +1372,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "selectRequestFulfillment": MessageLookupByLibrary.simpleMessage(
       "اختر محلي أو إعادة تصدير",
     ),
-    "selectedDocuments": m26,
-    "selectedMedia": m27,
+    "selectedDocuments": m30,
+    "selectedMedia": m31,
     "selection": MessageLookupByLibrary.simpleMessage("الاختيار"),
     "selfPickup": MessageLookupByLibrary.simpleMessage("استلام بنفسي"),
     "selfPickupHint": MessageLookupByLibrary.simpleMessage(
@@ -1401,7 +1423,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "shareProduct": MessageLookupByLibrary.simpleMessage("مشاركة المنتج"),
     "shareProductHint": MessageLookupByLibrary.simpleMessage(
-      "ابحث عن هذا المنتج في سوق الراس.",
+      "ابحث عن هذا المنتج في الراس الذكي.",
     ),
     "shareProductSearchHint": MessageLookupByLibrary.simpleMessage(
       "ابحث عن هذا الرمز في التطبيق لفتح المنتج.",
@@ -1430,7 +1452,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "إنشاء حساب شركة شحن",
     ),
     "shippingCompanyRegisterSubtitle": MessageLookupByLibrary.simpleMessage(
-      "أنشئ حسابك كشركة شحن على منصة سوق الراس",
+      "أنشئ حسابك كشركة شحن على منصة الراس الذكي",
     ),
     "shippingCompanySubtitle": MessageLookupByLibrary.simpleMessage(
       "حلول شحن موثوقة وسريعة",
@@ -1447,7 +1469,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "shippingProfileReviewNote": MessageLookupByLibrary.simpleMessage(
       "يرجى التأكد من صحة البيانات المدخلة. سيتم مراجعة أي تغييرات على بيانات شركة الشحن قبل اعتمادها.",
     ),
-    "shippingTimeRange": m28,
+    "shippingTimeRange": m32,
     "showAll": MessageLookupByLibrary.simpleMessage("عرض الكل"),
     "showAllRequests": MessageLookupByLibrary.simpleMessage("عرض كل الطلبات"),
     "showNumber": MessageLookupByLibrary.simpleMessage("إظهار الرقم"),
@@ -1465,8 +1487,8 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "signUp": MessageLookupByLibrary.simpleMessage("سجل الآن"),
     "similarAds": MessageLookupByLibrary.simpleMessage("إعلانات مشابهة"),
-    "sinceHoursAgo": m29,
-    "sinceMinutesAgo": m30,
+    "sinceHoursAgo": m33,
+    "sinceMinutesAgo": m34,
     "sixthRestrictions": MessageLookupByLibrary.simpleMessage(
       "سادساً: القيود والمحظورات",
     ),
@@ -1492,7 +1514,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "suggestedNames": MessageLookupByLibrary.simpleMessage("أسماء مقترحة"),
     "supplierAccount": MessageLookupByLibrary.simpleMessage("حساب مورد"),
     "supplierCollectionPolicy": MessageLookupByLibrary.simpleMessage(
-      "تسليم المورد البضاعة إلى تطبيق أو فريق سوق الراس لا يعني دفع قيمتها فوراً؛ لا تُصرف مستحقاته إلا بعد تحصيل قيمة الطلب فعلياً من المشتري أو العميل. بعد التحصيل تصبح قابلة للتسوية، وتحويل الأرباح المعتمدة يتم خلال 7 أيام عمل.",
+      "تسليم المورد البضاعة إلى تطبيق أو فريق الراس الذكي لا يعني دفع قيمتها فوراً؛ لا تُصرف مستحقاته إلا بعد تحصيل قيمة الطلب فعلياً من المشتري أو العميل. بعد التحصيل تصبح قابلة للتسوية، وتحويل الأرباح المعتمدة يتم خلال 7 أيام عمل.",
     ),
     "supplierCommitmentHeader": MessageLookupByLibrary.simpleMessage(
       "يلتزم المورد بعدم عرض أو بيع:",
@@ -1535,14 +1557,14 @@ class MessageLookup extends MessageLookupByLibrary {
       "اضغط لرفع صورة أو فيديو",
     ),
     "targetPrice": MessageLookupByLibrary.simpleMessage("السعر المستهدف"),
-    "targetPricePerUnit": m31,
+    "targetPricePerUnit": m35,
     "targetPricePerUnitGeneric": MessageLookupByLibrary.simpleMessage(
       "السعر المستهدف لكل وحدة",
     ),
     "taxNumber": MessageLookupByLibrary.simpleMessage("الرقم الضريبي"),
     "tenthAcceptance": MessageLookupByLibrary.simpleMessage("عاشراً: الموافقة"),
     "termsTitle": MessageLookupByLibrary.simpleMessage(
-      "سياسة الاستخدام والشروط والأحكام لتطبيق \"سوق الراس\"",
+      "سياسة الاستخدام والشروط والأحكام لتطبيق \"الراس الذكي\"",
     ),
     "theSupportTeamIsAlwaysHereToAssistYou":
         MessageLookupByLibrary.simpleMessage("فريق الدعم دائماً هنا لمساعدتك."),
@@ -1568,6 +1590,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "tradeLicenseSelected": MessageLookupByLibrary.simpleMessage(
       "تم اختيار رخصة التجارة",
     ),
+    "twoMonthsAgo": MessageLookupByLibrary.simpleMessage("منذ شهرين"),
     "underReview": MessageLookupByLibrary.simpleMessage("تحت المراجعة"),
     "underReviewAds": MessageLookupByLibrary.simpleMessage("تحت المعاينة"),
     "unitBag": MessageLookupByLibrary.simpleMessage("كيس"),
@@ -1608,8 +1631,8 @@ class MessageLookup extends MessageLookupByLibrary {
       "ضريبة القيمة المضافة (5%)",
     ),
     "video": MessageLookupByLibrary.simpleMessage("فيديو"),
-    "videoCompressFailed": m32,
-    "videoCompressedToMb": m33,
+    "videoCompressFailed": m36,
+    "videoCompressedToMb": m37,
     "videoDurationUnreadable": MessageLookupByLibrary.simpleMessage(
       "تعذر قراءة مدة الفيديو. جرّب ملفاً آخر.",
     ),
@@ -1625,12 +1648,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "videoSelectedFromGallery": MessageLookupByLibrary.simpleMessage(
       "فيديو محدد من المعرض",
     ),
-    "videoSizeExceeded": m34,
+    "videoSizeExceeded": m38,
     "viewAll": MessageLookupByLibrary.simpleMessage("عرض الكل"),
     "viewDetails": MessageLookupByLibrary.simpleMessage("عرض التفاصيل"),
     "viewOffers": MessageLookupByLibrary.simpleMessage("عرض العروض"),
     "website": MessageLookupByLibrary.simpleMessage("الموقع الإلكتروني"),
     "websiteHint": MessageLookupByLibrary.simpleMessage("https://"),
+    "weeksAgo": m39,
     "welcomeBack": MessageLookupByLibrary.simpleMessage("مرحبًا بك"),
     "welcomeShippingCompany": MessageLookupByLibrary.simpleMessage(
       "مرحباً بك في لوحة تحكم شركة الشحن",
@@ -1639,7 +1663,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "مرحباً بك في لوحة تحكم شركة الشحن الخاصة بك",
     ),
     "welcomeTagline": MessageLookupByLibrary.simpleMessage(
-      "منصة ذكية تربط الموردين والمشترين داخل سوق الراس وخارجه",
+      "منصة ذكية تربط الموردين والمشترين داخل الراس الذكي وخارجه",
     ),
     "welcomeTo": MessageLookupByLibrary.simpleMessage("مرحبا بك في"),
     "whatPaymentMethodsAreAvailable": MessageLookupByLibrary.simpleMessage(
@@ -1651,6 +1675,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "wholeBlackPepper": MessageLookupByLibrary.simpleMessage("بذور أسود كاملة"),
     "wholesalePrice": MessageLookupByLibrary.simpleMessage("سعر الجملة"),
     "workingHours": MessageLookupByLibrary.simpleMessage("ساعات العمل"),
+    "yearsAgo": m40,
     "yourAccountIsUnderReviewWeWillNotifyYouOnceItIsApproved":
         MessageLookupByLibrary.simpleMessage(
           "حسابك تحت المراجعة. سنقوم بالإعلام عندما يتم الموافقة عليه.",

@@ -5,7 +5,7 @@
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>
-		<string>Alrasmarket</string>
+		<string>Al Ras Smart</string>
 		<key>CFBundleLocalizations</key>
 		<array>
 			<string>en</string>

@@ -64,8 +64,8 @@ public static class OrderStatusNotificationHelper
         };
 
         return new OrderStatusNotificationContent(
-            EmailSubject: $"Al Ras App — Order #{orderId} is now {statusEn}",
-            EmailSubjectAr: $"تطبيق الراس — تحديث طلب #{orderId}: {statusAr}",
+            EmailSubject: $"Al Ras Smart — Order #{orderId} is now {statusEn}",
+            EmailSubjectAr: $"تطبيق الراس الذكي — تحديث طلب #{orderId}: {statusAr}",
             PushTitle: "Order update",
             PushTitleAr: "تحديث الطلب",
             PushBody: $"Order #{orderId}: {statusEn}",

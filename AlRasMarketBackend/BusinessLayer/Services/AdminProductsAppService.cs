@@ -105,6 +105,7 @@ public class AdminProductsAppService(
         DateTime? createdTo,
         bool? hasPendingOffers = null,
         bool? editResubmitOnly = null,
+        string? language = null,
         CancellationToken cancellationToken = default)
     {
         page = page < 1 ? 1 : page;
@@ -296,14 +297,18 @@ public class AdminProductsAppService(
             return new AdminProductListItemDto
         {
             ProductId = x.ProductId,
-            Name = AdminProductTextHelper.ResolveName(tr, x.Name),
-            Description = AdminProductTextHelper.ResolveDescription(tr, x.DescriptionEn),
+            Name = AdminProductTextHelper.ResolveNameForLocale(tr, x.Name, language),
+            Description = AdminProductTextHelper.ResolveDescriptionForLocale(tr, x.DescriptionEn, language),
             PriceUsd = x.USDPrice,
             Currency = currency,
             PriceFormatted = ProductCurrencyHelper.FormatPrice(x.USDPrice, currency),
             Quantity = x.Quantity,
             Negotiable = x.Negotiable,
-            CategoryName = x.CategoryName,
+            CategoryName = AdminProductTextHelper.LocalizeCategoryName(
+                x.CategoryId,
+                x.CategoryName,
+                staticReferenceCache,
+                language),
             CategoryId = x.CategoryId,
             ProductTypeId = x.ProductTypeId,
             ProductTypeName = x.ProductTypeName,
@@ -327,7 +332,10 @@ public class AdminProductsAppService(
             DestinationCountryName = x.DestinationCountryName ?? string.Empty,
             LoadingPortName = x.LoadingPortName ?? string.Empty,
             ArrivalPortName = x.ArrivalPortName ?? string.Empty,
-            ShippingDescription = AdminProductTextHelper.ResolveShippingDescription(tr, x.ShippingDescription),
+            ShippingDescription = AdminProductTextHelper.ResolveShippingDescriptionForLocale(
+                tr,
+                x.ShippingDescription,
+                language),
             ShippingRouteSummary = AdminShippingDisplayHelper.BuildRouteSummary(
                 x.OriginCountryName,
                 x.LoadingPortName,
@@ -593,6 +601,7 @@ public class AdminProductsAppService(
 
     public async Task<AdminProductDetailDto> GetProductByIdAsync(
         string productId,
+        string? language = null,
         CancellationToken cancellationToken = default)
     {
         if (!Guid.TryParse(productId, out var parsedProductId))
@@ -653,9 +662,13 @@ public class AdminProductsAppService(
                     })
                     .ToList(),
                 OriginCountryName = x.OriginCountry != null ? x.OriginCountry.CountryNameEn : null,
+                x.OriginCountryId,
                 DestinationCountryName = x.DestinationCountry != null ? x.DestinationCountry.CountryNameEn : null,
+                x.DestinationCountryId,
                 LoadingPortName = x.LoadingPort != null ? x.LoadingPort.PortNameEn : null,
+                x.LoadingPortId,
                 ArrivalPortName = x.ArrivalPort != null ? x.ArrivalPort.PortNameEn : null,
+                x.ArrivalPortId,
                 ShippingDescription = x.ShippingDescriptionEn,
                 x.ShippingDuration,
                 x.OfferDuration,
@@ -695,13 +708,45 @@ public class AdminProductsAppService(
             [raw.ProductId],
             cancellationToken);
         translations.TryGetValue(raw.ProductId, out var tr);
-        var displayName = AdminProductTextHelper.ResolveName(tr, raw.Name);
-        var displayDescription = AdminProductTextHelper.ResolveDescription(tr, raw.DescriptionEn);
-        var displayRetailDescription = AdminProductTextHelper.ResolveRetailDescription(tr, raw.RetailDescription);
-        var displaySupplierNotes = AdminProductTextHelper.ResolveSupplierNotes(tr, raw.SupplierNotesEn);
-        var displayShippingDescription = AdminProductTextHelper.ResolveShippingDescription(
+        var displayName = AdminProductTextHelper.ResolveNameForLocale(tr, raw.Name, language);
+        var displayDescription = AdminProductTextHelper.ResolveDescriptionForLocale(tr, raw.DescriptionEn, language);
+        var displayRetailDescription = AdminProductTextHelper.ResolveRetailDescriptionForLocale(
             tr,
-            raw.ShippingDescription);
+            raw.RetailDescription,
+            language);
+        var displaySupplierNotes = AdminProductTextHelper.ResolveSupplierNotesForLocale(
+            tr,
+            raw.SupplierNotesEn,
+            language);
+        var displayShippingDescription = AdminProductTextHelper.ResolveShippingDescriptionForLocale(
+            tr,
+            raw.ShippingDescription,
+            language);
+        var displayCategoryName = AdminProductTextHelper.LocalizeCategoryName(
+            raw.CategoryId,
+            raw.CategoryName,
+            staticReferenceCache,
+            language);
+        var displayOriginCountry = AdminProductTextHelper.LocalizeCountryName(
+            raw.OriginCountryId,
+            raw.OriginCountryName,
+            staticReferenceCache,
+            language);
+        var displayDestinationCountry = AdminProductTextHelper.LocalizeCountryName(
+            raw.DestinationCountryId,
+            raw.DestinationCountryName,
+            staticReferenceCache,
+            language);
+        var displayLoadingPort = AdminProductTextHelper.LocalizePortName(
+            raw.LoadingPortId,
+            raw.LoadingPortName,
+            staticReferenceCache,
+            language);
+        var displayArrivalPort = AdminProductTextHelper.LocalizePortName(
+            raw.ArrivalPortId,
+            raw.ArrivalPortName,
+            staticReferenceCache,
+            language);
 
         return new AdminProductDetailDto
         {
@@ -716,7 +761,7 @@ public class AdminProductsAppService(
             Quantity = raw.Quantity,
             Negotiable = raw.Negotiable,
             CategoryId = raw.CategoryId,
-            CategoryName = raw.CategoryName,
+            CategoryName = displayCategoryName,
             ProductTypeId = raw.ProductTypeId,
             ProductTypeName = raw.ProductTypeName,
             UnitId = raw.UnitId,
@@ -795,10 +840,10 @@ public class AdminProductsAppService(
             ImagePaths = imagePaths,
             Images = raw.Images,
             Documents = raw.Documents,
-            OriginCountryName = raw.OriginCountryName ?? string.Empty,
-            DestinationCountryName = raw.DestinationCountryName ?? string.Empty,
-            LoadingPortName = raw.LoadingPortName ?? string.Empty,
-            ArrivalPortName = raw.ArrivalPortName ?? string.Empty,
+            OriginCountryName = displayOriginCountry,
+            DestinationCountryName = displayDestinationCountry,
+            LoadingPortName = displayLoadingPort,
+            ArrivalPortName = displayArrivalPort,
             ShippingDescription = displayShippingDescription,
             ShippingRouteSummary = AdminShippingDisplayHelper.BuildRouteSummary(
                 raw.OriginCountryName,

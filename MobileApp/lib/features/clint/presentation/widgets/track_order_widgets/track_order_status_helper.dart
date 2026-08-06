@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/utils/product_quantity_formatter.dart';
+import 'package:alrasmarket/core/utils/relative_time_formatter.dart';
 import 'package:alrasmarket/features/clint/data/models/my_order_model.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:intl/intl.dart';
@@ -62,7 +63,7 @@ class TrackOrderStatusHelper {
                 ? TrackOrderStepState.completed
                 : TrackOrderStepState.inProgress,
             subtitle: refunded
-                ? (_formatDate(order.refundedAtUtc ?? '') ??
+                ? (_formatRelative(l10n, order.refundedAtUtc ?? '') ??
                     l10n.orderRefundCompleted)
                 : l10n.orderRefundNotice,
           ),
@@ -84,7 +85,7 @@ class TrackOrderStatusHelper {
           subtitle: order.returnReason?.trim().isNotEmpty == true
               ? order.returnReason!.trim()
               : l10n.returnOrderConfirmMessage,
-          date: _formatDate(order.returnRequestedAtUtc ?? ''),
+          date: _formatRelative(l10n, order.returnRequestedAtUtc ?? ''),
         ),
       ];
       if (approved || order.returnAdminResponse?.trim().isNotEmpty == true) {
@@ -97,7 +98,7 @@ class TrackOrderStatusHelper {
             subtitle: order.returnAdminResponse?.trim().isNotEmpty == true
                 ? order.returnAdminResponse!.trim()
                 : l10n.orderReturnSuccess,
-            date: _formatDate(order.returnRespondedAtUtc ?? ''),
+            date: _formatRelative(l10n, order.returnRespondedAtUtc ?? ''),
           ),
         );
       }
@@ -116,7 +117,7 @@ class TrackOrderStatusHelper {
     S l10n,
     bool isArabic,
   ) {
-    final createdDate = _formatDate(order.createdAt);
+    final createdDate = _formatRelative(l10n, order.createdAt);
     final history = order.statusHistory;
 
     if (history.isNotEmpty) {
@@ -141,7 +142,7 @@ class TrackOrderStatusHelper {
                     ? TrackOrderStepState.completed
                     : TrackOrderStepState.inProgress)
                 : TrackOrderStepState.completed,
-            date: _formatDate(entry.createdAtUtc),
+            date: _formatRelative(l10n, entry.createdAtUtc),
           ),
         );
       }
@@ -231,10 +232,9 @@ class TrackOrderStatusHelper {
     return isArabic ? 'غير معروف' : 'Unknown';
   }
 
-  static String? _formatDate(String raw) {
-    final parsed = DateTime.tryParse(raw);
-    if (parsed == null) return null;
-    return DateFormat('MMMM d, yyyy').format(parsed.toLocal());
+  static String? _formatRelative(S l10n, String raw) {
+    final text = RelativeTimeFormatter.format(l10n, raw);
+    return text.isEmpty ? null : text;
   }
 
   static String destinationLabel(MyOrderModel order, {bool isArabic = false}) {

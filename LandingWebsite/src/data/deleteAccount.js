@@ -1,7 +1,7 @@
 export const deleteAccountAr = {
-  title: 'حذف حساب تطبيق الراس الذكي (سوق الراس)',
+  title: 'حذف حساب تطبيق الراس الذكي (الراس الذكي)',
   intro:
-    'توضح هذه الصفحة كيفية طلب حذف حسابك في تطبيق «الراس الذكي / سوق الراس» وما هي البيانات التي تُحذف، بما يتوافق مع متطلبات Google Play لخصوصية البيانات وحذف الحساب.',
+    'توضح هذه الصفحة كيفية طلب حذف حسابك في تطبيق «الراس الذكي» وما هي البيانات التي تُحذف، بما يتوافق مع متطلبات Google Play لخصوصية البيانات وحذف الحساب.',
   lastUpdated: 'آخر تحديث: يوليو 2026',
   sections: [
     {
@@ -99,7 +99,7 @@ export const deleteAccountAr = {
 export const deleteAccountEn = {
   title: 'Delete your Al Ras Smart App account',
   intro:
-    'This page explains how to request deletion of your Al Ras Smart App (Souq Al Ras) account and what data is deleted, in line with Google Play account-deletion and data-privacy requirements.',
+    'This page explains how to request deletion of your Al Ras Smart App (Al Ras Smart) account and what data is deleted, in line with Google Play account-deletion and data-privacy requirements.',
   lastUpdated: 'Last updated: July 2026',
   sections: [
     {

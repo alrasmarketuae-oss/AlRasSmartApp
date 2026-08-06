@@ -6,7 +6,7 @@ export default function PhoneShowcase({ lang }) {
     ar: {
       title: 'حمّل التطبيق على هاتفك',
       subtitle: 'اختر منصتك وابدأ التجارة بسهولة وأمان',
-      screenTitle: 'سوق الراس',
+      screenTitle: 'الراس الذكي',
       screenSubtitle: 'تجارة الجملة الذكية',
       androidBtn: 'تحميل الآن',
       iosBtn: 'تحميل الآن',
@@ -14,7 +14,7 @@ export default function PhoneShowcase({ lang }) {
     en: {
       title: 'Get the app on your phone',
       subtitle: 'Choose your platform and start trading securely',
-      screenTitle: 'Al Ras Market',
+      screenTitle: 'Al Ras Smart',
       screenSubtitle: 'Smart wholesale trade',
       androidBtn: 'Download Now',
       iosBtn: 'Download Now',
@@ -33,7 +33,7 @@ export default function PhoneShowcase({ lang }) {
         <div className="mx-auto max-w-sm overflow-hidden rounded-3xl border border-slate-200 bg-white p-3 shadow-xl sm:max-w-md">
           <img
             src={screenshot}
-            alt={isAr ? 'واجهة تطبيق سوق الراس بالعربية' : 'Al Ras Market app in English'}
+            alt={isAr ? 'واجهة تطبيق الراس الذكي بالعربية' : 'Al Ras Smart app in English'}
             className="h-auto w-full rounded-2xl border border-slate-200 object-cover"
           />
         </div>

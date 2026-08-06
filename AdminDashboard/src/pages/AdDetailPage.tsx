@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import AdDetailView from '../components/ads/AdDetailView'
-import { resolveAssetUrl } from '../lib/assets'
 import { useAppPreferences } from '../context/AppPreferencesProvider'
 import { useReturnToListPath } from '../hooks/useReturnToListPath'
 import {
@@ -23,19 +22,23 @@ import { getRtkErrorMessage } from '../utils/rtkError'
 export default function AdDetailPage() {
   const { productId = '' } = useParams()
   const navigate = useNavigate()
-  const { t } = useAppPreferences()
+  const { t, locale } = useAppPreferences()
   const backToListPath = useReturnToListPath('/ads')
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [deletingImageId, setDeletingImageId] = useState<number | null>(null)
   const [deletingVideoPath, setDeletingVideoPath] = useState<string | null>(null)
-  const [trimTargetPath, setTrimTargetPath] = useState<string | null>(null)
+  const [trimTarget, setTrimTarget] = useState<{
+    path: string
+    durationSeconds?: number | null
+  } | null>(null)
   const [isReplacingImage, setIsReplacingImage] = useState(false)
 
-  const { data: product, error, isLoading } = useGetAdminProductDetailQuery(productId, {
-    skip: !productId,
-  })
+  const { data: product, error, isLoading } = useGetAdminProductDetailQuery(
+    { productId, lang: locale },
+    { skip: !productId },
+  )
   const { data: lookups } = useGetAdminProductLookupsQuery()
   const { data: categoriesData } = useGetCategoriesQuery()
 
@@ -163,7 +166,7 @@ export default function AdDetailPage() {
   }
 
   async function handleTrimSave(file: File, durationSeconds: number) {
-    if (!trimTargetPath) return
+    if (!trimTarget) return
 
     setActionError(null)
     setSuccessMessage(null)
@@ -173,9 +176,9 @@ export default function AdDetailPage() {
         productId,
         file,
         videoDurationSeconds: durationSeconds,
-        replaceVideoPath: trimTargetPath,
+        replaceVideoPath: trimTarget.path,
       }).unwrap()
-      setTrimTargetPath(null)
+      setTrimTarget(null)
       setSuccessMessage(t('ads.trimVideoSaveSuccess'))
     } catch (err) {
       setActionError(getRtkErrorMessage(err as never, t('ads.trimVideoSaveError')))
@@ -261,17 +264,25 @@ export default function AdDetailPage() {
           onUploadImage={(file) => void handleUploadImage(file)}
           onDeleteImage={(imageId) => void handleDeleteImage(imageId)}
           onDeleteVideo={(path) => void handleDeleteVideo(path)}
-          onTrimVideo={(path) => setTrimTargetPath(path)}
-          trimmingVideoPath={isTrimmingVideo ? trimTargetPath : null}
+          onTrimVideo={(path) => {
+            const match = product?.videos.find((video) => video.path === path)
+            setTrimTarget({
+              path,
+              durationSeconds:
+                match?.durationSeconds ?? product?.videoDurationSeconds ?? null,
+            })
+          }}
+          trimmingVideoPath={isTrimmingVideo ? trimTarget?.path ?? null : null}
           onReplaceImage={(imageId, file) => handleReplaceImage(imageId, file)}
         />
       )}
 
       <AdminVideoTrimModal
-        open={trimTargetPath != null}
-        videoUrl={trimTargetPath ? resolveAssetUrl(trimTargetPath) : ''}
+        open={trimTarget != null}
+        videoPath={trimTarget?.path ?? ''}
+        knownDurationSeconds={trimTarget?.durationSeconds}
         isSaving={isTrimmingVideo}
-        onClose={() => setTrimTargetPath(null)}
+        onClose={() => setTrimTarget(null)}
         onSave={handleTrimSave}
       />
     </div>

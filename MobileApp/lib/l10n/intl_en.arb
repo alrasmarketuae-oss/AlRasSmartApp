@@ -81,7 +81,7 @@
     "smartAlRasAppFull": "Al Ras Smart App",
     "appWord": "App",
     "platformForWholesaleTradeBetweenCompanies": "Platform for wholesale trade between companies",
-    "welcomeTagline": "A smart platform connecting suppliers and buyers inside and outside Al Ras market",
+    "welcomeTagline": "A smart platform connecting suppliers and buyers inside and outside Al Ras Smart",
     "registerSupplier": "Supplier Sign-up",
     "registerSupplierSubtitle": "List your products and reach customers",
     "registerClient": "Customer Sign-up",
@@ -275,9 +275,9 @@
     "englishLabel": "English",
     "languagePreferenceHint": "Choose your preferred language. The app will update immediately."
 ,"PolicyandPrivacy": "Policy and Privacy",
-    "termsTitle": "Terms of Use and Conditions for the \"Souq Al Ras\" App",
+    "termsTitle": "Terms of Use and Conditions for the \"Al Ras Smart\" App",
     "firstDefinitions": "First: Definitions",
-    "defApp": "The app refers to the Souq Al Ras electronic platform.",
+    "defApp": "The app refers to the Al Ras Smart electronic platform.",
     "defCompany": "The company refers to Merge Spice Foodstuff Trading LLC.",
     "defSupplier": "The supplier refers to any company or individual offering products through the app.",
     "defClient": "The client refers to any user purchasing products through the app.",
@@ -399,7 +399,7 @@
 "shippingCompanyLogin": "Shipping Company Login",
 "shippingCompanyLoginSubtitle": "Sign in to manage your shipping offers and requests",
 "shippingCompanyRegister": "Create Shipping Company Account",
-"shippingCompanyRegisterSubtitle": "Register your shipping company on Al Ras Market",
+"shippingCompanyRegisterSubtitle": "Register your shipping company on Al Ras Smart",
 "shippingCompanyName": "Shipping Company Name",
 "enterShippingCompanyName": "Enter shipping company name",
 "shippingCompanyDashboard": "Shipping Dashboard",
@@ -427,7 +427,7 @@
   "product": "Product",
   "productCode": "Product code",
   "shareProduct": "Share product",
-  "shareProductHint": "Find this product on Al Ras Market.",
+  "shareProductHint": "Find this product on Al Ras Smart.",
   "shareProductSearchHint": "Search for this code in the app to open the product.",
   "requestedQuantity": "Requested Quantity",
   "offerDetails": "Offer Details",
@@ -769,8 +769,51 @@
   "uploadProfilePhoto": "Upload profile photo",
   "clearAll": "Clear all",
   "justNow": "Just now",
+  "oneSecondAgo": "1 second ago",
+  "secondsAgo": "{count} seconds ago",
+  "@secondsAgo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "oneMinuteAgo": "1 minute ago",
+  "minutesAgo": "{count} minutes ago",
+  "@minutesAgo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "oneHourAgo": "1 hour ago",
+  "hoursAgoRelative": "{count} hours ago",
+  "@hoursAgoRelative": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "oneDayAgo": "1 day ago",
   "daysAgo": "{days} days ago",
+  "oneWeekAgo": "1 week ago",
+  "weeksAgo": "{count} weeks ago",
+  "@weeksAgo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "oneMonthAgo": "1 month ago",
+  "twoMonthsAgo": "2 months ago",
+  "monthsAgo": "{count} months ago",
+  "@monthsAgo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "oneYearAgo": "1 year ago",
+  "yearsAgo": "{count} years ago",
+  "@yearsAgo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "sinceMinutesAgo": "{minutes} min ago",
   "deliveryEmirate": "Delivery emirate",
   "selectDeliveryEmirate": "Select delivery emirate",
@@ -919,7 +962,7 @@
   "aiAssistantVoiceSend": "Send",
   "aiAssistantVoiceUnavailable": "Voice input is not available on this device",
   "aiAssistantUnsupportedLanguage": "We currently support Arabic and English. We may translate your question internally to understand it, then reply in a supported language.",
-  "aiAssistantOutOfScope": "I can only help with Al Ras Market topics (accounts, ads, orders, payment, returns). Please ask something about the platform.",
+  "aiAssistantOutOfScope": "I can only help with Al Ras Smart topics (accounts, ads, orders, payment, returns). Please ask something about the platform.",
   "aiAssistantImageSearchHint": "Image search: upload a product photo from the search bar to find similar catalog matches. See “Image-search model training” under Help & Support for details.",
   "aiAssistantReturnPolicyHint": "For damaged, expired, or materially different goods: report within 24 business hours of receipt with photos. If support approves, refund is issued within 1 business day, and the supplier balance is adjusted if it was credited.",
   "aiAssistantBalanceHint": "Supplier balance increases immediately on Retail card payments. Cash-on-delivery credits after collection/receipt. Withdrawals via IBAN are processed within 7 business days after support approval.",
@@ -942,5 +985,5 @@
   "returnPolicyPayout": "Approved supplier earnings transfers are completed within 7 business days per platform process.",
   "paymentRetailOnline": "Online card payment is available for Retail orders only.",
   "paymentCodAll": "Cash on delivery applies to other deal types according to platform process and the Al Ras team.",
-  "supplierCollectionPolicy": "A supplier handing goods to the Al Ras Market app or team does not trigger immediate payment. Supplier funds are released only after the order value is actually collected from the buyer/customer. After collection, approved earnings are transferred within 7 business days."
+  "supplierCollectionPolicy": "A supplier handing goods to the Al Ras Smart app or team does not trigger immediate payment. Supplier funds are released only after the order value is actually collected from the buyer/customer. After collection, approved earnings are transferred within 7 business days."
 }

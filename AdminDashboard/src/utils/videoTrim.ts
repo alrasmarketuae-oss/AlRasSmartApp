@@ -17,6 +17,67 @@ function extensionForMime(mime: string): string {
   return mime.includes('mp4') ? 'mp4' : 'webm'
 }
 
+function waitForEvent(target: HTMLVideoElement, event: keyof HTMLMediaElementEventMap): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const onSuccess = () => {
+      cleanup()
+      resolve()
+    }
+    const onFailure = () => {
+      cleanup()
+      reject(new Error('Could not load video'))
+    }
+    const cleanup = () => {
+      target.removeEventListener(event, onSuccess)
+      target.removeEventListener('error', onFailure)
+    }
+    target.addEventListener(event, onSuccess, { once: true })
+    target.addEventListener('error', onFailure, { once: true })
+  })
+}
+
+function waitForSeek(video: HTMLVideoElement): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      cleanup()
+      reject(new Error('Could not seek video'))
+    }, 10000)
+
+    const onSeeked = () => {
+      cleanup()
+      resolve()
+    }
+
+    const cleanup = () => {
+      window.clearTimeout(timeout)
+      video.removeEventListener('seeked', onSeeked)
+    }
+
+    video.addEventListener('seeked', onSeeked)
+  })
+}
+
+async function validateVideoBlob(blob: Blob): Promise<void> {
+  if (!blob.size) {
+    throw new Error('Trimmed video is empty')
+  }
+
+  const url = URL.createObjectURL(blob)
+  const video = document.createElement('video')
+  video.src = url
+  video.muted = true
+  video.preload = 'auto'
+
+  try {
+    await waitForEvent(video, 'loadedmetadata')
+    if (!Number.isFinite(video.duration) || video.duration <= 0) {
+      throw new Error('Trimmed video is invalid')
+    }
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
+
 /**
  * Trim a video segment in the browser and return a File ready for upload.
  */
@@ -35,13 +96,10 @@ export async function trimVideoToFile(
   video.muted = true
   video.playsInline = true
   video.preload = 'auto'
-  video.crossOrigin = 'anonymous'
 
   try {
-    await new Promise<void>((resolve, reject) => {
-      video.onloadedmetadata = () => resolve()
-      video.onerror = () => reject(new Error('Could not load video'))
-    })
+    await waitForEvent(video, 'loadedmetadata')
+    await waitForEvent(video, 'canplay')
 
     const recorderMime = pickRecorderMimeType()
     const fileMime = containerMime(recorderMime)
@@ -73,33 +131,41 @@ export async function trimVideoToFile(
     })
 
     video.currentTime = Math.max(0, startSec)
-    await new Promise<void>((resolve, reject) => {
-      const onSeeked = () => {
-        video.removeEventListener('seeked', onSeeked)
-        resolve()
-      }
-      video.addEventListener('seeked', onSeeked)
-      window.setTimeout(() => {
-        video.removeEventListener('seeked', onSeeked)
-        reject(new Error('Could not seek video'))
-      }, 8000)
-    })
+    await waitForSeek(video)
 
-    recorder.start(250)
+    recorder.start(100)
     await video.play()
 
-    const trimMs = Math.max(500, (endSec - startSec) * 1000)
-    await new Promise<void>((resolve) => {
-      window.setTimeout(() => resolve(), trimMs + 200)
+    await new Promise<void>((resolve, reject) => {
+      const trimMs = Math.max(500, (endSec - startSec) * 1000)
+      const timeout = window.setTimeout(() => {
+        cleanup()
+        reject(new Error('Trim timed out'))
+      }, trimMs + 15000)
+
+      const onTimeUpdate = () => {
+        if (video.currentTime >= endSec - 0.05) {
+          cleanup()
+          resolve()
+        }
+      }
+
+      const cleanup = () => {
+        window.clearTimeout(timeout)
+        video.removeEventListener('timeupdate', onTimeUpdate)
+        video.pause()
+      }
+
+      video.addEventListener('timeupdate', onTimeUpdate)
     })
 
-    video.pause()
-    if (recorder.state !== 'inactive') recorder.stop()
+    if (recorder.state !== 'inactive') {
+      recorder.requestData()
+      recorder.stop()
+    }
 
     const trimmedBlob = await blobPromise
-    if (!trimmedBlob.size) {
-      throw new Error('Trimmed video is empty')
-    }
+    await validateVideoBlob(trimmedBlob)
 
     const durationSeconds = Math.max(1, Math.min(180, Math.round(endSec - startSec)))
     const ext = extensionForMime(fileMime)

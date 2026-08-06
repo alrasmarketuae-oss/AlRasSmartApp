@@ -81,7 +81,7 @@ class _Section {
 
 const _ar = _Doc(
   intro:
-      'يعتمد سوق الراس على نموذج ذكاء اصطناعي للبحث بالصور حتى يجد المستخدم منتجات مشابهة بسرعة ودقة. هذه الصفحة تشرح بأسلوب مبسط كيف يُبنى النموذج، وكيف تُستخدم صور الإعلانات، ولماذا نهتم دائماً بنتائج صحيحة.',
+      'يعتمد الراس الذكي على نموذج ذكاء اصطناعي للبحث بالصور حتى يجد المستخدم منتجات مشابهة بسرعة ودقة. هذه الصفحة تشرح بأسلوب مبسط كيف يُبنى النموذج، وكيف تُستخدم صور الإعلانات، ولماذا نهتم دائماً بنتائج صحيحة.',
   sections: [
     _Section('1) الهدف من النموذج', [
       'الهدف ليس استبدال البحث النصي، بل إكمال التجربة: عندما يرسل المستخدم صورة لمنتج، يقوم النموذج بمقارنتها مع صور المنتجات المنشورة في المنصة ويعرض أقرب النتائج.',
@@ -106,7 +106,7 @@ const _ar = _Doc(
       'عند بحث المستخدم بالصورة، تُحوَّل صورته إلى بصمة بنفس الطريقة، ثم تُقارن مع فهرس المنتجات المعتمدة في المنصة.',
     ]),
     _Section('6) التحسين المستمر والدقة', [
-      'النموذج لا يتوقف عند نسخة واحدة؛ مع إضافة إعلانات وصور جديدة تتحسن تغطية المنتجات ويزداد فهم النموذج لأنواع البضائع المعروضة في سوق الراس.',
+      'النموذج لا يتوقف عند نسخة واحدة؛ مع إضافة إعلانات وصور جديدة تتحسن تغطية المنتجات ويزداد فهم النموذج لأنواع البضائع المعروضة في الراس الذكي.',
       'كلما كانت صور الإعلان أوضح وأقرب للمنتج الحقيقي، ساعد ذلك النموذج على إعطاء نتائج أفضل للجميع.',
     ]),
     _Section('7) الخصوصية والاستخدام المسؤول', [
@@ -123,7 +123,7 @@ const _ar = _Doc(
 
 const _en = _Doc(
   intro:
-      'Al Ras Market uses an AI image-search model so users can find similar products quickly and accurately. This page explains how the model is built, how listing images are used, and why correct results always matter to us.',
+      'Al Ras Smart uses an AI image-search model so users can find similar products quickly and accurately. This page explains how the model is built, how listing images are used, and why correct results always matter to us.',
   sections: [
     _Section('1) Purpose of the model', [
       'The goal is not to replace text search, but to complete the experience: when a user uploads a product photo, the model compares it with product images published on the platform and returns the closest matches.',
@@ -148,7 +148,7 @@ const _en = _Doc(
       'When a user searches by image, their photo is converted with the same method and compared against the indexed catalog.',
     ]),
     _Section('6) Continuous improvement and accuracy', [
-      'As new ads and images are added, product coverage grows and the model better understands goods listed on Al Ras Market.',
+      'As new ads and images are added, product coverage grows and the model better understands goods listed on Al Ras Smart.',
       'Clearer listing photos that represent the real product help the model deliver better results for everyone.',
     ]),
     _Section('7) Privacy and responsible use', [

@@ -76,7 +76,7 @@ export function AppPreferencesProvider({ children }: { children: ReactNode }) {
     root.lang = locale
     root.dir = dir
     document.title =
-      locale === 'ar' ? 'سوق الراس - الإدارة' : 'Ras Al Souq — Admin'
+      locale === 'ar' ? 'الراس الذكي - الإدارة' : 'Al Ras Smart — Admin'
   }, [isDark, locale, dir])
 
   const setTheme = useCallback((next: Theme) => {

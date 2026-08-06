@@ -4,7 +4,7 @@ export const encryptedMessagesAr = [
   {
     title: 'ما معنى التشفير التام بين الطرفين؟',
     paragraphs: [
-      'عندما تفتح محادثة الدعم في تطبيق سوق الراس، يتم تفعيل طبقة حماية تُبقي محتوى الرسائل مقروءًا فقط للأشخاص الموجودين داخل هذه المحادثة.',
+      'عندما تفتح محادثة الدعم في تطبيق الراس الذكي، يتم تفعيل طبقة حماية تُبقي محتوى الرسائل مقروءًا فقط للأشخاص الموجودين داخل هذه المحادثة.',
       'الخادم ينقل الرسالة ويحفظها بصيغة مشفّرة، لكنه لا يحتاج أن يقرأ النص الصريح كي يوصلها. الهدف أن تبقى المحادثة خاصة بينك وبين فريق الدعم المعتمد.',
     ],
   },
@@ -46,7 +46,7 @@ export const encryptedMessagesAr = [
   {
     title: 'من يستطيع القراءة أو الاستماع؟',
     paragraphs: [
-      'فقط أطراف هذه المحادثة: أنت وفريق الدعم المخوّل في سوق الراس.',
+      'فقط أطراف هذه المحادثة: أنت وفريق الدعم المخوّل في الراس الذكي.',
       'موظفو الدعم المعتمدون يفكّون التشفير على أجهزة لوحة التحكم بعد تحقق الهوية، لكي يردّوا عليك.',
       'لا يظهر نص الرسالة الواضح داخل قاعدة البيانات بشكل قابل للقراءة العادية؛ الإشعارات أيضًا لا تفصح عن محتوى الرسالة المشفّرة.',
     ],
@@ -71,7 +71,7 @@ export const encryptedMessagesAr = [
     paragraphs: [
       'حدّث التطبيق، ولا تشارك رمز OTP، واحمِ هاتفك بقفل شاشة.',
       'إذا غيّرت الجهاز، قد تحتاج الجلسة إلى تهيئة مفاتيح جديدة على الجهاز الجديد؛ الرسائل القديمة المشفّرة بمحور جهاز سابق قد لا تُفك على الجهاز الجديد.',
-      'شكراً لثقتك في سوق الراس — خصوصية محادثات الدعم جزء أساسي من تجربة المنصة.',
+      'شكراً لثقتك في الراس الذكي — خصوصية محادثات الدعم جزء أساسي من تجربة المنصة.',
     ],
   },
 ]
@@ -80,7 +80,7 @@ export const encryptedMessagesEn = [
   {
     title: 'What does end-to-end encryption mean?',
     paragraphs: [
-      'When you open Al Ras Market support chat, a protection layer keeps message content readable only to people in that conversation.',
+      'When you open Al Ras Smart support chat, a protection layer keeps message content readable only to people in that conversation.',
       'The server can deliver and store ciphertext without needing the clear text. The goal is a private thread between you and authorized support staff.',
     ],
   },
@@ -122,7 +122,7 @@ export const encryptedMessagesEn = [
   {
     title: 'Who can read or listen?',
     paragraphs: [
-      'Only parties in this conversation: you and authorized Al Ras Market support.',
+      'Only parties in this conversation: you and authorized Al Ras Smart support.',
       'Verified support agents decrypt on dashboard devices after sign-in so they can reply.',
       'Clear text is not stored for casual database reading; push notifications do not reveal encrypted body content.',
     ],
@@ -147,7 +147,7 @@ export const encryptedMessagesEn = [
     paragraphs: [
       'Keep the app updated, never share OTP codes, and lock your phone.',
       'On a new device, keys may need to be set up again; messages sealed with an older device key may not decrypt on the new device.',
-      'Thank you for trusting Al Ras Market — private support chats are part of the platform experience.',
+      'Thank you for trusting Al Ras Smart — private support chats are part of the platform experience.',
     ],
   },
 ]

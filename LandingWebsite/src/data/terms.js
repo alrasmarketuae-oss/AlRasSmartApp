@@ -1,10 +1,10 @@
 export const termsAr = {
-  title: 'سياسة الاستخدام والشروط والأحكام لتطبيق "سوق الراس"',
+  title: 'سياسة الاستخدام والشروط والأحكام لتطبيق "الراس الذكي"',
   sections: [
     {
       title: 'أولاً: التعريفات',
       items: [
-        'يقصد بـ التطبيق: منصة سوق الراس الإلكترونية.',
+        'يقصد بـ التطبيق: منصة الراس الذكي الإلكترونية.',
         'يقصد بـ الشركة: شركة ميرج سبايس لتجارة المواد الغذائية (Merge Spice Foodstuff Trading LLC).',
         'يقصد بـ المورد: أي شركة أو فرد يقوم بعرض منتجاته عبر التطبيق.',
         'يقصد بـ العميل: أي مستخدم يقوم بشراء المنتجات عبر التطبيق.',
@@ -62,8 +62,8 @@ export const termsAr = {
         'يتم إرسال الفاتورة للعميل للحصول على التأكيد.',
         'بعد تأكيد العميل: يتم تحصيل المبلغ من العميل حسب طريقة الدفع المتاحة.',
         'الدفع الإلكتروني (أونلاين) متاح لطلبات التجزئة Retail فقط.',
-        'الدفع عند الاستلام ينطبق على بقية أنواع التعاملات وفق آلية المنصة وفريق رأس السوق.',
-        'تسليم المورد البضاعة إلى تطبيق أو فريق سوق الراس لا يعني دفع قيمتها فوراً؛ لا تُصرف مستحقاته إلا بعد تحصيل قيمة الطلب فعلياً من المشتري أو العميل.',
+        'الدفع عند الاستلام ينطبق على بقية أنواع التعاملات وفق آلية المنصة وفريق الراس الذكي.',
+        'تسليم المورد البضاعة إلى تطبيق أو فريق الراس الذكي لا يعني دفع قيمتها فوراً؛ لا تُصرف مستحقاته إلا بعد تحصيل قيمة الطلب فعلياً من المشتري أو العميل.',
         'يتم إخطار المورد ببدء عملية التوصيل حسب نوع الطلب.',
         'تُراجع مستحقات المورد وفق حالة الدفع/الاستلام، ويتم تحويل الأرباح المعتمدة خلال 7 أيام عمل.',
         'الشركة وسيط مالي بين الطرفين (تحصيل من العميل – تحويل للمورد) حيث ينطبق ذلك.',
@@ -118,12 +118,12 @@ export const termsAr = {
 }
 
 export const termsEn = {
-  title: 'Terms of Use and Conditions for the "Souq Al Ras" App',
+  title: 'Terms of Use and Conditions for the "Al Ras Smart" App',
   sections: [
     {
       title: '1. Definitions',
       items: [
-        'App: the Souq Al Ras electronic marketplace platform.',
+        'App: the Al Ras Smart electronic marketplace platform.',
         'Company: Merge Spice Foodstuff Trading LLC.',
         'Supplier: any company or individual listing products through the app.',
         'Client: any user purchasing products through the app.',
@@ -182,7 +182,7 @@ export const termsEn = {
         'After client confirmation, payment is collected according to the available payment method.',
         'Online card payment is available for Retail orders only.',
         'Cash on delivery applies to other deal types according to platform process and the Al Ras team.',
-        'A supplier handing goods to the Al Ras Market app or team does not trigger immediate payment; supplier funds are released only after the order value is actually collected from the buyer/customer.',
+        'A supplier handing goods to the Al Ras Smart app or team does not trigger immediate payment; supplier funds are released only after the order value is actually collected from the buyer/customer.',
         'The supplier is notified to start delivery according to order type.',
         'Supplier earnings are reviewed per payment/receipt status and approved transfers complete within 7 business days.',
         'Where applicable, the company acts as a financial intermediary between both parties.',

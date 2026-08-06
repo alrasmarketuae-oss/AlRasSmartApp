@@ -700,6 +700,17 @@ public class ProductAssetsAppService(
 
         if (!string.IsNullOrWhiteSpace(input.ReplaceVideoPath))
         {
+            var normalizedReplace = NormalizeAssetPath(input.ReplaceVideoPath);
+            if (string.Equals(
+                    NormalizeAssetPath(product.VideoPath),
+                    normalizedReplace,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                product.VideoPath = videoPath;
+                product.VideoDurationSeconds = input.VideoDurationSeconds!.Value;
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
+
             try
             {
                 // Reload product videos after insert so delete finds the old path.

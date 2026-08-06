@@ -163,7 +163,7 @@ public sealed class SupplierBalanceService(
                 reasonEn = x.ReasonEn,
                 reasonAr = x.ReasonAr,
                 createdAtUtc = DateTime.SpecifyKind(x.CreatedAtUtc, DateTimeKind.Utc),
-                source = "Al Ras Market"
+                source = "Al Ras Smart"
             }).ToList()
         };
 

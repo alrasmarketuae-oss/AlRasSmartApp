@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:alrasmarket/core/serveses/supplier_balance_service.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
+import 'package:alrasmarket/core/utils/relative_time_formatter.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/core/widgets/app_header.dart';
 import 'package:alrasmarket/generated/l10n.dart';
@@ -446,8 +447,9 @@ class _SupplierBalanceViewState extends State<SupplierBalanceView>
                                         : (entry.reasonEn ?? entry.reasonAr);
                                     final dateText = entry.createdAtUtc == null
                                         ? ''
-                                        : DateFormat.yMMMd().add_jm().format(
-                                            entry.createdAtUtc!.toLocal(),
+                                        : RelativeTimeFormatter.formatFromUtc(
+                                            S.of(context),
+                                            entry.createdAtUtc!,
                                           );
                                     return Container(
                                       margin: EdgeInsets.only(bottom: 10.h),
@@ -563,8 +565,9 @@ class _SupplierBalanceViewState extends State<SupplierBalanceView>
                                   ..._withdrawals.map((request) {
                                     final dateText = request.requestedAtUtc == null
                                         ? ''
-                                        : DateFormat.yMMMd().add_jm().format(
-                                            request.requestedAtUtc!.toLocal(),
+                                        : RelativeTimeFormatter.formatFromUtc(
+                                            S.of(context),
+                                            request.requestedAtUtc!,
                                           );
                                     return Container(
                                       margin: EdgeInsets.only(bottom: 10.h),
