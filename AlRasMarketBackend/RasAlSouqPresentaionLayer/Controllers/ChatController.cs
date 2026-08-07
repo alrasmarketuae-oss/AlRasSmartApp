@@ -652,6 +652,137 @@ public class ChatController(
         return true;
     }
 
+    [HttpPost("presign/image")]
+    public async Task<IActionResult> PresignImageUpload(CancellationToken ct)
+    {
+        var userId = GetCurrentUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            return Ok(await chatAppService.PresignImageUploadAsync(userId, ct));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("presign/video")]
+    public async Task<IActionResult> PresignVideoUpload(
+        [FromBody] PresignChatMediaRequest? request,
+        CancellationToken ct)
+    {
+        var userId = GetCurrentUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            return Ok(await chatAppService.PresignVideoUploadAsync(userId, request?.Extension, ct));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("presign/voice")]
+    public async Task<IActionResult> PresignVoiceUpload(
+        [FromBody] PresignChatMediaRequest? request,
+        CancellationToken ct)
+    {
+        var userId = GetCurrentUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            return Ok(await chatAppService.PresignVoiceUploadAsync(userId, request?.Extension, ct));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("presign/file")]
+    public async Task<IActionResult> PresignFileUpload(
+        [FromBody] PresignChatFileRequest? request,
+        CancellationToken ct)
+    {
+        var userId = GetCurrentUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            return Ok(await chatAppService.PresignFileUploadAsync(userId, request?.FileName, ct));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("confirm-upload")]
+    public async Task<ActionResult<ChatUploadResultDto>> ConfirmDirectUpload(
+        [FromBody] ConfirmChatUploadRequest request,
+        CancellationToken ct)
+    {
+        var userId = GetCurrentUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Path))
+        {
+            return BadRequest(new { message = "path is required." });
+        }
+
+        try
+        {
+            var result = await chatAppService.ConfirmDirectUploadAsync(
+                userId,
+                request.Path,
+                request.MessageType,
+                request.FileName,
+                request.SizeBytes,
+                ct);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpPost("upload")]
     [RequestSizeLimit(30 * 1024 * 1024)]
     public async Task<ActionResult<ChatUploadResultDto>> UploadMedia(
@@ -932,4 +1063,22 @@ public sealed class ChatUploadRequest
 public sealed class ChatUploadImagesRequest
 {
     public List<IFormFile>? Files { get; set; }
+}
+
+public sealed class PresignChatMediaRequest
+{
+    public string? Extension { get; set; }
+}
+
+public sealed class PresignChatFileRequest
+{
+    public string? FileName { get; set; }
+}
+
+public sealed class ConfirmChatUploadRequest
+{
+    public string Path { get; set; } = string.Empty;
+    public ChatApiMessageType MessageType { get; set; }
+    public string? FileName { get; set; }
+    public long? SizeBytes { get; set; }
 }

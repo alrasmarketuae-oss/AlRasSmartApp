@@ -6,7 +6,8 @@ namespace BusinessLayer.Helpers;
 
 /// <summary>
 /// Resolves product text for admin UI from ContentTranslations, skipping
-/// corrupted legacy varchar values (Arabic stored as "????").
+/// corrupted legacy varchar values (Arabic stored as "????") and treating
+/// Arabic script in legacy *En columns as Arabic source text.
 /// </summary>
 public static class AdminProductTextHelper
 {
@@ -25,6 +26,33 @@ public static class AdminProductTextHelper
 
         // Non-Unicode varchar columns turn Arabic into question marks.
         return !significant.All(c => c == '?');
+    }
+
+    /// <summary>
+    /// True when the text is predominantly Arabic script (same heuristic as public product mapping).
+    /// </summary>
+    public static bool LooksLikeArabic(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return false;
+        }
+
+        var arabic = 0;
+        var latin = 0;
+        foreach (var ch in text)
+        {
+            if (ch is >= '\u0600' and <= '\u06FF')
+            {
+                arabic++;
+            }
+            else if (char.IsLetter(ch))
+            {
+                latin++;
+            }
+        }
+
+        return arabic > 0 && arabic >= latin;
     }
 
     public static string Prefer(params string?[] values)
@@ -49,60 +77,116 @@ public static class AdminProductTextHelper
     public static bool IsArabicLanguage(string? language) =>
         language?.StartsWith("ar", StringComparison.OrdinalIgnoreCase) == true;
 
+    /// <summary>Legacy *En column value usable as English (not Arabic script).</summary>
+    private static string? EnglishLegacy(string? legacy) =>
+        IsUsable(legacy) && !LooksLikeArabic(legacy) ? legacy : null;
+
+    /// <summary>Legacy *En column value that is actually Arabic source text.</summary>
+    private static string? ArabicLegacy(string? legacy) =>
+        IsUsable(legacy) && LooksLikeArabic(legacy) ? legacy : null;
+
     public static string ResolveName(ProductFieldTranslations? tr, string? legacyNameEn) =>
-        Prefer(legacyNameEn, tr?.NameEn, tr?.NameAr);
+        Prefer(tr?.NameEn, EnglishLegacy(legacyNameEn), tr?.NameAr, ArabicLegacy(legacyNameEn));
 
     public static string ResolveNameForLocale(
         ProductFieldTranslations? tr,
         string? legacyNameEn,
         string? language) =>
         IsArabicLanguage(language)
-            ? Prefer(tr?.NameAr, tr?.NameEn, legacyNameEn)
-            : Prefer(legacyNameEn, tr?.NameEn, tr?.NameAr);
+            ? Prefer(tr?.NameAr, ArabicLegacy(legacyNameEn), tr?.NameEn, EnglishLegacy(legacyNameEn))
+            : Prefer(tr?.NameEn, EnglishLegacy(legacyNameEn), tr?.NameAr, ArabicLegacy(legacyNameEn));
 
     public static string? ResolveDescription(ProductFieldTranslations? tr, string? legacyDescriptionEn) =>
-        PreferOrNull(legacyDescriptionEn, tr?.DescriptionEn, tr?.DescriptionAr);
+        PreferOrNull(
+            tr?.DescriptionEn,
+            EnglishLegacy(legacyDescriptionEn),
+            tr?.DescriptionAr,
+            ArabicLegacy(legacyDescriptionEn));
 
     public static string? ResolveDescriptionForLocale(
         ProductFieldTranslations? tr,
         string? legacyDescriptionEn,
         string? language) =>
         IsArabicLanguage(language)
-            ? PreferOrNull(tr?.DescriptionAr, tr?.DescriptionEn, legacyDescriptionEn)
-            : PreferOrNull(legacyDescriptionEn, tr?.DescriptionEn, tr?.DescriptionAr);
+            ? PreferOrNull(
+                tr?.DescriptionAr,
+                ArabicLegacy(legacyDescriptionEn),
+                tr?.DescriptionEn,
+                EnglishLegacy(legacyDescriptionEn))
+            : PreferOrNull(
+                tr?.DescriptionEn,
+                EnglishLegacy(legacyDescriptionEn),
+                tr?.DescriptionAr,
+                ArabicLegacy(legacyDescriptionEn));
 
     public static string? ResolveRetailDescription(ProductFieldTranslations? tr, string? legacy) =>
-        PreferOrNull(legacy, tr?.RetailDescriptionEn, tr?.RetailDescriptionAr);
+        PreferOrNull(
+            tr?.RetailDescriptionEn,
+            EnglishLegacy(legacy),
+            tr?.RetailDescriptionAr,
+            ArabicLegacy(legacy));
 
     public static string? ResolveRetailDescriptionForLocale(
         ProductFieldTranslations? tr,
         string? legacy,
         string? language) =>
         IsArabicLanguage(language)
-            ? PreferOrNull(tr?.RetailDescriptionAr, tr?.RetailDescriptionEn, legacy)
-            : PreferOrNull(legacy, tr?.RetailDescriptionEn, tr?.RetailDescriptionAr);
+            ? PreferOrNull(
+                tr?.RetailDescriptionAr,
+                ArabicLegacy(legacy),
+                tr?.RetailDescriptionEn,
+                EnglishLegacy(legacy))
+            : PreferOrNull(
+                tr?.RetailDescriptionEn,
+                EnglishLegacy(legacy),
+                tr?.RetailDescriptionAr,
+                ArabicLegacy(legacy));
 
     public static string? ResolveSupplierNotes(ProductFieldTranslations? tr, string? legacy) =>
-        PreferOrNull(legacy, tr?.SupplierNotesEn, tr?.SupplierNotesAr);
+        PreferOrNull(
+            tr?.SupplierNotesEn,
+            EnglishLegacy(legacy),
+            tr?.SupplierNotesAr,
+            ArabicLegacy(legacy));
 
     public static string? ResolveSupplierNotesForLocale(
         ProductFieldTranslations? tr,
         string? legacy,
         string? language) =>
         IsArabicLanguage(language)
-            ? PreferOrNull(tr?.SupplierNotesAr, tr?.SupplierNotesEn, legacy)
-            : PreferOrNull(legacy, tr?.SupplierNotesEn, tr?.SupplierNotesAr);
+            ? PreferOrNull(
+                tr?.SupplierNotesAr,
+                ArabicLegacy(legacy),
+                tr?.SupplierNotesEn,
+                EnglishLegacy(legacy))
+            : PreferOrNull(
+                tr?.SupplierNotesEn,
+                EnglishLegacy(legacy),
+                tr?.SupplierNotesAr,
+                ArabicLegacy(legacy));
 
     public static string ResolveShippingDescription(ProductFieldTranslations? tr, string? legacy) =>
-        Prefer(legacy, tr?.ShippingDescriptionEn, tr?.ShippingDescriptionAr);
+        Prefer(
+            tr?.ShippingDescriptionEn,
+            EnglishLegacy(legacy),
+            tr?.ShippingDescriptionAr,
+            ArabicLegacy(legacy));
 
     public static string ResolveShippingDescriptionForLocale(
         ProductFieldTranslations? tr,
         string? legacy,
         string? language) =>
         IsArabicLanguage(language)
-            ? Prefer(tr?.ShippingDescriptionAr, tr?.ShippingDescriptionEn, legacy)
-            : Prefer(legacy, tr?.ShippingDescriptionEn, tr?.ShippingDescriptionAr);
+            ? Prefer(
+                tr?.ShippingDescriptionAr,
+                ArabicLegacy(legacy),
+                tr?.ShippingDescriptionEn,
+                EnglishLegacy(legacy))
+            : Prefer(
+                tr?.ShippingDescriptionEn,
+                EnglishLegacy(legacy),
+                tr?.ShippingDescriptionAr,
+                ArabicLegacy(legacy));
 
     public static string LocalizeCategoryName(
         byte? categoryId,

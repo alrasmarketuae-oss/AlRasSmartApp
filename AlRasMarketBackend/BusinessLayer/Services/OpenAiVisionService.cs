@@ -781,9 +781,13 @@ public class OpenAiVisionService(
             "- seller company name, trade name, or branding used as contact/promotion " +
             "(not a commodity/product type name)\n" +
             "ALLOWED (hasViolation=false):\n" +
-            "- normal product title/type and origin (e.g. Sudanese peanuts, Indian cardamom, Grade A)\n" +
+            "- normal product title/type and origin (e.g. Sudanese peanuts, Indian cardamom, vanilla, saffron, Grade A)\n" +
+            "- common food ingredients, spices, and commodities even with spelling mistakes (e.g. vanillia, cinamon)\n" +
+            "- buyer request titles like \"i need vanilla\" or \"need cardamom\" when naming a commodity only\n" +
             "- packing, weight, grade, and other commodity specs\n" +
             "- polite commercial language\n" +
+            "IMPORTANT: ingredient and commodity names (vanilla, vanillia, rice, sugar, etc.) are NOT brand names " +
+            "and are NOT seller company names. Do NOT reject for commodity names alone.\n" +
             "Return ONLY JSON:\n" +
             "{\n" +
             "  \"hasViolation\": false,\n" +
@@ -792,8 +796,8 @@ public class OpenAiVisionService(
             "}\n" +
             "violationKinds examples: insult, profanity, hate, phone, whatsapp, email, url, social, " +
             "seller_company_name, brand_name.\n" +
-            "If any insult/profanity OR contact channel OR seller company name is present in the title " +
-            "or specs, hasViolation MUST be true. No markdown.\n\n" +
+            "If insult/profanity OR real contact details OR seller company/trade name is present, hasViolation MUST be true. " +
+            "Commodity-only titles (including typos and \"i need X\" requests) MUST be hasViolation=false. No markdown.\n\n" +
             "Ad text:\n" + text;
 
         var payload = new

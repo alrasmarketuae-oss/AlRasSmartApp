@@ -1,5 +1,6 @@
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import type { AdminPushNotificationItem } from '../../types/adminNotification'
+import { parseApiUtcDate } from '../../utils/formatTimeAgo'
 
 type NotificationsHistoryTableProps = {
   items: AdminPushNotificationItem[]
@@ -77,6 +78,11 @@ export default function NotificationsHistoryTable({
     timeStyle: 'short',
   })
 
+  const formatItemDate = (value: string) => {
+    const date = parseApiUtcDate(value)
+    return date ? dateFormatter.format(date) : value
+  }
+
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
@@ -94,7 +100,7 @@ export default function NotificationsHistoryTable({
             key={item.id}
             item={item}
             audienceLabel={audienceLabel}
-            formattedDate={dateFormatter.format(new Date(item.createdAt))}
+            formattedDate={formatItemDate(item.createdAt)}
           />
         ))}
       </div>
@@ -138,7 +144,7 @@ export default function NotificationsHistoryTable({
                 </td>
                 <td className="admin-table-cell-end">
                   <span className="admin-text-muted whitespace-nowrap">
-                    {dateFormatter.format(new Date(item.createdAt))}
+                    {formatItemDate(item.createdAt)}
                   </span>
                 </td>
               </tr>

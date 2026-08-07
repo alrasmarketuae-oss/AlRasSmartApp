@@ -218,6 +218,31 @@ public interface IChatAppService
         string webRootPath,
         CancellationToken ct = default);
 
+    Task<object> PresignImageUploadAsync(string userId, CancellationToken ct = default);
+
+    Task<object> PresignVideoUploadAsync(
+        string userId,
+        string? extension,
+        CancellationToken ct = default);
+
+    Task<object> PresignVoiceUploadAsync(
+        string userId,
+        string? extension,
+        CancellationToken ct = default);
+
+    Task<object> PresignFileUploadAsync(
+        string userId,
+        string? fileName,
+        CancellationToken ct = default);
+
+    Task<ChatUploadResultDto> ConfirmDirectUploadAsync(
+        string userId,
+        string path,
+        ChatApiMessageType messageType,
+        string? originalFileName = null,
+        long? sizeBytes = null,
+        CancellationToken ct = default);
+
     Task<ChatPublicKeyDto?> GetPublicKeyAsync(string targetUserId, CancellationToken ct = default);
 
     Task<ChatPublicKeyDto> UpsertMyPublicKeyAsync(

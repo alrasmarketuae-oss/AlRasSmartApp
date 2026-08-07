@@ -143,6 +143,145 @@ class ChatRepository {
     required String filePath,
     required ChatMessageType messageType,
   }) async {
+    if (messageType == ChatMessageType.image ||
+        messageType == ChatMessageType.video ||
+        messageType == ChatMessageType.voice) {
+      final direct = await _uploadMediaViaDirectR2(
+        token: token,
+        filePath: filePath,
+        messageType: messageType,
+      );
+      if (direct != null) {
+        return direct;
+      }
+    }
+
+    return _uploadMediaViaMultipart(
+      token: token,
+      filePath: filePath,
+      messageType: messageType,
+    );
+  }
+
+  /// Returns null when multipart fallback should be used (presign unavailable).
+  Future<Either<Failure, ChatUploadResultModel>?> _uploadMediaViaDirectR2({
+    required String token,
+    required String filePath,
+    required ChatMessageType messageType,
+  }) async {
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) {
+        return const Left(ServerFailure('File not found'));
+      }
+
+      final presignUrl = switch (messageType) {
+        ChatMessageType.image => ApiConstants.chatPresignImageEndPoint,
+        ChatMessageType.video => ApiConstants.chatPresignVideoEndPoint,
+        ChatMessageType.voice => ApiConstants.chatPresignVoiceEndPoint,
+        _ => throw StateError('Unsupported direct chat upload type'),
+      };
+
+      final Object? presignBody = messageType == ChatMessageType.image
+          ? const <String, dynamic>{}
+          : <String, dynamic>{
+              'extension': _extensionFromPath(filePath),
+            };
+
+      final presignResponse = await DioHelper.postData(
+        url: presignUrl,
+        data: presignBody,
+        token: token,
+      );
+      final presignStatus = presignResponse?.statusCode ?? 0;
+      if (presignStatus == 503 || presignStatus == 404) {
+        return null;
+      }
+      if (presignStatus < 200 || presignStatus >= 300) {
+        return Left(
+          ServerFailure(
+            _extractMessage(presignResponse?.data) ??
+                'Chat presign failed ($presignStatus)',
+          ),
+        );
+      }
+
+      final data = presignResponse?.data;
+      if (data is! Map) {
+        return const Left(ServerFailure('Invalid chat presign response'));
+      }
+
+      final uploadUrl =
+          data['uploadUrl']?.toString() ?? data['UploadUrl']?.toString();
+      final path = data['path']?.toString() ?? data['Path']?.toString();
+      final contentType = data['contentType']?.toString() ??
+          data['ContentType']?.toString() ??
+          _defaultContentType(messageType, filePath);
+
+      if (uploadUrl == null ||
+          uploadUrl.isEmpty ||
+          path == null ||
+          path.isEmpty) {
+        return const Left(ServerFailure('Chat presign response missing URL or path'));
+      }
+
+      final putResponse = await DioHelper.putBytesToAbsoluteUrl(
+        url: uploadUrl,
+        file: file,
+        contentType: contentType,
+      );
+      final putStatus = putResponse?.statusCode ?? 0;
+      if (putStatus < 200 || putStatus >= 300) {
+        return Left(ServerFailure('Chat direct upload failed ($putStatus)'));
+      }
+
+      final confirmResponse = await DioHelper.postData(
+        url: ApiConstants.chatConfirmUploadEndPoint,
+        data: {
+          'path': path,
+          'messageType': messageType.apiValue,
+        },
+        token: token,
+      );
+      final confirmStatus = confirmResponse?.statusCode ?? 0;
+      if (confirmStatus < 200 || confirmStatus >= 300) {
+        return Left(
+          ServerFailure(
+            _extractMessage(confirmResponse?.data) ??
+                'Chat upload confirm failed ($confirmStatus)',
+          ),
+        );
+      }
+
+      final confirmData = confirmResponse?.data;
+      if (confirmData is Map) {
+        final result = ChatUploadResultModel.fromJson(
+          Map<String, dynamic>.from(confirmData),
+        );
+        if (result.content.isNotEmpty) {
+          return Right(result);
+        }
+      }
+
+      return const Left(ServerFailure('Invalid chat confirm response'));
+    } on DioException catch (e) {
+      final status = e.response?.statusCode ?? 0;
+      if (status == 503 || status == 404) {
+        return null;
+      }
+      return Left(
+        ServerFailure(_extractMessage(e.response?.data) ?? e.message ?? 'Chat upload error'),
+      );
+    } catch (e) {
+      return Left(ServerFailure('Chat direct upload failed: $e'));
+    }
+  }
+
+  Future<Either<Failure, ChatUploadResultModel>> _uploadMediaViaMultipart({
+    required String token,
+    required String filePath,
+    required ChatMessageType messageType,
+  }) async {
     try {
       final file = File(filePath);
       if (!await file.exists()) {
@@ -362,5 +501,25 @@ class ChatRepository {
     }
     if (data is String) return data;
     return null;
+  }
+
+  static String _extensionFromPath(String filePath) {
+    final dot = filePath.lastIndexOf('.');
+    if (dot < 0 || dot >= filePath.length - 1) {
+      return '';
+    }
+    return filePath.substring(dot).toLowerCase();
+  }
+
+  static String _defaultContentType(
+    ChatMessageType messageType,
+    String filePath,
+  ) {
+    return switch (messageType) {
+      ChatMessageType.image => 'image/jpeg',
+      ChatMessageType.video => 'video/mp4',
+      ChatMessageType.voice => 'audio/mp4',
+      _ => 'application/octet-stream',
+    };
   }
 }

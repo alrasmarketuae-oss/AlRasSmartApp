@@ -1,1 +1,6 @@
 .nuget-cache/
+deploy/monitoring/ram-alert.env
+deploy/monitoring/.ram-alert-last-sent
+deploy/monitoring/.ram-warning-state
+deploy/monitoring/.ram-critical-state
+deploy/monitoring/ram-alert.log

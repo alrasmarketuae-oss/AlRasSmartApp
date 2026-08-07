@@ -359,7 +359,7 @@ public sealed class AdminPushNotificationListItemDto
     public string Audience { get; set; } = string.Empty;
     public Guid? TargetUserId { get; set; }
     public string? TargetUserName { get; set; }
-    public DateTime CreatedAt { get; set; }
+    public string CreatedAt { get; set; } = string.Empty;
     public int SentCount { get; set; }
     public int FailedCount { get; set; }
     public string? Type { get; set; }

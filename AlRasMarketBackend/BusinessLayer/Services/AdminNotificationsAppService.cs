@@ -1,4 +1,5 @@
 using BusinessLayer.Dtos;
+using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using DataLayer.Interfaces;
 using DataLayer.Models;
@@ -47,7 +48,7 @@ public class AdminNotificationsAppService(
             TargetUserName = x.TargetUser != null
                 ? (x.TargetUser.CompanyName ?? x.TargetUser.FullName)
                 : null,
-            CreatedAt = x.CreatedAt,
+            CreatedAt = UtcDateTimeHelper.FormatApiDateTime(x.CreatedAt),
             SentCount = x.SentCount,
             FailedCount = x.FailedCount,
             Type = x.Type

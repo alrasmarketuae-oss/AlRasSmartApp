@@ -68,8 +68,7 @@ class ChatMessageModel {
   final double? processingProgress;
   final String? processingLabel;
 
-  /// Chat attachments live on the media CDN, except API routes such as
-  /// `/Chat/voice` and `/Chat/video` which stream from the API host.
+  /// Chat attachments are stored on the CDN. Relative DB paths resolve to cdn.alrasmarketapp.com.
   String get contentUrl => resolveAttachmentUrl(content);
 
   static String resolveAttachmentUrl(String rawPath) {
@@ -109,9 +108,8 @@ class ChatMessageModel {
   String get videoUrl {
     if (messageType != ChatMessageType.video) return contentUrl;
     final normalized = _normalizedStoragePath;
-    if (!normalized.startsWith('/chat-videos/')) return contentUrl;
-    final encoded = Uri.encodeComponent(normalized);
-    return '${ApiConstants.baseUrl}/Chat/video?path=$encoded';
+    if (normalized.isEmpty) return contentUrl;
+    return resolveAttachmentUrl(normalized);
   }
 
   /// Document messages carry `{"path":..,"name":..,"size":..,"mime":..}` because the
@@ -150,23 +148,19 @@ class ChatMessageModel {
     return null;
   }
 
-  /// Downloads through the API so the response keeps the original file name.
+  /// Public CDN URL for the stored object. Original display name comes from [fileContent].
   String? get fileDownloadUrl {
     final file = fileContent;
     final path = file?.path.trim() ?? '';
     if (file == null || path.isEmpty) return null;
-    final normalized = path.startsWith('/') ? path : '/$path';
-    return '${ApiConstants.baseUrl}/Chat/file'
-        '?path=${Uri.encodeComponent(normalized)}'
-        '&name=${Uri.encodeComponent(file.name)}';
+    return resolveAttachmentUrl(path);
   }
 
-  /// Streams through the API so the response carries a playable content type.
+  /// Public CDN URL for voice playback.
   String get voiceUrl {
     final normalized = _normalizedStoragePath;
-    if (!normalized.startsWith('/chat-voice/')) return contentUrl;
-    final encoded = Uri.encodeComponent(normalized);
-    return '${ApiConstants.baseUrl}/Chat/voice?path=$encoded';
+    if (normalized.isEmpty) return contentUrl;
+    return resolveAttachmentUrl(normalized);
   }
 
   String get _normalizedStoragePath {

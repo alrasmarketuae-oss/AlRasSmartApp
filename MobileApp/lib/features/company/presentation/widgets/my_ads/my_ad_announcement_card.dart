@@ -59,11 +59,15 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
     with SingleTickerProviderStateMixin {
   static const _borderGray = Color(0xFFD0D5DD);
   static const _textDark = Color(0xFF333333);
+  static const _blinkRedSoft = Color(0xFFF97066);
+  static const _blinkRedStrong = Color(0xFFD92D20);
+  static const _highlightBlinkDuration = Duration(seconds: 5);
 
   late bool _isListingActive;
   bool _isTogglingStatus = false;
   bool _isDeleting = false;
   bool _isMarkingSoldOut = false;
+  bool _borderBlinkActive = false;
   late final AnimationController _blink;
 
   MyListingProductModel get product => widget.product;
@@ -88,17 +92,37 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
       _runBlink();
     }
     if (!widget.highlighted && oldWidget.highlighted) {
-      _blink.stop();
-      _blink.value = 0;
+      _stopBlink();
     }
   }
 
   Future<void> _runBlink() async {
-    // Keep pulsing while highlighted so the blue glow stays obvious from notifications.
-    while (mounted && widget.highlighted) {
+    _blink.stop();
+    _blink.value = 0;
+    if (!mounted) return;
+    setState(() => _borderBlinkActive = true);
+
+    final endAt = DateTime.now().add(_highlightBlinkDuration);
+    while (mounted &&
+        _borderBlinkActive &&
+        DateTime.now().isBefore(endAt)) {
       await _blink.forward();
-      if (!mounted || !widget.highlighted) return;
+      if (!mounted || !_borderBlinkActive) return;
       await _blink.reverse();
+    }
+
+    if (mounted) {
+      _stopBlink();
+    }
+  }
+
+  void _stopBlink() {
+    _blink.stop();
+    _blink.value = 0;
+    if (_borderBlinkActive && mounted) {
+      setState(() => _borderBlinkActive = false);
+    } else {
+      _borderBlinkActive = false;
     }
   }
 
@@ -149,7 +173,6 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
     final imageHeight = compact ? 110.h : 140.h;
     final isAr =
         Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
-    final viewOrdersLabel = isAr ? 'عرض الطلبات' : 'View orders';
     final pauseLabel = isAr ? 'إيقاف' : 'Pause';
     final publishLabel = S.of(context).publish;
     final canToggleStatus =
@@ -184,7 +207,6 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
                   fontFamily: fontFamily,
                   editLabel: S.of(context).edit,
                   deleteLabel: S.of(context).delete,
-                  viewOrdersLabel: viewOrdersLabel,
                   pauseOrPublishLabel:
                       _isListingActive ? pauseLabel : publishLabel,
                   soldOutLabel: S.of(context).soldOut,
@@ -199,7 +221,6 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
                   isMarkingSoldOut: _isMarkingSoldOut,
                   onEdit: _onEdit,
                   onDelete: _onDelete,
-                  onViewOrders: _onOpenAdDetails,
                   onToggleStatus: _onToggleListingStatus,
                   onSoldOut: _onMarkSoldOut,
                 ),
@@ -241,21 +262,6 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
                 fontSize: bodySize,
                 color: LightColor.greyTextColor,
               ),
-            ),
-          ],
-          if (product.pendingOffersCount > 0 || widget.highlighted) ...[
-            SizedBox(height: 6.h),
-            _OrdersActionChip(
-              label: product.pendingOffersCount > 0
-                  ? ((product.isRequestProduct ||
-                          adType == CreateAdType.requests)
-                      ? S.of(context).offersAvailable(product.pendingOffersCount)
-                      : S.of(context).ordersAvailable(product.pendingOffersCount))
-                  : viewOrdersLabel,
-              compact: compact,
-              emphasized: true,
-              pulse: widget.highlighted ? _blink : null,
-              onTap: product.productId.isNotEmpty ? _onOpenAdDetails : null,
             ),
           ],
           SizedBox(height: 6.h),
@@ -359,41 +365,30 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
     return AnimatedBuilder(
       animation: _blink,
       builder: (context, child) {
-        final t = widget.highlighted ? (0.55 + 0.45 * _blink.value) : 0.0;
-        final borderColor = widget.highlighted
+        final borderColor = _borderBlinkActive
             ? Color.lerp(
-                const Color(0xFF7EB6E8),
-                const Color(0xFF1E6BB8),
+                _blinkRedSoft,
+                _blinkRedStrong,
                 _blink.value,
               )!
             : _borderGray;
-        final bgColor = widget.highlighted
-            ? Color.lerp(
-                const Color(0xFFE8F4FD),
-                const Color(0xFFD6EBFA),
-                _blink.value,
-              )!
-            : Colors.white;
-        final glow = widget.highlighted
-            ? const Color(0xFF3A7DC5).withValues(alpha: 0.28 + 0.35 * t)
-            : Colors.black.withValues(alpha: 0.15);
 
         return Container(
           width: double.infinity,
           height: compact ? double.infinity : null,
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
-            color: bgColor,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(9.r),
             border: Border.all(
               color: borderColor,
-              width: widget.highlighted ? 2.5 : 1,
+              width: _borderBlinkActive ? 2 : 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: glow,
-                blurRadius: widget.highlighted ? 10.r + 8.r * t : 4.r,
-                spreadRadius: widget.highlighted ? 1.r : 0,
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 4.r,
+                spreadRadius: 0,
                 offset: Offset.zero,
               ),
             ],
@@ -849,107 +844,6 @@ class _PriceWithTypeRow extends StatelessWidget {
   }
 }
 
-class _OrdersActionChip extends StatelessWidget {
-  const _OrdersActionChip({
-    required this.label,
-    required this.compact,
-    required this.emphasized,
-    required this.onTap,
-    this.pulse,
-  });
-
-  final String label;
-  final bool compact;
-  final bool emphasized;
-  final VoidCallback? onTap;
-  final Animation<double>? pulse;
-
-  @override
-  Widget build(BuildContext context) {
-    final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
-    final base = Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10.r),
-        child: Container(
-          width: double.infinity,
-          padding: EdgeInsets.symmetric(
-            horizontal: compact ? 8.w : 12.w,
-            vertical: compact ? 7.h : 10.h,
-          ),
-          decoration: BoxDecoration(
-            color: const Color(0xFF3A7DC5),
-            borderRadius: BorderRadius.circular(10.r),
-            border: Border.all(color: const Color(0xFF1E6BB8), width: 1.5),
-            boxShadow: emphasized
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFF3A7DC5).withValues(alpha: 0.45),
-                      blurRadius: 10.r,
-                      spreadRadius: 1.r,
-                    ),
-                  ]
-                : null,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.notifications_active_rounded,
-                size: compact ? 14.sp : 16.sp,
-                color: Colors.white,
-              ),
-              SizedBox(width: 6.w),
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontFamily: fontFamily,
-                    fontSize: compact ? 11.sp : 13.sp,
-                    fontWeight: FontWeight.w700,
-                    height: 1.2,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    if (pulse == null) return base;
-
-    return AnimatedBuilder(
-      animation: pulse!,
-      builder: (context, child) {
-        final t = pulse!.value;
-        return Transform.scale(
-          scale: 1.0 + 0.04 * t,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12.r),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF3A7DC5).withValues(alpha: 0.35 + 0.4 * t),
-                  blurRadius: 8.r + 10.r * t,
-                  spreadRadius: 1.r + 2.r * t,
-                ),
-              ],
-            ),
-            child: child,
-          ),
-        );
-      },
-      child: base,
-    );
-  }
-}
-
 class _Badge extends StatelessWidget {
   const _Badge({
     required this.label,
@@ -1013,7 +907,6 @@ class _AdActionsMenu extends StatelessWidget {
     required this.fontFamily,
     required this.editLabel,
     required this.deleteLabel,
-    required this.viewOrdersLabel,
     required this.pauseOrPublishLabel,
     required this.soldOutLabel,
     required this.showPauseOrPublish,
@@ -1023,7 +916,6 @@ class _AdActionsMenu extends StatelessWidget {
     required this.isMarkingSoldOut,
     required this.onEdit,
     required this.onDelete,
-    required this.onViewOrders,
     required this.onToggleStatus,
     required this.onSoldOut,
   });
@@ -1031,7 +923,6 @@ class _AdActionsMenu extends StatelessWidget {
   final String fontFamily;
   final String editLabel;
   final String deleteLabel;
-  final String viewOrdersLabel;
   final String pauseOrPublishLabel;
   final String soldOutLabel;
   final bool showPauseOrPublish;
@@ -1041,7 +932,6 @@ class _AdActionsMenu extends StatelessWidget {
   final bool isMarkingSoldOut;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
-  final VoidCallback onViewOrders;
   final VoidCallback onToggleStatus;
   final VoidCallback onSoldOut;
 
@@ -1058,9 +948,6 @@ class _AdActionsMenu extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
       onSelected: (action) {
         switch (action) {
-          case _AdMenuAction.viewOrders:
-            onViewOrders();
-            break;
           case _AdMenuAction.edit:
             onEdit();
             break;
@@ -1076,13 +963,6 @@ class _AdActionsMenu extends StatelessWidget {
         }
       },
       itemBuilder: (context) => [
-        PopupMenuItem(
-          value: _AdMenuAction.viewOrders,
-          child: Text(
-            viewOrdersLabel,
-            style: TextStyle(fontFamily: fontFamily, fontSize: 14.sp),
-          ),
-        ),
         PopupMenuItem(
           value: _AdMenuAction.edit,
           child: Text(
@@ -1125,7 +1005,7 @@ class _AdActionsMenu extends StatelessWidget {
   }
 }
 
-enum _AdMenuAction { viewOrders, edit, toggleStatus, soldOut, delete }
+enum _AdMenuAction { edit, toggleStatus, soldOut, delete }
 
 class _BadgeStyle {
   const _BadgeStyle({

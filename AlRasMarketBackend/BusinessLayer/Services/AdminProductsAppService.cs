@@ -369,7 +369,10 @@ public class AdminProductsAppService(
             BookingPriceTypeName = ResolveBookingPriceTypeName(x.BookingPriceTypeId, x.BookingPriceTypeName),
             Packaging = x.Packaging,
             PackagingDetails = x.PackagingDetails,
-            RetailDescription = AdminProductTextHelper.ResolveRetailDescription(tr, x.RetailDescription),
+            RetailDescription = AdminProductTextHelper.ResolveRetailDescriptionForLocale(
+                tr,
+                x.RetailDescription,
+                language),
             RetailPackaging = x.RetailPackaging,
             RetailPackagingDetails = x.RetailPackagingDetails
         };

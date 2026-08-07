@@ -1,4 +1,5 @@
 using BusinessLayer.Dtos;
+using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using DataLayer.Interfaces;
 using DataLayer.Models;
@@ -60,30 +61,60 @@ public partial class OrdersAppService
             throw new ArgumentException("Unsupported video format. Allowed: .mp4, .mov, .webm, .m4v");
         }
 
-        var videoFileName = $"order-video-{Guid.NewGuid():N}{extension}";
-        var videoPath = await mediaStorage.SaveFormFileAsync(
+        var prepared = await VideoMobileCompatHelper.PrepareForMobilePlaybackAsync(
             input.File,
-            "order-videos",
-            videoFileName,
-            cancellationToken: cancellationToken);
-        var entity = new OrderVideo
+            logger,
+            cancellationToken);
+        await using (prepared.Content)
         {
-            OrderId = order.Id,
-            VideoPath = videoPath,
-            UploadedByUserId = userId
-        };
+            if (!allowed.Contains(prepared.Extension))
+            {
+                throw new ArgumentException("Unsupported video format. Allowed: .mp4, .mov, .webm, .m4v");
+            }
 
-        await orderData.AddOrderVideoAsync(entity, cancellationToken);
-        await orderData.SaveChangesAsync(cancellationToken);
+            byte[] bytes;
+            if (prepared.Content is MemoryStream memory)
+            {
+                bytes = memory.ToArray();
+            }
+            else
+            {
+                await using var buffer = new MemoryStream();
+                if (prepared.Content.CanSeek)
+                {
+                    prepared.Content.Position = 0;
+                }
 
-        return new
-        {
-            entity.Id,
-            entity.OrderId,
-            path = entity.VideoPath,
-            entity.UploadedByUserId,
-            entity.CreatedAt
-        };
+                await prepared.Content.CopyToAsync(buffer, cancellationToken);
+                bytes = buffer.ToArray();
+            }
+
+            var videoFileName = $"order-video-{Guid.NewGuid():N}{prepared.Extension}";
+            var videoPath = await mediaStorage.SaveBytesAsync(
+                bytes,
+                "order-videos",
+                videoFileName,
+                prepared.ContentType,
+                cancellationToken);
+            var entity = new OrderVideo
+            {
+                OrderId = order.Id,
+                VideoPath = videoPath,
+                UploadedByUserId = userId
+            };
+
+            await orderData.AddOrderVideoAsync(entity, cancellationToken);
+            await orderData.SaveChangesAsync(cancellationToken);
+
+            return new
+            {
+                entity.Id,
+                entity.OrderId,
+                path = entity.VideoPath,
+                entity.UploadedByUserId,
+                entity.CreatedAt
+            };
+        }
     }
 
     public async Task DeleteOrderVideoAsync(string userId, long orderId, long videoId, CancellationToken cancellationToken = default)

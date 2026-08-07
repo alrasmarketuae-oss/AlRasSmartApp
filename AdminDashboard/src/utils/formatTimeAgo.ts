@@ -1,10 +1,24 @@
 import type { Locale } from '../i18n/messages'
 
-export function formatTimeAgo(createdAt: string, locale: Locale): string {
-  if (!createdAt) return ''
+/** Parse API datetime as UTC (naive strings from SQL are UTC wall-clock). */
+export function parseApiUtcDate(createdAt: string): Date | null {
+  if (!createdAt) return null
 
-  const date = new Date(createdAt)
-  if (Number.isNaN(date.getTime())) return ''
+  const trimmed = createdAt.trim()
+  const hasExplicitZone = /Z$/i.test(trimmed) || /[+-]\d{2}:\d{2}$/.test(trimmed)
+  const normalized = hasExplicitZone
+    ? trimmed
+    : trimmed.includes('T')
+      ? `${trimmed}Z`
+      : `${trimmed.replace(' ', 'T')}Z`
+
+  const date = new Date(normalized)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+export function formatTimeAgo(createdAt: string, locale: Locale): string {
+  const date = parseApiUtcDate(createdAt)
+  if (!date) return ''
 
   const minutes = Math.floor((Date.now() - date.getTime()) / 60_000)
   const hours = Math.floor(minutes / 60)

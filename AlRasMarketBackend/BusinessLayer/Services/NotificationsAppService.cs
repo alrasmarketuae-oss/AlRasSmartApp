@@ -189,7 +189,7 @@ public class NotificationsAppService(
                 referenceId = x.ReferenceId,
                 fromUserId = x.FromUserId,
                 isRead = x.IsRead,
-                createdAt = x.CreatedAt,
+                createdAt = UtcDateTimeHelper.FormatApiDateTime(x.CreatedAt),
             };
         }).ToList();
 

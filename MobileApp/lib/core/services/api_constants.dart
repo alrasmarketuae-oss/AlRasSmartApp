@@ -241,6 +241,10 @@ class ApiConstants {
   static String chatPresenceEndPoint = '/Chat/presence';
   static String chatMessagesEndPoint = '/Chat/messages';
   static String chatUploadEndPoint = '/Chat/upload';
+  static const String chatPresignImageEndPoint = '/Chat/presign/image';
+  static const String chatPresignVideoEndPoint = '/Chat/presign/video';
+  static const String chatPresignVoiceEndPoint = '/Chat/presign/voice';
+  static const String chatConfirmUploadEndPoint = '/Chat/confirm-upload';
   static String chatSeenEndPoint = '/Chat/seen';
   static String chatDeliveredEndPoint = '/Chat/delivered';
   static String chatConversationEndPoint = '/Chat/conversation';

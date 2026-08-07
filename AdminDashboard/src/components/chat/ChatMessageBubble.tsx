@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import { formatChatRelativeTime } from '../../utils/formatChatRelativeTime'
-import { apiUrl } from '../../config/api.js'
 import { resolveAssetUrl } from '../../lib/assets'
 import VoiceAudioPlayer from './VoiceAudioPlayer'
 import {
@@ -26,7 +25,9 @@ export default function ChatMessageBubble({ message, isMine }: ChatMessageBubble
   return (
     <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`max-w-[88%] rounded-2xl px-3 py-2 shadow-sm sm:max-w-[85%] sm:px-3.5 sm:py-2.5 ${
+        // Keep message bodies as written — browsers must not auto-translate chat text.
+        translate="no"
+        className={`notranslate max-w-[88%] rounded-2xl px-3 py-2 shadow-sm sm:max-w-[85%] sm:px-3.5 sm:py-2.5 ${
           isMine
             ? 'chat-bubble-mine rounded-ee-md'
             : 'chat-bubble-theirs rounded-es-md'
@@ -85,7 +86,9 @@ function MessageBody({ message, isMine }: ChatMessageBubbleProps) {
       const location = parseLocationContent(message.content)
       if (!location) {
         return (
-          <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{message.content}</p>
+          <p className="notranslate whitespace-pre-wrap break-words text-sm leading-relaxed" translate="no">
+            {message.content}
+          </p>
         )
       }
       const mapsUrl = `https://www.google.com/maps?q=${location.lat},${location.lng}`
@@ -99,12 +102,18 @@ function MessageBody({ message, isMine }: ChatMessageBubbleProps) {
           }`}
         >
           <IconMapPin className="h-4 w-4 shrink-0" />
-          <span>{location.label ?? `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`}</span>
+          <span className="notranslate" translate="no">
+            {location.label ?? `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`}
+          </span>
         </a>
       )
     }
     default:
-      return <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{message.content}</p>
+      return (
+        <p className="notranslate whitespace-pre-wrap break-words text-sm leading-relaxed" translate="no">
+          {message.content}
+        </p>
+      )
   }
 }
 
@@ -182,14 +191,16 @@ function ChatFileMessage({ message, isMine }: { message: ChatMessage; isMine: bo
   const file = parseFileContent(message.content)
 
   if (!file) {
-    return <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{message.content}</p>
+    return (
+      <p className="notranslate whitespace-pre-wrap break-words text-sm leading-relaxed" translate="no">
+        {message.content}
+      </p>
+    )
   }
 
   const sizeLabel = formatFileSize(file.size)
   // Still uploading: no storage path yet, so render the name without a link.
-  const href = file.path
-    ? apiUrl(`/api/Chat/file?path=${encodeURIComponent(file.path)}&name=${encodeURIComponent(file.name)}`)
-    : null
+  const href = file.path ? resolveAssetUrl(file.path) : null
 
   const body = (
     <>
@@ -201,7 +212,9 @@ function ChatFileMessage({ message, isMine }: { message: ChatMessage; isMine: bo
         <IconDocument className="h-5 w-5" />
       </span>
       <span className="min-w-0">
-        <span className="block truncate text-sm font-medium">{file.name}</span>
+        <span className="notranslate block truncate text-sm font-medium" translate="no">
+          {file.name}
+        </span>
         {sizeLabel ? <span className="block text-[11px] opacity-70">{sizeLabel}</span> : null}
       </span>
     </>

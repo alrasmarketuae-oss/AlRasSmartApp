@@ -33,6 +33,49 @@ public static class WebRootFileHelper
         return trimmed.StartsWith('/') ? trimmed : $"/{trimmed}";
     }
 
+    /// <summary>
+    /// Normalize DB paths or CDN URLs to a storage-relative path (/product-images/...).
+    /// </summary>
+    public static string NormalizeMediaReferencePath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return string.Empty;
+        }
+
+        var value = path.Trim().Replace('\\', '/');
+        if (value.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+            || value.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                value = new Uri(value).AbsolutePath;
+            }
+            catch
+            {
+                // keep as-is
+            }
+        }
+
+        foreach (var marker in new[]
+                 {
+                     "/product-images/",
+                     "/product-videos/",
+                     "/product-documents/",
+                     "/order-videos/",
+                 })
+        {
+            var idx = value.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+            if (idx >= 0)
+            {
+                value = value[idx..];
+                break;
+            }
+        }
+
+        return value.StartsWith('/') ? value : $"/{value.TrimStart('/')}";
+    }
+
     public static void TryDeleteRelativeFile(string webRootPath, string? relativePath, string? exceptFullPath = null)
     {
         if (string.IsNullOrWhiteSpace(relativePath))

@@ -16,7 +16,8 @@ public sealed partial class ChatAppService(
     IMemoryCache cache,
     IConfiguration configuration,
     IAdminPermissionService permissionService,
-    IMediaStorageService mediaStorage) : IChatAppService
+    IMediaStorageService mediaStorage,
+    Microsoft.Extensions.Options.IOptions<BusinessLayer.Options.CloudflareR2Options> r2Options) : IChatAppService
 {
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(3);
     private static readonly TimeSpan OnlineThreshold = TimeSpan.FromMinutes(5);

@@ -1595,31 +1595,10 @@ export const adminApi = createApi({
       { file: File; messageType: 2 | 3 | 5 | 6 }
     >({
       queryFn: async ({ file, messageType }) => {
-        const token = getAuthToken()
-        const form = new FormData()
-        form.append('File', file)
-        form.append('MessageType', String(messageType))
-
         try {
-          const response = await fetch(apiUrl('/api/Chat/upload'), {
-            method: 'POST',
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-            body: form,
-          })
-
-          const data: unknown = await response.json().catch(() => ({}))
-
-          if (!response.ok) {
-            const error = data as { message?: string }
-            return {
-              error: {
-                status: response.status,
-                data: { message: error.message ?? 'تعذر رفع الملف.' },
-              },
-            }
-          }
-
-          return { data: data as ChatUploadResult }
+          const { uploadChatMediaDirect } = await import('../utils/chatDirectUpload')
+          const data = await uploadChatMediaDirect(file, messageType)
+          return { data }
         } catch (error) {
           return {
             error: {
@@ -1633,42 +1612,10 @@ export const adminApi = createApi({
 
     uploadChatImages: builder.mutation<ChatUploadImagesResult, { files: File[] }>({
       queryFn: async ({ files }) => {
-        const token = getAuthToken()
-        const form = new FormData()
-        files.forEach((file) => form.append('Files', file))
-
         try {
-          const response = await fetch(apiUrl('/api/Chat/upload-images'), {
-            method: 'POST',
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-            body: form,
-          })
-
-          const data: unknown = await response.json().catch(() => ({}))
-
-          if (!response.ok) {
-            const error = data as { message?: string }
-            return {
-              error: {
-                status: response.status,
-                data: { message: error.message ?? 'تعذر رفع الصور.' },
-              },
-            }
-          }
-
-          const raw = data as {
-            paths?: string[]
-            content?: string
-            messageType?: number
-          }
-
-          return {
-            data: {
-              paths: raw.paths ?? [],
-              content: raw.content ?? '',
-              messageType: (raw.messageType ?? 3) as 3,
-            },
-          }
+          const { uploadChatImagesDirect } = await import('../utils/chatDirectUpload')
+          const data = await uploadChatImagesDirect(files)
+          return { data }
         } catch (error) {
           return {
             error: {

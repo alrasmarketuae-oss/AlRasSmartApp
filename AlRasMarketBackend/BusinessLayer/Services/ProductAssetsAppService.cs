@@ -680,55 +680,63 @@ public class ProductAssetsAppService(
 
         EnsureVideoSlotAvailable(product, input.ReplaceVideoPath);
 
-        var extension = Path.GetExtension(input.File.FileName).ToLowerInvariant();
-        EnsureAllowedVideoExtension(extension);
-
-        var fileName = $"video-{Guid.NewGuid():N}{extension}";
-        var videoPath = await mediaStorage.SaveFormFileAsync(
+        var prepared = await VideoMobileCompatHelper.PrepareForMobilePlaybackAsync(
             input.File,
-            ProductVideosFolder,
-            fileName,
-            cancellationToken: cancellationToken);
-
-        var result = await CompleteVideoRegistrationAsync(
-            product,
-            productId,
-            videoPath,
-            input.VideoDurationSeconds!.Value,
-            input.AllowAdminAccess,
+            logger,
             cancellationToken);
-
-        if (!string.IsNullOrWhiteSpace(input.ReplaceVideoPath))
+        await using (prepared.Content)
         {
-            var normalizedReplace = NormalizeAssetPath(input.ReplaceVideoPath);
-            if (string.Equals(
-                    NormalizeAssetPath(product.VideoPath),
-                    normalizedReplace,
-                    StringComparison.OrdinalIgnoreCase))
+            EnsureAllowedVideoExtension(prepared.Extension);
+
+            var fileName = $"video-{Guid.NewGuid():N}{prepared.Extension}";
+            var bytes = await ReadStreamBytesAsync(prepared.Content, cancellationToken);
+            var videoPath = await mediaStorage.SaveBytesAsync(
+                bytes,
+                ProductVideosFolder,
+                fileName,
+                prepared.ContentType,
+                cancellationToken);
+
+            var result = await CompleteVideoRegistrationAsync(
+                product,
+                productId,
+                videoPath,
+                input.VideoDurationSeconds!.Value,
+                input.AllowAdminAccess,
+                cancellationToken);
+
+            if (!string.IsNullOrWhiteSpace(input.ReplaceVideoPath))
             {
-                product.VideoPath = videoPath;
-                product.VideoDurationSeconds = input.VideoDurationSeconds!.Value;
-                await dbContext.SaveChangesAsync(cancellationToken);
+                var normalizedReplace = NormalizeAssetPath(input.ReplaceVideoPath);
+                if (string.Equals(
+                        NormalizeAssetPath(product.VideoPath),
+                        normalizedReplace,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    product.VideoPath = videoPath;
+                    product.VideoDurationSeconds = input.VideoDurationSeconds!.Value;
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                }
+
+                try
+                {
+                    // Reload product videos after insert so delete finds the old path.
+                    await DeleteVideoByPathAsync(
+                        input.ProductId,
+                        input.ReplaceVideoPath,
+                        input.OwnerId,
+                        input.WebRootPath,
+                        input.AllowAdminAccess,
+                        cancellationToken);
+                }
+                catch (KeyNotFoundException)
+                {
+                    // Old path already gone — trimmed upload still succeeded.
+                }
             }
 
-            try
-            {
-                // Reload product videos after insert so delete finds the old path.
-                await DeleteVideoByPathAsync(
-                    input.ProductId,
-                    input.ReplaceVideoPath,
-                    input.OwnerId,
-                    input.WebRootPath,
-                    input.AllowAdminAccess,
-                    cancellationToken);
-            }
-            catch (KeyNotFoundException)
-            {
-                // Old path already gone — trimmed upload still succeeded.
-            }
+            return result;
         }
-
-        return result;
     }
 
     public async Task<object> PresignVideoUploadAsync(
@@ -1005,6 +1013,23 @@ public class ProductAssetsAppService(
         {
             throw new ArgumentException("Unsupported video format. Allowed: .mp4, .mov, .webm, .m4v");
         }
+    }
+
+    private static async Task<byte[]> ReadStreamBytesAsync(Stream stream, CancellationToken cancellationToken)
+    {
+        if (stream is MemoryStream memory)
+        {
+            return memory.ToArray();
+        }
+
+        await using var buffer = new MemoryStream();
+        if (stream.CanSeek)
+        {
+            stream.Position = 0;
+        }
+
+        await stream.CopyToAsync(buffer, cancellationToken);
+        return buffer.ToArray();
     }
 
     private async Task<object> BuildPresignResponseAsync(

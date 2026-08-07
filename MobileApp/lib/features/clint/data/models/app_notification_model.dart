@@ -1,3 +1,5 @@
+import 'package:alrasmarket/core/utils/utc_date_time.dart';
+
 class AppNotificationModel {
   const AppNotificationModel({
     required this.id,
@@ -31,7 +33,7 @@ class AppNotificationModel {
     DateTime? created;
     final rawCreated = json['createdAt'] ?? json['CreatedAt'];
     if (rawCreated != null) {
-      created = DateTime.tryParse(rawCreated.toString())?.toLocal();
+      created = UtcDateTime.parseAsUtc(rawCreated.toString());
     }
 
     final isReadRaw = json['isRead'] ?? json['IsRead'];

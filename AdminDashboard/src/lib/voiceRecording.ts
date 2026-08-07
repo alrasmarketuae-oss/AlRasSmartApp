@@ -1,4 +1,4 @@
-import { apiUrl } from '../config/api.js'
+import { resolveAssetUrl } from './assets'
 
 const VOICE_MIME_CANDIDATES = [
   'audio/webm;codecs=opus',
@@ -84,7 +84,7 @@ export function voiceMimeFromPath(path: string): string | undefined {
   }
 }
 
-/** رابط تشغيل صوتي عبر API يحدد Content-Type من محتوى الملف (Safari/iOS). */
+/** رابط تشغيل صوتي من الـ CDN (نفس مسار التخزين على R2). */
 export function resolveVoiceUrl(path: string | null | undefined): string {
   if (!path?.trim()) return ''
 
@@ -93,18 +93,13 @@ export function resolveVoiceUrl(path: string | null | undefined): string {
     return trimmed
   }
 
-  if (trimmed.includes('/api/Chat/voice')) {
-    return trimmed.startsWith('http') ? trimmed : apiUrl(trimmed)
+  // Legacy API voice stream URLs → strip to storage path then resolve via CDN.
+  const chatVoiceIdx = trimmed.toLowerCase().indexOf('/chat-voice/')
+  if (chatVoiceIdx >= 0) {
+    return resolveAssetUrl(decodeURIComponent(trimmed.slice(chatVoiceIdx)))
   }
 
-  const normalized = trimmed.startsWith('/') ? trimmed : `/${trimmed}`
-  const storagePath = normalized.replace(/^\/+/, '')
-  const encodedPath = storagePath
-    .split('/')
-    .filter(Boolean)
-    .map((segment) => encodeURIComponent(segment))
-    .join('/')
-  return apiUrl(`/api/Chat/voice/${encodedPath}`)
+  return resolveAssetUrl(trimmed)
 }
 
 export function createVoiceFile(blob: Blob, mimeType: string | undefined): File {

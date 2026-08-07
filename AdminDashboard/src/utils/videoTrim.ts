@@ -57,22 +57,70 @@ function waitForSeek(video: HTMLVideoElement): Promise<void> {
   })
 }
 
+/**
+ * MediaRecorder WebM often reports duration as Infinity until seeked to the end.
+ * Accept the blob if it loads and either has a finite duration or a seekable end.
+ */
 async function validateVideoBlob(blob: Blob): Promise<void> {
   if (!blob.size) {
     throw new Error('Trimmed video is empty')
+  }
+
+  // Very tiny outputs are almost always corrupt (headers only / no frames).
+  if (blob.size < 1024) {
+    throw new Error('Trimmed video is invalid')
   }
 
   const url = URL.createObjectURL(blob)
   const video = document.createElement('video')
   video.src = url
   video.muted = true
+  video.playsInline = true
   video.preload = 'auto'
 
   try {
     await waitForEvent(video, 'loadedmetadata')
-    if (!Number.isFinite(video.duration) || video.duration <= 0) {
-      throw new Error('Trimmed video is invalid')
+
+    if (Number.isFinite(video.duration) && video.duration > 0) {
+      return
     }
+
+    // Probe duration for WebM/MediaRecorder blobs that report Infinity.
+    await new Promise<void>((resolve, reject) => {
+      const timeout = window.setTimeout(() => {
+        cleanup()
+        // Blob has frames and loaded — Infinity duration is common and still uploadable.
+        if (blob.size >= 8_000) {
+          resolve()
+          return
+        }
+        reject(new Error('Trimmed video is invalid'))
+      }, 8000)
+
+      const onSeeked = () => {
+        const ok =
+          (Number.isFinite(video.duration) && video.duration > 0) ||
+          (Number.isFinite(video.currentTime) && video.currentTime > 0) ||
+          blob.size >= 8_000
+        cleanup()
+        if (ok) resolve()
+        else reject(new Error('Trimmed video is invalid'))
+      }
+
+      const cleanup = () => {
+        window.clearTimeout(timeout)
+        video.removeEventListener('seeked', onSeeked)
+      }
+
+      video.addEventListener('seeked', onSeeked)
+      try {
+        video.currentTime = 1e10
+      } catch {
+        cleanup()
+        if (blob.size >= 8_000) resolve()
+        else reject(new Error('Trimmed video is invalid'))
+      }
+    })
   } finally {
     URL.revokeObjectURL(url)
   }
@@ -115,6 +163,10 @@ export async function trimVideoToFile(
     }
 
     const stream = captureStream.call(videoWithCapture, 30)
+    if (stream.getVideoTracks().length === 0) {
+      throw new Error('Video trim is not supported in this browser')
+    }
+
     const recorder = new MediaRecorder(stream, {
       mimeType: recorderMime,
       videoBitsPerSecond: 2_500_000,
@@ -133,8 +185,17 @@ export async function trimVideoToFile(
     video.currentTime = Math.max(0, startSec)
     await waitForSeek(video)
 
-    recorder.start(100)
-    await video.play()
+    // Ensure a painted frame before recording starts (avoids empty WebM headers).
+    try {
+      await video.play()
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      })
+    } catch {
+      throw new Error('Could not play video for trimming')
+    }
+
+    recorder.start(250)
 
     await new Promise<void>((resolve, reject) => {
       const trimMs = Math.max(500, (endSec - startSec) * 1000)
@@ -150,18 +211,29 @@ export async function trimVideoToFile(
         }
       }
 
+      const onEnded = () => {
+        cleanup()
+        resolve()
+      }
+
       const cleanup = () => {
         window.clearTimeout(timeout)
         video.removeEventListener('timeupdate', onTimeUpdate)
+        video.removeEventListener('ended', onEnded)
         video.pause()
       }
 
       video.addEventListener('timeupdate', onTimeUpdate)
+      video.addEventListener('ended', onEnded)
     })
 
     if (recorder.state !== 'inactive') {
       recorder.requestData()
       recorder.stop()
+    }
+
+    for (const track of stream.getTracks()) {
+      track.stop()
     }
 
     const trimmedBlob = await blobPromise

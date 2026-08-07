@@ -129,7 +129,9 @@ export default function ChatContactsPanel({
                         </span>
                       </div>
                       <div className="mt-0.5 flex items-center justify-between gap-2">
-                        <span className="truncate text-sm text-[#667781]">{contact.lastMessagePreview ?? '—'}</span>
+                        <span className="notranslate truncate text-sm text-[#667781]" translate="no">
+                          {contact.lastMessagePreview ?? '—'}
+                        </span>
                         {contact.unreadCount > 0 ? (
                           <span className="inline-flex min-w-[20px] shrink-0 items-center justify-center rounded-full bg-[#25d366] px-1.5 py-0.5 text-[11px] font-bold text-white">
                             {contact.unreadCount}
