@@ -53,7 +53,7 @@ export default function ChatPage() {
   const dispatch = useAppDispatch()
   const location = useLocation()
   const navigate = useNavigate()
-  const { subscribeReceiveMessage, subscribeMessageUpdated, subscribeConversationSeen, subscribeMessagesDelivered } = useChat()
+  const { subscribeReceiveMessage, subscribeMessageUpdated, subscribeConversationSeen, subscribeMessagesDelivered, chatPollingInterval } = useChat()
   const authUser = getAuthUser()
   const myUserId = authUser?.id ?? null
   const viewerIsSuperAdmin = isSuperAdmin(authUser?.roleName)
@@ -79,7 +79,7 @@ export default function ChatPage() {
     isLoading: inboxLoading,
   } = useGetChatInboxQuery(undefined, {
     skip: !myUserId,
-    pollingInterval: 10_000,
+    pollingInterval: chatPollingInterval,
     ...liveQueryOptions,
   })
 
@@ -100,7 +100,7 @@ export default function ChatPage() {
     isFetching: threadFetching,
   } = useGetChatConversationDetailsQuery(selectedUserId ?? '', {
     skip: !selectedUserId || (isConversationLocked && !viewerIsSuperAdmin),
-    pollingInterval: 10_000,
+    pollingInterval: chatPollingInterval,
     ...liveQueryOptions,
   })
 

@@ -8,6 +8,7 @@ import ShippingDetailPage from '../pages/ShippingDetailPage'
 import DashboardPage from '../pages/DashboardPage'
 import UsersPage from '../pages/UsersPage'
 import UserDetailPage from '../pages/UserDetailPage'
+import UserAdsPage from '../pages/UserAdsPage'
 import AdsPage from '../pages/AdsPage'
 import AdDetailPage from '../pages/AdDetailPage'
 import OrderDetailPage from '../pages/OrderDetailPage'
@@ -80,6 +81,21 @@ export default function AppRoutes() {
               anyOf={[PERMISSIONS.usersView, PERMISSIONS.usersProfileEdits]}
             >
               <UserDetailPage />
+            </PermissionRoute>
+          }
+        />
+        <Route
+          path="/users/:userId/ads"
+          element={
+            <PermissionRoute
+              anyOf={[
+                PERMISSIONS.usersView,
+                PERMISSIONS.usersProfileEdits,
+                PERMISSIONS.productsView,
+                PERMISSIONS.productsAdEdits,
+              ]}
+            >
+              <UserAdsPage />
             </PermissionRoute>
           }
         />

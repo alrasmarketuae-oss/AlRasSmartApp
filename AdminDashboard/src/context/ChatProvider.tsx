@@ -4,9 +4,9 @@ import {
   useContext,
   useMemo,
   useRef,
+  useState,
   type ReactNode,
 } from 'react'
-import { useLocation } from 'react-router-dom'
 import { getAuthUser } from '../lib/authStorage'
 import { useChatHub } from '../hooks/useChatHub'
 import { adminApi, useGetChatUnreadCountQuery } from '../store/adminApi'
@@ -18,8 +18,14 @@ import type {
   ConversationSeenPayload,
 } from '../types/chat'
 
+/** Poll only when SignalR is down — realtime updates come from ChatHub. */
+const CHAT_POLL_WHEN_DISCONNECTED_MS = 10_000
+
 type ChatContextValue = {
   totalUnread: number
+  isHubConnected: boolean
+  /** RTK polling interval: 0 while SignalR is connected. */
+  chatPollingInterval: number
   subscribeReceiveMessage: (handler: (message: ChatMessage) => void) => () => void
   subscribeMessageUpdated: (handler: (message: ChatMessage) => void) => () => void
   subscribeConversationSeen: (handler: (payload: ConversationSeenPayload) => void) => () => void
@@ -30,22 +36,20 @@ const ChatContext = createContext<ChatContextValue | null>(null)
 
 export function ChatProvider({ children }: { children: ReactNode }) {
   const dispatch = useAppDispatch()
-  const location = useLocation()
   const authUser = getAuthUser()
   const userId = authUser?.id ?? null
-  // Keep ChatHub only on the chat page; LeaveUserChat + stop when navigating away.
-  const isOnChatPage =
-    location.pathname === '/chat' || location.pathname.startsWith('/chat/')
-  const hubUserId = isOnChatPage ? userId : null
+  const [isHubConnected, setIsHubConnected] = useState(false)
 
   const receiveListenersRef = useRef(new Set<(message: ChatMessage) => void>())
   const updatedListenersRef = useRef(new Set<(message: ChatMessage) => void>())
   const seenListenersRef = useRef(new Set<(payload: ConversationSeenPayload) => void>())
   const deliveredListenersRef = useRef(new Set<(payload: ChatMessagesDeliveredPayload) => void>())
 
+  const chatPollingInterval = isHubConnected ? 0 : CHAT_POLL_WHEN_DISCONNECTED_MS
+
   const { data: unreadData } = useGetChatUnreadCountQuery(undefined, {
     skip: !userId,
-    pollingInterval: 10_000,
+    pollingInterval: chatPollingInterval,
     ...liveQueryOptions,
   })
 
@@ -60,12 +64,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   const invalidateThread = useCallback(
     (otherUserId: string) => {
+      if (!otherUserId.trim()) return
       dispatch(adminApi.util.invalidateTags([{ type: 'Chat', id: `THREAD:${otherUserId}` }]))
     },
     [dispatch],
   )
 
-  useChatHub(hubUserId, {
+  // Keep ChatHub for the whole authenticated session (not only /chat).
+  useChatHub(userId, {
+    onConnectionChanged: setIsHubConnected,
     onReceiveMessage: (message) => {
       receiveListenersRef.current.forEach((handler) => handler(message))
       invalidateChat()
@@ -74,10 +81,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     },
     onMessageUpdated: (message) => {
       updatedListenersRef.current.forEach((handler) => handler(message))
-      if (userId) {
-        invalidateThread(message.fromUserId)
-        invalidateThread(message.toUserId)
-      }
+      invalidateThread(message.fromUserId)
+      invalidateThread(message.toUserId)
     },
     onConversationSeen: (payload) => {
       seenListenersRef.current.forEach((handler) => handler(payload))
@@ -87,6 +92,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       deliveredListenersRef.current.forEach((handler) => handler(payload))
     },
     onUserLastSeen: () => {
+      dispatch(adminApi.util.invalidateTags([{ type: 'Chat', id: 'INBOX' }]))
+    },
+    onSupportSessionChanged: () => {
+      invalidateChat()
       dispatch(adminApi.util.invalidateTags([{ type: 'Chat', id: 'INBOX' }]))
     },
   })
@@ -125,6 +134,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     (): ChatContextValue => ({
       totalUnread: unreadData?.totalUnread ?? 0,
+      isHubConnected,
+      chatPollingInterval,
       subscribeReceiveMessage,
       subscribeMessageUpdated,
       subscribeConversationSeen,
@@ -132,6 +143,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }),
     [
       unreadData?.totalUnread,
+      isHubConnected,
+      chatPollingInterval,
       subscribeReceiveMessage,
       subscribeMessageUpdated,
       subscribeConversationSeen,

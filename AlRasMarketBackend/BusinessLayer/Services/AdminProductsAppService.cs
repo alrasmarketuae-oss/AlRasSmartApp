@@ -105,6 +105,7 @@ public class AdminProductsAppService(
         DateTime? createdTo,
         bool? hasPendingOffers = null,
         bool? editResubmitOnly = null,
+        string? ownerId = null,
         string? language = null,
         CancellationToken cancellationToken = default)
     {
@@ -190,6 +191,11 @@ public class AdminProductsAppService(
                     && !o.IsAdminApproved
                     && o.Product != null
                     && o.Product.ProductTypeId == ProductTypeCodes.Requests));
+        }
+
+        if (!string.IsNullOrWhiteSpace(ownerId) && Guid.TryParse(ownerId.Trim(), out var ownerGuid))
+        {
+            query = query.Where(x => x.OwnerId == ownerGuid);
         }
 
         if (!string.IsNullOrWhiteSpace(search))

@@ -23,7 +23,7 @@ import CompactMediaStrip from './CompactMediaStrip'
 import OrderNotifyPartyDialog from './OrderNotifyPartyDialog'
 import OrderStatusActionButtons from './OrderStatusActionButtons'
 import OrderStatusHistoryStrip from './OrderStatusHistoryStrip'
-import { formatAdAmount, formatPackagingLabel, formatPriceTypeLabel, productTypeBadgeClass, resolveOrderChannelTypeKey, resolveOrderChannelTypeName } from '../../utils/adsDisplay'
+import { formatAdAmount, amountsLookEqual, formatPackagingLabel, formatPriceTypeLabel, productTypeBadgeClass, resolveOrderChannelTypeKey, resolveOrderChannelTypeName } from '../../utils/adsDisplay'
 import {
   formatOrderAmount,
   formatOrderQuantityWithUnit,
@@ -472,17 +472,19 @@ export default function OrderDetailView({
   const customerTotal =
     order.customerTotalPriceFormatted ||
     `${order.customerTotalPrice.toFixed(2)} ${order.currency}`
-  const appProfit =
-    order.appProfitFormatted || `${order.appProfitAmount.toFixed(2)} ${order.currency}`
+  const appProfit = formatAdAmount(
+    order.appProfitFormatted || `${order.appProfitAmount.toFixed(2)} ${order.currency}`,
+    locale,
+  )
   const vatAmount =
     order.currency?.toUpperCase() === 'USD' && order.vatAed <= 0
       ? '—'
-      : `${order.vatAed.toFixed(2)} AED`
+      : formatAdAmount(`${order.vatAed.toFixed(2)} AED`, locale)
   const shippingAed = order.chargedShippingAed > 0 ? order.chargedShippingAed : order.shippingCostAed
   const shippingCost =
     order.currency?.toUpperCase() === 'USD' && shippingAed <= 0
       ? '—'
-      : `${shippingAed.toFixed(2)} AED`
+      : formatAdAmount(`${shippingAed.toFixed(2)} AED`, locale)
   const grandTotal = formatOrderAmount(order)
   const supplierUnitPrice =
     order.supplierUnitPriceFormatted ||
@@ -1085,16 +1087,6 @@ export default function OrderDetailView({
                         />
                       )}
                       <IconInfoField
-                        label={t('orders.unitPrice')}
-                        icon={InfoFieldIcons.money}
-                        iconClass="bg-blue-50 text-blue-600"
-                        value={
-                          <span className="font-semibold">
-                            {formatAdAmount(customerUnitPrice, locale)}
-                          </span>
-                        }
-                      />
-                      <IconInfoField
                         label={t('orders.orderNotes')}
                         icon={InfoFieldIcons.note}
                         iconClass="bg-slate-100 text-slate-500"
@@ -1213,7 +1205,8 @@ export default function OrderDetailView({
                               </span>
                             }
                           />
-                          {chargedAmount ? (
+                          {chargedAmount &&
+                          !amountsLookEqual(chargedAmount, grandTotal) ? (
                             <IconInfoField
                               label={t('orders.chargedAmount')}
                               icon={InfoFieldIcons.card}
@@ -1244,16 +1237,18 @@ export default function OrderDetailView({
                           </div>
                         </div>
                         <div className="grid gap-5 sm:grid-cols-2">
-                          <IconInfoField
-                            label={t('orders.supplierUnitPrice')}
-                            icon={InfoFieldIcons.lock}
-                            iconClass="bg-sky-100 text-sky-700"
-                            value={
-                              <span className="font-semibold text-sky-800 dark:text-sky-200">
-                                {formatAdAmount(supplierUnitPrice, locale)}
-                              </span>
-                            }
-                          />
+                          {!amountsLookEqual(supplierUnitPrice, supplierTotal) ? (
+                            <IconInfoField
+                              label={t('orders.supplierUnitPrice')}
+                              icon={InfoFieldIcons.lock}
+                              iconClass="bg-sky-100 text-sky-700"
+                              value={
+                                <span className="font-semibold text-sky-800 dark:text-sky-200">
+                                  {formatAdAmount(supplierUnitPrice, locale)}
+                                </span>
+                              }
+                            />
+                          ) : null}
                           <IconInfoField
                             label={t('orders.supplierTotalPrice')}
                             icon={InfoFieldIcons.users}

@@ -78,7 +78,7 @@ export default function RequestOffersPanel({
   const { t, locale } = useAppPreferences()
   const location = useLocation()
   const listReturnState = buildListReturnState(location.pathname, location.search)
-  const [sortKey, setSortKey] = useState<SortKey>('bestMatch')
+  const [sortKey, setSortKey] = useState<SortKey>('newest')
   const [contactTarget, setContactTarget] = useState<ContactTarget | null>(null)
 
   const { data, error, isLoading, isFetching } = useGetAdminOrdersQuery({

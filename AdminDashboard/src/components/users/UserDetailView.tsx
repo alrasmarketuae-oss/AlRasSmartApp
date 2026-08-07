@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { resolveAssetUrl } from '../../lib/assets'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import {
@@ -204,7 +205,31 @@ export default function UserDetailView({
               {t('users.basicInfo')}
             </h2>
             <dl className="space-y-4">
-              <InfoRow label={t('users.company')} value={user.companyName?.trim() || '—'} />
+              <InfoRow
+                label={t('users.company')}
+                value={
+                  user.roleId === 2 || user.roleId === 5 ? (
+                    <Link
+                      to={`/users/${user.id}/ads`}
+                      className="font-medium text-[#3B7FC7] hover:underline"
+                    >
+                      {user.companyName?.trim() || user.fullName?.trim() || t('users.viewCompanyAds')}
+                    </Link>
+                  ) : (
+                    user.companyName?.trim() || '—'
+                  )
+                }
+              />
+              {(user.roleId === 2 || user.roleId === 5) ? (
+                <div className="pt-1">
+                  <Link
+                    to={`/users/${user.id}/ads`}
+                    className="inline-flex items-center rounded-xl bg-[#3B7FC7] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#2f6ab0]"
+                  >
+                    {t('users.viewCompanyAds')}
+                  </Link>
+                </div>
+              ) : null}
               <InfoRow label={customerKindTitle} value={customerKindLabel} />
               <InfoRow
                 label={t('users.type')}

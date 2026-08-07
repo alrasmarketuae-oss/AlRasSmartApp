@@ -329,6 +329,10 @@ export const enMessages = {
         'Permanently delete this account and its files (licence, company photos, etc.)? The user cannot sign in; they may register again with the same email if this was a new registration.',
       deleteAccountSuccess: 'Account and files deleted',
       deleteAccountError: 'Could not delete account',
+      viewCompanyAds: 'View company ads',
+      companyAdsTitle: 'Company ads',
+      companyAdsCrumb: 'Ads',
+      companyAdsDescription: 'All ads for {name}, with the same details as in the mobile app.',
     },
     ads: {
       title: 'Ads',

@@ -208,6 +208,7 @@ public interface IAdminProductsAppService
         DateTime? createdTo,
         bool? hasPendingOffers = null,
         bool? editResubmitOnly = null,
+        string? ownerId = null,
         string? language = null,
         CancellationToken cancellationToken = default);
 

@@ -14,6 +14,7 @@ import ImageGallery, { type GalleryMediaItem } from '../ui/ImageGallery'
 import { downloadAsset, filenameFromAssetPath } from '../../utils/downloadAsset'
 import {
   displayAdProductTypeName,
+  formatAdAmount,
   formatPriceTypeLabel,
   formatPackagingLabel,
   productTypeBadgeClassForProduct,
@@ -251,9 +252,11 @@ export default function RequestDetailView({
   const shipping = shippingFromProduct(product)
   const typeName = displayAdProductTypeName(product, locale)
   const quantityLabel = formatOrderQuantityWithUnit(product.quantity, product.unitName)
-  const priceLabel = product.priceFormatted?.trim()
-    ? product.priceFormatted
-    : `${Number(product.priceUsd || 0).toLocaleString(locale === 'ar' ? 'ar-AE' : 'en-US')} ${product.currency || 'AED'}`
+  const priceLabel = formatAdAmount(
+    product.priceFormatted?.trim() ||
+      `${Number(product.priceUsd || 0).toFixed(2)} ${product.currency || 'AED'}`,
+    locale,
+  )
   const priceWithUnit = product.unitName
     ? `${priceLabel} / ${product.unitName}`
     : priceLabel

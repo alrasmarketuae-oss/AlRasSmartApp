@@ -212,6 +212,7 @@ export const adminApi = createApi({
           createdTo: params.createdTo,
           hasPendingOffers: params.hasPendingOffers === true ? true : undefined,
           editResubmitOnly: params.editResubmitOnly === true ? true : undefined,
+          ownerId: params.ownerId || undefined,
           lang: params.lang,
         },
       }),

@@ -36,6 +36,41 @@ function customerKindLabel(user: AdminUser, locale: 'ar' | 'en'): string {
   return '—'
 }
 
+function isCompanyAccount(user: AdminUser): boolean {
+  return user.roleId === 2 || user.roleId === 5
+}
+
+function companyCellLabel(user: AdminUser, locale: 'ar' | 'en'): string {
+  const companyName = user.companyName?.trim()
+  if (companyName) return companyName
+  if (isCompanyAccount(user)) return user.fullName?.trim() || customerKindLabel(user, locale)
+  return customerKindLabel(user, locale)
+}
+
+function CompanyCell({
+  user,
+  locale,
+  listReturnState,
+}: {
+  user: AdminUser
+  locale: 'ar' | 'en'
+  listReturnState: ListReturnState
+}) {
+  const label = companyCellLabel(user, locale)
+  if (!isCompanyAccount(user)) {
+    return <CellText>{label}</CellText>
+  }
+  return (
+    <Link
+      to={`/users/${user.id}/ads`}
+      state={listReturnState}
+      className="font-medium text-[#3B7FC7] transition hover:text-[#2f6ab0] hover:underline"
+    >
+      {label}
+    </Link>
+  )
+}
+
 function TypeBadge({ label, locale }: { label: string; locale: 'ar' | 'en' }) {
   const display = localizeTypeLabel(label, locale)
   if (isUnknownLabel(label)) {
@@ -109,7 +144,17 @@ function UserMobileCard({
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <UserAvatar user={user} />
           <div className="min-w-0 text-start">
-            <p className="admin-text truncate font-semibold">{user.fullName}</p>
+            {isCompanyAccount(user) ? (
+              <Link
+                to={`/users/${user.id}/ads`}
+                state={listReturnState}
+                className="admin-text block truncate font-semibold text-[#3B7FC7] hover:underline"
+              >
+                {user.fullName}
+              </Link>
+            ) : (
+              <p className="admin-text truncate font-semibold">{user.fullName}</p>
+            )}
             <p className="admin-text-muted truncate text-xs" dir="ltr">
               {phoneDisplay}
             </p>
@@ -121,7 +166,19 @@ function UserMobileCard({
       <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
         <div>
           <dt className="admin-text-subtle text-xs">{t('users.company')}</dt>
-          <dd className="admin-text-muted mt-0.5">{customerKindLabel(user, locale)}</dd>
+          <dd className="admin-text-muted mt-0.5">
+            {isCompanyAccount(user) ? (
+              <Link
+                to={`/users/${user.id}/ads`}
+                state={listReturnState}
+                className="font-medium text-[#3B7FC7] hover:underline"
+              >
+                {companyCellLabel(user, locale)}
+              </Link>
+            ) : (
+              customerKindLabel(user, locale)
+            )}
+          </dd>
         </div>
         <div>
           <dt className="admin-text-subtle text-xs">{t('users.orders')}</dt>
@@ -236,13 +293,23 @@ export default function UsersTable({ users }: UsersTableProps) {
                   <td className="px-5 py-5 text-start">
                     <div className="flex items-center justify-start gap-3">
                       <UserAvatar user={user} />
-                      <Link
-                        to={`/users/${user.id}`}
-          state={listReturnState}
-                        className="admin-text font-medium transition hover:text-[#3B7FC7]"
-                      >
-                        {user.fullName}
-                      </Link>
+                      {isCompanyAccount(user) ? (
+                        <Link
+                          to={`/users/${user.id}/ads`}
+                          state={listReturnState}
+                          className="admin-text font-medium text-[#3B7FC7] transition hover:text-[#2f6ab0] hover:underline"
+                        >
+                          {user.fullName}
+                        </Link>
+                      ) : (
+                        <Link
+                          to={`/users/${user.id}`}
+                          state={listReturnState}
+                          className="admin-text font-medium transition hover:text-[#3B7FC7]"
+                        >
+                          {user.fullName}
+                        </Link>
+                      )}
                     </div>
                   </td>
                   <td className="px-5 py-5 text-start">
@@ -254,7 +321,11 @@ export default function UsersTable({ users }: UsersTableProps) {
                     <TypeBadge label={user.typeLabelAr} locale={locale} />
                   </td>
                   <td className="px-5 py-5 text-start">
-                    <CellText>{customerKindLabel(user, locale)}</CellText>
+                    <CompanyCell
+                      user={user}
+                      locale={locale}
+                      listReturnState={listReturnState}
+                    />
                   </td>
                   <td className="px-5 py-5 text-start">
                     <div className="flex flex-wrap items-center gap-2">

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
+import { formatAdAmount } from '../../utils/adsDisplay'
 import { DetailField, DetailStatGrid, DetailStatTile } from './DetailSectionCard'
 
 type ProductDetailsPanelProps = {
@@ -35,7 +36,7 @@ export default function ProductDetailsPanel({
   extraStats,
   layout = 'inline',
 }: ProductDetailsPanelProps) {
-  const { t } = useAppPreferences()
+  const { t, locale } = useAppPreferences()
 
   const content = (
     <div className="min-w-0 flex-1 space-y-4">
@@ -61,7 +62,10 @@ export default function ProductDetailsPanel({
           />
         ) : null}
         {priceFormatted ? (
-          <DetailStatTile label={t('ads.price')} value={priceFormatted} />
+          <DetailStatTile
+            label={t('ads.price')}
+            value={formatAdAmount(priceFormatted, locale)}
+          />
         ) : null}
         {createdAt && formatDate ? (
           <DetailStatTile label={t('ads.adCreatedAt')} value={formatDate(createdAt)} />

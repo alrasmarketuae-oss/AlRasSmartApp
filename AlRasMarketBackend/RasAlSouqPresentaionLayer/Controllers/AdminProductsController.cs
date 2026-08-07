@@ -54,6 +54,7 @@ public class AdminProductsController(
         [FromQuery] DateTime? createdTo = null,
         [FromQuery] bool? hasPendingOffers = null,
         [FromQuery] bool? editResubmitOnly = null,
+        [FromQuery] string? ownerId = null,
         [FromQuery] string? lang = null,
         CancellationToken cancellationToken = default)
     {
@@ -70,6 +71,7 @@ public class AdminProductsController(
             createdTo,
             hasPendingOffers,
             editResubmitOnly,
+            ownerId,
             lang,
             cancellationToken);
         return Ok(result);
@@ -134,7 +136,7 @@ public class AdminProductsController(
         [FromQuery] int pageSize = 20,
         [FromQuery] string? search = null,
         CancellationToken cancellationToken = default) =>
-        GetProducts(page, pageSize, search, "pending", null, null, null, null, null, null, null, null, null, cancellationToken);
+        GetProducts(page, pageSize, search, "pending", null, null, null, null, null, null, null, null, null, null, cancellationToken);
 
     [HttpPost("{productId}/approve")]
     public async Task<IActionResult> Approve(

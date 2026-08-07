@@ -150,6 +150,8 @@ export type AdminProductsFilters = {
   hasPendingOffers?: boolean
   /** Seller re-submitted an edited ad for approval. */
   editResubmitOnly?: boolean
+  /** Filter ads owned by this user (company). */
+  ownerId?: string
   lang?: 'ar' | 'en'
 }
 

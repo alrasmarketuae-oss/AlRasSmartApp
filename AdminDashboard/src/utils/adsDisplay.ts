@@ -218,19 +218,100 @@ export function formatAdListDate(value: string, _locale: Locale): string {
   return `${year}-${month}-${day}`
 }
 
-export function formatAdAmount(priceFormatted: string, locale: Locale): string {
-  const trimmed = priceFormatted.trim()
+/**
+ * Adds thousand separators (1,234.56) to the first numeric token in a price string.
+ * Display-only — does not change underlying values or business logic.
+ */
+export function withThousandSeparators(text: string): string {
+  const trimmed = text.trim()
+  if (!trimmed) return trimmed
+
+  // Match a full amount (optional commas already present), e.g. 137160.00 or 1,234.50
+  const match = trimmed.match(/-?[\d,]+(?:\.\d+)?/)
+  if (!match || match.index == null) return trimmed
+
+  const raw = match[0]
+  // Reject matches that are only commas/empty after strip
+  if (!/\d/.test(raw)) return trimmed
+
+  const normalized = raw.replace(/,/g, '')
+  const num = Number(normalized)
+  if (!Number.isFinite(num)) return trimmed
+
+  const decimalPart = normalized.includes('.')
+    ? (normalized.split('.')[1] ?? '')
+    : null
+  const fractionDigits =
+    decimalPart != null
+      ? Math.min(decimalPart.length, 2)
+      : Number.isInteger(num)
+        ? 0
+        : 2
+
+  const formatted = num.toLocaleString('en-US', {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits === 0 ? 0 : 2,
+  })
+
+  return (
+    trimmed.slice(0, match.index) +
+    formatted +
+    trimmed.slice(match.index + raw.length)
+  )
+}
+
+export function formatAdAmount(
+  priceFormatted: string | number | null | undefined,
+  locale: Locale,
+): string {
+  if (priceFormatted == null) return '—'
+
+  const asString =
+    typeof priceFormatted === 'number'
+      ? Number.isFinite(priceFormatted)
+        ? priceFormatted.toLocaleString('en-US', {
+            minimumFractionDigits: Number.isInteger(priceFormatted) ? 0 : 2,
+            maximumFractionDigits: 2,
+          })
+        : ''
+      : String(priceFormatted)
+
+  const trimmed = asString.trim()
   if (!trimmed) return '—'
 
-  const isUsd =
-    /\bUSD\b/i.test(trimmed) ||
-    trimmed.startsWith('$') ||
-    /\$\s*\d/.test(trimmed)
+  const withSeparators = withThousandSeparators(trimmed)
 
-  if (locale !== 'ar' || isUsd) return trimmed
-  if (trimmed.includes('درهم')) return trimmed
-  if (/\bAED\b/i.test(trimmed)) return trimmed.replace(/\bAED\b/gi, 'درهم')
-  return `${trimmed} درهم`
+  const isUsd =
+    /\bUSD\b/i.test(withSeparators) ||
+    withSeparators.startsWith('$') ||
+    /\$\s*[\d,]/.test(withSeparators)
+
+  if (locale !== 'ar' || isUsd) return withSeparators
+  if (withSeparators.includes('درهم')) return withSeparators
+  if (/\bAED\b/i.test(withSeparators)) {
+    return withSeparators.replace(/\bAED\b/gi, 'درهم')
+  }
+  return `${withSeparators} درهم`
+}
+
+/** Compare two display amounts ignoring separators/currency labels. */
+export function amountsLookEqual(
+  left: string | number | null | undefined,
+  right: string | number | null | undefined,
+): boolean {
+  const normalize = (value: string | number | null | undefined): string | null => {
+    if (value == null) return null
+    const text = String(value).trim()
+    if (!text || text === '—') return null
+    const match = text.match(/-?[\d,]+(?:\.\d+)?/)
+    if (!match) return null
+    const num = Number(match[0].replace(/,/g, ''))
+    if (!Number.isFinite(num)) return null
+    return num.toFixed(2)
+  }
+  const a = normalize(left)
+  const b = normalize(right)
+  return a != null && b != null && a === b
 }
 
 /** Local / Rexport (Price Type) from API requestTypeName or requestTypeId. */

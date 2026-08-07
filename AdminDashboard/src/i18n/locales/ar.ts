@@ -328,6 +328,10 @@ export const arMessages = {
         'حذف هذا الحساب نهائياً مع ملفاته (الرخصة، صور الشركة، وغيرها)؟ لن يتمكن المستخدم من تسجيل الدخول، ويمكنه التسجيل مجدداً بنفس البريد إن كان تسجيلاً جديداً.',
       deleteAccountSuccess: 'تم حذف الحساب وملفاته',
       deleteAccountError: 'تعذر حذف الحساب',
+      viewCompanyAds: 'عرض إعلانات الشركة',
+      companyAdsTitle: 'إعلانات الشركة',
+      companyAdsCrumb: 'الإعلانات',
+      companyAdsDescription: 'كل إعلانات {name} بنفس التفاصيل المعروضة في تطبيق الموبايل.',
     },
     ads: {
       title: 'الإعلانات',

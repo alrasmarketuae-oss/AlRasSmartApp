@@ -239,9 +239,11 @@ export default function RequestOfferDetailView({
     `${(order.customerTotalPrice || order.totalPrice || 0).toFixed(2)} ${order.currency}`
 
   const vatAmount =
-    order.vatAed > 0 ? `${order.vatAed.toFixed(2)} AED` : '—'
-  const appProfit =
-    order.appProfitFormatted || `${order.appProfitAmount.toFixed(2)} ${order.currency}`
+    order.vatAed > 0 ? formatAdAmount(`${order.vatAed.toFixed(2)} AED`, locale) : '—'
+  const appProfit = formatAdAmount(
+    order.appProfitFormatted || `${order.appProfitAmount.toFixed(2)} ${order.currency}`,
+    locale,
+  )
   const grandTotal = formatOrderAmount(order)
 
   const fulfillmentLabel = formatPriceTypeLabel(order.shippingDescription, t)

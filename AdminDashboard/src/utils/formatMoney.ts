@@ -1,3 +1,5 @@
+import { withThousandSeparators } from './adsDisplay'
+
 export function formatDashboardAmount(
   amount: number,
   locale: 'en' | 'ar',
@@ -5,9 +7,13 @@ export function formatDashboardAmount(
 ): string {
   if (locale === 'ar') {
     if (formattedFallback?.includes('درهم')) {
-      return formattedFallback
+      return withThousandSeparators(formattedFallback)
     }
-    return `${amount.toLocaleString('ar-AE', { maximumFractionDigits: 0 })} درهم`
+    return `${amount.toLocaleString('en-US', { maximumFractionDigits: 0 })} درهم`
+  }
+
+  if (formattedFallback?.trim()) {
+    return withThousandSeparators(formattedFallback)
   }
 
   return `${amount.toLocaleString('en-US', { maximumFractionDigits: 0 })} AED`
