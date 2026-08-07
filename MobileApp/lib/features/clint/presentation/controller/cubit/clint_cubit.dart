@@ -2662,6 +2662,7 @@ class ClintCubit extends Cubit<ClintStates> {
   void initSendBookingOrder(MyListingProductModel product) {
     currentBookingProduct = product;
     bookingToUserId = product.ownerId;
+    bookingOfferController.clear();
 
     final unit = product.unitName.trim().isEmpty
         ? 'Ton'
@@ -2812,16 +2813,24 @@ class ClintCubit extends Cubit<ClintStates> {
 
   double bookingOrderUnitPrice(MyListingProductModel product) {
     // Category / booking Purchase Order is always wholesale (never hybrid retail).
-    final listPrice = ProductPriceFormatter.amount(product, preferRetail: false);
+    final listPrice = ProductPriceFormatter.amountValue(
+      product,
+      preferRetail: false,
+    );
     final offer = bookingYourOffer;
     if (offer != null) {
-      return double.tryParse(offer) ?? (double.tryParse(listPrice) ?? 0);
+      final offerPrice = ThousandsNumberInput.parseDouble(offer);
+      // Ignore empty/zero/invalid offer text — keep the listing price.
+      if (offerPrice != null && offerPrice > 0) return offerPrice;
     }
-    return double.tryParse(listPrice) ?? 0;
+    return listPrice;
   }
 
   double get bookingOrderQuantity =>
-      double.tryParse(bookingOrderQuantityController.text.trim()) ?? 0;
+      ThousandsNumberInput.parseDouble(
+        bookingOrderQuantityController.text,
+      ) ??
+      0;
 
   // =========================================================================
   // Offer purchase order (product details)
@@ -2845,11 +2854,13 @@ class ClintCubit extends Cubit<ClintStates> {
     final unit = product.unitName.trim().isEmpty
         ? 'Ton'
         : product.unitName.trim();
-    final defaultQty = product.minimumOrderQuantity.trim().isNotEmpty
+    final defaultQtyRaw = product.minimumOrderQuantity.trim().isNotEmpty
         ? product.minimumOrderQuantity.trim()
         : '1';
+    final defaultQty = ThousandsNumberInput.parseDouble(defaultQtyRaw) ?? 1;
 
-    offerOrderQuantityController.text = defaultQty;
+    offerOrderQuantityController.text =
+        ThousandsNumberInput.format(defaultQty, allowDecimal: true);
     emit(OfferOrderFormState(product: product, selectedUnit: unit));
   }
 
@@ -2860,10 +2871,13 @@ class ClintCubit extends Cubit<ClintStates> {
   }
 
   double offerOrderUnitPrice(MyListingProductModel product) =>
-      double.tryParse(ProductPriceFormatter.amount(product)) ?? 0;
+      ProductPriceFormatter.amountValue(product);
 
   double get offerOrderQuantity =>
-      double.tryParse(offerOrderQuantityController.text.trim()) ?? 0;
+      ThousandsNumberInput.parseDouble(
+        offerOrderQuantityController.text,
+      ) ??
+      0;
 
   Future<void> submitOfferOrder() async {
     final form = _offerOrderFormState;
@@ -3224,7 +3238,7 @@ class ClintCubit extends Cubit<ClintStates> {
       if (price is num) {
         base = price.toDouble();
       } else {
-        base = double.tryParse(price?.toString() ?? '');
+        base = ThousandsNumberInput.parseDouble(price?.toString());
       }
       return base;
     } catch (_) {

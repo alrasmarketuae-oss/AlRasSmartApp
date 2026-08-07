@@ -1,3 +1,5 @@
+import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
+
 class DomesticEmirateModel {
   const DomesticEmirateModel({
     required this.id,
@@ -27,8 +29,6 @@ class DomesticEmirateModel {
     return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 
-  static double _parseDouble(dynamic value) {
-    if (value is num) return value.toDouble();
-    return double.tryParse(value?.toString() ?? '') ?? 0;
-  }
+  static double _parseDouble(dynamic value) =>
+      ThousandsNumberInput.parseDoubleOrZero(value);
 }

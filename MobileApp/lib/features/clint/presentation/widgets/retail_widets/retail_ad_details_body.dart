@@ -3,6 +3,7 @@ import 'package:alrasmarket/core/utils/product_quantity_formatter.dart';
 import 'package:alrasmarket/core/utils/product_stock.dart';
 import 'package:alrasmarket/core/utils/string_display_format.dart';
 import 'package:alrasmarket/core/utils/relative_time_formatter.dart';
+import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/core/widgets/product_price_text.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/ad_hero_description_text.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/booking_widets/booking_details_design.dart';
@@ -14,7 +15,6 @@ import 'package:alrasmarket/features/company/data/models/my_listing_product_mode
 import 'package:alrasmarket/features/company/presentation/helpers/create_ad_price_labels.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// Retail product details layout (no supplier header).
@@ -391,12 +391,11 @@ class _QuantityAndTotalRow extends StatelessWidget {
   final bool isAr;
 
   void _step(int delta) {
-    final current = double.tryParse(quantityController.text.trim()) ?? 0;
+    final current =
+        ThousandsNumberInput.parseDouble(quantityController.text) ?? 0;
     final next = (current + delta).clamp(1, 999999);
-    final text = next == next.roundToDouble()
-        ? next.toInt().toString()
-        : next.toString();
-    quantityController.text = text;
+    quantityController.text =
+        ThousandsNumberInput.format(next, allowDecimal: true);
     onQuantityChanged();
   }
 
@@ -439,9 +438,7 @@ class _QuantityAndTotalRow extends StatelessWidget {
                             decimal: true,
                           ),
                           inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                              RegExp(r'[0-9.]'),
-                            ),
+                            ThousandsSeparatorInputFormatter(allowDecimal: true),
                           ],
                           onChanged: (_) => onQuantityChanged(),
                           validator: quantityValidator,

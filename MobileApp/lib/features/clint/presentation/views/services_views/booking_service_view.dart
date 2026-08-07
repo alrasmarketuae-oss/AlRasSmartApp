@@ -1,6 +1,7 @@
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_states.dart';
 import 'package:alrasmarket/features/clint/presentation/models/service_product_type.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/product_grid_skeleton.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/search_header.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/service_products_grid.dart';
 import 'package:alrasmarket/generated/l10n.dart';
@@ -59,15 +60,7 @@ class _BookingServiceViewState extends State<BookingServiceView> {
                     onRefresh: _refresh,
                     child: cubit.isLoadingBookingProducts &&
                             bookingProducts.isEmpty
-                        ? ListView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            children: [
-                              SizedBox(height: 120.h),
-                              const Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                            ],
-                          )
+                        ? const ProductGridSkeleton()
                         : bookingProducts.isEmpty
                             ? ListView(
                                 physics: const AlwaysScrollableScrollPhysics(),

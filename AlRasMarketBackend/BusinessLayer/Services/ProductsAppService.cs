@@ -1,4 +1,4 @@
-﻿using BusinessLayer.Caching;
+using BusinessLayer.Caching;
 using BusinessLayer.Dtos;
 using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;

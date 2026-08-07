@@ -1,5 +1,6 @@
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/utils/localized_product_text.dart';
+import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/core/utils/utc_date_time.dart';
 
 import 'my_listing_shipping_model.dart';
@@ -1220,7 +1221,9 @@ class MyListingProductModel {
 
   /// Sale price currently stored on the product (after discount while active).
   double get salePriceValue =>
-      double.tryParse(displayPrice.trim().isNotEmpty ? displayPrice : priceUsd) ??
+      ThousandsNumberInput.parseDouble(
+        displayPrice.trim().isNotEmpty ? displayPrice : priceUsd,
+      ) ??
       0;
 
   /// Pre-discount price derived from sale price + percentage.

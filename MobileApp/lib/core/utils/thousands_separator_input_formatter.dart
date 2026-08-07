@@ -27,21 +27,32 @@ class ThousandsNumberInput {
     return buffer.toString();
   }
 
+  static final RegExp _numberPattern = RegExp(r'-?\d+(?:\.\d+)?');
+
+  /// Parses amounts that may include thousand separators and/or currency text
+  /// (e.g. `6,000`, `6,000.50 USD`, `AED 1500`).
   static double? parseDouble(String? raw) {
     final cleaned = strip(raw);
     if (cleaned.isEmpty) return null;
-    return double.tryParse(cleaned);
+    final direct = double.tryParse(cleaned);
+    if (direct != null) return direct;
+    final match = _numberPattern.firstMatch(cleaned);
+    if (match == null) return null;
+    return double.tryParse(match.group(0)!);
   }
 
   static int? parseInt(String? raw) {
-    final cleaned = strip(raw);
-    if (cleaned.isEmpty) return null;
-    final asInt = int.tryParse(cleaned);
-    if (asInt != null) return asInt;
-    final asDouble = double.tryParse(cleaned);
+    final asDouble = parseDouble(raw);
     if (asDouble == null) return null;
     if (asDouble == asDouble.roundToDouble()) return asDouble.round();
     return null;
+  }
+
+  /// Safe parse for API/model numeric fields that may arrive as formatted text.
+  static double parseDoubleOrZero(dynamic value) {
+    if (value == null) return 0;
+    if (value is num) return value.toDouble();
+    return parseDouble(value.toString()) ?? 0;
   }
 
   /// Formats a number for display in edit forms / controllers.

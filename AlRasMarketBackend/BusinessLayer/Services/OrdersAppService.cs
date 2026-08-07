@@ -297,7 +297,7 @@ public partial class OrdersAppService(
         ProductsAppService.InvalidateListingCaches();
         await NotifyOrderPartiesAsync([order], cancellationToken);
 
-        // Requests / Offers / Booking / Category pending admin review → same auto-moderation as ads.
+        // Booking / Category / Offers / Requests pending admin review → scan buyer notes/media.
         if (!isAdminApproved
             && ProductTypeCodes.RequiresAdminModerationBeforeSellerApproval(product))
         {

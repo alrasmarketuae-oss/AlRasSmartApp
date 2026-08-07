@@ -4,6 +4,7 @@ import 'package:alrasmarket/core/serveses/supplier_balance_service.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/utils/relative_time_formatter.dart';
+import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/core/widgets/app_header.dart';
 import 'package:alrasmarket/generated/l10n.dart';
@@ -19,6 +20,8 @@ class SupplierBalanceView extends StatefulWidget {
   State<SupplierBalanceView> createState() => _SupplierBalanceViewState();
 }
 
+enum _BalanceTab { deposit, withdraw }
+
 class _SupplierBalanceViewState extends State<SupplierBalanceView>
     with WidgetsBindingObserver {
   static const _liveRefreshInterval = Duration(seconds: 1);
@@ -31,6 +34,7 @@ class _SupplierBalanceViewState extends State<SupplierBalanceView>
   List<UserIbanModel> _ibans = const [];
   List<WithdrawalRequestModel> _withdrawals = const [];
   Timer? _liveRefreshTimer;
+  _BalanceTab _selectedTab = _BalanceTab.deposit;
 
   @override
   void initState() {
@@ -283,354 +287,445 @@ class _SupplierBalanceViewState extends State<SupplierBalanceView>
                             onRefresh: _load,
                             child: ListView(
                               children: [
-                                Container(
-                                  width: double.infinity,
-                                  padding: EdgeInsets.all(16.w),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xffF5F5F5),
-                                    borderRadius: BorderRadius.circular(12.r),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        S.of(context).currentBalance,
-                                        style: TextStyle(
-                                          fontSize: 14.sp,
-                                          color: Colors.black54,
-                                        ),
-                                      ),
-                                      SizedBox(height: 6.h),
-                                      Text(
-                                        currency.format(_balance),
-                                        style: TextStyle(
-                                          fontSize: 24.sp,
-                                          fontWeight: FontWeight.bold,
-                                          color: LightColor.defaultColor,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                SizedBox(height: 12.h),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: OutlinedButton(
-                                        onPressed: _submitting ? null : _addIbanFlow,
-                                        child: Text(isAr ? 'إضافة IBAN' : 'Add IBAN'),
-                                      ),
-                                    ),
-                                    SizedBox(width: 10.w),
-                                    Expanded(
-                                      child: ElevatedButton(
-                                        onPressed: _submitting ? null : _withdrawFlow,
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: LightColor.defaultColor,
-                                          foregroundColor: Colors.white,
-                                        ),
-                                        child: Text(
-                                          isAr ? 'طلب سحب' : 'Request withdrawal',
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                if (_ibans.isNotEmpty) ...[
-                                  SizedBox(height: 20.h),
-                                  Align(
-                                    alignment: AlignmentDirectional.centerStart,
-                                    child: Text(
-                                      isAr ? 'الحسابات البنكية' : 'IBANs',
-                                      style: TextStyle(
-                                        fontSize: 15.sp,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(height: 8.h),
-                                  ..._ibans.map(
-                                    (iban) => Container(
-                                      margin: EdgeInsets.only(bottom: 8.h),
-                                      padding: EdgeInsets.all(12.w),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(10.r),
-                                        color: const Color(0xffF8F8F8),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  iban.iban,
-                                                  style: TextStyle(
-                                                    fontSize: 13.sp,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                              ),
-                                              if (iban.isDefault)
-                                                Container(
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: 8.w,
-                                                    vertical: 4.h,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: LightColor.defaultColor,
-                                                    borderRadius:
-                                                        BorderRadius.circular(20.r),
-                                                  ),
-                                                  child: Text(
-                                                    isAr ? 'الافتراضي' : 'Default',
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 10.sp,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                          if ((iban.accountHolderName ?? '')
-                                                  .isNotEmpty ||
-                                              (iban.bankName ?? '').isNotEmpty)
-                                            Text(
-                                              [
-                                                if ((iban.accountHolderName ?? '')
-                                                    .isNotEmpty)
-                                                  iban.accountHolderName!,
-                                                if ((iban.bankName ?? '').isNotEmpty)
-                                                  iban.bankName!,
-                                              ].join(' - '),
-                                              style: TextStyle(
-                                                fontSize: 12.sp,
-                                                color: Colors.black54,
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                                SizedBox(height: 20.h),
-                                Align(
-                                  alignment: AlignmentDirectional.centerStart,
-                                  child: Text(
-                                    S.of(context).balanceDepositsSection,
-                                    style: TextStyle(
-                                      fontSize: 15.sp,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(height: 8.h),
-                                if (_deposits.isEmpty)
-                                  Padding(
-                                    padding: EdgeInsets.only(bottom: 12.h),
-                                    child: Text(
-                                      S.of(context).noDepositsYet,
-                                      style: TextStyle(
-                                        fontSize: 13.sp,
-                                        color: Colors.black54,
-                                      ),
-                                    ),
-                                  )
-                                else
-                                  ..._deposits.map((entry) {
-                                    final reason = isAr
-                                        ? (entry.reasonAr ?? entry.reasonEn)
-                                        : (entry.reasonEn ?? entry.reasonAr);
-                                    final dateText = entry.createdAtUtc == null
-                                        ? ''
-                                        : RelativeTimeFormatter.formatFromUtc(
-                                            S.of(context),
-                                            entry.createdAtUtc!,
-                                          );
-                                    return Container(
-                                      margin: EdgeInsets.only(bottom: 10.h),
-                                      padding: EdgeInsets.all(14.w),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(
-                                          color: const Color(0xffE8E8E8),
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(10.r),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  isAr
-                                                      ? (entry.entryTypeNameAr
-                                                              .isNotEmpty
-                                                          ? entry
-                                                              .entryTypeNameAr
-                                                          : S
-                                                              .of(context)
-                                                              .balanceDeposit)
-                                                      : (entry.entryTypeNameEn
-                                                              .isNotEmpty
-                                                          ? entry
-                                                              .entryTypeNameEn
-                                                          : S
-                                                              .of(context)
-                                                              .balanceDeposit),
-                                                  style: TextStyle(
-                                                    fontSize: 15.sp,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                              ),
-                                              Text(
-                                                '+${currency.format(entry.amount.abs())}',
-                                                style: TextStyle(
-                                                  fontSize: 15.sp,
-                                                  fontWeight: FontWeight.bold,
-                                                  color:
-                                                      const Color(0xff1B7F3A),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          if (entry.orderId != null) ...[
-                                            SizedBox(height: 6.h),
-                                            Text(
-                                              S.of(context).balanceOrderLabel(
-                                                entry.orderId.toString(),
-                                              ),
-                                              style: TextStyle(
-                                                fontSize: 13.sp,
-                                                color: Colors.black87,
-                                              ),
-                                            ),
-                                          ],
-                                          if (reason != null &&
-                                              reason.trim().isNotEmpty) ...[
-                                            SizedBox(height: 4.h),
-                                            Text(
-                                              reason,
-                                              style: TextStyle(
-                                                fontSize: 12.sp,
-                                                color: Colors.black54,
-                                              ),
-                                            ),
-                                          ],
-                                          if (dateText.isNotEmpty) ...[
-                                            SizedBox(height: 6.h),
-                                            Text(
-                                              dateText,
-                                              style: TextStyle(
-                                                fontSize: 11.sp,
-                                                color: Colors.black45,
-                                              ),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                    );
-                                  }),
+                                _buildBalanceCard(currency),
+                                SizedBox(height: 14.h),
+                                _buildTabSwitcher(context),
                                 SizedBox(height: 16.h),
-                                Align(
-                                  alignment: AlignmentDirectional.centerStart,
-                                  child: Text(
-                                    S.of(context).balanceWithdrawalsSection,
-                                    style: TextStyle(
-                                      fontSize: 15.sp,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(height: 8.h),
-                                if (_withdrawals.isEmpty)
-                                  Padding(
-                                    padding: EdgeInsets.only(bottom: 24.h),
-                                    child: Text(
-                                      S.of(context).noWithdrawalsYet,
-                                      style: TextStyle(
-                                        fontSize: 13.sp,
-                                        color: Colors.black54,
-                                      ),
-                                    ),
+                                if (_selectedTab == _BalanceTab.deposit)
+                                  ..._buildDepositSection(
+                                    context,
+                                    isAr: isAr,
+                                    currency: currency,
                                   )
                                 else
-                                  ..._withdrawals.map((request) {
-                                    final dateText = request.requestedAtUtc == null
-                                        ? ''
-                                        : RelativeTimeFormatter.formatFromUtc(
-                                            S.of(context),
-                                            request.requestedAtUtc!,
-                                          );
-                                    return Container(
-                                      margin: EdgeInsets.only(bottom: 10.h),
-                                      padding: EdgeInsets.all(12.w),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(
-                                          color: const Color(0xffE8E8E8),
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(10.r),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  request.ibanSnapshot,
-                                                  style: TextStyle(
-                                                    fontSize: 13.sp,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                                Text(
-                                                  isAr
-                                                      ? request.statusNameAr
-                                                      : request.statusNameEn,
-                                                  style: TextStyle(
-                                                    fontSize: 12.sp,
-                                                    color: Colors.black54,
-                                                  ),
-                                                ),
-                                                if (dateText.isNotEmpty)
-                                                  Text(
-                                                    dateText,
-                                                    style: TextStyle(
-                                                      fontSize: 11.sp,
-                                                      color: Colors.black45,
-                                                    ),
-                                                  ),
-                                              ],
-                                            ),
-                                          ),
-                                          Text(
-                                            currency.format(request.amount),
-                                            style: TextStyle(
-                                              fontSize: 14.sp,
-                                              fontWeight: FontWeight.bold,
-                                              color: const Color(0xffC62828),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  }),
+                                  ..._buildWithdrawSection(
+                                    context,
+                                    isAr: isAr,
+                                    currency: currency,
+                                  ),
                                 SizedBox(height: 24.h),
                               ],
                             ),
                           ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBalanceCard(NumberFormat currency) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: const Color(0xffF5F5F5),
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            S.of(context).currentBalance,
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: Colors.black54,
+            ),
+          ),
+          SizedBox(height: 6.h),
+          Text(
+            currency.format(_balance),
+            style: TextStyle(
+              fontSize: 24.sp,
+              fontWeight: FontWeight.bold,
+              color: LightColor.defaultColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabSwitcher(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _BalanceTabButton(
+            label: S.of(context).balanceDeposit,
+            selected: _selectedTab == _BalanceTab.deposit,
+            selectedColor: const Color(0xFF1B7F3A),
+            onTap: () => setState(() => _selectedTab = _BalanceTab.deposit),
+          ),
+        ),
+        SizedBox(width: 10.w),
+        Expanded(
+          child: _BalanceTabButton(
+            label: S.of(context).balanceWithdrawal,
+            selected: _selectedTab == _BalanceTab.withdraw,
+            selectedColor: const Color(0xFFC62828),
+            onTap: () => setState(() => _selectedTab = _BalanceTab.withdraw),
+          ),
+        ),
+      ],
+    );
+  }
+
+  List<Widget> _buildDepositSection(
+    BuildContext context, {
+    required bool isAr,
+    required NumberFormat currency,
+  }) {
+    return [
+      Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: Text(
+          S.of(context).balanceDepositsSection,
+          style: TextStyle(
+            fontSize: 15.sp,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      SizedBox(height: 8.h),
+      if (_deposits.isEmpty)
+        Padding(
+          padding: EdgeInsets.only(bottom: 12.h, top: 8.h),
+          child: Text(
+            S.of(context).noDepositsYet,
+            style: TextStyle(
+              fontSize: 13.sp,
+              color: Colors.black54,
+            ),
+          ),
+        )
+      else
+        ..._deposits.map((entry) {
+          final reason = isAr
+              ? (entry.reasonAr ?? entry.reasonEn)
+              : (entry.reasonEn ?? entry.reasonAr);
+          final dateText = entry.createdAtUtc == null
+              ? ''
+              : RelativeTimeFormatter.formatFromUtc(
+                  S.of(context),
+                  entry.createdAtUtc!,
+                );
+          return Container(
+            margin: EdgeInsets.only(bottom: 10.h),
+            padding: EdgeInsets.all(14.w),
+            decoration: BoxDecoration(
+              border: Border.all(color: const Color(0xffE8E8E8)),
+              borderRadius: BorderRadius.circular(10.r),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        isAr
+                            ? (entry.entryTypeNameAr.isNotEmpty
+                                ? entry.entryTypeNameAr
+                                : S.of(context).balanceDeposit)
+                            : (entry.entryTypeNameEn.isNotEmpty
+                                ? entry.entryTypeNameEn
+                                : S.of(context).balanceDeposit),
+                        style: TextStyle(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '+${currency.format(entry.amount.abs())}',
+                      style: TextStyle(
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xff1B7F3A),
+                      ),
+                    ),
+                  ],
+                ),
+                if (entry.orderId != null) ...[
+                  SizedBox(height: 6.h),
+                  Text(
+                    S.of(context).balanceOrderLabel(entry.orderId.toString()),
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+                if (reason != null && reason.trim().isNotEmpty) ...[
+                  SizedBox(height: 4.h),
+                  Text(
+                    reason,
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ],
+                if (dateText.isNotEmpty) ...[
+                  SizedBox(height: 6.h),
+                  Text(
+                    dateText,
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      color: Colors.black45,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        }),
+    ];
+  }
+
+  List<Widget> _buildWithdrawSection(
+    BuildContext context, {
+    required bool isAr,
+    required NumberFormat currency,
+  }) {
+    return [
+      Row(
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              onPressed: _submitting ? null : _addIbanFlow,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: LightColor.defaultColor,
+                side: const BorderSide(color: LightColor.defaultColor),
+                padding: EdgeInsets.symmetric(vertical: 12.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+              ),
+              child: Text(isAr ? 'إضافة IBAN' : 'Add IBAN'),
+            ),
+          ),
+          SizedBox(width: 10.w),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: _submitting ? null : _withdrawFlow,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: LightColor.defaultColor,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 12.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+              ),
+              child: Text(isAr ? 'طلب سحب' : 'Request withdrawal'),
+            ),
+          ),
+        ],
+      ),
+      if (_ibans.isNotEmpty) ...[
+        SizedBox(height: 18.h),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Text(
+            isAr ? 'الحسابات البنكية' : 'IBANs',
+            style: TextStyle(
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        SizedBox(height: 8.h),
+        ..._ibans.map(
+          (iban) => Container(
+            margin: EdgeInsets.only(bottom: 8.h),
+            padding: EdgeInsets.all(12.w),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10.r),
+              color: const Color(0xffF8F8F8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        iban.iban,
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    if (iban.isDefault)
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8.w,
+                          vertical: 4.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: LightColor.defaultColor,
+                          borderRadius: BorderRadius.circular(20.r),
+                        ),
+                        child: Text(
+                          isAr ? 'الافتراضي' : 'Default',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                if ((iban.accountHolderName ?? '').isNotEmpty ||
+                    (iban.bankName ?? '').isNotEmpty)
+                  Text(
+                    [
+                      if ((iban.accountHolderName ?? '').isNotEmpty)
+                        iban.accountHolderName!,
+                      if ((iban.bankName ?? '').isNotEmpty) iban.bankName!,
+                    ].join(' - '),
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: Colors.black54,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
+      SizedBox(height: 18.h),
+      Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: Text(
+          S.of(context).balanceWithdrawalsSection,
+          style: TextStyle(
+            fontSize: 15.sp,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      SizedBox(height: 8.h),
+      if (_withdrawals.isEmpty)
+        Padding(
+          padding: EdgeInsets.only(bottom: 12.h, top: 8.h),
+          child: Text(
+            S.of(context).noWithdrawalsYet,
+            style: TextStyle(
+              fontSize: 13.sp,
+              color: Colors.black54,
+            ),
+          ),
+        )
+      else
+        ..._withdrawals.map((request) {
+          final dateText = request.requestedAtUtc == null
+              ? ''
+              : RelativeTimeFormatter.formatFromUtc(
+                  S.of(context),
+                  request.requestedAtUtc!,
+                );
+          return Container(
+            margin: EdgeInsets.only(bottom: 10.h),
+            padding: EdgeInsets.all(12.w),
+            decoration: BoxDecoration(
+              border: Border.all(color: const Color(0xffE8E8E8)),
+              borderRadius: BorderRadius.circular(10.r),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        request.ibanSnapshot,
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        isAr ? request.statusNameAr : request.statusNameEn,
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: Colors.black54,
+                        ),
+                      ),
+                      if (dateText.isNotEmpty)
+                        Text(
+                          dateText,
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            color: Colors.black45,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Text(
+                  currency.format(request.amount),
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xffC62828),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+    ];
+  }
+}
+
+class _BalanceTabButton extends StatelessWidget {
+  const _BalanceTabButton({
+    required this.label,
+    required this.selected,
+    required this.selectedColor,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final Color selectedColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final background = selected ? selectedColor : Colors.white;
+    final foreground = selected ? Colors.white : selectedColor;
+    final borderColor = selected ? selectedColor : selectedColor.withValues(alpha: 0.45);
+
+    return Material(
+      color: background,
+      elevation: selected ? 1 : 0,
+      shadowColor: selectedColor.withValues(alpha: 0.35),
+      borderRadius: BorderRadius.circular(12.r),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12.r),
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: 13.h),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12.r),
+            border: Border.all(color: borderColor, width: 1.5),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15.sp,
+                fontWeight: FontWeight.w800,
+                color: foreground,
+                height: 1.2,
+              ),
+            ),
           ),
         ),
       ),
@@ -804,7 +899,8 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
                 foregroundColor: Colors.white,
               ),
               onPressed: () {
-                final amount = double.tryParse(_amountController.text.trim());
+                final amount =
+                    ThousandsNumberInput.parseDouble(_amountController.text);
                 if (amount == null || amount <= 0) return;
                 Navigator.pop(
                   context,

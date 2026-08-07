@@ -332,7 +332,8 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
         editType?.toLowerCase() == CreateAdType.offers.label.toLowerCase();
 
     if (isOffers) {
-      final saleUsd = double.tryParse(product.priceUsd.trim()) ?? 0;
+      final saleUsd =
+          ThousandsNumberInput.parseDouble(product.priceUsd.trim()) ?? 0;
       final pct = product.discountPercentValue;
       final beforeUsd = (saleUsd > 0 && pct > 0 && pct < 100)
           ? saleUsd / (1 - pct / 100)
@@ -379,7 +380,8 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
 
     final hasRetail = product.hasRetailPricing ||
         (product.retailPrice.trim().isNotEmpty &&
-            (double.tryParse(product.retailPrice.trim()) ?? 0) > 0);
+            (ThousandsNumberInput.parseDouble(product.retailPrice.trim()) ?? 0) >
+                0);
     if (hasRetail) {
       retailPriceController.text = product.retailPrice.trim().isNotEmpty
           ? ThousandsNumberInput.formatRaw(

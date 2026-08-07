@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/core/utils/product_quantity_validator.dart';
 import 'package:alrasmarket/core/utils/product_stock.dart';
+import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/core/utils/user_facing_error_localizer.dart';
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/services/product_view_service.dart';
@@ -89,7 +90,10 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
       final defaultQty = widget.product.minimumOrderQuantity.trim().isNotEmpty
           ? widget.product.minimumOrderQuantity.trim()
           : '1';
-      _quantityController = TextEditingController(text: defaultQty);
+      final parsedDefault = ThousandsNumberInput.parseDouble(defaultQty) ?? 1;
+      _quantityController = TextEditingController(
+        text: ThousandsNumberInput.format(parsedDefault, allowDecimal: true),
+      );
       _ownsQuantityController = true;
     }
     _recalculateTotal();
@@ -106,7 +110,8 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
   Future<void> _addToCart(String unit) async {
     if (!(_quantityFormKey.currentState?.validate() ?? false)) return;
 
-    final quantity = double.tryParse(_quantityController.text.trim()) ?? 0;
+    final quantity =
+        ThousandsNumberInput.parseDouble(_quantityController.text) ?? 0;
     if (quantity <= 0) return;
 
     if (await _redirectIfCartAtStockLimit(quantity)) {
@@ -149,7 +154,7 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
   }
 
   double _availableProductQuantity() {
-    return double.tryParse(widget.product.quantity.replaceAll(',', '')) ?? 0;
+    return ProductStock.parseQuantity(widget.product.quantity) ?? 0;
   }
 
   double _cartQuantityForProduct(CartEntity cart) {
@@ -190,9 +195,17 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
   }
 
   void _recalculateTotal() {
-    final quantity = double.tryParse(_quantityController.text.trim()) ?? 0;
+    final quantity =
+        ThousandsNumberInput.parseDouble(_quantityController.text) ?? 0;
+    final preferRetail = ProductNavigationHelper.resolvePreferRetailChannel(
+      widget.preferRetailChannel,
+    );
     setState(() {
-      _total = RetailDetailsMapper.unitPrice(widget.product) * quantity;
+      _total = RetailDetailsMapper.unitPrice(
+            widget.product,
+            preferRetail: preferRetail && !widget.isOffer,
+          ) *
+          quantity;
     });
     if (widget.isOffer) {
       _clintCubit.notifyOfferOrderQuantityChanged();

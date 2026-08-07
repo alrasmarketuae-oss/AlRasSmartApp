@@ -9,6 +9,7 @@ import '../../../core/services/api_constants.dart';
 import '../../../core/services/biometric_auth_service.dart';
 import '../../../core/services/dio_helper.dart';
 import '../../../core/services/fcm_token_service.dart';
+import '../../../core/serveses/notifications_service.dart';
 
 /// Centralized authentication service for managing user authentication state
 class AuthService {
@@ -364,6 +365,7 @@ class AuthService {
 
   /// Clear all authentication data
   Future<void> clearAuthData() async {
+    NotificationsService.instance.resetForLogout();
     id = null;
     token = null;
     name = null;

@@ -707,7 +707,6 @@ public class OpenAiVisionService(
         var body = await response.Content.ReadAsStringAsync(timeoutCts.Token).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
         {
-            logger.LogWarning("Ad image policy scan failed: {Status} {Body}", (int)response.StatusCode, body);
             return new AdImagePolicyScanResult();
         }
 

@@ -17,8 +17,11 @@ public interface IOrderOfferAutoModerationService
 }
 
 /// <summary>
-/// Auto-moderates orders pending admin review (Requests offers, Offers, Booking, Category)
-/// with the same text/image/video rules as product ads.
+/// Auto-moderates orders pending admin review for Requests offers, Offers, Booking, and Category.
+/// Buyer notes (and images) are scanned with the same policy as ads:
+/// - order video → admin dashboard only (no auto-reject / auto-approve / notify)
+/// - no video + notes/image violations → auto-reject + notify buyer
+/// - no video + clean notes/images → auto-approve for seller
 /// </summary>
 public sealed class OrderOfferAutoModerationService(
     IRasAlSouqDbContext dbContext,
@@ -63,7 +66,7 @@ public sealed class OrderOfferAutoModerationService(
             return;
         }
 
-        // Same gated types as ads moderation path: Requests, Offers, Booking, Category.
+        // Requests / Offers / Booking / Category (incl. hybrid category catalog).
         if (!ProductTypeCodes.RequiresAdminModerationBeforeSellerApproval(order.Product))
         {
             return;
@@ -89,14 +92,38 @@ public sealed class OrderOfferAutoModerationService(
             return;
         }
 
+        // Video cannot be Vision-scanned: never auto-reject / auto-approve / notify.
+        var hasVideo = order.Videos.Any(v => !string.IsNullOrWhiteSpace(v.VideoPath));
+        if (hasVideo)
+        {
+            logger.LogInformation(
+                "Order {OrderId} (type={ProductTypeId}, category={CategoryId}) has video — " +
+                "left for admin dashboard only (no auto-reject/approve/notify).",
+                workItem.OrderId,
+                order.Product?.ProductTypeId,
+                order.Product?.CategoryId);
+            return;
+        }
+
         var textFields = await LoadOrderTextFieldsForPolicyScanAsync(order, cancellationToken)
             .ConfigureAwait(false);
+        var hasNotes = textFields.HasAnyNotes;
 
+        logger.LogInformation(
+            "Order {OrderId} (type={ProductTypeId}, category={CategoryId}) scanning buyer notes/images " +
+            "(hasNotes={HasNotes}, noteChars={NoteChars}).",
+            workItem.OrderId,
+            order.Product?.ProductTypeId,
+            order.Product?.CategoryId,
+            hasNotes,
+            textFields.CombinedLength);
+
+        // Buyer notes (Booking / Category / Offers / Requests) — same contact/abuse policy as ads.
         var textHits = AdContactPolicyScanner.Scan(textFields.AllParts);
         if (textHits.Count > 0)
         {
             logger.LogInformation(
-                "Order {OrderId} text policy violations: {Hits}",
+                "Order {OrderId} notes policy violations: {Hits}",
                 workItem.OrderId,
                 string.Join(", ", textHits.Select(h => $"{h.Kind}:{h.Sample}")));
             await RejectAsync(adminUserId, workItem.OrderId, cancellationToken).ConfigureAwait(false);
@@ -104,8 +131,16 @@ public sealed class OrderOfferAutoModerationService(
         }
 
         var combinedText = textFields.ToLabeledCombinedText();
-        if (!string.IsNullOrWhiteSpace(combinedText))
+        if (hasNotes)
         {
+            if (string.IsNullOrWhiteSpace(combinedText))
+            {
+                logger.LogWarning(
+                    "Order {OrderId} notes expected but combined text empty — leaving for admin.",
+                    workItem.OrderId);
+                return;
+            }
+
             AdTextPolicyScanResult textLlm;
             try
             {
@@ -114,20 +149,20 @@ public sealed class OrderOfferAutoModerationService(
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Order {OrderId} text scan threw — leaving for admin.", workItem.OrderId);
+                logger.LogWarning(ex, "Order {OrderId} notes scan threw — leaving for admin.", workItem.OrderId);
                 return;
             }
 
             if (string.Equals(textLlm.Summary, "scan_failed", StringComparison.OrdinalIgnoreCase))
             {
-                logger.LogWarning("Order {OrderId} text scan failed — leaving for admin.", workItem.OrderId);
+                logger.LogWarning("Order {OrderId} notes scan failed — leaving for admin.", workItem.OrderId);
                 return;
             }
 
             if (textLlm.HasViolation)
             {
                 logger.LogInformation(
-                    "Order {OrderId} LLM text violations: {Kinds} ({Summary})",
+                    "Order {OrderId} LLM notes violations: {Kinds} ({Summary})",
                     workItem.OrderId,
                     string.Join("|", textLlm.ViolationKinds),
                     textLlm.Summary);
@@ -139,10 +174,12 @@ public sealed class OrderOfferAutoModerationService(
         var imagePaths = order.Images
             .Select(i => i.ImagePath)
             .Where(p => !string.IsNullOrWhiteSpace(p)
-                        && !p.Contains("product-documents", StringComparison.OrdinalIgnoreCase)
-                        && !p.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                        && !IsDocumentPath(p))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
+
+        var hasDocuments = order.Images.Any(i =>
+            !string.IsNullOrWhiteSpace(i.ImagePath) && IsDocumentPath(i.ImagePath));
 
         var imageScan = await ScanImagesAsync(workItem.OrderId, imagePaths, cancellationToken).ConfigureAwait(false);
         if (imageScan.Hits.Count > 0)
@@ -161,16 +198,21 @@ public sealed class OrderOfferAutoModerationService(
             return;
         }
 
-        // Video is not Vision-scanned: never auto-approve; leave for admin dashboard.
-        var hasVideo = order.Videos.Any(v => !string.IsNullOrWhiteSpace(v.VideoPath));
-        if (hasVideo)
+        // Documents are not Vision-scanned — admin must review.
+        if (hasDocuments)
         {
             logger.LogInformation(
-                "Order {OrderId} (type={ProductTypeId}, category={CategoryId}) has video — " +
-                "left for admin dashboard (notes/images were clean).",
-                workItem.OrderId,
-                order.Product?.ProductTypeId,
-                order.Product?.CategoryId);
+                "Order {OrderId} has documents — left for admin dashboard (notes/images were clean).",
+                workItem.OrderId);
+            return;
+        }
+
+        // Nothing scannable (should be rare for admin-gated orders) — don't vacuous-approve.
+        if (!hasNotes && imagePaths.Count == 0)
+        {
+            logger.LogInformation(
+                "Order {OrderId} has no notes/images to scan — left for admin dashboard.",
+                workItem.OrderId);
             return;
         }
 
@@ -179,7 +221,7 @@ public sealed class OrderOfferAutoModerationService(
             await ordersAppService.ApproveRequestOfferForAdminAsync(adminUserId, workItem.OrderId, cancellationToken)
                 .ConfigureAwait(false);
             logger.LogInformation(
-                "Order {OrderId} (type={ProductTypeId}, category={CategoryId}) auto-approved after policy scan.",
+                "Order {OrderId} (type={ProductTypeId}, category={CategoryId}) auto-approved after notes/image scan.",
                 workItem.OrderId,
                 order.Product?.ProductTypeId,
                 order.Product?.CategoryId);
@@ -189,6 +231,10 @@ public sealed class OrderOfferAutoModerationService(
             logger.LogWarning(ex, "Auto-approve failed for order {OrderId} — leaving for admin.", workItem.OrderId);
         }
     }
+
+    private static bool IsDocumentPath(string path) =>
+        path.Contains("product-documents", StringComparison.OrdinalIgnoreCase)
+        || path.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
 
     private async Task<OrderTextFieldsForScan> LoadOrderTextFieldsForPolicyScanAsync(
         Order order,
@@ -203,8 +249,10 @@ public sealed class OrderOfferAutoModerationService(
                 cancellationToken)
             .ConfigureAwait(false);
 
-        var notesPrimary = FirstNonEmpty(order.Notes, translation?.TextEn);
-        var notesSecondary = DistinctFrom(translation?.TextAr, notesPrimary);
+        var notesPrimary = FirstNonEmpty(order.Notes, translation?.TextEn, translation?.TextAr);
+        var notesSecondary = DistinctFrom(
+            FirstNonEmpty(translation?.TextAr, translation?.TextEn),
+            notesPrimary);
 
         return new OrderTextFieldsForScan(notesPrimary, notesSecondary);
     }
@@ -245,6 +293,12 @@ public sealed class OrderOfferAutoModerationService(
     {
         public string?[] AllParts => [NotesPrimary, NotesSecondary];
 
+        public bool HasAnyNotes =>
+            !string.IsNullOrWhiteSpace(NotesPrimary) || !string.IsNullOrWhiteSpace(NotesSecondary);
+
+        public int CombinedLength =>
+            (NotesPrimary?.Length ?? 0) + (NotesSecondary?.Length ?? 0);
+
         public string ToLabeledCombinedText()
         {
             var lines = new List<string>(2);
@@ -256,9 +310,9 @@ public sealed class OrderOfferAutoModerationService(
                 }
             }
 
-            // Order notes are the buyer-submitted text (title/specs equivalent for offers/orders).
-            Add("Order notes / specifications", NotesPrimary);
-            Add("Order notes (alt language)", NotesSecondary);
+            // Buyer notes on Booking / Category / Offers / Requests purchase orders.
+            Add("Buyer order notes / additional instructions", NotesPrimary);
+            Add("Buyer order notes (alt language)", NotesSecondary);
             return string.Join("\n", lines);
         }
     }

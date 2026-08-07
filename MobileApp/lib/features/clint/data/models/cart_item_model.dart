@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/services/api_constants.dart';
+import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/features/clint/domain/entities/cart_item_entity.dart';
 
 class CartItemModel {
@@ -71,10 +72,8 @@ class CartItemModel {
     return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 
-  static double _parseDouble(dynamic value) {
-    if (value is num) return value.toDouble();
-    return double.tryParse(value?.toString() ?? '') ?? 0;
-  }
+  static double _parseDouble(dynamic value) =>
+      ThousandsNumberInput.parseDoubleOrZero(value);
 
   static String? _resolveMediaUrl(String? path) {
     if (path != null && path.startsWith('assets/')) return path;

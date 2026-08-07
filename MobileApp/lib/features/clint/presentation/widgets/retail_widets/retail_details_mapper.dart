@@ -18,13 +18,25 @@ class RetailDetailsMapper {
     return '';
   }
 
-  static String priceText(MyListingProductModel product) {
-    final label = ProductPriceFormatter.priceWithCurrency(product);
+  static String priceText(
+    MyListingProductModel product, {
+    bool preferRetail = false,
+  }) {
+    final label = ProductPriceFormatter.priceWithCurrency(
+      product,
+      preferRetail: preferRetail,
+    );
     return label.isEmpty ? '—' : label;
   }
 
-  static double unitPrice(MyListingProductModel product) =>
-      double.tryParse(ProductPriceFormatter.amount(product)) ?? 0;
+  static double unitPrice(
+    MyListingProductModel product, {
+    bool preferRetail = false,
+  }) =>
+      ProductPriceFormatter.amountValue(
+        product,
+        preferRetail: preferRetail,
+      );
 
   static String formatTotal(MyListingProductModel product, double total) =>
       ProductPriceFormatter.totalLabel(product, total);

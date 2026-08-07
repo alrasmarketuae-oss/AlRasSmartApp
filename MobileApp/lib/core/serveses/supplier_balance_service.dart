@@ -1,6 +1,7 @@
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/services/dio_helper.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
+import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 
 class SupplierBalanceStatement {
   final double balance;
@@ -292,10 +293,8 @@ class SupplierBalanceService {
   }
 }
 
-double _toDouble(dynamic value) {
-  if (value is num) return value.toDouble();
-  return double.tryParse(value?.toString() ?? '') ?? 0;
-}
+double _toDouble(dynamic value) =>
+    ThousandsNumberInput.parseDoubleOrZero(value);
 
 int _toInt(dynamic value, int fallback) {
   if (value is int) return value;

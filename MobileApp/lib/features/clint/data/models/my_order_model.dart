@@ -1,5 +1,6 @@
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/utils/localized_product_text.dart';
+import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/features/clint/data/models/my_order_image_model.dart';
 
 class MyOrderModel {
@@ -470,10 +471,8 @@ class MyOrderModel {
     return (json['currency'] ?? json['Currency'])?.toString().trim() ?? '';
   }
 
-  static double _toDouble(dynamic value) {
-    if (value is num) return value.toDouble();
-    return double.tryParse(value?.toString() ?? '') ?? 0;
-  }
+  static double _toDouble(dynamic value) =>
+      ThousandsNumberInput.parseDoubleOrZero(value);
 
   static bool _isVideoPath(String path) {
     final lower = path.toLowerCase();

@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/services/api_constants.dart';
+import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 
 class InternationalShippingPostModel {
   const InternationalShippingPostModel({
@@ -72,11 +73,8 @@ class InternationalShippingPostModel {
     return ApiConstants.resolveMediaUrl(value);
   }
 
-  static double _toDouble(Object? value) {
-    if (value == null) return 0;
-    if (value is num) return value.toDouble();
-    return double.tryParse(value.toString()) ?? 0;
-  }
+  static double _toDouble(Object? value) =>
+      ThousandsNumberInput.parseDoubleOrZero(value);
 
   static int? _toInt(Object? value) {
     if (value == null) return null;

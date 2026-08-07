@@ -1,6 +1,7 @@
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_states.dart';
 import 'package:alrasmarket/features/clint/presentation/models/service_product_type.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/product_grid_skeleton.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/search_header.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/service_products_grid.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
@@ -118,13 +119,7 @@ class _OffersServiceViewState extends State<OffersServiceView> {
                 child: RefreshIndicator(
                   onRefresh: _refresh,
                   child: cubit.isLoadingOffersProducts && offerProducts.isEmpty
-                      ? ListView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          children: [
-                            SizedBox(height: 120.h),
-                            const Center(child: CircularProgressIndicator()),
-                          ],
-                        )
+                      ? const ProductGridSkeleton(useOfferCard: true)
                       : offerProducts.isEmpty
                           ? ListView(
                               physics: const AlwaysScrollableScrollPhysics(),

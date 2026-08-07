@@ -17,8 +17,8 @@ public interface IProductAutoModerationService
 
 /// <summary>
 /// Background ad review (all product types: Offers, Requests, Booking, Category/Retail):
-/// - text/image violations → auto-reject + notify
-/// - video (no text/image violations) → leave for admin dashboard (then CLIP)
+/// - video present → leave for admin dashboard only (no auto-reject, no auto-approve, no notify)
+/// - no video + text/image violations → auto-reject + notify
 /// - no video + clean → auto-approve + notify (then CLIP)
 /// - seller edits/resubmits → same scan again
 /// </summary>
@@ -79,6 +79,20 @@ public sealed class ProductAutoModerationService(
                 workItem.ProductId,
                 options.Value.Enabled,
                 workItem.RequireManualReview);
+            await QueueClipAsync(workItem.ProductId, cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
+        // Video cannot be Vision-scanned: never auto-reject / auto-approve / notify.
+        // Leave the ad (with video) for admin dashboard review only.
+        if (await HasVideoAsync(workItem.ProductId, product, cancellationToken).ConfigureAwait(false))
+        {
+            logger.LogInformation(
+                "Product {ProductId} (type={ProductTypeId}, category={CategoryId}) has video — " +
+                "left for admin dashboard only (no auto-reject/approve/notify).",
+                workItem.ProductId,
+                product.ProductTypeId,
+                product.CategoryId);
             await QueueClipAsync(workItem.ProductId, cancellationToken).ConfigureAwait(false);
             return;
         }
@@ -160,19 +174,6 @@ public sealed class ProductAutoModerationService(
             logger.LogWarning(
                 "Product {ProductId} image scans all failed — leaving for manual admin review.",
                 workItem.ProductId);
-            await QueueClipAsync(workItem.ProductId, cancellationToken).ConfigureAwait(false);
-            return;
-        }
-
-        // Video is not Vision-scanned: never auto-approve; leave for admin dashboard.
-        if (await HasVideoAsync(workItem.ProductId, product, cancellationToken).ConfigureAwait(false))
-        {
-            logger.LogInformation(
-                "Product {ProductId} (type={ProductTypeId}, category={CategoryId}) has video — " +
-                "left for admin dashboard (text/images were clean).",
-                workItem.ProductId,
-                product.ProductTypeId,
-                product.CategoryId);
             await QueueClipAsync(workItem.ProductId, cancellationToken).ConfigureAwait(false);
             return;
         }

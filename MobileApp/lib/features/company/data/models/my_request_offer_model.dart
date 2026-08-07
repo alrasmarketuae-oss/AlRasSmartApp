@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/services/api_constants.dart';
+import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 
 class MyRequestOfferModel {
   const MyRequestOfferModel({
@@ -109,10 +110,8 @@ class MyRequestOfferModel {
     );
   }
 
-  static double _toDouble(dynamic value) {
-    if (value is num) return value.toDouble();
-    return double.tryParse(value?.toString() ?? '') ?? 0;
-  }
+  static double _toDouble(dynamic value) =>
+      ThousandsNumberInput.parseDoubleOrZero(value);
 
   static String? resolveAssetUrl(String path) {
     final url = ApiConstants.resolveMediaUrl(path);

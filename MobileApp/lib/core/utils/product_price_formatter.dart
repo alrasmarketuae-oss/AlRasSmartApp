@@ -14,6 +14,26 @@ class ProductPriceFormatter {
     return formatAmountText(product.priceForChannel(preferRetail: preferRetail));
   }
 
+  /// Numeric unit price for order math (unit × quantity).
+  /// Always strips thousand separators / currency text before parsing.
+  static double amountValue(
+    MyListingProductModel product, {
+    bool preferRetail = false,
+  }) {
+    final candidates = <String>[
+      product.priceForChannel(preferRetail: preferRetail),
+      if (preferRetail) product.retailPrice,
+      product.displayPrice,
+      product.priceUsd,
+      product.ownerListingPrice,
+    ];
+    for (final candidate in candidates) {
+      final value = ThousandsNumberInput.parseDouble(candidate);
+      if (value != null && value > 0) return value;
+    }
+    return 0;
+  }
+
   /// Formats a raw price string for display (e.g. `1150` → `1,150`).
   static String formatAmountText(String? raw) {
     final text = raw?.trim() ?? '';

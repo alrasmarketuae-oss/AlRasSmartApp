@@ -1,5 +1,6 @@
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/core/utils/product_price_formatter.dart';
+import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/core/widgets/product_price_text.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
@@ -31,7 +32,8 @@ class SendBookingQuantitySection extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = S.of(context);
     final unitLabel = selectedUnit.isEmpty ? 'Ton' : selectedUnit;
-    final quantity = double.tryParse(quantityController.text.trim()) ?? 0;
+    final quantity =
+        ThousandsNumberInput.parseDouble(quantityController.text) ?? 0;
     final total = unitPrice * quantity;
     final showPrices = ProductPriceFormatter.canShowPrices;
 
@@ -67,6 +69,9 @@ class SendBookingQuantitySection extends StatelessWidget {
                 child: TextFormField(
                   controller: quantityController,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    ThousandsSeparatorInputFormatter(allowDecimal: true),
+                  ],
                   onChanged: (_) => onQuantityChanged(),
                   decoration: _fieldDecoration(
                     hint: s.quantity,
@@ -150,7 +155,7 @@ class SendBookingQuantitySection extends StatelessWidget {
                   ),
                 ),
                 ProductPriceText(
-                  amount: total.toStringAsFixed(total % 1 == 0 ? 0 : 2),
+                  amount: ThousandsNumberInput.format(total),
                   currency: ProductPriceFormatter.currencyCode(product),
                   amountStyle: TextStyle(
                     color: const Color(0xFF3A7DC5),

@@ -5,6 +5,7 @@ import 'package:alrasmarket/features/clint/data/models/app_notification_model.da
 import 'package:alrasmarket/features/clint/presentation/helpers/notification_navigation_helper.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/notification_card.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/notification_section_header.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/notifications_list_skeleton.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/search_header.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
@@ -35,7 +36,17 @@ class _NotificationsViewState extends State<NotificationsView> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    _loadNotifications(reset: true);
+    final cached = NotificationsService.instance.peekSessionPage1();
+    if (cached != null) {
+      _items = List<AppNotificationModel>.from(cached.items);
+      _page = 1;
+      _hasMore = _items.length < cached.totalCount;
+      _loading = false;
+      _markedAllRead = true;
+      _error = null;
+    } else {
+      _loadNotifications(reset: true);
+    }
   }
 
   @override
@@ -56,7 +67,10 @@ class _NotificationsViewState extends State<NotificationsView> {
     }
   }
 
-  Future<void> _loadNotifications({required bool reset}) async {
+  Future<void> _loadNotifications({
+    required bool reset,
+    bool forceRefresh = false,
+  }) async {
     if (reset) {
       setState(() {
         _loading = true;
@@ -71,6 +85,7 @@ class _NotificationsViewState extends State<NotificationsView> {
       final page = await NotificationsService.instance.fetchMine(
         page: 1,
         pageSize: _pageSize,
+        forceRefresh: forceRefresh,
       );
       if (!mounted) return;
 
@@ -81,11 +96,13 @@ class _NotificationsViewState extends State<NotificationsView> {
           await NotificationsService.instance.markAllRead();
           _markedAllRead = true;
           items = items.map(_asRead).toList();
+          NotificationsService.instance.updateSessionItems(items);
         } catch (_) {
           // Keep fetched list even if mark-all fails.
         }
       } else if (_markedAllRead) {
         items = items.map(_asRead).toList();
+        NotificationsService.instance.updateSessionItems(items);
       }
 
       if (!mounted) return;
@@ -118,6 +135,7 @@ class _NotificationsViewState extends State<NotificationsView> {
       final page = await NotificationsService.instance.fetchMine(
         page: nextPage,
         pageSize: _pageSize,
+        forceRefresh: true,
       );
       if (!mounted) return;
 
@@ -179,7 +197,8 @@ class _NotificationsViewState extends State<NotificationsView> {
           SizedBox(height: 12.h),
           Expanded(
             child: RefreshIndicator(
-              onRefresh: () => _loadNotifications(reset: true),
+              onRefresh: () =>
+                  _loadNotifications(reset: true, forceRefresh: true),
               child: _buildBody(),
             ),
           ),
@@ -190,13 +209,7 @@ class _NotificationsViewState extends State<NotificationsView> {
 
   Widget _buildBody() {
     if (_loading) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          SizedBox(height: 120.h),
-          const Center(child: CircularProgressIndicator()),
-        ],
-      );
+      return const NotificationsListSkeleton();
     }
 
     if (_error != null && _items.isEmpty) {
@@ -208,7 +221,8 @@ class _NotificationsViewState extends State<NotificationsView> {
           SizedBox(height: 16.h),
           Center(
             child: TextButton(
-              onPressed: () => _loadNotifications(reset: true),
+              onPressed: () =>
+                  _loadNotifications(reset: true, forceRefresh: true),
               child: Text(S.of(context).retry),
             ),
           ),
