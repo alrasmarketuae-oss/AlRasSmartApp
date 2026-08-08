@@ -225,7 +225,8 @@ public interface IAdminProductsAppService
     Task<string> RejectProductAsync(
         string productId,
         AdminRejectProductRequest request,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        string? notifyLanguageOverride = null);
 
     Task<AdminProductDetailDto> GetProductByIdAsync(
         string productId,

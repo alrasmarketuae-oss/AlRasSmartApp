@@ -531,7 +531,8 @@ public class AdminProductsAppService(
     public async Task<string> RejectProductAsync(
         string productId,
         AdminRejectProductRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        string? notifyLanguageOverride = null)
     {
         if (!Guid.TryParse(productId, out var parsedProductId))
         {
@@ -630,7 +631,12 @@ public class AdminProductsAppService(
             productName,
             adminNotesEn,
             adminNotesAr);
-        var preferred = NotificationMessages.IsArabic(owner?.PreferredLanguage)
+        // Auto-moderation passes the ad's created language so the seller is notified
+        // in the language they wrote the ad in; manual admin rejects keep owner preference.
+        var notifyLanguage = !string.IsNullOrWhiteSpace(notifyLanguageOverride)
+            ? notifyLanguageOverride
+            : owner?.PreferredLanguage;
+        var preferred = NotificationMessages.IsArabic(notifyLanguage)
             ? notificationAr
             : notificationEn;
 

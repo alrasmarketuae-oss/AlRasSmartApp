@@ -33,10 +33,6 @@ public sealed class ProductAutoModerationService(
     IOptions<ImageEmbeddingOptions> imageEmbeddingOptions,
     ILogger<ProductAutoModerationService> logger) : IProductAutoModerationService
 {
-    private static readonly string RejectReasonEn = AutoModerationMessages.RejectReasonEn;
-
-    private static readonly string RejectReasonAr = AutoModerationMessages.RejectReasonAr;
-
     public async Task ProcessAsync(ProductAutoModerationWorkItem workItem, CancellationToken cancellationToken = default)
     {
         var product = await dbContext.Products
@@ -109,7 +105,12 @@ public sealed class ProductAutoModerationService(
                 "Product {ProductId} text policy violations: {Hits}",
                 workItem.ProductId,
                 string.Join(", ", textHits.Select(h => $"{h.Kind}:{h.Sample}")));
-            await RejectAsync(workItem.ProductId, cancellationToken).ConfigureAwait(false);
+            await RejectAsync(
+                    workItem.ProductId,
+                    product.CreatedLanguage,
+                    textHits.Select(h => h.Kind).ToList(),
+                    cancellationToken)
+                .ConfigureAwait(false);
             return;
         }
 
@@ -145,7 +146,12 @@ public sealed class ProductAutoModerationService(
                     workItem.ProductId,
                     string.Join("|", textLlm.ViolationKinds),
                     textLlm.Summary);
-                await RejectAsync(workItem.ProductId, cancellationToken).ConfigureAwait(false);
+                await RejectAsync(
+                        workItem.ProductId,
+                        product.CreatedLanguage,
+                        textLlm.ViolationKinds,
+                        cancellationToken)
+                    .ConfigureAwait(false);
                 return;
             }
         }
@@ -157,7 +163,12 @@ public sealed class ProductAutoModerationService(
                 "Product {ProductId} image policy violations: {Hits}",
                 workItem.ProductId,
                 string.Join(", ", imageScan.Hits));
-            await RejectAsync(workItem.ProductId, cancellationToken).ConfigureAwait(false);
+            await RejectAsync(
+                    workItem.ProductId,
+                    product.CreatedLanguage,
+                    imageScan.Kinds,
+                    cancellationToken)
+                .ConfigureAwait(false);
             return;
         }
 
@@ -192,18 +203,19 @@ public sealed class ProductAutoModerationService(
         await QueueClipAsync(workItem.ProductId, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Rejects the ad with a clear, violation-specific reason and notifies the seller
+    /// in the language the ad was created in.
+    /// </summary>
     private async Task RejectAsync(
         Guid productId,
-        CancellationToken cancellationToken) =>
-        await RejectAsync(productId, RejectReasonEn, RejectReasonAr, cancellationToken)
-            .ConfigureAwait(false);
-
-    private async Task RejectAsync(
-        Guid productId,
-        string reasonEn,
-        string reasonAr,
+        string? createdLanguage,
+        IReadOnlyCollection<string> violationKinds,
         CancellationToken cancellationToken)
     {
+        var (reasonEn, reasonAr) = AutoModerationMessages.BuildReason(violationKinds);
+        var notifyLanguage = NotificationMessages.IsArabic(createdLanguage) ? "ar" : "en";
+
         try
         {
             await adminProducts.RejectProductAsync(
@@ -213,7 +225,8 @@ public sealed class ProductAutoModerationService(
                         SupplierNotesEn = reasonEn,
                         SupplierNotesAr = reasonAr
                     },
-                    cancellationToken)
+                    cancellationToken,
+                    notifyLanguageOverride: notifyLanguage)
                 .ConfigureAwait(false);
         }
         catch (Exception ex)
@@ -382,11 +395,12 @@ public sealed class ProductAutoModerationService(
         return videos.Exists(v => !string.IsNullOrWhiteSpace(v.Path));
     }
 
-    private sealed record ImageScanResult(List<string> Hits, int Attempted, int Succeeded);
+    private sealed record ImageScanResult(List<string> Hits, List<string> Kinds, int Attempted, int Succeeded);
 
     private async Task<ImageScanResult> ScanImagesAsync(Guid productId, CancellationToken cancellationToken)
     {
         var hits = new List<string>();
+        var kindSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var attempted = 0;
         var succeeded = 0;
         var images = await productData.GetProductImagePathsByProductIdsAsync([productId], cancellationToken)
@@ -430,13 +444,21 @@ public sealed class ProductAutoModerationService(
                 continue;
             }
 
+            foreach (var kind in result.ViolationKinds)
+            {
+                if (!string.IsNullOrWhiteSpace(kind))
+                {
+                    kindSet.Add(kind.Trim());
+                }
+            }
+
             var kinds = result.ViolationKinds.Count > 0
                 ? string.Join("|", result.ViolationKinds)
                 : "policy";
             hits.Add($"{image.Path}:{kinds}");
         }
 
-        return new ImageScanResult(hits, attempted, succeeded);
+        return new ImageScanResult(hits, kindSet.ToList(), attempted, succeeded);
     }
 
     private async Task QueueClipAsync(Guid productId, CancellationToken cancellationToken)
