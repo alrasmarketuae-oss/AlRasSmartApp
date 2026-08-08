@@ -11,12 +11,16 @@ class CountryCodeField extends StatelessWidget {
     required this.value,
     required this.onChanged,
     this.showLabel = true,
+    this.enabled = true,
   });
 
   final String label;
   final String value;
   final ValueChanged<String> onChanged;
   final bool showLabel;
+
+  /// When false the picker cannot be opened (locked to the registration country).
+  final bool enabled;
 
   Future<void> _openPicker(BuildContext context) async {
     final selected = await showModalBottomSheet<CountryDialCode>(
@@ -59,21 +63,23 @@ class CountryCodeField extends StatelessWidget {
           SizedBox(height: 8.h),
         ],
         InkWell(
-          onTap: () => _openPicker(context),
+          onTap: enabled ? () => _openPicker(context) : null,
           borderRadius: BorderRadius.circular(14.r),
           child: Container(
             height: 46.h,
             padding: EdgeInsets.symmetric(horizontal: 12.w),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: enabled ? Colors.white : const Color(0xFFF2F4F7),
               borderRadius: BorderRadius.circular(14.r),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.06),
-                  blurRadius: 8.r,
-                  offset: Offset(0, 3.h),
-                ),
-              ],
+              boxShadow: enabled
+                  ? [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.06),
+                        blurRadius: 8.r,
+                        offset: Offset(0, 3.h),
+                      ),
+                    ]
+                  : null,
             ),
             child: Directionality(
               textDirection: TextDirection.rtl,
@@ -92,8 +98,11 @@ class CountryCodeField extends StatelessWidget {
                     ),
                   ),
                   Icon(
-                    Icons.keyboard_arrow_down,
-                    color: LightColor.defaultColor,
+                    enabled ? Icons.keyboard_arrow_down : Icons.lock_outline,
+                    color: enabled
+                        ? LightColor.defaultColor
+                        : const Color(0xFF98A2B3),
+                    size: enabled ? null : 18.sp,
                   ),
                 ],
               ),

@@ -46,9 +46,9 @@ android {
         jniLibs {
             // Ensures native FFmpeg libs load correctly on release APKs (API 23+)
             useLegacyPackaging = true
-            // Some bundled native libs fail Android's strip step during AAB packaging.
-            // Keep symbols instead of stripping so Play upload can succeed.
-            keepDebugSymbols += setOf("**/*.so")
+            // NOTE: Do NOT keep debug symbols for "**/*.so" here. Flutter 3.44+ requires
+            // AGP to strip libapp.so/libflutter.so and emit their .sym companions; a blanket
+            // keepDebugSymbols blocks that and fails the release AAB build.
         }
     }
 

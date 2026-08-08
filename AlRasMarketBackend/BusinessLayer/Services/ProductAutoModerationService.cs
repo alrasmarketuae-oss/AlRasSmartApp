@@ -159,16 +159,14 @@ public sealed class ProductAutoModerationService(
         var imageScan = await ScanImagesAsync(workItem.ProductId, cancellationToken).ConfigureAwait(false);
         if (imageScan.Hits.Count > 0)
         {
+            // Image violations are NOT auto-rejected or auto-approved: leave the ad for
+            // manual admin dashboard review only (no auto-reject, no auto-approve, no notify).
+            // Only text violations still auto-reject.
             logger.LogInformation(
-                "Product {ProductId} image policy violations: {Hits}",
+                "Product {ProductId} image policy violations: {Hits} — left for admin dashboard review.",
                 workItem.ProductId,
                 string.Join(", ", imageScan.Hits));
-            await RejectAsync(
-                    workItem.ProductId,
-                    product.CreatedLanguage,
-                    imageScan.Kinds,
-                    cancellationToken)
-                .ConfigureAwait(false);
+            await QueueClipAsync(workItem.ProductId, cancellationToken).ConfigureAwait(false);
             return;
         }
 

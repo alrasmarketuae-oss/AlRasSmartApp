@@ -184,6 +184,7 @@ class _MyAdsListPlaceholderWidgetState
               product: product,
               compact: true,
               highlighted: highlighted,
+              persistentGlow: product.pendingOffersCount > 0,
               preferRetailPricing: preferRetail,
               preferCategoryLabel: preferCategory,
               showBothPricingChannels: showBothPricing,

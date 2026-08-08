@@ -6,11 +6,11 @@ import type { AdminOrder } from '../../types/adminOrder'
 import { buildListReturnState } from '../../utils/listPageParams'
 import {
   formatAdAmount,
-  formatAdListDate,
   productTypeBadgeClass,
   resolveOrderChannelTypeKey,
   resolveOrderChannelTypeName,
 } from '../../utils/adsDisplay'
+import { formatRelativeTime } from '../../utils/timeAgo'
 import {
   formatOrderAmount,
   formatOrderQuantityWithUnit,
@@ -18,7 +18,7 @@ import {
   resolveRequiredQuantity,
 } from '../../utils/ordersDisplay'
 import { getOrderStatusLabel, getOrderStatusStyle } from '../../utils/orderStatus'
-import { orderNeedsAttention } from '../../utils/orderWorkflow'
+import { orderApprovalBlink, orderNeedsAttention } from '../../utils/orderWorkflow'
 import OrderNotifyPartyDialog from './OrderNotifyPartyDialog'
 
 type OrdersTableProps = {
@@ -151,14 +151,23 @@ export default function OrdersTable({
                   ? order.statusLabelAr?.trim() || getOrderStatusLabel(order.statusId, locale)
                   : order.statusName?.trim() || getOrderStatusLabel(order.statusId, locale)
               const attention = orderNeedsAttention(order)
+              const approvalBlink = orderApprovalBlink(order)
               const typeKey = resolveOrderChannelTypeKey(order)
               const typeName = resolveOrderChannelTypeName(order, locale)
               const companyLabel = order.customerName?.trim() || '—'
-              const attentionClass = attention
-                ? isRequestOffersList
+              // Approval stage drives the blink color: yellow while awaiting the
+              // app/seller approval, green once the seller has approved. Other
+              // attention states (e.g. return requests) keep the yellow cue.
+              const attentionClass =
+                approvalBlink === 'approved'
                   ? 'row-attention-offer'
-                  : 'row-attention-order'
-                : 'bg-white'
+                  : approvalBlink === 'pending'
+                    ? 'row-attention-order'
+                    : attention
+                      ? isRequestOffersList
+                        ? 'row-attention-offer'
+                        : 'row-attention-order'
+                      : 'bg-white'
               const buyerId = order.customerUserId?.trim() || ''
               const sellerId = order.supplierUserId?.trim() || ''
 
@@ -228,7 +237,7 @@ export default function OrdersTable({
                   <td className="px-4 py-3.5 text-start sm:px-5">
                     <span className="admin-text-muted inline-flex items-center gap-1.5 text-xs">
                       <CalendarIcon />
-                      {formatAdListDate(order.createdAt, locale)}
+                      {formatRelativeTime(order.createdAt, locale)}
                     </span>
                   </td>
                   <td className="px-4 py-3.5 text-start sm:px-5">

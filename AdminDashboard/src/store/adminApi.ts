@@ -427,9 +427,38 @@ export const adminApi = createApi({
         method: 'PUT',
         body: { path, isMuted },
       }),
-      invalidatesTags: (_r, _e, { productId }) => [
-        { type: 'Products', id: productId },
-      ],
+      // Flip the mute flag in the cache immediately, then let the (slow) backend
+      // request run in the background. Roll back only if it fails.
+      async onQueryStarted(
+        { productId, path, isMuted },
+        { dispatch, queryFulfilled, getState },
+      ) {
+        const cachedArgs = adminApi.util.selectCachedArgsForQuery(
+          getState(),
+          'getAdminProductDetail',
+        )
+
+        const patchResults = cachedArgs
+          .filter((args) => args.productId === productId)
+          .map((args) =>
+            dispatch(
+              adminApi.util.updateQueryData(
+                'getAdminProductDetail',
+                args,
+                (draft) => {
+                  const video = draft.videos?.find((item) => item.path === path)
+                  if (video) video.isMuted = isMuted
+                },
+              ),
+            ),
+          )
+
+        try {
+          await queryFulfilled
+        } catch {
+          patchResults.forEach((patch) => patch.undo())
+        }
+      },
     }),
 
     approveCompany: builder.mutation<{ message: string }, string>({

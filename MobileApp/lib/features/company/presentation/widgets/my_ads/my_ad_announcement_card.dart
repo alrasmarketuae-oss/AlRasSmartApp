@@ -29,6 +29,7 @@ class MyAdAnnouncementCard extends StatefulWidget {
     required this.product,
     this.compact = false,
     this.highlighted = false,
+    this.persistentGlow = false,
     this.preferRetailPricing = false,
     this.preferCategoryLabel = false,
     this.showBothPricingChannels = false,
@@ -39,8 +40,11 @@ class MyAdAnnouncementCard extends StatefulWidget {
   /// Narrow Account grid cells (2 phone / 3 tablet).
   final bool compact;
 
-  /// Soft emphasis when opened from a new-order notification.
+  /// Soft emphasis when opened from a new-order notification (blinks ~5s).
   final bool highlighted;
+
+  /// Continuous glow while the ad has pending orders/requests (no time cap).
+  final bool persistentGlow;
 
   /// When true (My Ads → Retail filter), show retail price / unit / qty.
   final bool preferRetailPricing;
@@ -80,7 +84,7 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
       vsync: this,
       duration: const Duration(milliseconds: 420),
     );
-    if (widget.highlighted) {
+    if (widget.highlighted || widget.persistentGlow) {
       _runBlink();
     }
   }
@@ -88,10 +92,12 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
   @override
   void didUpdateWidget(covariant MyAdAnnouncementCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.highlighted && !oldWidget.highlighted) {
+    final wasActive = oldWidget.highlighted || oldWidget.persistentGlow;
+    final isActive = widget.highlighted || widget.persistentGlow;
+    if (isActive && !wasActive) {
       _runBlink();
     }
-    if (!widget.highlighted && oldWidget.highlighted) {
+    if (!isActive && wasActive) {
       _stopBlink();
     }
   }
@@ -102,10 +108,12 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
     if (!mounted) return;
     setState(() => _borderBlinkActive = true);
 
+    // Push-notification highlight blinks for a short window; a pending-order
+    // glow keeps pulsing until the ad no longer has orders.
     final endAt = DateTime.now().add(_highlightBlinkDuration);
     while (mounted &&
         _borderBlinkActive &&
-        DateTime.now().isBefore(endAt)) {
+        (widget.persistentGlow || DateTime.now().isBefore(endAt))) {
       await _blink.forward();
       if (!mounted || !_borderBlinkActive) return;
       await _blink.reverse();

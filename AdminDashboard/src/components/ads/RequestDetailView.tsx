@@ -22,6 +22,7 @@ import {
 } from '../../utils/adsDisplay'
 import { categoryDisplayName } from '../../utils/categoryDisplay'
 import { localizeProductStatusLabel } from '../../utils/localizedLabels'
+import CappedText from '../shared/CappedText'
 import { formatOrderQuantityWithUnit } from '../../utils/ordersDisplay'
 import { shippingFromProduct } from '../../utils/productShipping'
 import { formatRelativeTime } from '../../utils/timeAgo'
@@ -667,7 +668,11 @@ export default function RequestDetailView({
                     {t('ads.productDescription')}
                   </p>
                   <p className="admin-text mt-1 text-sm leading-relaxed">
-                    {product.description?.trim() || t('ads.noDescription')}
+                    <CappedText
+                      text={product.description}
+                      title={t('ads.productDescription')}
+                      fallback={t('ads.noDescription')}
+                    />
                   </p>
                 </div>
 
@@ -1211,7 +1216,11 @@ export default function RequestDetailView({
               <div>
                 <dt className="admin-text-muted">{t('ads.productDescription')}</dt>
                 <dd className="admin-text mt-1 text-xs leading-relaxed">
-                  {product.description?.trim() || t('ads.noDescription')}
+                  <CappedText
+                    text={product.description}
+                    title={t('ads.productDescription')}
+                    fallback={t('ads.noDescription')}
+                  />
                 </dd>
               </div>
             </dl>
@@ -1254,7 +1263,8 @@ export default function RequestDetailView({
               </div>
               {product.supplierNotesEn?.trim() ? (
                 <p className="admin-text-muted text-[11px] leading-relaxed">
-                  {t('ads.adminNotes')}: {product.supplierNotesEn}
+                  {t('ads.adminNotes')}:{' '}
+                  <CappedText text={product.supplierNotesEn} title={t('ads.adminNotes')} />
                 </p>
               ) : null}
             </div>

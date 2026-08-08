@@ -18,6 +18,7 @@ import {
 } from '../../utils/adsDisplay'
 import { parseProductSpecificationItems } from '../../utils/bookingSpecs'
 import { localizeProductStatusLabel } from '../../utils/localizedLabels'
+import CappedText from '../shared/CappedText'
 import { formatOrderQuantityWithUnit } from '../../utils/ordersDisplay'
 import { shippingFromProduct } from '../../utils/productShipping'
 import {
@@ -367,8 +368,6 @@ export default function OffersAdDetailView({
     () => parseProductSpecificationItems(product.description),
     [product.description],
   )
-  const descriptionDisplay = product.description?.trim() || '—'
-
   const galleryImages = useMemo(() => {
     if (product.images.length > 0) return product.images
     const paths = product.imagePaths?.length
@@ -987,7 +986,12 @@ export default function OffersAdDetailView({
                 <div className="grid grid-cols-3 gap-x-3 gap-y-2">
                   <div className="space-y-2">
                     <Labeled label={t('ads.productName')}>{product.name}</Labeled>
-                    <Labeled label={t('ads.productDescription')}>{descriptionDisplay}</Labeled>
+                    <Labeled label={t('ads.productDescription')}>
+                      <CappedText
+                        text={product.description}
+                        title={t('ads.productDescription')}
+                      />
+                    </Labeled>
                   </div>
                   <div className="space-y-2">
                     <Labeled label={t('ads.price')}>{priceWithUnit}</Labeled>
@@ -1050,7 +1054,11 @@ export default function OffersAdDetailView({
                       </ul>
                     ) : (
                       <p className="text-[11px] font-normal whitespace-pre-wrap" style={{ color: '#64748B' }}>
-                        {descriptionDisplay}
+                        <CappedText
+                          text={product.description}
+                          title={t('ads.productSpecifications')}
+                          className="whitespace-pre-wrap"
+                        />
                       </p>
                     )}
                   </div>

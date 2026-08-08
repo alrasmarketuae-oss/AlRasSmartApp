@@ -308,6 +308,7 @@ class _EditProfileViewState extends State<EditProfileView> {
                   label: s.countryCode,
                   showLabel: false,
                   value: _selectedCountryCode,
+                  enabled: false,
                   onChanged: (value) {
                     setState(() => _selectedCountryCode = value);
                   },

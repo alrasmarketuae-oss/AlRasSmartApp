@@ -19,6 +19,7 @@ import {
   InfoFieldIcons,
 } from '../shared/IconInfoField'
 import ConfirmDialog from '../ui/ConfirmDialog'
+import CappedText from '../shared/CappedText'
 import CompactMediaStrip from './CompactMediaStrip'
 import OrderNotifyPartyDialog from './OrderNotifyPartyDialog'
 import OrderStatusActionButtons from './OrderStatusActionButtons'
@@ -734,9 +735,13 @@ export default function OrderDetailView({
               <p className="admin-text text-xs font-bold leading-snug">
                 {t('orders.specificationsComments')}
               </p>
-              <p className="admin-text-muted mt-0.5 text-sm font-normal leading-snug whitespace-pre-wrap">
-                {specsComments || '—'}
-              </p>
+              <div className="admin-text-muted mt-0.5 text-sm font-normal leading-snug">
+                <CappedText
+                  text={specsComments}
+                  title={t('orders.specificationsComments')}
+                  className="whitespace-pre-wrap"
+                />
+              </div>
             </div>
           </div>
         ) : null}
@@ -1019,7 +1024,16 @@ export default function OrderDetailView({
                         label={t('orders.productDescription')}
                         icon={InfoFieldIcons.note}
                         iconClass="bg-amber-50 text-amber-600"
-                        value={order.productDescription?.trim() || t('ads.noDescription')}
+                        value={
+                          order.productDescription?.trim() ? (
+                            <CappedText
+                              text={order.productDescription}
+                              title={t('orders.productDescription')}
+                            />
+                          ) : (
+                            t('ads.noDescription')
+                          )
+                        }
                       />
                       {isRequestOrder ? (
                         <IconInfoField
@@ -1090,7 +1104,13 @@ export default function OrderDetailView({
                         label={t('orders.orderNotes')}
                         icon={InfoFieldIcons.note}
                         iconClass="bg-slate-100 text-slate-500"
-                        value={order.notes?.trim() || '—'}
+                        value={
+                          order.notes?.trim() ? (
+                            <CappedText text={order.notes} title={t('orders.orderNotes')} />
+                          ) : (
+                            '—'
+                          )
+                        }
                       />
                       {isBookingOrder ? (
                         <>
@@ -1425,7 +1445,16 @@ export default function OrderDetailView({
                 {t('orders.returnRequest')}
               </h2>
               <div className="grid gap-3 sm:grid-cols-2">
-                <InfoLine label={t('orders.returnReason')} value={order.returnReason?.trim() || '—'} />
+                <InfoLine
+                  label={t('orders.returnReason')}
+                  value={
+                    order.returnReason?.trim() ? (
+                      <CappedText text={order.returnReason} title={t('orders.returnReason')} />
+                    ) : (
+                      '—'
+                    )
+                  }
+                />
                 {order.returnRequestedAtUtc ? (
                   <InfoLine
                     label={t('orders.returnRequestedAt')}
@@ -1470,7 +1499,12 @@ export default function OrderDetailView({
               {order.returnAdminResponse?.trim() ? (
                 <InfoLine
                   label={t('orders.returnAdminResponse')}
-                  value={order.returnAdminResponse}
+                  value={
+                    <CappedText
+                      text={order.returnAdminResponse}
+                      title={t('orders.returnAdminResponse')}
+                    />
+                  }
                 />
               ) : order.statusId === 9 ? (
                 <div className="mt-3 space-y-2 print:hidden">

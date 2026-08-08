@@ -126,6 +126,38 @@ export function orderNeedsAttention(order: {
 }
 
 /**
+ * Approval-stage blink cue for order rows:
+ * - 'pending'  → still awaiting the app admin's approval OR the seller's approval (yellow).
+ * - 'approved' → the seller has approved the order (green).
+ * - 'none'     → terminal/return states get no approval blink.
+ */
+export function orderApprovalBlink(order: {
+  productTypeName?: string
+  categoryId?: number | null
+  isApproved?: boolean
+  isAdminApproved?: boolean
+  statusId: number
+}): 'pending' | 'approved' | 'none' {
+  // Delivered / Cancelled / Paid / Return states carry no approval blink.
+  const settled = [5, 6, 7, 8, 9, 10]
+  if (settled.includes(order.statusId)) return 'none'
+
+  // Seller accepted the order → green.
+  if (order.isApproved || order.statusId === 2) return 'approved'
+
+  // Awaiting the app admin's approval or the seller's approval → yellow.
+  if (
+    needsAdminOrderModeration(order) ||
+    order.statusId === 11 || // AwaitingSellerApproval
+    order.statusId === 1 // Ordered, not yet approved
+  ) {
+    return 'pending'
+  }
+
+  return 'none'
+}
+
+/**
  * Paid/Shipping/Delivered workflow buttons are disabled for text-status orders.
  * Admin moderation (approve/reject offer) and custom status form handle the rest.
  */

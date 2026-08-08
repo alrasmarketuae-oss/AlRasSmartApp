@@ -1,6 +1,7 @@
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import type { AdminPushNotificationItem } from '../../types/adminNotification'
 import { parseApiUtcDate } from '../../utils/formatTimeAgo'
+import { formatRelativeTime } from '../../utils/timeAgo'
 
 type NotificationsHistoryTableProps = {
   items: AdminPushNotificationItem[]
@@ -73,14 +74,9 @@ export default function NotificationsHistoryTable({
 }: NotificationsHistoryTableProps) {
   const { t, locale } = useAppPreferences()
 
-  const dateFormatter = new Intl.DateTimeFormat(locale === 'ar' ? 'ar-AE' : 'en-AE', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  })
-
   const formatItemDate = (value: string) => {
     const date = parseApiUtcDate(value)
-    return date ? dateFormatter.format(date) : value
+    return date ? formatRelativeTime(date.toISOString(), locale) : value
   }
 
   if (items.length === 0) {

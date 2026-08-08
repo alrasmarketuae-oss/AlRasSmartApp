@@ -7,11 +7,11 @@ import {
   adStatusBadgeClass,
   displayAdProductTypeName,
   formatAdAmount,
-  formatAdListDate,
   formatAdPriceTypeLabel,
   productTypeBadgeClassForProduct,
   resolveAdListStatus,
 } from '../../utils/adsDisplay'
+import { formatRelativeTime } from '../../utils/timeAgo'
 
 type AdsTableProps = {
   products: AdminProduct[]
@@ -204,7 +204,7 @@ export default function AdsTable({
                 <td className="px-4 py-3.5 text-start sm:px-5">
                   <span className="admin-text-muted inline-flex items-center gap-1.5 text-xs">
                     <CalendarIcon />
-                    {formatAdListDate(product.createdAt, locale)}
+                    {formatRelativeTime(product.createdAt, locale)}
                   </span>
                 </td>
                 <td className="px-4 py-3.5 text-start sm:px-5">

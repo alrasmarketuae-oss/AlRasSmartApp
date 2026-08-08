@@ -3,6 +3,7 @@ import { useAppPreferences } from '../context/AppPreferencesProvider'
 import { useGetAdminAuditLogsQuery } from '../store'
 import { queryViewState } from '../store/queryView'
 import { getRtkErrorMessage } from '../utils/rtkError'
+import { formatRelativeFromSeconds } from '../utils/timeAgo'
 
 function formatUtcStamp(value: string): string {
   if (!value) return '—'
@@ -10,22 +11,6 @@ function formatUtcStamp(value: string): string {
   const date = new Date(normalized)
   if (Number.isNaN(date.getTime())) return value
   return date.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC')
-}
-
-function formatAge(seconds: number, locale: string): string {
-  const minutes = Math.floor(seconds / 60)
-  const hours = Math.floor(minutes / 60)
-  const days = Math.floor(hours / 24)
-  if (locale === 'ar') {
-    if (seconds < 60) return 'الآن'
-    if (minutes < 60) return `منذ ${minutes} دقيقة`
-    if (hours < 24) return `منذ ${hours} ساعة`
-    return `منذ ${days} يوم`
-  }
-  if (seconds < 60) return 'Just now'
-  if (minutes < 60) return `${minutes} min ago`
-  if (hours < 24) return `${hours} hr ago`
-  return `${days} day${days === 1 ? '' : 's'} ago`
 }
 
 function tryPrettyDetails(raw: string | null): string {
@@ -153,10 +138,10 @@ export default function AuditLogsPage() {
                   return (
                     <tr key={item.id} className="border-b border-slate-100 dark:border-slate-800">
                       <td className="px-4 py-3 align-top whitespace-nowrap">
-                        <div className="font-medium admin-text">{formatUtcStamp(item.createdAtUtc)}</div>
-                        <div className="text-xs text-slate-500">
-                          {formatAge(item.ageSeconds, locale)}
+                        <div className="font-medium admin-text">
+                          {formatRelativeFromSeconds(item.ageSeconds, locale)}
                         </div>
+                        <div className="text-xs text-slate-500">{formatUtcStamp(item.createdAtUtc)}</div>
                       </td>
                       <td className="px-4 py-3 align-top">
                         <div className="font-medium admin-text">{item.actorName}</div>

@@ -10,7 +10,8 @@ import {
 } from '../../store'
 import type { AdminOrder } from '../../types/adminOrder'
 import { buildListReturnState } from '../../utils/listPageParams'
-import { formatAdAmount, formatAdListDate } from '../../utils/adsDisplay'
+import { formatAdAmount } from '../../utils/adsDisplay'
+import { formatRelativeTime } from '../../utils/timeAgo'
 import {
   formatOrderAmount,
   formatOrderQuantityWithUnit,
@@ -201,7 +202,7 @@ export default function RequestOffersPanel({
                               </span>
                             ) : null}
                             <span className="admin-text-muted text-[11px]">
-                              {formatAdListDate(offer.createdAt, locale)}
+                              {formatRelativeTime(offer.createdAt, locale)}
                             </span>
                           </div>
                         </div>

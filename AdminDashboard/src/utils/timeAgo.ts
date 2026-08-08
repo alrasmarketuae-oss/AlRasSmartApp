@@ -39,15 +39,24 @@ export function formatRelativeTime(value: string | null | undefined, locale: Loc
   const time = date.getTime()
   if (Number.isNaN(time)) return value
 
-  const diffSeconds = Math.floor((Date.now() - time) / 1000)
+  return formatRelativeFromSeconds(Math.floor((Date.now() - time) / 1000), locale)
+}
 
-  if (diffSeconds < 10) {
+/**
+ * Formats an already-computed elapsed duration (in seconds) as a localized relative
+ * "time ago" string. Useful when the server provides a timezone-safe age directly.
+ */
+export function formatRelativeFromSeconds(diffSeconds: number, locale: Locale): string {
+  if (!Number.isFinite(diffSeconds)) return '—'
+  const elapsed = Math.max(0, Math.floor(diffSeconds))
+
+  if (elapsed < 10) {
     return locale === 'ar' ? 'منذ لحظات' : 'just now'
   }
 
   for (const unit of UNITS) {
-    if (diffSeconds >= unit.seconds) {
-      const count = Math.floor(diffSeconds / unit.seconds)
+    if (elapsed >= unit.seconds) {
+      const count = Math.floor(elapsed / unit.seconds)
       return locale === 'ar' ? formatArabic(count, unit) : formatEnglish(count, unit)
     }
   }

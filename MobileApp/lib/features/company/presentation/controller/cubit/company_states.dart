@@ -78,7 +78,18 @@ class CompanyMyListingsState extends CompanyStates {
     if (statusFilter != null && statusFilter!.isNotEmpty) {
       list = list.where(_matchesStatusFilter).toList();
     }
-    return list;
+    // Ads that have pending orders/requests float to the top, keeping the
+    // backend order within each group (stable partition).
+    final withOrders = <MyListingProductModel>[];
+    final withoutOrders = <MyListingProductModel>[];
+    for (final product in list) {
+      if (product.pendingOffersCount > 0) {
+        withOrders.add(product);
+      } else {
+        withoutOrders.add(product);
+      }
+    }
+    return [...withOrders, ...withoutOrders];
   }
 
   bool get preferRetailPricing =>

@@ -4,10 +4,10 @@ import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import { resolveAssetUrl } from '../../lib/assets'
 import { buildListReturnState, type ListReturnState } from '../../utils/listPageParams'
 import {
-  formatJoinDate,
   getStatusBadgeClass,
   getTypeBadgeClass,
 } from '../../utils/userStatus'
+import { formatRelativeTime } from '../../utils/timeAgo'
 import {
   isUnknownLabel,
   localizeStatusLabel,
@@ -201,7 +201,7 @@ function UserMobileCard({
         </div>
         <div>
           <dt className="admin-text-subtle text-xs">{t('users.joinDate')}</dt>
-          <dd className="admin-text-muted mt-0.5">{formatJoinDate(user.createdAt)}</dd>
+          <dd className="admin-text-muted mt-0.5">{formatRelativeTime(user.createdAt, locale)}</dd>
         </div>
       </dl>
 
@@ -341,7 +341,7 @@ export default function UsersTable({ users }: UsersTableProps) {
                     <CellText>{user.ordersCount > 0 ? user.ordersCount : '—'}</CellText>
                   </td>
                   <td className="px-5 py-5 text-start">
-                    <CellText>{formatJoinDate(user.createdAt)}</CellText>
+                    <CellText>{formatRelativeTime(user.createdAt, locale)}</CellText>
                   </td>
                   <td className="px-5 py-5 text-start">
                     <Link
