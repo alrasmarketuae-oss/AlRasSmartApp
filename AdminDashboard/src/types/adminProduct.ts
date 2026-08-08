@@ -125,6 +125,30 @@ export type AdminUpdateProductPayload = {
   productTypeName: string
   unitName: string
   supplierNotesEn?: string | null
+  /**
+   * Optional "edit like the mobile app" fields. All optional: omitted => leave unchanged.
+   * For geo fields an explicit empty string means "clear" (e.g. booking ad switched to FOB).
+   */
+  negotiable?: boolean | null
+  packaging?: number | null
+  packagingDetails?: string | null
+  shippingDuration?: string | null
+  offerDuration?: string | null
+  discountPercentage?: number | null
+  discountDays?: number | null
+  requestTypeName?: string | null
+  bookingPriceTypeName?: string | null
+  originCountryName?: string | null
+  destinationCountryName?: string | null
+  loadingPortName?: string | null
+  arrivalPortName?: string | null
+  enableRetailPricing?: boolean | null
+  retailPrice?: number | null
+  retailUnitName?: string | null
+  retailQuantity?: number | null
+  retailPackaging?: number | null
+  retailPackagingDetails?: string | null
+  retailDescriptionEn?: string | null
 }
 
 export type AdminProductsResponse = {

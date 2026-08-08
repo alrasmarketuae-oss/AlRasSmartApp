@@ -164,6 +164,7 @@ builder.Services.AddHttpClient<IAiAssistantAppService, AiAssistantAppService>(cl
 {
     client.Timeout = TimeSpan.FromSeconds(90);
 });
+builder.Services.AddScoped<IAiKnowledgeIndexer, AiKnowledgeIndexer>();
 builder.Services.AddHostedService<AiKnowledgeBootstrapHostedService>();
 builder.Services.AddHttpClient<IProductTextSearchIndex, MeilisearchProductTextSearchIndex>((sp, client) =>
 {
@@ -479,8 +480,10 @@ await using (var scope = app.Services.CreateAsyncScope())
     await CartSchemaMigrator.EnsureAsync(db);
     await UserSchemaMigrator.EnsureAsync(db);
     await RoleSchemaMigrator.EnsureAsync(db);
+    await UnitCatalogSchemaMigrator.EnsureAsync(db);
     await InternationalShippingPostSchemaMigrator.EnsureAsync(db);
     await SystemSettingsSchemaMigrator.EnsureAsync(db);
+    await AiKnowledgeIndexStateSchemaMigrator.EnsureAsync(db);
     await AdminPushNotificationSchemaMigrator.EnsureAsync(db);
     await QueryPerformanceIndexMigrator.EnsureAsync(db);
     await ShippingSchemaMigrator.EnsureAsync(db);
@@ -511,6 +514,18 @@ await using (var scope = app.Services.CreateAsyncScope())
 
     var internalDomesticShippingProvider = scope.ServiceProvider.GetRequiredService<IInternalDomesticShippingProvider>();
     await internalDomesticShippingProvider.EnsureLoadedAsync();
+
+    // Apply the R2 bucket CORS policy so the dashboard can PUT chat media
+    // directly via presigned URLs (browser preflight otherwise fails).
+    try
+    {
+        var mediaStorage = scope.ServiceProvider.GetRequiredService<IFileStorage>();
+        await mediaStorage.EnsureUploadCorsAsync();
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "Failed to apply R2 bucket CORS policy on startup.");
+    }
 }
 
 if (app.Environment.IsDevelopment())

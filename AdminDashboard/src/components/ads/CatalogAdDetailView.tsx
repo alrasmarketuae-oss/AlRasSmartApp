@@ -2,12 +2,18 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode 
 import { Link } from 'react-router-dom'
 import { resolveAssetUrl } from '../../lib/assets'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
-import type { AdminProductDetail, AdminProductLookups } from '../../types/adminProduct'
+import type {
+  AdminProductDetail,
+  AdminProductLookups,
+  AdminUpdateProductPayload,
+} from '../../types/adminProduct'
 import PendingProductEditPanel from './PendingProductEditPanel'
 import ProductVideosPanel from './ProductVideosPanel'
 import type { Category } from '../../types/category'
 import ProductShippingPanel from '../shared/ProductShippingPanel'
 import CountryFlag from '../shared/CountryFlag'
+import WhatsAppPhoneLink from '../shared/WhatsAppPhoneLink'
+import MailtoEmailLink from '../shared/MailtoEmailLink'
 import AdminImageBlurModal from '../shared/AdminImageBlurModal'
 import ImageGallery, { type GalleryMediaItem } from '../ui/ImageGallery'
 import { downloadAsset, filenameFromAssetPath } from '../../utils/downloadAsset'
@@ -28,6 +34,7 @@ import { categoryDisplayName } from '../../utils/categoryDisplay'
 import { localizeProductStatusLabel } from '../../utils/localizedLabels'
 import { formatOrderQuantityWithUnit } from '../../utils/ordersDisplay'
 import { shippingFromProduct } from '../../utils/productShipping'
+import { formatRelativeTime } from '../../utils/timeAgo'
 import { useSetAdminProductVideoMuteMutation } from '../../store/adminApi'
 import {
   hasDomesticShipping,
@@ -71,17 +78,7 @@ export type CatalogAdDetailViewProps = {
   isDeleting?: boolean
   deletingImageId: number | null
   deletingVideoPath?: string | null
-  onSave: (payload: {
-    nameEn: string
-    usdPrice: number
-    currency: string
-    quantity: number
-    descriptionEn: string
-    categoryId: number | null
-    productTypeName: string
-    unitName: string
-    supplierNotesEn: string
-  }) => void
+  onSave: (payload: AdminUpdateProductPayload) => void
   onApprove: (supplierNotesEn: string) => void
   onReject: (payload: { supplierNotesEn: string; supplierNotesAr: string }) => void
   onDelete?: () => void
@@ -94,16 +91,7 @@ export type CatalogAdDetailViewProps = {
 }
 
 function formatPostedAt(value: string, locale: 'ar' | 'en') {
-  if (!value) return '—'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString(locale === 'ar' ? 'ar-AE' : 'en-US', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  return formatRelativeTime(value, locale)
 }
 
 function SidebarCard({ title, children }: { title: string; children: ReactNode }) {
@@ -1119,11 +1107,11 @@ export default function CatalogAdDetailView({
               <div className="admin-border space-y-1.5 border-t pt-1.5 text-[11px]">
                 <p className="flex items-center gap-1.5" dir="ltr">
                   <CountryFlag phone={product.ownerPhone} city={product.ownerCity} size={20} />
-                  <span className="admin-text font-semibold">
-                    {product.ownerPhone?.trim() || '—'}
-                  </span>
+                  <WhatsAppPhoneLink phone={product.ownerPhone} className="text-[11px] font-semibold" />
                 </p>
-                <p className="admin-text break-all">{product.ownerEmail || '—'}</p>
+                <p className="break-all">
+                  <MailtoEmailLink email={product.ownerEmail} className="text-[11px] font-semibold" />
+                </p>
                 <p className="flex items-center gap-1.5">
                   <CountryFlag city={product.ownerCity} phone={product.ownerPhone} size={20} />
                   <span className="admin-text font-semibold">

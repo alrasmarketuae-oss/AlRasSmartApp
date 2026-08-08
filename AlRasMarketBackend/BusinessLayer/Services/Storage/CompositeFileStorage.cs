@@ -75,4 +75,7 @@ public sealed class CompositeFileStorage(
         TimeSpan expiry,
         CancellationToken cancellationToken = default) =>
         primary.TryCreatePresignedPutUrlAsync(relativePath, contentType, expiry, cancellationToken);
+
+    public Task EnsureUploadCorsAsync(CancellationToken cancellationToken = default) =>
+        primary.EnsureUploadCorsAsync(cancellationToken);
 }

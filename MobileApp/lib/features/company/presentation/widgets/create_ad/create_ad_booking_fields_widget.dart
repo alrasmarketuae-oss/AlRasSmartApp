@@ -53,7 +53,7 @@ class CreateAdBookingFieldsWidget extends StatelessWidget {
             ),
             SizedBox(height: 10.h),
             CreateAdLocationDetailsSection(
-              countryLabel: S.of(context).bookingExportingCountry,
+              countryLabel: S.of(context).countryOfOrigin,
               portLabel: S.of(context).loadingPort,
               selectedCountry: state.originCountry,
               ports: state.originPorts,

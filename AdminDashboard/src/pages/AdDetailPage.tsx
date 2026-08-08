@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import AdDetailView from '../components/ads/AdDetailView'
+import AdEditDialog from '../components/ads/AdEditDialog'
+import type { AdminUpdateProductPayload } from '../types/adminProduct'
 import { useAppPreferences } from '../context/AppPreferencesProvider'
 import { useReturnToListPath } from '../hooks/useReturnToListPath'
 import {
@@ -34,6 +36,7 @@ export default function AdDetailPage() {
     durationSeconds?: number | null
   } | null>(null)
   const [isReplacingImage, setIsReplacingImage] = useState(false)
+  const [showEdit, setShowEdit] = useState(false)
 
   const { data: product, error, isLoading } = useGetAdminProductDetailQuery(
     { productId, lang: locale },
@@ -62,26 +65,23 @@ export default function AdDetailPage() {
     return null
   }
 
-  async function handleSave(payload: {
-    nameEn: string
-    usdPrice: number
-    currency: string
-    quantity: number
-    descriptionEn: string
-    categoryId: number | null
-    productTypeName: string
-    unitName: string
-    supplierNotesEn: string
-  }) {
+  async function handleSave(payload: AdminUpdateProductPayload): Promise<boolean> {
     setActionError(null)
     setSuccessMessage(null)
 
     try {
       await updateProduct({ productId, body: payload }).unwrap()
       setSuccessMessage(t('ads.saveSuccess'))
+      return true
     } catch (err) {
       setActionError(getRtkErrorMessage(err as never, t('ads.saveError')))
+      return false
     }
+  }
+
+  async function handleFullEditSubmit(payload: AdminUpdateProductPayload) {
+    const ok = await handleSave(payload)
+    if (ok) setShowEdit(false)
   }
 
   async function handleApprove(supplierNotesEn: string) {
@@ -244,6 +244,23 @@ export default function AdDetailPage() {
           </Link>
         </div>
       ) : (
+        <>
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => setShowEdit(true)}
+            className="keep-white inline-flex items-center gap-1.5 rounded-xl bg-[#3B7FC7] px-4 py-2 text-sm font-semibold text-white"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M16.862 4.487l1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z"
+              />
+            </svg>
+            {t('ads.editFull')}
+          </button>
+        </div>
         <AdDetailView
           product={product}
           lookups={lookups ?? emptyLookups}
@@ -275,6 +292,16 @@ export default function AdDetailPage() {
           trimmingVideoPath={isTrimmingVideo ? trimTarget?.path ?? null : null}
           onReplaceImage={(imageId, file) => handleReplaceImage(imageId, file)}
         />
+        <AdEditDialog
+          open={showEdit}
+          product={product}
+          categories={categories}
+          units={lookups?.units ?? []}
+          isSaving={isSaving}
+          onClose={() => setShowEdit(false)}
+          onSubmit={(payload) => void handleFullEditSubmit(payload)}
+        />
+        </>
       )}
 
       <AdminVideoTrimModal

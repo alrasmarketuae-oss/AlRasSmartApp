@@ -296,6 +296,8 @@ export const adminApi = createApi({
       query: ({ productId, body }) => ({
         url: `/api/admin/products/${productId}`,
         method: 'PUT',
+        // Undefined keys are dropped during JSON serialization, so the optional
+        // full-edit fields are only sent when the edit dialog provides them.
         body: {
           nameEn: body.nameEn,
           usdPrice: body.usdPrice,
@@ -306,6 +308,26 @@ export const adminApi = createApi({
           productTypeName: body.productTypeName,
           unitName: body.unitName,
           supplierNotesEn: body.supplierNotesEn,
+          negotiable: body.negotiable,
+          packaging: body.packaging,
+          packagingDetails: body.packagingDetails,
+          shippingDuration: body.shippingDuration,
+          offerDuration: body.offerDuration,
+          discountPercentage: body.discountPercentage,
+          discountDays: body.discountDays,
+          requestTypeName: body.requestTypeName,
+          bookingPriceTypeName: body.bookingPriceTypeName,
+          originCountryName: body.originCountryName,
+          destinationCountryName: body.destinationCountryName,
+          loadingPortName: body.loadingPortName,
+          arrivalPortName: body.arrivalPortName,
+          enableRetailPricing: body.enableRetailPricing,
+          retailPrice: body.retailPrice,
+          retailUnitName: body.retailUnitName,
+          retailQuantity: body.retailQuantity,
+          retailPackaging: body.retailPackaging,
+          retailPackagingDetails: body.retailPackagingDetails,
+          retailDescriptionEn: body.retailDescriptionEn,
         },
       }),
       invalidatesTags: (_r, _e, { productId }) => [

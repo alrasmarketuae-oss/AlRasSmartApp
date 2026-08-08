@@ -21,7 +21,18 @@ public sealed partial class AiAssistantMcpToolsService
         (5, "Bag", "كيس"),
         (6, "Dozen", "درزن"),
         (7, "Box", "صندوق"),
-        (8, "Piece", "قطعة")
+        (8, "Piece", "قطعة"),
+        (9, "Packet", "عبوة"),
+        (10, "Bundle", "حزمة"),
+        (11, "Drum", "برميل"),
+        (12, "Bottle", "زجاجة"),
+        (13, "Tin", "علبة معدنية"),
+        (14, "Sack", "شوال"),
+        (15, "Case", "كرتونة"),
+        (16, "Pallet", "طبلية"),
+        (17, "Liter", "لتر"),
+        (18, "Ml", "ملليلتر"),
+        (19, "Jar", "برطمان")
     ];
 
     private static readonly (byte Id, string NameEn, string NameAr)[] KnownProductTypes =
@@ -73,7 +84,42 @@ public sealed partial class AiAssistantMcpToolsService
         ["pcs"] = "Piece",
         ["قطعة"] = "Piece",
         ["قطع"] = "Piece",
-        ["حبة"] = "Piece"
+        ["حبة"] = "Piece",
+        ["packet"] = "Packet",
+        ["packets"] = "Packet",
+        ["عبوة"] = "Packet",
+        ["باكيت"] = "Packet",
+        ["bundle"] = "Bundle",
+        ["bundles"] = "Bundle",
+        ["حزمة"] = "Bundle",
+        ["drum"] = "Drum",
+        ["drums"] = "Drum",
+        ["برميل"] = "Drum",
+        ["bottle"] = "Bottle",
+        ["bottles"] = "Bottle",
+        ["زجاجة"] = "Bottle",
+        ["tin"] = "Tin",
+        ["tins"] = "Tin",
+        ["علبة معدنية"] = "Tin",
+        ["sack"] = "Sack",
+        ["sacks"] = "Sack",
+        ["شوال"] = "Sack",
+        ["case"] = "Case",
+        ["cases"] = "Case",
+        ["كرتونة"] = "Case",
+        ["pallet"] = "Pallet",
+        ["pallets"] = "Pallet",
+        ["طبلية"] = "Pallet",
+        ["liter"] = "Liter",
+        ["liters"] = "Liter",
+        ["litre"] = "Liter",
+        ["لتر"] = "Liter",
+        ["ml"] = "Ml",
+        ["milliliter"] = "Ml",
+        ["ملليلتر"] = "Ml",
+        ["jar"] = "Jar",
+        ["jars"] = "Jar",
+        ["برطمان"] = "Jar"
     };
 
     private static readonly (byte Id, string NameEn, string NameAr)[] KnownCategories =

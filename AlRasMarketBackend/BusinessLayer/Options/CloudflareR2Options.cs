@@ -24,6 +24,20 @@ public sealed class CloudflareR2Options
     /// <summary>How long mobile may use a presigned PUT URL (default 15 minutes).</summary>
     public int PresignedPutExpirySeconds { get; set; } = 900;
 
+    /// <summary>
+    /// Browser origins allowed to PUT directly to the bucket via presigned URLs.
+    /// Applied as the bucket CORS policy on startup so dashboard chat uploads work.
+    /// A single wildcard is allowed per origin (S3/R2 CORS rule).
+    /// </summary>
+    public string[] AllowedCorsOrigins { get; set; } =
+    [
+        "https://*.alrasmarketapp.com",
+        "https://*.netlify.app",
+        "http://localhost:5173",
+        "http://localhost:4173",
+        "http://localhost:3000",
+    ];
+
     public bool IsConfigured =>
         Enabled
         && !string.IsNullOrWhiteSpace(BucketName)

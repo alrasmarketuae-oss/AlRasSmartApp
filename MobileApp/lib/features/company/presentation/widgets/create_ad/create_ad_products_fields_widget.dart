@@ -174,6 +174,7 @@ class CreateAdProductsFieldsWidget extends StatelessWidget {
                     ),
                     CreateAdPackingSection(
                       controller: cubit.retailPackingKgController,
+                      isRetail: true,
                       labelText: isAr
                           ? 'تعبئة التجزئة (اختياري)'
                           : 'Retail packing (optional)',

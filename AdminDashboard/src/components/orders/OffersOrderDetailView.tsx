@@ -21,6 +21,7 @@ import {
 } from '../shared/IconInfoField'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import CompactMediaStrip from './CompactMediaStrip'
+import ProductDetailsDialog from './ProductDetailsDialog'
 import OrderNotifyPartyDialog from './OrderNotifyPartyDialog'
 import OrderStatusActionButtons from './OrderStatusActionButtons'
 import OrderStatusHistoryStrip from './OrderStatusHistoryStrip'
@@ -32,6 +33,7 @@ import {
   resolveOrderedQuantity,
 } from '../../utils/ordersDisplay'
 import { getOrderStatusLabel, getOrderStatusStyle } from '../../utils/orderStatus'
+import { formatRelativeTime } from '../../utils/timeAgo'
 import {
   canMarkOrderReceived,
   canSetCustomTextStatus,
@@ -401,6 +403,7 @@ export default function OffersOrderDetailView({
   const [customStatusError, setCustomStatusError] = useState<string | null>(null)
   const [customStatusSuccess, setCustomStatusSuccess] = useState<string | null>(null)
   const [confirmMarkReceived, setConfirmMarkReceived] = useState(false)
+  const [showProductDetails, setShowProductDetails] = useState(false)
 
   const status = getOrderStatusStyle(order.statusId)
   const statusLabel =
@@ -721,7 +724,9 @@ export default function OffersOrderDetailView({
           </div>
           <p className="admin-text-muted mt-2 text-xs">
             <span className="font-semibold">{t('orders.createdOn')}: </span>
-            {formatDetailDate(order.createdAt, locale)}
+            <span title={formatDetailDate(order.createdAt, locale)}>
+              {formatRelativeTime(order.createdAt, locale)}
+            </span>
           </p>
           {statusHistory.length > 0 ? (
             <div className="admin-card mt-3 rounded-2xl border border-slate-200/80 px-3 py-3 shadow-sm dark:border-slate-700">
@@ -914,7 +919,20 @@ export default function OffersOrderDetailView({
                       label={t('orders.productName')}
                       icon={InfoFieldIcons.document}
                       iconClass="bg-rose-50 text-rose-500"
-                      value={order.productName || '—'}
+                      value={
+                        order.productName?.trim() ? (
+                          <button
+                            type="button"
+                            onClick={() => setShowProductDetails(true)}
+                            title={t('ads.productDetails')}
+                            className="text-start font-semibold text-[#2563eb] underline decoration-dotted underline-offset-2 transition hover:text-[#1d4ed8]"
+                          >
+                            {order.productName}
+                          </button>
+                        ) : (
+                          '—'
+                        )
+                      }
                     />
                     <IconInfoField
                       label={t('orders.category')}
@@ -971,17 +989,6 @@ export default function OffersOrderDetailView({
                     {t('orders.productImages')} ({Math.max(productImagePaths.length, 1)})
                   </h2>
                   <div className="flex flex-wrap gap-3">
-                    <label className="flex h-24 w-28 shrink-0 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-[#93C5FD] bg-[#EFF6FF] px-1.5 text-center text-[10px] font-semibold leading-tight text-[#2563eb] transition hover:border-[#2563eb] hover:bg-[#DBEAFE]">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        className="hidden"
-                        onChange={() => {}}
-                      />
-                      <span className="text-[#3B82F6]">{Icons.upload}</span>
-                      {t('ads.uploadImages')}
-                    </label>
                     <CompactMediaStrip
                       paths={productImagePaths}
                       sizeClassName="h-24 w-28"
@@ -1614,6 +1621,12 @@ export default function OffersOrderDetailView({
       </div>
 
       <div className="print:hidden">
+        <ProductDetailsDialog
+          open={showProductDetails}
+          order={order}
+          onClose={() => setShowProductDetails(false)}
+        />
+
         <OrderNotifyPartyDialog
           open={notifyTarget != null}
           onClose={() => setNotifyTarget(null)}

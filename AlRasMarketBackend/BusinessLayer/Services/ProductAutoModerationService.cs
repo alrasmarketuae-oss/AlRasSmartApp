@@ -33,17 +33,9 @@ public sealed class ProductAutoModerationService(
     IOptions<ImageEmbeddingOptions> imageEmbeddingOptions,
     ILogger<ProductAutoModerationService> logger) : IProductAutoModerationService
 {
-    private static readonly string RejectReasonEn =
-        "Contains insults/profanity, phone/contact details, WhatsApp, website, seller/company name, " +
-        "seller logo, or commercial brand logo (including in the ad title). " +
-        "Origin country and product specs (e.g. Sudanese peanuts) are allowed. " +
-        "Remove violations, then edit and resubmit — we will scan again.";
+    private static readonly string RejectReasonEn = AutoModerationMessages.RejectReasonEn;
 
-    private static readonly string RejectReasonAr =
-        "يحتوي على ألفاظ نابية/إساءة أو رقم هاتف أو بيانات تواصل أو واتساب أو موقع أو اسم شركة/بائع " +
-        "أو شعار البائع أو شعار ماركة (بما في ذلك اسم الإعلان). " +
-        "مسموح ببلد المنشأ والمواصفات (مثل: حبوب سودانية). " +
-        "أزل المخالفات ثم عدّل الإعلان وأعد الإرسال — سنعيد الفحص بنفس المنطق.";
+    private static readonly string RejectReasonAr = AutoModerationMessages.RejectReasonAr;
 
     public async Task ProcessAsync(ProductAutoModerationWorkItem workItem, CancellationToken cancellationToken = default)
     {

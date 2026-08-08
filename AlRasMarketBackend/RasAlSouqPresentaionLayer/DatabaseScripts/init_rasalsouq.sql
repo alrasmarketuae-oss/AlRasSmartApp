@@ -361,8 +361,20 @@ INSERT INTO Units (UnitNameEn) VALUES
 (N'Kilogram'),
 (N'Carton'),
 (N'Bag'),
-(N'Cup'),
-(N'Box');
+(N'Dozen'),
+(N'Box'),
+(N'Piece'),
+(N'Packet'),
+(N'Bundle'),
+(N'Drum'),
+(N'Bottle'),
+(N'Tin'),
+(N'Sack'),
+(N'Case'),
+(N'Pallet'),
+(N'Liter'),
+(N'Ml'),
+(N'Jar');
 
 INSERT INTO ProductTypes (TypeNameEn) VALUES
 (N'Retail'),

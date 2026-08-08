@@ -138,7 +138,17 @@ class BookingDetailsMapper {
     return normalized.startsWith('auto-approved') ||
         normalized.contains('auto-approved:') ||
         normalized.startsWith('موافقة تلقائية') ||
-        normalized.contains('auto approved');
+        normalized.contains('auto approved') ||
+        _isModerationRejectionNote(normalized);
+  }
+
+  /// Rejection reasons are stored in SupplierNotes while an ad is rejected; hide any
+  /// stale value that survived into an approved ad (e.g. legacy data before the fix).
+  static bool _isModerationRejectionNote(String normalized) {
+    return normalized.contains('remove violations, then edit and resubmit') ||
+        normalized.contains('contains insults/profanity') ||
+        normalized.contains('أزل المخالفات ثم عدّل الإعلان') ||
+        normalized.contains('يحتوي على ألفاظ نابية');
   }
 
   static String descriptionText(MyListingProductModel product) {

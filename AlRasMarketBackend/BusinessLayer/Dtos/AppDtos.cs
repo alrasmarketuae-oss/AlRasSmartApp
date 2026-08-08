@@ -287,6 +287,32 @@ public sealed class AdminUpdateProductRequest
     public string UnitName { get; set; } = string.Empty;
     public string? Currency { get; set; }
     public string? SupplierNotesEn { get; set; }
+
+    // Full "edit like the mobile app" fields. All optional so the legacy basic edit
+    // (which omits them) keeps working: null => leave unchanged. For geo fields an
+    // explicit empty string means "clear" (e.g. switching a booking ad to FOB).
+    public bool? Negotiable { get; set; }
+    public byte? Packaging { get; set; }
+    public string? PackagingDetails { get; set; }
+    public string? ShippingDuration { get; set; }
+    public string? OfferDuration { get; set; }
+    public byte? DiscountPercentage { get; set; }
+    public short? DiscountDays { get; set; }
+    public string? RequestTypeName { get; set; }
+    public string? BookingPriceTypeName { get; set; }
+    public string? OriginCountryName { get; set; }
+    public string? DestinationCountryName { get; set; }
+    public string? LoadingPortName { get; set; }
+    public string? ArrivalPortName { get; set; }
+
+    // Optional dual retail channel (category / hybrid ads only).
+    public bool? EnableRetailPricing { get; set; }
+    public decimal? RetailPrice { get; set; }
+    public string? RetailUnitName { get; set; }
+    public long? RetailQuantity { get; set; }
+    public byte? RetailPackaging { get; set; }
+    public string? RetailPackagingDetails { get; set; }
+    public string? RetailDescriptionEn { get; set; }
 }
 
 public sealed class SetProductVideoMuteRequest

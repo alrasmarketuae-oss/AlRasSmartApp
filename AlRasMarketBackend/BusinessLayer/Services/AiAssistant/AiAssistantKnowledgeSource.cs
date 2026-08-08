@@ -276,14 +276,14 @@ internal static class AiAssistantKnowledgeSource
 
         Add(chunks, "units", "وحدات القياس والكميات", "ar", All,
             """
-            عند إنشاء إعلان تُختار وحدة القياس المناسبة للمنتج، ومن الوحدات المتاحة: طن، كيلو، قطعة، كرتون، درزن، كيس، صندوق.
+            عند إنشاء إعلان تُختار وحدة القياس المناسبة للمنتج، ومن الوحدات المتاحة: طن، كيلوجرام، كيس، كرتون، عبوة، صندوق، حزمة، درزن، برميل، زجاجة، علبة معدنية، شوال، كرتونة، طبلية، لتر، ملليلتر، جرام، برطمان، قطعة.
             الكمية المدخلة هي المخزون المتاح للبيع، وعندما تصل إلى صفر يصبح الإعلان نافد المخزون ولا يمكن الشراء منه.
             يمكن للمعلن تحديد حد أدنى للطلب (Minimum Order Quantity) وحد أقصى، فلا يستطيع المشتري طلب كمية أقل من الحد الأدنى أو أكثر من الحد الأقصى.
             إذا كان المنتج مفعّلاً للبيع بالتجزئة أيضاً، فله وحدة وكمية وسعر تجزئة منفصلة عن بيانات الجملة، وله كود تجزئة (RetailCode) منفصل عن كود الجملة (ProductCode).
             """);
         Add(chunks, "units", "Units of measure and quantities", "en", All,
             """
-            When creating an ad you choose the unit that fits the product; available units include ton, kilogram, piece, carton, dozen, bag, and box.
+            When creating an ad you choose the unit that fits the product; available units include ton, kilogram, bag, carton, packet, box, bundle, dozen, drum, bottle, tin, sack, case, pallet, liter, ml, gram, jar, and piece.
             The quantity entered is the sellable stock; when it reaches zero the listing becomes out of stock and cannot be purchased.
             The advertiser can set a Minimum Order Quantity and a maximum, so a buyer cannot order below the minimum or above the maximum.
             If the product is also enabled for retail selling, it has a separate retail unit, retail quantity, retail price, and a separate RetailCode distinct from the wholesale ProductCode.
@@ -1323,7 +1323,7 @@ internal static class AiAssistantKnowledgeSource
             افتح إنشاء إعلان واختر النوع صنف (Category).
             اختر الصنف المناسب للمنتج.
             أدخل اسم المنتج والوصف والمواصفات.
-            أدخل الكمية المتاحة واختر الوحدة المناسبة: طن أو كيلو أو قطعة أو كرتون أو درزن أو كيس أو صندوق.
+            أدخل الكمية المتاحة واختر الوحدة المناسبة: طن أو كيلوجرام أو كيس أو كرتون أو عبوة أو صندوق أو حزمة أو درزن أو برميل أو زجاجة أو علبة معدنية أو شوال أو كرتونة أو طبلية أو لتر أو ملليلتر أو جرام أو برطمان أو قطعة.
             أدخل السعر واختر العملة درهم AED أو دولار USD.
             اختر نوع التلبية: محلي أو إعادة تصدير (إلزامي).
             اسأل عن التعبئة بالكيلو جرام في كل إعلان (المستخدم قد يقول بدون).
@@ -1337,7 +1337,7 @@ internal static class AiAssistantKnowledgeSource
             Open Create Ad and choose the Category type.
             Select the category that fits the product.
             Enter the product name, description, and specifications.
-            Enter the available quantity and choose the unit: ton, kilogram, piece, carton, dozen, bag, or box.
+            Enter the available quantity and choose the unit: ton, kilogram, bag, carton, packet, box, bundle, dozen, drum, bottle, tin, sack, case, pallet, liter, ml, gram, jar, or piece.
             Enter the price and choose the currency, AED or USD.
             Choose fulfillment type: Local or Reexport (required).
             Always ask packaging in kg for every ad (user may say none).

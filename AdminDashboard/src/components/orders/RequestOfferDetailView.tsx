@@ -28,6 +28,7 @@ import WhatsAppPhoneLink from '../shared/WhatsAppPhoneLink'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import { getRtkErrorMessage } from '../../utils/rtkError'
 import OrderStatusHistoryStrip from './OrderStatusHistoryStrip'
+import ProductDetailsDialog from './ProductDetailsDialog'
 import {
   displayAdProductTypeName,
   formatAdAmount,
@@ -43,6 +44,7 @@ import {
   resolveRequiredQuantity,
 } from '../../utils/ordersDisplay'
 import { getOrderStatusLabel, getOrderStatusStyle } from '../../utils/orderStatus'
+import { formatRelativeTime } from '../../utils/timeAgo'
 import {
   canMarkOrderReceived,
   canSetCustomTextStatus,
@@ -177,6 +179,7 @@ export default function RequestOfferDetailView({
     durationSeconds?: number | null
   } | null>(null)
   const [selectedVideoIndex, setSelectedVideoIndex] = useState(0)
+  const [showProductDetails, setShowProductDetails] = useState(false)
 
   const [approveRequestOffer, { isLoading: isApprovingOffer }] =
     useApproveRequestOfferMutation()
@@ -546,9 +549,9 @@ export default function RequestOfferDetailView({
               {statusLabel}
             </span>
           </div>
-          <p className="admin-text-muted mt-1 text-xs">
+          <p className="admin-text-muted mt-1 text-xs" title={formatDetailDate(order.createdAt, locale)}>
             {t('reqsOffers.submittedOn', {
-              date: formatDetailDate(order.createdAt, locale),
+              date: formatRelativeTime(order.createdAt, locale),
             })}
           </p>
           {statusHistory.length > 0 ? (
@@ -708,8 +711,11 @@ export default function RequestOfferDetailView({
                     <p className="admin-text-subtle text-[10px] font-semibold uppercase">
                       {t('orders.orderDate')}
                     </p>
-                    <p className="admin-text mt-1 text-sm font-bold">
-                      {formatDetailDate(order.createdAt, locale)}
+                    <p
+                      className="admin-text mt-1 text-sm font-bold"
+                      title={formatDetailDate(order.createdAt, locale)}
+                    >
+                      {formatRelativeTime(order.createdAt, locale)}
                     </p>
                   </div>
                 </div>
@@ -1168,7 +1174,18 @@ export default function RequestOfferDetailView({
                   </span>
                 )}
                 <div className="min-w-0">
-                  <p className="admin-text text-sm font-bold">{order.productName}</p>
+                  {order.productName?.trim() ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowProductDetails(true)}
+                      title={t('ads.productDetails')}
+                      className="admin-text text-start text-sm font-bold text-[#2563eb] underline decoration-dotted underline-offset-2 transition hover:text-[#1d4ed8]"
+                    >
+                      {order.productName}
+                    </button>
+                  ) : (
+                    <p className="admin-text text-sm font-bold">—</p>
+                  )}
                   <span
                     className={`mt-1 inline-flex rounded-md px-2 py-0.5 text-[10px] font-bold ${productTypeBadgeClass(resolveOrderChannelTypeKey(order))}`}
                   >
@@ -1319,6 +1336,12 @@ export default function RequestOfferDetailView({
         onCancel={() => {
           if (!isMarkingReceived) setConfirmMarkReceived(false)
         }}
+      />
+
+      <ProductDetailsDialog
+        open={showProductDetails}
+        order={order}
+        onClose={() => setShowProductDetails(false)}
       />
 
       <ContactSupplierDialog

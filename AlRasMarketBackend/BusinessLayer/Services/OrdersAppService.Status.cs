@@ -116,6 +116,15 @@ public partial class OrdersAppService
             await orderData.SaveChangesAsync(cancellationToken);
             ProductsAppService.InvalidateListingCaches();
 
+            try
+            {
+                await adminRealtimeNotificationService.BroadcastCountsAsync(cancellationToken);
+            }
+            catch
+            {
+                // Realtime notification failure must not roll back order updates.
+            }
+
             var orderForModerationNotify = await orderData.GetOrderWithListDetailsAsync(input.OrderId, cancellationToken)
                 ?? order;
             await NotifyAdvertiserOfAdminApprovedOrderAsync(orderForModerationNotify, cancellationToken);
@@ -189,6 +198,18 @@ public partial class OrdersAppService
         }
 
         await orderData.SaveChangesAsync(cancellationToken);
+
+        // Push updated live counts to the admin dashboard so an admin standing on
+        // this order's detail page (or a list) sees the status change in real time,
+        // even when the change is initiated from the mobile app (seller/buyer).
+        try
+        {
+            await adminRealtimeNotificationService.BroadcastCountsAsync(cancellationToken);
+        }
+        catch
+        {
+            // Realtime notification failure must not roll back order updates.
+        }
 
         if (input.StatusId == OrderStatusCodes.Approved
             && (ProductTypeCodes.IsRequests(order.Product?.ProductTypeId)

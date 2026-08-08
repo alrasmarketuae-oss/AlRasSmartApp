@@ -211,11 +211,19 @@ export async function uploadChatMediaDirect(
       return multipartUpload(file, messageType)
     }
 
-    await putToR2(uploadUrl, file, contentType)
+    // A direct PUT can fail with a CORS/network error (TypeError: Failed to
+    // fetch) when the R2 bucket CORS policy is missing. Fall back to the server
+    // proxy upload so chat keeps working instead of surfacing a CORS error.
+    try {
+      await putToR2(uploadUrl, file, contentType)
+    } catch {
+      return multipartUpload(file, messageType)
+    }
+
     return confirmUpload(path, messageType, file)
   } catch (error) {
     // Soft-fallback for transient R2 issues; keep chat usable.
-    if (error instanceof Error && /presign|direct upload|503|404/i.test(error.message)) {
+    if (error instanceof Error && /presign|direct upload|503|404|failed to fetch|networkerror|load failed/i.test(error.message)) {
       return multipartUpload(file, messageType)
     }
     throw error

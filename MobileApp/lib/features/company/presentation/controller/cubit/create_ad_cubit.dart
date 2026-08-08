@@ -128,8 +128,10 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
   final quantityController = TextEditingController();
   final specificationsController = TextEditingController();
   final packingKgController = TextEditingController();
+  final otherPackingController = TextEditingController();
   final retailSpecificationsController = TextEditingController();
   final retailPackingKgController = TextEditingController();
+  final retailOtherPackingController = TextEditingController();
   final beforeDiscountController = TextEditingController();
   final afterDiscountController = TextEditingController();
   final priceController = TextEditingController();
@@ -269,6 +271,26 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     emit(state.copyWith(bookingPriceType: type));
   }
 
+  /// Toggles free-text packing ("Other packing"). Clears the field being hidden
+  /// so only one packing value is submitted.
+  void setOtherPacking(bool value, {bool isRetail = false}) {
+    if (isRetail) {
+      if (value) {
+        retailPackingKgController.clear();
+      } else {
+        retailOtherPackingController.clear();
+      }
+      emit(state.copyWith(retailOtherPacking: value));
+    } else {
+      if (value) {
+        packingKgController.clear();
+      } else {
+        otherPackingController.clear();
+      }
+      emit(state.copyWith(otherPacking: value));
+    }
+  }
+
   void setRequiredDeliveryDate(DateTime date) {
     emit(state.copyWith(requiredDeliveryDate: date));
   }
@@ -322,6 +344,9 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     _loadedLocalizedDescription = displayDescription;
     final packingKg = CreateAdPackingOptions.normalize(product.packaging);
     packingKgController.text = packingKg?.toString() ?? '';
+    // Free-text packing (e.g. "1.5 litre") is stored in packagingDetails.
+    final packingDetails = product.packagingDetails.trim();
+    otherPackingController.text = packingDetails;
     retailSpecificationsController.text = displayRetailDescription;
     final retailPackingKg =
         CreateAdPackingOptions.normalize(product.retailPackaging);
@@ -459,6 +484,7 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
               )
             : 'Kg',
         enableRetailPricing: hasRetail,
+        otherPacking: packingDetails.isNotEmpty,
         selectedCurrency: editType == CreateAdType.booking.label
             ? CreateAdCurrency.usd
             : editType == CreateAdType.retail.label
@@ -1079,6 +1105,8 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
       quantityController: quantityController,
       specificationsController: specificationsController,
       packingKgController: packingKgController,
+      otherPackingController: otherPackingController,
+      isOtherPacking: stateForRequest.otherPacking,
       beforeDiscountController: beforeDiscountController,
       afterDiscountController: afterDiscountController,
       priceController: priceController,
@@ -1088,6 +1116,8 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
       retailQuantityController: retailQuantityController,
       retailSpecificationsController: retailSpecificationsController,
       retailPackingKgController: retailPackingKgController,
+      retailOtherPackingController: retailOtherPackingController,
+      isRetailOtherPacking: stateForRequest.retailOtherPacking,
       productVideoFile: null,
       videoDurationSeconds: null,
       isEditMode: state.editingProductId != null || state.isEditMode,
@@ -1531,8 +1561,10 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     quantityController.clear();
     specificationsController.clear();
     packingKgController.clear();
+    otherPackingController.clear();
     retailSpecificationsController.clear();
     retailPackingKgController.clear();
+    retailOtherPackingController.clear();
     beforeDiscountController.clear();
     afterDiscountController.clear();
     priceController.clear();
@@ -2266,8 +2298,10 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     quantityController.dispose();
     specificationsController.dispose();
     packingKgController.dispose();
+    otherPackingController.dispose();
     retailSpecificationsController.dispose();
     retailPackingKgController.dispose();
+    retailOtherPackingController.dispose();
     beforeDiscountController.dispose();
     afterDiscountController.dispose();
     priceController.dispose();

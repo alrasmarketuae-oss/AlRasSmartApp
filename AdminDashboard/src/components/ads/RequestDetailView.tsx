@@ -8,6 +8,7 @@ import ProductVideosPanel, { resolveProductVideoPaths } from './ProductVideosPan
 import type { Category } from '../../types/category'
 import CountryFlag from '../shared/CountryFlag'
 import WhatsAppPhoneLink from '../shared/WhatsAppPhoneLink'
+import MailtoEmailLink from '../shared/MailtoEmailLink'
 import RequestOffersPanel from './RequestOffersPanel'
 import AdminImageBlurModal from '../shared/AdminImageBlurModal'
 import ImageGallery, { type GalleryMediaItem } from '../ui/ImageGallery'
@@ -23,6 +24,7 @@ import { categoryDisplayName } from '../../utils/categoryDisplay'
 import { localizeProductStatusLabel } from '../../utils/localizedLabels'
 import { formatOrderQuantityWithUnit } from '../../utils/ordersDisplay'
 import { shippingFromProduct } from '../../utils/productShipping'
+import { formatRelativeTime } from '../../utils/timeAgo'
 import { useSetAdminProductVideoMuteMutation } from '../../store/adminApi'
 
 function countProductGalleryImages(product: AdminProductDetail): number {
@@ -72,16 +74,7 @@ type RequestDetailViewProps = {
 }
 
 function formatPostedAt(value: string, locale: 'ar' | 'en') {
-  if (!value) return '—'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString(locale === 'ar' ? 'ar-AE' : 'en-US', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  return formatRelativeTime(value, locale)
 }
 
 function shortRequestRef(productId: string): string {
@@ -1145,7 +1138,9 @@ export default function RequestDetailView({
                   <CountryFlag phone={product.ownerPhone} city={product.ownerCity} size={20} />
                   <WhatsAppPhoneLink phone={product.ownerPhone} className="break-all" />
                 </p>
-                <p className="admin-text break-all">{product.ownerEmail || '—'}</p>
+                <p className="break-all">
+                  <MailtoEmailLink email={product.ownerEmail} />
+                </p>
                 <p className="flex items-center gap-2">
                   <CountryFlag city={product.ownerCity} phone={product.ownerPhone} size={20} />
                   <span className="admin-text-muted">{product.ownerCity?.trim() || '—'}</span>

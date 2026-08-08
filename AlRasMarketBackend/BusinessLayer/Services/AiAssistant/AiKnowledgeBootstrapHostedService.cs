@@ -30,28 +30,11 @@ public sealed class AiKnowledgeBootstrapHostedService(
         try
         {
             await using var scope = scopeFactory.CreateAsyncScope();
-            var index = scope.ServiceProvider.GetRequiredService<IAiKnowledgeIndex>();
-            var embedder = scope.ServiceProvider.GetRequiredService<IAiTextEmbeddingService>();
-            var chunks = AiAssistantKnowledgeSource.Build();
+            var indexer = scope.ServiceProvider.GetRequiredService<IAiKnowledgeIndexer>();
 
-            await index.EnsureCollectionAsync(cancellationToken).ConfigureAwait(false);
-
-            // Always re-upsert so content edits overwrite the same stable point ids.
-            var points = new List<(AiKnowledgeChunk Chunk, float[] Vector)>(chunks.Count);
-            foreach (var chunk in chunks)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                var vector = await embedder.EmbedAsync(
-                    $"{chunk.Title}\n{chunk.Content}",
-                    cancellationToken).ConfigureAwait(false);
-                points.Add((chunk, vector));
-            }
-
-            await index.UpsertAsync(points, cancellationToken).ConfigureAwait(false);
-            logger.LogInformation(
-                "AI knowledge indexed: {Count} chunks into {Collection}.",
-                points.Count,
-                _options.Collection);
+            // force:false → skip embedding entirely when the knowledge content,
+            // embedding model, and chunk count are unchanged since last deploy.
+            await indexer.ReindexAsync(force: false, cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {

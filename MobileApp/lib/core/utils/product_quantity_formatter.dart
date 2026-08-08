@@ -119,6 +119,48 @@ class ProductQuantityFormatter {
       case 'لتر':
       case 'لترات':
         return s?.unitLiter ?? 'Liter';
+      case 'packet':
+      case 'packets':
+      case 'عبوة':
+      case 'باكيت':
+        return s?.unitPacket ?? 'Packet';
+      case 'bundle':
+      case 'bundles':
+      case 'حزمة':
+        return s?.unitBundle ?? 'Bundle';
+      case 'drum':
+      case 'drums':
+      case 'برميل':
+        return s?.unitDrum ?? 'Drum';
+      case 'bottle':
+      case 'bottles':
+      case 'زجاجة':
+        return s?.unitBottle ?? 'Bottle';
+      case 'tin':
+      case 'tins':
+      case 'علبة معدنية':
+        return s?.unitTin ?? 'Tin';
+      case 'sack':
+      case 'sacks':
+      case 'شوال':
+        return s?.unitSack ?? 'Sack';
+      case 'case':
+      case 'cases':
+      case 'كرتونة':
+        return s?.unitCase ?? 'Case';
+      case 'pallet':
+      case 'pallets':
+      case 'طبلية':
+        return s?.unitPallet ?? 'Pallet';
+      case 'ml':
+      case 'milliliter':
+      case 'milliliters':
+      case 'ملليلتر':
+        return s?.unitMl ?? 'Ml';
+      case 'jar':
+      case 'jars':
+      case 'برطمان':
+        return s?.unitJar ?? 'Jar';
       default:
         return unitName.trim();
     }
@@ -201,6 +243,48 @@ class ProductQuantityFormatter {
       case 'كيس':
       case 'أكياس':
         return s.unitBag;
+      case 'packet':
+      case 'packets':
+      case 'عبوة':
+      case 'باكيت':
+        return s.unitPacket;
+      case 'bundle':
+      case 'bundles':
+      case 'حزمة':
+        return s.unitBundle;
+      case 'drum':
+      case 'drums':
+      case 'برميل':
+        return s.unitDrum;
+      case 'bottle':
+      case 'bottles':
+      case 'زجاجة':
+        return s.unitBottle;
+      case 'tin':
+      case 'tins':
+      case 'علبة معدنية':
+        return s.unitTin;
+      case 'sack':
+      case 'sacks':
+      case 'شوال':
+        return s.unitSack;
+      case 'case':
+      case 'cases':
+      case 'كرتونة':
+        return s.unitCase;
+      case 'pallet':
+      case 'pallets':
+      case 'طبلية':
+        return s.unitPallet;
+      case 'ml':
+      case 'milliliter':
+      case 'milliliters':
+      case 'ملليلتر':
+        return s.unitMl;
+      case 'jar':
+      case 'jars':
+      case 'برطمان':
+        return s.unitJar;
       default:
         // Never append English "s" to Arabic (or other non-Latin) unit labels.
         if (_hasArabicScript(unitName)) return unitName;

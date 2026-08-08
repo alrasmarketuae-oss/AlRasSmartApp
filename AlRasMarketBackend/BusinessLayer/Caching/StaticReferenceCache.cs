@@ -23,7 +23,7 @@ public sealed class StaticReferenceCache(
     private const string CountriesKey = "geo:countries:v1";
     private const string CitiesKey = "geo:cities:v1";
     private const string PortsKey = "geo:ports:v1";
-    private const string UnitsKey = "catalog:units:v1";
+    private const string UnitsKey = "catalog:units:v2";
     private const string ProductTypesKey = "catalog:product-types:v1";
     private const string CategoriesKey = "catalog:categories:v1";
     private const string RequestTypesKey = "catalog:request-types:v1";
@@ -577,6 +577,7 @@ public sealed class StaticReferenceCache(
             await tieredCache.RemoveAsync(CountriesKey, cancellationToken).ConfigureAwait(false);
             await tieredCache.RemoveAsync(CitiesKey, cancellationToken).ConfigureAwait(false);
             await tieredCache.RemoveAsync(PortsKey, cancellationToken).ConfigureAwait(false);
+            await tieredCache.RemoveAsync(UnitsKey, cancellationToken).ConfigureAwait(false);
         }
         catch
         {
@@ -715,6 +716,17 @@ public sealed class StaticReferenceCache(
             "kg" or "kgs" or "kilo" or "kilos" or "كجم" or "كيلو" or "كيلوجرام" or "كيلو جرام" => "Kilogram",
             "kilogram" or "kilograms" => "Kilogram",
             "g" or "gram" or "grams" or "جرام" or "غرام" => "Gram",
+            "packet" or "packets" or "عبوة" or "عبوه" or "باكيت" => "Packet",
+            "bundle" or "bundles" or "حزمة" or "حزمه" => "Bundle",
+            "drum" or "drums" or "برميل" or "براميل" => "Drum",
+            "bottle" or "bottles" or "زجاجة" or "زجاجه" => "Bottle",
+            "tin" or "tins" or "علبة معدنية" or "علبه معدنيه" => "Tin",
+            "sack" or "sacks" or "شوال" => "Sack",
+            "case" or "cases" or "كرتونة" or "كرتونه" => "Case",
+            "pallet" or "pallets" or "طبلية" or "طبليه" => "Pallet",
+            "liter" or "liters" or "litre" or "litres" or "لتر" or "لترات" => "Liter",
+            "ml" or "milliliter" or "milliliters" or "millilitre" or "millilitres" or "ملليلتر" or "مل" => "Ml",
+            "jar" or "jars" or "برطمان" or "برطمانات" => "Jar",
             _ => trimmed
         };
     }
@@ -731,6 +743,17 @@ public sealed class StaticReferenceCache(
             "bag" => ["bag", "bags", "Bag"],
             "dozen" => ["dozen", "dozens", "Dozen"],
             "box" => ["box", "boxes", "Box"],
+            "packet" => ["packet", "packets", "Packet"],
+            "bundle" => ["bundle", "bundles", "Bundle"],
+            "drum" => ["drum", "drums", "Drum"],
+            "bottle" => ["bottle", "bottles", "Bottle"],
+            "tin" => ["tin", "tins", "Tin"],
+            "sack" => ["sack", "sacks", "Sack"],
+            "case" => ["case", "cases", "Case"],
+            "pallet" => ["pallet", "pallets", "Pallet"],
+            "liter" => ["liter", "liters", "litre", "litres", "Liter"],
+            "ml" => ["ml", "milliliter", "milliliters", "millilitre", "millilitres", "Ml"],
+            "jar" => ["jar", "jars", "Jar"],
             _ => []
         };
     }

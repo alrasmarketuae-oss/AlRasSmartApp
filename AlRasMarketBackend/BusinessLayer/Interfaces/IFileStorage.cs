@@ -33,6 +33,12 @@ public interface IFileStorage
         string contentType,
         TimeSpan expiry,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Applies the bucket CORS policy so browsers may PUT directly via presigned
+    /// URLs. No-op for providers that don't need it (e.g. local disk storage).
+    /// </summary>
+    Task EnsureUploadCorsAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
 
 public sealed record StoredObjectInfo(string RelativePath, DateTimeOffset LastModified);

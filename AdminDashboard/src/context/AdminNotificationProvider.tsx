@@ -69,7 +69,9 @@ export function AdminNotificationProvider({ children }: { children: ReactNode })
         { type: 'Dashboard', id: 'LIVE_COUNTS' },
         { type: 'Users', id: 'LIST' },
         { type: 'Products', id: 'LIST' },
-        { type: 'Orders', id: 'LIST' },
+        // Invalidate the whole Orders tag (not just LIST) so an order detail page
+        // currently open also refetches on realtime pushes (e.g. status changes).
+        { type: 'Orders' },
       ]),
     )
   }, [dispatch])

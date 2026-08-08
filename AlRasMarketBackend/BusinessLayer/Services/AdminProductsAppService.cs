@@ -419,6 +419,13 @@ public class AdminProductsAppService(
         {
             product.SupplierNotesEn = adminNotes;
         }
+        else if (AutoModerationMessages.IsAutoModerationRejectionNote(product.SupplierNotesEn))
+        {
+            // A rejection reason was stored in the seller-facing SupplierNotes while the
+            // ad was rejected. It must not leak into the public ad details after approval.
+            product.SupplierNotesEn = null;
+            await ClearSupplierNotesTranslationAsync(product.ProductId, cancellationToken);
+        }
 
         var productName = await ResolveProductDisplayNameAsync(product.ProductId, product.NameEn, cancellationToken);
         var previousSnapshot = PendingProductChangeHelper.TryParse(product.PendingProductChanges);
@@ -501,6 +508,24 @@ public class AdminProductsAppService(
             bodyAr: notificationAr.FcmBody);
 
         return "Product approved successfully.";
+    }
+
+    /// <summary>
+    /// Removes any stored bilingual SupplierNotes translation so a former rejection
+    /// reason cannot be resolved for public ad details after the ad is approved.
+    /// </summary>
+    private async Task ClearSupplierNotesTranslationAsync(Guid productId, CancellationToken cancellationToken)
+    {
+        var rows = await dbContext.ContentTranslations
+            .Where(x => x.Scope == ContentTranslationScopes.Product
+                && x.ProductId == productId
+                && x.Field == ContentTranslationFields.SupplierNotes)
+            .ToListAsync(cancellationToken);
+
+        if (rows.Count > 0)
+        {
+            dbContext.ContentTranslations.RemoveRange(rows);
+        }
     }
 
     public async Task<string> RejectProductAsync(
@@ -1159,6 +1184,8 @@ public class AdminProductsAppService(
             {
                 x.ProductId,
                 x.OwnerId,
+                x.ProductTypeId,
+                x.CategoryId,
                 x.OriginCountryId,
                 x.DestinationCountryId,
                 x.LoadingPortId,
@@ -1198,6 +1225,56 @@ public class AdminProductsAppService(
             ? staticReferenceCache.FindPortById(product.ArrivalPortId.Value)?.PortNameEn ?? string.Empty
             : string.Empty;
 
+        // The admin "basic info" edit (name/price/description/unit) never changes the ad's
+        // classification. When the dashboard omits ProductTypeName, preserve the existing
+        // product type and category so a booking/offers ad is not demoted to Retail.
+        var existingProductTypeName = product.ProductTypeId.HasValue
+            ? staticReferenceCache.FindProductTypeById(product.ProductTypeId.Value)?.TypeNameEn ?? string.Empty
+            : string.Empty;
+        if (string.IsNullOrWhiteSpace(existingProductTypeName)
+            && product.BookingPriceTypeId is > 0)
+        {
+            // Self-heal legacy booking ads whose ProductTypeId was cleared by a prior edit.
+            existingProductTypeName = staticReferenceCache
+                .FindProductTypeById(ProductTypeCodes.Booking)?.TypeNameEn ?? string.Empty;
+        }
+
+        var resolvedProductTypeName = string.IsNullOrWhiteSpace(request.ProductTypeName)
+            ? existingProductTypeName
+            : request.ProductTypeName.Trim();
+        var resolvedCategoryId = request.CategoryId ?? product.CategoryId;
+
+        // Geo: null => leave unchanged (preserve existing route); an explicit empty
+        // string => clear (e.g. a booking ad switched to FOB drops destination + ports).
+        var resolvedOriginCountry = request.OriginCountryName ?? originCountry;
+        var resolvedDestinationCountry = request.DestinationCountryName ?? destinationCountry;
+        var resolvedLoadingPort = request.LoadingPortName ?? loadingPort;
+        var resolvedArrivalPort = request.ArrivalPortName ?? arrivalPort;
+
+        // Packing: prefer free-text ("Other packing"), then the numeric kg id, else keep as-is.
+        byte? resolvedPackaging;
+        string? resolvedPackagingDetails;
+        if (!string.IsNullOrWhiteSpace(request.PackagingDetails))
+        {
+            resolvedPackagingDetails = request.PackagingDetails;
+            resolvedPackaging = null;
+        }
+        else if (request.Packaging.HasValue)
+        {
+            resolvedPackaging = request.Packaging;
+            resolvedPackagingDetails = null;
+        }
+        else
+        {
+            resolvedPackaging = product.Packaging;
+            resolvedPackagingDetails = product.PackagingDetails;
+        }
+
+        // Price type / booking Incoterm: when the dashboard sends a new name use it (and drop
+        // the old id so the name wins during reference resolution); otherwise keep the current id.
+        var hasRequestTypeName = !string.IsNullOrWhiteSpace(request.RequestTypeName);
+        var hasBookingPriceTypeName = !string.IsNullOrWhiteSpace(request.BookingPriceTypeName);
+
         var result = await _productsAppService.UpdateAsync(new UpdateProductInput
         {
             ProductId = productId,
@@ -1208,28 +1285,42 @@ public class AdminProductsAppService(
             Currency = request.Currency,
             Quantity = request.Quantity,
             DescriptionEn = request.DescriptionEn,
-            CategoryId = request.CategoryId?.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            ProductTypeName = request.ProductTypeName.Trim(),
+            CategoryId = resolvedCategoryId?.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ProductTypeName = resolvedProductTypeName,
             UnitName = request.UnitName.Trim(),
             SupplierNotesEn = request.SupplierNotesEn,
-            // Preserve catalog fields the admin UI does not edit.
-            RequestTypeId = product.RequestTypeId,
-            BookingPriceTypeId = product.BookingPriceTypeId,
-            Negotiable = product.Negotiable,
-            Packaging = product.Packaging,
-            PackagingDetails = product.PackagingDetails,
-            ShippingDuration = product.ShippingDuration,
-            OfferDuration = product.OfferDuration,
+            // Catalog fields: use the request value when provided, else preserve the current one.
+            RequestTypeId = hasRequestTypeName ? null : product.RequestTypeId,
+            RequestTypeName = request.RequestTypeName,
+            BookingPriceTypeId = hasBookingPriceTypeName ? null : product.BookingPriceTypeId,
+            BookingPriceTypeName = request.BookingPriceTypeName,
+            Negotiable = request.Negotiable ?? product.Negotiable,
+            Packaging = resolvedPackaging,
+            PackagingDetails = resolvedPackagingDetails,
+            ShippingDuration = string.IsNullOrWhiteSpace(request.ShippingDuration)
+                ? product.ShippingDuration
+                : request.ShippingDuration,
+            OfferDuration = string.IsNullOrWhiteSpace(request.OfferDuration)
+                ? product.OfferDuration
+                : request.OfferDuration,
             MinimumOrderQuantity = product.MinimumOrderQuantity,
             MaximumOrderQuantity = product.MaximumOrderQuantity,
-            DiscountPercentage = product.DiscountPercentage,
-            DiscountDays = product.DiscountDays,
+            DiscountPercentage = request.DiscountPercentage ?? product.DiscountPercentage,
+            DiscountDays = request.DiscountDays ?? product.DiscountDays,
             ShippingDescriptionEn = product.ShippingDescriptionEn,
             AddressId = product.AddressId?.ToString(),
-            OriginCountryName = originCountry,
-            DestinationCountryName = destinationCountry,
-            LoadingPortName = loadingPort,
-            ArrivalPortName = arrivalPort
+            OriginCountryName = resolvedOriginCountry,
+            DestinationCountryName = resolvedDestinationCountry,
+            LoadingPortName = resolvedLoadingPort,
+            ArrivalPortName = resolvedArrivalPort,
+            // Optional dual retail channel (category / hybrid ads only). Null => leave unchanged.
+            EnableRetailPricing = request.EnableRetailPricing,
+            RetailPrice = request.RetailPrice,
+            RetailUnitName = request.RetailUnitName,
+            RetailQuantity = request.RetailQuantity,
+            RetailPackaging = request.RetailPackaging,
+            RetailPackagingDetails = request.RetailPackagingDetails,
+            RetailDescriptionEn = request.RetailDescriptionEn
         }, cancellationToken);
 
         await auditLogAppService.WriteAsync(

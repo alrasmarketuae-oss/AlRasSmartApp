@@ -138,6 +138,46 @@ public sealed class CloudflareR2FileStorage : IFileStorage, IDisposable
         return Task.FromResult<string?>(url);
     }
 
+    public async Task EnsureUploadCorsAsync(CancellationToken cancellationToken = default)
+    {
+        var origins = (_options.AllowedCorsOrigins ?? [])
+            .Select(o => o?.Trim() ?? string.Empty)
+            .Where(o => o.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (origins.Count == 0)
+        {
+            return;
+        }
+
+        var request = new PutCORSConfigurationRequest
+        {
+            BucketName = _options.BucketName,
+            Configuration = new CORSConfiguration
+            {
+                Rules =
+                [
+                    new CORSRule
+                    {
+                        Id = "chat-direct-upload",
+                        AllowedOrigins = origins,
+                        AllowedMethods = ["PUT", "GET", "HEAD"],
+                        AllowedHeaders = ["*"],
+                        ExposeHeaders = ["ETag"],
+                        MaxAgeSeconds = 3600
+                    }
+                ]
+            }
+        };
+
+        await _client.PutCORSConfigurationAsync(request, cancellationToken);
+        _logger.LogInformation(
+            "Applied R2 bucket CORS for {Count} origin(s) on {Bucket}.",
+            origins.Count,
+            _options.BucketName);
+    }
+
     public async Task<IReadOnlyList<StoredObjectInfo>> ListAsync(
         string prefix,
         CancellationToken cancellationToken = default)

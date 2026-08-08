@@ -4969,6 +4969,56 @@ class S {
     return Intl.message('Liters', name: 'unitLiters', desc: '', args: []);
   }
 
+  /// `Packet`
+  String get unitPacket {
+    return Intl.message('Packet', name: 'unitPacket', desc: '', args: []);
+  }
+
+  /// `Bundle`
+  String get unitBundle {
+    return Intl.message('Bundle', name: 'unitBundle', desc: '', args: []);
+  }
+
+  /// `Drum`
+  String get unitDrum {
+    return Intl.message('Drum', name: 'unitDrum', desc: '', args: []);
+  }
+
+  /// `Bottle`
+  String get unitBottle {
+    return Intl.message('Bottle', name: 'unitBottle', desc: '', args: []);
+  }
+
+  /// `Tin`
+  String get unitTin {
+    return Intl.message('Tin', name: 'unitTin', desc: '', args: []);
+  }
+
+  /// `Sack`
+  String get unitSack {
+    return Intl.message('Sack', name: 'unitSack', desc: '', args: []);
+  }
+
+  /// `Case`
+  String get unitCase {
+    return Intl.message('Case', name: 'unitCase', desc: '', args: []);
+  }
+
+  /// `Pallet`
+  String get unitPallet {
+    return Intl.message('Pallet', name: 'unitPallet', desc: '', args: []);
+  }
+
+  /// `Ml`
+  String get unitMl {
+    return Intl.message('Ml', name: 'unitMl', desc: '', args: []);
+  }
+
+  /// `Jar`
+  String get unitJar {
+    return Intl.message('Jar', name: 'unitJar', desc: '', args: []);
+  }
+
   /// `Video must be 3 minutes (180 seconds) or less.`
   String get videoMaxDurationSeconds {
     return Intl.message(

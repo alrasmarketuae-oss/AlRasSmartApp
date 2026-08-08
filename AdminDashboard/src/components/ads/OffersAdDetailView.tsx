@@ -6,6 +6,7 @@ import PendingProductEditPanel from './PendingProductEditPanel'
 import ProductVideosPanel from './ProductVideosPanel'
 import CountryFlag from '../shared/CountryFlag'
 import WhatsAppPhoneLink from '../shared/WhatsAppPhoneLink'
+import MailtoEmailLink from '../shared/MailtoEmailLink'
 import AdminImageBlurModal from '../shared/AdminImageBlurModal'
 import ImageGallery, { type GalleryMediaItem } from '../ui/ImageGallery'
 import { downloadAsset, filenameFromAssetPath } from '../../utils/downloadAsset'
@@ -26,6 +27,7 @@ import {
 import { shippingTypeKey } from '../../types/productShipping'
 import type { AdminProductDetail } from '../../types/adminProduct'
 import { useSetAdminProductVideoMuteMutation } from '../../store/adminApi'
+import { formatRelativeTime } from '../../utils/timeAgo'
 import type { CatalogAdDetailViewProps } from './CatalogAdDetailView'
 
 const C = {
@@ -71,16 +73,7 @@ function resolveProductVideoPaths(product: AdminProductDetail): string[] {
 }
 
 function formatPostedAt(value: string, locale: 'ar' | 'en') {
-  if (!value) return '—'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString(locale === 'ar' ? 'ar-AE' : 'en-US', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  return formatRelativeTime(value, locale)
 }
 
 function Svg({ d, className = 'h-3.5 w-3.5', paths }: { d?: string; paths?: string[]; className?: string }) {
@@ -569,9 +562,7 @@ export default function OffersAdDetailView({
           </p>
           <p className="flex items-center gap-1.5 break-all">
             <span style={{ color: C.blue }}>{I.mail}</span>
-            <span className="font-normal" style={{ color: '#64748B' }}>
-              {product.ownerEmail || '—'}
-            </span>
+            <MailtoEmailLink email={product.ownerEmail} className="text-xs font-normal" />
           </p>
           <p className="flex items-center gap-1.5">
             <CountryFlag city={product.ownerCity} phone={product.ownerPhone} size={20} />

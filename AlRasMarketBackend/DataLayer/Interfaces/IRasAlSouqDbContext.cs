@@ -59,5 +59,6 @@ public interface IRasAlSouqDbContext
     DbSet<Balance> Balances { get; }
     DbSet<UserIban> UserIbans { get; }
     DbSet<WithdrawalRequest> WithdrawalRequests { get; }
+    DbSet<AiKnowledgeIndexState> AiKnowledgeIndexStates { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

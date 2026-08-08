@@ -61,9 +61,21 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
     public DbSet<Balance> Balances => Set<Balance>();
     public DbSet<UserIban> UserIbans => Set<UserIban>();
     public DbSet<WithdrawalRequest> WithdrawalRequests => Set<WithdrawalRequest>();
+    public DbSet<AiKnowledgeIndexState> AiKnowledgeIndexStates => Set<AiKnowledgeIndexState>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<AiKnowledgeIndexState>(entity =>
+        {
+            entity.ToTable("AiKnowledgeIndexState");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.ContentHash).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.EmbeddingModel).HasMaxLength(128).IsRequired();
+            entity.Property(x => x.ChunkCount);
+            entity.Property(x => x.UpdatedAtUtc);
+        });
+
         modelBuilder.Entity<Role>(entity =>
         {
             entity.ToTable("Roles");
@@ -331,7 +343,18 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
                 new Unit { Id = 5, UnitNameEn = "Bag" },
                 new Unit { Id = 6, UnitNameEn = "Dozen" },
                 new Unit { Id = 7, UnitNameEn = "Box" },
-                new Unit { Id = 8, UnitNameEn = "Piece" }
+                new Unit { Id = 8, UnitNameEn = "Piece" },
+                new Unit { Id = 9, UnitNameEn = "Packet" },
+                new Unit { Id = 10, UnitNameEn = "Bundle" },
+                new Unit { Id = 11, UnitNameEn = "Drum" },
+                new Unit { Id = 12, UnitNameEn = "Bottle" },
+                new Unit { Id = 13, UnitNameEn = "Tin" },
+                new Unit { Id = 14, UnitNameEn = "Sack" },
+                new Unit { Id = 15, UnitNameEn = "Case" },
+                new Unit { Id = 16, UnitNameEn = "Pallet" },
+                new Unit { Id = 17, UnitNameEn = "Liter" },
+                new Unit { Id = 18, UnitNameEn = "Ml" },
+                new Unit { Id = 19, UnitNameEn = "Jar" }
             );
         });
 

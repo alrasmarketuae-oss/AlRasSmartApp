@@ -60,6 +60,25 @@ public interface IAiKnowledgeIndex
         double? minScore = null);
 }
 
+public sealed record AiKnowledgeReindexResult(
+    bool Reindexed,
+    int ChunkCount,
+    string ContentHash,
+    string Reason);
+
+public interface IAiKnowledgeIndexer
+{
+    /// <summary>
+    /// Re-embeds and upserts the knowledge base only when its content hash,
+    /// embedding model, or chunk count differs from the last successful run
+    /// (unless <paramref name="force"/> is set). The persisted marker is updated
+    /// only after Qdrant confirms the upsert, so a mid-run crash re-tries safely.
+    /// </summary>
+    Task<AiKnowledgeReindexResult> ReindexAsync(
+        bool force,
+        CancellationToken cancellationToken = default);
+}
+
 public interface IAiAssistantAppService
 {
     Task<AiAssistantAnswer> AskAsync(

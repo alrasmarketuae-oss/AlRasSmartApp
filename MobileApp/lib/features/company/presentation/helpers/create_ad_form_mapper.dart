@@ -92,6 +92,28 @@ class CreateAdFormMapper {
         return 'Bag';
       case 'dozen':
         return 'Dozen';
+      case 'packet':
+        return 'Packet';
+      case 'bundle':
+        return 'Bundle';
+      case 'drum':
+        return 'Drum';
+      case 'bottle':
+        return 'Bottle';
+      case 'tin':
+        return 'Tin';
+      case 'sack':
+        return 'Sack';
+      case 'case':
+        return 'Case';
+      case 'pallet':
+        return 'Pallet';
+      case 'liter':
+        return 'Liter';
+      case 'ml':
+        return 'Ml';
+      case 'jar':
+        return 'Jar';
       default:
         return unit.trim();
     }
@@ -278,6 +300,8 @@ class CreateAdFormMapper {
     required TextEditingController quantityController,
     required TextEditingController specificationsController,
     required TextEditingController packingKgController,
+    TextEditingController? otherPackingController,
+    bool isOtherPacking = false,
     required TextEditingController beforeDiscountController,
     required TextEditingController afterDiscountController,
     required TextEditingController priceController,
@@ -287,6 +311,8 @@ class CreateAdFormMapper {
     TextEditingController? retailQuantityController,
     TextEditingController? retailSpecificationsController,
     TextEditingController? retailPackingKgController,
+    TextEditingController? retailOtherPackingController,
+    bool isRetailOtherPacking = false,
     File? productVideoFile,
     int? videoDurationSeconds,
     bool isEditMode = false,
@@ -375,6 +401,7 @@ class CreateAdFormMapper {
     String? retailUnitName;
     int? retailQuantity;
     int? retailPackaging;
+    String? retailPackagingDetails;
     String? retailDescriptionEn;
     if (isCategories) {
       if (enableRetail) {
@@ -387,9 +414,14 @@ class CreateAdFormMapper {
             ? (isEditMode ? null : 0)
             : ThousandsNumberInput.parseInt(retailQtyText);
         retailUnitName = mapUnitName(state.selectedRetailUnit);
-        retailPackaging = CreateAdPackingOptions.parseInput(
-          retailPackingKgController?.text ?? '',
-        );
+        final retailOtherText = retailOtherPackingController?.text.trim() ?? '';
+        final useRetailOther = isRetailOtherPacking && retailOtherText.isNotEmpty;
+        retailPackaging = useRetailOther
+            ? null
+            : CreateAdPackingOptions.parseInput(
+                retailPackingKgController?.text ?? '',
+              );
+        retailPackagingDetails = useRetailOther ? retailOtherText : null;
         final retailSpecs =
             retailSpecificationsController?.text.trim() ?? '';
         retailDescriptionEn = retailSpecs.isEmpty
@@ -462,8 +494,14 @@ class CreateAdFormMapper {
       }(),
       offerDuration: offerDurationDaysText,
       shippingDescriptionEn: null,
-      packaging: CreateAdPackingOptions.parseInput(packingKgController.text),
-      packagingDetails: null,
+      packaging: (isOtherPacking &&
+              (otherPackingController?.text.trim().isNotEmpty ?? false))
+          ? null
+          : CreateAdPackingOptions.parseInput(packingKgController.text),
+      packagingDetails: (isOtherPacking &&
+              (otherPackingController?.text.trim().isNotEmpty ?? false))
+          ? otherPackingController!.text.trim()
+          : null,
       requestTypeName: resolveRequestTypeName(state),
       bookingPriceTypeName: resolveBookingPriceTypeName(state),
       address: state.address?.trim().isEmpty ?? true ? null : state.address?.trim(),
@@ -484,7 +522,8 @@ class CreateAdFormMapper {
       retailQuantity: isCategories ? (enableRetail ? retailQuantity : null) : null,
       retailPackaging:
           isCategories ? (enableRetail ? retailPackaging : null) : null,
-      retailPackagingDetails: null,
+      retailPackagingDetails:
+          isCategories ? (enableRetail ? retailPackagingDetails : null) : null,
       retailDescriptionEn:
           isCategories ? (enableRetail ? retailDescriptionEn : null) : null,
     );

@@ -778,67 +778,94 @@ class _PriceWithTypeRow extends StatelessWidget {
       matchCurrencyToAmount: true,
     );
 
-    return Row(
-      children: [
+    final routeText = showBookingRoute
+        ? [
+            product.shipping.routeFromCountry.trim(),
+            product.shipping.routeToCountry.trim(),
+          ].where((part) => part.isNotEmpty).join(' → ')
+        : '';
+
+    // Price sits on its own full-width line so it never truncates; the price
+    // type / route / discount wrap onto a second line below it.
+    final priceLine = Align(
+      alignment: amountAlignEnd
+          ? AlignmentDirectional.centerEnd
+          : AlignmentDirectional.centerStart,
+      child: price,
+    );
+
+    final metaChildren = <Widget>[
+      if (priceType.isNotEmpty)
         Flexible(
-          child: amountAlignEnd
-              ? Align(
-                  alignment: AlignmentDirectional.centerEnd,
-                  child: price,
-                )
-              : price,
-        ),
-        if (priceType.isNotEmpty) ...[
-          SizedBox(width: 6.w),
-          Flexible(
-            child: Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: compact ? 6.w : 8.w,
-                vertical: compact ? 2.h : 3.h,
-              ),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8F4FD),
-                borderRadius: BorderRadius.circular(6.r),
-                border: Border.all(color: const Color(0xFF3A7DC5), width: 1),
-              ),
-              child: Text(
-                priceType,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontFamily: fontFamily,
-                  fontSize: compact ? 10.sp : 12.sp,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1E6BB8),
-                ),
-              ),
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: compact ? 6.w : 8.w,
+              vertical: compact ? 2.h : 3.h,
             ),
-          ),
-        ],
-        if (showBookingRoute) ...[
-          SizedBox(width: 4.w),
-          Flexible(
+            decoration: BoxDecoration(
+              color: const Color(0xFFE8F4FD),
+              borderRadius: BorderRadius.circular(6.r),
+              border: Border.all(color: const Color(0xFF3A7DC5), width: 1),
+            ),
             child: Text(
-              '${product.shipping.routeFromCountry} → ${product.shipping.routeToCountry}',
+              priceType,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontFamily: fontFamily,
-                fontSize: bodySize,
-                color: const Color(0xFF333333),
+                fontSize: compact ? 10.sp : 12.sp,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF1E6BB8),
               ),
             ),
           ),
-        ],
-        if (showDiscount) ...[
-          SizedBox(width: 4.w),
-          DiscountBadge(
-            discountPercentage: product.discountPercentage.trim().isNotEmpty
-                ? product.discountPercentage.trim()
-                : product.discountPercentValue.toString(),
-            compact: compact,
+        ),
+      if (showBookingRoute && routeText.isNotEmpty)
+        Flexible(
+          child: Text(
+            routeText,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: fontFamily,
+              fontSize: bodySize,
+              color: const Color(0xFF333333),
+            ),
           ),
+        ),
+      if (showDiscount)
+        DiscountBadge(
+          discountPercentage: product.discountPercentage.trim().isNotEmpty
+              ? product.discountPercentage.trim()
+              : product.discountPercentValue.toString(),
+          compact: compact,
+        ),
+    ];
+
+    if (metaChildren.isEmpty) {
+      return priceLine;
+    }
+
+    final metaLine = Row(
+      mainAxisAlignment: amountAlignEnd
+          ? MainAxisAlignment.end
+          : MainAxisAlignment.start,
+      children: [
+        for (var i = 0; i < metaChildren.length; i++) ...[
+          if (i > 0) SizedBox(width: 6.w),
+          metaChildren[i],
         ],
+      ],
+    );
+
+    return Column(
+      crossAxisAlignment:
+          amountAlignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        priceLine,
+        SizedBox(height: 6.h),
+        metaLine,
       ],
     );
   }

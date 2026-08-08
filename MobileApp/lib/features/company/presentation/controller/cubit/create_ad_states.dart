@@ -14,6 +14,8 @@ class CreateAdFormState extends Equatable {
     this.selectedUnit = 'Ton',
     this.selectedRetailUnit = 'Kg',
     this.enableRetailPricing = false,
+    this.otherPacking = false,
+    this.retailOtherPacking = false,
     this.selectedCurrency = CreateAdCurrency.aed,
     this.negotiationType = NegotiationType.negotiable,
     this.requestFulfillmentType,
@@ -55,6 +57,11 @@ class CreateAdFormState extends Equatable {
   final String selectedUnit;
   final String selectedRetailUnit;
   final bool enableRetailPricing;
+
+  /// When true, the numeric kg packing field is replaced by a free-text field
+  /// (e.g. "1.5 litre") stored in packagingDetails.
+  final bool otherPacking;
+  final bool retailOtherPacking;
   final String selectedCurrency;
   final NegotiationType negotiationType;
   final RequestFulfillmentType? requestFulfillmentType;
@@ -99,6 +106,8 @@ class CreateAdFormState extends Equatable {
     String? selectedUnit,
     String? selectedRetailUnit,
     bool? enableRetailPricing,
+    bool? otherPacking,
+    bool? retailOtherPacking,
     String? selectedCurrency,
     NegotiationType? negotiationType,
     RequestFulfillmentType? requestFulfillmentType,
@@ -161,6 +170,8 @@ class CreateAdFormState extends Equatable {
       selectedUnit: selectedUnit ?? this.selectedUnit,
       selectedRetailUnit: selectedRetailUnit ?? this.selectedRetailUnit,
       enableRetailPricing: enableRetailPricing ?? this.enableRetailPricing,
+      otherPacking: otherPacking ?? this.otherPacking,
+      retailOtherPacking: retailOtherPacking ?? this.retailOtherPacking,
       selectedCurrency: selectedCurrency ?? this.selectedCurrency,
       negotiationType: negotiationType ?? this.negotiationType,
       requestFulfillmentType: clearRequestFulfillmentType
@@ -228,6 +239,8 @@ class CreateAdFormState extends Equatable {
         selectedUnit,
         selectedRetailUnit,
         enableRetailPricing,
+        otherPacking,
+        retailOtherPacking,
         selectedCurrency,
         negotiationType,
         requestFulfillmentType,

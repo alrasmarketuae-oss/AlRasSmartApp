@@ -92,6 +92,8 @@ class RequestDetailsMapper {
   }
 
   static String packagingText(MyListingProductModel product) {
+    final details = product.packagingDetails.trim();
+    if (details.isNotEmpty) return details;
     return CreateAdPackingOptions.displayText(product.packaging);
   }
 
@@ -101,6 +103,10 @@ class RequestDetailsMapper {
     required bool isAr,
     int? packagingOverride,
   }) {
+    // Free-text packing (e.g. "1.5 litre") is stored in packagingDetails and
+    // takes precedence over the numeric kg value for the wholesale channel.
+    final details = product.packagingDetails.trim();
+    if (packagingOverride == null && details.isNotEmpty) return details;
     return CreateAdPackingOptions.displayText(
       packagingOverride ?? product.packaging,
       s: s,

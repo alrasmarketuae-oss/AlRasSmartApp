@@ -355,8 +355,8 @@ class _ProductCardMarketplaceLayoutState
           style: TextStyle(
             fontFamily: fontFamily,
             fontSize: detailsFontSize,
-            fontWeight: FontWeight.w400,
-            color: const Color.fromRGBO(107, 114, 128, 1),
+            fontWeight: FontWeight.w600,
+            color: const Color.fromRGBO(220, 38, 38, 1),
             height: 1.2,
           ),
         ),
