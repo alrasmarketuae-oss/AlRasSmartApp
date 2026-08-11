@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import AdsTable from '../components/ads/AdsTable'
 import OrdersTable from '../components/orders/OrdersTable'
+import PageHeader from '../components/layout/PageHeader'
+import { IconAds, IconOrders } from '../components/icons'
 import ReqsOffersStatsCards from '../components/reqsOffers/ReqsOffersStatsCards'
 import ReqsOffersToolbar from '../components/reqsOffers/ReqsOffersToolbar'
 import { PRODUCT_TYPE_REQUESTS } from '../constants/productTypes'
@@ -295,9 +297,16 @@ export default function ReqsOffersPage() {
 
   const rangeFrom = activeTotalCount === 0 ? 0 : (activePage - 1) * pageSize + 1
   const rangeTo = Math.min(activePage * pageSize, activeTotalCount)
+  const fromOrders = searchParams.get('nav') === 'orders'
 
   return (
     <div className="space-y-5">
+      <PageHeader
+        eyebrow={fromOrders ? t('nav.orders') : t('nav.ads')}
+        title={fromOrders ? t('nav.orderRequest') : t('nav.adRequest')}
+        description={t('reqsOffers.description')}
+        icon={fromOrders ? IconOrders : IconAds}
+      />
       <ReqsOffersToolbar
         activeTab={activeTab}
         onTabChange={selectTab}

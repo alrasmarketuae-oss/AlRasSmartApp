@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import { useAdminNotifications } from '../../context/AdminNotificationProvider'
@@ -7,11 +8,13 @@ import { hasPermission, isSuperAdmin, PERMISSIONS, type PermissionKey } from '..
 import { PROJECT_IMAGES } from '../../constants/projectImages'
 import { isSidebarNavActive } from '../../utils/navActive'
 import NavBadge from './NavBadge'
+import type { AdminNavCounts } from '../../types/adminRealtime'
 import {
   IconAds,
   IconCategories,
   IconBanner,
   IconChat,
+  IconChevronDown,
   IconClose,
   IconGrid,
   IconOrders,
@@ -23,110 +26,114 @@ import {
   IconLogout,
 } from '../icons'
 
-type NavTone =
-  | 'ads'
-  | 'retail'
-  | 'booking'
-  | 'offers'
-  | 'categoriesOrders'
-  | 'request'
+type CountKey = keyof AdminNavCounts
+type BadgeTone = 'red' | 'green' | 'blue' | 'yellow' | 'amber' | 'sky' | 'slate'
 
-/**
- * Sidebar channel colors match pending-row blink peaks:
- * - Offers → green (row-attention-offer)
- * - Requests → red (row-attention-request)
- * - Other ads (Retail / Booking / Categories / Ads) → blue (row-attention-ad)
- * - Order queues without a dedicated ad wink → yellow (row-attention-order)
- */
-const navToneClasses: Record<
-  NavTone,
-  { idle: string; active: string; iconIdle: string; pulse: string }
-> = {
-  ads: {
-    idle: 'bg-blue-100 text-blue-900 hover:bg-blue-200/90 dark:bg-blue-950/55 dark:text-blue-100 dark:hover:bg-blue-900/70',
-    active: 'keep-white bg-blue-600 text-white shadow-md shadow-blue-600/25',
-    iconIdle: 'text-blue-700 dark:text-blue-300',
-    pulse: 'nav-attention-ad',
-  },
-  retail: {
-    idle: 'bg-blue-100 text-blue-900 hover:bg-blue-200/90 dark:bg-blue-950/55 dark:text-blue-100 dark:hover:bg-blue-900/70',
-    active: 'keep-white bg-blue-600 text-white shadow-md shadow-blue-600/25',
-    iconIdle: 'text-blue-700 dark:text-blue-300',
-    pulse: 'nav-attention-ad',
-  },
-  booking: {
-    idle: 'bg-blue-100 text-blue-900 hover:bg-blue-200/90 dark:bg-blue-950/55 dark:text-blue-100 dark:hover:bg-blue-900/70',
-    active: 'keep-white bg-blue-600 text-white shadow-md shadow-blue-600/25',
-    iconIdle: 'text-blue-700 dark:text-blue-300',
-    pulse: 'nav-attention-ad',
-  },
-  offers: {
-    idle: 'bg-green-100 text-green-900 hover:bg-green-200/90 dark:bg-green-950/55 dark:text-green-100 dark:hover:bg-green-900/70',
-    active: 'keep-white bg-green-600 text-white shadow-md shadow-green-600/25',
-    iconIdle: 'text-green-700 dark:text-green-300',
-    pulse: 'nav-attention-offer',
-  },
-  categoriesOrders: {
-    idle: 'bg-blue-100 text-blue-900 hover:bg-blue-200/90 dark:bg-blue-950/55 dark:text-blue-100 dark:hover:bg-blue-900/70',
-    active: 'keep-white bg-blue-600 text-white shadow-md shadow-blue-600/25',
-    iconIdle: 'text-blue-700 dark:text-blue-300',
-    pulse: 'nav-attention-ad',
-  },
-  request: {
-    idle: 'bg-red-100 text-red-900 hover:bg-red-200/90 dark:bg-red-950/55 dark:text-red-100 dark:hover:bg-red-900/70',
-    active: 'keep-white bg-red-600 text-white shadow-md shadow-red-600/25',
-    iconIdle: 'text-red-700 dark:text-red-300',
-    pulse: 'nav-attention-request',
-  },
-}
-
-const navItems: Array<{
+type NavItem = {
   to: string
   labelKey: string
   icon: typeof IconGrid
-  countKey?:
-    | 'users'
-    | 'profileEdits'
-    | 'ads'
-    | 'adEdits'
-    | 'retailOrders'
-    | 'bookingOrders'
-    | 'offersOrders'
-    | 'categoriesOrders'
-    | 'offers'
-    | 'shipping'
-    | 'chat'
-  badgeTone?: 'red' | 'green' | 'blue' | 'yellow' | 'amber' | 'sky'
-  navTone?: NavTone
+  countKey?: CountKey
+  badgeTone?: BadgeTone
   permission?: PermissionKey
+  anyOf?: PermissionKey[]
   superAdminOnly?: boolean
-}> = [
-  { to: '/', labelKey: 'nav.dashboard', icon: IconGrid, permission: PERMISSIONS.dashboardView },
-  { to: '/users', labelKey: 'nav.users', icon: IconUsers, countKey: 'users', badgeTone: 'amber', permission: PERMISSIONS.usersView },
-  { to: '/ads', labelKey: 'nav.ads', icon: IconAds, countKey: 'ads', badgeTone: 'blue', navTone: 'ads', permission: PERMISSIONS.productsView },
-  { to: '/orders/retail', labelKey: 'nav.ordersRetail', icon: IconOrders, countKey: 'retailOrders', badgeTone: 'blue', navTone: 'retail', permission: PERMISSIONS.ordersView },
-  { to: '/orders/booking', labelKey: 'nav.ordersBooking', icon: IconOrders, countKey: 'bookingOrders', badgeTone: 'blue', navTone: 'booking', permission: PERMISSIONS.ordersView },
-  { to: '/orders/offers', labelKey: 'nav.ordersOffersType', icon: IconOrders, countKey: 'offersOrders', badgeTone: 'green', navTone: 'offers', permission: PERMISSIONS.ordersView },
-  { to: '/orders/categories', labelKey: 'nav.ordersCategories', icon: IconOrders, countKey: 'categoriesOrders', badgeTone: 'blue', navTone: 'categoriesOrders', permission: PERMISSIONS.ordersView },
-  { to: '/reqs-offers', labelKey: 'nav.reqsOffers', icon: IconOrders, countKey: 'offers', badgeTone: 'red', navTone: 'request', permission: PERMISSIONS.ordersReqsOffers },
-  { to: '/categories', labelKey: 'nav.categories', icon: IconCategories, permission: PERMISSIONS.categoriesManage },
-  { to: '/banners', labelKey: 'nav.banners', icon: IconBanner, permission: PERMISSIONS.bannersManage },
-  { to: '/shipping', labelKey: 'nav.shipping', icon: IconShipping, countKey: 'shipping', badgeTone: 'sky', permission: PERMISSIONS.shippingView },
-  { to: '/chat', labelKey: 'nav.chat', icon: IconChat, countKey: 'chat', badgeTone: 'red', permission: PERMISSIONS.chatAccess },
-  { to: '/notifications', labelKey: 'nav.notifications', icon: IconBell, permission: PERMISSIONS.notificationsView },
-  { to: '/finance', labelKey: 'Finance', icon: IconWallet, permission: PERMISSIONS.financeView },
-  { to: '/missed-searches', labelKey: 'nav.missedSearches', icon: IconAds, permission: PERMISSIONS.searchAccess },
-  { to: '/audit-logs', labelKey: 'nav.auditLogs', icon: IconOrders, permission: PERMISSIONS.auditView },
-  { to: '/employees', labelKey: 'nav.employees', icon: IconUsers, superAdminOnly: true },
-  { to: '/settings', labelKey: 'nav.settings', icon: IconSettings, permission: PERMISSIONS.settingsView },
-  // Keep company/ad edit queues at the very end of the sidebar.
-  { to: '/users?profileEdits=1', labelKey: 'nav.profileEdits', icon: IconUsers, countKey: 'profileEdits', badgeTone: 'amber', permission: PERMISSIONS.usersProfileEdits },
-  { to: '/ads?adEdits=1', labelKey: 'nav.adEdits', icon: IconAds, countKey: 'adEdits', badgeTone: 'blue', permission: PERMISSIONS.productsAdEdits },
+}
+
+type NavGroup = {
+  id: 'ads' | 'orders'
+  labelKey: string
+  icon: typeof IconGrid
+  badgeTone: BadgeTone
+  countKeys: CountKey[]
+  anyOf: PermissionKey[]
+  children: NavItem[]
+}
+
+type NavEntry =
+  | { kind: 'item'; item: NavItem }
+  | { kind: 'group'; group: NavGroup }
+
+const navEntries: NavEntry[] = [
+  { kind: 'item', item: { to: '/', labelKey: 'nav.dashboard', icon: IconGrid, permission: PERMISSIONS.dashboardView } },
+  { kind: 'item', item: { to: '/users', labelKey: 'nav.users', icon: IconUsers, countKey: 'users', badgeTone: 'amber', permission: PERMISSIONS.usersView } },
+  {
+    kind: 'group',
+    group: {
+      id: 'ads',
+      labelKey: 'nav.ads',
+      icon: IconAds,
+      badgeTone: 'slate',
+      countKeys: ['ads', 'requestAds'],
+      anyOf: [PERMISSIONS.productsView, PERMISSIONS.ordersReqsOffers],
+      children: [
+        { to: '/ads', labelKey: 'nav.adAll', icon: IconAds, permission: PERMISSIONS.productsView },
+        { to: '/ads?productTypeId=1', labelKey: 'nav.adRetail', icon: IconAds, permission: PERMISSIONS.productsView },
+        { to: '/ads?productTypeId=2', labelKey: 'nav.adBooking', icon: IconAds, permission: PERMISSIONS.productsView },
+        { to: '/ads?productTypeId=3', labelKey: 'nav.adOffers', icon: IconAds, permission: PERMISSIONS.productsView },
+        { to: '/ads?channel=categories', labelKey: 'nav.adCategories', icon: IconAds, permission: PERMISSIONS.productsView },
+        { to: '/reqs-offers', labelKey: 'nav.adRequest', icon: IconAds, countKey: 'requestAds', badgeTone: 'slate', permission: PERMISSIONS.ordersReqsOffers },
+      ],
+    },
+  },
+  {
+    kind: 'group',
+    group: {
+      id: 'orders',
+      labelKey: 'nav.orders',
+      icon: IconOrders,
+      badgeTone: 'slate',
+      countKeys: ['retailOrders', 'bookingOrders', 'offersOrders', 'categoriesOrders', 'offers'],
+      anyOf: [PERMISSIONS.ordersView, PERMISSIONS.ordersReqsOffers],
+      children: [
+        { to: '/orders/all', labelKey: 'nav.orderAll', icon: IconOrders, permission: PERMISSIONS.ordersView },
+        { to: '/orders/retail', labelKey: 'nav.orderRetail', icon: IconOrders, countKey: 'retailOrders', badgeTone: 'slate', permission: PERMISSIONS.ordersView },
+        { to: '/orders/booking', labelKey: 'nav.orderBooking', icon: IconOrders, countKey: 'bookingOrders', badgeTone: 'slate', permission: PERMISSIONS.ordersView },
+        { to: '/orders/offers', labelKey: 'nav.orderOffers', icon: IconOrders, countKey: 'offersOrders', badgeTone: 'slate', permission: PERMISSIONS.ordersView },
+        { to: '/orders/categories', labelKey: 'nav.orderCategories', icon: IconOrders, countKey: 'categoriesOrders', badgeTone: 'slate', permission: PERMISSIONS.ordersView },
+        { to: '/reqs-offers?nav=orders', labelKey: 'nav.orderRequest', icon: IconOrders, countKey: 'offers', badgeTone: 'slate', permission: PERMISSIONS.ordersReqsOffers },
+      ],
+    },
+  },
+  { kind: 'item', item: { to: '/categories', labelKey: 'nav.categories', icon: IconCategories, permission: PERMISSIONS.categoriesManage } },
+  { kind: 'item', item: { to: '/banners', labelKey: 'nav.banners', icon: IconBanner, permission: PERMISSIONS.bannersManage } },
+  { kind: 'item', item: { to: '/shipping', labelKey: 'nav.shipping', icon: IconShipping, countKey: 'shipping', badgeTone: 'sky', permission: PERMISSIONS.shippingView } },
+  { kind: 'item', item: { to: '/chat', labelKey: 'nav.chat', icon: IconChat, countKey: 'chat', badgeTone: 'red', permission: PERMISSIONS.chatAccess } },
+  { kind: 'item', item: { to: '/notifications', labelKey: 'nav.notifications', icon: IconBell, permission: PERMISSIONS.notificationsView } },
+  { kind: 'item', item: { to: '/finance', labelKey: 'Finance', icon: IconWallet, permission: PERMISSIONS.financeView } },
+  { kind: 'item', item: { to: '/missed-searches', labelKey: 'nav.missedSearches', icon: IconAds, permission: PERMISSIONS.searchAccess } },
+  { kind: 'item', item: { to: '/audit-logs', labelKey: 'nav.auditLogs', icon: IconOrders, permission: PERMISSIONS.auditView } },
+  { kind: 'item', item: { to: '/employees', labelKey: 'nav.employees', icon: IconUsers, superAdminOnly: true } },
+  { kind: 'item', item: { to: '/settings', labelKey: 'nav.settings', icon: IconSettings, permission: PERMISSIONS.settingsView } },
+  { kind: 'item', item: { to: '/users?profileEdits=1', labelKey: 'nav.profileEdits', icon: IconUsers, countKey: 'profileEdits', badgeTone: 'amber', permission: PERMISSIONS.usersProfileEdits } },
+  { kind: 'item', item: { to: '/ads?adEdits=1', labelKey: 'nav.adEdits', icon: IconAds, countKey: 'adEdits', badgeTone: 'blue', permission: PERMISSIONS.productsAdEdits } },
 ]
+
+function canSeeItem(item: NavItem, roleName: string | undefined): boolean {
+  if (item.superAdminOnly) return isSuperAdmin(roleName)
+  if (item.anyOf?.length) return item.anyOf.some((key) => hasPermission(key))
+  if (!item.permission) return true
+  return hasPermission(item.permission)
+}
+
+function sumCounts(counts: AdminNavCounts, keys: CountKey[]): number {
+  return keys.reduce((total, key) => total + (counts[key] ?? 0), 0)
+}
 
 type SidebarProps = {
   open: boolean
   onClose: () => void
+}
+
+function navLinkClass(active: boolean, nested = false) {
+  const linkClass = active
+    ? 'keep-white bg-[#1d4ed8] text-white shadow-md shadow-blue-600/20'
+    : 'admin-text hover:bg-slate-50 dark:hover:bg-slate-800'
+  const iconClass = active ? 'keep-white text-white' : 'admin-text-muted'
+  const sizeClass = nested
+    ? 'gap-2 rounded-lg px-3 py-2 text-[13px] sm:py-2.5'
+    : 'gap-3 rounded-xl px-4 py-3 text-[15px] sm:py-3.5'
+  return { linkClass, iconClass, sizeClass }
 }
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
@@ -135,15 +142,57 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   const { navCounts } = useAdminNotifications()
   const logout = useLogout()
   const authUser = getAuthUser()
-  const visibleNavItems = navItems.filter((item) => {
-    if (item.superAdminOnly) return isSuperAdmin(authUser?.roleName)
-    if (!item.permission) return true
-    return hasPermission(item.permission)
-  })
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
+
+  const visibleEntries = navEntries
+    .map((entry) => {
+      if (entry.kind === 'item') {
+        return canSeeItem(entry.item, authUser?.roleName) ? entry : null
+      }
+      const children = entry.group.children.filter((child) =>
+        canSeeItem(child, authUser?.roleName),
+      )
+      if (children.length === 0) return null
+      if (!entry.group.anyOf.some((key) => hasPermission(key))) return null
+      return { kind: 'group' as const, group: { ...entry.group, children } }
+    })
+    .filter((entry): entry is NavEntry => entry != null)
+
   const slideOff =
     dir === 'rtl'
       ? 'translate-x-full lg:translate-x-0'
       : '-translate-x-full lg:translate-x-0'
+
+  function renderNavItem(item: NavItem, nested = false) {
+    const active = isSidebarNavActive(
+      item.to,
+      location.pathname,
+      location.search,
+      location.state,
+    )
+    const { linkClass, iconClass, sizeClass } = navLinkClass(active, nested)
+    const Icon = item.icon
+    return (
+      <NavLink
+        key={item.to}
+        to={item.to}
+        end={item.to === '/'}
+        onClick={onClose}
+        aria-current={active ? 'page' : undefined}
+        className={() =>
+          `flex w-full items-center font-semibold transition-colors ${sizeClass} ${linkClass}`
+        }
+      >
+        <Icon className={`${nested ? 'h-4 w-4' : 'h-[22px] w-[22px]'} shrink-0 ${iconClass}`} />
+        <span className="flex-1 text-start leading-snug">
+          {item.labelKey.startsWith('nav.') ? t(item.labelKey) : item.labelKey}
+        </span>
+        {item.countKey ? (
+          <NavBadge count={navCounts[item.countKey]} active={active} tone={item.badgeTone} />
+        ) : null}
+      </NavLink>
+    )
+  }
 
   return (
     <aside
@@ -171,42 +220,59 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       </div>
 
       <nav className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-3 py-4 sm:px-4 sm:py-5">
-        {visibleNavItems.map(({ to, labelKey, icon: Icon, countKey, badgeTone, navTone }) => {
-          const active = isSidebarNavActive(
-            to,
-            location.pathname,
-            location.search,
-            location.state,
+        {visibleEntries.map((entry) => {
+          if (entry.kind === 'item') {
+            return renderNavItem(entry.item)
+          }
+
+          const { group } = entry
+          const childActive = group.children.some((child) =>
+            isSidebarNavActive(
+              child.to,
+              location.pathname,
+              location.search,
+              location.state,
+            ),
           )
-          const tone = navTone ? navToneClasses[navTone] : null
-          const pendingCount = countKey ? navCounts[countKey] : 0
-          const shouldPulse = Boolean(tone && !active && pendingCount > 0)
-          const linkClass = active
-            ? tone?.active ??
-              'keep-white bg-[#1d4ed8] text-white shadow-md shadow-blue-600/20'
-            : shouldPulse
-              ? `${tone?.pulse ?? ''} ${tone?.idle ?? ''}`.trim()
-              : tone?.idle ?? 'admin-text hover:bg-slate-50 dark:hover:bg-slate-800'
-          const iconClass = active
-            ? 'keep-white text-white'
-            : tone?.iconIdle ?? 'admin-text-muted'
+          // Orders stays collapsed until the user opens it. Ads still auto-opens
+          // when one of its children is the current page.
+          const expanded =
+            group.id === 'orders'
+              ? openGroups[group.id] === true
+              : childActive || openGroups[group.id] === true
+          const pendingCount = sumCounts(navCounts, group.countKeys)
+          const { linkClass, iconClass, sizeClass } = navLinkClass(childActive)
+          const Icon = group.icon
+
           return (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === '/'}
-              onClick={onClose}
-              aria-current={active ? 'page' : undefined}
-              className={() =>
-                `flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[15px] font-semibold transition-colors sm:py-3.5 ${linkClass}`
-              }
-            >
-              <Icon className={`h-[22px] w-[22px] shrink-0 ${iconClass}`} />
-              <span className="flex-1 text-start leading-none">{labelKey.startsWith('nav.') ? t(labelKey) : labelKey}</span>
-              {countKey ? (
-                <NavBadge count={navCounts[countKey]} active={active} tone={badgeTone} />
+            <div key={group.id} className="flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  if (group.id !== 'orders' && childActive) return
+                  setOpenGroups((current) => ({
+                    ...current,
+                    [group.id]: current[group.id] !== true,
+                  }))
+                }}
+                aria-expanded={expanded}
+                className={`flex w-full items-center font-semibold transition-colors ${sizeClass} ${linkClass}`}
+              >
+                <Icon className={`h-[22px] w-[22px] shrink-0 ${iconClass}`} />
+                <span className="flex-1 text-start leading-none">{t(group.labelKey)}</span>
+                <NavBadge count={pendingCount} active={childActive} tone={group.badgeTone} />
+                <IconChevronDown
+                  className={`h-4 w-4 shrink-0 transition-transform ${iconClass} ${
+                    expanded ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+              {expanded ? (
+                <div className="ms-3 flex flex-col gap-1 border-s border-slate-200 ps-2 dark:border-slate-700">
+                  {group.children.map((child) => renderNavItem(child, true))}
+                </div>
               ) : null}
-            </NavLink>
+            </div>
           )
         })}
       </nav>

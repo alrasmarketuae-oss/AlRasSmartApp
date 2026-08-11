@@ -126,6 +126,20 @@ export function orderNeedsAttention(order: {
 }
 
 /**
+ * True when the order row represents a supplier offer submitted on a buyer
+ * request (as opposed to a normal retail/wholesale/booking order).
+ */
+export function isRequestOfferOrder(order: { productTypeName?: string }): boolean {
+  const type = (order.productTypeName ?? '').trim().toLowerCase()
+  return (
+    type.includes('request') ||
+    type.includes('offer') ||
+    type.includes('طلب') ||
+    type.includes('عرض')
+  )
+}
+
+/**
  * Approval-stage blink cue for order rows:
  * - 'pending'  → still awaiting the app admin's approval OR the seller's approval (yellow).
  * - 'approved' → the seller has approved the order (green).

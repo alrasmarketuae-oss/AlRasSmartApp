@@ -44,6 +44,7 @@ export type AdminNavCounts = {
   offersOrders: number
   categoriesOrders: number
   offers: number
+  requestAds: number
   shipping: number
   chat: number
 }

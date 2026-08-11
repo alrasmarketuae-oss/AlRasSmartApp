@@ -1,4 +1,4 @@
-type NavBadgeTone = 'red' | 'green' | 'blue' | 'yellow' | 'amber' | 'sky'
+type NavBadgeTone = 'red' | 'green' | 'blue' | 'yellow' | 'amber' | 'sky' | 'slate'
 
 type NavBadgeProps = {
   count: number
@@ -13,6 +13,7 @@ const toneClass: Record<NavBadgeTone, string> = {
   yellow: 'bg-yellow-300 text-yellow-900',
   amber: 'bg-amber-300 text-amber-900',
   sky: 'bg-sky-300 text-sky-900',
+  slate: 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-100',
 }
 
 export default function NavBadge({ count, active = false, tone = 'red' }: NavBadgeProps) {

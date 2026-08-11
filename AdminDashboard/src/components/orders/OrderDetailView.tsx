@@ -361,7 +361,7 @@ export default function OrderDetailView({
   isUpdating,
   onStatusChange,
   backToListPath = '/orders/retail',
-  listTitleKey = 'nav.ordersRetail',
+  listTitleKey = 'nav.orderRetail',
 }: OrderDetailViewProps) {
   const { t, locale } = useAppPreferences()
   const [activeTab, setActiveTab] = useState<TabKey>('overview')

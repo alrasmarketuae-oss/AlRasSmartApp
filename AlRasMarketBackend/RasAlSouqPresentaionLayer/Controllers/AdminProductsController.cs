@@ -56,6 +56,7 @@ public class AdminProductsController(
         [FromQuery] bool? editResubmitOnly = null,
         [FromQuery] string? ownerId = null,
         [FromQuery] string? lang = null,
+        [FromQuery] bool? hasCategory = null,
         CancellationToken cancellationToken = default)
     {
         var result = await adminProductsAppService.GetProductsAsync(
@@ -73,6 +74,7 @@ public class AdminProductsController(
             editResubmitOnly,
             ownerId,
             lang,
+            hasCategory,
             cancellationToken);
         return Ok(result);
     }
@@ -136,7 +138,12 @@ public class AdminProductsController(
         [FromQuery] int pageSize = 20,
         [FromQuery] string? search = null,
         CancellationToken cancellationToken = default) =>
-        GetProducts(page, pageSize, search, "pending", null, null, null, null, null, null, null, null, null, null, cancellationToken);
+        GetProducts(
+            page,
+            pageSize,
+            search,
+            approval: "pending",
+            cancellationToken: cancellationToken);
 
     [HttpPost("{productId}/approve")]
     public async Task<IActionResult> Approve(

@@ -104,8 +104,10 @@ export function AdminNotificationProvider({ children }: { children: ReactNode })
       bookingOrders: liveCounts.pendingBookingOrders,
       offersOrders: liveCounts.pendingOffersOrders,
       categoriesOrders: liveCounts.pendingCategoriesOrders,
-      // Supplier offers on Request ads + new Request ads (طلب).
-      offers: liveCounts.pendingOffers + liveCounts.pendingRequestOfferAds,
+      // Supplier offers on Request ads (Orders → Request).
+      offers: liveCounts.pendingOffers,
+      // New Request ads awaiting approval (Ads → Request).
+      requestAds: liveCounts.pendingRequestOfferAds,
       shipping: liveCounts.pendingShippingAds,
       chat: totalUnread,
     }),
@@ -122,6 +124,7 @@ export function AdminNotificationProvider({ children }: { children: ReactNode })
     navCounts.offersOrders +
     navCounts.categoriesOrders +
     navCounts.offers +
+    navCounts.requestAds +
     navCounts.shipping +
     navCounts.chat
 

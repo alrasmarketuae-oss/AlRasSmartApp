@@ -107,6 +107,7 @@ public class AdminProductsAppService(
         bool? editResubmitOnly = null,
         string? ownerId = null,
         string? language = null,
+        bool? hasCategory = null,
         CancellationToken cancellationToken = default)
     {
         page = page < 1 ? 1 : page;
@@ -144,6 +145,14 @@ public class AdminProductsAppService(
         if (categoryId.HasValue)
         {
             query = query.Where(x => x.CategoryId == categoryId.Value);
+        }
+
+        if (hasCategory == true)
+        {
+            query = query.Where(x =>
+                x.CategoryId != null
+                && x.CategoryId > 0
+                && (x.ProductTypeId == null || x.ProductTypeId == ProductTypeCodes.Retail));
         }
 
         if (productTypeId.HasValue)
@@ -296,6 +305,25 @@ public class AdminProductsAppService(
             .Select(g => new { ProductId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.ProductId, x => x.Count, cancellationToken);
 
+        // Offers still "in progress": any offer-order on a request that has not yet
+        // reached a settled state (delivered/received, cancelled, paid-to-supplier,
+        // or return). These keep the request row blinking until receipt.
+        var activeOffersByProduct = await dbContext.Orders
+            .AsNoTracking()
+            .Where(o =>
+                productIds.Contains(o.ProductId)
+                && o.StatusId != OrderStatusCodes.Delivered
+                && o.StatusId != OrderStatusCodes.Received
+                && o.StatusId != OrderStatusCodes.Cancelled
+                && o.StatusId != OrderStatusCodes.PaidToSupplier
+                && o.StatusId != OrderStatusCodes.ReturnRequested
+                && o.StatusId != OrderStatusCodes.ReturnApproved
+                && o.Product != null
+                && o.Product.ProductTypeId == ProductTypeCodes.Requests)
+            .GroupBy(o => o.ProductId)
+            .Select(g => new { ProductId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.ProductId, x => x.Count, cancellationToken);
+
         var items = rawItems.Select(x =>
         {
             translations.TryGetValue(x.ProductId, out var tr);
@@ -354,6 +382,7 @@ public class AdminProductsAppService(
                 x.AddressLine2,
                 x.CityName),
             PendingOffersCount = pendingOffersByProduct.GetValueOrDefault(x.ProductId),
+            ActiveOffersCount = activeOffersByProduct.GetValueOrDefault(x.ProductId),
             HasRetailPricing = ProductTypeCodes.HasRetailPricing(
                 x.CategoryId,
                 x.ProductTypeId,

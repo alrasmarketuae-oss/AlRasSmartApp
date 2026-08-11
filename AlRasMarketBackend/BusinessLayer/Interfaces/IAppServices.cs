@@ -210,6 +210,7 @@ public interface IAdminProductsAppService
         bool? editResubmitOnly = null,
         string? ownerId = null,
         string? language = null,
+        bool? hasCategory = null,
         CancellationToken cancellationToken = default);
 
     Task<AdminProductStatsDto> GetProductStatsAsync(CancellationToken cancellationToken = default);

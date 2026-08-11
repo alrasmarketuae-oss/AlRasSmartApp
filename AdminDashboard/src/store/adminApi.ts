@@ -207,6 +207,7 @@ export const adminApi = createApi({
           categoryId: params.categoryId,
           productTypeId: params.productTypeId,
           excludeProductTypeId: params.excludeProductTypeId,
+          hasCategory: params.hasCategory === true ? true : undefined,
           status: params.status,
           createdFrom: params.createdFrom,
           createdTo: params.createdTo,

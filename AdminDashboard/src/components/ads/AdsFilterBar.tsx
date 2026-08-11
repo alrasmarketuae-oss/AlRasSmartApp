@@ -54,6 +54,7 @@ export default function AdsFilterBar({
           <option value="3">{t('ads.typeOffers')}</option>
           <option value="1">{t('ads.typeRetail')}</option>
           <option value="2">{t('ads.typeBooking')}</option>
+          <option value="categories">{t('ads.typeCategories')}</option>
           <option value="4">{t('ads.typeRequests')}</option>
         </select>
 

@@ -421,6 +421,11 @@ public class AdminProductListItemDto
     public string? ProductAddress { get; set; }
     /// <summary>Supplier offers on request ads awaiting admin review.</summary>
     public int PendingOffersCount { get; set; }
+    /// <summary>
+    /// Supplier offers on this request ad that are still in progress (not yet
+    /// delivered/received, cancelled, or returned). Drives the request-row blink.
+    /// </summary>
+    public int ActiveOffersCount { get; set; }
     public bool HasRetailPricing { get; set; }
     public decimal? RetailPrice { get; set; }
     public string? RetailUnitName { get; set; }

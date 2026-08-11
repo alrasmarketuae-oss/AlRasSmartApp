@@ -124,6 +124,14 @@ export default function AppRoutes() {
           element={<Navigate to="/orders/retail" replace />}
         />
         <Route
+          path="/orders/all"
+          element={
+            <PermissionRoute permission={PERMISSIONS.ordersView}>
+              <OrdersPage />
+            </PermissionRoute>
+          }
+        />
+        <Route
           path="/orders/retail"
           element={
             <PermissionRoute permission={PERMISSIONS.ordersView}>

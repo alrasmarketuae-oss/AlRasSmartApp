@@ -32,6 +32,8 @@ export type AdminProduct = {
   offerDuration: string
   productAddress: string | null
   pendingOffersCount?: number
+  /** Offers still in progress on a request ad (not yet received/settled). */
+  activeOffersCount?: number
   /** Optional dual retail pricing (alongside wholesale/main price). */
   hasRetailPricing?: boolean
   retailPrice?: number | null
@@ -167,6 +169,8 @@ export type AdminProductsFilters = {
   categoryId?: number
   productTypeId?: number
   excludeProductTypeId?: number
+  /** Category/wholesale listings (CategoryId set, not a request ad). */
+  hasCategory?: boolean
   status?: number
   createdFrom?: string
   createdTo?: string

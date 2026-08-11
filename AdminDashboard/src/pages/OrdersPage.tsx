@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import OrdersFilterBar from '../components/orders/OrdersFilterBar'
 import OrdersStatsCards from '../components/orders/OrdersStatsCards'
 import OrdersTable from '../components/orders/OrdersTable'
+import PageHeader from '../components/layout/PageHeader'
+import { IconOrders } from '../components/icons'
 import { useAppPreferences } from '../context/AppPreferencesProvider'
 import { useGlobalSearchParam } from '../hooks/useGlobalSearchParam'
 import { useListPageParam } from '../hooks/useListPageParam'
@@ -29,14 +31,14 @@ const defaultFilters: AppliedFilters = {
 }
 
 const channelTitleKey: Record<OrderChannel, string> = {
-  retail: 'nav.ordersRetail',
-  booking: 'nav.ordersBooking',
-  offers: 'nav.ordersOffersType',
-  categories: 'nav.ordersCategories',
+  retail: 'nav.orderRetail',
+  booking: 'nav.orderBooking',
+  offers: 'nav.orderOffers',
+  categories: 'nav.orderCategories',
 }
 
 type OrdersPageProps = {
-  channel: OrderChannel
+  channel?: OrderChannel
 }
 
 export default function OrdersPage({ channel }: OrdersPageProps) {
@@ -143,11 +145,11 @@ export default function OrdersPage({ channel }: OrdersPageProps) {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="admin-text text-2xl font-bold tracking-tight">
-          {t(channelTitleKey[channel])}
-        </h1>
-      </div>
+      <PageHeader
+        eyebrow={t('nav.orders')}
+        title={t(channel ? channelTitleKey[channel] : 'nav.orderAll')}
+        icon={IconOrders}
+      />
 
       <OrdersStatsCards stats={stats} isLoading={statsLoading} />
 

@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import AdsFilterBar from '../components/ads/AdsFilterBar'
 import AdsStatsCards from '../components/ads/AdsStatsCards'
 import AdsTable from '../components/ads/AdsTable'
+import PageHeader from '../components/layout/PageHeader'
+import { IconAds } from '../components/icons'
 import { useAppPreferences } from '../context/AppPreferencesProvider'
 import { useGlobalSearchParam } from '../hooks/useGlobalSearchParam'
 import { useListPageParam } from '../hooks/useListPageParam'
@@ -36,7 +38,10 @@ export default function AdsPage() {
   const navigate = useNavigate()
   const searchParams = new URLSearchParams(location.search)
   const adEditsOnly = searchParams.get('adEdits') === '1'
-  const productTypeFromUrl = searchParams.get('productTypeId')?.trim() ?? ''
+  const productTypeFromUrl =
+    searchParams.get('channel')?.trim() === 'categories'
+      ? 'categories'
+      : (searchParams.get('productTypeId')?.trim() ?? '')
   const { page, setPage } = useListPageParam()
   const [search, setSearch] = useState('')
   const [approval, setApproval] = useState<AppliedFilters['approval']>('all')
@@ -64,16 +69,23 @@ export default function AdsPage() {
 
   const queryParams = useMemo((): AdminProductsFilters => {
     const createdOnValue = appliedFilters.createdOn.trim()
-    const typeId = appliedFilters.productTypeId
-      ? Number(appliedFilters.productTypeId)
-      : undefined
+    const isCategoriesChannel = appliedFilters.productTypeId === 'categories'
+    const typeId =
+      !isCategoriesChannel && appliedFilters.productTypeId
+        ? Number(appliedFilters.productTypeId)
+        : undefined
     return {
       page,
       pageSize,
       search: appliedFilters.search.trim() || undefined,
       approval: adEditsOnly ? 'pending' : appliedFilters.approval,
-      excludeProductTypeId: adEditsOnly ? undefined : typeId ? undefined : 4,
+      excludeProductTypeId: adEditsOnly
+        ? undefined
+        : typeId || isCategoriesChannel
+          ? undefined
+          : 4,
       productTypeId: typeId,
+      hasCategory: isCategoriesChannel ? true : undefined,
       createdFrom: createdOnValue || undefined,
       createdTo: createdOnValue || undefined,
       editResubmitOnly: adEditsOnly ? true : undefined,
@@ -221,30 +233,28 @@ export default function AdsPage() {
 
   const products = productsData?.items ?? []
   const totalPages = productsData?.totalPages ?? 1
-  const pageTitle = adEditsOnly ? t('nav.adEdits') : t('ads.title')
-  const crumb = adEditsOnly ? t('nav.adEdits') : t('nav.ads')
+  const typeTitleKey =
+    productTypeId === '1'
+      ? 'nav.adRetail'
+      : productTypeId === '2'
+        ? 'nav.adBooking'
+        : productTypeId === '3'
+          ? 'nav.adOffers'
+          : productTypeId === '4'
+            ? 'nav.adRequest'
+            : productTypeId === 'categories'
+              ? 'nav.adCategories'
+              : 'nav.adAll'
+  const pageTitle = adEditsOnly ? t('nav.adEdits') : t(typeTitleKey)
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="text-start">
-          <h1 className="admin-text text-2xl font-bold tracking-tight">
-            {pageTitle}
-          </h1>
-          <p className="admin-text-muted mt-1 text-xs">
-            <Link to="/" className="hover:text-[#2563eb]">
-              {t('nav.dashboard')}
-            </Link>
-            <span className="mx-1.5 opacity-50">›</span>
-            <span>{crumb}</span>
-          </p>
-          {adEditsOnly ? (
-            <p className="admin-text-muted mt-2 max-w-2xl text-sm">
-              {t('ads.adEditsHint')}
-            </p>
-          ) : null}
-        </div>
-      </div>
+      <PageHeader
+        eyebrow={t('nav.ads')}
+        title={pageTitle}
+        description={adEditsOnly ? t('ads.adEditsHint') : undefined}
+        icon={IconAds}
+      />
 
       {!adEditsOnly ? (
         <AdsStatsCards stats={stats} isLoading={statsLoading} />

@@ -181,6 +181,8 @@ type RawProduct = AdminProduct & {
   productAddress?: string | null
   pendingOffersCount?: number
   PendingOffersCount?: number
+  activeOffersCount?: number
+  ActiveOffersCount?: number
   hasRetailPricing?: boolean
   HasRetailPricing?: boolean
   retailPrice?: number | null
@@ -299,6 +301,9 @@ export function normalizeProduct(raw: RawProduct): AdminProduct {
     productAddress: raw.productAddress ?? raw.ProductAddress ?? null,
     pendingOffersCount: Number(
       raw.pendingOffersCount ?? raw.PendingOffersCount ?? 0,
+    ),
+    activeOffersCount: Number(
+      raw.activeOffersCount ?? raw.ActiveOffersCount ?? 0,
     ),
     hasRetailPricing,
     retailPrice:

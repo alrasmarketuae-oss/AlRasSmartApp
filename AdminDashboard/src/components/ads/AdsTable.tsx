@@ -135,6 +135,13 @@ export default function AdsTable({
               isRequestList || typeKey === 'requests' || typeKey.includes('طلب')
             const isOfferAd = typeKey === 'offers' || typeKey.includes('عرض')
             const showPriceTypeBadge = priceTypeLabel !== '—'
+            const pendingOffers = product.pendingOffersCount ?? 0
+            // Offers still in progress (not yet received/settled) keep the row
+            // blinking; falls back to new-offer count on older API responses.
+            const activeOffers = Math.max(
+              product.activeOffersCount ?? 0,
+              pendingOffers,
+            )
             const attentionClass =
               listStatus === 'pending'
                 ? isOfferAd
@@ -142,7 +149,11 @@ export default function AdsTable({
                   : isRequestAd
                     ? 'row-attention-request'
                     : 'row-attention-ad'
-                : 'bg-white'
+                : // Approved request ads keep blinking (green) while they still
+                  // have offers in progress that have not been received yet.
+                  isRequestList && activeOffers > 0
+                  ? 'row-attention-offer'
+                  : 'bg-white'
 
             return (
               <tr
@@ -189,12 +200,15 @@ export default function AdsTable({
                 </td>
                 {isRequestList ? (
                   <td className="px-4 py-3.5 text-start sm:px-5">
-                    {(product.pendingOffersCount ?? 0) > 0 ? (
+                    {pendingOffers > 0 ? (
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-[#3B7FC7]/10 px-3 py-1 text-xs font-bold text-[#3B7FC7]">
                         <span className="inline-flex h-2 w-2 rounded-full bg-[#3B7FC7]" aria-hidden="true" />
-                        {t('reqsOffers.pendingOffersOnAd', {
-                          count: product.pendingOffersCount ?? 0,
-                        })}
+                        {t('reqsOffers.pendingOffersOnAd', { count: pendingOffers })}
+                      </span>
+                    ) : activeOffers > 0 ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-600">
+                        <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true" />
+                        {t('reqsOffers.offersInProgressOnAd', { count: activeOffers })}
                       </span>
                     ) : (
                       <span className="admin-text-muted text-xs">—</span>

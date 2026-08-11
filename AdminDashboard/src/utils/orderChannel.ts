@@ -15,6 +15,7 @@ export function orderChannelPath(channel: OrderChannel): string {
 
 export function isOrderChannelListPath(path: string): boolean {
   const base = path.split('?')[0] ?? path
+  if (base === '/orders/all') return true
   return ORDER_CHANNELS.some((channel) => base === `/orders/${channel}`)
 }
 
@@ -48,8 +49,9 @@ export function resolveOrderListFallbackPath(order?: AdminOrder | null): string 
 
 export function resolveOrderListTitleKey(listPath: string): string {
   const base = listPath.split('?')[0] ?? listPath
-  if (base.startsWith('/orders/booking')) return 'nav.ordersBooking'
-  if (base.startsWith('/orders/offers')) return 'nav.ordersOffersType'
-  if (base.startsWith('/orders/categories')) return 'nav.ordersCategories'
-  return 'nav.ordersRetail'
+  if (base.startsWith('/orders/all')) return 'nav.orderAll'
+  if (base.startsWith('/orders/booking')) return 'nav.orderBooking'
+  if (base.startsWith('/orders/offers')) return 'nav.orderOffers'
+  if (base.startsWith('/orders/categories')) return 'nav.orderCategories'
+  return 'nav.orderRetail'
 }

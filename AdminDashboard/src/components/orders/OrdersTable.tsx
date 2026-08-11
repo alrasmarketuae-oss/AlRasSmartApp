@@ -18,7 +18,11 @@ import {
   resolveRequiredQuantity,
 } from '../../utils/ordersDisplay'
 import { getOrderStatusLabel, getOrderStatusStyle } from '../../utils/orderStatus'
-import { orderApprovalBlink, orderNeedsAttention } from '../../utils/orderWorkflow'
+import {
+  isRequestOfferOrder,
+  orderApprovalBlink,
+  orderNeedsAttention,
+} from '../../utils/orderWorkflow'
 import OrderNotifyPartyDialog from './OrderNotifyPartyDialog'
 
 type OrdersTableProps = {
@@ -152,22 +156,33 @@ export default function OrdersTable({
                   : order.statusName?.trim() || getOrderStatusLabel(order.statusId, locale)
               const attention = orderNeedsAttention(order)
               const approvalBlink = orderApprovalBlink(order)
+              // A supplier offer on a buyer request: either the dedicated offers
+              // list, or an order whose product type is a request/offer.
+              const isOfferRow = isRequestOffersList || isRequestOfferOrder(order)
+              // Offers keep blinking until the order is actually received/delivered
+              // (5/7) or reaches a terminal state (6 cancelled, 8 paid-to-supplier,
+              // 9/10 return). i.e. blink for every non-settled offer status.
+              const offerBlink =
+                isOfferRow && ![5, 6, 7, 8, 9, 10].includes(order.statusId)
               const typeKey = resolveOrderChannelTypeKey(order)
               const typeName = resolveOrderChannelTypeName(order, locale)
               const companyLabel = order.customerName?.trim() || '—'
               // Approval stage drives the blink color: yellow while awaiting the
-              // app/seller approval, green once the seller has approved. Other
-              // attention states (e.g. return requests) keep the yellow cue.
+              // app/seller approval, green once the seller has approved. Request
+              // offers keep blinking (green) until received. Other attention
+              // states (e.g. return requests) keep the yellow cue.
               const attentionClass =
                 approvalBlink === 'approved'
                   ? 'row-attention-offer'
                   : approvalBlink === 'pending'
                     ? 'row-attention-order'
-                    : attention
-                      ? isRequestOffersList
-                        ? 'row-attention-offer'
-                        : 'row-attention-order'
-                      : 'bg-white'
+                    : offerBlink
+                      ? 'row-attention-offer'
+                      : attention
+                        ? isRequestOffersList
+                          ? 'row-attention-offer'
+                          : 'row-attention-order'
+                        : 'bg-white'
               const buyerId = order.customerUserId?.trim() || ''
               const sellerId = order.supplierUserId?.trim() || ''
 
