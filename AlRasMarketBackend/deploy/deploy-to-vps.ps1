@@ -81,6 +81,8 @@ rm -f BusinessLayer/Interfaces/IAiAssistantMcpServices.cs
 rm -f BusinessLayer/Interfaces/IImageEmbeddingService.cs
 rm -f BusinessLayer/Interfaces/IProductImageIndexingQueue.cs
 rm -f BusinessLayer/Interfaces/IProductImageVectorIndex.cs
+# Stale Grafana cookie-proxy helper removed when monitoring moved into the dashboard.
+rm -f BusinessLayer/Services/MonitoringAccessService.cs
 mkdir -p deploy/certbot/conf deploy/certbot/www
 echo '==> Building & restarting...'
 if [ -n '$serviceList' ]; then
