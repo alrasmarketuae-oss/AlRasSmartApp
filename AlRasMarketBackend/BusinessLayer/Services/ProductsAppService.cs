@@ -902,6 +902,64 @@ public partial class ProductsAppService(
         };
     }
 
+    public async Task<object> UpdatePriceAsync(
+        SetProductPriceInput input,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(input.ProductId, out var productId))
+        {
+            throw new ArgumentException("Invalid product id.");
+        }
+
+        if (input.UsdPrice is null && input.RetailPrice is null)
+        {
+            throw new ArgumentException("Provide usdPrice and/or retailPrice.");
+        }
+
+        if (input.UsdPrice is <= 0)
+        {
+            throw new ArgumentException("Price must be greater than zero.");
+        }
+
+        if (input.RetailPrice is <= 0)
+        {
+            throw new ArgumentException("Retail price must be greater than zero.");
+        }
+
+        var ownerId = await EnsureCompanyOwnerAsync(input.OwnerId, cancellationToken);
+
+        var product = await productData.GetProductByIdTrackedAsync(productId, cancellationToken)
+            ?? throw new KeyNotFoundException("Product not found.");
+
+        if (product.OwnerId != ownerId)
+        {
+            throw new UnauthorizedAccessException("You can only update your own listings.");
+        }
+
+        if (input.UsdPrice is > 0)
+        {
+            product.USDPrice = input.UsdPrice.Value;
+        }
+
+        if (input.RetailPrice is > 0)
+        {
+            product.RetailPrice = input.RetailPrice.Value;
+        }
+
+        product.UpdatedAt = UtcDateTimeHelper.UtcNow;
+        await productData.SaveChangesAsync(cancellationToken);
+        InvalidateProductCaches(ownerId);
+        QueueTextSearchSync(product.ProductId);
+
+        return new
+        {
+            productId = product.ProductId,
+            usdPrice = product.USDPrice,
+            retailPrice = product.RetailPrice,
+            message = "Price updated successfully."
+        };
+    }
+
     public async Task<object> MarkSoldOutAsync(
         string productId,
         string ownerId,

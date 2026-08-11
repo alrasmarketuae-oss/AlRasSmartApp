@@ -13,7 +13,7 @@ class MyAdsHeaderWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SearchHeader(
-      title: S.of(context).account,
+      title: showBackButton ? S.of(context).account : null,
       isBackButton: showBackButton,
     );
   }

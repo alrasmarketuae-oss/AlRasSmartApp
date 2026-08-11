@@ -3,6 +3,7 @@ import 'package:alrasmarket/features/company/data/models/create_ad_product_reque
 import 'package:alrasmarket/features/company/data/models/create_product_response.dart';
 import 'package:alrasmarket/features/company/data/models/my_listings_response.dart';
 import 'package:alrasmarket/features/company/data/models/update_listing_status_request.dart';
+import 'package:alrasmarket/features/company/data/models/update_product_price_request.dart';
 import 'package:dartz/dartz.dart';
 
 abstract class BaseProductRepository {
@@ -29,6 +30,12 @@ abstract class BaseProductRepository {
   Future<Either<Failure, void>> updateProductListingStatus({
     required String productId,
     required UpdateListingStatusRequest request,
+    required String token,
+  });
+
+  Future<Either<Failure, void>> updateProductPrice({
+    required String productId,
+    required UpdateProductPriceRequest request,
     required String token,
   });
 

@@ -9,6 +9,7 @@ import 'package:alrasmarket/features/company/data/models/my_listing_product_mode
 import 'package:alrasmarket/features/company/presentation/controller/cubit/company_cubit.dart';
 import 'package:alrasmarket/features/company/presentation/models/my_ads_filter.dart';
 import 'package:alrasmarket/features/company/presentation/models/my_ads_listing_status_filter.dart';
+import 'package:alrasmarket/features/company/presentation/widgets/my_ads/change_prices_banner.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/my_ads/my_ads_filter_chips.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/my_ads/my_ads_header_widget.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/my_ads/my_ads_list_placeholder_widget.dart';
@@ -135,6 +136,7 @@ class _MyAdsViewState extends State<MyAdsView> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               MyAdsHeaderWidget(showBackButton: !widget.isTabView),
+              const ChangePricesBanner(),
               _AccountSectionTabs(
                 selectedIndex: _accountSectionIndex,
                 onSelected: _onAccountSectionSelected,
@@ -149,6 +151,15 @@ class _MyAdsViewState extends State<MyAdsView> {
                   items: statusItems,
                   selectedIndex: _selectedStatusFilterIndex,
                   onSelected: _onStatusFilterSelected,
+                ),
+                _RecentListingsHeader(
+                  onViewAll: () {
+                    if (_selectedTypeFilterIndex != 0 ||
+                        _selectedStatusFilterIndex != 0) {
+                      _onTypeFilterSelected(0);
+                      _onStatusFilterSelected(0);
+                    }
+                  },
                 ),
                 Expanded(
                   child: _MyAdsRefreshableList(
@@ -182,67 +193,169 @@ class _AccountSectionTabs extends StatelessWidget {
     final s = S.of(context);
     final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
     final items = [
-      (label: s.myAds, icon: Icons.badge_outlined),
-      (label: s.myOffers, icon: Icons.local_offer_outlined),
+      (
+        label: s.myAds,
+        subtitle: s.myAdsOverviewSubtitle,
+        icon: Icons.description_outlined,
+      ),
+      (
+        label: s.myOffers,
+        subtitle: s.myOffersOverviewSubtitle,
+        icon: Icons.local_offer_outlined,
+      ),
     ];
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 4.h),
-      child: Row(
-        children: List.generate(items.length, (index) {
-          final isSelected = selectedIndex == index;
-          final item = items[index];
-          return Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(
-                right: index == 0 ? 8.w : 0,
-                left: index == 1 ? 8.w : 0,
-              ),
-              child: GestureDetector(
-                onTap: () => onSelected(index),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  padding: EdgeInsets.symmetric(vertical: 12.h),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10.r),
-                    color: isSelected
-                        ? LightColor.defaultColor
-                        : Colors.white,
-                    border: Border.all(
-                      color: LightColor.defaultColor,
-                      width: 1.5,
+      padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 8.h),
+      child: Column(
+        children: [
+          Text(
+            s.accountOverview,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: fontFamily,
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF1B4F8A),
+            ),
+          ),
+          SizedBox(height: 10.h),
+          Row(
+            children: List.generate(items.length, (index) {
+              final isSelected = selectedIndex == index;
+              final item = items[index];
+              final fg = isSelected ? Colors.white : LightColor.defaultColor;
+              return Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    right: index == 0 ? 8.w : 0,
+                    left: index == 1 ? 8.w : 0,
+                  ),
+                  child: GestureDetector(
+                    onTap: () => onSelected(index),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      padding: EdgeInsets.fromLTRB(12.w, 14.h, 10.w, 14.h),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14.r),
+                        color: isSelected
+                            ? LightColor.defaultColor
+                            : Colors.white,
+                        border: Border.all(
+                          color: LightColor.defaultColor,
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: LightColor.defaultColor.withValues(
+                              alpha: isSelected ? 0.22 : 0.06,
+                            ),
+                            blurRadius: 10.r,
+                            offset: Offset(0, 3.h),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(item.icon, size: 20.sp, color: fg),
+                              const Spacer(),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                size: 22.sp,
+                                color: fg,
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 8.h),
+                          Text(
+                            item.label,
+                            style: TextStyle(
+                              color: fg,
+                              fontFamily: fontFamily,
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          SizedBox(height: 3.h),
+                          Text(
+                            item.subtitle,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: isSelected
+                                  ? Colors.white.withValues(alpha: 0.88)
+                                  : const Color(0xFF6B7280),
+                              fontFamily: fontFamily,
+                              fontSize: 10.5.sp,
+                              height: 1.3,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        item.icon,
-                        size: 18.sp,
-                        color: isSelected
-                            ? Colors.white
-                            : LightColor.defaultColor,
-                      ),
-                      SizedBox(width: 6.w),
-                      Text(
-                        item.label,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: isSelected
-                              ? Colors.white
-                              : LightColor.defaultColor,
-                          fontFamily: fontFamily,
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecentListingsHeader extends StatelessWidget {
+  const _RecentListingsHeader({required this.onViewAll});
+
+  final VoidCallback onViewAll;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16.w, 2.h, 8.w, 4.h),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              s.recentListings,
+              style: TextStyle(
+                fontFamily: fontFamily,
+                fontSize: 14.5.sp,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF16233A),
               ),
             ),
-          );
-        }),
+          ),
+          TextButton(
+            onPressed: onViewAll,
+            style: TextButton.styleFrom(
+              foregroundColor: LightColor.defaultColor,
+              padding: EdgeInsets.symmetric(horizontal: 8.w),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  s.viewAll,
+                  style: TextStyle(
+                    fontFamily: fontFamily,
+                    fontSize: 12.5.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, size: 18.sp),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

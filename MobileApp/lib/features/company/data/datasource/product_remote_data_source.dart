@@ -7,6 +7,7 @@ import 'package:alrasmarket/features/company/data/models/create_ad_product_reque
 import 'package:alrasmarket/features/company/data/models/create_product_response.dart';
 import 'package:alrasmarket/features/company/data/models/my_listings_response.dart';
 import 'package:alrasmarket/features/company/data/models/update_listing_status_request.dart';
+import 'package:alrasmarket/features/company/data/models/update_product_price_request.dart';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -35,6 +36,12 @@ abstract class BaseProductRemoteDataSource {
   Future<Either<Failure, void>> updateProductListingStatus({
     required String productId,
     required UpdateListingStatusRequest request,
+    required String token,
+  });
+
+  Future<Either<Failure, void>> updateProductPrice({
+    required String productId,
+    required UpdateProductPriceRequest request,
     required String token,
   });
 
@@ -298,6 +305,36 @@ class ProductRemoteDataSource implements BaseProductRemoteDataSource {
           _extractMessage(e.response?.data) ??
               e.message ??
               'Listing status update failed',
+        ),
+      );
+    } catch (e) {
+      return Left(NetworkFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> updateProductPrice({
+    required String productId,
+    required UpdateProductPriceRequest request,
+    required String token,
+  }) async {
+    try {
+      final response = await DioHelper.patchData(
+        url: ApiConstants.productPriceEndPoint(productId),
+        data: request.toJson(),
+        token: token,
+      );
+
+      return _mapVoidResponse(
+        response,
+        failureFallback: 'Failed to update price',
+      );
+    } on DioException catch (e) {
+      return Left(
+        ServerFailure(
+          _extractMessage(e.response?.data) ??
+              e.message ??
+              'Price update failed',
         ),
       );
     } catch (e) {

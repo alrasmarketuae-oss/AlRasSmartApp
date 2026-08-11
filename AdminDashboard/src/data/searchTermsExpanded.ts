@@ -19,6 +19,7 @@ const PREFIX_ROUTES: Record<string, RouteMapping> = {
   settingsPage: { section: 'settings', route: '/settings' },
   globalSearch: { section: 'dashboard', route: '/search' },
   payment: { section: 'orders', route: '/orders' },
+  monitoring: { section: 'dashboard', route: '/monitoring' },
   login: { section: 'dashboard', route: '/login' },
   comingSoon: { section: 'chat', route: '/chat' },
 }
@@ -33,6 +34,8 @@ const NAV_ROUTES: Record<string, RouteMapping> = {
   chat: { section: 'chat', route: '/chat' },
   notifications: { section: 'notifications', route: '/notifications' },
   settings: { section: 'settings', route: '/settings' },
+  monitoring: { section: 'dashboard', route: '/monitoring' },
+  auditLogs: { section: 'dashboard', route: '/audit-logs' },
 }
 
 /** Extra synonyms per settings/UI concept — beyond i18n labels. */

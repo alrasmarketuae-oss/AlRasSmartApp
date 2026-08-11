@@ -166,6 +166,8 @@ class ApiConstants {
       asRetail ? '/Products/$productId?asRetail=true' : '/Products/$productId';
   static String productListingStatusEndPoint(String productId) =>
       '/Products/$productId/listing-status';
+  static String productPriceEndPoint(String productId) =>
+      '/Products/$productId/price';
   static String productSoldOutEndPoint(String productId) =>
       '/Products/$productId/sold-out';
   static String productSubmitForReviewEndPoint(String productId) =>

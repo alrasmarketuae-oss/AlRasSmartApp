@@ -126,6 +126,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "باستخدام التطبيق، يقر المستخدم (مورد أو عميل) بموافقته الكاملة على جميع الشروط والأحكام المذكورة أعلاه.",
     ),
     "account": MessageLookupByLibrary.simpleMessage("الحساب"),
+    "accountOverview": MessageLookupByLibrary.simpleMessage(
+      "نظرة عامة على الحساب",
+    ),
     "accountCreatedSuccessfully": MessageLookupByLibrary.simpleMessage(
       "تم إنشاء حسابك بنجاح",
     ),
@@ -352,6 +355,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "changePassword": MessageLookupByLibrary.simpleMessage("تغيير كلمة المرور"),
     "changePasswordSubtitle": MessageLookupByLibrary.simpleMessage(
       "تحديث كلمة المرور",
+    ),
+    "changePrices": MessageLookupByLibrary.simpleMessage("تغيير الأسعار"),
+    "changePricesSearchHint": MessageLookupByLibrary.simpleMessage(
+      "ابحث في الإعلانات",
+    ),
+    "changePricesSubtitle": MessageLookupByLibrary.simpleMessage(
+      "حدّث وأدر أسعار المنتجات بسهولة",
     ),
     "chatE2eNoticeBody": MessageLookupByLibrary.simpleMessage(
       "فقط الأشخاص في هذه المحادثة هم من يستطيعون قراءة أو الاستماع لهذه الرسائل.",
@@ -594,6 +604,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "edit": MessageLookupByLibrary.simpleMessage("تعديل"),
     "editAddress": MessageLookupByLibrary.simpleMessage("تعديل العنوان"),
     "editCart": MessageLookupByLibrary.simpleMessage("تعديل السلة"),
+    "editPrice": MessageLookupByLibrary.simpleMessage("تعديل السعر"),
     "editProfile": MessageLookupByLibrary.simpleMessage("تعديل الملف الشخصي"),
     "editShippingAd": MessageLookupByLibrary.simpleMessage("تعديل إعلان شحن"),
     "eighthAmendments": MessageLookupByLibrary.simpleMessage(
@@ -782,6 +793,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "invalidEmail": MessageLookupByLibrary.simpleMessage(
       "بريد إلكتروني غير صالح",
     ),
+    "invalidPrice": MessageLookupByLibrary.simpleMessage(
+      "أدخل سعراً صحيحاً أكبر من صفر",
+    ),
     "invalidWebsite": MessageLookupByLibrary.simpleMessage(
       "أدخل رابط موقع صحيح",
     ),
@@ -867,12 +881,18 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "muteVideo": MessageLookupByLibrary.simpleMessage("كتم الصوت"),
     "myAds": MessageLookupByLibrary.simpleMessage("إعلاناتي"),
+    "myAdsOverviewSubtitle": MessageLookupByLibrary.simpleMessage(
+      "أدر وتابع إعلاناتك",
+    ),
     "myAdsSubtitle": MessageLookupByLibrary.simpleMessage("إدارة إعلاناتك"),
     "myBalance": MessageLookupByLibrary.simpleMessage("رصيدي"),
     "myBalanceSubtitle": MessageLookupByLibrary.simpleMessage(
       "تتبع رصيدك وطلبات السحب",
     ),
     "myOffers": MessageLookupByLibrary.simpleMessage("عروضي"),
+    "myOffersOverviewSubtitle": MessageLookupByLibrary.simpleMessage(
+      "اعرض وأدر عروضك",
+    ),
     "myOrders": MessageLookupByLibrary.simpleMessage("طلباتي"),
     "myOrdersSubtitle": MessageLookupByLibrary.simpleMessage(
       "تابع وأدر كل طلباتك من مكان واحد.",
@@ -892,6 +912,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "noAccount": MessageLookupByLibrary.simpleMessage("ليس لديك حساب؟"),
     "noAdsMatchFilter": MessageLookupByLibrary.simpleMessage(
       "لا توجد إعلانات مطابقة لهذا الفلتر.",
+    ),
+    "noAdsToChangePrices": MessageLookupByLibrary.simpleMessage(
+      "لا توجد إعلانات بعد",
     ),
     "noBalanceTransactions": MessageLookupByLibrary.simpleMessage(
       "لا توجد حركات رصيد بعد.",
@@ -1134,6 +1157,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "pricePerUnitTimesQuantity": MessageLookupByLibrary.simpleMessage(
       "السعر لكل وحدة × الكمية",
     ),
+    "pricesUpdated": MessageLookupByLibrary.simpleMessage("تم تحديث الأسعار"),
     "product": MessageLookupByLibrary.simpleMessage("المنتج"),
     "productAddedToCart": MessageLookupByLibrary.simpleMessage(
       "تمت إضافة المنتج إلى السلة.",
@@ -1216,6 +1240,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "receiveOffers": MessageLookupByLibrary.simpleMessage("استلام العروض"),
     "received": MessageLookupByLibrary.simpleMessage("تم الاستلام"),
     "receivedOffers": MessageLookupByLibrary.simpleMessage("العروض المستلمة"),
+    "recentListings": MessageLookupByLibrary.simpleMessage("أحدث الإعلانات"),
     "refresh": MessageLookupByLibrary.simpleMessage("تحديث"),
     "registerClient": MessageLookupByLibrary.simpleMessage("تسجيل عميل"),
     "registerClientSubtitle": MessageLookupByLibrary.simpleMessage(

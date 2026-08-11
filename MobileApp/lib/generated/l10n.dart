@@ -1679,6 +1679,51 @@ class S {
     return Intl.message('Account', name: 'account', desc: '', args: []);
   }
 
+  /// `Account Overview`
+  String get accountOverview {
+    return Intl.message(
+      'Account Overview',
+      name: 'accountOverview',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Manage & track your advertisements`
+  String get myAdsOverviewSubtitle {
+    return Intl.message(
+      'Manage & track your advertisements',
+      name: 'myAdsOverviewSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `View & manage your offers`
+  String get myOffersOverviewSubtitle {
+    return Intl.message(
+      'View & manage your offers',
+      name: 'myOffersOverviewSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Recent Listings`
+  String get recentListings {
+    return Intl.message(
+      'Recent Listings',
+      name: 'recentListings',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Edit Price`
+  String get editPrice {
+    return Intl.message('Edit Price', name: 'editPrice', desc: '', args: []);
+  }
+
   /// `Personal Information`
   String get personalInformation {
     return Intl.message(
@@ -1969,6 +2014,66 @@ class S {
     return Intl.message(
       'Update your password',
       name: 'changePasswordSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Change prices`
+  String get changePrices {
+    return Intl.message(
+      'Change prices',
+      name: 'changePrices',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Update all your ad prices in one place`
+  String get changePricesSubtitle {
+    return Intl.message(
+      'Update and manage product prices easily',
+      name: 'changePricesSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Search ads`
+  String get changePricesSearchHint {
+    return Intl.message(
+      'Search ads',
+      name: 'changePricesSearchHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Prices updated`
+  String get pricesUpdated {
+    return Intl.message(
+      'Prices updated',
+      name: 'pricesUpdated',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `You have no ads yet`
+  String get noAdsToChangePrices {
+    return Intl.message(
+      'You have no ads yet',
+      name: 'noAdsToChangePrices',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enter a valid price greater than zero`
+  String get invalidPrice {
+    return Intl.message(
+      'Enter a valid price greater than zero',
+      name: 'invalidPrice',
       desc: '',
       args: [],
     );

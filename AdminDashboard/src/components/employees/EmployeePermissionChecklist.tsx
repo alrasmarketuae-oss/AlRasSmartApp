@@ -72,7 +72,8 @@ export default function EmployeePermissionChecklist({
                       {item.key === 'users.profile_edits' ||
                       item.key === 'products.ad_edits' ||
                       item.key === 'orders.reqs_offers' ||
-                      item.key === 'audit.view' ? (
+                      item.key === 'audit.view' ||
+                      item.key === 'monitoring.view' ? (
                         <span className="rounded-md bg-[#3B7FC7]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[#3B7FC7]">
                           {locale === 'ar' ? 'صفحة' : 'page'}
                         </span>

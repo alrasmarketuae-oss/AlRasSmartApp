@@ -81,6 +81,14 @@ export function IconBell({ className = 'h-5 w-5' }: IconProps) {
   )
 }
 
+export function IconActivity({ className = 'h-5 w-5' }: IconProps) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 12h3l3-8 4 16 3-8h5" />
+    </svg>
+  )
+}
+
 export function IconWallet({ className = 'h-5 w-5' }: IconProps) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>

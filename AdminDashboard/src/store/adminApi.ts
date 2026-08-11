@@ -40,6 +40,10 @@ import type {
   AdminAuditLogsResponse,
 } from '../types/adminAuditLog'
 import type {
+  AdminMonitoringOverview,
+  MonitoringRange,
+} from '../types/adminMonitoring'
+import type {
   MissedProductSearchesFilters,
   MissedProductSearchesResponse,
 } from '../types/missedProductSearch'
@@ -127,6 +131,7 @@ export const adminApi = createApi({
     'Chat',
     'Employees',
     'AuditLogs',
+    'Monitoring',
     'MissedProductSearches',
     'Finance',
   ],
@@ -1705,6 +1710,15 @@ export const adminApi = createApi({
       keepUnusedDataFor: 60,
     }),
 
+    getAdminMonitoring: builder.query<AdminMonitoringOverview, MonitoringRange | void>({
+      query: (range) => ({
+        url: '/api/admin/monitoring',
+        params: { range: range || '1h' },
+      }),
+      providesTags: [{ type: 'Monitoring', id: 'OVERVIEW' }],
+      keepUnusedDataFor: 20,
+    }),
+
     getAdminAuditLogs: builder.query<AdminAuditLogsResponse, AdminAuditLogsFilters | void>({
       query: (params) => ({
         url: '/api/admin/audit-logs',
@@ -1947,6 +1961,7 @@ export const {
   useUploadChatMediaMutation,
   useUploadChatImagesMutation,
   useGetPermissionDefinitionsQuery,
+  useGetAdminMonitoringQuery,
   useGetAdminAuditLogsQuery,
   useGetMissedProductSearchesQuery,
   useGetEmployeesQuery,

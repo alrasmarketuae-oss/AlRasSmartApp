@@ -4,6 +4,7 @@ import 'package:alrasmarket/features/company/data/models/create_ad_product_reque
 import 'package:alrasmarket/features/company/data/models/create_product_response.dart';
 import 'package:alrasmarket/features/company/data/models/my_listings_response.dart';
 import 'package:alrasmarket/features/company/data/models/update_listing_status_request.dart';
+import 'package:alrasmarket/features/company/data/models/update_product_price_request.dart';
 import 'package:alrasmarket/features/company/domain/repository/base_product_repository.dart';
 import 'package:dartz/dartz.dart';
 
@@ -55,6 +56,19 @@ class ProductRepository implements BaseProductRepository {
     required String token,
   }) {
     return _remote.updateProductListingStatus(
+      productId: productId,
+      request: request,
+      token: token,
+    );
+  }
+
+  @override
+  Future<Either<Failure, void>> updateProductPrice({
+    required String productId,
+    required UpdateProductPriceRequest request,
+    required String token,
+  }) {
+    return _remote.updateProductPrice(
       productId: productId,
       request: request,
       token: token,

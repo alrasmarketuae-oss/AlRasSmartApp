@@ -89,6 +89,17 @@ builder.Services.AddScoped<IAdminDashboardAppService, AdminDashboardAppService>(
 builder.Services.AddScoped<IAdminPermissionService, AdminPermissionService>();
 builder.Services.AddScoped<IAdminEmployeesAppService, AdminEmployeesAppService>();
 builder.Services.AddScoped<IAdminAuditLogAppService, AdminAuditLogAppService>();
+builder.Services.Configure<MonitoringOptions>(
+    builder.Configuration.GetSection(MonitoringOptions.SectionName));
+builder.Services.AddHttpClient<IAdminMonitoringAppService, AdminMonitoringAppService>((sp, client) =>
+{
+    var url = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<MonitoringOptions>>()
+        .Value.PrometheusUrl
+        ?.Trim();
+    if (string.IsNullOrWhiteSpace(url)) url = "http://prometheus:9090";
+    client.BaseAddress = new Uri(url.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(8);
+});
 builder.Services.AddScoped<IMissedProductSearchAppService, MissedProductSearchAppService>();
 builder.Services.AddScoped<IAdminUsersAppService, AdminUsersAppService>();
 builder.Services.AddScoped<IAdminOrdersAppService, AdminOrdersAppService>();

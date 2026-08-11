@@ -3,6 +3,7 @@ import 'package:alrasmarket/features/company/data/models/create_ad_product_reque
 import 'package:alrasmarket/features/company/data/models/create_product_response.dart';
 import 'package:alrasmarket/features/company/data/models/my_listings_response.dart';
 import 'package:alrasmarket/features/company/data/models/update_listing_status_request.dart';
+import 'package:alrasmarket/features/company/data/models/update_product_price_request.dart';
 import 'package:alrasmarket/features/company/domain/repository/base_product_repository.dart';
 import 'package:dartz/dartz.dart';
 
@@ -73,6 +74,28 @@ class UpdateProductListingStatusUseCase {
     return _repository.updateProductListingStatus(
       productId: productId,
       request: UpdateListingStatusRequest(isActive: isActive),
+      token: token,
+    );
+  }
+}
+
+class UpdateProductPriceUseCase {
+  UpdateProductPriceUseCase(this._repository);
+
+  final BaseProductRepository _repository;
+
+  Future<Either<Failure, void>> call({
+    required String productId,
+    double? usdPrice,
+    double? retailPrice,
+    required String token,
+  }) {
+    return _repository.updateProductPrice(
+      productId: productId,
+      request: UpdateProductPriceRequest(
+        usdPrice: usdPrice,
+        retailPrice: retailPrice,
+      ),
       token: token,
     );
   }

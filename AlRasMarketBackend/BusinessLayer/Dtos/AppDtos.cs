@@ -342,6 +342,17 @@ public sealed class SetProductListingStatusInput
     public bool IsActive { get; set; }
 }
 
+/// <summary>
+/// Owner-only in-place price update (no admin re-review).
+/// </summary>
+public sealed class SetProductPriceInput
+{
+    public string ProductId { get; set; } = string.Empty;
+    public string OwnerId { get; set; } = string.Empty;
+    public decimal? UsdPrice { get; set; }
+    public decimal? RetailPrice { get; set; }
+}
+
 public sealed class GetProductsByTypeInput
 {
     public string ProductTypeName { get; set; } = string.Empty;

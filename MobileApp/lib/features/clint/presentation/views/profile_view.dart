@@ -310,6 +310,18 @@ class _ProfileViewState extends State<ProfileView> {
                                 assetIcon: AppAssets.profileAdsIcon,
                                 onTap: () => context.push(AppRoutes.kMyAdsView),
                               ),
+                            if (isSupplier || isCompany)
+                              _SettingsTile(
+                                title: s.changePrices,
+                                subtitle: s.changePricesSubtitle,
+                                icon: Icons.sell_rounded,
+                                iconColors: const [
+                                  Color(0xFFF59E0B),
+                                  Color(0xFFD97706),
+                                ],
+                                onTap: () =>
+                                    context.push(AppRoutes.kChangePricesView),
+                              ),
                             SizedBox(height: 6.h),
                             const _DataSafeBanner(),
                             SizedBox(height: 22.h),

@@ -24,6 +24,7 @@ public static class AdminPermissions
     public const string ProductsAdEdits = "products.ad_edits";
     public const string OrdersReqsOffers = "orders.reqs_offers";
     public const string AuditView = "audit.view";
+    public const string MonitoringView = "monitoring.view";
     public const string FinanceView = "finance.view";
     public const string FinanceManage = "finance.manage";
 
@@ -52,6 +53,7 @@ public static class AdminPermissions
         SettingsManage,
         SearchAccess,
         AuditView,
+        MonitoringView,
         FinanceView,
         FinanceManage,
     ];

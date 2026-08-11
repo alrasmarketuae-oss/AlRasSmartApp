@@ -562,6 +562,58 @@ public class ProductsController(
     }
 
     /// <summary>
+    /// Updates listing USD and/or retail price in place. Owner only. Does not send the ad back to admin review.
+    /// </summary>
+    [HttpPatch("{productId}/price")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdatePrice(
+        [FromRoute] string productId,
+        [FromBody] SetProductPriceRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            var result = await _productsAppService.UpdatePriceAsync(
+                new SetProductPriceInput
+                {
+                    ProductId = productId,
+                    OwnerId = userId,
+                    UsdPrice = request.UsdPrice,
+                    RetailPrice = request.RetailPrice
+                },
+                cancellationToken);
+
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+    }
+
+    /// <summary>
     /// Marks the listing sold out (quantity = 0). Owner only.
     /// </summary>
     [HttpPatch("{productId}/sold-out")]
@@ -1103,4 +1155,10 @@ public sealed class SetProductListingStatusRequest
 {
     /// <summary>true = إعادة تنشيط، false = إيقاف مؤقت</summary>
     public bool IsActive { get; set; }
+}
+
+public sealed class SetProductPriceRequest
+{
+    public decimal? UsdPrice { get; set; }
+    public decimal? RetailPrice { get; set; }
 }

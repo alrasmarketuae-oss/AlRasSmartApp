@@ -18,12 +18,14 @@ class CompanyCubit extends Cubit<CompanyStates> {
     required GetMyListingsUseCase getMyListingsUseCase,
     required DeleteProductUseCase deleteProductUseCase,
     required UpdateProductListingStatusUseCase updateProductListingStatusUseCase,
+    required UpdateProductPriceUseCase updateProductPriceUseCase,
     required MarkProductSoldOutUseCase markProductSoldOutUseCase,
     required GetMyOffersOnMyRequestsUseCase getMyOffersOnMyRequestsUseCase,
     required UpdateOrderStatusUseCase updateOrderStatusUseCase,
   })  : _getMyListingsUseCase = getMyListingsUseCase,
         _deleteProductUseCase = deleteProductUseCase,
         _updateProductListingStatusUseCase = updateProductListingStatusUseCase,
+        _updateProductPriceUseCase = updateProductPriceUseCase,
         _markProductSoldOutUseCase = markProductSoldOutUseCase,
         _getMyOffersOnMyRequestsUseCase = getMyOffersOnMyRequestsUseCase,
         _updateOrderStatusUseCase = updateOrderStatusUseCase,
@@ -32,6 +34,7 @@ class CompanyCubit extends Cubit<CompanyStates> {
   final GetMyListingsUseCase _getMyListingsUseCase;
   final DeleteProductUseCase _deleteProductUseCase;
   final UpdateProductListingStatusUseCase _updateProductListingStatusUseCase;
+  final UpdateProductPriceUseCase _updateProductPriceUseCase;
   final MarkProductSoldOutUseCase _markProductSoldOutUseCase;
   final GetMyOffersOnMyRequestsUseCase _getMyOffersOnMyRequestsUseCase;
   final UpdateOrderStatusUseCase _updateOrderStatusUseCase;
@@ -356,6 +359,31 @@ class CompanyCubit extends Cubit<CompanyStates> {
         unawaited(CatalogSyncService.instance.afterAdMutation());
         return null;
       },
+    );
+  }
+
+  /// PATCH /api/Products/{productId}/price
+  Future<String?> updateProductPrice({
+    required String productId,
+    double? usdPrice,
+    double? retailPrice,
+    required BuildContext context,
+  }) async {
+    final token = _token;
+    if (token == null || token.isEmpty) {
+      return S.of(context).pleaseLoginToContinue;
+    }
+
+    final result = await _updateProductPriceUseCase(
+      productId: productId,
+      usdPrice: usdPrice,
+      retailPrice: retailPrice,
+      token: token,
+    );
+
+    return result.fold(
+      (failure) => failure.message,
+      (_) => null,
     );
   }
 

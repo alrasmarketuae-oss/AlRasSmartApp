@@ -83,6 +83,7 @@ export {
   useUploadChatMediaMutation,
   useUploadChatImagesMutation,
   useGetPermissionDefinitionsQuery,
+  useGetAdminMonitoringQuery,
   useGetAdminAuditLogsQuery,
   useGetMissedProductSearchesQuery,
   useGetEmployeesQuery,

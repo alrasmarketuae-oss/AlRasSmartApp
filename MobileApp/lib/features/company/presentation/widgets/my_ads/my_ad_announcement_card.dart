@@ -434,6 +434,7 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
               onTap: product.productId.isNotEmpty ? _onOpenAdDetails : null,
               child: content,
             ),
+          if (compact) _EditPriceButton(productId: product.productId),
         ],
       ),
     );
@@ -731,6 +732,55 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
           foreground: Color(0xFF3A7DC5),
         );
     }
+  }
+}
+
+class _EditPriceButton extends StatelessWidget {
+  const _EditPriceButton({required this.productId});
+
+  final String productId;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(8.w, 0, 8.w, 8.h),
+      child: SizedBox(
+        width: double.infinity,
+        height: 32.h,
+        child: OutlinedButton.icon(
+          onPressed: productId.isEmpty
+              ? null
+              : () => context.push(
+                    AppRoutes.kChangePricesView,
+                    extra: {'highlightProductId': productId},
+                  ),
+          icon: Icon(Icons.edit_outlined, size: 14.sp),
+          label: Text(
+            s.editPrice,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: fontFamily,
+              fontSize: 11.sp,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: LightColor.defaultColor,
+            side: const BorderSide(color: LightColor.defaultColor),
+            padding: EdgeInsets.symmetric(horizontal: 8.w),
+            visualDensity: VisualDensity.compact,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.r),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

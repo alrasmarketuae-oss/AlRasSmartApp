@@ -300,6 +300,7 @@ internal static class AdminPermissionCatalog
         new("notifications.send", "إرسال الإشعارات", "Send notifications", "pages", "صفحات اللوحة", "Dashboard pages"),
 
         new("audit.view", "صفحة سجل الأحداث", "Audit logs page", "pages", "صفحات اللوحة", "Dashboard pages"),
+        new("monitoring.view", "صفحة المراقبة", "Monitoring page", "pages", "صفحات اللوحة", "Dashboard pages"),
 
         new("finance.view", "صفحة المعاملات المالية", "Finance page", "pages", "صفحات اللوحة", "Dashboard pages"),
         new("finance.manage", "إدارة طلبات السحب والتحويل", "Manage withdrawals & payouts", "pages", "صفحات اللوحة", "Dashboard pages"),

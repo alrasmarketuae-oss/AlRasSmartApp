@@ -152,7 +152,7 @@ class _MyAdsListPlaceholderWidgetState
         final mainSpacing = 12.h;
         final columns = MyAdsListPlaceholderWidget._crossAxisCount(context);
         final isTablet = ProductGridLayout.isTablet(context);
-        final cellHeight = isTablet ? 370.h : 320.h;
+        final cellHeight = isTablet ? 400.h : 352.h;
         final highlightId = widget.highlightProductId?.trim() ?? '';
 
         _scrollToHighlightIfNeeded(

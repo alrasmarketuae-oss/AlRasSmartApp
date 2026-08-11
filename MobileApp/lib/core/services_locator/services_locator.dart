@@ -172,6 +172,7 @@ class ServicesLocator {
     sl.registerLazySingleton(() => DeleteProductUseCase(sl()));
     sl.registerLazySingleton(() => UpdateProductUseCase(sl()));
     sl.registerLazySingleton(() => UpdateProductListingStatusUseCase(sl()));
+    sl.registerLazySingleton(() => UpdateProductPriceUseCase(sl()));
     sl.registerLazySingleton(() => MarkProductSoldOutUseCase(sl()));
     sl.registerLazySingleton(() => GetMyOffersOnMyRequestsUseCase(sl()));
     sl.registerLazySingleton(() => UpdateOrderStatusUseCase(sl()));
@@ -180,6 +181,7 @@ class ServicesLocator {
         getMyListingsUseCase: sl(),
         deleteProductUseCase: sl(),
         updateProductListingStatusUseCase: sl(),
+        updateProductPriceUseCase: sl(),
         markProductSoldOutUseCase: sl(),
         getMyOffersOnMyRequestsUseCase: sl(),
         updateOrderStatusUseCase: sl(),

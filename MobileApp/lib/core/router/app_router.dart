@@ -41,6 +41,7 @@ import 'package:alrasmarket/features/shipping_company/data/models/shipping_compa
 import 'package:alrasmarket/features/shipping_company/presentation/views/shipping_ad_form_view.dart';
 import 'package:alrasmarket/features/shipping_company/presentation/views/shipping_register_view.dart';
 import 'package:alrasmarket/features/company/presentation/views/ad_request_offers_view.dart';
+import 'package:alrasmarket/features/company/presentation/views/change_prices_view.dart';
 import 'package:alrasmarket/features/company/presentation/views/my_ads_view.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -103,6 +104,7 @@ abstract class AppRoutes {
   static const String kAiAssistantView = '/AiAssistantView';
   static const String kModelTrainingView = '/ModelTrainingView';
   static const String kMyAdsView = '/MyAdsView';
+  static const String kChangePricesView = '/ChangePricesView';
   static const String kSupplierBalanceView = '/SupplierBalanceView';
   static const String kAdRequestOffersView = '/AdRequestOffersView';
   static const String kSubmitOfferView = '/SubmitOfferView';
@@ -363,6 +365,19 @@ abstract class AppRoutes {
       GoRoute(
         path: kModelTrainingView,
         builder: (context, state) => const ModelTrainingView(),
+      ),
+      GoRoute(
+        path: kChangePricesView,
+        builder: (context, state) {
+          final extra = state.extra;
+          String? highlightProductId;
+          if (extra is Map) {
+            highlightProductId =
+                extra['highlightProductId']?.toString() ??
+                extra['productId']?.toString();
+          }
+          return ChangePricesView(highlightProductId: highlightProductId);
+        },
       ),
       GoRoute(
         path: kMyAdsView,

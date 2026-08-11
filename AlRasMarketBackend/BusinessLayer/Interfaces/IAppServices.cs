@@ -365,6 +365,9 @@ public interface IProductsAppService
     Task<object> SetListingStatusAsync(
         SetProductListingStatusInput input,
         CancellationToken cancellationToken = default);
+    Task<object> UpdatePriceAsync(
+        SetProductPriceInput input,
+        CancellationToken cancellationToken = default);
     Task<object> MarkSoldOutAsync(
         string productId,
         string ownerId,

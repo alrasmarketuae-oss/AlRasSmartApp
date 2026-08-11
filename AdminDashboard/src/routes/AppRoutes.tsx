@@ -21,6 +21,7 @@ import SettingsPage from '../pages/SettingsPage'
 import NotificationsPage from '../pages/NotificationsPage'
 import GlobalSearchPage from '../pages/GlobalSearchPage'
 import AuditLogsPage from '../pages/AuditLogsPage'
+import MonitoringPage from '../pages/MonitoringPage'
 import MissedProductSearchesPage from '../pages/MissedProductSearchesPage'
 import EmployeesPage from '../pages/EmployeesPage'
 import FinancePage from '../pages/FinancePage'
@@ -252,6 +253,14 @@ export default function AppRoutes() {
           element={
             <PermissionRoute permission={PERMISSIONS.auditView}>
               <AuditLogsPage />
+            </PermissionRoute>
+          }
+        />
+        <Route
+          path="/monitoring"
+          element={
+            <PermissionRoute permission={PERMISSIONS.monitoringView}>
+              <MonitoringPage />
             </PermissionRoute>
           }
         />

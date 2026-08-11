@@ -23,6 +23,7 @@ import {
   IconUsers,
   IconBell,
   IconWallet,
+  IconActivity,
   IconLogout,
 } from '../icons'
 
@@ -107,6 +108,7 @@ const navEntries: NavEntry[] = [
   { kind: 'item', item: { to: '/finance', labelKey: 'Finance', icon: IconWallet, permission: PERMISSIONS.financeView } },
   { kind: 'item', item: { to: '/missed-searches', labelKey: 'nav.missedSearches', icon: IconAds, permission: PERMISSIONS.searchAccess } },
   { kind: 'item', item: { to: '/audit-logs', labelKey: 'nav.auditLogs', icon: IconOrders, permission: PERMISSIONS.auditView } },
+  { kind: 'item', item: { to: '/monitoring', labelKey: 'nav.monitoring', icon: IconActivity, permission: PERMISSIONS.monitoringView } },
   { kind: 'item', item: { to: '/employees', labelKey: 'nav.employees', icon: IconUsers, superAdminOnly: true } },
   { kind: 'item', item: { to: '/settings', labelKey: 'nav.settings', icon: IconSettings, permission: PERMISSIONS.settingsView } },
   { kind: 'item', item: { to: '/users?profileEdits=1', labelKey: 'nav.profileEdits', icon: IconUsers, countKey: 'profileEdits', badgeTone: 'amber', permission: PERMISSIONS.usersProfileEdits } },

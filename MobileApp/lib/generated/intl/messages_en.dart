@@ -123,6 +123,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "By using the app, the user (supplier or client) fully agrees to all the above terms and conditions.",
     ),
     "account": MessageLookupByLibrary.simpleMessage("Account"),
+    "accountOverview": MessageLookupByLibrary.simpleMessage("Account Overview"),
     "accountCreatedSuccessfully": MessageLookupByLibrary.simpleMessage(
       "Account created successfully",
     ),
@@ -360,6 +361,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "changePasswordSubtitle": MessageLookupByLibrary.simpleMessage(
       "Update your password",
     ),
+    "changePrices": MessageLookupByLibrary.simpleMessage("Change prices"),
+    "changePricesSearchHint": MessageLookupByLibrary.simpleMessage(
+      "Search ads",
+    ),
+    "changePricesSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Update and manage product prices easily",
+    ),
     "chatE2eNoticeBody": MessageLookupByLibrary.simpleMessage(
       "Only people in this conversation can read or listen to these messages.",
     ),
@@ -595,6 +603,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "edit": MessageLookupByLibrary.simpleMessage("Edit"),
     "editAddress": MessageLookupByLibrary.simpleMessage("Edit Address"),
     "editCart": MessageLookupByLibrary.simpleMessage("Edit Cart"),
+    "editPrice": MessageLookupByLibrary.simpleMessage("Edit Price"),
     "editProfile": MessageLookupByLibrary.simpleMessage("Edit Profile"),
     "editShippingAd": MessageLookupByLibrary.simpleMessage("Edit Shipping Ad"),
     "eighthAmendments": MessageLookupByLibrary.simpleMessage(
@@ -779,6 +788,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "imageVideoFormatsHint": m16,
     "inProgress": MessageLookupByLibrary.simpleMessage("In Progress"),
     "invalidEmail": MessageLookupByLibrary.simpleMessage("Invalid email"),
+    "invalidPrice": MessageLookupByLibrary.simpleMessage(
+      "Enter a valid price greater than zero",
+    ),
     "invalidWebsite": MessageLookupByLibrary.simpleMessage(
       "Enter a valid website URL",
     ),
@@ -866,6 +878,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "muteVideo": MessageLookupByLibrary.simpleMessage("Mute"),
     "myAds": MessageLookupByLibrary.simpleMessage("My Ads"),
+    "myAdsOverviewSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Manage & track your advertisements",
+    ),
     "myAdsSubtitle": MessageLookupByLibrary.simpleMessage(
       "Manage your advertisements",
     ),
@@ -874,6 +889,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "Track your balance and withdrawals",
     ),
     "myOffers": MessageLookupByLibrary.simpleMessage("My Offers"),
+    "myOffersOverviewSubtitle": MessageLookupByLibrary.simpleMessage(
+      "View & manage your offers",
+    ),
     "myOrders": MessageLookupByLibrary.simpleMessage("My Orders"),
     "myOrdersSubtitle": MessageLookupByLibrary.simpleMessage(
       "Track and manage all your orders in one place.",
@@ -893,6 +911,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "noAccount": MessageLookupByLibrary.simpleMessage("No account?"),
     "noAdsMatchFilter": MessageLookupByLibrary.simpleMessage(
       "No ads match this filter.",
+    ),
+    "noAdsToChangePrices": MessageLookupByLibrary.simpleMessage(
+      "You have no ads yet",
     ),
     "noBalanceTransactions": MessageLookupByLibrary.simpleMessage(
       "No balance transactions yet.",
@@ -1139,6 +1160,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "pricePerUnitTimesQuantity": MessageLookupByLibrary.simpleMessage(
       "Price per unit × quantity",
     ),
+    "pricesUpdated": MessageLookupByLibrary.simpleMessage("Prices updated"),
     "product": MessageLookupByLibrary.simpleMessage("Product"),
     "productAddedToCart": MessageLookupByLibrary.simpleMessage(
       "Product added to cart.",
@@ -1223,6 +1245,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "receiveOffers": MessageLookupByLibrary.simpleMessage("Receive Offers"),
     "received": MessageLookupByLibrary.simpleMessage("Received"),
     "receivedOffers": MessageLookupByLibrary.simpleMessage("Received Offers"),
+    "recentListings": MessageLookupByLibrary.simpleMessage("Recent Listings"),
     "refresh": MessageLookupByLibrary.simpleMessage("Refresh"),
     "registerClient": MessageLookupByLibrary.simpleMessage("Customer Sign-up"),
     "registerClientSubtitle": MessageLookupByLibrary.simpleMessage(
