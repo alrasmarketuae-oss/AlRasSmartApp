@@ -57,49 +57,12 @@ class CreateAdUnitDropdown extends StatelessWidget {
         ? CreateAdUnitOptions.values
         : <String>[canonicalSelected, ...CreateAdUnitOptions.values];
 
-    // Key forces FormField to follow parent selectedUnit (initialValue alone does not).
-    final dropdown = DropdownButtonFormField<String>(
-      key: ValueKey('unit-dropdown-$canonicalSelected'),
-      initialValue: canonicalSelected,
-      isExpanded: true,
-      icon: Icon(
-        Icons.keyboard_arrow_down_rounded,
-        size: 22.sp,
-        color: const Color(0xFF6B7280),
-      ),
-      decoration: CreateAdFormFieldStyles.dropdownDecorator(),
-      style: fieldTextStyle,
-      selectedItemBuilder: (context) => options
-          .map(
-            (unit) => SizedBox(
-              width: double.infinity,
-              child: Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: Text(
-                  CreateAdUnitOptions.localizedLabel(unit, s),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: fieldTextStyle,
-                ),
-              ),
-            ),
-          )
-          .toList(),
-      items: options
-          .map(
-            (unit) => DropdownMenuItem<String>(
-              value: unit,
-              child: Text(
-                CreateAdUnitOptions.localizedLabel(unit, s),
-                style: fieldTextStyle,
-              ),
-            ),
-          )
-          .toList(),
-      onChanged: (value) {
-        if (value == null || value == canonicalSelected) return;
-        onChanged(value);
-      },
+    final dropdown = _AnchoredUnitMenu(
+      options: options,
+      selectedUnit: canonicalSelected,
+      displayLabel: displayLabel,
+      fieldTextStyle: fieldTextStyle,
+      onChanged: onChanged,
     );
 
     if (matchRowHeight) {
@@ -107,5 +70,201 @@ class CreateAdUnitDropdown extends StatelessWidget {
     }
 
     return dropdown;
+  }
+}
+
+/// Opens the unit list starting at the field, then scrolls downward.
+class _AnchoredUnitMenu extends StatefulWidget {
+  const _AnchoredUnitMenu({
+    required this.options,
+    required this.selectedUnit,
+    required this.displayLabel,
+    required this.fieldTextStyle,
+    required this.onChanged,
+  });
+
+  final List<String> options;
+  final String selectedUnit;
+  final String displayLabel;
+  final TextStyle fieldTextStyle;
+  final ValueChanged<String> onChanged;
+
+  @override
+  State<_AnchoredUnitMenu> createState() => _AnchoredUnitMenuState();
+}
+
+class _AnchoredUnitMenuState extends State<_AnchoredUnitMenu> {
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _entry;
+  bool _open = false;
+
+  @override
+  void dispose() {
+    _removeOverlay();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant _AnchoredUnitMenu oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedUnit != widget.selectedUnit) {
+      _removeOverlay();
+    }
+  }
+
+  void _removeOverlay() {
+    _entry?.remove();
+    _entry = null;
+    if (_open && mounted) {
+      setState(() => _open = false);
+    } else {
+      _open = false;
+    }
+  }
+
+  Future<void> _toggle() async {
+    if (_open) {
+      _removeOverlay();
+      return;
+    }
+
+    await Scrollable.ensureVisible(
+      context,
+      alignment: 0.18,
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+    );
+    if (!mounted) return;
+
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+
+    final fieldSize = box.size;
+    final fieldOffset = box.localToGlobal(Offset.zero);
+    final media = MediaQuery.of(context);
+    final screen = media.size;
+    final spaceBelow =
+        screen.height - fieldOffset.dy - fieldSize.height - media.padding.bottom - 12;
+    final maxHeight = spaceBelow < 96 ? 96.0 : spaceBelow.clamp(96.0, 320.h);
+
+    final menuWidth = fieldSize.width.clamp(160.w, screen.width - 32.w);
+    final s = S.of(context);
+
+    _entry = OverlayEntry(
+      builder: (context) {
+        final direction = Directionality.of(context);
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _removeOverlay,
+                child: const SizedBox.expand(),
+              ),
+            ),
+            CompositedTransformFollower(
+              link: _layerLink,
+              showWhenUnlinked: false,
+              targetAnchor: AlignmentDirectional.bottomEnd.resolve(direction),
+              followerAnchor: AlignmentDirectional.topEnd.resolve(direction),
+              offset: const Offset(0, 4),
+              child: Material(
+                color: Colors.white,
+                elevation: 10,
+                shadowColor: const Color(0xFF16233A).withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(10.r),
+                clipBehavior: Clip.antiAlias,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minWidth: fieldSize.width,
+                    maxWidth: menuWidth,
+                    maxHeight: maxHeight,
+                  ),
+                  child: ListView.builder(
+                    padding: EdgeInsets.symmetric(vertical: 4.h),
+                    shrinkWrap: true,
+                    itemCount: widget.options.length,
+                    itemBuilder: (context, index) {
+                      final unit = widget.options[index];
+                      final selected = unit == widget.selectedUnit;
+                      return InkWell(
+                        onTap: () {
+                          _removeOverlay();
+                          if (unit != widget.selectedUnit) {
+                            widget.onChanged(unit);
+                          }
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12.w,
+                            vertical: 10.h,
+                          ),
+                          color: selected
+                              ? const Color(0xFFE8F2FC)
+                              : Colors.transparent,
+                          child: Text(
+                            CreateAdUnitOptions.localizedLabel(unit, s),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: widget.fieldTextStyle.copyWith(
+                              color: selected
+                                  ? const Color(0xFF1B5FB8)
+                                  : const Color(0xFF333333),
+                              fontWeight:
+                                  selected ? FontWeight.w700 : FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    Overlay.of(context, rootOverlay: true).insert(_entry!);
+    setState(() => _open = true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _toggle,
+          borderRadius: BorderRadius.circular(10.r),
+          child: InputDecorator(
+            isEmpty: false,
+            decoration: CreateAdFormFieldStyles.dropdownDecorator(),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.displayLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: widget.fieldTextStyle,
+                  ),
+                ),
+                Icon(
+                  _open
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                  size: 22.sp,
+                  color: const Color(0xFF6B7280),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
