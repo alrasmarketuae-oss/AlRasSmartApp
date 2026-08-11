@@ -122,6 +122,16 @@ export const arMessages = {
       viewRequestAd: 'عرض إعلان الطلب',
       requiredQuantity: 'الكمية المطلوبة',
       offeredQuantity: 'الكمية المقدمة',
+      listingUnitPrice: 'سعر إعلان الطلب',
+      supplierOfferPrice: 'عرض المورد',
+      advertiserPrice: 'السعر لصاحب الطلب',
+      advertiserPriceHint:
+        'صاحب الإعلان هيشوف السعر ده. المورد هيفضل شايف سعر عرضه الأصلي.',
+      belowListingWarning:
+        'العرض أقل من سعر إعلان الطلب، فمش هيتوافق تلقائي. راجع وحدد السعر اللي هيظهر لصاحب الطلب.',
+      saveAdvertiserPrice: 'حفظ سعر صاحب الطلب',
+      advertiserPriceSaved: 'تم حفظ سعر صاحب الطلب',
+      advertiserPriceInvalid: 'أدخل سعر وحدة صحيح أكبر من صفر.',
       adminApproved: 'موافقة الإدارة',
       awaitingAdminReview: 'بانتظار مراجعة الإدارة',
       pendingOffersOnAd: '{count} عروض جديدة',
@@ -363,6 +373,9 @@ export const arMessages = {
       statusRejected: 'مرفوض',
       preview: 'معاينة',
       rejectConfirm: 'هل أنت متأكد من رفض هذا الإعلان؟',
+      rejectReasonRequired: 'اكتب سبب الرفض بالعربية أو الإنجليزية.',
+      rejectReasonDialogHint:
+        'اكتب سبب الرفض. هيوصل للمورد. لغة واحدة كافية والتانية اختيارية.',
       searchPlaceholderShort: 'بحث...',
       stats: {
         totalAds: 'إجمالي الإعلانات',
@@ -838,7 +851,7 @@ export const arMessages = {
       requestOfferActionError: 'تعذر تحديث عرض الطلب',
       requestOfferApproveConfirmTitle: 'الموافقة على العرض لصاحب الطلب؟',
       requestOfferApproveConfirmMessage:
-        'سيصل إشعار لصاحب الطلب ليراجع الصور والسعر والكمية والملاحظات.',
+        'هيوصل إشعار لصاحب الطلب وهيشوف السعر اللي حددته أنت، مش سعر عرض المورد الأصلي.',
       requestOfferRejectConfirmTitle: 'رفض هذا العرض؟',
       requestOfferRejectConfirmMessage:
         'لن يصل أي إشعار لصاحب الطلب ولن يرى هذا العرض.',

@@ -71,9 +71,9 @@ public static class AutoModerationMessages
             "ألفاظ نابية أو غير لائقة");
 
         AddCategory(
-            Has("seller_company_name", "seller_logo", "watermark"),
-            "your store/company name or a logo/watermark",
-            "اسم متجرك/شركتك أو شعارك أو علامة مائية");
+            Has("seller_company_name", "seller_logo", "watermark", "unclear_packaging"),
+            "your store/company name or a logo/watermark (including printed on packaging)",
+            "اسم متجرك/شركتك أو شعارك أو علامة مائية (بما في ذلك المطبوع على العبوة)");
 
         AddCategory(
             Has("brand_name", "product_brand", "brand_logo"),

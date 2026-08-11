@@ -627,8 +627,8 @@ public class OpenAiVisionService(
         var apiKey = configuration["OpenAI:ApiKey"];
         if (string.IsNullOrWhiteSpace(apiKey))
         {
-            logger.LogWarning("OpenAI ApiKey missing — skipping ad image policy scan.");
-            return new AdImagePolicyScanResult();
+            logger.LogWarning("OpenAI ApiKey missing — ad image policy scan failed closed.");
+            return FailedImageScan("missing_api_key");
         }
 
         byte[] jpegBytes;
@@ -640,7 +640,7 @@ public class OpenAiVisionService(
             {
                 jpegBytes = await ImageFileHelper.CompressToJpegBytesAsync(
                     buffered,
-                    ImageCompressionOptions.SearchVision,
+                    ImageCompressionOptions.ModerationVision,
                     cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -652,30 +652,40 @@ public class OpenAiVisionService(
 
         if (jpegBytes.Length == 0)
         {
-            return new AdImagePolicyScanResult();
+            return FailedImageScan("empty_image");
         }
 
         var dataUrl = $"data:image/jpeg;base64,{Convert.ToBase64String(jpegBytes)}";
         var prompt =
-            "You moderate marketplace product photos for Al Ras Smart (B2B food wholesale).\n" +
-            "REJECT the image only if ANY of these are clearly visible:\n" +
-            "- phone numbers, WhatsApp, emails, social handles, websites, QR codes for contact\n" +
-            "- seller company logos or watermarks overlaid on the photo\n" +
-            "- commercial product brand logos/trademarks (e.g. Nestle, Almarai, MDH, Everest)\n" +
-            "ALLOWED (do NOT reject for these):\n" +
-            "- origin country or region (Sudanese peanuts, Indian cardamom, Egyptian rice, Product of Sudan)\n" +
-            "- product type, grade, size, color, packing type, weight, and other commodity specs\n" +
-            "- plain commodity photos without a commercial brand mark\n" +
+            "You moderate marketplace product photos for Al Ras Smart (B2B wholesale).\n" +
+            "Look carefully at EVERY visible text and mark: sacks, bags, cartons, tins, stickers, labels, " +
+            "banners, and overlays. Read Arabic and English.\n" +
+            "Set hasViolation=true if ANY of these appear ANYWHERE in the photo:\n" +
+            "- phone / mobile / WhatsApp numbers (digits on packaging count; 8+ digits, with or without +)\n" +
+            "- emails, websites, QR codes, social handles for contact\n" +
+            "- company name, factory name, mill name, trader name, or store name printed on the sack/bag/carton " +
+            "(this IS a violation even when it is part of the packaging, not an overlay)\n" +
+            "- seller logos, watermarks, or commercial brand logos/trademarks (Nestle, Almarai, local mill marks, etc.)\n" +
+            "ALLOWED only when NONE of the above appear:\n" +
+            "- origin/region alone (Product of Sudan, Indian cardamom, Egyptian rice)\n" +
+            "- commodity specs alone (grade, size, weight, packing type) with no company name and no phone\n" +
+            "- plain product photos with no readable business identity\n" +
+            "IMPORTANT:\n" +
+            "- A sack/شقارة with a company name on it = seller_company_name (violation).\n" +
+            "- A phone printed on a sack/label = phone (violation).\n" +
+            "- Origin country is NOT a company name.\n" +
+            "- If you can read a business/company/factory name OR a phone-like number, hasViolation MUST be true.\n" +
+            "- If packaging text is present and you cannot tell company-name vs origin/spec, hasViolation=true " +
+            "with violationKinds [\"unclear_packaging\"].\n" +
             "Return ONLY JSON:\n" +
             "{\n" +
             "  \"hasViolation\": false,\n" +
             "  \"violationKinds\": [],\n" +
             "  \"summary\": \"\"\n" +
             "}\n" +
-            "violationKinds examples: phone, whatsapp, email, url, social, seller_logo, watermark, " +
-            "qr_contact, product_brand, brand_logo.\n" +
-            "Origin country text is NOT a brand. If unsure whether a mark is a commercial brand vs origin/spec text, " +
-            "prefer hasViolation=false unless a clear commercial logo is visible. No markdown.";
+            "violationKinds examples: phone, whatsapp, email, url, social, seller_company_name, seller_logo, " +
+            "watermark, qr_contact, product_brand, brand_logo, unclear_packaging.\n" +
+            "No markdown.";
 
         var payload = new
         {
@@ -690,7 +700,7 @@ public class OpenAiVisionService(
                     content = new object[]
                     {
                         new { type = "text", text = prompt },
-                        new { type = "image_url", image_url = new { url = dataUrl, detail = "low" } }
+                        new { type = "image_url", image_url = new { url = dataUrl, detail = "high" } }
                     }
                 }
             }
@@ -701,51 +711,72 @@ public class OpenAiVisionService(
         request.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(TimeSpan.FromSeconds(35));
+        timeoutCts.CancelAfter(TimeSpan.FromSeconds(50));
 
-        using var response = await httpClient.SendAsync(request, timeoutCts.Token).ConfigureAwait(false);
-        var body = await response.Content.ReadAsStringAsync(timeoutCts.Token).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            return new AdImagePolicyScanResult();
-        }
-
-        using var doc = JsonDocument.Parse(body);
-        var content = doc.RootElement
-            .GetProperty("choices")[0]
-            .GetProperty("message")
-            .GetProperty("content")
-            .GetString();
-
-        if (string.IsNullOrWhiteSpace(content))
-        {
-            return new AdImagePolicyScanResult();
-        }
-
-        using var parsed = JsonDocument.Parse(content);
-        var root = parsed.RootElement;
-        var hasViolation = root.TryGetProperty("hasViolation", out var hv) && hv.ValueKind == JsonValueKind.True;
-        var kinds = new List<string>();
-        if (root.TryGetProperty("violationKinds", out var vk) && vk.ValueKind == JsonValueKind.Array)
-        {
-            foreach (var item in vk.EnumerateArray())
+            using var response = await httpClient.SendAsync(request, timeoutCts.Token).ConfigureAwait(false);
+            var body = await response.Content.ReadAsStringAsync(timeoutCts.Token).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
             {
-                var value = item.GetString();
-                if (!string.IsNullOrWhiteSpace(value))
+                logger.LogWarning(
+                    "Ad image policy scan failed: {Status} {Body}",
+                    (int)response.StatusCode,
+                    body);
+                return FailedImageScan("http_error");
+            }
+
+            using var doc = JsonDocument.Parse(body);
+            var content = doc.RootElement
+                .GetProperty("choices")[0]
+                .GetProperty("message")
+                .GetProperty("content")
+                .GetString();
+
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                return FailedImageScan("empty_response");
+            }
+
+            using var parsed = JsonDocument.Parse(content);
+            var root = parsed.RootElement;
+            var kinds = new List<string>();
+            if (root.TryGetProperty("violationKinds", out var vk) && vk.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in vk.EnumerateArray())
                 {
-                    kinds.Add(value.Trim());
+                    var value = item.GetString();
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        kinds.Add(value.Trim());
+                    }
                 }
             }
-        }
 
-        var summary = root.TryGetProperty("summary", out var s) ? s.GetString() : null;
-        return new AdImagePolicyScanResult
+            var hasViolation = (root.TryGetProperty("hasViolation", out var hv) && hv.ValueKind == JsonValueKind.True)
+                || kinds.Count > 0;
+            var summary = root.TryGetProperty("summary", out var s) ? s.GetString() : null;
+            return new AdImagePolicyScanResult
+            {
+                HasViolation = hasViolation,
+                ViolationKinds = kinds,
+                Summary = summary
+            };
+        }
+        catch (Exception ex)
         {
-            HasViolation = hasViolation,
-            ViolationKinds = kinds,
-            Summary = summary
-        };
+            logger.LogWarning(ex, "Ad image policy scan threw — fail closed for admin review.");
+            return FailedImageScan("exception");
+        }
     }
+
+    private static AdImagePolicyScanResult FailedImageScan(string reason) =>
+        new()
+        {
+            HasViolation = false,
+            ScanFailed = true,
+            Summary = $"scan_failed:{reason}"
+        };
 
     public async Task<AdTextPolicyScanResult> ScanAdTextForPolicyViolationsAsync(
         string combinedText,

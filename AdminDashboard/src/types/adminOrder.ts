@@ -64,6 +64,14 @@ export type AdminOrder = {
   customerUnitPriceFormatted: string
   customerTotalPriceFormatted: string
   appProfitFormatted: string
+  listingUnitPrice?: number
+  listingUnitPriceFormatted?: string
+  isBelowListingPrice?: boolean
+  hasAdminAdvertiserPrice?: boolean
+  adminAdvertiserUnitPrice?: number | null
+  adminAdvertiserTotalPrice?: number | null
+  adminAdvertiserUnitPriceFormatted?: string
+  adminAdvertiserTotalPriceFormatted?: string
   quantity: number
   requestedQuantity: number
   productAvailableQuantity?: number | null

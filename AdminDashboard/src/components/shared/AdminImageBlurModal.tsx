@@ -9,13 +9,14 @@ type BlurRect = {
   height: number
 }
 
-const DEFAULT_BLUR_PX = 30
+/** Display-space radius. Export multiplies this by the source/display scale. */
+const DEFAULT_BLUR_PX = 32
 
 type AdminImageBlurModalProps = {
   open: boolean
   imageUrl: string
   isSaving?: boolean
-  /** Gaussian blur radius in pixels (default 30). */
+  /** Gaussian blur radius in display pixels (scaled up when saving the original). */
   blurPx?: number
   onClose: () => void
   onSave: (file: File) => Promise<void>
@@ -35,24 +36,56 @@ function applyBlurRegion(
   rect: BlurRect,
   blurPx: number,
 ) {
-  const { x, y, width, height } = rect
+  const canvasW = ctx.canvas.width
+  const canvasH = ctx.canvas.height
+  const x = Math.max(0, Math.min(Math.round(rect.x), canvasW - 1))
+  const y = Math.max(0, Math.min(Math.round(rect.y), canvasH - 1))
+  const width = Math.max(1, Math.min(Math.round(rect.width), canvasW - x))
+  const height = Math.max(1, Math.min(Math.round(rect.height), canvasH - y))
+  const radius = Math.max(8, Math.round(blurPx))
+
+  // Pad so Gaussian blur samples real pixels instead of fading to transparent
+  // (transparent edges let the sharp original show through and look "light").
+  const pad = Math.ceil(radius * 2)
+  const sx = Math.max(0, x - pad)
+  const sy = Math.max(0, y - pad)
+  const ex = Math.min(canvasW, x + width + pad)
+  const ey = Math.min(canvasH, y + height + pad)
+  const sw = Math.max(1, ex - sx)
+  const sh = Math.max(1, ey - sy)
+  const innerX = x - sx
+  const innerY = y - sy
+
   const patch = document.createElement('canvas')
-  patch.width = Math.max(1, Math.round(width))
-  patch.height = Math.max(1, Math.round(height))
+  patch.width = sw
+  patch.height = sh
   const patchCtx = patch.getContext('2d')
   if (!patchCtx) return
+  patchCtx.drawImage(source, sx, sy, sw, sh, 0, 0, sw, sh)
 
-  patchCtx.drawImage(source, x, y, width, height, 0, 0, patch.width, patch.height)
+  // Pixelate first so numbers/text stay unreadable at any resolution.
+  const block = Math.max(10, Math.round(Math.min(width, height) / 7))
+  const tinyW = Math.max(1, Math.round(width / block))
+  const tinyH = Math.max(1, Math.round(height / block))
+  const tiny = document.createElement('canvas')
+  tiny.width = tinyW
+  tiny.height = tinyH
+  const tinyCtx = tiny.getContext('2d')
+  if (!tinyCtx) return
+  tinyCtx.imageSmoothingEnabled = true
+  tinyCtx.drawImage(patch, innerX, innerY, width, height, 0, 0, tinyW, tinyH)
+  patchCtx.imageSmoothingEnabled = false
+  patchCtx.drawImage(tiny, 0, 0, tinyW, tinyH, innerX, innerY, width, height)
 
   const blurred = document.createElement('canvas')
-  blurred.width = patch.width
-  blurred.height = patch.height
+  blurred.width = sw
+  blurred.height = sh
   const blurredCtx = blurred.getContext('2d')
   if (!blurredCtx) return
-
-  blurredCtx.filter = `blur(${blurPx}px)`
+  blurredCtx.filter = `blur(${radius}px)`
   blurredCtx.drawImage(patch, 0, 0)
-  ctx.drawImage(blurred, x, y)
+
+  ctx.drawImage(blurred, innerX, innerY, width, height, x, y, width, height)
 }
 
 /**
@@ -164,6 +197,8 @@ export default function AdminImageBlurModal({
       exportCtx.drawImage(bitmap, 0, 0)
       const scaleX = bitmap.width / displayW
       const scaleY = bitmap.height / displayH
+      const scale = Math.max(scaleX, scaleY)
+      const exportBlurPx = Math.max(blurPx * scale, 24)
 
       for (const rect of regions) {
         applyBlurRegion(
@@ -175,7 +210,7 @@ export default function AdminImageBlurModal({
             width: rect.width * scaleX,
             height: rect.height * scaleY,
           },
-          blurPx,
+          exportBlurPx,
         )
       }
 
@@ -249,9 +284,9 @@ export default function AdminImageBlurModal({
                   top: rect.y,
                   width: rect.width,
                   height: rect.height,
-                  backdropFilter: `blur(${Math.min(blurPx, 30)}px)`,
-                  WebkitBackdropFilter: `blur(${Math.min(blurPx, 30)}px)`,
-                  background: 'rgba(255,255,255,0.3)',
+                  backdropFilter: `blur(${blurPx}px)`,
+                  WebkitBackdropFilter: `blur(${blurPx}px)`,
+                  background: 'rgba(210, 210, 210, 0.28)',
                 }}
               />
             ))}

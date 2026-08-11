@@ -123,6 +123,16 @@ export const enMessages = {
       viewRequestAd: 'View request ad',
       requiredQuantity: 'Required quantity',
       offeredQuantity: 'Offered quantity',
+      listingUnitPrice: 'Request ad price',
+      supplierOfferPrice: 'Supplier offer',
+      advertiserPrice: 'Price for advertiser',
+      advertiserPriceHint:
+        'The request owner will see this amount. The supplier still sees their original offer.',
+      belowListingWarning:
+        'This offer is below the request ad price. It will not auto-approve — review and set the price the advertiser should see.',
+      saveAdvertiserPrice: 'Save advertiser price',
+      advertiserPriceSaved: 'Advertiser price saved',
+      advertiserPriceInvalid: 'Enter a valid unit price greater than zero.',
       adminApproved: 'Admin approved',
       awaitingAdminReview: 'Awaiting admin review',
       pendingOffersOnAd: '{count} new offers',
@@ -364,6 +374,9 @@ export const enMessages = {
       statusRejected: 'Rejected',
       preview: 'Preview',
       rejectConfirm: 'Are you sure you want to reject this ad?',
+      rejectReasonRequired: 'Enter a rejection reason in English or Arabic.',
+      rejectReasonDialogHint:
+        'Write the rejection reason. The supplier will receive it. One language is enough; the other is optional.',
       searchPlaceholderShort: 'Search...',
       stats: {
         totalAds: 'Total ads',
@@ -840,7 +853,7 @@ export const enMessages = {
       requestOfferActionError: 'Could not update request offer',
       requestOfferApproveConfirmTitle: 'Approve offer for owner?',
       requestOfferApproveConfirmMessage:
-        'The request owner will receive a notification and can review photos, price, quantity, and notes.',
+        'The request owner will be notified and will see the advertiser price you set (not the supplier\'s original offer).',
       requestOfferRejectConfirmTitle: 'Reject this offer?',
       requestOfferRejectConfirmMessage:
         'The request owner will not be notified and will never see this offer.',

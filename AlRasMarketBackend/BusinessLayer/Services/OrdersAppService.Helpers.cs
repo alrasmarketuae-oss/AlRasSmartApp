@@ -504,8 +504,16 @@ public partial class OrdersAppService
         string? notes,
         int imageCount,
         int documentCount,
-        int videoCount)
+        int videoCount,
+        decimal offerUnitPrice = 0m)
     {
+        // Supplier bid below the request listing price always waits for admin,
+        // even when there are no notes/media (those would otherwise skip admin).
+        if (AdminOrderPricingHelper.IsRequestOfferBelowListingPrice(offerUnitPrice, product))
+        {
+            return (OrderStatusCodes.Ordered, false);
+        }
+
         if (ProductTypeCodes.UsesSpecOrMediaAdminGate(product))
         {
             return ResolveSpecOrMediaGateStatus(notes, imageCount, documentCount, videoCount);

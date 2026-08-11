@@ -68,7 +68,8 @@ public static class OrderQueryHelpers
                 .ThenInclude(x => x!.Country)
             .Include(x => x.PendingOrder!)
                 .ThenInclude(p => p!.Address!)
-                    .ThenInclude(a => a!.City);
+                    .ThenInclude(a => a!.City)
+            .Include(x => x.AdminOfferPrice);
 
     /// <summary>Same as list includes, plus full status timeline for order detail.</summary>
     public static IQueryable<Order> WithDetailDetails(IQueryable<Order> query) =>

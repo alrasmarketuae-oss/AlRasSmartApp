@@ -1,9 +1,10 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { resolveAssetUrl } from '../../lib/assets'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import {
   useApproveRequestOfferMutation,
+  useSetRequestOfferAdvertiserPriceMutation,
   useDeleteAdminProductVideoMutation,
   useDeleteOrderImageMutation,
   useDeleteOrderVideoMutation,
@@ -143,6 +144,25 @@ function fileNameFromPath(path: string): string {
   return parts[parts.length - 1] || path
 }
 
+function defaultAdvertiserUnitPrice(order: AdminOrder): string {
+  if (order.hasAdminAdvertiserPrice && (order.adminAdvertiserUnitPrice ?? 0) > 0) {
+    return String(order.adminAdvertiserUnitPrice)
+  }
+  if (order.isBelowListingPrice && (order.listingUnitPrice ?? 0) > 0) {
+    return String(order.listingUnitPrice)
+  }
+  if (order.customerUnitPrice > 0) {
+    return String(order.customerUnitPrice)
+  }
+  return order.supplierUnitPrice > 0 ? String(order.supplierUnitPrice) : ''
+}
+
+function parseAdvertiserUnitPrice(value: string): number | null {
+  const parsed = Number(value.trim().replace(',', '.'))
+  if (!Number.isFinite(parsed) || parsed <= 0) return null
+  return parsed
+}
+
 export default function RequestOfferDetailView({
   order,
   isUpdating,
@@ -180,9 +200,14 @@ export default function RequestOfferDetailView({
   } | null>(null)
   const [selectedVideoIndex, setSelectedVideoIndex] = useState(0)
   const [showProductDetails, setShowProductDetails] = useState(false)
+  const [advertiserUnitPrice, setAdvertiserUnitPrice] = useState(() =>
+    defaultAdvertiserUnitPrice(order),
+  )
 
   const [approveRequestOffer, { isLoading: isApprovingOffer }] =
     useApproveRequestOfferMutation()
+  const [setAdvertiserPrice, { isLoading: isSavingAdvertiserPrice }] =
+    useSetRequestOfferAdvertiserPriceMutation()
   const [rejectRequestOffer, { isLoading: isRejectingOffer }] =
     useRejectRequestOfferMutation()
   const [setCustomOrderStatus, { isLoading: isSettingCustomStatus }] =
@@ -218,6 +243,7 @@ export default function RequestOfferDetailView({
   const isBusy =
     isUpdating ||
     isApprovingOffer ||
+    isSavingAdvertiserPrice ||
     isRejectingOffer ||
     isSettingCustomStatus ||
     isMarkingReceived ||
@@ -230,12 +256,32 @@ export default function RequestOfferDetailView({
   const offeredQuantity = resolveOfferedQuantity(order)
   const extraQuantity = Math.max(0, offeredQuantity - requiredQuantity)
 
+  const supplierUnitPrice =
+    order.supplierUnitPriceFormatted?.trim() ||
+    `${(order.supplierUnitPrice || 0).toFixed(2)} ${order.currency}`
+  const listingUnitPrice =
+    order.listingUnitPriceFormatted?.trim() ||
+    ((order.listingUnitPrice ?? 0) > 0
+      ? `${order.listingUnitPrice!.toFixed(2)} ${order.currency}`
+      : '')
   const unitPrice =
+    order.adminAdvertiserUnitPriceFormatted?.trim() ||
     order.customerUnitPriceFormatted?.trim() ||
     (order.customerUnitPrice > 0
       ? `${order.customerUnitPrice.toFixed(2)} ${order.currency}`
-      : order.supplierUnitPriceFormatted ||
-        `${order.supplierUnitPrice.toFixed(2)} ${order.currency}`)
+      : supplierUnitPrice)
+
+  useEffect(() => {
+    setAdvertiserUnitPrice(defaultAdvertiserUnitPrice(order))
+  }, [
+    order.id,
+    order.hasAdminAdvertiserPrice,
+    order.adminAdvertiserUnitPrice,
+    order.isBelowListingPrice,
+    order.listingUnitPrice,
+    order.customerUnitPrice,
+    order.supplierUnitPrice,
+  ])
 
   const subtotal =
     order.customerTotalPriceFormatted?.trim() ||
@@ -430,16 +476,48 @@ export default function RequestOfferDetailView({
   function submitRequestOfferDecision(approved: boolean) {
     setRequestOfferError(null)
     setRequestOfferSuccess(null)
+    if (approved) {
+      const unit = parseAdvertiserUnitPrice(advertiserUnitPrice)
+      if (unit == null) {
+        setRequestOfferError(t('reqsOffers.advertiserPriceInvalid'))
+        setPendingRequestOfferAction(null)
+        return
+      }
+      setPendingRequestOfferAction(null)
+      void approveRequestOffer({ orderId: order.id, adminUnitPrice: unit })
+        .unwrap()
+        .then(() => {
+          setRequestOfferSuccess(t('orders.requestOfferApproveSuccess'))
+        })
+        .catch((err: { data?: { message?: string } }) => {
+          setRequestOfferError(err?.data?.message ?? t('orders.requestOfferActionError'))
+        })
+      return
+    }
+
     setPendingRequestOfferAction(null)
-    const action = approved ? approveRequestOffer : rejectRequestOffer
-    void action({ orderId: order.id })
+    void rejectRequestOffer({ orderId: order.id })
       .unwrap()
       .then(() => {
-        setRequestOfferSuccess(
-          approved
-            ? t('orders.requestOfferApproveSuccess')
-            : t('orders.requestOfferRejectSuccess'),
-        )
+        setRequestOfferSuccess(t('orders.requestOfferRejectSuccess'))
+      })
+      .catch((err: { data?: { message?: string } }) => {
+        setRequestOfferError(err?.data?.message ?? t('orders.requestOfferActionError'))
+      })
+  }
+
+  function saveAdvertiserPrice() {
+    const unit = parseAdvertiserUnitPrice(advertiserUnitPrice)
+    setRequestOfferError(null)
+    setRequestOfferSuccess(null)
+    if (unit == null) {
+      setRequestOfferError(t('reqsOffers.advertiserPriceInvalid'))
+      return
+    }
+    void setAdvertiserPrice({ orderId: order.id, adminUnitPrice: unit })
+      .unwrap()
+      .then(() => {
+        setRequestOfferSuccess(t('reqsOffers.advertiserPriceSaved'))
       })
       .catch((err: { data?: { message?: string } }) => {
         setRequestOfferError(err?.data?.message ?? t('orders.requestOfferActionError'))
@@ -687,16 +765,34 @@ export default function RequestOfferDetailView({
                   </div>
                   <div className="admin-surface-muted rounded-xl px-3 py-3 text-start">
                     <p className="admin-text-subtle text-[10px] font-semibold uppercase">
-                      {t('reqsOffers.unitPrice')}
+                      {t('reqsOffers.supplierOfferPrice')}
                     </p>
                     <p className="admin-text mt-1 text-sm font-bold">
-                      {formatAdAmount(unitPrice, locale)}
+                      {formatAdAmount(supplierUnitPrice, locale)}
                       {order.unitName ? (
                         <span className="admin-text-muted text-xs font-medium">
                           {' '}
                           / {order.unitName}
                         </span>
                       ) : null}
+                    </p>
+                  </div>
+                  {listingUnitPrice ? (
+                    <div className="admin-surface-muted rounded-xl px-3 py-3 text-start">
+                      <p className="admin-text-subtle text-[10px] font-semibold uppercase">
+                        {t('reqsOffers.listingUnitPrice')}
+                      </p>
+                      <p className="admin-text mt-1 text-sm font-bold">
+                        {formatAdAmount(listingUnitPrice, locale)}
+                      </p>
+                    </div>
+                  ) : null}
+                  <div className="admin-surface-muted rounded-xl px-3 py-3 text-start">
+                    <p className="admin-text-subtle text-[10px] font-semibold uppercase">
+                      {t('reqsOffers.advertiserPrice')}
+                    </p>
+                    <p className="admin-text mt-1 text-sm font-bold">
+                      {formatAdAmount(unitPrice, locale)}
                     </p>
                   </div>
                   <div className="admin-surface-muted rounded-xl px-3 py-3 text-start">
@@ -1248,6 +1344,35 @@ export default function RequestOfferDetailView({
 
           <section className="admin-card space-y-2 rounded-2xl p-4 shadow-sm">
             <p className="admin-text mb-1 text-sm font-bold">{t('reqsOffers.requestActions')}</p>
+            {order.isBelowListingPrice ? (
+              <p className="rounded-lg bg-amber-50 px-3 py-2 text-start text-xs font-semibold text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                {t('reqsOffers.belowListingWarning')}
+              </p>
+            ) : null}
+            <label className="block text-start">
+              <span className="admin-text-subtle text-xs">{t('reqsOffers.advertiserPrice')}</span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={advertiserUnitPrice}
+                onChange={(e) => setAdvertiserUnitPrice(e.target.value)}
+                className="admin-input mt-1 w-full rounded-lg px-3 py-2 text-sm"
+              />
+            </label>
+            <p className="admin-text-muted text-start text-[11px] leading-relaxed">
+              {t('reqsOffers.advertiserPriceHint')}
+            </p>
+            {!needsAdminModeration ? (
+              <button
+                type="button"
+                disabled={isBusy}
+                onClick={saveAdvertiserPrice}
+                className="admin-border inline-flex h-11 w-full items-center justify-center rounded-xl border bg-white text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+              >
+                {isSavingAdvertiserPrice ? t('saving') : t('reqsOffers.saveAdvertiserPrice')}
+              </button>
+            ) : null}
             {needsAdminModeration ? (
               <>
                 <button

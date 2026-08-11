@@ -197,7 +197,8 @@ public static class AdminOrderPricingHelper
             categoryCommissions);
 
         var (supplierUnitPrice, supplierTotalPrice) = ResolveSubmittedOrderAmounts(order);
-        var (customerUnitPrice, customerTotalPrice) = ApplyRequestsCommission(
+        var (customerUnitPrice, customerTotalPrice) = ResolveRequestOfferAdvertiserPrices(
+            order,
             supplierUnitPrice,
             supplierTotalPrice,
             commissionPercent);
@@ -237,12 +238,14 @@ public static class AdminOrderPricingHelper
         decimal commissionPercent)
     {
         var (supplierUnitPrice, supplierTotalPrice) = ResolveSubmittedOrderAmounts(order);
-        var (customerUnitPrice, customerTotalPrice) = ApplyRequestsCommission(
+        var (customerUnitPrice, customerTotalPrice) = ResolveRequestOfferAdvertiserPrices(
+            order,
             supplierUnitPrice,
             supplierTotalPrice,
             commissionPercent);
         var appProfitAmount = decimal.Round(customerTotalPrice - supplierTotalPrice, 2, MidpointRounding.AwayFromZero);
         var currency = ProductCurrencyHelper.Normalize(product.Currency, product.ProductTypeId);
+        var listingUnitPrice = ResolveRequestListingUnitPrice(product);
 
         dto.Currency = currency;
         dto.CommissionPercent = commissionPercent;
@@ -261,6 +264,19 @@ public static class AdminOrderPricingHelper
         dto.CustomerTotalPriceFormatted = FormatPrice(customerTotalPrice, currency);
         dto.AppProfitFormatted = FormatPrice(appProfitAmount, currency);
         dto.AmountFormatted = dto.CustomerTotalPriceFormatted;
+        dto.ListingUnitPrice = listingUnitPrice;
+        dto.ListingUnitPriceFormatted = listingUnitPrice > 0
+            ? FormatPrice(listingUnitPrice, currency)
+            : string.Empty;
+        dto.IsBelowListingPrice = IsRequestOfferBelowListingPrice(order, product);
+        if (TryGetAdminAdvertiserPrices(order, out var adminUnit, out var adminTotal))
+        {
+            dto.HasAdminAdvertiserPrice = true;
+            dto.AdminAdvertiserUnitPrice = adminUnit;
+            dto.AdminAdvertiserTotalPrice = adminTotal;
+            dto.AdminAdvertiserUnitPriceFormatted = FormatPrice(adminUnit, currency);
+            dto.AdminAdvertiserTotalPriceFormatted = FormatPrice(adminTotal, currency);
+        }
     }
 
     public static (decimal CustomerUnitPrice, decimal CustomerTotalPrice, string Currency) GetRequestOfferCustomerPrices(
@@ -276,13 +292,85 @@ public static class AdminOrderPricingHelper
             categoryCommissions);
 
         var (supplierUnitPrice, supplierTotalPrice) = ResolveSubmittedOrderAmounts(order);
-        var (customerUnitPrice, customerTotalPrice) = ApplyRequestsCommission(
+        var (customerUnitPrice, customerTotalPrice) = ResolveRequestOfferAdvertiserPrices(
+            order,
             supplierUnitPrice,
             supplierTotalPrice,
             commissionPercent);
         var currency = ProductCurrencyHelper.Normalize(product.Currency, product.ProductTypeId);
 
         return (customerUnitPrice, customerTotalPrice, currency);
+    }
+
+    /// <summary>
+    /// Price the request-ad owner sees. Admin override is shown as typed (no extra commission).
+    /// Otherwise supplier amount + Requests commission.
+    /// </summary>
+    public static (decimal UnitPrice, decimal TotalPrice) ResolveRequestOfferAdvertiserPrices(
+        Order order,
+        decimal supplierUnitPrice,
+        decimal supplierTotalPrice,
+        decimal commissionPercent)
+    {
+        if (TryGetAdminAdvertiserPrices(order, out var adminUnit, out var adminTotal))
+        {
+            return (adminUnit, adminTotal);
+        }
+
+        return ApplyRequestsCommission(supplierUnitPrice, supplierTotalPrice, commissionPercent);
+    }
+
+    public static decimal ResolveRequestListingUnitPrice(Product product)
+    {
+        if (product.USDPrice <= 0)
+        {
+            return 0m;
+        }
+
+        var stored = decimal.Round(product.USDPrice, 2, MidpointRounding.AwayFromZero);
+        return CustomerPriceCalculator.ApplyPercentMarkdown(
+            stored,
+            CustomerPriceCalculator.RequestListingMarkdownPercent);
+    }
+
+    public static bool IsRequestOfferBelowListingPrice(decimal offerUnitPrice, Product? product)
+    {
+        if (product is null || product.ProductTypeId != ProductTypeCodes.Requests)
+        {
+            return false;
+        }
+
+        var listing = ResolveRequestListingUnitPrice(product);
+        if (listing <= 0)
+        {
+            return false;
+        }
+
+        return offerUnitPrice + 0.009m < listing;
+    }
+
+    public static bool IsRequestOfferBelowListingPrice(Order order, Product? product)
+    {
+        var (unit, _) = ResolveSubmittedOrderAmounts(order);
+        return IsRequestOfferBelowListingPrice(unit, product);
+    }
+
+    public static bool TryGetAdminAdvertiserPrices(Order order, out decimal unitPrice, out decimal totalPrice)
+    {
+        var row = order.AdminOfferPrice;
+        if (row is null || row.AdminUnitPrice <= 0)
+        {
+            unitPrice = 0m;
+            totalPrice = 0m;
+            return false;
+        }
+
+        var qty = order.Quantity <= 0 ? 1m : order.Quantity;
+        unitPrice = decimal.Round(row.AdminUnitPrice, 2, MidpointRounding.AwayFromZero);
+        totalPrice = row.AdminTotalPrice > 0
+            ? decimal.Round(row.AdminTotalPrice, 2, MidpointRounding.AwayFromZero)
+            : decimal.Round(unitPrice * qty, 2, MidpointRounding.AwayFromZero);
+        return true;
     }
 
     /// <summary>

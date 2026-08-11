@@ -46,7 +46,18 @@ public interface IOrdersAppService
     Task DeleteOrderImageAsync(string userId, long orderId, long imageId, CancellationToken cancellationToken = default);
     Task<object> RequestOrderReturnAsync(RequestOrderReturnInput input, CancellationToken cancellationToken = default);
     Task<object> RespondToOrderReturnAsync(RespondToOrderReturnInput input, CancellationToken cancellationToken = default);
-    Task<object> ApproveRequestOfferForAdminAsync(string adminUserId, long orderId, CancellationToken cancellationToken = default);
+    Task<object> ApproveRequestOfferForAdminAsync(
+        string adminUserId,
+        long orderId,
+        decimal? adminUnitPrice = null,
+        decimal? adminTotalPrice = null,
+        CancellationToken cancellationToken = default);
+    Task<object> SetRequestOfferAdvertiserPriceAsync(
+        string adminUserId,
+        long orderId,
+        decimal adminUnitPrice,
+        decimal? adminTotalPrice = null,
+        CancellationToken cancellationToken = default);
     Task<object> RejectRequestOfferForAdminAsync(
         string adminUserId,
         long orderId,

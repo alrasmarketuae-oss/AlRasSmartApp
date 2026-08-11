@@ -163,6 +163,8 @@ public partial class OrdersAppService
     public async Task<object> ApproveRequestOfferForAdminAsync(
         string adminUserId,
         long orderId,
+        decimal? adminUnitPrice = null,
+        decimal? adminTotalPrice = null,
         CancellationToken cancellationToken = default)
     {
         if (!Guid.TryParse(adminUserId, out var adminId))
@@ -186,6 +188,11 @@ public partial class OrdersAppService
         }
 
         EnsurePendingAdminModerationReview(order);
+
+        if (adminUnitPrice is > 0 && ProductTypeCodes.IsRequests(order.Product?.ProductTypeId))
+        {
+            UpsertAdminAdvertiserPrice(order, adminId, adminUnitPrice.Value, adminTotalPrice);
+        }
 
         order.IsAdminApproved = true;
         order.StatusId = OrderStatusCodes.AwaitingSellerApproval;
@@ -218,6 +225,85 @@ public partial class OrdersAppService
             usdToAedRate);
         AdminOrderPricingHelper.ApplyChargedCheckoutAmounts(dto, order);
         return dto;
+    }
+
+    public async Task<object> SetRequestOfferAdvertiserPriceAsync(
+        string adminUserId,
+        long orderId,
+        decimal adminUnitPrice,
+        decimal? adminTotalPrice = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(adminUserId, out var adminId))
+        {
+            throw new ArgumentException("Invalid admin user id.");
+        }
+
+        _ = await orderData.GetUserByIdAsNoTrackingAsync(adminId, cancellationToken)
+            ?? throw new KeyNotFoundException("Admin user not found.");
+
+        var order = await orderData.GetOrderWithListDetailsAsync(orderId, cancellationToken)
+            ?? throw new KeyNotFoundException("Order not found.");
+
+        if (!ProductTypeCodes.IsRequests(order.Product?.ProductTypeId))
+        {
+            throw new InvalidOperationException("Advertiser price can only be set on request offers.");
+        }
+
+        UpsertAdminAdvertiserPrice(order, adminId, adminUnitPrice, adminTotalPrice);
+        await orderData.SaveChangesAsync(cancellationToken);
+
+        var commissionSettings = await commissionSettingsProvider.GetAsync(cancellationToken);
+        var categoryCommissions = await categoryCommissionProvider.GetAsync(cancellationToken);
+        var usdToAedRate = AdminOrderPricingHelper.GetUsdToAedRate(configuration);
+
+        var dto = AdminOrderMapper.Map(order);
+        AdminOrderPricingHelper.ApplyPricingFields(
+            dto,
+            order,
+            order.Product,
+            commissionSettings,
+            categoryCommissions,
+            usdToAedRate);
+        AdminOrderPricingHelper.ApplyChargedCheckoutAmounts(dto, order);
+        return dto;
+    }
+
+    private static void UpsertAdminAdvertiserPrice(
+        Order order,
+        Guid adminId,
+        decimal adminUnitPrice,
+        decimal? adminTotalPrice)
+    {
+        var qty = order.Quantity <= 0 ? 1m : order.Quantity;
+        var unit = decimal.Round(adminUnitPrice, 2, MidpointRounding.AwayFromZero);
+        if (unit <= 0)
+        {
+            throw new ArgumentException("Admin unit price must be greater than zero.");
+        }
+
+        var total = adminTotalPrice is > 0
+            ? decimal.Round(adminTotalPrice.Value, 2, MidpointRounding.AwayFromZero)
+            : decimal.Round(unit * qty, 2, MidpointRounding.AwayFromZero);
+
+        if (order.AdminOfferPrice is null)
+        {
+            order.AdminOfferPrice = new OrderAdminOfferPrice
+            {
+                OrderId = order.Id,
+                AdminUnitPrice = unit,
+                AdminTotalPrice = total,
+                UpdatedAtUtc = DateTime.UtcNow,
+                UpdatedByAdminUserId = adminId,
+            };
+        }
+        else
+        {
+            order.AdminOfferPrice.AdminUnitPrice = unit;
+            order.AdminOfferPrice.AdminTotalPrice = total;
+            order.AdminOfferPrice.UpdatedAtUtc = DateTime.UtcNow;
+            order.AdminOfferPrice.UpdatedByAdminUserId = adminId;
+        }
     }
 
     public async Task<object> RejectRequestOfferForAdminAsync(

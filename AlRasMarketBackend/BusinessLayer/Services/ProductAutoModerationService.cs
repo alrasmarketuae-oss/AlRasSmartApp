@@ -18,8 +18,11 @@ public interface IProductAutoModerationService
 /// <summary>
 /// Background ad review (all product types: Offers, Requests, Booking, Category/Retail):
 /// - video present → leave for admin dashboard only (no auto-reject, no auto-approve, no notify)
-/// - no video + text/image violations → auto-reject + notify
-/// - no video + clean → auto-approve + notify (then CLIP)
+/// - no video + text violations → auto-reject + notify
+/// - no video + image violations (phone, company name, brand on photos/packaging) →
+///   admin dashboard only (no auto-reject, no auto-approve, no notify)
+/// - scan failure / incomplete image scan → admin dashboard only
+/// - no video + clean text and images → auto-approve + notify (then CLIP)
 /// - seller edits/resubmits → same scan again
 /// </summary>
 public sealed class ProductAutoModerationService(
@@ -170,11 +173,13 @@ public sealed class ProductAutoModerationService(
             return;
         }
 
-        if (imageScan.Attempted > 0 && imageScan.Succeeded == 0)
+        if (imageScan.Listed > 0 && imageScan.Succeeded < imageScan.Listed)
         {
             logger.LogWarning(
-                "Product {ProductId} image scans all failed — leaving for manual admin review.",
-                workItem.ProductId);
+                "Product {ProductId} image scan incomplete ({Succeeded}/{Listed}) — leaving for admin.",
+                workItem.ProductId,
+                imageScan.Succeeded,
+                imageScan.Listed);
             await QueueClipAsync(workItem.ProductId, cancellationToken).ConfigureAwait(false);
             return;
         }
@@ -393,34 +398,35 @@ public sealed class ProductAutoModerationService(
         return videos.Exists(v => !string.IsNullOrWhiteSpace(v.Path));
     }
 
-    private sealed record ImageScanResult(List<string> Hits, List<string> Kinds, int Attempted, int Succeeded);
+    private sealed record ImageScanResult(List<string> Hits, List<string> Kinds, int Listed, int Succeeded);
 
     private async Task<ImageScanResult> ScanImagesAsync(Guid productId, CancellationToken cancellationToken)
     {
         var hits = new List<string>();
         var kindSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var attempted = 0;
         var succeeded = 0;
         var images = await productData.GetProductImagePathsByProductIdsAsync([productId], cancellationToken)
             .ConfigureAwait(false);
 
         var max = options.Value.MaxImagesToScan;
-        var toScan = max > 0 ? images.Take(max) : images;
+        var toScan = (max > 0 ? images.Take(max) : images)
+            .Where(image => !string.IsNullOrWhiteSpace(image.Path))
+            .ToList();
+        var listed = toScan.Count;
+
         foreach (var image in toScan)
         {
-            if (string.IsNullOrWhiteSpace(image.Path))
-            {
-                continue;
-            }
-
             await using var stream = await fileStorage.OpenReadAsync(image.Path, cancellationToken)
                 .ConfigureAwait(false);
             if (stream is null)
             {
+                logger.LogWarning(
+                    "Product {ProductId} image {Path} could not be opened — treating as scan failure.",
+                    productId,
+                    image.Path);
                 continue;
             }
 
-            attempted++;
             AdImagePolicyScanResult result;
             try
             {
@@ -429,7 +435,6 @@ public sealed class ProductAutoModerationService(
                         Path.GetFileName(image.Path),
                         cancellationToken)
                     .ConfigureAwait(false);
-                succeeded++;
             }
             catch (Exception ex)
             {
@@ -437,6 +442,17 @@ public sealed class ProductAutoModerationService(
                 continue;
             }
 
+            if (result.ScanFailed)
+            {
+                logger.LogWarning(
+                    "Product {ProductId} image {Path} policy scan failed ({Summary}).",
+                    productId,
+                    image.Path,
+                    result.Summary);
+                continue;
+            }
+
+            succeeded++;
             if (!result.HasViolation)
             {
                 continue;
@@ -456,7 +472,7 @@ public sealed class ProductAutoModerationService(
             hits.Add($"{image.Path}:{kinds}");
         }
 
-        return new ImageScanResult(hits, kindSet.ToList(), attempted, succeeded);
+        return new ImageScanResult(hits, kindSet.ToList(), listed, succeeded);
     }
 
     private async Task QueueClipAsync(Guid productId, CancellationToken cancellationToken)

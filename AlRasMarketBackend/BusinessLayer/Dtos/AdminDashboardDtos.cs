@@ -253,6 +253,16 @@ public sealed class AdminOrderListItemDto
     public string CustomerUnitPriceFormatted { get; set; } = string.Empty;
     public string CustomerTotalPriceFormatted { get; set; } = string.Empty;
     public string AppProfitFormatted { get; set; } = string.Empty;
+    /// <summary>Request-ad listing unit price the supplier saw (1% markdown of stored USDPrice).</summary>
+    public decimal ListingUnitPrice { get; set; }
+    public string ListingUnitPriceFormatted { get; set; } = string.Empty;
+    /// <summary>True when the supplier unit price is below the request listing unit price.</summary>
+    public bool IsBelowListingPrice { get; set; }
+    public bool HasAdminAdvertiserPrice { get; set; }
+    public decimal? AdminAdvertiserUnitPrice { get; set; }
+    public decimal? AdminAdvertiserTotalPrice { get; set; }
+    public string AdminAdvertiserUnitPriceFormatted { get; set; } = string.Empty;
+    public string AdminAdvertiserTotalPriceFormatted { get; set; } = string.Empty;
     /// <summary>Order/offer line quantity (what the buyer ordered or supplier offered).</summary>
     public decimal Quantity { get; set; }
     /// <summary>
@@ -318,6 +328,13 @@ public sealed class AdminOrderListItemDto
     /// <summary>True when admin can mark the order as Received (final).</summary>
     public bool CanMarkReceived { get; set; }
     public List<AdminOrderStatusHistoryDto> StatusHistory { get; set; } = [];
+}
+
+public sealed class ApproveRequestOfferRequest
+{
+    /// <summary>Unit price shown to the request-ad owner. Supplier order amounts stay unchanged.</summary>
+    public decimal? AdminUnitPrice { get; set; }
+    public decimal? AdminTotalPrice { get; set; }
 }
 
 public sealed class AdminOrderStatusHistoryDto

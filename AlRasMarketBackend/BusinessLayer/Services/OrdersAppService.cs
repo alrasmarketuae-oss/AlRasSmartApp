@@ -183,7 +183,8 @@ public partial class OrdersAppService(
             notes,
             imagePaths.Count,
             documentPaths.Count,
-            videoPaths.Count);
+            videoPaths.Count,
+            orderUnitPrice);
 
         var order = new Order
         {

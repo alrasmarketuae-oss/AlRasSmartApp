@@ -146,7 +146,18 @@ public interface IAdminOrdersAppService
 
     Task<AdminOrderListItemDto> GetOrderByIdAsync(long orderId, CancellationToken cancellationToken = default);
     Task<object> UpdateOrderStatusAsync(string adminUserId, long orderId, byte statusId, CancellationToken cancellationToken = default);
-    Task<object> ApproveRequestOfferAsync(string adminUserId, long orderId, CancellationToken cancellationToken = default);
+    Task<object> ApproveRequestOfferAsync(
+        string adminUserId,
+        long orderId,
+        decimal? adminUnitPrice = null,
+        decimal? adminTotalPrice = null,
+        CancellationToken cancellationToken = default);
+    Task<object> SetRequestOfferAdvertiserPriceAsync(
+        string adminUserId,
+        long orderId,
+        decimal adminUnitPrice,
+        decimal? adminTotalPrice = null,
+        CancellationToken cancellationToken = default);
     Task<object> RejectRequestOfferAsync(string adminUserId, long orderId, CancellationToken cancellationToken = default);
     Task<object> SetCustomOrderStatusAsync(
         string adminUserId,
@@ -479,7 +490,8 @@ public interface IOpenAiVisionService
         string statusName, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Checks whether an ad image contains seller contact info, phone numbers, or seller logos/watermarks.
+    /// Checks whether an ad image contains seller contact info, phone numbers,
+    /// company names on packaging, or seller/brand logos.
     /// </summary>
     Task<AdImagePolicyScanResult> ScanAdImageForPolicyViolationsAsync(
         Stream imageStream,

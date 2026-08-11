@@ -16,6 +16,7 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
     public DbSet<BookingPriceType> BookingPriceTypes => Set<BookingPriceType>();
     public DbSet<Unit> Units => Set<Unit>();
     public DbSet<Order> Orders => Set<Order>();
+    public DbSet<OrderAdminOfferPrice> OrderAdminOfferPrices => Set<OrderAdminOfferPrice>();
     public DbSet<OrderStatus> OrderStatuses => Set<OrderStatus>();
     public DbSet<OrderVideo> OrderVideos => Set<OrderVideo>();
     public DbSet<OrderImage> OrderImages => Set<OrderImage>();
@@ -664,6 +665,19 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.HasIndex(x => x.ToUserId);
             entity.HasIndex(x => x.PendingOrderId).HasFilter("[PendingOrderId] IS NOT NULL");
             entity.HasIndex(x => x.OrderGroupId).HasFilter("[OrderGroupId] IS NOT NULL");
+            entity.HasOne(x => x.AdminOfferPrice)
+                .WithOne(x => x.Order)
+                .HasForeignKey<OrderAdminOfferPrice>(x => x.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<OrderAdminOfferPrice>(entity =>
+        {
+            entity.ToTable("OrderAdminOfferPrices");
+            entity.HasKey(x => x.OrderId);
+            entity.Property(x => x.AdminUnitPrice).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.AdminTotalPrice).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.UpdatedAtUtc).HasColumnType("datetime2").HasDefaultValueSql("(sysutcdatetime())");
         });
 
         modelBuilder.Entity<OrderVideo>(entity =>

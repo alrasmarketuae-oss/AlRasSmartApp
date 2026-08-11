@@ -41,6 +41,7 @@ export {
   useRespondToOrderReturnMutation,
   useManualRefundOrderMutation,
   useApproveRequestOfferMutation,
+  useSetRequestOfferAdvertiserPriceMutation,
   useRejectRequestOfferMutation,
   useSetCustomOrderStatusMutation,
   useMarkOrderReceivedMutation,

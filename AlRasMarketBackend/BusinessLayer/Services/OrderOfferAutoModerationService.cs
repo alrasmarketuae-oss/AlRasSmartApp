@@ -20,7 +20,9 @@ public interface IOrderOfferAutoModerationService
 /// Auto-moderates orders pending admin review for Requests offers, Offers, Booking, and Category.
 /// Buyer notes (and images) are scanned with the same policy as ads:
 /// - order video → admin dashboard only (no auto-reject / auto-approve / notify)
-/// - no video + notes/image violations → auto-reject + notify buyer
+/// - no video + notes/text violations → auto-reject + notify buyer
+/// - no video + image violations (phone, company name, brand on photos) →
+///   admin dashboard only (no auto-reject, no auto-approve)
 /// - no video + clean notes/images → auto-approve for seller
 /// </summary>
 public sealed class OrderOfferAutoModerationService(
@@ -185,16 +187,19 @@ public sealed class OrderOfferAutoModerationService(
         if (imageScan.Hits.Count > 0)
         {
             logger.LogInformation(
-                "Order {OrderId} image policy violations: {Hits}",
+                "Order {OrderId} image policy violations: {Hits} — left for admin dashboard review.",
                 workItem.OrderId,
                 string.Join(", ", imageScan.Hits));
-            await RejectAsync(adminUserId, workItem.OrderId, cancellationToken).ConfigureAwait(false);
             return;
         }
 
-        if (imageScan.Attempted > 0 && imageScan.Succeeded == 0)
+        if (imageScan.Listed > 0 && imageScan.Succeeded < imageScan.Listed)
         {
-            logger.LogWarning("Order {OrderId} image scans all failed — leaving for admin.", workItem.OrderId);
+            logger.LogWarning(
+                "Order {OrderId} image scan incomplete ({Succeeded}/{Listed}) — leaving for admin.",
+                workItem.OrderId,
+                imageScan.Succeeded,
+                imageScan.Listed);
             return;
         }
 
@@ -216,9 +221,20 @@ public sealed class OrderOfferAutoModerationService(
             return;
         }
 
+        if (AdminOrderPricingHelper.IsRequestOfferBelowListingPrice(order, order.Product))
+        {
+            logger.LogInformation(
+                "Order {OrderId} offer is below the request listing price — left for admin.",
+                workItem.OrderId);
+            return;
+        }
+
         try
         {
-            await ordersAppService.ApproveRequestOfferForAdminAsync(adminUserId, workItem.OrderId, cancellationToken)
+            await ordersAppService.ApproveRequestOfferForAdminAsync(
+                    adminUserId,
+                    workItem.OrderId,
+                    cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
             logger.LogInformation(
                 "Order {OrderId} (type={ProductTypeId}, category={CategoryId}) auto-approved after notes/image scan.",
@@ -344,7 +360,7 @@ public sealed class OrderOfferAutoModerationService(
         }
     }
 
-    private sealed record ImageScanResult(List<string> Hits, int Attempted, int Succeeded);
+    private sealed record ImageScanResult(List<string> Hits, int Listed, int Succeeded);
 
     private async Task<ImageScanResult> ScanImagesAsync(
         long orderId,
@@ -352,20 +368,23 @@ public sealed class OrderOfferAutoModerationService(
         CancellationToken cancellationToken)
     {
         var hits = new List<string>();
-        var attempted = 0;
         var succeeded = 0;
         var max = options.Value.MaxImagesToScan;
-        var toScan = max > 0 ? imagePaths.Take(max) : imagePaths;
+        var toScan = (max > 0 ? imagePaths.Take(max) : imagePaths).ToList();
+        var listed = toScan.Count;
 
         foreach (var path in toScan)
         {
             await using var stream = await fileStorage.OpenReadAsync(path, cancellationToken).ConfigureAwait(false);
             if (stream is null)
             {
+                logger.LogWarning(
+                    "Order {OrderId} image {Path} could not be opened — treating as scan failure.",
+                    orderId,
+                    path);
                 continue;
             }
 
-            attempted++;
             try
             {
                 var result = await openAiVision.ScanAdImageForPolicyViolationsAsync(
@@ -373,6 +392,16 @@ public sealed class OrderOfferAutoModerationService(
                         Path.GetFileName(path),
                         cancellationToken)
                     .ConfigureAwait(false);
+                if (result.ScanFailed)
+                {
+                    logger.LogWarning(
+                        "Order {OrderId} image {Path} policy scan failed ({Summary}).",
+                        orderId,
+                        path,
+                        result.Summary);
+                    continue;
+                }
+
                 succeeded++;
                 if (!result.HasViolation)
                 {
@@ -390,6 +419,6 @@ public sealed class OrderOfferAutoModerationService(
             }
         }
 
-        return new ImageScanResult(hits, attempted, succeeded);
+        return new ImageScanResult(hits, listed, succeeded);
     }
 }

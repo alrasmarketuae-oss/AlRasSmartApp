@@ -860,6 +860,46 @@ export function normalizeOrder(raw: RawOrder): AdminOrder {
     customerTotalPriceFormatted:
       raw.customerTotalPriceFormatted ?? raw.CustomerTotalPriceFormatted ?? '',
     appProfitFormatted: raw.appProfitFormatted ?? raw.AppProfitFormatted ?? '',
+    listingUnitPrice: Number(
+      (raw as { listingUnitPrice?: number; ListingUnitPrice?: number }).listingUnitPrice ??
+        (raw as { ListingUnitPrice?: number }).ListingUnitPrice ??
+        0,
+    ),
+    listingUnitPriceFormatted:
+      (raw as { listingUnitPriceFormatted?: string; ListingUnitPriceFormatted?: string })
+        .listingUnitPriceFormatted ??
+      (raw as { ListingUnitPriceFormatted?: string }).ListingUnitPriceFormatted ??
+      '',
+    isBelowListingPrice: Boolean(
+      (raw as { isBelowListingPrice?: boolean; IsBelowListingPrice?: boolean })
+        .isBelowListingPrice ??
+        (raw as { IsBelowListingPrice?: boolean }).IsBelowListingPrice,
+    ),
+    hasAdminAdvertiserPrice: Boolean(
+      (raw as { hasAdminAdvertiserPrice?: boolean; HasAdminAdvertiserPrice?: boolean })
+        .hasAdminAdvertiserPrice ??
+        (raw as { HasAdminAdvertiserPrice?: boolean }).HasAdminAdvertiserPrice,
+    ),
+    adminAdvertiserUnitPrice:
+      (raw as { adminAdvertiserUnitPrice?: number | null; AdminAdvertiserUnitPrice?: number | null })
+        .adminAdvertiserUnitPrice ??
+      (raw as { AdminAdvertiserUnitPrice?: number | null }).AdminAdvertiserUnitPrice ??
+      null,
+    adminAdvertiserTotalPrice:
+      (raw as { adminAdvertiserTotalPrice?: number | null; AdminAdvertiserTotalPrice?: number | null })
+        .adminAdvertiserTotalPrice ??
+      (raw as { AdminAdvertiserTotalPrice?: number | null }).AdminAdvertiserTotalPrice ??
+      null,
+    adminAdvertiserUnitPriceFormatted:
+      (raw as { adminAdvertiserUnitPriceFormatted?: string; AdminAdvertiserUnitPriceFormatted?: string })
+        .adminAdvertiserUnitPriceFormatted ??
+      (raw as { AdminAdvertiserUnitPriceFormatted?: string }).AdminAdvertiserUnitPriceFormatted ??
+      '',
+    adminAdvertiserTotalPriceFormatted:
+      (raw as { adminAdvertiserTotalPriceFormatted?: string; AdminAdvertiserTotalPriceFormatted?: string })
+        .adminAdvertiserTotalPriceFormatted ??
+      (raw as { AdminAdvertiserTotalPriceFormatted?: string }).AdminAdvertiserTotalPriceFormatted ??
+      '',
     quantity: raw.quantity ?? raw.Quantity ?? 0,
     requestedQuantity:
       raw.requestedQuantity ??

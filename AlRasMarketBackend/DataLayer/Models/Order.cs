@@ -65,4 +65,5 @@ public class Order
     public ICollection<OrderVideo> Videos { get; set; } = [];
     public ICollection<OrderImage> Images { get; set; } = [];
     public ICollection<OrderStatusHistory> StatusHistories { get; set; } = [];
+    public OrderAdminOfferPrice? AdminOfferPrice { get; set; }
 }

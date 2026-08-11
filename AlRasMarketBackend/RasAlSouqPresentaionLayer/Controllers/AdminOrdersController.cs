@@ -4,6 +4,7 @@ using BusinessLayer.Dtos;
 using BusinessLayer.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using RasAlSouqPresentaionLayer.Authorization;
 
 namespace RasAlSouqPresentaionLayer.Controllers;
@@ -116,6 +117,7 @@ public class AdminOrdersController(
     [RequireAdminPermission(AdminPermissions.OrdersManage)]
     public async Task<IActionResult> ApproveRequestOffer(
         [FromRoute] long orderId,
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] ApproveRequestOfferRequest? body = null,
         CancellationToken cancellationToken = default)
     {
         var userId = GetUserId();
@@ -129,6 +131,53 @@ public class AdminOrdersController(
             var result = await adminOrdersAppService.ApproveRequestOfferAsync(
                 userId,
                 orderId,
+                body?.AdminUnitPrice,
+                body?.AdminTotalPrice,
+                cancellationToken);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Sets the unit price shown to the request-ad owner without changing the supplier's offer.
+    /// </summary>
+    [HttpPatch("{orderId:long}/request-offer/advertiser-price")]
+    [RequireAdminPermission(AdminPermissions.OrdersManage)]
+    public async Task<IActionResult> SetRequestOfferAdvertiserPrice(
+        [FromRoute] long orderId,
+        [FromBody] ApproveRequestOfferRequest body,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        if (body?.AdminUnitPrice is not > 0)
+        {
+            return BadRequest(new { message = "AdminUnitPrice is required." });
+        }
+
+        try
+        {
+            var result = await adminOrdersAppService.SetRequestOfferAdvertiserPriceAsync(
+                userId,
+                orderId,
+                body.AdminUnitPrice.Value,
+                body.AdminTotalPrice,
                 cancellationToken);
             return Ok(result);
         }

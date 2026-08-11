@@ -33,11 +33,11 @@ type RequestOffersPanelProps = {
 type SortKey = 'bestMatch' | 'newest' | 'priceAsc' | 'priceDesc'
 
 function offerAmount(order: AdminOrder): string {
-  return formatOrderAmount(order)
+  return order.supplierTotalPriceFormatted?.trim() || formatOrderAmount(order)
 }
 
 function offerTotalNumber(order: AdminOrder): number {
-  return Number(order.customerTotalPrice || order.totalPrice || 0)
+  return Number(order.supplierTotalPrice || order.customerTotalPrice || order.totalPrice || 0)
 }
 
 function RankBadge({ rank }: { rank: number }) {
@@ -165,9 +165,9 @@ export default function RequestOffersPanel({
             const offeredQty = resolveOfferedQuantity(offer)
             const qtyDiff = offeredQty - requiredQty
             const unitPrice =
-              offer.customerUnitPriceFormatted?.trim() ||
-              (offer.customerUnitPrice > 0
-                ? `${offer.customerUnitPrice.toFixed(2)} ${offer.currency || 'AED'}`
+              offer.supplierUnitPriceFormatted?.trim() ||
+              (offer.supplierUnitPrice > 0
+                ? `${offer.supplierUnitPrice.toFixed(2)} ${offer.currency || 'AED'}`
                 : '—')
             const isBest = sortKey === 'bestMatch' && rank === 1
             const supplierInitials = (offer.supplierName || '—').slice(0, 2).toUpperCase()
@@ -303,25 +303,30 @@ export default function RequestOffersPanel({
                         {t('reqsOffers.contactSupplier')}
                       </button>
                     ) : null}
+                    {needsReview && offer.isBelowListingPrice ? (
+                      <p className="text-center text-[10px] font-semibold leading-snug text-amber-700">
+                        {t('reqsOffers.belowListingWarning')}
+                      </p>
+                    ) : null}
+                    {needsReview && !offer.isBelowListingPrice ? (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void approveOffer({ orderId: offer.id })}
+                        className="inline-flex h-9 items-center justify-center rounded-xl bg-[#619D51] px-3 text-xs font-bold text-white disabled:opacity-60"
+                      >
+                        {t('orders.requestOfferApprove')}
+                      </button>
+                    ) : null}
                     {needsReview ? (
-                      <>
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={() => void approveOffer({ orderId: offer.id })}
-                          className="inline-flex h-9 items-center justify-center rounded-xl bg-[#619D51] px-3 text-xs font-bold text-white disabled:opacity-60"
-                        >
-                          {t('orders.requestOfferApprove')}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={() => void rejectOffer({ orderId: offer.id })}
-                          className="inline-flex h-9 items-center justify-center rounded-xl bg-[#ef4444] px-3 text-xs font-bold text-white disabled:opacity-60"
-                        >
-                          {t('orders.requestOfferReject')}
-                        </button>
-                      </>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void rejectOffer({ orderId: offer.id })}
+                        className="inline-flex h-9 items-center justify-center rounded-xl bg-[#ef4444] px-3 text-xs font-bold text-white disabled:opacity-60"
+                      >
+                        {t('orders.requestOfferReject')}
+                      </button>
                     ) : null}
                   </div>
                 </div>

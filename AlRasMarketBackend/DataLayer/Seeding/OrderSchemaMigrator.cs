@@ -630,5 +630,22 @@ public static class OrderSchemaMigrator
                 "ALTER TABLE dbo.Orders ADD ReturnRespondedAtUtc DATETIME2 NULL;",
                 cancellationToken).ConfigureAwait(false);
         }
+
+        if (!await SqlSchemaHelper.TableExistsAsync(connection, "OrderAdminOfferPrices", cancellationToken)
+            .ConfigureAwait(false))
+        {
+            await SqlSchemaHelper.ExecuteBatchAsync(connection, """
+                CREATE TABLE dbo.OrderAdminOfferPrices
+                (
+                    OrderId BIGINT NOT NULL CONSTRAINT PK_OrderAdminOfferPrices PRIMARY KEY,
+                    AdminUnitPrice DECIMAL(18,2) NOT NULL,
+                    AdminTotalPrice DECIMAL(18,2) NOT NULL,
+                    UpdatedAtUtc DATETIME2 NOT NULL CONSTRAINT DF_OrderAdminOfferPrices_UpdatedAtUtc DEFAULT (SYSUTCDATETIME()),
+                    UpdatedByAdminUserId UNIQUEIDENTIFIER NULL,
+                    CONSTRAINT FK_OrderAdminOfferPrices_Orders
+                        FOREIGN KEY (OrderId) REFERENCES dbo.Orders(Id) ON DELETE CASCADE
+                );
+                """, cancellationToken).ConfigureAwait(false);
+        }
     }
 }

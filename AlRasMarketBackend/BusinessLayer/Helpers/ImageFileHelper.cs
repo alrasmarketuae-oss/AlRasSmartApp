@@ -50,6 +50,21 @@ public sealed class ImageCompressionOptions
         AutoOrient = true,
         EnforceByteTarget = true
     };
+
+    /// <summary>
+    /// Higher-fidelity preset for policy OCR (phone / company name on sacks and labels).
+    /// Does not shrink to a byte budget so printed text stays readable.
+    /// </summary>
+    public static ImageCompressionOptions ModerationVision { get; } = new()
+    {
+        MaxBytes = 900 * 1024,
+        MaxSide = 1920,
+        InitialQuality = 88,
+        MinQuality = 75,
+        QualityStep = 5,
+        AutoOrient = true,
+        EnforceByteTarget = false
+    };
 }
 
 public static class ImageFileHelper

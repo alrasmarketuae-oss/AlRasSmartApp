@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import AdDetailView from '../components/ads/AdDetailView'
 import AdEditDialog from '../components/ads/AdEditDialog'
+import RejectAdReasonDialog from '../components/ads/RejectAdReasonDialog'
 import type { AdminUpdateProductPayload } from '../types/adminProduct'
 import { useAppPreferences } from '../context/AppPreferencesProvider'
 import { useReturnToListPath } from '../hooks/useReturnToListPath'
@@ -37,6 +38,11 @@ export default function AdDetailPage() {
   } | null>(null)
   const [isReplacingImage, setIsReplacingImage] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false)
+  const [rejectDraft, setRejectDraft] = useState({
+    supplierNotesEn: '',
+    supplierNotesAr: '',
+  })
 
   const { data: product, error, isLoading } = useGetAdminProductDetailQuery(
     { productId, lang: locale },
@@ -99,13 +105,18 @@ export default function AdDetailPage() {
     }
   }
 
+  function openRejectDialog(input: { supplierNotesEn: string; supplierNotesAr: string }) {
+    setRejectDraft({
+      supplierNotesEn: input.supplierNotesEn.trim(),
+      supplierNotesAr: input.supplierNotesAr.trim(),
+    })
+    setRejectDialogOpen(true)
+  }
+
   async function handleReject(input: { supplierNotesEn: string; supplierNotesAr: string }) {
     const reasonEn = input.supplierNotesEn.trim()
     const reasonAr = input.supplierNotesAr.trim()
     if (!reasonEn && !reasonAr) return
-
-    const confirmed = window.confirm(t('ads.rejectConfirm'))
-    if (!confirmed) return
 
     setActionError(null)
     setSuccessMessage(null)
@@ -116,6 +127,7 @@ export default function AdDetailPage() {
         supplierNotesEn: reasonEn || null,
         supplierNotesAr: reasonAr || null,
       }).unwrap()
+      setRejectDialogOpen(false)
       setSuccessMessage(result.message || t('ads.rejectSuccess'))
     } catch (err) {
       setActionError(getRtkErrorMessage(err as never, t('ads.rejectError')))
@@ -277,7 +289,7 @@ export default function AdDetailPage() {
           onSave={(payload) => void handleSave(payload)}
           onDelete={() => void handleDelete()}
           onApprove={(notes) => void handleApprove(notes)}
-          onReject={(payload) => void handleReject(payload)}
+          onReject={openRejectDialog}
           onUploadImage={(file) => void handleUploadImage(file)}
           onDeleteImage={(imageId) => void handleDeleteImage(imageId)}
           onDeleteVideo={(path) => void handleDeleteVideo(path)}
@@ -304,6 +316,14 @@ export default function AdDetailPage() {
         </>
       )}
 
+      <RejectAdReasonDialog
+        open={rejectDialogOpen}
+        busy={isRejecting}
+        initialReasonEn={rejectDraft.supplierNotesEn}
+        initialReasonAr={rejectDraft.supplierNotesAr}
+        onCancel={() => setRejectDialogOpen(false)}
+        onConfirm={(payload) => void handleReject(payload)}
+      />
       <AdminVideoTrimModal
         open={trimTarget != null}
         videoPath={trimTarget?.path ?? ''}

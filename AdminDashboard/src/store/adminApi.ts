@@ -616,16 +616,35 @@ export const adminApi = createApi({
       ],
     }),
 
-    approveRequestOffer: builder.mutation<AdminOrder, { orderId: number }>({
-      query: ({ orderId }) => ({
+    approveRequestOffer: builder.mutation<
+      AdminOrder,
+      { orderId: number; adminUnitPrice?: number; adminTotalPrice?: number }
+    >({
+      query: ({ orderId, adminUnitPrice, adminTotalPrice }) => ({
         url: `/api/admin/orders/${orderId}/request-offer/approve`,
         method: 'POST',
+        body: { adminUnitPrice, adminTotalPrice },
       }),
       invalidatesTags: (_result, _error, { orderId }) => [
         { type: 'Orders', id: 'LIST' },
         { type: 'Orders', id: 'STATS' },
         { type: 'Orders', id: String(orderId) },
         'Dashboard',
+      ],
+    }),
+
+    setRequestOfferAdvertiserPrice: builder.mutation<
+      AdminOrder,
+      { orderId: number; adminUnitPrice: number; adminTotalPrice?: number }
+    >({
+      query: ({ orderId, adminUnitPrice, adminTotalPrice }) => ({
+        url: `/api/admin/orders/${orderId}/request-offer/advertiser-price`,
+        method: 'PATCH',
+        body: { adminUnitPrice, adminTotalPrice },
+      }),
+      invalidatesTags: (_result, _error, { orderId }) => [
+        { type: 'Orders', id: 'LIST' },
+        { type: 'Orders', id: String(orderId) },
       ],
     }),
 
@@ -1873,6 +1892,7 @@ export const {
   useRespondToOrderReturnMutation,
   useManualRefundOrderMutation,
   useApproveRequestOfferMutation,
+  useSetRequestOfferAdvertiserPriceMutation,
   useRejectRequestOfferMutation,
   useUpdateOrderStatusMutation,
   useSetCustomOrderStatusMutation,

@@ -400,6 +400,8 @@ public sealed class AdImagePolicyScanResult
     public bool HasViolation { get; init; }
     public IReadOnlyList<string> ViolationKinds { get; init; } = Array.Empty<string>();
     public string? Summary { get; init; }
+    /// <summary>True when the model/API did not produce a usable verdict — caller must not auto-approve.</summary>
+    public bool ScanFailed { get; init; }
 }
 
 /// <summary>LLM result for ad title/specs text policy (contact, insults, etc.).</summary>

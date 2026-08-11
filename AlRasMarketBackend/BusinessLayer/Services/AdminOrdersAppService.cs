@@ -190,19 +190,48 @@ public class AdminOrdersAppService(
     public async Task<object> ApproveRequestOfferAsync(
         string adminUserId,
         long orderId,
+        decimal? adminUnitPrice = null,
+        decimal? adminTotalPrice = null,
         CancellationToken cancellationToken = default)
     {
         var result = await _ordersAppService.ApproveRequestOfferForAdminAsync(
             adminUserId,
             orderId,
+            adminUnitPrice,
+            adminTotalPrice,
             cancellationToken);
 
         await adminRealtimeNotificationService.BroadcastCountsAsync(cancellationToken);
         await WriteOrderAuditAsync(
             AdminAuditActions.OrderApproveOffer,
             orderId,
-            $"Approved order #{orderId} for seller review",
-            null,
+            adminUnitPrice is > 0
+                ? $"Approved order #{orderId} for seller review with advertiser unit price {adminUnitPrice.Value:0.00}"
+                : $"Approved order #{orderId} for seller review",
+            adminUnitPrice is > 0 ? new { adminUnitPrice, adminTotalPrice } : null,
+            cancellationToken);
+        return result;
+    }
+
+    public async Task<object> SetRequestOfferAdvertiserPriceAsync(
+        string adminUserId,
+        long orderId,
+        decimal adminUnitPrice,
+        decimal? adminTotalPrice = null,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _ordersAppService.SetRequestOfferAdvertiserPriceAsync(
+            adminUserId,
+            orderId,
+            adminUnitPrice,
+            adminTotalPrice,
+            cancellationToken);
+
+        await WriteOrderAuditAsync(
+            AdminAuditActions.OrderApproveOffer,
+            orderId,
+            $"Set advertiser price on order #{orderId} to unit {adminUnitPrice:0.00}",
+            new { adminUnitPrice, adminTotalPrice },
             cancellationToken);
         return result;
     }
