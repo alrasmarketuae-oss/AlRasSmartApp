@@ -8,6 +8,7 @@ export type ChatContact = {
   contactUserId: string
   displayName: string
   avatarUrl: string | null
+  profileImageUrl?: string | null
   companyName?: string | null
   contactFullName?: string | null
   companyImageUrl?: string | null
@@ -259,6 +260,7 @@ export function normalizeChatContact(raw: Record<string, unknown>): ChatContact 
     contactUserId: String(raw.contactUserId ?? raw.ContactUserId ?? ''),
     displayName: String(raw.displayName ?? raw.DisplayName ?? ''),
     avatarUrl: (raw.avatarUrl ?? raw.AvatarUrl ?? null) as string | null,
+    profileImageUrl: (raw.profileImageUrl ?? raw.ProfileImageUrl ?? null) as string | null,
     companyName: (raw.companyName ?? raw.CompanyName ?? null) as string | null,
     contactFullName: (raw.contactFullName ?? raw.ContactFullName ?? null) as string | null,
     companyImageUrl: (raw.companyImageUrl ?? raw.CompanyImageUrl ?? null) as string | null,

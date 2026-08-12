@@ -772,7 +772,8 @@ public sealed partial class ChatAppService(
                 var contactFullName = user?.FullName?.Trim();
                 var isCompanyAccount = !string.IsNullOrWhiteSpace(companyName);
                 companyImageMap.TryGetValue(item.Key, out var companyImagePath);
-                var avatarUrl = companyImagePath ?? user?.ImgPath;
+                var profileImageUrl = user?.ImgPath;
+                var avatarUrl = companyImagePath ?? profileImageUrl;
 
                 var lastMsg = item.LastMessage;
                 var lastSeen = user?.LastSeenAtUtc;
@@ -811,6 +812,7 @@ public sealed partial class ChatAppService(
                     CompanyName: companyName,
                     ContactFullName: contactFullName,
                     CompanyImageUrl: companyImagePath,
+                    ProfileImageUrl: profileImageUrl,
                     IsCompanyAccount: isCompanyAccount);
             })
             .OrderByDescending(c => c.LastMessageSentAtUtc)

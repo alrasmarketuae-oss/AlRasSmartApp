@@ -9,18 +9,27 @@ export type ChatCompanyDisplay = {
   isCompany: boolean
 }
 
-/** Company logo lives under company-images; profile photo under images/profiles. */
+function looksLikeProfileImagePath(path: string): boolean {
+  const normalized = path.replace(/\\/g, '/').toLowerCase()
+  return normalized.includes('images/profiles')
+}
+
+/** Match users page: profile photo (images/profiles) first, company logo as fallback. */
 export function resolveContactAvatarUrl(contact: {
-  isCompanyAccount?: boolean
-  companyName?: string | null
+  profileImageUrl?: string | null
   companyImageUrl?: string | null
   avatarUrl?: string | null
 }): string | null {
-  const isCompany = contact.isCompanyAccount || Boolean(contact.companyName?.trim())
+  const profileImage = contact.profileImageUrl?.trim()
+  if (profileImage) return profileImage
+
+  const avatar = contact.avatarUrl?.trim()
+  if (avatar && looksLikeProfileImagePath(avatar)) return avatar
+
   const companyImage = contact.companyImageUrl?.trim()
-  const profileImage = contact.avatarUrl?.trim()
-  if (isCompany && companyImage) return companyImage
-  return profileImage || companyImage || null
+  if (companyImage) return companyImage
+
+  return avatar || null
 }
 
 export function resolveChatCompanyDisplay(contact: ChatContact): ChatCompanyDisplay {

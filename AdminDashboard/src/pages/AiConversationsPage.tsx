@@ -29,8 +29,7 @@ function formatWhen(value: string): string {
 
 function resolveConversationAvatar(item: AiConversationListItem): string | null {
   return resolveContactAvatarUrl({
-    isCompanyAccount: item.isCompanyAccount,
-    companyName: item.companyName,
+    profileImageUrl: item.profileImageUrl,
     companyImageUrl: item.companyImageUrl,
     avatarUrl: item.profileImageUrl,
   })

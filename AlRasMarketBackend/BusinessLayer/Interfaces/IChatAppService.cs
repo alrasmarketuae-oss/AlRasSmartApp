@@ -30,6 +30,7 @@ public sealed record ChatContactDto(
     string? CompanyName = null,
     string? ContactFullName = null,
     string? CompanyImageUrl = null,
+    string? ProfileImageUrl = null,
     bool IsCompanyAccount = false);
 
 public sealed record ChatSupportAssignmentDto(
