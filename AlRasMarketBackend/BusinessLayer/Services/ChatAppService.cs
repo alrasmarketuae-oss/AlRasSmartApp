@@ -735,6 +735,16 @@ public sealed partial class ChatAppService(
             .ToListAsync(ct);
 
         var userMap = users.ToDictionary(x => x.Id);
+        var primaryCompanyImages = await dbContext.CompanyImages
+            .AsNoTracking()
+            .Where(ci => otherIds.Contains(ci.UserId))
+            .OrderByDescending(ci => ci.IsPrimary)
+            .ThenBy(ci => ci.Id)
+            .Select(ci => new { ci.UserId, ci.ImagePath })
+            .ToListAsync(ct);
+        var companyImageMap = primaryCompanyImages
+            .GroupBy(x => x.UserId)
+            .ToDictionary(g => g.Key, g => g.First().ImagePath);
         var isSupportInbox = inboxOwnerId != viewerUserId;
         var viewerIsSuperAdmin = await IsSuperAdminUserAsync(viewerUserId, ct);
         var assignments = isSupportInbox
@@ -757,6 +767,11 @@ public sealed partial class ChatAppService(
                 var displayName = !string.IsNullOrWhiteSpace(user?.CompanyName)
                     ? user!.CompanyName!
                     : user?.FullName ?? item.Key.ToString("D");
+                var companyName = user?.CompanyName?.Trim();
+                var contactFullName = user?.FullName?.Trim();
+                var isCompanyAccount = !string.IsNullOrWhiteSpace(companyName);
+                companyImageMap.TryGetValue(item.Key, out var companyImagePath);
+                var avatarUrl = companyImagePath ?? user?.ImgPath;
 
                 var lastMsg = item.LastMessage;
                 var lastSeen = user?.LastSeenAtUtc;
@@ -780,7 +795,7 @@ public sealed partial class ChatAppService(
                 return new ChatContactDto(
                     ContactUserId: item.Key.ToString("D"),
                     DisplayName: displayName,
-                    AvatarUrl: user?.ImgPath,
+                    AvatarUrl: avatarUrl,
                     LastMessagePreview: BuildPreview(lastMsg),
                     LastMessageType: lastMsg.MessageType.ToString(),
                     LastMessageRelativeTime: FormatRelativeTime(utcNow, lastMsg.SentAtUtc),
@@ -791,7 +806,11 @@ public sealed partial class ChatAppService(
                     AssignedAgentId: assignedAgentId,
                     AssignedAgentName: assignedAgentName,
                     IsAssignedToMe: isAssignedToMe,
-                    IsLockedByOtherAgent: isLockedByOtherAgent);
+                    IsLockedByOtherAgent: isLockedByOtherAgent,
+                    CompanyName: companyName,
+                    ContactFullName: contactFullName,
+                    CompanyImageUrl: companyImagePath ?? user?.ImgPath,
+                    IsCompanyAccount: isCompanyAccount);
             })
             .OrderByDescending(c => c.LastMessageSentAtUtc)
             .ToList();

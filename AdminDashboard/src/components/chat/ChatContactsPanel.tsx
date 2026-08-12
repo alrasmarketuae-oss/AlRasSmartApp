@@ -3,6 +3,7 @@ import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import { formatChatRelativeTime } from '../../utils/formatChatRelativeTime'
 import { IconSearch } from '../icons'
 import { resolveAssetUrl } from '../../lib/assets'
+import { resolveChatCompanyDisplay } from '../../lib/chatCompanyReport'
 import type { ChatContact } from '../../types/chat'
 
 type ChatContactsPanelProps = {
@@ -100,6 +101,8 @@ export default function ChatContactsPanel({
           <ul>
             {contacts.map((contact) => {
               const active = contact.contactUserId === selectedUserId
+              const company = resolveChatCompanyDisplay(contact)
+              const avatarSrc = company.imageUrl
               return (
                 <li key={contact.contactUserId} className="border-b border-[#e9edef] dark:border-slate-800">
                   <button
@@ -112,16 +115,21 @@ export default function ChatContactsPanel({
                     }`}
                   >
                     <div className="relative shrink-0">
-                      <Avatar name={contact.displayName} src={contact.avatarUrl} />
+                      <Avatar name={company.title} src={avatarSrc} />
                       {contact.isOnline ? (
                         <span className="absolute bottom-0 end-0 h-3 w-3 rounded-full border-2 border-white bg-[#25d366] dark:border-slate-900" />
                       ) : null}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="truncate text-[15px] font-semibold text-[#111b21] dark:text-slate-100">
-                          {contact.displayName}
-                        </span>
+                        <div className="min-w-0">
+                          <span className="block truncate text-[15px] font-semibold text-[#111b21] dark:text-slate-100">
+                            {company.title}
+                          </span>
+                          {company.subtitle ? (
+                            <span className="block truncate text-xs text-[#667781]">{company.subtitle}</span>
+                          ) : null}
+                        </div>
                         <span className="shrink-0 text-[11px] text-[#667781]">
                           {(contact.lastMessageSentAtUtc
                             ? formatChatRelativeTime(contact.lastMessageSentAtUtc, locale)

@@ -250,6 +250,31 @@ class MessageLookup extends MessageLookupByLibrary {
     "aiAssistantVoiceUnavailable": MessageLookupByLibrary.simpleMessage(
       "الإدخال الصوتي غير متاح على هذا الجهاز",
     ),
+    "aiAssistantHistoryTitle": MessageLookupByLibrary.simpleMessage(
+      "سجل المحادثات",
+    ),
+    "aiAssistantHistorySearchHint": MessageLookupByLibrary.simpleMessage(
+      "ابحث في المحادثات…",
+    ),
+    "aiAssistantHistoryEmpty": MessageLookupByLibrary.simpleMessage(
+      "لا توجد محادثات محفوظة بعد.",
+    ),
+    "aiAssistantHistoryNoResults": MessageLookupByLibrary.simpleMessage(
+      "لا توجد محادثات مطابقة لبحثك.",
+    ),
+    "aiAssistantHistoryLoadError": MessageLookupByLibrary.simpleMessage(
+      "تعذر تحميل سجل المحادثات.",
+    ),
+    "aiAssistantHistoryLoadMessagesError": MessageLookupByLibrary.simpleMessage(
+      "تعذر تحميل رسائل المحادثة.",
+    ),
+    "aiAssistantHistoryRetry": MessageLookupByLibrary.simpleMessage(
+      "إعادة المحاولة",
+    ),
+    "aiAssistantHistoryUntitled": MessageLookupByLibrary.simpleMessage(
+      "محادثة بدون عنوان",
+    ),
+    "aiAssistantHistoryMessages": MessageLookupByLibrary.simpleMessage("رسالة"),
     "aiAssistantWelcome": MessageLookupByLibrary.simpleMessage(
       "أهلاً بك. أنا الراس الذكي. أقدر — حسب نوع حسابك — أضيف إعلانات، أعدّل الأسعار والكميات، أبحث وأقارن المنتجات، أجيبك بالأرخص والأغلى، أعرف أسعار الشحن لدولتك، وأجيبك بتفاصيل إعلاناتك وطلباتك ومبيعاتك والطلبات المعلّقة. المحادثة المباشرة مع الدعم من الملف الشخصي.",
     ),

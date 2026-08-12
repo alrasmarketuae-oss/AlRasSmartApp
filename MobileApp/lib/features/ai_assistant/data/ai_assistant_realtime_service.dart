@@ -12,9 +12,16 @@ class AiAssistantRealtimeService {
 
   /// Keeps the server-side chat history attached to this screen instead of the
   /// SignalR connection, which changes id on every auto-reconnect.
-  final String _sessionId;
+  String _sessionId;
 
   String get sessionId => _sessionId;
+
+  /// Resume a saved conversation so the hub loads that session's DB history.
+  void attachToSession(String sessionId) {
+    final clean = sessionId.trim();
+    if (clean.isEmpty || clean.length > 64) return;
+    _sessionId = clean;
+  }
 
   /// Set when the AI screen is leaving so an in-flight connect cannot orphan a hub.
   bool _closed = false;

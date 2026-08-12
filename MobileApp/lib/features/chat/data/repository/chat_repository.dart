@@ -388,7 +388,7 @@ class ChatRepository {
   Future<Either<Failure, ChatConversationDetails>> getConversationDetails({
     required String token,
     required String otherUserId,
-    int limit = 50,
+    int limit = ApiConstants.chatMessagesPageSize,
     String? beforeMessageId,
   }) async {
     try {

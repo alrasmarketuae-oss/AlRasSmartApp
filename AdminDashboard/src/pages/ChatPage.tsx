@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import ChatContactsPanel from '../components/chat/ChatContactsPanel'
+import ChatCompanyReportDialog from '../components/chat/ChatCompanyReportDialog'
 import ChatThreadPanel from '../components/chat/ChatThreadPanel'
 import { useAppPreferences } from '../context/AppPreferencesProvider'
 import { useChat } from '../context/ChatProvider'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
+import { buildReportMessages, resolveChatCompanyDisplay } from '../lib/chatCompanyReport'
 import { getAuthUser, getChatWrapSecret, saveChatWrapSecret } from '../lib/authStorage'
 import { hasPermission, isSuperAdmin, PERMISSIONS } from '../lib/permissions'
 import {
@@ -21,6 +23,8 @@ import {
   resolveChatKeyWrapSecrets,
 } from '../lib/chatE2e'
 import {
+  useGenerateChatCompanyReportMutation,
+  useGetAdminUserDetailQuery,
   useGetChatInboxQuery,
   useGetChatConversationDetailsQuery,
   useLazyGetChatConversationDetailsQuery,
@@ -40,7 +44,11 @@ import {
 } from '../store'
 import { liveQueryOptions } from '../store/cachePolicy'
 import { useAppDispatch } from '../store/hooks'
+import type { FetchBaseQueryError } from '@reduxjs/toolkit/query'
+import type { SerializedError } from '@reduxjs/toolkit'
+import type { ChatCompanyReport } from '../types/chatCompanyReport'
 import type { ChatContact, ChatMessage, ChatMessageTypeCode } from '../types/chat'
+import { CHAT_MESSAGES_PAGE_SIZE } from '../types/chat'
 import { getRtkErrorMessage } from '../utils/rtkError'
 
 type OpenChatWithState = {
@@ -52,7 +60,7 @@ type OpenChatWithState = {
 }
 
 export default function ChatPage() {
-  const { t } = useAppPreferences()
+  const { t, locale } = useAppPreferences()
   const dispatch = useAppDispatch()
   const location = useLocation()
   const navigate = useNavigate()
@@ -71,6 +79,9 @@ export default function ChatPage() {
   const [isConversationLocked, setIsConversationLocked] = useState(false)
   const [lockAgentName, setLockAgentName] = useState<string | null>(null)
   const [supervisingAgentName, setSupervisingAgentName] = useState<string | null>(null)
+  const [reportOpen, setReportOpen] = useState(false)
+  const [reportResult, setReportResult] = useState<ChatCompanyReport | null>(null)
+  const [reportError, setReportError] = useState<string | null>(null)
 
   const [claimSupportConversation] = useClaimSupportConversationMutation()
   const [releaseSupportConversation, { isLoading: isReleasingConversation }] =
@@ -105,7 +116,7 @@ export default function ChatPage() {
     isLoading: threadLoading,
     isFetching: threadFetching,
   } = useGetChatConversationDetailsQuery(
-    { otherUserId: selectedUserId ?? '', limit: 50 },
+    { otherUserId: selectedUserId ?? '', limit: CHAT_MESSAGES_PAGE_SIZE },
     {
     skip: !selectedUserId || (isConversationLocked && !viewerIsSuperAdmin),
     pollingInterval: chatPollingInterval,
@@ -113,6 +124,33 @@ export default function ChatPage() {
   })
 
   const [fetchOlderConversationPage] = useLazyGetChatConversationDetailsQuery()
+  const [generateCompanyReport, { isLoading: isGeneratingReport }] =
+    useGenerateChatCompanyReportMutation()
+
+  const { data: participantDetail } = useGetAdminUserDetailQuery(selectedUserId ?? '', {
+    skip: !selectedUserId,
+    ...liveQueryOptions,
+  })
+
+  const companyDisplay = useMemo(() => {
+    if (!selectedContact) return null
+    const fromContact = resolveChatCompanyDisplay(selectedContact)
+    if (!participantDetail) return fromContact
+
+    const primaryImage =
+      participantDetail.companyImages.find((image) => image.isPrimary)?.imagePath ??
+      participantDetail.companyImages[0]?.imagePath ??
+      participantDetail.imgPath ??
+      fromContact.imageUrl
+
+    const companyName = participantDetail.companyName?.trim()
+    return {
+      title: companyName || fromContact.title,
+      subtitle: companyName ? participantDetail.fullName : fromContact.subtitle,
+      imageUrl: primaryImage,
+      isCompany: Boolean(companyName) || fromContact.isCompany,
+    }
+  }, [participantDetail, selectedContact])
 
   const supportSessions = threadDetails?.supportSessions ?? []
 
@@ -255,7 +293,7 @@ export default function ChatPage() {
     try {
       const page = await fetchOlderConversationPage({
         otherUserId: selectedUserId,
-        limit: 50,
+        limit: CHAT_MESSAGES_PAGE_SIZE,
         before: nextBeforeMessageId,
       }).unwrap()
 
@@ -711,6 +749,25 @@ export default function ChatPage() {
 
   const showMobileThread = Boolean(selectedContact)
 
+  async function handleGenerateCompanyReport() {
+    if (!selectedContact || !selectedUserId) return
+    setReportOpen(true)
+    setReportError(null)
+    setReportResult(null)
+    try {
+      const result = await generateCompanyReport({
+        participantUserId: selectedUserId,
+        language: locale === 'en' ? 'en' : 'ar',
+        messages: buildReportMessages(localMessages, selectedUserId, t),
+      }).unwrap()
+      setReportResult(result)
+    } catch (error: unknown) {
+      setReportError(
+        getRtkErrorMessage(error as FetchBaseQueryError | SerializedError, t('chat.companyReportError')),
+      )
+    }
+  }
+
   return (
     <div className="chat-page flex h-[calc(100dvh-4rem)] min-h-0 flex-col overflow-hidden lg:h-[calc(100svh-9rem)] lg:max-h-[calc(100svh-9rem)]">
       <div className={`mb-3 shrink-0 items-center justify-between px-1 ${showMobileThread ? 'hidden lg:flex' : 'flex'}`}>
@@ -782,10 +839,25 @@ export default function ChatPage() {
           onSendDocument={handleSendDocument}
           onSendLocation={handleSendLocation}
           onBack={() => setSelectedContact(null)}
+          companyDisplay={companyDisplay}
+          onCompanyClick={() => void handleGenerateCompanyReport()}
+          isGeneratingReport={isGeneratingReport}
           className={showMobileThread ? 'flex' : 'hidden lg:flex'}
           t={t}
         />
       </div>
+
+      <ChatCompanyReportDialog
+        open={reportOpen}
+        busy={isGeneratingReport}
+        error={reportError}
+        report={reportResult}
+        onClose={() => {
+          if (isGeneratingReport) return
+          setReportOpen(false)
+        }}
+        t={t}
+      />
     </div>
   )
 }

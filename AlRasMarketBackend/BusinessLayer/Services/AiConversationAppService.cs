@@ -112,7 +112,7 @@ public sealed class AiConversationAppService(IRasAlSouqDbContext dbContext) : IA
         int maxMessages = 15,
         CancellationToken cancellationToken = default)
     {
-        maxMessages = Math.Clamp(maxMessages, 1, 30);
+        maxMessages = Math.Clamp(maxMessages, 1, 40);
         var rows = await dbContext.AiConversationMessages
             .AsNoTracking()
             .Where(x => x.ConversationId == conversationId)

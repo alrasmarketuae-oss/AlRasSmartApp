@@ -254,4 +254,7 @@ class ApiConstants {
   static String chatDeliveredEndPoint = '/Chat/delivered';
   static String chatConversationEndPoint = '/Chat/conversation';
   static String chatUnreadCountEndPoint = '/Chat/unread-count';
+
+  /// Initial and paginated batch size for chat threads (newest-first pages).
+  static const int chatMessagesPageSize = 10;
 }

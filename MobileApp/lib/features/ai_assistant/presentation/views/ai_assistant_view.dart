@@ -9,6 +9,7 @@ import 'package:alrasmarket/core/serveses/cached_constants.dart' as cache;
 import 'package:alrasmarket/features/ai_assistant/data/ai_assistant_realtime_service.dart';
 import 'package:alrasmarket/features/ai_assistant/data/ai_assistant_repository.dart';
 import 'package:alrasmarket/features/ai_assistant/presentation/widgets/ai_ad_plan_form.dart';
+import 'package:alrasmarket/features/ai_assistant/presentation/views/ai_assistant_history_view.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
 import 'package:alrasmarket/features/company/domain/usecases/create_ad_usecases.dart';
@@ -639,91 +640,29 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   }
 
   Future<void> _openHistorySheet() async {
-    final token = AuthService.instance.currentToken;
-    if (token == null) return;
+    if (!AuthService.instance.isAuthenticated) return;
 
-    final isAr = Localizations.localeOf(context).languageCode == 'ar';
-    setState(() => _historyLoading = true);
-    final result = await _historyRepository.listConversations(token: token);
-    if (!mounted) return;
-    setState(() => _historyLoading = false);
-
-    await result.fold(
-      (_) async {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              isAr
-                  ? 'تعذر تحميل سجل المحادثات.'
-                  : 'Could not load conversation history.',
-            ),
-          ),
-        );
-      },
-      (page) async {
-        if (page.items.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                isAr ? 'لا توجد محادثات محفوظة بعد.' : 'No saved conversations yet.',
-              ),
-            ),
-          );
-          return;
-        }
-
-        final selected = await showModalBottomSheet<AiConversationSummary>(
-          context: context,
-          isScrollControlled: true,
-          showDragHandle: true,
-          builder: (context) {
-            return SafeArea(
-              child: ListView.separated(
-                padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 24.h),
-                itemCount: page.items.length,
-                separatorBuilder: (_, __) => SizedBox(height: 8.h),
-                itemBuilder: (context, index) {
-                  final item = page.items[index];
-                  final title = item.titlePreview?.trim().isNotEmpty == true
-                      ? item.titlePreview!.trim()
-                      : (isAr ? 'محادثة بدون عنوان' : 'Untitled conversation');
-                  return ListTile(
-                    tileColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14.r),
-                      side: BorderSide(color: Colors.grey.shade200),
-                    ),
-                    title: Text(
-                      title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: Text(
-                      '${item.messageCount} ${isAr ? 'رسالة' : 'messages'}',
-                    ),
-                    onTap: () => Navigator.pop(context, item),
-                  );
-                },
-              ),
-            );
-          },
-        );
-
-        if (selected == null || !mounted) return;
-        await _loadConversationHistory(selected);
-      },
+    final selected = await Navigator.of(context).push<AiConversationSummary>(
+      MaterialPageRoute(
+        builder: (_) => AiAssistantHistoryView(
+          activeSessionId: _realtime.sessionId,
+        ),
+      ),
     );
+
+    if (selected == null || !mounted) return;
+    await _loadConversationHistory(selected);
   }
 
   Future<void> _loadConversationHistory(AiConversationSummary summary) async {
     final token = AuthService.instance.currentToken;
     if (token == null) return;
 
-    final isAr = Localizations.localeOf(context).languageCode == 'ar';
     setState(() => _historyLoading = true);
     final result = await _historyRepository.getConversationMessages(
       token: token,
       conversationId: summary.id,
+      limit: 50,
     );
     if (!mounted) return;
     setState(() => _historyLoading = false);
@@ -731,17 +670,14 @@ class _AiAssistantViewState extends State<AiAssistantView> {
     result.fold(
       (_) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              isAr
-                  ? 'تعذر تحميل رسائل المحادثة.'
-                  : 'Could not load conversation messages.',
-            ),
-          ),
+          SnackBar(content: Text(S.of(context).aiAssistantHistoryLoadMessagesError)),
         );
       },
       (page) {
+        _realtime.attachToSession(summary.clientSessionId);
         setState(() {
+          _planMode = false;
+          _pendingAdMediaButton = false;
           _messages
             ..clear()
             ..addAll(

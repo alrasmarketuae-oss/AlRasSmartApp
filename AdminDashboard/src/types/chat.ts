@@ -1,11 +1,17 @@
 export type ChatMessageType = 'Text' | 'Voice' | 'Image' | 'Location' | 'Video' | 'File'
 
+export const CHAT_MESSAGES_PAGE_SIZE = 10
+
 export type ChatMessageTypeCode = 1 | 2 | 3 | 4 | 5 | 6
 
 export type ChatContact = {
   contactUserId: string
   displayName: string
   avatarUrl: string | null
+  companyName?: string | null
+  contactFullName?: string | null
+  companyImageUrl?: string | null
+  isCompanyAccount?: boolean
   lastMessagePreview: string | null
   lastMessageType: string | null
   lastMessageRelativeTime: string | null
@@ -248,6 +254,35 @@ export function parseImageContent(content: string): string[] {
   return [trimmed]
 }
 
+export function normalizeChatContact(raw: Record<string, unknown>): ChatContact {
+  return {
+    contactUserId: String(raw.contactUserId ?? raw.ContactUserId ?? ''),
+    displayName: String(raw.displayName ?? raw.DisplayName ?? ''),
+    avatarUrl: (raw.avatarUrl ?? raw.AvatarUrl ?? null) as string | null,
+    companyName: (raw.companyName ?? raw.CompanyName ?? null) as string | null,
+    contactFullName: (raw.contactFullName ?? raw.ContactFullName ?? null) as string | null,
+    companyImageUrl: (raw.companyImageUrl ?? raw.CompanyImageUrl ?? null) as string | null,
+    isCompanyAccount: Boolean(raw.isCompanyAccount ?? raw.IsCompanyAccount),
+    lastMessagePreview: (raw.lastMessagePreview ?? raw.LastMessagePreview ?? null) as string | null,
+    lastMessageType: (raw.lastMessageType ?? raw.LastMessageType ?? null) as string | null,
+    lastMessageRelativeTime: (raw.lastMessageRelativeTime ?? raw.LastMessageRelativeTime ?? null) as
+      | string
+      | null,
+    lastMessageSentAtUtc: (raw.lastMessageSentAtUtc ?? raw.LastMessageSentAtUtc ?? null) as
+      | string
+      | null,
+    unreadCount: Number(raw.unreadCount ?? raw.UnreadCount ?? 0),
+    contactLastSeenAtUtc: (raw.contactLastSeenAtUtc ?? raw.ContactLastSeenAtUtc ?? null) as
+      | string
+      | null,
+    isOnline: Boolean(raw.isOnline ?? raw.IsOnline),
+    assignedAgentId: (raw.assignedAgentId ?? raw.AssignedAgentId ?? null) as string | null,
+    assignedAgentName: (raw.assignedAgentName ?? raw.AssignedAgentName ?? null) as string | null,
+    isAssignedToMe: Boolean(raw.isAssignedToMe ?? raw.IsAssignedToMe),
+    isLockedByOtherAgent: Boolean(raw.isLockedByOtherAgent ?? raw.IsLockedByOtherAgent),
+  }
+}
+
 export function normalizeChatMessage(raw: Partial<ChatMessage> & Record<string, unknown>): ChatMessage {
   return {
     messageId: String(raw.messageId ?? ''),
@@ -297,5 +332,15 @@ export function normalizeChatConversationDetails(
     nextBeforeMessageId: (raw.nextBeforeMessageId ?? raw.NextBeforeMessageId ?? null) as
       | string
       | null,
+  }
+}
+
+export function normalizeChatInbox(raw: Record<string, unknown>): ChatInbox {
+  const contactsRaw = (raw.contacts ?? raw.Contacts ?? []) as Array<Record<string, unknown>>
+  return {
+    contacts: contactsRaw.map((contact) => normalizeChatContact(contact)),
+    myLastSeenAtUtc: (raw.myLastSeenAtUtc ?? raw.MyLastSeenAtUtc ?? null) as string | null,
+    totalUnreadCount: Number(raw.totalUnreadCount ?? raw.TotalUnreadCount ?? 0),
+    fromCache: Boolean(raw.fromCache ?? raw.FromCache),
   }
 }

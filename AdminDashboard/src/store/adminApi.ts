@@ -35,7 +35,12 @@ import type {
   ChatUploadImagesResult,
   SendChatMessagePayload,
 } from '../types/chat'
-import { normalizeChatConversationDetails, normalizeChatMessage } from '../types/chat'
+import { normalizeChatContact, normalizeChatConversationDetails, normalizeChatInbox, normalizeChatMessage, CHAT_MESSAGES_PAGE_SIZE } from '../types/chat'
+import type {
+  ChatCompanyReport,
+  ChatCompanyReportRequest,
+} from '../types/chatCompanyReport'
+import { normalizeChatCompanyReport } from '../types/chatCompanyReport'
 import type {
   AiConversationListPage,
   AiConversationMessagesPage,
@@ -1552,6 +1557,7 @@ export const adminApi = createApi({
 
     getChatInbox: builder.query<ChatInbox, void>({
       query: () => '/api/Chat/my',
+      transformResponse: (response: Record<string, unknown>) => normalizeChatInbox(response),
       providesTags: [{ type: 'Chat', id: 'INBOX' }],
       keepUnusedDataFor: LIVE_CACHE_TTL_SECONDS,
     }),
@@ -1567,6 +1573,8 @@ export const adminApi = createApi({
         url: '/api/Chat/search',
         params: { q },
       }),
+      transformResponse: (response: Array<Record<string, unknown>>) =>
+        response.map((contact) => normalizeChatContact(contact)),
       keepUnusedDataFor: LIVE_CACHE_TTL_SECONDS,
     }),
 
@@ -1584,7 +1592,7 @@ export const adminApi = createApi({
     }),
 
     getChatConversationDetails: builder.query<ChatConversationDetails, ChatConversationQuery>({
-      query: ({ otherUserId, limit = 50, before }) => ({
+      query: ({ otherUserId, limit = CHAT_MESSAGES_PAGE_SIZE, before }) => ({
         url: '/api/Chat/conversation',
         params: {
           otherUserId,
@@ -1926,6 +1934,15 @@ export const adminApi = createApi({
       ],
       keepUnusedDataFor: LIVE_CACHE_TTL_SECONDS,
     }),
+
+    generateChatCompanyReport: builder.mutation<ChatCompanyReport, ChatCompanyReportRequest>({
+      query: (body) => ({
+        url: '/api/admin/chat/company-report',
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (response: Record<string, unknown>) => normalizeChatCompanyReport(response),
+    }),
   }),
 })
 
@@ -2029,4 +2046,5 @@ export const {
   useReleaseSupportConversationMutation,
   useGetAdminAiConversationsQuery,
   useLazyGetAdminAiConversationMessagesQuery,
+  useGenerateChatCompanyReportMutation,
 } = adminApi

@@ -44,6 +44,9 @@ class _SupportChatViewState extends State<SupportChatView> {
   bool _isSending = false;
   String? _presenceLabel;
   final ScrollController _scrollController = ScrollController();
+  double? _scrollExtentBeforeOlderLoad;
+  double? _scrollOffsetBeforeOlderLoad;
+  bool _wasLoadingOlder = false;
 
   @override
   void dispose() {
@@ -131,6 +134,29 @@ class _SupportChatViewState extends State<SupportChatView> {
         ..startSupportChat(adminUserId: ApiConstants.supportAdminUserId),
       child: BlocConsumer<ChatCubit, ChatState>(
         listener: (context, state) {
+          if (state is ChatLoadingOlder) {
+            _wasLoadingOlder = true;
+            if (_scrollController.hasClients) {
+              _scrollExtentBeforeOlderLoad =
+                  _scrollController.position.maxScrollExtent;
+              _scrollOffsetBeforeOlderLoad = _scrollController.position.pixels;
+            }
+          }
+          if (state is ChatMessagesLoaded && _wasLoadingOlder) {
+            _wasLoadingOlder = false;
+            final previousExtent = _scrollExtentBeforeOlderLoad;
+            final previousOffset = _scrollOffsetBeforeOlderLoad;
+            _scrollExtentBeforeOlderLoad = null;
+            _scrollOffsetBeforeOlderLoad = null;
+            if (previousExtent != null && previousOffset != null) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!_scrollController.hasClients) return;
+                final delta =
+                    _scrollController.position.maxScrollExtent - previousExtent;
+                _scrollController.jumpTo(previousOffset + delta);
+              });
+            }
+          }
           if (state is ChatMessageSending || state is ChatUploadingMedia) {
             setState(() => _isSending = true);
           } else if (state is ChatMessageSent ||
@@ -234,6 +260,13 @@ class _SupportChatViewState extends State<SupportChatView> {
                             )
                           : NotificationListener<ScrollNotification>(
                               onNotification: (notification) {
+                                if (notification is! ScrollUpdateNotification) {
+                                  return false;
+                                }
+                                if (!cubit.hasMoreMessages ||
+                                    cubit.isLoadingOlderMessages) {
+                                  return false;
+                                }
                                 if (notification.metrics.pixels >=
                                     notification.metrics.maxScrollExtent - 48) {
                                   cubit.loadOlderMessages();

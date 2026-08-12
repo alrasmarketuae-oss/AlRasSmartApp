@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:alrasmarket/core/media/media_compression_service.dart';
+import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_message_model.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_message_type.dart';
@@ -259,6 +260,7 @@ class ChatCubit extends Cubit<ChatState> {
     final result = await _repository.getConversationDetails(
       token: token,
       otherUserId: oid,
+      limit: ApiConstants.chatMessagesPageSize,
     );
 
     result.fold(
@@ -311,7 +313,7 @@ class ChatCubit extends Cubit<ChatState> {
     final result = await _repository.getConversationDetails(
       token: token,
       otherUserId: oid,
-      limit: 50,
+      limit: ApiConstants.chatMessagesPageSize,
       beforeMessageId: nextBeforeMessageId,
     );
 

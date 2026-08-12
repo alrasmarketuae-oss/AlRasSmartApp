@@ -175,6 +175,10 @@ builder.Services.AddHttpClient<IAiAssistantAppService, AiAssistantAppService>(cl
 {
     client.Timeout = TimeSpan.FromSeconds(90);
 });
+builder.Services.AddHttpClient<IAdminChatReportAppService, AdminChatReportAppService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(90);
+});
 builder.Services.AddScoped<IAiKnowledgeIndexer, AiKnowledgeIndexer>();
 builder.Services.AddHostedService<AiKnowledgeBootstrapHostedService>();
 builder.Services.AddHttpClient<IProductTextSearchIndex, MeilisearchProductTextSearchIndex>((sp, client) =>

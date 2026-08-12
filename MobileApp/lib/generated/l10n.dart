@@ -6906,6 +6906,96 @@ class S {
     );
   }
 
+  /// `Conversation history`
+  String get aiAssistantHistoryTitle {
+    return Intl.message(
+      'Conversation history',
+      name: 'aiAssistantHistoryTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Search conversations…`
+  String get aiAssistantHistorySearchHint {
+    return Intl.message(
+      'Search conversations…',
+      name: 'aiAssistantHistorySearchHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No saved conversations yet.`
+  String get aiAssistantHistoryEmpty {
+    return Intl.message(
+      'No saved conversations yet.',
+      name: 'aiAssistantHistoryEmpty',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No conversations match your search.`
+  String get aiAssistantHistoryNoResults {
+    return Intl.message(
+      'No conversations match your search.',
+      name: 'aiAssistantHistoryNoResults',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not load conversation history.`
+  String get aiAssistantHistoryLoadError {
+    return Intl.message(
+      'Could not load conversation history.',
+      name: 'aiAssistantHistoryLoadError',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not load conversation messages.`
+  String get aiAssistantHistoryLoadMessagesError {
+    return Intl.message(
+      'Could not load conversation messages.',
+      name: 'aiAssistantHistoryLoadMessagesError',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Retry`
+  String get aiAssistantHistoryRetry {
+    return Intl.message(
+      'Retry',
+      name: 'aiAssistantHistoryRetry',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Untitled conversation`
+  String get aiAssistantHistoryUntitled {
+    return Intl.message(
+      'Untitled conversation',
+      name: 'aiAssistantHistoryUntitled',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `messages`
+  String get aiAssistantHistoryMessages {
+    return Intl.message(
+      'messages',
+      name: 'aiAssistantHistoryMessages',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `We currently support Arabic and English. We may translate your question internally to understand it, then reply in a supported language.`
   String get aiAssistantUnsupportedLanguage {
     return Intl.message(

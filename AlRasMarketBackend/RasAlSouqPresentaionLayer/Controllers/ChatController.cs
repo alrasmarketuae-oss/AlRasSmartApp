@@ -78,7 +78,7 @@ public class ChatController(
     [HttpGet("messages")]
     public async Task<ActionResult<ChatMessagesPageDto>> GetConversation(
         [FromQuery] string otherUserId,
-        [FromQuery] int limit = 50,
+        [FromQuery] int limit = 10,
         [FromQuery] string? before = null,
         CancellationToken ct = default)
     {
@@ -107,7 +107,7 @@ public class ChatController(
     [HttpGet("conversation")]
     public async Task<ActionResult<ChatConversationDetailsDto>> GetConversationDetails(
         [FromQuery] string otherUserId,
-        [FromQuery] int limit = 50,
+        [FromQuery] int limit = 10,
         [FromQuery] string? before = null,
         CancellationToken ct = default)
     {

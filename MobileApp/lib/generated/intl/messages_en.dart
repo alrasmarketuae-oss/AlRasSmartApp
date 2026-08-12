@@ -253,6 +253,31 @@ class MessageLookup extends MessageLookupByLibrary {
     "aiAssistantVoiceUnavailable": MessageLookupByLibrary.simpleMessage(
       "Voice input is not available on this device",
     ),
+    "aiAssistantHistoryTitle": MessageLookupByLibrary.simpleMessage(
+      "Conversation history",
+    ),
+    "aiAssistantHistorySearchHint": MessageLookupByLibrary.simpleMessage(
+      "Search conversations…",
+    ),
+    "aiAssistantHistoryEmpty": MessageLookupByLibrary.simpleMessage(
+      "No saved conversations yet.",
+    ),
+    "aiAssistantHistoryNoResults": MessageLookupByLibrary.simpleMessage(
+      "No conversations match your search.",
+    ),
+    "aiAssistantHistoryLoadError": MessageLookupByLibrary.simpleMessage(
+      "Could not load conversation history.",
+    ),
+    "aiAssistantHistoryLoadMessagesError": MessageLookupByLibrary.simpleMessage(
+      "Could not load conversation messages.",
+    ),
+    "aiAssistantHistoryRetry": MessageLookupByLibrary.simpleMessage("Retry"),
+    "aiAssistantHistoryUntitled": MessageLookupByLibrary.simpleMessage(
+      "Untitled conversation",
+    ),
+    "aiAssistantHistoryMessages": MessageLookupByLibrary.simpleMessage(
+      "messages",
+    ),
     "aiAssistantWelcome": MessageLookupByLibrary.simpleMessage(
       "Welcome. I’m Alras Smart. Depending on your account type, I can create ads, update prices and quantities, search and compare products, find cheapest/most expensive listings, check shipping prices to a country, and show your ads, orders, sales, and pending orders. Live chat with support is available from Profile.",
     ),

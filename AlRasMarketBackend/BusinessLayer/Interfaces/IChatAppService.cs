@@ -26,7 +26,11 @@ public sealed record ChatContactDto(
     string? AssignedAgentId = null,
     string? AssignedAgentName = null,
     bool IsAssignedToMe = false,
-    bool IsLockedByOtherAgent = false);
+    bool IsLockedByOtherAgent = false,
+    string? CompanyName = null,
+    string? ContactFullName = null,
+    string? CompanyImageUrl = null,
+    bool IsCompanyAccount = false);
 
 public sealed record ChatSupportAssignmentDto(
     string CustomerUserId,
