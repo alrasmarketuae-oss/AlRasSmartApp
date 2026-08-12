@@ -7,7 +7,7 @@ import { IconChat } from '../components/icons'
 import { useAppPreferences } from '../context/AppPreferencesProvider'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import { resolveAssetUrl } from '../lib/assets'
-import { resolveContactAvatarUrl } from '../lib/chatCompanyReport'
+import { isCompanyMediaPath } from '../lib/chatCompanyReport'
 import {
   useGenerateAiConversationReportMutation,
   useGetAdminAiConversationsQuery,
@@ -28,11 +28,9 @@ function formatWhen(value: string): string {
 }
 
 function resolveConversationAvatar(item: AiConversationListItem): string | null {
-  return resolveContactAvatarUrl({
-    profileImageUrl: item.profileImageUrl,
-    companyImageUrl: item.companyImageUrl,
-    avatarUrl: item.profileImageUrl,
-  })
+  const profile = item.profileImageUrl?.trim()
+  if (profile && !isCompanyMediaPath(profile)) return profile
+  return null
 }
 
 function resolveCompanyLabel(item: AiConversationListItem): string {

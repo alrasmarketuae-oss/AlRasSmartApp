@@ -255,12 +255,24 @@ export function parseImageContent(content: string): string[] {
   return [trimmed]
 }
 
+function isCompanyMediaPath(path: string): boolean {
+  const normalized = path.replace(/\\/g, '/').toLowerCase()
+  return normalized.includes('company-images') || normalized.includes('companyimages/')
+}
+
 export function normalizeChatContact(raw: Record<string, unknown>): ChatContact {
+  const avatarRaw = (raw.avatarUrl ?? raw.AvatarUrl ?? null) as string | null
+  const profileRaw = (raw.profileImageUrl ?? raw.ProfileImageUrl ?? null) as string | null
+  const profileImageUrl =
+    profileRaw?.trim() ||
+    (avatarRaw?.trim() && !isCompanyMediaPath(avatarRaw) ? avatarRaw.trim() : null) ||
+    null
+
   return {
     contactUserId: String(raw.contactUserId ?? raw.ContactUserId ?? ''),
     displayName: String(raw.displayName ?? raw.DisplayName ?? ''),
-    avatarUrl: (raw.avatarUrl ?? raw.AvatarUrl ?? null) as string | null,
-    profileImageUrl: (raw.profileImageUrl ?? raw.ProfileImageUrl ?? null) as string | null,
+    avatarUrl: avatarRaw,
+    profileImageUrl,
     companyName: (raw.companyName ?? raw.CompanyName ?? null) as string | null,
     contactFullName: (raw.contactFullName ?? raw.ContactFullName ?? null) as string | null,
     companyImageUrl: (raw.companyImageUrl ?? raw.CompanyImageUrl ?? null) as string | null,

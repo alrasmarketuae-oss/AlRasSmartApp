@@ -6,7 +6,7 @@ import ChatSessionDivider from './ChatSessionDivider'
 import { PROJECT_IMAGES } from '../../constants/projectImages'
 import { IconArrowLeft, IconChat } from '../icons'
 import { resolveAssetUrl } from '../../lib/assets'
-import type { ChatCompanyDisplay } from '../../lib/chatCompanyReport'
+import { resolveContactAvatarUrl, type ChatCompanyDisplay } from '../../lib/chatCompanyReport'
 import type { ChatContact, ChatMessage, ChatSupportSession } from '../../types/chat'
 
 export type VoiceDraft = {
@@ -293,7 +293,8 @@ export default function ChatThreadPanel({
     await onSendVoice(file)
   }
 
-  const avatarUrl = resolveAssetUrl(companyDisplay?.imageUrl ?? contact.avatarUrl)
+  const avatarPath = companyDisplay?.imageUrl ?? resolveContactAvatarUrl(contact)
+  const avatarUrl = resolveAssetUrl(avatarPath)
   const headerTitle = companyDisplay?.title ?? contact.displayName
   const headerSubtitle = companyDisplay?.subtitle
 

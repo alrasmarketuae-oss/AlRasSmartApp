@@ -9,27 +9,25 @@ export type ChatCompanyDisplay = {
   isCompany: boolean
 }
 
-function looksLikeProfileImagePath(path: string): boolean {
+/** True when the stored path points at company-images (not user profile photos). */
+export function isCompanyMediaPath(path: string): boolean {
   const normalized = path.replace(/\\/g, '/').toLowerCase()
-  return normalized.includes('images/profiles')
+  return normalized.includes('company-images') || normalized.includes('companyimages/')
 }
 
-/** Match users page: profile photo (images/profiles) first, company logo as fallback. */
+/** Same rule as users table: profile photo only — never company-images for avatars. */
 export function resolveContactAvatarUrl(contact: {
   profileImageUrl?: string | null
   companyImageUrl?: string | null
   avatarUrl?: string | null
 }): string | null {
   const profileImage = contact.profileImageUrl?.trim()
-  if (profileImage) return profileImage
+  if (profileImage && !isCompanyMediaPath(profileImage)) return profileImage
 
   const avatar = contact.avatarUrl?.trim()
-  if (avatar && looksLikeProfileImagePath(avatar)) return avatar
+  if (avatar && !isCompanyMediaPath(avatar)) return avatar
 
-  const companyImage = contact.companyImageUrl?.trim()
-  if (companyImage) return companyImage
-
-  return avatar || null
+  return null
 }
 
 export function resolveChatCompanyDisplay(contact: ChatContact): ChatCompanyDisplay {

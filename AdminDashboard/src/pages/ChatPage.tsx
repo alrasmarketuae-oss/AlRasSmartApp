@@ -5,7 +5,7 @@ import ChatThreadPanel from '../components/chat/ChatThreadPanel'
 import { useAppPreferences } from '../context/AppPreferencesProvider'
 import { useChat } from '../context/ChatProvider'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
-import { resolveChatCompanyDisplay } from '../lib/chatCompanyReport'
+import { resolveChatCompanyDisplay, resolveContactAvatarUrl } from '../lib/chatCompanyReport'
 import { getAuthUser, getChatWrapSecret, saveChatWrapSecret } from '../lib/authStorage'
 import { hasPermission, isSuperAdmin, PERMISSIONS } from '../lib/permissions'
 import {
@@ -89,6 +89,7 @@ export default function ChatPage() {
   } = useGetChatInboxQuery(undefined, {
     skip: !myUserId,
     pollingInterval: chatPollingInterval,
+    refetchOnMountOrArgChange: true,
     ...liveQueryOptions,
   })
 
@@ -131,19 +132,12 @@ export default function ChatPage() {
     const isCompany = Boolean(companyName) || fromContact.isCompany
     const profileImage =
       participantDetail.imgPath?.trim() ||
-      selectedContact.profileImageUrl?.trim() ||
-      selectedContact.avatarUrl?.trim() ||
-      fromContact.imageUrl
-    const companyImage =
-      participantDetail.companyImages.find((image) => image.isPrimary)?.imagePath?.trim() ||
-      participantDetail.companyImages[0]?.imagePath?.trim() ||
-      selectedContact.companyImageUrl?.trim() ||
-      null
+      resolveContactAvatarUrl(selectedContact)
 
     return {
       title: companyName || fromContact.title,
       subtitle: companyName ? participantDetail.fullName : fromContact.subtitle,
-      imageUrl: profileImage || companyImage,
+      imageUrl: profileImage,
       isCompany,
     }
   }, [participantDetail, selectedContact])

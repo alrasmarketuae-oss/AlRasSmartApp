@@ -41,6 +41,8 @@ export type AiConversationReportRequest = {
   language: 'ar' | 'en'
 }
 
+import { isCompanyMediaPath } from '../lib/chatCompanyReport'
+
 function readString(raw: unknown, fallback = ''): string {
   return raw == null ? fallback : String(raw)
 }
@@ -58,7 +60,12 @@ export function normalizeAiConversationListItem(
     companyName: (raw.companyName ?? raw.CompanyName ?? null) as string | null,
     contactFullName: (raw.contactFullName ?? raw.ContactFullName ?? null) as string | null,
     companyImageUrl: (raw.companyImageUrl ?? raw.CompanyImageUrl ?? null) as string | null,
-    profileImageUrl: (raw.profileImageUrl ?? raw.ProfileImageUrl ?? null) as string | null,
+    profileImageUrl: (() => {
+      const profile = (raw.profileImageUrl ?? raw.ProfileImageUrl ?? null) as string | null
+      const trimmed = profile?.trim()
+      if (trimmed && !isCompanyMediaPath(trimmed)) return trimmed
+      return null
+    })(),
     isCompanyAccount: Boolean(raw.isCompanyAccount ?? raw.IsCompanyAccount),
   }
 }
