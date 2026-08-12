@@ -7,16 +7,19 @@ class CreateAdCurrencyLabel extends StatelessWidget {
     super.key,
     required this.currency,
     this.iconHeight,
+    this.matchTextSize,
   });
 
   final String currency;
   final double? iconHeight;
+  final bool? matchTextSize;
 
   @override
   Widget build(BuildContext context) {
     return CurrencyIcon(
       currency: CreateAdCurrency.normalize(currency),
       size: iconHeight ?? 20,
+      matchTextSize: matchTextSize ?? iconHeight != null,
     );
   }
 }

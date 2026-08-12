@@ -27,22 +27,34 @@ class CurrencyIcon extends StatelessWidget {
     if (normalized == CreateAdCurrency.aed) {
       final dimension = matchTextSize ? size : size.w;
       final height = matchTextSize ? size : (size * 0.9).h;
-      return SvgPicture.asset(
-        AppAssets.dirhamSvg,
+      return SizedBox(
         width: dimension,
         height: height,
-        colorFilter: const ColorFilter.mode(green, BlendMode.srcIn),
+        child: Center(
+          child: SvgPicture.asset(
+            AppAssets.dirhamSvg,
+            width: dimension,
+            height: height,
+            colorFilter: const ColorFilter.mode(green, BlendMode.srcIn),
+          ),
+        ),
       );
     }
 
     final dollarSize = matchTextSize ? size : size.sp;
-    return Text(
-      '\$',
-      style: TextStyle(
-        color: green,
-        fontSize: dollarSize,
-        fontWeight: FontWeight.w700,
-        height: 1,
+    final boxHeight = matchTextSize ? size : size.sp;
+    return SizedBox(
+      height: boxHeight,
+      child: Center(
+        child: Text(
+          '\$',
+          style: TextStyle(
+            color: green,
+            fontSize: dollarSize,
+            fontWeight: FontWeight.w700,
+            height: 1,
+          ),
+        ),
       ),
     );
   }

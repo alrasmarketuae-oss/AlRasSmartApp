@@ -579,11 +579,17 @@ class _PriceField extends StatelessWidget {
         decoration: InputDecoration(
           isDense: true,
           hintText: hint,
-          suffixIcon: Padding(
-            padding: EdgeInsets.only(right: 10.w),
-            child: CreateAdCurrencyLabel(
-              currency: currency,
-              iconHeight: 13.sp,
+          suffixIcon: Align(
+            alignment: Alignment.center,
+            widthFactor: 1,
+            heightFactor: 1,
+            child: Padding(
+              padding: EdgeInsets.only(right: 10.w),
+              child: CreateAdCurrencyLabel(
+                currency: currency,
+                iconHeight: 13.sp,
+                matchTextSize: true,
+              ),
             ),
           ),
           suffixIconConstraints: BoxConstraints(minWidth: 28.w, minHeight: 28.h),
