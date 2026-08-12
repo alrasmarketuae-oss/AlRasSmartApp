@@ -17,13 +17,11 @@ public interface IProductAutoModerationService
 
 /// <summary>
 /// Background ad review (all product types: Offers, Requests, Booking, Category/Retail):
-/// - video present → leave for admin dashboard only (no auto-reject, no auto-approve, no notify)
-/// - no video + text violations → auto-reject + notify
-/// - no video + image violations (phone, company name, brand on photos/packaging) →
-///   admin dashboard only (no auto-reject, no auto-approve, no notify)
+/// - any violation (text, image, video) → leave for admin dashboard only (under review)
 /// - scan failure / incomplete image scan → admin dashboard only
 /// - no video + clean text and images → auto-approve + notify (then CLIP)
 /// - seller edits/resubmits → same scan again
+/// Never auto-rejects — admin decides on flagged ads.
 /// </summary>
 public sealed class ProductAutoModerationService(
     IRasAlSouqDbContext dbContext,
@@ -105,15 +103,10 @@ public sealed class ProductAutoModerationService(
         if (textHits.Count > 0)
         {
             logger.LogInformation(
-                "Product {ProductId} text policy violations: {Hits}",
+                "Product {ProductId} text policy violations: {Hits} — left for admin dashboard review.",
                 workItem.ProductId,
                 string.Join(", ", textHits.Select(h => $"{h.Kind}:{h.Sample}")));
-            await RejectAsync(
-                    workItem.ProductId,
-                    product.CreatedLanguage,
-                    textHits.Select(h => h.Kind).ToList(),
-                    cancellationToken)
-                .ConfigureAwait(false);
+            await LeaveForAdminReviewAsync(workItem.ProductId, cancellationToken).ConfigureAwait(false);
             return;
         }
 
@@ -145,16 +138,11 @@ public sealed class ProductAutoModerationService(
             if (textLlm.HasViolation)
             {
                 logger.LogInformation(
-                    "Product {ProductId} LLM text policy violations: {Kinds} ({Summary})",
+                    "Product {ProductId} LLM text policy violations: {Kinds} ({Summary}) — left for admin dashboard review.",
                     workItem.ProductId,
                     string.Join("|", textLlm.ViolationKinds),
                     textLlm.Summary);
-                await RejectAsync(
-                        workItem.ProductId,
-                        product.CreatedLanguage,
-                        textLlm.ViolationKinds,
-                        cancellationToken)
-                    .ConfigureAwait(false);
+                await LeaveForAdminReviewAsync(workItem.ProductId, cancellationToken).ConfigureAwait(false);
                 return;
             }
         }
@@ -162,14 +150,11 @@ public sealed class ProductAutoModerationService(
         var imageScan = await ScanImagesAsync(workItem.ProductId, cancellationToken).ConfigureAwait(false);
         if (imageScan.Hits.Count > 0)
         {
-            // Image violations are NOT auto-rejected or auto-approved: leave the ad for
-            // manual admin dashboard review only (no auto-reject, no auto-approve, no notify).
-            // Only text violations still auto-reject.
             logger.LogInformation(
                 "Product {ProductId} image policy violations: {Hits} — left for admin dashboard review.",
                 workItem.ProductId,
                 string.Join(", ", imageScan.Hits));
-            await QueueClipAsync(workItem.ProductId, cancellationToken).ConfigureAwait(false);
+            await LeaveForAdminReviewAsync(workItem.ProductId, cancellationToken).ConfigureAwait(false);
             return;
         }
 
@@ -207,37 +192,10 @@ public sealed class ProductAutoModerationService(
     }
 
     /// <summary>
-    /// Rejects the ad with a clear, violation-specific reason and notifies the seller
-    /// in the language the ad was created in.
+    /// Keeps the ad under admin review (no auto-reject, no auto-approve, no seller notify).
     /// </summary>
-    private async Task RejectAsync(
-        Guid productId,
-        string? createdLanguage,
-        IReadOnlyCollection<string> violationKinds,
-        CancellationToken cancellationToken)
-    {
-        var (reasonEn, reasonAr) = AutoModerationMessages.BuildReason(violationKinds);
-        var notifyLanguage = NotificationMessages.IsArabic(createdLanguage) ? "ar" : "en";
-
-        try
-        {
-            await adminProducts.RejectProductAsync(
-                    productId.ToString("D"),
-                    new AdminRejectProductRequest
-                    {
-                        SupplierNotesEn = reasonEn,
-                        SupplierNotesAr = reasonAr
-                    },
-                    cancellationToken,
-                    notifyLanguageOverride: notifyLanguage)
-                .ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Auto-reject failed for {ProductId} — leaving for admin.", productId);
-            await QueueClipAsync(productId, cancellationToken).ConfigureAwait(false);
-        }
-    }
+    private Task LeaveForAdminReviewAsync(Guid productId, CancellationToken cancellationToken) =>
+        QueueClipAsync(productId, cancellationToken);
 
     /// <summary>
     /// Loads live product title + specs (including bilingual ContentTranslations)
