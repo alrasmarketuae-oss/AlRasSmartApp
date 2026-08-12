@@ -193,115 +193,68 @@ class _AccountSectionTabs extends StatelessWidget {
     final s = S.of(context);
     final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
     final items = [
-      (
-        label: s.myAds,
-        subtitle: s.myAdsOverviewSubtitle,
-        icon: Icons.description_outlined,
-      ),
-      (
-        label: s.myOffers,
-        subtitle: s.myOffersOverviewSubtitle,
-        icon: Icons.local_offer_outlined,
-      ),
+      (label: s.myAds, icon: Icons.description_outlined),
+      (label: s.myOffers, icon: Icons.local_offer_outlined),
     ];
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 8.h),
-      child: Column(
-        children: [
-          Text(
-            s.accountOverview,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: fontFamily,
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w800,
-              color: const Color(0xFF1B4F8A),
-            ),
-          ),
-          SizedBox(height: 10.h),
-          Row(
-            children: List.generate(items.length, (index) {
-              final isSelected = selectedIndex == index;
-              final item = items[index];
-              final fg = isSelected ? Colors.white : LightColor.defaultColor;
-              return Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    right: index == 0 ? 8.w : 0,
-                    left: index == 1 ? 8.w : 0,
+      padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 4.h),
+      child: Row(
+        children: List.generate(items.length, (index) {
+          final isSelected = selectedIndex == index;
+          final item = items[index];
+          final fg = isSelected ? Colors.white : LightColor.defaultColor;
+          return Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(
+                right: index == 0 ? 6.w : 0,
+                left: index == 1 ? 6.w : 0,
+              ),
+              child: GestureDetector(
+                onTap: () => onSelected(index),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                    vertical: 9.h,
                   ),
-                  child: GestureDetector(
-                    onTap: () => onSelected(index),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      padding: EdgeInsets.fromLTRB(12.w, 14.h, 10.w, 14.h),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14.r),
-                        color: isSelected
-                            ? LightColor.defaultColor
-                            : Colors.white,
-                        border: Border.all(
-                          color: LightColor.defaultColor,
-                          width: 1.5,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: LightColor.defaultColor.withValues(
-                              alpha: isSelected ? 0.22 : 0.06,
-                            ),
-                            blurRadius: 10.r,
-                            offset: Offset(0, 3.h),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(item.icon, size: 20.sp, color: fg),
-                              const Spacer(),
-                              Icon(
-                                Icons.chevron_right_rounded,
-                                size: 22.sp,
-                                color: fg,
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 8.h),
-                          Text(
-                            item.label,
-                            style: TextStyle(
-                              color: fg,
-                              fontFamily: fontFamily,
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          SizedBox(height: 3.h),
-                          Text(
-                            item.subtitle,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: isSelected
-                                  ? Colors.white.withValues(alpha: 0.88)
-                                  : const Color(0xFF6B7280),
-                              fontFamily: fontFamily,
-                              fontSize: 10.5.sp,
-                              height: 1.3,
-                            ),
-                          ),
-                        ],
-                      ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10.r),
+                    color: isSelected ? LightColor.defaultColor : Colors.white,
+                    border: Border.all(
+                      color: LightColor.defaultColor,
+                      width: 1.4,
                     ),
                   ),
+                  child: Row(
+                    children: [
+                      Icon(item.icon, size: 16.sp, color: fg),
+                      SizedBox(width: 6.w),
+                      Expanded(
+                        child: Text(
+                          item.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: fg,
+                            fontFamily: fontFamily,
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        size: 18.sp,
+                        color: fg,
+                      ),
+                    ],
+                  ),
                 ),
-              );
-            }),
-          ),
-        ],
+              ),
+            ),
+          );
+        }),
       ),
     );
   }

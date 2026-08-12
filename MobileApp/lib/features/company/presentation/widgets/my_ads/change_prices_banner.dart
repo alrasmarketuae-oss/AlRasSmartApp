@@ -17,10 +17,10 @@ class ChangePricesBanner extends StatelessWidget {
     final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 8.h),
+      padding: EdgeInsets.fromLTRB(16.w, 2.h, 16.w, 6.h),
       child: Material(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14.r),
+        borderRadius: BorderRadius.circular(12.r),
         child: InkWell(
           onTap: () {
             final id = highlightProductId?.trim();
@@ -31,37 +31,37 @@ class ChangePricesBanner extends StatelessWidget {
                   : {'highlightProductId': id},
             );
           },
-          borderRadius: BorderRadius.circular(14.r),
+          borderRadius: BorderRadius.circular(12.r),
           child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14.r),
+              borderRadius: BorderRadius.circular(12.r),
               border: Border.all(color: const Color(0xFFE6EEF8)),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF16233A).withValues(alpha: 0.06),
-                  blurRadius: 12.r,
-                  offset: Offset(0, 4.h),
+                  color: const Color(0xFF16233A).withValues(alpha: 0.05),
+                  blurRadius: 8.r,
+                  offset: Offset(0, 2.h),
                 ),
               ],
             ),
             child: Row(
               children: [
                 Container(
-                  width: 44.w,
-                  height: 44.w,
+                  width: 34.w,
+                  height: 34.w,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: LightColor.defaultColor,
-                    borderRadius: BorderRadius.circular(12.r),
+                    borderRadius: BorderRadius.circular(10.r),
                   ),
                   child: Icon(
                     Icons.sell_rounded,
                     color: Colors.white,
-                    size: 22.sp,
+                    size: 18.sp,
                   ),
                 ),
-                SizedBox(width: 12.w),
+                SizedBox(width: 10.w),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,20 +70,22 @@ class ChangePricesBanner extends StatelessWidget {
                         s.changePrices,
                         style: TextStyle(
                           fontFamily: fontFamily,
-                          fontSize: 15.sp,
+                          fontSize: 13.5.sp,
                           fontWeight: FontWeight.w800,
                           color: LightColor.defaultColor,
-                          height: 1.2,
+                          height: 1.15,
                         ),
                       ),
-                      SizedBox(height: 3.h),
+                      SizedBox(height: 1.h),
                       Text(
                         s.changePricesSubtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontFamily: fontFamily,
-                          fontSize: 12.sp,
+                          fontSize: 11.sp,
                           color: const Color(0xFF6B7280),
-                          height: 1.3,
+                          height: 1.2,
                         ),
                       ),
                     ],
@@ -94,7 +96,7 @@ class ChangePricesBanner extends StatelessWidget {
                       ? Icons.chevron_left_rounded
                       : Icons.chevron_right_rounded,
                   color: LightColor.defaultColor,
-                  size: 26.sp,
+                  size: 22.sp,
                 ),
               ],
             ),

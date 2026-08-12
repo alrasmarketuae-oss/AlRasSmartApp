@@ -74,8 +74,15 @@ class _HomeViewState extends State<HomeView> {
       cubit.clearHomeCatalogMemory();
     }
     // Guest browses category catalog (same feed path as company home).
-    unawaited(cubit.preloadHomeFromDisk(isPerson: isPersonalCustomer));
-    cubit.refreshHomeFeed(isPerson: isPersonalCustomer, resetCached: isGuest);
+    unawaited(
+      cubit.preloadHomeFromDisk(isPerson: isPersonalCustomer).whenComplete(() {
+        if (!mounted) return;
+        cubit.refreshHomeFeed(
+          isPerson: isPersonalCustomer,
+          resetCached: isGuest,
+        );
+      }),
+    );
   }
 
   @override

@@ -153,12 +153,9 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     isLoadingCategories = true;
     emit(state.copyWith(formRevision: state.formRevision + 1));
 
-    final result = await _getCategoriesUseCase(
-      const GetCategoriesParams(forceRefresh: true),
-    );
+    final result = await _getCategoriesUseCase(const GetCategoriesParams());
     result.fold(
       (_) {
-        categories = [];
         isLoadingCategories = false;
         emit(state.copyWith(formRevision: state.formRevision + 1));
       },

@@ -952,32 +952,63 @@ class ClintCubit extends Cubit<ClintStates> {
   Future<void> fetchCategories({bool force = false}) async {
     if (force) {
       await ApiCacheStore.instance.remove(ApiCacheKeys.categories);
+      categories = [];
     } else if (categories.isNotEmpty) {
+      unawaited(_refreshCategoriesInBackground());
       return;
     }
 
     if (categories.isEmpty) {
       await _hydrateCategoriesFromDisk();
     }
+
+    // Cached categories on disk: show immediately, refresh in background only.
+    if (!force && categories.isNotEmpty) {
+      categoriesError = null;
+      isLoadingCategories = false;
+      emit(FetchCategoriesSuccessState(categories));
+      unawaited(_refreshCategoriesInBackground());
+      return;
+    }
+
     if (categories.isEmpty) {
       isLoadingCategories = true;
       categoriesError = null;
       emit(FetchCategoriesLoadingState());
     }
 
-    final result = await _getCategoriesUseCase(const GetCategoriesParams());
+    final result = await _getCategoriesUseCase(
+      GetCategoriesParams(forceRefresh: force),
+    );
 
     result.fold(
       (failure) {
-        categoriesError = failure.message;
-        categories = [];
         isLoadingCategories = false;
-        emit(FetchCategoriesErrorState(failure.message));
+        if (categories.isEmpty) {
+          categoriesError = failure.message;
+          emit(FetchCategoriesErrorState(failure.message));
+        } else {
+          categoriesError = null;
+          emit(FetchCategoriesSuccessState(categories));
+        }
       },
       (items) {
         categories = items;
         categoriesError = null;
         isLoadingCategories = false;
+        emit(FetchCategoriesSuccessState(items));
+      },
+    );
+  }
+
+  Future<void> _refreshCategoriesInBackground() async {
+    final result = await _getCategoriesUseCase(const GetCategoriesParams());
+    result.fold(
+      (_) {},
+      (items) {
+        if (items.isEmpty) return;
+        categories = items;
+        categoriesError = null;
         emit(FetchCategoriesSuccessState(items));
       },
     );

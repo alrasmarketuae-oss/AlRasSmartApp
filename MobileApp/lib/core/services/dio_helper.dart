@@ -36,10 +36,15 @@ class DioHelper {
       BaseOptions(
         baseUrl: ApiConstants.baseUrl,
         receiveDataWhenStatusError: true,
-        connectTimeout: const Duration(seconds: 25),
-        receiveTimeout: const Duration(seconds: 25),
-        sendTimeout: const Duration(seconds: 25),
+        // Mobile networks / cold API starts often exceed 25s; keep generous.
+        connectTimeout: const Duration(seconds: 45),
+        receiveTimeout: const Duration(seconds: 60),
+        sendTimeout: const Duration(seconds: 45),
       ),
+    );
+
+    dio!.interceptors.add(
+      _RetryOnTransientErrorInterceptor(dio!, maxRetries: 2),
     );
 
     // Local API (LAN / self-signed): accept bad certificates when isLocal.
@@ -61,13 +66,20 @@ class DioHelper {
     Map<String, dynamic>? data,
     String lan = 'ar',
     String? token,
+    Duration? receiveTimeout,
   }) async {
     dio!.options.headers = {
       'Content-Type': 'application/json',
       ..._authHeaders(token: token),
     };
-    //print("0000${url}");
-    final x = await dio?.get(url, data: data, queryParameters: query);
+    final x = await dio?.get(
+      url,
+      data: data,
+      queryParameters: query,
+      options: receiveTimeout == null
+          ? null
+          : Options(receiveTimeout: receiveTimeout),
+    );
     return x;
   }
 
@@ -256,6 +268,67 @@ class DioHelper {
       );
     }
     return client.get<dynamic>(fullUrl);
+  }
+}
+
+/// Retries idempotent GETs on transient network/timeout failures.
+class _RetryOnTransientErrorInterceptor extends Interceptor {
+  _RetryOnTransientErrorInterceptor(this._dio, {this.maxRetries = 2});
+
+  final Dio _dio;
+  final int maxRetries;
+  static const _retryExtraKey = 'transient_retry_count';
+
+  @override
+  Future<void> onError(
+    DioException err,
+    ErrorInterceptorHandler handler,
+  ) async {
+    if (!_shouldRetry(err)) {
+      return handler.next(err);
+    }
+
+    final attempt = (err.requestOptions.extra[_retryExtraKey] as int?) ?? 0;
+    if (attempt >= maxRetries) {
+      return handler.next(err);
+    }
+
+    final nextAttempt = attempt + 1;
+    err.requestOptions.extra[_retryExtraKey] = nextAttempt;
+    final delayMs = 500 * nextAttempt;
+    debugPrint(
+      '[Dio] transient ${err.type} on ${err.requestOptions.method} '
+      '${err.requestOptions.path}; retry $nextAttempt/$maxRetries in ${delayMs}ms',
+    );
+    await Future<void>.delayed(Duration(milliseconds: delayMs));
+
+    try {
+      final response = await _dio.fetch<dynamic>(err.requestOptions);
+      return handler.resolve(response);
+    } on DioException catch (retryError) {
+      return handler.next(retryError);
+    } catch (e) {
+      return handler.next(
+        DioException(requestOptions: err.requestOptions, error: e),
+      );
+    }
+  }
+
+  bool _shouldRetry(DioException err) {
+    final method = err.requestOptions.method.toUpperCase();
+    if (method != 'GET' && method != 'HEAD') return false;
+    switch (err.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+      case DioExceptionType.connectionError:
+        return true;
+      case DioExceptionType.unknown:
+        // DNS / socket resets often land here without a response.
+        return err.response == null;
+      default:
+        return false;
+    }
   }
 }
 

@@ -12,9 +12,11 @@ class MyAdsHeaderWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // No search on Account — keeps listings visible below.
     return SearchHeader(
       title: showBackButton ? S.of(context).account : null,
       isBackButton: showBackButton,
+      isSearch: false,
     );
   }
 }

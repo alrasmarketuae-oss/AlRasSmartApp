@@ -2,7 +2,7 @@
 class ApiCacheKeys {
   ApiCacheKeys._();
 
-  static const categories = 'catalog.categories';
+  static const categories = 'catalog.categories.v2';
   static const homeBanners = 'catalog.home_banners';
   static const geoCountries = 'geo.countries.v2';
   static const domesticEmirates = 'geo.domestic_emirates';
