@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-/// Green currency glyph — dirham SVG for AED, dollar sign for USD.
+/// Currency glyph — dirham SVG for AED, dollar sign for USD.
 class CurrencyIcon extends StatelessWidget {
   const CurrencyIcon({
     super.key,
@@ -19,6 +19,10 @@ class CurrencyIcon extends StatelessWidget {
   /// When true, icon height matches [size] (same as adjacent price [TextStyle.fontSize]).
   final bool matchTextSize;
 
+  /// Icon glyph color (dirham SVG + dollar sign).
+  static const Color glyphColor = Color(0xFF1A1A1A);
+
+  /// Legacy alias used by some price text styles — unchanged (green amounts).
   static const Color green = Color(0xFF619D50);
 
   @override
@@ -35,7 +39,7 @@ class CurrencyIcon extends StatelessWidget {
             AppAssets.dirhamSvg,
             width: dimension,
             height: height,
-            colorFilter: const ColorFilter.mode(green, BlendMode.srcIn),
+            colorFilter: const ColorFilter.mode(glyphColor, BlendMode.srcIn),
           ),
         ),
       );
@@ -49,7 +53,7 @@ class CurrencyIcon extends StatelessWidget {
         child: Text(
           '\$',
           style: TextStyle(
-            color: green,
+            color: glyphColor,
             fontSize: dollarSize,
             fontWeight: FontWeight.w700,
             height: 1,

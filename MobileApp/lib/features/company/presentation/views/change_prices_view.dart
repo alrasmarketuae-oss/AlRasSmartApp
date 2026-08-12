@@ -330,15 +330,6 @@ class _ChangePricesViewState extends State<ChangePricesView> {
                 product: product,
                 editor: editor,
                 onChanged: () => setState(() {}),
-                onSave: () async {
-                  final error = await _saveProduct(product, syncCatalog: true);
-                  if (!mounted) return;
-                  if (error != null) {
-                    AppToast.showError(context, error);
-                  } else {
-                    AppToast.showSuccess(context, s.pricesUpdated);
-                  }
-                },
               ),
             ),
           );
@@ -416,17 +407,14 @@ class _PriceRow extends StatelessWidget {
     required this.product,
     required this.editor,
     required this.onChanged,
-    required this.onSave,
   });
 
   final MyListingProductModel product;
   final _PriceEditors editor;
   final VoidCallback onChanged;
-  final VoidCallback onSave;
 
   @override
   Widget build(BuildContext context) {
-    final s = S.of(context);
     final imageUrl = product.primaryImageUrl ?? product.categoryImageUrl;
     final wholesaleCurrency =
         ProductPriceFormatter.wholesaleCurrencyCode(product);
@@ -500,48 +488,27 @@ class _PriceRow extends StatelessWidget {
             ),
           ),
           SizedBox(width: 8.w),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              _PriceField(
-                controller: editor.wholesale,
-                currency: wholesaleCurrency,
-                hint: editor.hasRetail ? s.wholesalePrice : s.enterPrice,
-                onChanged: (_) => onChanged(),
-              ),
-              if (editor.hasRetail) ...[
-                SizedBox(height: 8.h),
+          SizedBox(
+            width: 118.w,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
                 _PriceField(
-                  controller: editor.retail,
-                  currency: retailCurrency,
-                  hint: s.retailPriceLabel,
+                  controller: editor.wholesale,
+                  currency: wholesaleCurrency,
                   onChanged: (_) => onChanged(),
                 ),
-              ],
-            ],
-          ),
-          if (editor.isDirty) ...[
-            SizedBox(width: 4.w),
-            editor.saving
-                ? SizedBox(
-                    width: 22.w,
-                    height: 22.w,
-                    child: const CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : IconButton(
-                    onPressed: onSave,
-                    padding: EdgeInsets.zero,
-                    constraints: BoxConstraints.tightFor(
-                      width: 32.w,
-                      height: 32.w,
-                    ),
-                    icon: Icon(
-                      Icons.check_circle_rounded,
-                      color: LightColor.defaultColor,
-                      size: 24.sp,
-                    ),
+                if (editor.hasRetail) ...[
+                  SizedBox(height: 8.h),
+                  _PriceField(
+                    controller: editor.retail,
+                    currency: retailCurrency,
+                    onChanged: (_) => onChanged(),
                   ),
-          ],
+                ],
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -552,19 +519,17 @@ class _PriceField extends StatelessWidget {
   const _PriceField({
     required this.controller,
     required this.currency,
-    required this.hint,
     required this.onChanged,
   });
 
   final TextEditingController controller;
   final String currency;
-  final String hint;
   final ValueChanged<String> onChanged;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 118.w,
+      height: 40.h,
       child: TextField(
         controller: controller,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -575,10 +540,10 @@ class _PriceField extends StatelessWidget {
           fontSize: 13.sp,
           fontWeight: FontWeight.w700,
           color: const Color(0xFF16233A),
+          height: 1.2,
         ),
         decoration: InputDecoration(
           isDense: true,
-          hintText: hint,
           suffixIcon: Align(
             alignment: Alignment.center,
             widthFactor: 1,
@@ -597,7 +562,7 @@ class _PriceField extends StatelessWidget {
           fillColor: const Color(0xFFF6F9FE),
           contentPadding: EdgeInsets.symmetric(
             horizontal: 10.w,
-            vertical: 10.h,
+            vertical: 0,
           ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10.r),
