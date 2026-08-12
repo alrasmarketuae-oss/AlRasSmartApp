@@ -32,13 +32,30 @@ class ProductSearchResultsView extends StatefulWidget {
 }
 
 class _ProductSearchResultsViewState extends State<ProductSearchResultsView> {
+  late final TextEditingController _searchController;
+
   @override
   void initState() {
     super.initState();
+    _searchController = TextEditingController(text: widget.initialQuery ?? '');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _runSearch();
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onLiveQueryChanged(String query) {
+    context.read<ClintCubit>().searchProducts(
+          query: query,
+          showLoadingIndicator:
+              context.read<ClintCubit>().productSearchResults.isEmpty,
+        );
   }
 
   void _runSearch({bool forceApi = false}) {
@@ -125,6 +142,9 @@ class _ProductSearchResultsViewState extends State<ProductSearchResultsView> {
                 SearchHeader(
                   title: headerTitle,
                   initialQuery: widget.initialQuery,
+                  searchController: _searchController,
+                  onLiveQueryChanged: fromImage ? null : _onLiveQueryChanged,
+                  enableLiveSearch: !fromImage,
                 ),
                 Expanded(
                   child: Builder(

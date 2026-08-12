@@ -7,6 +7,7 @@ import 'package:alrasmarket/core/utils/product_price_formatter.dart';
 import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/core/widgets/cached_app_image.dart';
 import 'package:alrasmarket/core/widgets/primary_button.dart';
+import 'package:alrasmarket/core/widgets/app_search_field.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/search_header.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/features/company/presentation/controller/cubit/company_cubit.dart';
@@ -210,23 +211,15 @@ class _ChangePricesViewState extends State<ChangePricesView> {
                   children: [
                     Padding(
                       padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 10.h),
-                      child: TextField(
+                      child: AppSearchField(
+                        mode: AppSearchMode.local,
                         controller: _searchController,
+                        hintText: s.changePricesSearchHint,
+                        showBackButton: false,
+                        showImageSearch: false,
+                        enableLiveSearch: false,
+                        enableSuggestions: false,
                         onChanged: (_) => setState(() {}),
-                        decoration: InputDecoration(
-                          hintText: s.changePricesSearchHint,
-                          prefixIcon: const Icon(Icons.search_rounded),
-                          filled: true,
-                          fillColor: Colors.white,
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 14.w,
-                            vertical: 12.h,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14.r),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
                       ),
                     ),
                     Expanded(

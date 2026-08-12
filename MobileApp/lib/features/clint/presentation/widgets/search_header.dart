@@ -1,20 +1,11 @@
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/widgets/app_header.dart';
-import 'package:alrasmarket/features/clint/presentation/widgets/search_form_feild.dart';
+import 'package:alrasmarket/core/widgets/app_search_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
 class SearchHeader extends StatelessWidget {
-  final String? title;
-  final bool isBackButton;
-  final bool isSearch;
-  final String? initialQuery;
-  final TextEditingController? searchController;
-  final ValueChanged<String>? onSearchSubmitted;
-  final VoidCallback? onImageSearchTap;
-  final VoidCallback? onFilterTap;
-
   const SearchHeader({
     super.key,
     this.title,
@@ -23,15 +14,34 @@ class SearchHeader extends StatelessWidget {
     this.initialQuery,
     this.searchController,
     this.onSearchSubmitted,
+    this.onLiveQueryChanged,
     this.onImageSearchTap,
     this.onFilterTap,
+    this.enableLiveSearch = true,
+    this.searchMode = AppSearchMode.catalog,
+    this.searchHint,
+    this.onLocalSearchChanged,
+    this.showImageSearch = true,
   });
+
+  final String? title;
+  final bool isBackButton;
+  final bool isSearch;
+  final String? initialQuery;
+  final TextEditingController? searchController;
+  final ValueChanged<String>? onSearchSubmitted;
+  final ValueChanged<String>? onLiveQueryChanged;
+  final VoidCallback? onImageSearchTap;
+  final VoidCallback? onFilterTap;
+  final bool enableLiveSearch;
+  final AppSearchMode searchMode;
+  final String? searchHint;
+  final ValueChanged<String>? onLocalSearchChanged;
+  final bool showImageSearch;
 
   @override
   Widget build(BuildContext context) {
     final canPop = isBackButton && context.canPop();
-    // Match Android/iOS: honor status-bar/notch when parent has no SafeArea;
-    // keep a compact gap when already inside SafeArea (padding.top == 0).
     final topInset = MediaQuery.paddingOf(context).top;
     final topPad = topInset > 0 ? topInset + 8.h : 12.h;
 
@@ -59,13 +69,19 @@ class SearchHeader extends StatelessWidget {
           ),
           if (isSearch) SizedBox(height: 16.h),
           if (isSearch)
-            SearchFormFiled(
+            AppSearchField(
+              mode: searchMode,
               initialQuery: initialQuery,
               controller: searchController,
+              hintText: searchHint,
               onSubmitted: onSearchSubmitted,
+              onChanged: onLocalSearchChanged,
+              onLiveQueryChanged: onLiveQueryChanged,
               onImageSearchTap: onImageSearchTap,
               onFilterTap: onFilterTap,
               showBackButton: isBackButton,
+              showImageSearch: showImageSearch,
+              enableLiveSearch: enableLiveSearch,
             ),
           SizedBox(height: 16.h),
           if (title != null)

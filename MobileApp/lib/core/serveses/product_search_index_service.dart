@@ -12,7 +12,7 @@ class ProductSearchIndexService {
 
   static final ProductSearchIndexService instance = ProductSearchIndexService._();
 
-  static const _debounce = Duration(milliseconds: 120);
+  static const _debounce = Duration(milliseconds: 80);
 
   Timer? _debounceTimer;
   int _requestSeq = 0;
