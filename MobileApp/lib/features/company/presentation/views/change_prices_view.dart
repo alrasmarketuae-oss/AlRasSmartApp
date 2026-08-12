@@ -530,25 +530,42 @@ class _PriceField extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: 40.h,
-      child: TextField(
-        controller: controller,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        inputFormatters: [ThousandsSeparatorInputFormatter.price()],
-        textAlign: TextAlign.end,
-        onChanged: onChanged,
-        style: TextStyle(
-          fontSize: 13.sp,
-          fontWeight: FontWeight.w700,
-          color: const Color(0xFF16233A),
-          height: 1.2,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF6F9FE),
+          borderRadius: BorderRadius.circular(10.r),
+          border: Border.all(color: const Color(0xFFE6EEF8)),
         ),
-        decoration: InputDecoration(
-          isDense: true,
-          suffixIcon: Align(
-            alignment: Alignment.center,
-            widthFactor: 1,
-            heightFactor: 1,
-            child: Padding(
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: controller,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [ThousandsSeparatorInputFormatter.price()],
+                textAlign: TextAlign.end,
+                onChanged: onChanged,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF16233A),
+                  height: 1.2,
+                ),
+                decoration: InputDecoration(
+                  isDense: true,
+                  filled: true,
+                  fillColor: Colors.transparent,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                    vertical: 10.h,
+                  ),
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                ),
+              ),
+            ),
+            Padding(
               padding: EdgeInsets.only(right: 10.w),
               child: CreateAdCurrencyLabel(
                 currency: currency,
@@ -556,26 +573,7 @@ class _PriceField extends StatelessWidget {
                 matchTextSize: true,
               ),
             ),
-          ),
-          suffixIconConstraints: BoxConstraints(minWidth: 28.w, minHeight: 28.h),
-          filled: true,
-          fillColor: const Color(0xFFF6F9FE),
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: 10.w,
-            vertical: 0,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10.r),
-            borderSide: const BorderSide(color: Color(0xFFE6EEF8)),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10.r),
-            borderSide: const BorderSide(color: Color(0xFFE6EEF8)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10.r),
-            borderSide: BorderSide(color: LightColor.defaultColor),
-          ),
+          ],
         ),
       ),
     );
