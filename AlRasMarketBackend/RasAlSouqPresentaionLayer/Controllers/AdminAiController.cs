@@ -9,7 +9,9 @@ namespace RasAlSouqPresentaionLayer.Controllers;
 [Route("api/admin/ai")]
 [ApiController]
 [Authorize(Roles = "Admin,Employee")]
-public sealed class AdminAiController(IAiKnowledgeIndexer knowledgeIndexer) : ControllerBase
+public sealed class AdminAiController(
+    IAiKnowledgeIndexer knowledgeIndexer,
+    IAiConversationStore conversationStore) : ControllerBase
 {
     /// <summary>
     /// Force a full re-embed + re-index of the AI knowledge base. Use after
@@ -21,5 +23,33 @@ public sealed class AdminAiController(IAiKnowledgeIndexer knowledgeIndexer) : Co
     {
         var result = await knowledgeIndexer.ReindexAsync(force: true, cancellationToken);
         return Ok(result);
+    }
+
+    [HttpGet("conversations")]
+    [RequireAdminPermission(AdminPermissions.ChatAccess)]
+    public async Task<ActionResult<AiConversationListPageDto>> ListConversations(
+        [FromQuery] Guid? userId = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await conversationStore.ListForAdminAsync(userId, page, pageSize, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("conversations/{conversationId:guid}/messages")]
+    [RequireAdminPermission(AdminPermissions.ChatAccess)]
+    public async Task<ActionResult<AiConversationMessagesPageDto>> GetConversationMessages(
+        [FromRoute] Guid conversationId,
+        [FromQuery] int limit = 50,
+        [FromQuery] long? before = null,
+        CancellationToken cancellationToken = default)
+    {
+        var page = await conversationStore.GetMessagesPageAsync(
+            conversationId,
+            limit,
+            before,
+            cancellationToken);
+        return Ok(page);
     }
 }

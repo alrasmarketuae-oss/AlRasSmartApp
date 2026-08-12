@@ -5,11 +5,16 @@ import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 
 class AiAssistantRealtimeService {
+  AiAssistantRealtimeService({String? sessionId})
+      : _sessionId = sessionId ?? _newSessionId();
+
   HubConnection? _hub;
 
   /// Keeps the server-side chat history attached to this screen instead of the
   /// SignalR connection, which changes id on every auto-reconnect.
-  final String _sessionId = _newSessionId();
+  final String _sessionId;
+
+  String get sessionId => _sessionId;
 
   /// Set when the AI screen is leaving so an in-flight connect cannot orphan a hub.
   bool _closed = false;
@@ -102,18 +107,13 @@ class AiAssistantRealtimeService {
     await hub.invoke('AskInSession', args: [message, language, _sessionId]);
   }
 
-  /// Clears server session history and stops the SignalR connection.
+  /// Stops the SignalR connection. Conversation history stays in the database.
   Future<void> close() async {
     _closed = true;
     _connectGeneration++;
     final hub = _hub;
     _hub = null;
     if (hub == null) return;
-    try {
-      if (hub.state == HubConnectionState.Connected) {
-        await hub.invoke('ClearSessionById', args: [_sessionId]);
-      }
-    } catch (_) {}
     try {
       await hub.stop();
     } catch (_) {}

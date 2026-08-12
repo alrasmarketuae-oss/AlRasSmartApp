@@ -41,6 +41,14 @@ export type ChatConversationDetails = {
   supportSessions: ChatSupportSession[]
   activeAgentId: string | null
   activeAgentName: string | null
+  hasMore: boolean
+  nextBeforeMessageId: string | null
+}
+
+export type ChatConversationQuery = {
+  otherUserId: string
+  limit?: number
+  before?: string | null
 }
 
 export type ChatDeliveryStatus = 'sending' | 'sent' | 'failed'
@@ -285,5 +293,9 @@ export function normalizeChatConversationDetails(
     supportSessions: sessionsRaw.map((session) => normalizeChatSupportSession(session)),
     activeAgentId: (raw.activeAgentId ?? raw.ActiveAgentId ?? null) as string | null,
     activeAgentName: (raw.activeAgentName ?? raw.ActiveAgentName ?? null) as string | null,
+    hasMore: Boolean(raw.hasMore ?? raw.HasMore),
+    nextBeforeMessageId: (raw.nextBeforeMessageId ?? raw.NextBeforeMessageId ?? null) as
+      | string
+      | null,
   }
 }

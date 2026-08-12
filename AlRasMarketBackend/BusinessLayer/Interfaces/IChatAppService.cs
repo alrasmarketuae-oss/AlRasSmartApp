@@ -65,7 +65,14 @@ public sealed record ChatConversationDetailsDto(
     IReadOnlyList<ChatMessageDto> Messages,
     IReadOnlyList<ChatSupportSessionDto> SupportSessions,
     string? ActiveAgentId,
-    string? ActiveAgentName);
+    string? ActiveAgentName,
+    bool HasMore = false,
+    string? NextBeforeMessageId = null);
+
+public sealed record ChatMessagesPageDto(
+    IReadOnlyList<ChatMessageDto> Messages,
+    bool HasMore,
+    string? NextBeforeMessageId);
 
 public sealed record ChatInboxDto(
     IReadOnlyList<ChatContactDto> Contacts,
@@ -150,9 +157,18 @@ public interface IChatAppService
         string otherUserId,
         CancellationToken ct = default);
 
+    Task<ChatMessagesPageDto> GetConversationPageAsync(
+        string userId,
+        string otherUserId,
+        int limit = 50,
+        string? beforeMessageId = null,
+        CancellationToken ct = default);
+
     Task<ChatConversationDetailsDto> GetConversationDetailsAsync(
         string userId,
         string otherUserId,
+        int limit = 50,
+        string? beforeMessageId = null,
         CancellationToken ct = default);
 
     Task<ChatMessageDto> CreateMessageAsync(

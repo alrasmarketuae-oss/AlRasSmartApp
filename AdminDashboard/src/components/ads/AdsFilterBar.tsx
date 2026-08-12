@@ -11,6 +11,7 @@ type AdsFilterBarProps = {
   onCreatedOnChange: (value: string) => void
   onApply: () => void
   hideApproval?: boolean
+  hideProductTypeFilter?: boolean
 }
 
 export default function AdsFilterBar({
@@ -24,6 +25,7 @@ export default function AdsFilterBar({
   onCreatedOnChange,
   onApply,
   hideApproval = false,
+  hideProductTypeFilter = false,
 }: AdsFilterBarProps) {
   const { t } = useAppPreferences()
 
@@ -45,18 +47,20 @@ export default function AdsFilterBar({
           {t('ads.filter')}
         </button>
 
-        <select
-          value={productTypeId}
-          onChange={(e) => onProductTypeIdChange(e.target.value)}
-          className="admin-input h-10 min-w-[9rem] px-3 text-sm"
-        >
-          <option value="">{t('ads.allTypes')}</option>
-          <option value="3">{t('ads.typeOffers')}</option>
-          <option value="1">{t('ads.typeRetail')}</option>
-          <option value="2">{t('ads.typeBooking')}</option>
-          <option value="categories">{t('ads.typeCategories')}</option>
-          <option value="4">{t('ads.typeRequests')}</option>
-        </select>
+        {hideProductTypeFilter ? null : (
+          <select
+            value={productTypeId}
+            onChange={(e) => onProductTypeIdChange(e.target.value)}
+            className="admin-input h-10 min-w-[9rem] px-3 text-sm"
+          >
+            <option value="">{t('ads.allTypes')}</option>
+            <option value="3">{t('ads.typeOffers')}</option>
+            <option value="1">{t('ads.typeRetail')}</option>
+            <option value="2">{t('ads.typeBooking')}</option>
+            <option value="categories">{t('ads.typeCategories')}</option>
+            <option value="4">{t('ads.typeRequests')}</option>
+          </select>
+        )}
 
         {!hideApproval ? (
           <select

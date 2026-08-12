@@ -804,21 +804,21 @@ public partial class ProductsAppService(
         InvalidateProductCaches(cascade.OwnerId);
         QueueTextSearchSync(productId, deleted: true);
 
-        await DeleteProductPhysicalAssetsAsync(
-            productId,
-            cascade.VideoPaths,
-            cascade.ImagePaths,
-            cascade.DocumentPaths,
-            cancellationToken);
+        //await DeleteProductPhysicalAssetsAsync(
+        //    productId,
+        //    cascade.VideoPaths,
+        //    cascade.ImagePaths,
+        //    cascade.DocumentPaths,
+        //    cancellationToken);
 
         try
         {
-            foreach (var imageId in cascade.ImageIds)
-            {
-                await productImageVectorIndex.DeleteByProductImageIdAsync(imageId, cancellationToken);
-            }
+        //    foreach (var imageId in cascade.ImageIds)
+        //    {
+        //        await productImageVectorIndex.DeleteByProductImageIdAsync(imageId, cancellationToken);
+        //    }
 
-            await productImageVectorIndex.DeleteByProductIdAsync(productId, cancellationToken);
+            //await productImageVectorIndex.DeleteByProductIdAsync(productId, cancellationToken);
         }
         catch (Exception ex)
         {

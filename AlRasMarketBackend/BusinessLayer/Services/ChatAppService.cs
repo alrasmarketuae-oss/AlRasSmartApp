@@ -159,30 +159,82 @@ public sealed partial class ChatAppService(
         string otherUserId,
         CancellationToken ct = default)
     {
+        var page = await GetConversationPageAsync(userId, otherUserId, 50, null, ct);
+        return page.Messages;
+    }
+
+    public async Task<ChatMessagesPageDto> GetConversationPageAsync(
+        string userId,
+        string otherUserId,
+        int limit = 50,
+        string? beforeMessageId = null,
+        CancellationToken ct = default)
+    {
+        var (messages, hasMore, nextBefore) = await LoadConversationMessagesAsync(
+            userId,
+            otherUserId,
+            limit,
+            beforeMessageId,
+            ct);
+        var utcNow = DateTime.UtcNow;
+        return new ChatMessagesPageDto(
+            messages.Select(m => MapToDto(m, utcNow)).ToList(),
+            hasMore,
+            nextBefore);
+    }
+
+    internal async Task<(List<ChatMessage> Messages, bool HasMore, string? NextBeforeMessageId)> LoadConversationMessagesAsync(
+        string userId,
+        string otherUserId,
+        int limit,
+        string? beforeMessageId,
+        CancellationToken ct)
+    {
         var actingUserId = ParseUserId(userId);
         var otherId = ParseUserId(otherUserId);
         await EnsureUserExistsAsync(otherId, ct);
 
         var (viewerId, partnerId) = await ResolveSupportViewerPartiesAsync(actingUserId, otherId, ct);
+        limit = Math.Clamp(limit, 1, 100);
 
-        var cacheKey = ChatCacheKeys.Thread(viewerId, partnerId);
-        if (cache.TryGetValue(cacheKey, out IReadOnlyList<ChatMessageDto>? cached) && cached is not null)
-        {
-            return cached;
-        }
-
-        var messages = await dbContext.ChatMessages
+        var query = dbContext.ChatMessages
             .AsNoTracking()
             .Where(m =>
                 (m.FromUserId == viewerId && m.ToUserId == partnerId) ||
-                (m.FromUserId == partnerId && m.ToUserId == viewerId))
-            .OrderBy(m => m.SentAtUtc)
+                (m.FromUserId == partnerId && m.ToUserId == viewerId));
+
+        if (!string.IsNullOrWhiteSpace(beforeMessageId))
+        {
+            var cursor = await dbContext.ChatMessages
+                .AsNoTracking()
+                .Where(m => m.MessageId == beforeMessageId)
+                .Select(m => new { m.SentAtUtc, m.MessageId })
+                .FirstOrDefaultAsync(ct);
+
+            if (cursor is not null)
+            {
+                query = query.Where(m =>
+                    m.SentAtUtc < cursor.SentAtUtc ||
+                    (m.SentAtUtc == cursor.SentAtUtc &&
+                     string.Compare(m.MessageId, cursor.MessageId, StringComparison.Ordinal) < 0));
+            }
+        }
+
+        var batch = await query
+            .OrderByDescending(m => m.SentAtUtc)
+            .ThenByDescending(m => m.MessageId)
+            .Take(limit + 1)
             .ToListAsync(ct);
 
-        var utcNow = DateTime.UtcNow;
-        var result = messages.Select(m => MapToDto(m, utcNow)).ToList();
-        cache.Set(cacheKey, result, CacheTtl);
-        return result;
+        var hasMore = batch.Count > limit;
+        if (hasMore)
+        {
+            batch.RemoveAt(limit);
+        }
+
+        batch.Reverse();
+        var nextBefore = hasMore && batch.Count > 0 ? batch[0].MessageId : null;
+        return (batch, hasMore, nextBefore);
     }
 
     public async Task<ChatMessageDto> CreateMessageAsync(

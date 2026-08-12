@@ -59,7 +59,7 @@ export function getDefaultRoute(): string {
   const checks: Array<{ permission: PermissionKey; path: string }> = [
     { permission: PERMISSIONS.dashboardView, path: '/' },
     { permission: PERMISSIONS.chatAccess, path: '/chat' },
-    { permission: PERMISSIONS.ordersView, path: '/orders/retail' },
+    { permission: PERMISSIONS.ordersView, path: '/orders/all' },
     { permission: PERMISSIONS.ordersReqsOffers, path: '/reqs-offers' },
     { permission: PERMISSIONS.productsView, path: '/ads' },
     { permission: PERMISSIONS.productsAdEdits, path: '/ads?adEdits=1' },

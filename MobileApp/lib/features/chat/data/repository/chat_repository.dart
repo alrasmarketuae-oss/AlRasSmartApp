@@ -21,12 +21,16 @@ class ChatConversationDetails {
     required this.supportSessions,
     this.activeAgentId,
     this.activeAgentName,
+    this.hasMore = false,
+    this.nextBeforeMessageId,
   });
 
   final List<ChatMessageModel> messages;
   final List<ChatSupportSessionModel> supportSessions;
   final String? activeAgentId;
   final String? activeAgentName;
+  final bool hasMore;
+  final String? nextBeforeMessageId;
 }
 
 /// HTTP + shared SignalR streams (no second hub connection).
@@ -384,11 +388,18 @@ class ChatRepository {
   Future<Either<Failure, ChatConversationDetails>> getConversationDetails({
     required String token,
     required String otherUserId,
+    int limit = 50,
+    String? beforeMessageId,
   }) async {
     try {
       final response = await DioHelper.getData(
         url: ApiConstants.chatConversationEndPoint,
-        query: {'otherUserId': otherUserId},
+        query: {
+          'otherUserId': otherUserId,
+          'limit': limit,
+          if (beforeMessageId != null && beforeMessageId.isNotEmpty)
+            'before': beforeMessageId,
+        },
         token: token,
       );
 
@@ -445,6 +456,10 @@ class ChatRepository {
               (map['activeAgentId'] ?? map['ActiveAgentId'])?.toString(),
           activeAgentName:
               (map['activeAgentName'] ?? map['ActiveAgentName'])?.toString(),
+          hasMore: map['hasMore'] == true || map['HasMore'] == true,
+          nextBeforeMessageId: (map['nextBeforeMessageId'] ??
+                  map['NextBeforeMessageId'])
+              ?.toString(),
         ),
       );
     } on DioException catch (e) {

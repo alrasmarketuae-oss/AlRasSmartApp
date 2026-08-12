@@ -17,10 +17,8 @@ namespace RasAlSouqPresentaionLayer.Controllers;
 [Authorize]
 public class ChatController(
     IChatAppService chatAppService,
-    IFcmNotificationService fcmService,
-    IRasAlSouqDbContext dbContext,
     IHubContext<ChatHub> chatHub,
-    IAdminRealtimeNotificationService adminRealtimeNotificationService,
+    IChatMessageEventPublisher chatMessageEvents,
     IMediaStorageService mediaStorage,
     IMediaUrlResolver mediaUrlResolver,
     IOptions<CloudflareR2Options> r2Options,
@@ -78,9 +76,11 @@ public class ChatController(
     }
 
     [HttpGet("messages")]
-    public async Task<ActionResult<IReadOnlyList<ChatMessageDto>>> GetConversation(
+    public async Task<ActionResult<ChatMessagesPageDto>> GetConversation(
         [FromQuery] string otherUserId,
-        CancellationToken ct)
+        [FromQuery] int limit = 50,
+        [FromQuery] string? before = null,
+        CancellationToken ct = default)
     {
         var userId = GetCurrentUserId();
         if (userId is null)
@@ -95,8 +95,8 @@ public class ChatController(
 
         try
         {
-            var messages = await chatAppService.GetConversationAsync(userId, otherUserId, ct);
-            return Ok(messages);
+            var page = await chatAppService.GetConversationPageAsync(userId, otherUserId, limit, before, ct);
+            return Ok(page);
         }
         catch (InvalidOperationException ex)
         {
@@ -107,7 +107,9 @@ public class ChatController(
     [HttpGet("conversation")]
     public async Task<ActionResult<ChatConversationDetailsDto>> GetConversationDetails(
         [FromQuery] string otherUserId,
-        CancellationToken ct)
+        [FromQuery] int limit = 50,
+        [FromQuery] string? before = null,
+        CancellationToken ct = default)
     {
         var userId = GetCurrentUserId();
         if (userId is null)
@@ -122,7 +124,12 @@ public class ChatController(
 
         try
         {
-            var details = await chatAppService.GetConversationDetailsAsync(userId, otherUserId, ct);
+            var details = await chatAppService.GetConversationDetailsAsync(
+                userId,
+                otherUserId,
+                limit,
+                before,
+                ct);
             return Ok(details);
         }
         catch (InvalidOperationException ex)
@@ -359,7 +366,7 @@ public class ChatController(
         try
         {
             var result = await chatAppService.CreateMessageAsync(userId, request, ct);
-            result = await PushRealtimeMessageAsync(result, ct);
+            await PublishMessageCreatedAsync(result, ct);
             return Ok(result);
         }
         catch (ArgumentException ex)
@@ -849,43 +856,17 @@ public class ChatController(
         }
     }
 
-    private const byte AdminRoleId = 1;
-
-    private async Task<ChatMessageDto> PushRealtimeMessageAsync(ChatMessageDto result, CancellationToken ct)
+    private async Task PublishMessageCreatedAsync(ChatMessageDto result, CancellationToken ct)
     {
-        try
+        if (!Guid.TryParse(result.FromUserId, out var fromUserId) ||
+            !Guid.TryParse(result.ToUserId, out var toUserId))
         {
-            await chatHub.Clients
-                .Group(ChatHub.GetGroupName(result.ToUserId))
-                .SendAsync("receiveMessage", result, ct);
-        }
-        catch
-        {
-            // ignore realtime failures
+            return;
         }
 
-        try
-        {
-            await SendChatPushIfNeededAsync(result, ct);
-        }
-        catch
-        {
-            // ignore push failures
-        }
-
-        try
-        {
-            await adminRealtimeNotificationService.NotifyAdminChatMessageAsync(
-                result.ToUserId,
-                result.FromUserId,
-                ct);
-        }
-        catch
-        {
-            // ignore admin alert failures
-        }
-
-        return result;
+        await chatMessageEvents.PublishMessageCreatedAsync(
+            new ChatMessageCreatedEvent(result, fromUserId, toUserId),
+            ct);
     }
 
     private async Task NotifyMessagesDeliveredAsync(ChatMessagesDeliveredDto deliveryEvent, CancellationToken ct)
@@ -901,106 +882,6 @@ public class ChatController(
             // ignore realtime failures
         }
     }
-
-    private async Task SendChatPushIfNeededAsync(ChatMessageDto result, CancellationToken ct)
-    {
-        if (!Guid.TryParse(result.ToUserId, out var recipientId) ||
-            !Guid.TryParse(result.FromUserId, out var senderId))
-        {
-            return;
-        }
-
-        var userIds = new[] { recipientId, senderId };
-        var users = await dbContext.Users
-            .AsNoTracking()
-            .Where(u => userIds.Contains(u.Id))
-            .Select(u => new ChatPushUserInfo(
-                u.Id,
-                u.RoleId,
-                u.FcmToken,
-                u.FullName,
-                u.CompanyName,
-                u.PreferredLanguage))
-            .ToListAsync(ct);
-
-        var recipient = users.FirstOrDefault(u => u.Id == recipientId);
-        var sender = users.FirstOrDefault(u => u.Id == senderId);
-
-        if (recipient is null || recipient.RoleId == AdminRoleId)
-        {
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(recipient.FcmToken))
-        {
-            return;
-        }
-
-        var senderName = ResolveChatSenderName(sender, recipient.PreferredLanguage);
-        var preview = NotificationMessages.BuildChatPushBody(
-            recipient.PreferredLanguage,
-            result.MessageType,
-            result.Content);
-        var messageType = result.MessageType.ToString();
-
-        await fcmService.SendNotificationAsync(recipient.FcmToken!, new FcmNotificationPayload
-        {
-            Title = senderName,
-            Body = preview,
-            Type = "chat_message",
-            ReferenceId = result.MessageId,
-            RouteId = result.FromUserId,
-            Data = new Dictionary<string, string>
-            {
-                ["messageType"] = messageType,
-                ["fromUserId"] = result.FromUserId,
-                ["toUserId"] = result.ToUserId,
-                ["senderName"] = senderName,
-                ["messagePreview"] = preview,
-                ["sentAtUtc"] = result.SentAtUtc,
-            }
-        }, ct);
-    }
-
-    private static string ResolveChatSenderName(ChatPushUserInfo? sender, string? recipientLanguage)
-    {
-        if (sender is null)
-        {
-            return NotificationMessages.ChatFallbackSenderName(recipientLanguage);
-        }
-
-        if (sender.RoleId == AdminRoleId)
-        {
-            if (!string.IsNullOrWhiteSpace(sender.CompanyName))
-            {
-                return sender.CompanyName.Trim();
-            }
-
-            if (!string.IsNullOrWhiteSpace(sender.FullName))
-            {
-                return sender.FullName.Trim();
-            }
-
-            return NotificationMessages.ChatAdminSenderName(recipientLanguage);
-        }
-
-        if (!string.IsNullOrWhiteSpace(sender.CompanyName))
-        {
-            return sender.CompanyName.Trim();
-        }
-
-        return string.IsNullOrWhiteSpace(sender.FullName)
-            ? NotificationMessages.ChatUserFallbackName(recipientLanguage)
-            : sender.FullName.Trim();
-    }
-
-    private sealed record ChatPushUserInfo(
-        Guid Id,
-        byte RoleId,
-        string? FcmToken,
-        string FullName,
-        string? CompanyName,
-        string PreferredLanguage);
 
     private async Task PushMessageUpdatedAsync(ChatMessageDto result, CancellationToken ct)
     {

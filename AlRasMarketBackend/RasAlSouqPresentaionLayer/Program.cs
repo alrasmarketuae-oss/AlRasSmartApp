@@ -201,6 +201,9 @@ builder.Services.AddScoped<IProfileAppService, ProfileAppService>();
 builder.Services.AddScoped<RasAlSouqPresentaionLayer.Filters.ActiveUserAuthorizationFilter>();
 builder.Services.AddScoped<RasAlSouqPresentaionLayer.Filters.LocalizeApiMessagesFilter>();
 builder.Services.AddScoped<IChatAppService, ChatAppService>();
+builder.Services.AddScoped<IAiConversationStore, AiConversationAppService>();
+builder.Services.AddScoped<IChatMessageEventPublisher, InProcessChatMessageEventPublisher>();
+builder.Services.AddScoped<IChatMessageCreatedHandler, RasAlSouqPresentaionLayer.Services.ChatMessageRealtimeHandler>();
 builder.Services.AddSignalR();
 builder.Services.AddMemoryCache();
 builder.Services.Configure<RedisOptions>(builder.Configuration.GetSection(RedisOptions.SectionName));
@@ -500,6 +503,7 @@ await using (var scope = app.Services.CreateAsyncScope())
     await ShippingSchemaMigrator.EnsureAsync(db);
     await InternalDomesticShippingSchemaMigrator.EnsureAsync(db);
     await ChatSchemaMigrator.EnsureAsync(db);
+    await AiConversationSchemaMigrator.EnsureAsync(db);
     await OfferSchemaMigrator.EnsureAsync(db);
     await ProductOfferDurationSchemaMigrator.EnsureAsync(db);
     await ProductCreatedLanguageSchemaMigrator.EnsureAsync(db);

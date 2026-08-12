@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import AdsFilterBar from '../components/ads/AdsFilterBar'
 import AdsStatsCards from '../components/ads/AdsStatsCards'
 import AdsTable from '../components/ads/AdsTable'
+import AdsChannelTabs from '../components/layout/AdsChannelTabs'
 import PageHeader from '../components/layout/PageHeader'
 import { IconAds } from '../components/icons'
 import { useAppPreferences } from '../context/AppPreferencesProvider'
@@ -16,6 +17,7 @@ import {
 } from '../store'
 import { queryViewState } from '../store/queryView'
 import type { AdminProductsFilters } from '../types/adminProduct'
+import { adsChannelFromLocation } from '../utils/sectionChannels'
 import { getRtkErrorMessage } from '../utils/rtkError'
 
 type AppliedFilters = {
@@ -121,6 +123,12 @@ export default function AdsPage() {
     })
     setUrlSearch(search)
   }
+
+  useEffect(() => {
+    if (searchParams.get('productTypeId') === '4') {
+      navigate('/reqs-offers', { replace: true })
+    }
+  }, [navigate, searchParams])
 
   useEffect(() => {
     setPage(1)
@@ -233,19 +241,8 @@ export default function AdsPage() {
 
   const products = productsData?.items ?? []
   const totalPages = productsData?.totalPages ?? 1
-  const typeTitleKey =
-    productTypeId === '1'
-      ? 'nav.adRetail'
-      : productTypeId === '2'
-        ? 'nav.adBooking'
-        : productTypeId === '3'
-          ? 'nav.adOffers'
-          : productTypeId === '4'
-            ? 'nav.adRequest'
-            : productTypeId === 'categories'
-              ? 'nav.adCategories'
-              : 'nav.adAll'
-  const pageTitle = adEditsOnly ? t('nav.adEdits') : t(typeTitleKey)
+  const activeChannel = adsChannelFromLocation(location.search, location.pathname)
+  const pageTitle = adEditsOnly ? t('nav.adEdits') : t('nav.ads')
 
   return (
     <div className="space-y-5">
@@ -255,6 +252,8 @@ export default function AdsPage() {
         description={adEditsOnly ? t('ads.adEditsHint') : undefined}
         icon={IconAds}
       />
+
+      {!adEditsOnly ? <AdsChannelTabs activeId={activeChannel} /> : null}
 
       {!adEditsOnly ? (
         <AdsStatsCards stats={stats} isLoading={statsLoading} />
@@ -272,6 +271,7 @@ export default function AdsPage() {
           onCreatedOnChange={setCreatedOn}
           onApply={applyFilters}
           hideApproval={adEditsOnly}
+          hideProductTypeFilter
         />
 
         {successMessage ? (

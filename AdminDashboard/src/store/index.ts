@@ -74,6 +74,7 @@ export {
   useSearchChatConversationsQuery,
   useGetChatMessagesQuery,
   useGetChatConversationDetailsQuery,
+  useLazyGetChatConversationDetailsQuery,
   useSendChatMessageMutation,
   useLazyGetChatPublicKeyQuery,
   useUpsertSupportChatKeysMutation,
@@ -97,5 +98,7 @@ export {
   useMarkWithdrawalPaidMutation,
   useClaimSupportConversationMutation,
   useReleaseSupportConversationMutation,
+  useGetAdminAiConversationsQuery,
+  useLazyGetAdminAiConversationMessagesQuery,
 } from './adminApi'
 export type { FetchUsersParams } from './adminApi'

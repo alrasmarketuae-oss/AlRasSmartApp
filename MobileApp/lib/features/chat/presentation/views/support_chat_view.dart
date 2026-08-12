@@ -43,6 +43,13 @@ class SupportChatView extends StatefulWidget {
 class _SupportChatViewState extends State<SupportChatView> {
   bool _isSending = false;
   String? _presenceLabel;
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   List<_ThreadItem> _buildThreadItems(ChatCubit cubit) {
     final messages = [...cubit.messages]
@@ -225,17 +232,42 @@ class _SupportChatViewState extends State<SupportChatView> {
                                 child: Text(state.message),
                               ),
                             )
-                          : ListView.separated(
+                          : NotificationListener<ScrollNotification>(
+                              onNotification: (notification) {
+                                if (notification.metrics.pixels >=
+                                    notification.metrics.maxScrollExtent - 48) {
+                                  cubit.loadOlderMessages();
+                                }
+                                return false;
+                              },
+                              child: ListView.separated(
+                              controller: _scrollController,
                               padding: EdgeInsets.symmetric(
                                 horizontal: 16.w,
                                 vertical: 20.h,
                               ),
                               physics: const BouncingScrollPhysics(),
                               reverse: true,
-                              itemCount: threadItems.length,
+                              itemCount: threadItems.length +
+                                  (cubit.isLoadingOlderMessages ? 1 : 0),
                               separatorBuilder: (_, __) =>
                                   SizedBox(height: 8.h),
                               itemBuilder: (context, index) {
+                                if (cubit.isLoadingOlderMessages &&
+                                    index == threadItems.length) {
+                                  return Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 8.h),
+                                    child: const Center(
+                                      child: SizedBox(
+                                        height: 22,
+                                        width: 22,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }
                                 final item = threadItems[index];
                                 return switch (item) {
                                   _MessageItem(:final message) =>
@@ -264,6 +296,7 @@ class _SupportChatViewState extends State<SupportChatView> {
                                 };
                               },
                             ),
+                          ),
                 ),
                 ChatInputBar(
                   isSending: _isSending,

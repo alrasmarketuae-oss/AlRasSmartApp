@@ -326,6 +326,8 @@ public sealed partial class ChatAppService
     public async Task<ChatConversationDetailsDto> GetConversationDetailsAsync(
         string userId,
         string otherUserId,
+        int limit = 50,
+        string? beforeMessageId = null,
         CancellationToken ct = default)
     {
         var actingUserId = ParseUserId(userId);
@@ -338,32 +340,32 @@ public sealed partial class ChatAppService
         var isAgentSupportThread = actingIsStaff && viewerId == supportAdminId;
         var isCustomerSupportThread = !actingIsStaff && partnerId == supportAdminId;
 
-        var messages = await dbContext.ChatMessages
-            .AsNoTracking()
-            .Where(m =>
-                (m.FromUserId == viewerId && m.ToUserId == partnerId) ||
-                (m.FromUserId == partnerId && m.ToUserId == viewerId))
-            .OrderBy(m => m.SentAtUtc)
-            .ToListAsync(ct);
-
+        var page = await LoadConversationMessagesAsync(userId, otherUserId, limit, beforeMessageId, ct);
         var utcNow = DateTime.UtcNow;
 
         if (!isAgentSupportThread && !isCustomerSupportThread)
         {
-            var plain = messages.Select(m => MapToDto(m, utcNow)).ToList();
-            return new ChatConversationDetailsDto(plain, [], null, null);
+            return new ChatConversationDetailsDto(
+                page.Messages.Select(m => MapToDto(m, utcNow)).ToList(),
+                [],
+                null,
+                null,
+                page.HasMore,
+                page.NextBeforeMessageId);
         }
 
         var customerId = isCustomerSupportThread ? viewerId : partnerId;
         var sessions = await BuildSupportSessionsAsync(customerId, ct);
-        var annotated = AnnotateSupportMessages(messages, sessions, utcNow);
+        var annotated = AnnotateSupportMessages(page.Messages, sessions, utcNow);
         var active = sessions.FirstOrDefault(x => x.IsActive);
 
         return new ChatConversationDetailsDto(
             annotated,
             sessions,
             active?.AgentUserId,
-            active?.AgentName);
+            active?.AgentName,
+            page.HasMore,
+            page.NextBeforeMessageId);
     }
 
     private async Task<IReadOnlyList<ChatSupportSessionDto>> BuildSupportSessionsAsync(

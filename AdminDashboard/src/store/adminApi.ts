@@ -26,6 +26,7 @@ import type { HomeBanner } from '../types/banner'
 import type {
   ChatContact,
   ChatConversationDetails,
+  ChatConversationQuery,
   ChatInbox,
   ChatMessage,
   ChatSupportAssignment,
@@ -35,6 +36,14 @@ import type {
   SendChatMessagePayload,
 } from '../types/chat'
 import { normalizeChatConversationDetails, normalizeChatMessage } from '../types/chat'
+import type {
+  AiConversationListPage,
+  AiConversationMessagesPage,
+} from '../types/aiConversation'
+import {
+  normalizeAiConversationListPage,
+  normalizeAiConversationMessagesPage,
+} from '../types/aiConversation'
 import type {
   AdminAuditLogsFilters,
   AdminAuditLogsResponse,
@@ -129,6 +138,7 @@ export const adminApi = createApi({
     'GlobalSearch',
     'Geo',
     'Chat',
+    'AiConversations',
     'Employees',
     'AuditLogs',
     'Monitoring',
@@ -1573,15 +1583,19 @@ export const adminApi = createApi({
       keepUnusedDataFor: LIVE_CACHE_TTL_SECONDS,
     }),
 
-    getChatConversationDetails: builder.query<ChatConversationDetails, string>({
-      query: (otherUserId) => ({
+    getChatConversationDetails: builder.query<ChatConversationDetails, ChatConversationQuery>({
+      query: ({ otherUserId, limit = 50, before }) => ({
         url: '/api/Chat/conversation',
-        params: { otherUserId },
+        params: {
+          otherUserId,
+          limit,
+          ...(before ? { before } : {}),
+        },
       }),
       transformResponse: (response: Record<string, unknown>) =>
         normalizeChatConversationDetails(response),
-      providesTags: (_result, _error, otherUserId) => [
-        { type: 'Chat', id: `THREAD:${otherUserId}` },
+      providesTags: (_result, _error, arg) => [
+        { type: 'Chat', id: `THREAD:${arg.otherUserId}` },
       ],
       keepUnusedDataFor: LIVE_CACHE_TTL_SECONDS,
     }),
@@ -1875,6 +1889,43 @@ export const adminApi = createApi({
       }),
       invalidatesTags: [{ type: 'Chat', id: 'INBOX' }],
     }),
+
+    getAdminAiConversations: builder.query<
+      AiConversationListPage,
+      { userId?: string; page?: number; pageSize?: number }
+    >({
+      query: ({ userId, page = 1, pageSize = 20 }) => ({
+        url: '/api/admin/ai/conversations',
+        params: {
+          page,
+          pageSize,
+          ...(userId ? { userId } : {}),
+        },
+      }),
+      transformResponse: (response: Record<string, unknown>) =>
+        normalizeAiConversationListPage(response),
+      providesTags: [{ type: 'AiConversations', id: 'LIST' }],
+      keepUnusedDataFor: LIVE_CACHE_TTL_SECONDS,
+    }),
+
+    getAdminAiConversationMessages: builder.query<
+      AiConversationMessagesPage,
+      { conversationId: string; limit?: number; before?: number | null }
+    >({
+      query: ({ conversationId, limit = 50, before }) => ({
+        url: `/api/admin/ai/conversations/${conversationId}/messages`,
+        params: {
+          limit,
+          ...(before != null ? { before } : {}),
+        },
+      }),
+      transformResponse: (response: Record<string, unknown>) =>
+        normalizeAiConversationMessagesPage(response),
+      providesTags: (_result, _error, arg) => [
+        { type: 'AiConversations', id: `THREAD:${arg.conversationId}` },
+      ],
+      keepUnusedDataFor: LIVE_CACHE_TTL_SECONDS,
+    }),
   }),
 })
 
@@ -1950,6 +2001,7 @@ export const {
   useSearchChatConversationsQuery,
   useGetChatMessagesQuery,
   useGetChatConversationDetailsQuery,
+  useLazyGetChatConversationDetailsQuery,
   useSendChatMessageMutation,
   useGetChatPublicKeyQuery,
   useLazyGetChatPublicKeyQuery,
@@ -1975,4 +2027,6 @@ export const {
   useMarkWithdrawalPaidMutation,
   useClaimSupportConversationMutation,
   useReleaseSupportConversationMutation,
+  useGetAdminAiConversationsQuery,
+  useLazyGetAdminAiConversationMessagesQuery,
 } = adminApi

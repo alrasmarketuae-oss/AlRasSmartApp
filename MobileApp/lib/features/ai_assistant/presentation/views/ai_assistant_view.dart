@@ -7,6 +7,7 @@ import 'package:alrasmarket/core/services/dio_helper.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/serveses/cached_constants.dart' as cache;
 import 'package:alrasmarket/features/ai_assistant/data/ai_assistant_realtime_service.dart';
+import 'package:alrasmarket/features/ai_assistant/data/ai_assistant_repository.dart';
 import 'package:alrasmarket/features/ai_assistant/presentation/widgets/ai_ad_plan_form.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
@@ -88,6 +89,8 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   final _scrollController = ScrollController();
   final List<_ChatMessage> _messages = [];
   final _realtime = AiAssistantRealtimeService();
+  final _historyRepository = AiAssistantRepository();
+  bool _historyLoading = false;
   Future<void>? _connectFuture;
   bool _isThinking = false;
   final List<String> _thinkingSteps = [];
@@ -635,6 +638,126 @@ class _AiAssistantViewState extends State<AiAssistantView> {
     });
   }
 
+  Future<void> _openHistorySheet() async {
+    final token = AuthService.instance.currentToken;
+    if (token == null) return;
+
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    setState(() => _historyLoading = true);
+    final result = await _historyRepository.listConversations(token: token);
+    if (!mounted) return;
+    setState(() => _historyLoading = false);
+
+    await result.fold(
+      (_) async {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isAr
+                  ? 'تعذر تحميل سجل المحادثات.'
+                  : 'Could not load conversation history.',
+            ),
+          ),
+        );
+      },
+      (page) async {
+        if (page.items.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                isAr ? 'لا توجد محادثات محفوظة بعد.' : 'No saved conversations yet.',
+              ),
+            ),
+          );
+          return;
+        }
+
+        final selected = await showModalBottomSheet<AiConversationSummary>(
+          context: context,
+          isScrollControlled: true,
+          showDragHandle: true,
+          builder: (context) {
+            return SafeArea(
+              child: ListView.separated(
+                padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 24.h),
+                itemCount: page.items.length,
+                separatorBuilder: (_, __) => SizedBox(height: 8.h),
+                itemBuilder: (context, index) {
+                  final item = page.items[index];
+                  final title = item.titlePreview?.trim().isNotEmpty == true
+                      ? item.titlePreview!.trim()
+                      : (isAr ? 'محادثة بدون عنوان' : 'Untitled conversation');
+                  return ListTile(
+                    tileColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14.r),
+                      side: BorderSide(color: Colors.grey.shade200),
+                    ),
+                    title: Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    subtitle: Text(
+                      '${item.messageCount} ${isAr ? 'رسالة' : 'messages'}',
+                    ),
+                    onTap: () => Navigator.pop(context, item),
+                  );
+                },
+              ),
+            );
+          },
+        );
+
+        if (selected == null || !mounted) return;
+        await _loadConversationHistory(selected);
+      },
+    );
+  }
+
+  Future<void> _loadConversationHistory(AiConversationSummary summary) async {
+    final token = AuthService.instance.currentToken;
+    if (token == null) return;
+
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    setState(() => _historyLoading = true);
+    final result = await _historyRepository.getConversationMessages(
+      token: token,
+      conversationId: summary.id,
+    );
+    if (!mounted) return;
+    setState(() => _historyLoading = false);
+
+    result.fold(
+      (_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isAr
+                  ? 'تعذر تحميل رسائل المحادثة.'
+                  : 'Could not load conversation messages.',
+            ),
+          ),
+        );
+      },
+      (page) {
+        setState(() {
+          _messages
+            ..clear()
+            ..addAll(
+              page.messages.map(
+                (message) => _ChatMessage(
+                  text: message.content,
+                  isUser: message.role.toLowerCase() == 'user',
+                ),
+              ),
+            );
+        });
+        _scrollToEnd();
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = _planMode
@@ -647,6 +770,10 @@ class _AiAssistantViewState extends State<AiAssistantView> {
           _AiChatHeader(
             planMode: _planMode,
             onCancelPlan: _planMode ? _cancelAdPlan : null,
+            onOpenHistory: AuthService.instance.isAuthenticated
+                ? (_historyLoading ? null : _openHistorySheet)
+                : null,
+            historyLoading: _historyLoading,
           ),
           Expanded(
             child: ListView.builder(
@@ -688,10 +815,17 @@ class _AiAssistantViewState extends State<AiAssistantView> {
 }
 
 class _AiChatHeader extends StatelessWidget {
-  const _AiChatHeader({this.planMode = false, this.onCancelPlan});
+  const _AiChatHeader({
+    this.planMode = false,
+    this.onCancelPlan,
+    this.onOpenHistory,
+    this.historyLoading = false,
+  });
 
   final bool planMode;
   final VoidCallback? onCancelPlan;
+  final VoidCallback? onOpenHistory;
+  final bool historyLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -793,6 +927,27 @@ class _AiChatHeader extends StatelessWidget {
                   ],
                 ),
               ),
+              if (onOpenHistory != null)
+                historyLoading
+                    ? Padding(
+                        padding: EdgeInsetsDirectional.only(end: 8.w),
+                        child: SizedBox(
+                          width: 22.w,
+                          height: 22.w,
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        ),
+                      )
+                    : IconButton(
+                        onPressed: onOpenHistory,
+                        icon: Icon(
+                          Icons.history_rounded,
+                          color: Colors.white,
+                          size: 22.sp,
+                        ),
+                      ),
               if (onCancelPlan != null)
                 TextButton(
                   onPressed: onCancelPlan,

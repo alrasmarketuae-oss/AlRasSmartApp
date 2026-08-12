@@ -20,6 +20,9 @@ type ChatThreadPanelProps = {
   myUserId: string
   isLoading: boolean
   isRefreshing?: boolean
+  hasMore?: boolean
+  isLoadingOlder?: boolean
+  onLoadOlder?: () => void
   isLocked?: boolean
   lockAgentName?: string | null
   supervisingAgentName?: string | null
@@ -43,6 +46,9 @@ export default function ChatThreadPanel({
   messages,
   isLoading,
   isRefreshing = false,
+  hasMore = false,
+  isLoadingOlder = false,
+  onLoadOlder,
   isLocked = false,
   lockAgentName = null,
   supervisingAgentName = null,
@@ -69,6 +75,9 @@ export default function ChatThreadPanel({
   const cancelRecordingRef = useRef(false)
   const chunksRef = useRef<Blob[]>([])
   const bottomRef = useRef<HTMLDivElement | null>(null)
+  const scrollRef = useRef<HTMLDivElement | null>(null)
+  const loadingOlderRef = useRef(false)
+  const prevTailIdRef = useRef<string | null>(null)
   const imageInputRef = useRef<HTMLInputElement | null>(null)
   const videoInputRef = useRef<HTMLInputElement | null>(null)
   const documentInputRef = useRef<HTMLInputElement | null>(null)
@@ -122,8 +131,31 @@ export default function ChatThreadPanel({
   }, [sortedMessages, supportSessions])
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [sortedMessages.length, contact?.contactUserId, voiceDraft])
+    const tailId = sortedMessages[sortedMessages.length - 1]?.messageId ?? null
+    if (tailId && tailId !== prevTailIdRef.current && !isLoadingOlder) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+    prevTailIdRef.current = tailId
+  }, [sortedMessages, isLoadingOlder, contact?.contactUserId, voiceDraft])
+
+  useEffect(() => {
+    loadingOlderRef.current = isLoadingOlder
+  }, [isLoadingOlder])
+
+  useEffect(() => {
+    const node = scrollRef.current
+    if (!node || !onLoadOlder) return
+
+    function handleScroll() {
+      if (!node || loadingOlderRef.current || !hasMore) return
+      if (node.scrollTop <= 72) {
+        onLoadOlder?.()
+      }
+    }
+
+    node.addEventListener('scroll', handleScroll, { passive: true })
+    return () => node.removeEventListener('scroll', handleScroll)
+  }, [contact?.contactUserId, hasMore, onLoadOlder])
 
   useEffect(() => {
     if (!recording) {
@@ -306,7 +338,18 @@ export default function ChatThreadPanel({
         ) : null}
       </header>
 
-      <div className="chat-messages-scroll min-h-0 flex-1 space-y-2 overflow-y-auto px-2 py-3 sm:space-y-3 sm:px-4 sm:py-4">
+      <div
+        ref={scrollRef}
+        className="chat-messages-scroll min-h-0 flex-1 space-y-2 overflow-y-auto px-2 py-3 sm:space-y-3 sm:px-4 sm:py-4"
+      >
+        {isLoadingOlder ? (
+          <p className="sticky top-0 z-10 rounded-full bg-white/90 py-1 text-center text-xs text-slate-500 shadow-sm backdrop-blur dark:bg-slate-900/90">
+            {t('chat.loadingOlder')}
+          </p>
+        ) : null}
+        {!isLoadingOlder && hasMore ? (
+          <p className="text-center text-xs text-slate-400">{t('chat.scrollForOlder')}</p>
+        ) : null}
         {isRefreshing ? (
           <p className="sticky top-0 z-10 rounded-full bg-white/90 py-1 text-center text-xs text-slate-500 shadow-sm backdrop-blur dark:bg-slate-900/90">
             {t('chat.refreshing')}

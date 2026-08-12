@@ -37,6 +37,9 @@ class ChatCubit extends Cubit<ChatState> {
   List<ChatMessageModel> messages = [];
   List<ChatSupportSessionModel> supportSessions = [];
   String? activeAgentName;
+  bool hasMoreMessages = false;
+  String? nextBeforeMessageId;
+  bool isLoadingOlderMessages = false;
   String? userId;
   String? otherUserId;
   ChatPresenceModel? otherUserPresence;
@@ -266,14 +269,57 @@ class ChatCubit extends Cubit<ChatState> {
     );
   }
 
-  Future<void> _applyLoadedConversation(ChatConversationDetails details) async {
-    messages = List<ChatMessageModel>.from(details.messages);
-    supportSessions = details.supportSessions;
-    activeAgentName = details.activeAgentName;
+  Future<void> _applyLoadedConversation(
+    ChatConversationDetails details, {
+    bool prepend = false,
+  }) async {
+    if (prepend) {
+      final known = messages.map((m) => m.messageId).toSet();
+      final older = details.messages
+          .where((message) => !known.contains(message.messageId))
+          .toList();
+      messages = [...older, ...messages];
+    } else {
+      messages = List<ChatMessageModel>.from(details.messages);
+      supportSessions = details.supportSessions;
+      activeAgentName = details.activeAgentName;
+    }
+    hasMoreMessages = details.hasMore;
+    nextBeforeMessageId = details.nextBeforeMessageId;
     emit(ChatSessionsUpdated(List.from(supportSessions)));
     emit(ChatMessagesLoaded(messages));
-    unawaited(_markDeliveredAndSeen());
-    unawaited(_updatePresence());
+    if (!prepend) {
+      unawaited(_markDeliveredAndSeen());
+      unawaited(_updatePresence());
+    }
+  }
+
+  Future<void> loadOlderMessages() async {
+    final token = AuthService.instance.currentToken;
+    final oid = otherUserId;
+    if (token == null ||
+        oid == null ||
+        !hasMoreMessages ||
+        nextBeforeMessageId == null ||
+        isLoadingOlderMessages) {
+      return;
+    }
+
+    isLoadingOlderMessages = true;
+    emit(const ChatLoadingOlder());
+
+    final result = await _repository.getConversationDetails(
+      token: token,
+      otherUserId: oid,
+      limit: 50,
+      beforeMessageId: nextBeforeMessageId,
+    );
+
+    isLoadingOlderMessages = false;
+    result.fold(
+      (failure) => emit(ChatMessagesError(failure.message)),
+      (details) => unawaited(_applyLoadedConversation(details, prepend: true)),
+    );
   }
 
   Future<void> _markDeliveredAndSeen() async {

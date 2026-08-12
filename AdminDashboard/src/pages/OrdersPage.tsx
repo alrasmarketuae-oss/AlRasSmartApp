@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import OrdersFilterBar from '../components/orders/OrdersFilterBar'
 import OrdersStatsCards from '../components/orders/OrdersStatsCards'
 import OrdersTable from '../components/orders/OrdersTable'
+import OrdersChannelTabs from '../components/layout/OrdersChannelTabs'
 import PageHeader from '../components/layout/PageHeader'
 import { IconOrders } from '../components/icons'
 import { useAppPreferences } from '../context/AppPreferencesProvider'
@@ -14,6 +15,7 @@ import {
 import { queryViewState } from '../store/queryView'
 import type { AdminOrdersFilters } from '../types/adminOrder'
 import type { OrderChannel } from '../utils/orderChannel'
+import { ordersChannelFromProp } from '../utils/sectionChannels'
 import { getRtkErrorMessage } from '../utils/rtkError'
 
 export type { OrderChannel }
@@ -28,13 +30,6 @@ const defaultFilters: AppliedFilters = {
   search: '',
   statusId: '',
   createdOn: '',
-}
-
-const channelTitleKey: Record<OrderChannel, string> = {
-  retail: 'nav.orderRetail',
-  booking: 'nav.orderBooking',
-  offers: 'nav.orderOffers',
-  categories: 'nav.orderCategories',
 }
 
 type OrdersPageProps = {
@@ -147,9 +142,11 @@ export default function OrdersPage({ channel }: OrdersPageProps) {
     <div className="space-y-5">
       <PageHeader
         eyebrow={t('nav.orders')}
-        title={t(channel ? channelTitleKey[channel] : 'nav.orderAll')}
+        title={t('nav.orders')}
         icon={IconOrders}
       />
+
+      <OrdersChannelTabs activeId={ordersChannelFromProp(channel)} />
 
       <OrdersStatsCards stats={stats} isLoading={statsLoading} />
 

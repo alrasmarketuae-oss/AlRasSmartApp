@@ -63,6 +63,8 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
     public DbSet<UserIban> UserIbans => Set<UserIban>();
     public DbSet<WithdrawalRequest> WithdrawalRequests => Set<WithdrawalRequest>();
     public DbSet<AiKnowledgeIndexState> AiKnowledgeIndexStates => Set<AiKnowledgeIndexState>();
+    public DbSet<AiConversation> AiConversations => Set<AiConversation>();
+    public DbSet<AiConversationMessage> AiConversationMessages => Set<AiConversationMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -276,6 +278,36 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.HasIndex(x => x.FromUserId);
             entity.HasIndex(x => x.ToUserId);
             entity.HasIndex(x => x.SentAtUtc);
+            entity.HasIndex(x => new { x.FromUserId, x.ToUserId, x.SentAtUtc });
+            entity.HasIndex(x => new { x.ToUserId, x.FromUserId, x.SentAtUtc });
+            entity.HasIndex(x => new { x.ToUserId, x.IsSeen, x.SentAtUtc });
+        });
+
+        modelBuilder.Entity<AiConversation>(entity =>
+        {
+            entity.ToTable("AiConversations");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.ClientSessionId).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.TitlePreview).HasMaxLength(200);
+            entity.Property(x => x.CreatedAtUtc).HasColumnType("datetime");
+            entity.Property(x => x.LastMessageAtUtc).HasColumnType("datetime");
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(x => new { x.UserId, x.ClientSessionId }).IsUnique();
+            entity.HasIndex(x => new { x.UserId, x.LastMessageAtUtc });
+        });
+
+        modelBuilder.Entity<AiConversationMessage>(entity =>
+        {
+            entity.ToTable("AiConversationMessages");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+            entity.Property(x => x.Role).HasColumnType("tinyint");
+            entity.Property(x => x.Content).IsRequired();
+            entity.Property(x => x.Language).HasMaxLength(8).IsRequired();
+            entity.Property(x => x.CreatedAtUtc).HasColumnType("datetime");
+            entity.HasOne(x => x.Conversation).WithMany(x => x.Messages).HasForeignKey(x => x.ConversationId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(x => new { x.ConversationId, x.CreatedAtUtc });
         });
 
         modelBuilder.Entity<Category>(entity =>

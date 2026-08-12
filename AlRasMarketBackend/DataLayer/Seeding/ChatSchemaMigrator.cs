@@ -29,6 +29,8 @@ public static class ChatSchemaMigrator
                 await SqlSchemaHelper.ExecuteBatchAsync(connection, AddDeliveredAtUtcColumnBatch, cancellationToken)
                     .ConfigureAwait(false);
             }
+
+            await EnsureChatMessageIndexesAsync(connection, cancellationToken).ConfigureAwait(false);
         }
         else
         {
@@ -89,6 +91,21 @@ public static class ChatSchemaMigrator
         CREATE INDEX IX_ChatMessages_SentAtUtc ON dbo.ChatMessages (SentAtUtc DESC);
         CREATE INDEX IX_ChatMessages_Pair ON dbo.ChatMessages (FromUserId, ToUserId, SentAtUtc DESC);
         """;
+
+    private static async Task EnsureChatMessageIndexesAsync(
+        System.Data.Common.DbConnection connection,
+        CancellationToken cancellationToken)
+    {
+        const string batch = """
+            IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_ChatMessages_Pair_Reverse' AND object_id = OBJECT_ID('dbo.ChatMessages'))
+                CREATE INDEX IX_ChatMessages_Pair_Reverse ON dbo.ChatMessages (ToUserId, FromUserId, SentAtUtc DESC);
+
+            IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_ChatMessages_ToUser_Unread' AND object_id = OBJECT_ID('dbo.ChatMessages'))
+                CREATE INDEX IX_ChatMessages_ToUser_Unread ON dbo.ChatMessages (ToUserId, IsSeen, SentAtUtc DESC);
+            """;
+
+        await SqlSchemaHelper.ExecuteBatchAsync(connection, batch, cancellationToken).ConfigureAwait(false);
+    }
 
     private const string CreateChatUserKeysTemplate = """
         CREATE TABLE dbo.ChatUserKeys (

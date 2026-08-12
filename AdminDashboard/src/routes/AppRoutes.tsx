@@ -3,6 +3,7 @@ import AdminLayout from '../layouts/AdminLayout'
 import CategoriesPage from '../pages/CategoriesPage'
 import BannersPage from '../pages/BannersPage'
 import ChatPage from '../pages/ChatPage'
+import AiConversationsPage from '../pages/AiConversationsPage'
 import ShippingPage from '../pages/ShippingPage'
 import ShippingDetailPage from '../pages/ShippingDetailPage'
 import DashboardPage from '../pages/DashboardPage'
@@ -122,7 +123,7 @@ export default function AppRoutes() {
         />
         <Route
           path="/orders"
-          element={<Navigate to="/orders/retail" replace />}
+          element={<Navigate to="/orders/all" replace />}
         />
         <Route
           path="/orders/all"
@@ -221,6 +222,14 @@ export default function AppRoutes() {
           element={
             <PermissionRoute permission={PERMISSIONS.chatAccess}>
               <ChatPage />
+            </PermissionRoute>
+          }
+        />
+        <Route
+          path="/ai-conversations"
+          element={
+            <PermissionRoute permission={PERMISSIONS.chatAccess}>
+              <AiConversationsPage />
             </PermissionRoute>
           }
         />

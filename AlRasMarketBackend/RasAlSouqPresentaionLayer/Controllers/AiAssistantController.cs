@@ -8,7 +8,9 @@ namespace RasAlSouqPresentaionLayer.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public sealed class AiAssistantController(IAiAssistantAppService assistant) : ControllerBase
+public sealed class AiAssistantController(
+    IAiAssistantAppService assistant,
+    IAiConversationStore conversationStore) : ControllerBase
 {
     [HttpPost("ask")]
     [AllowAnonymous]
@@ -97,5 +99,57 @@ public sealed class AiAssistantController(IAiAssistantAppService assistant) : Co
         {
             return StatusCode(StatusCodes.Status502BadGateway, new { message = ex.Message });
         }
+    }
+
+    [HttpGet("conversations")]
+    [Authorize]
+    public async Task<ActionResult<AiConversationListPageDto>> ListConversations(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = GetCurrentUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await conversationStore.ListForUserAsync(userId.Value, page, pageSize, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("conversations/{conversationId:guid}/messages")]
+    [Authorize]
+    public async Task<ActionResult<AiConversationMessagesPageDto>> GetConversationMessages(
+        [FromRoute] Guid conversationId,
+        [FromQuery] int limit = 50,
+        [FromQuery] long? before = null,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = GetCurrentUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        if (!await conversationStore.UserOwnsConversationAsync(userId.Value, conversationId, cancellationToken))
+        {
+            return NotFound();
+        }
+
+        var page = await conversationStore.GetMessagesPageAsync(
+            conversationId,
+            limit,
+            before,
+            cancellationToken);
+        return Ok(page);
+    }
+
+    private Guid? GetCurrentUserId()
+    {
+        var raw = User.FindFirst("EntityId")?.Value
+            ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? User.FindFirst("sub")?.Value;
+        return Guid.TryParse(raw, out var userId) ? userId : null;
     }
 }

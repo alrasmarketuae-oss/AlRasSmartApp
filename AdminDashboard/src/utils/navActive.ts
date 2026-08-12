@@ -24,15 +24,13 @@ export function resolveActiveNavTo(
     fromPath === '/reqs-offers' &&
     (pathname.startsWith('/ads/') || pathname.startsWith('/orders/'))
   ) {
-    return fromQuery?.get('nav') === 'orders'
-      ? '/reqs-offers?nav=orders'
-      : '/reqs-offers'
+    return fromQuery?.get('nav') === 'orders' ? '/orders/all' : '/ads'
   }
 
   if (pathname === '/reqs-offers' || pathname.startsWith('/reqs-offers/')) {
     const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search)
-    if (params.get('nav') === 'orders') return '/reqs-offers?nav=orders'
-    return '/reqs-offers'
+    if (params.get('nav') === 'orders') return '/orders/all'
+    return '/ads'
   }
 
   if (pathname === '/ads' || pathname.startsWith('/ads/')) {
@@ -40,29 +38,11 @@ export function resolveActiveNavTo(
     if (params.get('adEdits') === '1' || fromQuery?.get('adEdits') === '1') {
       return '/ads?adEdits=1'
     }
-    const typeId = params.get('productTypeId') || fromQuery?.get('productTypeId') || ''
-    const channel = params.get('channel') || fromQuery?.get('channel') || ''
-    if (channel === 'categories') return '/ads?channel=categories'
-    if (typeId === '1') return '/ads?productTypeId=1'
-    if (typeId === '2') return '/ads?productTypeId=2'
-    if (typeId === '3') return '/ads?productTypeId=3'
     return '/ads'
   }
 
   if (pathname === '/orders' || pathname.startsWith('/orders/')) {
-    if (pathname.startsWith('/orders/all')) return '/orders/all'
-    if (pathname.startsWith('/orders/retail')) return '/orders/retail'
-    if (pathname.startsWith('/orders/booking')) return '/orders/booking'
-    if (pathname.startsWith('/orders/offers')) return '/orders/offers'
-    if (pathname.startsWith('/orders/categories')) return '/orders/categories'
-
-    if (fromPath.startsWith('/orders/all')) return '/orders/all'
-    if (fromPath.startsWith('/orders/retail')) return '/orders/retail'
-    if (fromPath.startsWith('/orders/booking')) return '/orders/booking'
-    if (fromPath.startsWith('/orders/offers')) return '/orders/offers'
-    if (fromPath.startsWith('/orders/categories')) return '/orders/categories'
-
-    return '/orders/retail'
+    return '/orders/all'
   }
 
   if (pathname === '/users' || pathname.startsWith('/users/')) {
@@ -95,5 +75,10 @@ export function isSidebarNavActive(
   search: string,
   locationState: unknown,
 ): boolean {
-  return resolveActiveNavTo(pathname, search, locationState) === itemTo
+  const active = resolveActiveNavTo(pathname, search, locationState)
+  if (itemTo === '/ads' || itemTo === '/reqs-offers') return active === '/ads'
+  if (itemTo === '/orders/all' || itemTo.startsWith('/reqs-offers?nav=orders')) {
+    return active === '/orders/all'
+  }
+  return active === itemTo
 }

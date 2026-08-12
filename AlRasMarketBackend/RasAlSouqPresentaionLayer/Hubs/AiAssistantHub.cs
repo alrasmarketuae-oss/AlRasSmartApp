@@ -10,7 +10,9 @@ namespace RasAlSouqPresentaionLayer.Hubs;
 /// Dedicated short-lived AI session. History is keyed by a client session id so
 /// it survives SignalR auto-reconnects, and expires so chat context does not leak.
 /// </summary>
-public sealed class AiAssistantHub(IAiAssistantAppService assistant) : Hub
+public sealed class AiAssistantHub(
+    IAiAssistantAppService assistant,
+    IAiConversationStore conversationStore) : Hub
 {
     private const int MaxHistoryMessages = 15;
     private const int MaxRequestsPerMinute = 12;
@@ -59,6 +61,32 @@ public sealed class AiAssistantHub(IAiAssistantAppService assistant) : Hub
             return;
         }
 
+        var userId = GetCurrentUserId();
+        Guid? conversationId = null;
+        IReadOnlyList<AiAssistantHistoryMessage> history = session.Snapshot();
+        if (userId is not null)
+        {
+            try
+            {
+                var clientSessionId = ExtractClientSessionId(sessionId, Context.ConnectionId);
+                conversationId = await conversationStore.GetOrCreateConversationAsync(
+                    userId.Value,
+                    clientSessionId,
+                    Context.ConnectionAborted);
+                if (history.Count == 0)
+                {
+                    history = await conversationStore.GetRecentHistoryAsync(
+                        conversationId.Value,
+                        MaxHistoryMessages,
+                        Context.ConnectionAborted);
+                }
+            }
+            catch
+            {
+                // Persistence must not block the AI response path.
+            }
+        }
+
         await Clients.Caller.SendAsync(
             "aiThinking",
             new { isThinking = true },
@@ -67,9 +95,9 @@ public sealed class AiAssistantHub(IAiAssistantAppService assistant) : Hub
         try
         {
             var result = await assistant.AskAsync(
-                GetCurrentUserId(),
+                userId,
                 new AiAssistantAskRequest { Message = text, Language = language },
-                session.Snapshot(),
+                history,
                 async (step, ct) =>
                 {
                     await Clients.Caller.SendAsync(
@@ -81,6 +109,29 @@ public sealed class AiAssistantHub(IAiAssistantAppService assistant) : Hub
 
             session.Add("user", text);
             session.Add("assistant", result.Answer);
+
+            if (conversationId is not null)
+            {
+                try
+                {
+                    await conversationStore.AppendUserMessageAsync(
+                        conversationId.Value,
+                        text,
+                        language,
+                        Context.ConnectionAborted);
+                    await conversationStore.AppendAssistantMessageAsync(
+                        conversationId.Value,
+                        result.Answer,
+                        result.Language,
+                        result.UsedKnowledge,
+                        result.Sources,
+                        Context.ConnectionAborted);
+                }
+                catch
+                {
+                    // ignore persistence failures after a successful answer
+                }
+            }
 
             await Clients.Caller.SendAsync(
                 "aiResponseStarted",
@@ -151,6 +202,12 @@ public sealed class AiAssistantHub(IAiAssistantAppService assistant) : Hub
             Context.ConnectionId,
             _ => new ConcurrentDictionary<string, byte>(StringComparer.Ordinal));
         keys[sessionKey] = 0;
+    }
+
+    private static string ExtractClientSessionId(string? sessionId, string connectionId)
+    {
+        var clean = (sessionId ?? string.Empty).Trim();
+        return clean.Length is > 0 and <= 64 ? clean : connectionId;
     }
 
     /// <summary>

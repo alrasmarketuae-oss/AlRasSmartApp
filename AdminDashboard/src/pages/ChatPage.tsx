@@ -9,6 +9,8 @@ import { getAuthUser, getChatWrapSecret, saveChatWrapSecret } from '../lib/authS
 import { hasPermission, isSuperAdmin, PERMISSIONS } from '../lib/permissions'
 import {
   createOptimisticMessageId,
+  mergeOlderMessages,
+  mergeThreadTail,
   mergeThreadWithPending,
   revokeMessagePreview,
 } from '../lib/chatOptimistic'
@@ -21,6 +23,7 @@ import {
 import {
   useGetChatInboxQuery,
   useGetChatConversationDetailsQuery,
+  useLazyGetChatConversationDetailsQuery,
   useGetUsersQuery,
   useMarkChatSeenMutation,
   useMarkChatDeliveredMutation,
@@ -61,6 +64,9 @@ export default function ChatPage() {
   const [selectedContact, setSelectedContact] = useState<ChatContact | null>(null)
   const [searchValue, setSearchValue] = useState('')
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([])
+  const [hasMoreMessages, setHasMoreMessages] = useState(false)
+  const [nextBeforeMessageId, setNextBeforeMessageId] = useState<string | null>(null)
+  const [isLoadingOlder, setIsLoadingOlder] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
   const [isConversationLocked, setIsConversationLocked] = useState(false)
   const [lockAgentName, setLockAgentName] = useState<string | null>(null)
@@ -98,11 +104,15 @@ export default function ChatPage() {
     data: threadDetails,
     isLoading: threadLoading,
     isFetching: threadFetching,
-  } = useGetChatConversationDetailsQuery(selectedUserId ?? '', {
+  } = useGetChatConversationDetailsQuery(
+    { otherUserId: selectedUserId ?? '', limit: 50 },
+    {
     skip: !selectedUserId || (isConversationLocked && !viewerIsSuperAdmin),
     pollingInterval: chatPollingInterval,
     ...liveQueryOptions,
   })
+
+  const [fetchOlderConversationPage] = useLazyGetChatConversationDetailsQuery()
 
   const supportSessions = threadDetails?.supportSessions ?? []
 
@@ -202,6 +212,12 @@ export default function ChatPage() {
   }
 
   useEffect(() => {
+    setHasMoreMessages(false)
+    setNextBeforeMessageId(null)
+    setIsLoadingOlder(false)
+  }, [selectedUserId])
+
+  useEffect(() => {
     let cancelled = false
     async function hydrate() {
       const source = threadDetails?.messages ?? []
@@ -210,16 +226,62 @@ export default function ChatPage() {
         decrypted.push(await decryptForDisplay(m))
       }
       if (cancelled) return
-      setLocalMessages((prev) =>
-        mergeThreadWithPending(decrypted, prev, selectedUserId, myUserId),
-      )
+      setHasMoreMessages(Boolean(threadDetails?.hasMore))
+      setNextBeforeMessageId(threadDetails?.nextBeforeMessageId ?? null)
+      setLocalMessages((prev) => {
+        const merged =
+          prev.length > decrypted.length
+            ? mergeThreadTail(decrypted, prev, selectedUserId, myUserId)
+            : mergeThreadWithPending(decrypted, prev, selectedUserId, myUserId)
+        return merged
+      })
     }
     void hydrate()
     return () => {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [threadDetails?.messages, selectedUserId, myUserId])
+  }, [threadDetails, selectedUserId, myUserId])
+
+  const handleLoadOlderMessages = useCallback(async () => {
+    if (!selectedUserId || !hasMoreMessages || !nextBeforeMessageId || isLoadingOlder) {
+      return
+    }
+
+    const scrollEl = document.querySelector('.chat-messages-scroll')
+    const previousScrollHeight = scrollEl?.scrollHeight ?? 0
+
+    setIsLoadingOlder(true)
+    try {
+      const page = await fetchOlderConversationPage({
+        otherUserId: selectedUserId,
+        limit: 50,
+        before: nextBeforeMessageId,
+      }).unwrap()
+
+      const decrypted: ChatMessage[] = []
+      for (const message of page.messages) {
+        decrypted.push(await decryptForDisplay(message))
+      }
+
+      setHasMoreMessages(page.hasMore)
+      setNextBeforeMessageId(page.nextBeforeMessageId)
+      setLocalMessages((prev) => mergeOlderMessages(decrypted, prev))
+
+      requestAnimationFrame(() => {
+        if (!scrollEl) return
+        scrollEl.scrollTop = scrollEl.scrollHeight - previousScrollHeight
+      })
+    } finally {
+      setIsLoadingOlder(false)
+    }
+  }, [
+    selectedUserId,
+    hasMoreMessages,
+    nextBeforeMessageId,
+    isLoadingOlder,
+    fetchOlderConversationPage,
+  ])
 
   useEffect(() => {
     if (!selectedUserId) return
@@ -696,7 +758,10 @@ export default function ChatPage() {
           messages={localMessages}
           myUserId={myUserId}
           isLoading={showThreadLoading}
-          isRefreshing={threadFetching && localMessages.length > 0}
+          isRefreshing={threadFetching && localMessages.length > 0 && !isLoadingOlder}
+          hasMore={hasMoreMessages}
+          isLoadingOlder={isLoadingOlder}
+          onLoadOlder={() => void handleLoadOlderMessages()}
           isLocked={isConversationLocked}
           lockAgentName={lockAgentName}
           supervisingAgentName={supervisingAgentName}

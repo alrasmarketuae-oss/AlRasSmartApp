@@ -14,6 +14,10 @@ class ChatInitial extends ChatState {}
 
 class ChatLoading extends ChatState {}
 
+class ChatLoadingOlder extends ChatState {
+  const ChatLoadingOlder();
+}
+
 class ChatConnectionState extends ChatState {
   const ChatConnectionState(this.isConnected);
   final bool isConnected;

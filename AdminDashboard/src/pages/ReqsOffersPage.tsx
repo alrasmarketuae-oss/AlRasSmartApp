@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import AdsTable from '../components/ads/AdsTable'
 import OrdersTable from '../components/orders/OrdersTable'
+import AdsChannelTabs from '../components/layout/AdsChannelTabs'
+import OrdersChannelTabs from '../components/layout/OrdersChannelTabs'
 import PageHeader from '../components/layout/PageHeader'
 import { IconAds, IconOrders } from '../components/icons'
 import ReqsOffersStatsCards from '../components/reqsOffers/ReqsOffersStatsCards'
@@ -307,6 +309,11 @@ export default function ReqsOffersPage() {
         description={t('reqsOffers.description')}
         icon={fromOrders ? IconOrders : IconAds}
       />
+      {fromOrders ? (
+        <OrdersChannelTabs activeId="requests" />
+      ) : (
+        <AdsChannelTabs activeId="requests" />
+      )}
       <ReqsOffersToolbar
         activeTab={activeTab}
         onTabChange={selectTab}
