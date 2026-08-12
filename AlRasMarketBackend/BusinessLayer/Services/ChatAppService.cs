@@ -810,7 +810,7 @@ public sealed partial class ChatAppService(
                     IsLockedByOtherAgent: isLockedByOtherAgent,
                     CompanyName: companyName,
                     ContactFullName: contactFullName,
-                    CompanyImageUrl: companyImagePath ?? user?.ImgPath,
+                    CompanyImageUrl: companyImagePath,
                     IsCompanyAccount: isCompanyAccount);
             })
             .OrderByDescending(c => c.LastMessageSentAtUtc)

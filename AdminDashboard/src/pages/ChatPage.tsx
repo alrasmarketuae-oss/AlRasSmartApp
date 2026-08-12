@@ -127,18 +127,23 @@ export default function ChatPage() {
     const fromContact = resolveChatCompanyDisplay(selectedContact)
     if (!participantDetail) return fromContact
 
-    const primaryImage =
-      participantDetail.companyImages.find((image) => image.isPrimary)?.imagePath ??
-      participantDetail.companyImages[0]?.imagePath ??
-      participantDetail.imgPath ??
+    const companyName = participantDetail.companyName?.trim()
+    const isCompany = Boolean(companyName) || fromContact.isCompany
+    const companyImage =
+      participantDetail.companyImages.find((image) => image.isPrimary)?.imagePath?.trim() ||
+      participantDetail.companyImages[0]?.imagePath?.trim() ||
+      selectedContact.companyImageUrl?.trim() ||
+      null
+    const profileImage =
+      participantDetail.imgPath?.trim() ||
+      selectedContact.avatarUrl?.trim() ||
       fromContact.imageUrl
 
-    const companyName = participantDetail.companyName?.trim()
     return {
       title: companyName || fromContact.title,
       subtitle: companyName ? participantDetail.fullName : fromContact.subtitle,
-      imageUrl: primaryImage,
-      isCompany: Boolean(companyName) || fromContact.isCompany,
+      imageUrl: isCompany && companyImage ? companyImage : profileImage,
+      isCompany,
     }
   }, [participantDetail, selectedContact])
 

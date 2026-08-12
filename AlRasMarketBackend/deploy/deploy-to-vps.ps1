@@ -90,6 +90,10 @@ if [ -n '$serviceList' ]; then
 else
   docker compose up -d --build
 fi
+# Ensure Redis stays up (api-only deploys must not leave cache missing).
+docker compose up -d redis
+# Nginx caches old api container IPs after api recreate.
+docker compose restart nginx
 docker compose ps
 echo DONE
 "@

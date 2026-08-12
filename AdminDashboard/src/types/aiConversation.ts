@@ -8,6 +8,8 @@ export type AiConversationListItem = {
   companyName: string | null
   contactFullName: string | null
   companyImageUrl: string | null
+  profileImageUrl: string | null
+  isCompanyAccount: boolean
 }
 
 export type AiConversationMessage = {
@@ -56,6 +58,8 @@ export function normalizeAiConversationListItem(
     companyName: (raw.companyName ?? raw.CompanyName ?? null) as string | null,
     contactFullName: (raw.contactFullName ?? raw.ContactFullName ?? null) as string | null,
     companyImageUrl: (raw.companyImageUrl ?? raw.CompanyImageUrl ?? null) as string | null,
+    profileImageUrl: (raw.profileImageUrl ?? raw.ProfileImageUrl ?? null) as string | null,
+    isCompanyAccount: Boolean(raw.isCompanyAccount ?? raw.IsCompanyAccount),
   }
 }
 

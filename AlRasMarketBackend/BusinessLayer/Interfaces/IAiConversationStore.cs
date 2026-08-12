@@ -11,7 +11,9 @@ public sealed record AiConversationListItemDto(
     int MessageCount,
     string? CompanyName,
     string? ContactFullName,
-    string? CompanyImageUrl);
+    string? CompanyImageUrl,
+    string? ProfileImageUrl,
+    bool IsCompanyAccount);
 
 public sealed record AiConversationMessageDto(
     long Id,

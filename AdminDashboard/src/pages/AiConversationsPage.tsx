@@ -7,6 +7,7 @@ import { IconChat } from '../components/icons'
 import { useAppPreferences } from '../context/AppPreferencesProvider'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import { resolveAssetUrl } from '../lib/assets'
+import { resolveContactAvatarUrl } from '../lib/chatCompanyReport'
 import {
   useGenerateAiConversationReportMutation,
   useGetAdminAiConversationsQuery,
@@ -24,6 +25,15 @@ function formatWhen(value: string): string {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
   return date.toLocaleString()
+}
+
+function resolveConversationAvatar(item: AiConversationListItem): string | null {
+  return resolveContactAvatarUrl({
+    isCompanyAccount: item.isCompanyAccount,
+    companyName: item.companyName,
+    companyImageUrl: item.companyImageUrl,
+    avatarUrl: item.profileImageUrl,
+  })
 }
 
 function resolveCompanyLabel(item: AiConversationListItem): string {
@@ -154,8 +164,8 @@ export default function AiConversationsPage() {
   }, [selected, t])
 
   const selectedCompanyLabel = selected ? resolveCompanyLabel(selected) : ''
-  const selectedCompanyImage = selected?.companyImageUrl
-    ? resolveAssetUrl(selected.companyImageUrl)
+  const selectedCompanyImage = selected
+    ? resolveAssetUrl(resolveConversationAvatar(selected))
     : null
 
   return (
@@ -195,7 +205,8 @@ export default function AiConversationsPage() {
               items.map((item) => {
                 const active = selected?.id === item.id
                 const companyLabel = resolveCompanyLabel(item)
-                const avatarUrl = item.companyImageUrl ? resolveAssetUrl(item.companyImageUrl) : null
+                const avatarPath = resolveConversationAvatar(item)
+                const avatarUrl = avatarPath ? resolveAssetUrl(avatarPath) : null
                 return (
                   <button
                     key={item.id}

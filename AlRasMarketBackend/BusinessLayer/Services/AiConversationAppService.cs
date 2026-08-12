@@ -255,7 +255,9 @@ public sealed class AiConversationAppService(IRasAlSouqDbContext dbContext) : IA
         {
             var companyName = !string.IsNullOrWhiteSpace(x.UserCompanyName)
                 ? x.UserCompanyName!.Trim()
-                : x.UserFullName.Trim();
+                : null;
+            var isCompanyAccount = companyName is not null;
+            var displayName = companyName ?? x.UserFullName.Trim();
             imageByUser.TryGetValue(x.UserId, out var companyImage);
             return new AiConversationListItemDto(
                 x.Id,
@@ -264,9 +266,11 @@ public sealed class AiConversationAppService(IRasAlSouqDbContext dbContext) : IA
                 x.TitlePreview,
                 UtcDateTimeHelper.FormatApiDateTime(x.LastMessageAtUtc)!,
                 x.MessageCount,
-                companyName,
+                displayName,
                 x.UserFullName.Trim(),
-                companyImage ?? x.UserImgPath);
+                companyImage,
+                x.UserImgPath,
+                isCompanyAccount);
         }).ToList();
 
         return new AiConversationListPageDto(items, page, pageSize, totalCount, totalPages);
