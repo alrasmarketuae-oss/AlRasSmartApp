@@ -1,5 +1,11 @@
 import { ASSETS_BASE_URL, PRODUCTION_API } from '../config/api.js'
 
+/** True when path is a company logo folder — not a user profile photo. */
+export function isCompanyMediaPath(path: string): boolean {
+  const normalized = path.replace(/\\/g, '/').toLowerCase()
+  return normalized.includes('company-images') || normalized.includes('companyimages/')
+}
+
 /** Legacy R2 public host — rewritten to the CDN when resolving absolute media URLs. */
 const LEGACY_MEDIA_HOST = 'pub-63bb2df7433f4fd4a71249ac40f944ca.r2.dev'
 
@@ -71,4 +77,11 @@ export function resolveAssetUrl(path: string | null | undefined): string {
   }
 
   return `${ASSETS_BASE_URL}${normalized}`
+}
+
+/** Profile avatars only — blocks company-images paths from becoming img src. */
+export function resolveProfileAssetUrl(path: string | null | undefined): string {
+  const trimmed = path?.trim()
+  if (!trimmed || isCompanyMediaPath(trimmed)) return ''
+  return resolveAssetUrl(trimmed)
 }

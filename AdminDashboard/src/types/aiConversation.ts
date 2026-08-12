@@ -41,7 +41,7 @@ export type AiConversationReportRequest = {
   language: 'ar' | 'en'
 }
 
-import { isCompanyMediaPath } from '../lib/chatCompanyReport'
+import { isCompanyMediaPath } from '../lib/assets'
 
 function readString(raw: unknown, fallback = ''): string {
   return raw == null ? fallback : String(raw)

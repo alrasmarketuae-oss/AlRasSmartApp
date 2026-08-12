@@ -2,7 +2,7 @@ import { PROJECT_IMAGES } from '../../constants/projectImages'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import { formatChatRelativeTime } from '../../utils/formatChatRelativeTime'
 import { IconSearch } from '../icons'
-import { resolveAssetUrl } from '../../lib/assets'
+import { resolveProfileAssetUrl } from '../../lib/assets'
 import { resolveChatCompanyDisplay } from '../../lib/chatCompanyReport'
 import type { ChatContact } from '../../types/chat'
 
@@ -166,7 +166,7 @@ export default function ChatContactsPanel({
 }
 
 function Avatar({ name, src }: { name: string; src: string | null }) {
-  const url = resolveAssetUrl(src)
+  const url = resolveProfileAssetUrl(src)
   if (url) {
     return <img src={url} alt="" className="h-12 w-12 rounded-full object-cover" />
   }

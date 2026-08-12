@@ -5,7 +5,7 @@ import ChatMessageBubble from './ChatMessageBubble'
 import ChatSessionDivider from './ChatSessionDivider'
 import { PROJECT_IMAGES } from '../../constants/projectImages'
 import { IconArrowLeft, IconChat } from '../icons'
-import { resolveAssetUrl } from '../../lib/assets'
+import { resolveProfileAssetUrl } from '../../lib/assets'
 import { resolveContactAvatarUrl, type ChatCompanyDisplay } from '../../lib/chatCompanyReport'
 import type { ChatContact, ChatMessage, ChatSupportSession } from '../../types/chat'
 
@@ -294,7 +294,7 @@ export default function ChatThreadPanel({
   }
 
   const avatarPath = companyDisplay?.imageUrl ?? resolveContactAvatarUrl(contact)
-  const avatarUrl = resolveAssetUrl(avatarPath)
+  const avatarUrl = resolveProfileAssetUrl(avatarPath)
   const headerTitle = companyDisplay?.title ?? contact.displayName
   const headerSubtitle = companyDisplay?.subtitle
 

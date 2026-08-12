@@ -1,18 +1,13 @@
 import type { ChatContact, ChatMessage } from '../types/chat'
 import type { ChatCompanyReportMessage } from '../types/chatCompanyReport'
 import { messageTypeLabel } from '../types/chat'
+import { isCompanyMediaPath } from './assets'
 
 export type ChatCompanyDisplay = {
   title: string
   subtitle: string | null
   imageUrl: string | null
   isCompany: boolean
-}
-
-/** True when the stored path points at company-images (not user profile photos). */
-export function isCompanyMediaPath(path: string): boolean {
-  const normalized = path.replace(/\\/g, '/').toLowerCase()
-  return normalized.includes('company-images') || normalized.includes('companyimages/')
 }
 
 /** Same rule as users table: profile photo only — never company-images for avatars. */

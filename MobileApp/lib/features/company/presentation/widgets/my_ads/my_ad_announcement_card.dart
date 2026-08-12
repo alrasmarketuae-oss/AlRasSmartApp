@@ -4,12 +4,8 @@ import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
-import 'package:alrasmarket/core/utils/product_price_formatter.dart';
-import 'package:alrasmarket/core/utils/product_quantity_formatter.dart';
 import 'package:alrasmarket/core/utils/product_stock.dart';
-import 'package:alrasmarket/core/widgets/product_price_text.dart';
-import 'package:alrasmarket/features/clint/presentation/helpers/booking_price_type_label.dart';
-import 'package:alrasmarket/features/clint/presentation/helpers/product_price_type_label.dart';
+import 'package:alrasmarket/features/company/presentation/widgets/my_ads/my_ad_product_facts.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_media_thumbnail.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product_views_badge.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
@@ -172,8 +168,6 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
       S.of(context),
     );
     final preferRetail = widget.preferRetailPricing;
-    final showDiscount =
-        adType == CreateAdType.offers && product.isDiscountActive;
     final padH = compact ? 8.w : 12.w;
     final padV = compact ? 8.h : 12.h;
     final titleSize = compact ? 13.sp : 16.sp;
@@ -295,77 +289,12 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
             ),
           ],
           if (compact) const Spacer(),
-          if (adType == CreateAdType.requests) ...[
-            Text(
-              () {
-                final qty = ProductQuantityFormatter.quantityWithUnit(
-                  quantityText: product.quantity,
-                  unitName: product.unitName,
-                  s: S.of(context),
-                );
-                return qty.isEmpty
-                    ? S.of(context).requestedQuantity
-                    : '${S.of(context).requestedQuantity} $qty';
-              }(),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontFamily: fontFamily,
-                fontSize: bodySize,
-                color: const Color.fromRGBO(107, 114, 128, 1),
-              ),
-            ),
-            if (ProductPriceFormatter.amount(product).isNotEmpty) ...[
-              SizedBox(height: 4.h),
-              _PriceWithTypeRow(
-                product: product,
-                adType: adType,
-                preferRetail: preferRetail,
-                isAr: isAr,
-                fontFamily: fontFamily,
-                bodySize: bodySize,
-                compact: compact,
-                amountAlignEnd: true,
-              ),
-            ],
-          ],
-          if (adType != CreateAdType.requests) ...[
-            _PriceWithTypeRow(
-              product: product,
-              adType: adType,
-              preferRetail: preferRetail,
-              isAr: isAr,
-              fontFamily: fontFamily,
-              bodySize: bodySize,
-              compact: compact,
-              showBookingRoute: adType == CreateAdType.booking,
-              showDiscount: showDiscount,
-            ),
-            if (product
-                .quantityForChannel(preferRetail: preferRetail)
-                .trim()
-                .isNotEmpty) ...[
-              SizedBox(height: 2.h),
-              Text(
-                ProductQuantityFormatter.quantityWithUnit(
-                  quantityText: product.quantityForChannel(
-                    preferRetail: preferRetail,
-                  ),
-                  unitName: product.unitNameForChannel(
-                    preferRetail: preferRetail,
-                  ),
-                  s: S.of(context),
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontFamily: fontFamily,
-                  fontSize: compact ? 10.sp : 12.sp,
-                  color: const Color.fromRGBO(107, 114, 128, 1),
-                ),
-              ),
-            ],
-          ],
+          MyAdProductFacts(
+            product: product,
+            adType: adType,
+            preferRetail: preferRetail,
+            compact: compact,
+          ),
         ],
       ),
     );
@@ -734,151 +663,6 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
   }
 }
 
-class _PriceWithTypeRow extends StatelessWidget {
-  const _PriceWithTypeRow({
-    required this.product,
-    required this.adType,
-    required this.preferRetail,
-    required this.isAr,
-    required this.fontFamily,
-    required this.bodySize,
-    required this.compact,
-    this.showBookingRoute = false,
-    this.showDiscount = false,
-    this.amountAlignEnd = false,
-  });
-
-  final MyListingProductModel product;
-  final CreateAdType? adType;
-  final bool preferRetail;
-  final bool isAr;
-  final String fontFamily;
-  final double bodySize;
-  final bool compact;
-  final bool showBookingRoute;
-  final bool showDiscount;
-  final bool amountAlignEnd;
-
-  String get _priceTypeLabel {
-    final showType = adType == CreateAdType.booking ||
-        adType == CreateAdType.categories ||
-        adType == CreateAdType.offers ||
-        adType == CreateAdType.requests ||
-        (product.categoryId != null && product.categoryId! > 0);
-    if (!showType) return '';
-    return adType == CreateAdType.booking
-        ? BookingPriceTypeLabel.fromProduct(product)
-        : ProductPriceTypeLabel.fromProduct(product, isAr: isAr);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final priceType = _priceTypeLabel;
-    final price = ProductPriceText.unitPrice(
-      product,
-      preferRetail: preferRetail,
-      amountStyle: TextStyle(
-        color: LightColor.defaultColor,
-        fontFamily: AppFonts.cairo,
-        fontSize: compact ? 14.sp : 16.sp,
-        fontWeight: FontWeight.w700,
-      ),
-      matchCurrencyToAmount: true,
-    );
-
-    final routeText = showBookingRoute
-        ? [
-            product.shipping.routeFromCountry.trim(),
-            product.shipping.routeToCountry.trim(),
-          ].where((part) => part.isNotEmpty).join(' → ')
-        : '';
-
-    // Price sits on its own full-width line so it never truncates; the price
-    // type / route / discount wrap onto a second line below it.
-    final priceLine = Align(
-      alignment: amountAlignEnd
-          ? AlignmentDirectional.centerEnd
-          : AlignmentDirectional.centerStart,
-      child: price,
-    );
-
-    final metaChildren = <Widget>[
-      if (priceType.isNotEmpty)
-        Flexible(
-          child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: compact ? 6.w : 8.w,
-              vertical: compact ? 2.h : 3.h,
-            ),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE8F4FD),
-              borderRadius: BorderRadius.circular(6.r),
-              border: Border.all(color: const Color(0xFF3A7DC5), width: 1),
-            ),
-            child: Text(
-              priceType,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontFamily: fontFamily,
-                fontSize: compact ? 10.sp : 12.sp,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF1E6BB8),
-              ),
-            ),
-          ),
-        ),
-      if (showBookingRoute && routeText.isNotEmpty)
-        Flexible(
-          child: Text(
-            routeText,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontFamily: fontFamily,
-              fontSize: bodySize,
-              color: const Color(0xFF333333),
-            ),
-          ),
-        ),
-      if (showDiscount)
-        DiscountBadge(
-          discountPercentage: product.discountPercentage.trim().isNotEmpty
-              ? product.discountPercentage.trim()
-              : product.discountPercentValue.toString(),
-          compact: compact,
-        ),
-    ];
-
-    if (metaChildren.isEmpty) {
-      return priceLine;
-    }
-
-    final metaLine = Row(
-      mainAxisAlignment: amountAlignEnd
-          ? MainAxisAlignment.end
-          : MainAxisAlignment.start,
-      children: [
-        for (var i = 0; i < metaChildren.length; i++) ...[
-          if (i > 0) SizedBox(width: 6.w),
-          metaChildren[i],
-        ],
-      ],
-    );
-
-    return Column(
-      crossAxisAlignment:
-          amountAlignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        priceLine,
-        SizedBox(height: 6.h),
-        metaLine,
-      ],
-    );
-  }
-}
-
 class _Badge extends StatelessWidget {
   const _Badge({
     required this.label,
@@ -1054,52 +838,4 @@ class _BadgeStyle {
   final Color background;
   final Color foreground;
   final String? icon;
-}
-
-class DiscountBadge extends StatelessWidget {
-  final String discountPercentage;
-  final bool compact;
-  const DiscountBadge({
-    Key? key,
-    required this.discountPercentage,
-    this.compact = false,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: compact ? 6 : 8,
-        vertical: compact ? 2 : 4,
-      ),
-      decoration: BoxDecoration(
-        color: const Color.fromRGBO(249, 112, 102, 1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            discountPercentage,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white,
-              fontFamily: 'Inter',
-              fontSize: compact ? 12.sp : 16.sp,
-              fontWeight: FontWeight.w600,
-              height: 1.2,
-            ),
-          ),
-          SizedBox(width: compact ? 2 : 5),
-          Icon(
-            Icons.percent,
-            color: Colors.white,
-            size: compact ? 12 : 15,
-          ),
-        ],
-      ),
-    );
-  }
 }

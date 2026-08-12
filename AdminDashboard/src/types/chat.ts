@@ -1,5 +1,7 @@
 export type ChatMessageType = 'Text' | 'Voice' | 'Image' | 'Location' | 'Video' | 'File'
 
+import { isCompanyMediaPath } from '../lib/assets'
+
 export const CHAT_MESSAGES_PAGE_SIZE = 10
 
 export type ChatMessageTypeCode = 1 | 2 | 3 | 4 | 5 | 6
@@ -253,11 +255,6 @@ export function parseImageContent(content: string): string[] {
   }
 
   return [trimmed]
-}
-
-function isCompanyMediaPath(path: string): boolean {
-  const normalized = path.replace(/\\/g, '/').toLowerCase()
-  return normalized.includes('company-images') || normalized.includes('companyimages/')
 }
 
 export function normalizeChatContact(raw: Record<string, unknown>): ChatContact {

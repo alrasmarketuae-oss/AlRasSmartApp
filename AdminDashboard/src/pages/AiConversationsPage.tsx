@@ -6,8 +6,7 @@ import PageHeader from '../components/layout/PageHeader'
 import { IconChat } from '../components/icons'
 import { useAppPreferences } from '../context/AppPreferencesProvider'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
-import { resolveAssetUrl } from '../lib/assets'
-import { isCompanyMediaPath } from '../lib/chatCompanyReport'
+import { resolveProfileAssetUrl, isCompanyMediaPath } from '../lib/assets'
 import {
   useGenerateAiConversationReportMutation,
   useGetAdminAiConversationsQuery,
@@ -162,7 +161,7 @@ export default function AiConversationsPage() {
 
   const selectedCompanyLabel = selected ? resolveCompanyLabel(selected) : ''
   const selectedCompanyImage = selected
-    ? resolveAssetUrl(resolveConversationAvatar(selected))
+    ? resolveProfileAssetUrl(resolveConversationAvatar(selected))
     : null
 
   return (
@@ -203,7 +202,7 @@ export default function AiConversationsPage() {
                 const active = selected?.id === item.id
                 const companyLabel = resolveCompanyLabel(item)
                 const avatarPath = resolveConversationAvatar(item)
-                const avatarUrl = avatarPath ? resolveAssetUrl(avatarPath) : null
+                const avatarUrl = avatarPath ? resolveProfileAssetUrl(avatarPath) : null
                 return (
                   <button
                     key={item.id}
