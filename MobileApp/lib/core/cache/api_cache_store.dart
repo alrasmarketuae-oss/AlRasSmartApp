@@ -122,11 +122,15 @@ class ApiCacheStore {
     }
   }
 
-  /// Clears catalog/product caches (e.g. after login refresh).
+  /// Clears product/banner caches (e.g. after login refresh or ad mutation).
+  /// Categories are cached separately — use [invalidateCategoriesCache].
   Future<void> invalidateHomeCatalog() async {
-    await remove(ApiCacheKeys.categories);
     await remove(ApiCacheKeys.homeBanners);
     await removeByPrefix(ApiCacheKeys.homePrefix);
+  }
+
+  Future<void> invalidateCategoriesCache() async {
+    await remove(ApiCacheKeys.categories);
   }
 
   /// Clears user-specific caches (orders, profile, addresses).

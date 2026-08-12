@@ -50,7 +50,7 @@ class CategoriesResponse {
     final raw = json['items'] as List<dynamic>? ?? [];
     final items = raw
         .map((e) => CategoryModel.fromJson(e as Map<String, dynamic>))
-        .where((c) => c.categoryId > 0 && c.nameEn.isNotEmpty)
+        .where((c) => c.categoryId > 0 && (c.nameEn.isNotEmpty || c.nameAr.isNotEmpty))
         .toList();
     return CategoriesResponse(
       count: json['count'] as int? ?? items.length,

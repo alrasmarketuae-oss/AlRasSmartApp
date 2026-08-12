@@ -2,6 +2,7 @@ import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/utils/product_quantity_formatter.dart';
 import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
+import 'package:alrasmarket/features/company/presentation/models/create_ad_currency.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 
 class ProductPriceFormatter {
@@ -46,6 +47,17 @@ class ProductPriceFormatter {
     final code = product.currency.trim().toUpperCase();
     return code.isEmpty ? 'USD' : code;
   }
+
+  /// Owner wholesale / main listing price currency (matches create-ad rules).
+  static String wholesaleCurrencyCode(MyListingProductModel product) {
+    if (product.isPureRetailProduct) return CreateAdCurrency.aed;
+    if (product.isBookingProduct) return CreateAdCurrency.usd;
+    return CreateAdCurrency.normalize(currencyCode(product));
+  }
+
+  /// Hybrid category retail price is always AED.
+  static String retailCurrencyCode(MyListingProductModel product) =>
+      CreateAdCurrency.aed;
 
   static String unitSuffix(
     MyListingProductModel product, {

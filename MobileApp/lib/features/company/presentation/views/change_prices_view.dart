@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:alrasmarket/core/serveses/catalog_sync_service.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
+import 'package:alrasmarket/core/utils/product_price_formatter.dart';
 import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/core/widgets/cached_app_image.dart';
 import 'package:alrasmarket/core/widgets/primary_button.dart';
@@ -10,6 +11,7 @@ import 'package:alrasmarket/features/clint/presentation/widgets/search_header.da
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/features/company/presentation/controller/cubit/company_cubit.dart';
 import 'package:alrasmarket/features/company/presentation/controller/cubit/company_states.dart';
+import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_currency_label.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -426,7 +428,9 @@ class _PriceRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = S.of(context);
     final imageUrl = product.primaryImageUrl ?? product.categoryImageUrl;
-    final wholesaleCurrency = product.isPureRetailProduct ? 'AED' : 'USD';
+    final wholesaleCurrency =
+        ProductPriceFormatter.wholesaleCurrencyCode(product);
+    final retailCurrency = ProductPriceFormatter.retailCurrencyCode(product);
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
@@ -509,7 +513,7 @@ class _PriceRow extends StatelessWidget {
                 SizedBox(height: 8.h),
                 _PriceField(
                   controller: editor.retail,
-                  currency: 'AED',
+                  currency: retailCurrency,
                   hint: s.retailPriceLabel,
                   onChanged: (_) => onChanged(),
                 ),
@@ -575,12 +579,14 @@ class _PriceField extends StatelessWidget {
         decoration: InputDecoration(
           isDense: true,
           hintText: hint,
-          suffixText: currency,
-          suffixStyle: TextStyle(
-            fontSize: 10.5.sp,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF7B8794),
+          suffixIcon: Padding(
+            padding: EdgeInsets.only(right: 10.w),
+            child: CreateAdCurrencyLabel(
+              currency: currency,
+              iconHeight: 13.sp,
+            ),
           ),
+          suffixIconConstraints: BoxConstraints(minWidth: 28.w, minHeight: 28.h),
           filled: true,
           fillColor: const Color(0xFFF6F9FE),
           contentPadding: EdgeInsets.symmetric(

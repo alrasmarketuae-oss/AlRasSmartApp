@@ -867,7 +867,7 @@ class ClintCubit extends Cubit<ClintStates> {
       categories = raw
           .whereType<Map<String, dynamic>>()
           .map(CategoryModel.fromJson)
-          .where((c) => c.categoryId > 0 && c.nameEn.isNotEmpty)
+          .where((c) => c.categoryId > 0 && (c.nameEn.isNotEmpty || c.nameAr.isNotEmpty))
           .toList();
       if (categories.isNotEmpty) {
         isLoadingCategories = false;
@@ -1332,7 +1332,7 @@ class ClintCubit extends Cubit<ClintStates> {
 
     await Future.wait([
       fetchHomeBanners(forceRefresh: resetCached),
-      fetchCategories(force: resetCached),
+      fetchCategories(force: false),
       _loadHomeProducts(isPerson: isPerson, forceRefresh: resetCached),
       fetchMyOrders(),
     ]);

@@ -52,10 +52,9 @@ class CatalogSyncService {
   void onHomeTabSelected() {
     final clintCubit = sl<ClintCubit>();
     if (clintCubit.isClosed) return;
-    // Reset disk cache so commission markup changes appear without waiting for TTL.
     clintCubit.refreshHomeFeed(
       isPerson: _isPersonAccount,
-      resetCached: true,
+      resetCached: false,
     );
   }
 
