@@ -217,7 +217,6 @@ class _ChangePricesViewState extends State<ChangePricesView> {
                         hintText: s.changePricesSearchHint,
                         showBackButton: false,
                         showImageSearch: false,
-                        enableLiveSearch: false,
                         enableSuggestions: false,
                         onChanged: (_) => setState(() {}),
                       ),

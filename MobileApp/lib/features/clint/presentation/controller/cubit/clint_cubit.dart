@@ -452,7 +452,6 @@ class ClintCubit extends Cubit<ClintStates> {
     required String query,
     int page = 1,
     int pageSize = 20,
-    bool showLoadingIndicator = true,
   }) async {
     final trimmed = query.trim();
     if (trimmed.isEmpty) {
@@ -462,15 +461,13 @@ class ClintCubit extends Cubit<ClintStates> {
     }
 
     final requestGeneration = ++_productSearchFetchGeneration;
-    isLoadingSearch = showLoadingIndicator;
+    isLoadingSearch = true;
     searchError = null;
     searchQuery = trimmed;
     isImageSearch = false;
     searchSuggestedNames = [];
     searchAiAssist = null;
-    if (showLoadingIndicator) {
-      emit(ProductSearchLoadingState(query: trimmed));
-    }
+    emit(ProductSearchLoadingState(query: trimmed));
 
     try {
       final response = await DioHelper.getData(

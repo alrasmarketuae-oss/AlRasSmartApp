@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:alrasmarket/core/media/image_source_picker.dart';
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/search/search_history_entry.dart';
@@ -13,32 +11,6 @@ import 'package:go_router/go_router.dart';
 /// Shared search navigation used by every screen in the app.
 class AppSearchActions {
   AppSearchActions._();
-
-  /// TikTok-style product search while typing (catalog mode).
-  static void liveQuery(BuildContext context, String query) {
-    final trimmed = query.trim();
-    if (trimmed.isEmpty) return;
-
-    final isOnSearchResults =
-        GoRouterState.of(context).matchedLocation ==
-        AppRoutes.kProductSearchResultsView;
-
-    if (!isOnSearchResults) {
-      context.pushReplacement(
-        AppRoutes.kProductSearchResultsView,
-        extra: {'query': trimmed},
-      );
-      return;
-    }
-
-    final cubit = context.read<ClintCubit>();
-    unawaited(
-      cubit.searchProducts(
-        query: trimmed,
-        showLoadingIndicator: cubit.productSearchResults.isEmpty,
-      ),
-    );
-  }
 
   static void _openSearchResults(
     BuildContext context,

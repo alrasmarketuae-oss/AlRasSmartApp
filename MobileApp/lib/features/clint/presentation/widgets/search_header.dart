@@ -14,10 +14,8 @@ class SearchHeader extends StatelessWidget {
     this.initialQuery,
     this.searchController,
     this.onSearchSubmitted,
-    this.onLiveQueryChanged,
     this.onImageSearchTap,
     this.onFilterTap,
-    this.enableLiveSearch = true,
     this.searchMode = AppSearchMode.catalog,
     this.searchHint,
     this.onLocalSearchChanged,
@@ -30,10 +28,8 @@ class SearchHeader extends StatelessWidget {
   final String? initialQuery;
   final TextEditingController? searchController;
   final ValueChanged<String>? onSearchSubmitted;
-  final ValueChanged<String>? onLiveQueryChanged;
   final VoidCallback? onImageSearchTap;
   final VoidCallback? onFilterTap;
-  final bool enableLiveSearch;
   final AppSearchMode searchMode;
   final String? searchHint;
   final ValueChanged<String>? onLocalSearchChanged;
@@ -76,12 +72,10 @@ class SearchHeader extends StatelessWidget {
               hintText: searchHint,
               onSubmitted: onSearchSubmitted,
               onChanged: onLocalSearchChanged,
-              onLiveQueryChanged: onLiveQueryChanged,
               onImageSearchTap: onImageSearchTap,
               onFilterTap: onFilterTap,
               showBackButton: isBackButton,
               showImageSearch: showImageSearch,
-              enableLiveSearch: enableLiveSearch,
             ),
           SizedBox(height: 16.h),
           if (title != null)

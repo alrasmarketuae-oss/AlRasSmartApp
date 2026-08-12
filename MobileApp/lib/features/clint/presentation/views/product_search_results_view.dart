@@ -50,14 +50,6 @@ class _ProductSearchResultsViewState extends State<ProductSearchResultsView> {
     super.dispose();
   }
 
-  void _onLiveQueryChanged(String query) {
-    context.read<ClintCubit>().searchProducts(
-          query: query,
-          showLoadingIndicator:
-              context.read<ClintCubit>().productSearchResults.isEmpty,
-        );
-  }
-
   void _runSearch({bool forceApi = false}) {
     final cubit = context.read<ClintCubit>();
     if (!forceApi &&
@@ -143,8 +135,6 @@ class _ProductSearchResultsViewState extends State<ProductSearchResultsView> {
                   title: headerTitle,
                   initialQuery: widget.initialQuery,
                   searchController: _searchController,
-                  onLiveQueryChanged: fromImage ? null : _onLiveQueryChanged,
-                  enableLiveSearch: !fromImage,
                 ),
                 Expanded(
                   child: Builder(

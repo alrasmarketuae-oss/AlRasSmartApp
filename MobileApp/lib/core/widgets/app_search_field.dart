@@ -16,7 +16,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
 enum AppSearchMode {
-  /// Product catalog search — suggestions, image search, live results.
+  /// Product catalog search — suggestions + image search.
+  /// Suggestions update on each keystroke; products load only on submit.
   catalog,
 
   /// Inline list filter — no API, no image lens.
@@ -33,12 +34,10 @@ class AppSearchField extends StatefulWidget {
     this.hintText,
     this.onSubmitted,
     this.onChanged,
-    this.onLiveQueryChanged,
     this.onImageSearchTap,
     this.onFilterTap,
     this.showBackButton = true,
     this.showImageSearch = true,
-    this.enableLiveSearch = true,
     this.enableSuggestions = true,
   });
 
@@ -48,16 +47,12 @@ class AppSearchField extends StatefulWidget {
   final String? hintText;
   final ValueChanged<String>? onSubmitted;
   final ValueChanged<String>? onChanged;
-  final ValueChanged<String>? onLiveQueryChanged;
   final VoidCallback? onImageSearchTap;
   final VoidCallback? onFilterTap;
   final bool showBackButton;
   final bool showImageSearch;
 
-  /// TikTok-style: refresh product results while typing (catalog mode).
-  final bool enableLiveSearch;
-
-  /// Remote autocomplete dropdown (catalog mode).
+  /// Remote autocomplete dropdown (catalog mode) — updates while typing.
   final bool enableSuggestions;
 
   @override
@@ -68,14 +63,11 @@ class AppSearchField extends StatefulWidget {
 typedef SearchFormFiled = AppSearchField;
 
 class _AppSearchFieldState extends State<AppSearchField> {
-  static const _liveSearchDebounce = Duration(milliseconds: 180);
-
   late final TextEditingController _controller;
   late final FocusNode _focusNode;
   late final bool _ownsController;
   List<String> _suggestions = [];
   bool _showSuggestions = false;
-  Timer? _liveSearchTimer;
 
   bool get _isCatalog => widget.mode == AppSearchMode.catalog;
 
@@ -109,7 +101,6 @@ class _AppSearchFieldState extends State<AppSearchField> {
 
   @override
   void dispose() {
-    _liveSearchTimer?.cancel();
     _controller.removeListener(_onQueryChanged);
     _focusNode.removeListener(_onFocusChanged);
     _focusNode.dispose();
@@ -124,9 +115,6 @@ class _AppSearchFieldState extends State<AppSearchField> {
     if (_isCatalog && widget.enableSuggestions) {
       unawaited(_refreshSuggestions());
     }
-    if (_isCatalog && widget.enableLiveSearch) {
-      _scheduleLiveSearch();
-    }
   }
 
   void _onFocusChanged() {
@@ -139,33 +127,26 @@ class _AppSearchFieldState extends State<AppSearchField> {
     }
   }
 
-  void _scheduleLiveSearch() {
-    _liveSearchTimer?.cancel();
-    _liveSearchTimer = Timer(_liveSearchDebounce, () {
-      if (!mounted) return;
-      final query = _controller.text.trim();
-      if (query.isEmpty) return;
-      if (widget.onLiveQueryChanged != null) {
-        widget.onLiveQueryChanged!(query);
-        return;
-      }
-      AppSearchActions.liveQuery(context, query);
-    });
-  }
-
   Future<void> _refreshSuggestions() async {
     if (!_isCatalog || !widget.enableSuggestions) return;
 
     final query = _controller.text;
+    if (query.trim().isEmpty) {
+      if (_showSuggestions || _suggestions.isNotEmpty) {
+        setState(() {
+          _suggestions = const [];
+          _showSuggestions = false;
+        });
+      }
+      return;
+    }
+
     final items =
         await ProductSearchIndexService.instance.suggestRemote(query);
     if (!mounted || _controller.text != query) return;
     setState(() {
       _suggestions = items;
-      _showSuggestions =
-          _focusNode.hasFocus &&
-          query.trim().isNotEmpty &&
-          items.isNotEmpty;
+      _showSuggestions = _focusNode.hasFocus && items.isNotEmpty;
     });
   }
 
