@@ -100,6 +100,6 @@ export {
   useReleaseSupportConversationMutation,
   useGetAdminAiConversationsQuery,
   useLazyGetAdminAiConversationMessagesQuery,
-  useGenerateChatCompanyReportMutation,
+  useGenerateAiConversationReportMutation,
 } from './adminApi'
 export type { FetchUsersParams } from './adminApi'

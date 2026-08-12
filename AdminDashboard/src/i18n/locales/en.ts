@@ -1280,6 +1280,8 @@ export const enMessages = {
       assistant: 'Assistant',
       loadError: 'Could not load AI conversations.',
       loadMessagesError: 'Could not load conversation messages.',
+      companyReportHint: 'Click to generate an AI report from this AI conversation and ads',
+      companyReportError: 'Could not generate AI conversation report',
     },
     employees: {
       title: 'Employees',

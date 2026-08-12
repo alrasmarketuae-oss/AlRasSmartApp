@@ -1,4 +1,5 @@
 using BusinessLayer.Constants;
+using BusinessLayer.Dtos;
 using BusinessLayer.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,7 +12,8 @@ namespace RasAlSouqPresentaionLayer.Controllers;
 [Authorize(Roles = "Admin,Employee")]
 public sealed class AdminAiController(
     IAiKnowledgeIndexer knowledgeIndexer,
-    IAiConversationStore conversationStore) : ControllerBase
+    IAiConversationStore conversationStore,
+    IAdminChatReportAppService chatReportAppService) : ControllerBase
 {
     /// <summary>
     /// Force a full re-embed + re-index of the AI knowledge base. Use after
@@ -51,5 +53,20 @@ public sealed class AdminAiController(
             before,
             cancellationToken);
         return Ok(page);
+    }
+
+    [HttpPost("conversations/{conversationId:guid}/report")]
+    [RequireAdminPermission(AdminPermissions.ChatAccess)]
+    public async Task<ActionResult<AdminChatCompanyReportDto>> GenerateConversationReport(
+        [FromRoute] Guid conversationId,
+        [FromBody] AdminAiConversationReportRequest? request,
+        CancellationToken cancellationToken = default)
+    {
+        var language = request?.Language ?? "ar";
+        var result = await chatReportAppService.GenerateAiConversationReportAsync(
+            conversationId,
+            language,
+            cancellationToken);
+        return Ok(result);
     }
 }

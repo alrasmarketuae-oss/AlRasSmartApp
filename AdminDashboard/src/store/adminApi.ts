@@ -44,6 +44,7 @@ import { normalizeChatCompanyReport } from '../types/chatCompanyReport'
 import type {
   AiConversationListPage,
   AiConversationMessagesPage,
+  AiConversationReportRequest,
 } from '../types/aiConversation'
 import {
   normalizeAiConversationListPage,
@@ -1935,6 +1936,18 @@ export const adminApi = createApi({
       keepUnusedDataFor: LIVE_CACHE_TTL_SECONDS,
     }),
 
+    generateAiConversationReport: builder.mutation<
+      ChatCompanyReport,
+      AiConversationReportRequest
+    >({
+      query: ({ conversationId, language }) => ({
+        url: `/api/admin/ai/conversations/${conversationId}/report`,
+        method: 'POST',
+        body: { language },
+      }),
+      transformResponse: (response: Record<string, unknown>) => normalizeChatCompanyReport(response),
+    }),
+
     generateChatCompanyReport: builder.mutation<ChatCompanyReport, ChatCompanyReportRequest>({
       query: (body) => ({
         url: '/api/admin/chat/company-report',
@@ -2046,5 +2059,6 @@ export const {
   useReleaseSupportConversationMutation,
   useGetAdminAiConversationsQuery,
   useLazyGetAdminAiConversationMessagesQuery,
+  useGenerateAiConversationReportMutation,
   useGenerateChatCompanyReportMutation,
 } = adminApi

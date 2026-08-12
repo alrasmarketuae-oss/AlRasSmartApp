@@ -25,6 +25,11 @@ public sealed class AdminChatCompanyReportDto
     public string Language { get; set; } = "ar";
 }
 
+public sealed class AdminAiConversationReportRequest
+{
+    public string Language { get; set; } = "ar";
+}
+
 public sealed class AdminChatReportAdLine
 {
     public string Name { get; set; } = string.Empty;

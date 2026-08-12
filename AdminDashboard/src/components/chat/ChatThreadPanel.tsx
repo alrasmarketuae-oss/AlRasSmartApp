@@ -311,56 +311,72 @@ export default function ChatThreadPanel({
           </button>
         ) : null}
 
-        <button
-          type="button"
-          onClick={onCompanyClick}
-          disabled={!onCompanyClick || isGeneratingReport}
-          className={`flex min-w-0 flex-1 items-center gap-2 text-start sm:gap-3 ${
-            onCompanyClick ? 'rounded-xl transition hover:bg-white/10 disabled:opacity-70' : ''
-          }`}
-          title={onCompanyClick ? t('chat.companyReportHint') : undefined}
-        >
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt=""
-              className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-white/30 sm:h-11 sm:w-11"
-            />
-          ) : (
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white sm:h-11 sm:w-11">
-              {headerTitle.charAt(0).toUpperCase()}
-            </div>
-          )}
+        {(() => {
+          const headerContent = (
+            <>
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt=""
+                  className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-white/30 sm:h-11 sm:w-11"
+                />
+              ) : (
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white sm:h-11 sm:w-11">
+                  {headerTitle.charAt(0).toUpperCase()}
+                </div>
+              )}
 
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h3 className="truncate text-base font-bold text-white sm:text-lg">{headerTitle}</h3>
-              {companyDisplay?.isCompany ? (
-                <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-                  {t('chat.companyBadge')}
-                </span>
-              ) : null}
-              {isGeneratingReport ? (
-                <span className="shrink-0 text-[11px] text-white/80">{t('chat.companyReportGenerating')}</span>
-              ) : null}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="truncate text-base font-bold text-white sm:text-lg">{headerTitle}</h3>
+                  {companyDisplay?.isCompany ? (
+                    <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                      {t('chat.companyBadge')}
+                    </span>
+                  ) : null}
+                  {isGeneratingReport ? (
+                    <span className="shrink-0 text-[11px] text-white/80">{t('chat.companyReportGenerating')}</span>
+                  ) : null}
+                </div>
+                {headerSubtitle ? (
+                  <p className="truncate text-xs text-white/75">{headerSubtitle}</p>
+                ) : null}
+                <p className="flex items-center gap-1.5 text-xs text-white/85">
+                  <span
+                    className={`inline-block h-2 w-2 rounded-full ${contact.isOnline ? 'bg-[#25d366]' : 'bg-white/40'}`}
+                  />
+                  {supervisingAgentName
+                    ? t('chat.supervising', { name: supervisingAgentName })
+                    : contact.isOnline
+                      ? t('chat.online')
+                      : contact.contactLastSeenAtUtc
+                        ? t('chat.lastSeen')
+                        : t('chat.offline')}
+                </p>
+              </div>
+            </>
+          )
+
+          if (onCompanyClick) {
+            return (
+              <button
+                type="button"
+                onClick={onCompanyClick}
+                disabled={isGeneratingReport}
+                className="flex min-w-0 flex-1 items-center gap-2 rounded-xl text-start transition hover:bg-white/10 disabled:opacity-70 sm:gap-3"
+                title={t('chat.companyReportHint')}
+              >
+                {headerContent}
+              </button>
+            )
+          }
+
+          return (
+            <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+              {headerContent}
             </div>
-            {headerSubtitle ? (
-              <p className="truncate text-xs text-white/75">{headerSubtitle}</p>
-            ) : null}
-            <p className="flex items-center gap-1.5 text-xs text-white/85">
-              <span
-                className={`inline-block h-2 w-2 rounded-full ${contact.isOnline ? 'bg-[#25d366]' : 'bg-white/40'}`}
-              />
-              {supervisingAgentName
-                ? t('chat.supervising', { name: supervisingAgentName })
-                : contact.isOnline
-                  ? t('chat.online')
-                  : contact.contactLastSeenAtUtc
-                    ? t('chat.lastSeen')
-                    : t('chat.offline')}
-            </p>
-          </div>
-        </button>
+          )
+        })()}
 
         {canCloseConversation && onCloseConversation ? (
           <button

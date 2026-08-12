@@ -213,10 +213,11 @@ public sealed partial class ChatAppService(
 
             if (cursor is not null)
             {
+                var cursorSentAt = cursor.SentAtUtc;
+                var cursorMessageId = cursor.MessageId;
                 query = query.Where(m =>
-                    m.SentAtUtc < cursor.SentAtUtc ||
-                    (m.SentAtUtc == cursor.SentAtUtc &&
-                     string.Compare(m.MessageId, cursor.MessageId, StringComparison.Ordinal) < 0));
+                    m.SentAtUtc < cursorSentAt ||
+                    (m.SentAtUtc == cursorSentAt && m.MessageId.CompareTo(cursorMessageId) < 0));
             }
         }
 

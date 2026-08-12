@@ -1,9 +1,13 @@
 export type AiConversationListItem = {
   id: string
+  userId: string
   clientSessionId: string
   titlePreview: string | null
   lastMessageAtUtc: string
   messageCount: number
+  companyName: string | null
+  contactFullName: string | null
+  companyImageUrl: string | null
 }
 
 export type AiConversationMessage = {
@@ -30,6 +34,11 @@ export type AiConversationListPage = {
   totalPages: number
 }
 
+export type AiConversationReportRequest = {
+  conversationId: string
+  language: 'ar' | 'en'
+}
+
 function readString(raw: unknown, fallback = ''): string {
   return raw == null ? fallback : String(raw)
 }
@@ -39,10 +48,14 @@ export function normalizeAiConversationListItem(
 ): AiConversationListItem {
   return {
     id: readString(raw.id ?? raw.Id),
+    userId: readString(raw.userId ?? raw.UserId),
     clientSessionId: readString(raw.clientSessionId ?? raw.ClientSessionId),
     titlePreview: (raw.titlePreview ?? raw.TitlePreview ?? null) as string | null,
     lastMessageAtUtc: readString(raw.lastMessageAtUtc ?? raw.LastMessageAtUtc),
     messageCount: Number(raw.messageCount ?? raw.MessageCount ?? 0),
+    companyName: (raw.companyName ?? raw.CompanyName ?? null) as string | null,
+    contactFullName: (raw.contactFullName ?? raw.ContactFullName ?? null) as string | null,
+    companyImageUrl: (raw.companyImageUrl ?? raw.CompanyImageUrl ?? null) as string | null,
   }
 }
 

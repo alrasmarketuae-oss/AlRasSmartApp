@@ -1276,6 +1276,8 @@ export const arMessages = {
       assistant: 'المساعد',
       loadError: 'تعذر تحميل محادثات AI.',
       loadMessagesError: 'تعذر تحميل رسائل المحادثة.',
+      companyReportHint: 'اضغط لإنشاء تقرير AI من محادثة المساعد الذكي والإعلانات',
+      companyReportError: 'تعذر إنشاء تقرير محادثة AI',
     },
     employees: {
       title: 'الموظفين',

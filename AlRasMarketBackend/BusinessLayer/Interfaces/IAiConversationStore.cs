@@ -4,10 +4,14 @@ namespace BusinessLayer.Interfaces;
 
 public sealed record AiConversationListItemDto(
     Guid Id,
+    Guid UserId,
     string ClientSessionId,
     string? TitlePreview,
     string LastMessageAtUtc,
-    int MessageCount);
+    int MessageCount,
+    string? CompanyName,
+    string? ContactFullName,
+    string? CompanyImageUrl);
 
 public sealed record AiConversationMessageDto(
     long Id,

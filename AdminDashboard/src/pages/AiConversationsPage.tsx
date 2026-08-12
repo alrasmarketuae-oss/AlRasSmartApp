@@ -1,9 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { FetchBaseQueryError } from '@reduxjs/toolkit/query'
+import type { SerializedError } from '@reduxjs/toolkit'
+import ChatCompanyReportDialog from '../components/chat/ChatCompanyReportDialog'
 import PageHeader from '../components/layout/PageHeader'
 import { IconChat } from '../components/icons'
 import { useAppPreferences } from '../context/AppPreferencesProvider'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
+import { resolveAssetUrl } from '../lib/assets'
 import {
+  useGenerateAiConversationReportMutation,
   useGetAdminAiConversationsQuery,
   useLazyGetAdminAiConversationMessagesQuery,
 } from '../store'
@@ -12,6 +17,7 @@ import type {
   AiConversationListItem,
   AiConversationMessage,
 } from '../types/aiConversation'
+import type { ChatCompanyReport } from '../types/chatCompanyReport'
 import { getRtkErrorMessage } from '../utils/rtkError'
 
 function formatWhen(value: string): string {
@@ -20,8 +26,12 @@ function formatWhen(value: string): string {
   return date.toLocaleString()
 }
 
+function resolveCompanyLabel(item: AiConversationListItem): string {
+  return item.companyName?.trim() || item.contactFullName?.trim() || item.userId
+}
+
 export default function AiConversationsPage() {
-  const { t } = useAppPreferences()
+  const { t, locale } = useAppPreferences()
   const [userFilter, setUserFilter] = useState('')
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<AiConversationListItem | null>(null)
@@ -29,6 +39,9 @@ export default function AiConversationsPage() {
   const [hasMore, setHasMore] = useState(false)
   const [nextBefore, setNextBefore] = useState<number | null>(null)
   const [isLoadingOlder, setIsLoadingOlder] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
+  const [reportResult, setReportResult] = useState<ChatCompanyReport | null>(null)
+  const [reportError, setReportError] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const debouncedUserId = useDebouncedValue(userFilter.trim(), 350)
 
@@ -47,6 +60,9 @@ export default function AiConversationsPage() {
 
   const [fetchMessages, { isFetching: messagesLoading, error: messagesError }] =
     useLazyGetAdminAiConversationMessagesQuery()
+
+  const [generateReport, { isLoading: isGeneratingReport }] =
+    useGenerateAiConversationReportMutation()
 
   const loadInitialMessages = useCallback(
     async (conversation: AiConversationListItem) => {
@@ -111,6 +127,24 @@ export default function AiConversationsPage() {
     return () => node.removeEventListener('scroll', onScroll)
   }, [handleLoadOlder, selected?.id])
 
+  async function handleGenerateReport() {
+    if (!selected) return
+    setReportOpen(true)
+    setReportError(null)
+    setReportResult(null)
+    try {
+      const result = await generateReport({
+        conversationId: selected.id,
+        language: locale === 'en' ? 'en' : 'ar',
+      }).unwrap()
+      setReportResult(result)
+    } catch (error: unknown) {
+      setReportError(
+        getRtkErrorMessage(error as FetchBaseQueryError | SerializedError, t('aiConversations.companyReportError')),
+      )
+    }
+  }
+
   const items = listPage?.items ?? []
   const totalPages = listPage?.totalPages ?? 1
 
@@ -118,6 +152,11 @@ export default function AiConversationsPage() {
     if (!selected) return ''
     return selected.titlePreview?.trim() || t('aiConversations.untitled')
   }, [selected, t])
+
+  const selectedCompanyLabel = selected ? resolveCompanyLabel(selected) : ''
+  const selectedCompanyImage = selected?.companyImageUrl
+    ? resolveAssetUrl(selected.companyImageUrl)
+    : null
 
   return (
     <div className="space-y-5">
@@ -155,25 +194,40 @@ export default function AiConversationsPage() {
             ) : (
               items.map((item) => {
                 const active = selected?.id === item.id
+                const companyLabel = resolveCompanyLabel(item)
+                const avatarUrl = item.companyImageUrl ? resolveAssetUrl(item.companyImageUrl) : null
                 return (
                   <button
                     key={item.id}
                     type="button"
                     onClick={() => setSelected(item)}
-                    className={`admin-border flex w-full flex-col gap-1 border-b px-4 py-3 text-start transition ${
+                    className={`admin-border flex w-full gap-3 border-b px-4 py-3 text-start transition ${
                       active ? 'bg-indigo-50 dark:bg-indigo-950/30' : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'
                     }`}
                   >
-                    <span className="line-clamp-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                      {item.titlePreview?.trim() || t('aiConversations.untitled')}
-                    </span>
-                    <span className="text-xs text-slate-500">
-                      {formatWhen(item.lastMessageAtUtc)} · {item.messageCount}{' '}
-                      {t('aiConversations.messages')}
-                    </span>
-                    <span className="truncate text-[11px] text-slate-400">
-                      {item.clientSessionId}
-                    </span>
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt=""
+                        className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-indigo-100 dark:ring-indigo-900"
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-200">
+                        {companyLabel.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        {companyLabel}
+                      </span>
+                      <span className="line-clamp-2 text-xs text-slate-600 dark:text-slate-300">
+                        {item.titlePreview?.trim() || t('aiConversations.untitled')}
+                      </span>
+                      <span className="mt-1 block text-xs text-slate-500">
+                        {formatWhen(item.lastMessageAtUtc)} · {item.messageCount}{' '}
+                        {t('aiConversations.messages')}
+                      </span>
+                    </div>
                   </button>
                 )
               })
@@ -211,12 +265,46 @@ export default function AiConversationsPage() {
           ) : (
             <>
               <header className="admin-border border-b bg-white px-5 py-4 dark:bg-slate-900">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                  {selectedTitle}
-                </h2>
-                <p className="mt-1 text-xs text-slate-500">
-                  {t('aiConversations.sessionId')}: {selected.clientSessionId}
-                </p>
+                <button
+                  type="button"
+                  onClick={() => void handleGenerateReport()}
+                  disabled={isGeneratingReport}
+                  title={t('aiConversations.companyReportHint')}
+                  className="flex w-full items-start gap-3 rounded-xl text-start transition hover:bg-slate-50 disabled:opacity-70 dark:hover:bg-slate-800/60"
+                >
+                  {selectedCompanyImage ? (
+                    <img
+                      src={selectedCompanyImage}
+                      alt=""
+                      className="h-12 w-12 shrink-0 rounded-xl object-cover ring-2 ring-indigo-100 dark:ring-indigo-900"
+                    />
+                  ) : (
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-lg font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-200">
+                      {selectedCompanyLabel.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="truncate text-lg font-bold text-slate-900 dark:text-slate-100">
+                        {selectedCompanyLabel}
+                      </h2>
+                      {isGeneratingReport ? (
+                        <span className="text-xs text-indigo-600 dark:text-indigo-300">
+                          {t('chat.companyReportGenerating')}
+                        </span>
+                      ) : null}
+                    </div>
+                    {selected.contactFullName && selected.companyName ? (
+                      <p className="truncate text-sm text-slate-500">{selected.contactFullName}</p>
+                    ) : null}
+                    <p className="mt-1 line-clamp-2 text-sm text-slate-600 dark:text-slate-300">
+                      {selectedTitle}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      {t('aiConversations.sessionId')}: {selected.clientSessionId}
+                    </p>
+                  </div>
+                </button>
               </header>
 
               <div ref={scrollRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4">
@@ -264,6 +352,18 @@ export default function AiConversationsPage() {
           )}
         </section>
       </div>
+
+      <ChatCompanyReportDialog
+        open={reportOpen}
+        busy={isGeneratingReport}
+        error={reportError}
+        report={reportResult}
+        onClose={() => {
+          if (isGeneratingReport) return
+          setReportOpen(false)
+        }}
+        t={t}
+      />
     </div>
   )
 }

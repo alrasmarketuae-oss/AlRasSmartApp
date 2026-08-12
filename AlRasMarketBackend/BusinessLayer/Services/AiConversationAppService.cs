@@ -225,19 +225,49 @@ public sealed class AiConversationAppService(IRasAlSouqDbContext dbContext) : IA
             .Select(x => new
             {
                 x.Id,
+                x.UserId,
                 x.ClientSessionId,
                 x.TitlePreview,
                 x.LastMessageAtUtc,
-                MessageCount = x.Messages.Count
+                MessageCount = x.Messages.Count,
+                UserFullName = x.User!.FullName,
+                UserCompanyName = x.User!.CompanyName,
+                UserImgPath = x.User!.ImgPath,
             })
             .ToListAsync(cancellationToken);
 
-        var items = rows.Select(x => new AiConversationListItemDto(
-            x.Id,
-            x.ClientSessionId,
-            x.TitlePreview,
-            UtcDateTimeHelper.FormatApiDateTime(x.LastMessageAtUtc)!,
-            x.MessageCount)).ToList();
+        var userIds = rows.Select(x => x.UserId).Distinct().ToList();
+        var companyImages = userIds.Count == 0
+            ? []
+            : await dbContext.CompanyImages
+                .AsNoTracking()
+                .Where(ci => userIds.Contains(ci.UserId))
+                .OrderByDescending(ci => ci.IsPrimary)
+                .ThenBy(ci => ci.Id)
+                .Select(ci => new { ci.UserId, ci.ImagePath })
+                .ToListAsync(cancellationToken);
+
+        var imageByUser = companyImages
+            .GroupBy(x => x.UserId)
+            .ToDictionary(g => g.Key, g => g.First().ImagePath);
+
+        var items = rows.Select(x =>
+        {
+            var companyName = !string.IsNullOrWhiteSpace(x.UserCompanyName)
+                ? x.UserCompanyName!.Trim()
+                : x.UserFullName.Trim();
+            imageByUser.TryGetValue(x.UserId, out var companyImage);
+            return new AiConversationListItemDto(
+                x.Id,
+                x.UserId,
+                x.ClientSessionId,
+                x.TitlePreview,
+                UtcDateTimeHelper.FormatApiDateTime(x.LastMessageAtUtc)!,
+                x.MessageCount,
+                companyName,
+                x.UserFullName.Trim(),
+                companyImage ?? x.UserImgPath);
+        }).ToList();
 
         return new AiConversationListPageDto(items, page, pageSize, totalCount, totalPages);
     }

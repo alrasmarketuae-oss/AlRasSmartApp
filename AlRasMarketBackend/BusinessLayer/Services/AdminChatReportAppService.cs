@@ -6,6 +6,7 @@ using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using BusinessLayer.Options;
 using DataLayer.Interfaces;
+using DataLayer.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -70,6 +71,97 @@ public sealed class AdminChatReportAppService(
             user.FullName,
             messages,
             ads,
+            isAiConversation: false,
+            cancellationToken).ConfigureAwait(false);
+
+        return new AdminChatCompanyReportDto
+        {
+            CompanyName = companyName,
+            ContactFullName = user.FullName,
+            CompanyImageUrl = companyImage ?? user.ImgPath,
+            AdsCount = ads.Count,
+            Report = report,
+            Language = language,
+        };
+    }
+
+    public async Task<AdminChatCompanyReportDto> GenerateAiConversationReportAsync(
+        Guid conversationId,
+        string language = "ar",
+        CancellationToken cancellationToken = default)
+    {
+        if (conversationId == Guid.Empty)
+        {
+            throw new ArgumentException("ConversationId is required.");
+        }
+
+        language = NormalizeLanguage(language);
+
+        var conversation = await dbContext.AiConversations
+            .AsNoTracking()
+            .Where(c => c.Id == conversationId)
+            .Select(c => new { c.UserId })
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false)
+            ?? throw new KeyNotFoundException("AI conversation not found.");
+
+        var rows = await dbContext.AiConversationMessages
+            .AsNoTracking()
+            .Where(m => m.ConversationId == conversationId)
+            .OrderByDescending(m => m.CreatedAtUtc)
+            .ThenByDescending(m => m.Id)
+            .Take(10)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        rows.Reverse();
+
+        var messages = rows
+            .Where(m => !string.IsNullOrWhiteSpace(m.Content))
+            .Select(m => new AdminChatReportMessageInput
+            {
+                Sender = m.Role == AiConversationMessageRole.User ? "user" : "assistant",
+                Content = m.Content,
+                MessageType = "Text",
+                SentAtUtc = UtcDateTimeHelper.FormatApiDateTime(m.CreatedAtUtc)!,
+            })
+            .ToList();
+
+        var user = await dbContext.Users
+            .AsNoTracking()
+            .Where(u => u.Id == conversation.UserId)
+            .Select(u => new
+            {
+                u.Id,
+                u.FullName,
+                u.CompanyName,
+                u.ImgPath,
+            })
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false)
+            ?? throw new KeyNotFoundException("Participant user not found.");
+
+        var companyImage = await dbContext.CompanyImages
+            .AsNoTracking()
+            .Where(ci => ci.UserId == conversation.UserId)
+            .OrderByDescending(ci => ci.IsPrimary)
+            .ThenBy(ci => ci.Id)
+            .Select(ci => ci.ImagePath)
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var ads = await LoadAdsAsync(conversation.UserId, cancellationToken).ConfigureAwait(false);
+        var companyName = !string.IsNullOrWhiteSpace(user.CompanyName)
+            ? user.CompanyName!.Trim()
+            : user.FullName.Trim();
+
+        var report = await GenerateReportTextAsync(
+            language,
+            companyName,
+            user.FullName,
+            messages,
+            ads,
+            isAiConversation: true,
             cancellationToken).ConfigureAwait(false);
 
         return new AdminChatCompanyReportDto
@@ -161,10 +253,11 @@ public sealed class AdminChatReportAppService(
         string fullName,
         IReadOnlyList<AdminChatReportMessageInput> messages,
         IReadOnlyList<AdminChatReportAdLine> ads,
+        bool isAiConversation,
         CancellationToken cancellationToken)
     {
         var apiKey = configuration["OpenAI:ApiKey"];
-        var prompt = BuildPrompt(language, companyName, fullName, messages, ads);
+        var prompt = BuildPrompt(language, companyName, fullName, messages, ads, isAiConversation);
 
         if (string.IsNullOrWhiteSpace(apiKey))
         {
@@ -189,18 +282,33 @@ public sealed class AdminChatReportAppService(
                     {
                         role = "system",
                         content = language == "ar"
-                            ? """
-                              أنت محلل دعم في منصة الراس الذكي. اكتب تقريراً إدارياً موجزاً وعملياً بالعربية
-                              بناءً على آخر رسائل المحادثة وقائمة إعلانات الشركة/المستخدم.
-                              استخدم عناوين Markdown. لا تخترع معلومات غير موجودة في البيانات.
-                              غطِ: ملخص المحادثة، احتياج العميل/الشركة، الإعلانات ذات الصلة، وتوصيات للموظف.
-                              """
-                            : """
-                              You are a support analyst for Al Ras Smart marketplace. Write a concise admin report
-                              in English based on the latest chat messages and the participant's ad catalog.
-                              Use Markdown headings. Do not invent facts not present in the data.
-                              Cover: conversation summary, participant needs, relevant ads, and agent recommendations.
-                              """,
+                            ? isAiConversation
+                                ? """
+                                  أنت محلل في منصة الراس الذكي. اكتب تقريراً إدارياً موجزاً وعملياً بالعربية
+                                  بناءً على آخر رسائل محادثة المساعد الذكي (سؤال المستخدم + جواب AI) وقائمة إعلانات الشركة/المستخدم.
+                                  استخدم عناوين Markdown. لا تخترع معلومات غير موجودة في البيانات.
+                                  غطِ: ملخص المحادثة مع AI، احتياج المستخدم/الشركة، الإعلانات ذات الصلة، وتوصيات للموظف.
+                                  """
+                                : """
+                                  أنت محلل دعم في منصة الراس الذكي. اكتب تقريراً إدارياً موجزاً وعملياً بالعربية
+                                  بناءً على آخر رسائل المحادثة وقائمة إعلانات الشركة/المستخدم.
+                                  استخدم عناوين Markdown. لا تخترع معلومات غير موجودة في البيانات.
+                                  غطِ: ملخص المحادثة، احتياج العميل/الشركة، الإعلانات ذات الصلة، وتوصيات للموظف.
+                                  """
+                            : isAiConversation
+                                ? """
+                                  You are an analyst for Al Ras Smart marketplace. Write a concise admin report
+                                  in English based on the latest AI assistant conversation (user questions + AI answers)
+                                  and the participant's ad catalog.
+                                  Use Markdown headings. Do not invent facts not present in the data.
+                                  Cover: AI conversation summary, participant needs, relevant ads, and staff recommendations.
+                                  """
+                                : """
+                                  You are a support analyst for Al Ras Smart marketplace. Write a concise admin report
+                                  in English based on the latest chat messages and the participant's ad catalog.
+                                  Use Markdown headings. Do not invent facts not present in the data.
+                                  Cover: conversation summary, participant needs, relevant ads, and agent recommendations.
+                                  """,
                     },
                     new { role = "user", content = prompt },
                 },
@@ -233,14 +341,22 @@ public sealed class AdminChatReportAppService(
         string companyName,
         string fullName,
         IReadOnlyList<AdminChatReportMessageInput> messages,
-        IReadOnlyList<AdminChatReportAdLine> ads)
+        IReadOnlyList<AdminChatReportAdLine> ads,
+        bool isAiConversation)
     {
         var sb = new StringBuilder();
         sb.AppendLine(language == "ar" ? "## بيانات المشارك" : "## Participant");
         sb.AppendLine($"Company: {companyName}");
         sb.AppendLine($"Contact name: {fullName}");
         sb.AppendLine();
-        sb.AppendLine(language == "ar" ? "## آخر الرسائل (10 كحد أقصى)" : "## Latest messages (up to 10)");
+        sb.AppendLine(
+            language == "ar"
+                ? isAiConversation
+                    ? "## آخر رسائل محادثة AI (10 كحد أقصى)"
+                    : "## آخر الرسائل (10 كحد أقصى)"
+                : isAiConversation
+                    ? "## Latest AI conversation messages (up to 10)"
+                    : "## Latest messages (up to 10)");
         if (messages.Count == 0)
         {
             sb.AppendLine(language == "ar" ? "(لا توجد رسائل نصية)" : "(No messages provided)");
