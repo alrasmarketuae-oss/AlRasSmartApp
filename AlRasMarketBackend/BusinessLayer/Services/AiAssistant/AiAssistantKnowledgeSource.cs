@@ -24,6 +24,7 @@ internal static class AiAssistantKnowledgeSource
         AddBrowsingAndListings(chunks);
         AddBuyingAndPayments(chunks);
         AddOrdersAndTracking(chunks);
+        AddRecentOrdersAndAdsUpdates(chunks);
         AddReturnsAndRefunds(chunks);
         AddSupplierAdCreation(chunks);
         AddAdManagement(chunks);
@@ -456,7 +457,8 @@ internal static class AiAssistantKnowledgeSource
             منتجات الصفحة الرئيسية هي منتجات الأصناف فقط، أي المنتجات التي لها CategoryId، وليست أنواع الخدمات وحدها.
             البار السفلي للمورد يشمل: الصفحة الرئيسية، إنشاء إعلان، طلباتي (My Orders)، الحساب (Account)، الملف الشخصي (Profile).
             صفحة الحساب تنقسم إلى قسمين: إعلاناتي (My Ads) وعروضي (My Offers).
-            صفحة طلباتي للمورد تعرض مشترياته (الطلبات التي اشتراها كمشترٍ)، والمورد يستطيع الشراء والطلب كأي مشتري بالإضافة لمتابعة الطلبات الواردة على إعلاناته.
+            صفحة طلباتي للمورد فيها تبويبان: الواردة (طلبات وعروض واردة على إعلاناتك — تقبل أو ترفض) والمشتريات (الطلبات التي اشتراها المورد كمشتري).
+            على أيقونة طلباتي في البار السفلي تظهر شارة حمراء بعدد الطلبات الواردة التي بانتظار موافقتك كبائع.
             """);
         Add(chunks, "supplier-nav", "Supplier interface and navigation", "en", ["supplier"],
             """
@@ -464,7 +466,8 @@ internal static class AiAssistantKnowledgeSource
             Home products are category products only, meaning items that have a CategoryId, not the service types alone.
             The supplier bottom bar includes: Home, Create Ad, My Orders, Account, and Profile.
             The Account page has two sections: My Ads and My Offers.
-            My Orders for a supplier shows purchases they placed as a buyer; suppliers can buy and order like any buyer, in addition to incoming orders on their ads.
+            My Orders for a supplier has two tabs: Incoming (orders and offers received on your ads — accept or reject) and Purchases (orders the supplier placed as a buyer).
+            A red badge on the My Orders icon shows how many incoming orders are awaiting your approval as seller.
             """);
 
         Add(chunks, "personal-nav", "واجهة العميل الفردي والتنقل", "ar", ["personal"],
@@ -473,7 +476,7 @@ internal static class AiAssistantKnowledgeSource
             العميل الفردي لا يرى الأصناف (Categories) في الصفحة الرئيسية ولا يرى منتجات الجملة، لأنه يشتري بالتجزئة.
             البار السفلي للعميل الفردي يحتوي على ثلاث صفحات فقط: الصفحة الرئيسية (Home)، وطلباتي (My Orders)، والملف الشخصي (Profile).
             لا يظهر له زر إنشاء إعلان ولا صفحة الحساب الخاصة بالإعلانات.
-            صفحة طلباتي متاحة له بالكامل ومنها يتابع مشترياته وحالة كل طلب.
+            صفحة طلباتي للعميل الفردي تعرض المشتريات فقط (بدون تبويبات): كل الطلبات التي اشتراها كمشتري.
             الملف الشخصي يحتوي على كل الإعدادات والدعم.
             """);
         Add(chunks, "personal-nav", "Personal customer interface and navigation", "en", ["personal"],
@@ -482,7 +485,7 @@ internal static class AiAssistantKnowledgeSource
             A personal customer does not see Categories on home and does not see wholesale products, because this account buys at retail.
             The bottom bar has three pages only: Home, My Orders, and Profile.
             There is no Create Ad button, no ads Account page.
-            My Orders is fully available and is where this account follows its purchases and each order's status.
+            My Orders for a personal customer shows Purchases only (no tabs): every order they placed as a buyer.
             Profile contains all settings and support.
             """);
 
@@ -492,7 +495,8 @@ internal static class AiAssistantKnowledgeSource
             منتجات الصفحة الرئيسية لعميل الشركة ليست Retail فقط كما في حساب الفرد، بل منتجات الأصناف مثل المورد، لأنه يشتري بالجملة.
             البار السفلي: الصفحة الرئيسية (Home)، وإنشاء طلب (Create Order)، والحساب (Account)، وطلباتي (My Orders)، والملف الشخصي (Profile).
             صفحة Create Order مخصصة لإنشاء إعلان Request فقط لأنه عملية شراء/طلب بضاعة.
-            صفحة الحساب تعرض إعلانات Request التي نشرها والعروض التي قدمها على طلبات الآخرين.
+            صفحة الحساب (Account) لعميل الشركة تعرض إعلاناتي فقط — إعلانات Request التي نشرها، بدون قسم عروضي (My Offers).
+            صفحة طلباتي لعميل الشركة فيها تبويبان: طلباتي (Requests — إعلانات Request التي نشرها + العروض الواردة عليها) والمشتريات (Orders — مشترياتك كمشتري).
             """);
         Add(chunks, "company-nav", "Company customer interface and navigation", "en", ["company_customer"],
             """
@@ -500,7 +504,8 @@ internal static class AiAssistantKnowledgeSource
             Home products are not Retail-only as they are for a personal account; they are category products like the supplier home, because this account buys wholesale.
             Bottom bar: Home, Create Order, Account, My Orders, and Profile.
             Create Order is dedicated to creating Request ads only, since a request is a purchase/sourcing action.
-            The Account page shows the Request ads it published and the offers it submitted on other companies' requests.
+            The Account page for a company customer shows My Ads only — Request ads they published, with no My Offers section.
+            My Orders for a company customer has two tabs: Requests (Request ads you published plus incoming supplier offers) and Orders (your purchases as a buyer).
             """);
 
         Add(chunks, "shipping-nav", "واجهة شركة الشحن والتنقل", "ar", ["shipping"],
@@ -939,6 +944,8 @@ internal static class AiAssistantKnowledgeSource
             راجع السعر والكمية والوحدة والمواصفات في صفحة التفاصيل.
             حدد الكمية المطلوبة ثم أضف المنتج إلى السلة أو اضغط الشراء مباشرة.
             اختر عنوان التسليم من العناوين المحفوظة أو أضف عنواناً جديداً.
+            عند إضافة عنوان Retail داخل الإمارات: أدخل السطر الأول للشارع/المنطقة، ورقم الغرفة أو المكتب، واسم المبنى؛ يُحفظ تلقائياً بصيغة "رقم X في اسم المبنى".
+            يظهر تنبيه أن رسوم الشحن الإضافية قد تُحسب إذا تجاوز وزن المنتجات 10 كيلو (2 درهم لكل كيلو فوق 10، وأول 10 كيلو مجاناً).
             اختر طريقة الدفع: بطاقة إلكترونية أو الدفع عند الاستلام.
             أكد الطلب، وبعدها يمكنك متابعة حالته من صفحة طلباتي (My Orders).
             """);
@@ -948,6 +955,8 @@ internal static class AiAssistantKnowledgeSource
             Review the price, quantity, unit, and specifications on the details page.
             Choose the quantity you need, then add the product to the cart or buy it directly.
             Select a delivery address from your saved addresses or add a new one.
+            When adding a Retail address inside the UAE: enter street/area line 1, room or unit number, and building name; it is saved automatically as "Room number X at {building name}".
+            A note explains that extra shipping fees may apply if total weight exceeds 10 kg (AED 2 per kg above 10; the first 10 kg are free).
             Choose the payment method: card payment or cash on delivery.
             Confirm the order, then follow its status from the My Orders page.
             """);
@@ -958,6 +967,7 @@ internal static class AiAssistantKnowledgeSource
             داخل السلة يمكنك تعديل الكمية أو حذف منتج قبل تأكيد الطلب.
             تأكد من احترام الحد الأدنى للطلب المحدد في الإعلان، وإلا لن يُقبل الطلب.
             بعد مراجعة السلة تنتقل إلى اختيار العنوان وطريقة الدفع ثم تأكيد الطلب.
+            في طلبات Retail مع التوصيل للمنزل يُعرض تنبيه: رسوم إضافية محتملة إذا الوزن أكثر من 10 كيلو (2 درهم/كيلو فوق 10، وأول 10 كيلو مجاناً).
             """);
         Add(chunks, "cart", "The shopping cart", "en", Buyers,
             """
@@ -965,6 +975,7 @@ internal static class AiAssistantKnowledgeSource
             Inside the cart you can change quantities or remove an item before confirming.
             Respect the minimum order quantity set on the listing, otherwise the order will not be accepted.
             After reviewing the cart you move to address selection, payment method, and order confirmation.
+            For Retail home delivery, a note warns that extra shipping may apply above 10 kg total weight (AED 2 per kg above 10; first 10 kg free).
             """);
 
         Add(chunks, "payment-methods", "طرق الدفع المتاحة", "ar", Buyers,
@@ -1040,20 +1051,22 @@ internal static class AiAssistantKnowledgeSource
             """
             تتبع الطلبات متاح لكل حساب يستطيع الشراء: العميل الفردي وعميل الشركة والمورد.
             افتح صفحة طلباتي (My Orders) من البار السفلي.
+            شكل الصفحة يختلف حسب نوع حسابك: العميل الفردي يرى المشتريات فقط (بدون تبويبات)؛ المورد يرى تبويبي الواردة والمشتريات؛ عميل الشركة يرى تبويبي طلباتي (Requests) والمشتريات (Orders).
             ستجد قائمة بكل طلباتك، ولكل طلب حالته الحالية وتاريخه وتفاصيله.
             اضغط على أي طلب لفتح تفاصيله ورؤية سجل تغير الحالة خطوة بخطوة من لحظة الطلب حتى التسليم.
             يمكنك أيضاً التمييز بين الطلبات المفتوحة الجارية والطلبات المكتملة.
-            تصلك إشعارات عند تغير حالة طلبك.
+            تصلك إشعارات عند تغير حالة طلبك، وتُحدَّث قائمة الطلبات تلقائياً داخل التطبيق دون الحاجة لإعادة فتح الصفحة.
             ملاحظة مهمة: تتبع الطلبات ليس مقيداً بنوع الحساب؛ العميل الفردي لديه صفحة طلباتي كاملة ويستطيع تتبع مشترياته بشكل طبيعي.
             """);
         Add(chunks, "orders-track", "How to track my orders", "en", Buyers,
             """
             Order tracking is available to every account that can buy: personal customers, company customers, and suppliers.
             Open the My Orders page from the bottom bar.
+            The page layout depends on your account type: personal customers see Purchases only (no tabs); suppliers see Incoming and Purchases tabs; company customers see Requests and Orders (Purchases) tabs.
             You will see a list of all your orders, each with its current status, date, and details.
             Tap any order to open its details and see the status history step by step from placement to delivery.
             You can also distinguish open, in-progress orders from completed ones.
-            Notifications are sent when your order status changes.
+            Notifications are sent when your order status changes, and the order list refreshes automatically inside the app without reopening the page.
             Important note: order tracking is not restricted by account type; a personal customer has a full My Orders page and can track purchases normally.
             """);
 
@@ -1074,15 +1087,19 @@ internal static class AiAssistantKnowledgeSource
 
         Add(chunks, "orders-track-supplier", "تتبع الطلبات والمبيعات للمورد", "ar", ["supplier"],
             """
-            المورد لديه صفحة طلباتي (My Orders) في البار السفلي لتتبع الطلبات التي اشتراها هو، ومتابعة طلباته المفتوحة حالياً.
-            كما يتابع المورد الطلبات الواردة على إعلاناته ومراحل تنفيذها وحالة التحصيل.
+            المورد لديه صفحة طلباتي (My Orders) في البار السفلي فيها تبويبان: الواردة (طلبات وعروض واردة على إعلاناتك) والمشتريات (ما اشتراه المورد كمشتري).
+            تابع الطلبات الواردة من تبويب الواردة؛ الطلبات التي تحتاج موافقتك كبائع تظهر بحالة بانتظار موافقة البائع، وفي تطبيق الجوال قد ترى نصاً مختصراً "بانتظار موافقتك".
+            على أيقونة طلباتي في البار السفلي تظهر شارة حمراء بعدد الطلبات الواردة التي بانتظار موافقتك.
+            القائمة تُحدَّث تلقائياً عند تغير حالة أي طلب.
             في الطلبات غير التجزئة قد تحتاج بعض الطلبات موافقة البائع، وتظهر بحالة بانتظار موافقة البائع حتى يقبلها أو يرفضها.
-            صفحة الحساب (Account) منفصلة عن الطلبات وتخص إعلاناته وعروضه.
+            صفحة الحساب (Account) منفصلة عن الطلبات وتخص إعلاناتك وعروضك.
             """);
         Add(chunks, "orders-track-supplier", "Order and sales tracking for suppliers", "en", ["supplier"],
             """
-            A supplier has a My Orders page in the bottom bar to track orders they purchased and to follow their currently open orders.
-            Suppliers also follow incoming orders on their listings, their fulfilment stages, and collection status.
+            A supplier has a My Orders page in the bottom bar with two tabs: Incoming (orders and offers received on your ads) and Purchases (orders the supplier placed as a buyer).
+            Follow incoming orders from the Incoming tab; orders needing your approval as seller show as Awaiting seller approval, and on the mobile app you may see the shorter label "Awaiting your approval".
+            A red badge on the My Orders icon shows how many incoming orders are awaiting your approval.
+            The list refreshes automatically when any order status changes.
             For non-retail orders, some orders need seller approval and appear as Awaiting seller approval until accepted or rejected.
             The Account page is separate from orders and covers the supplier's ads and offers.
             """);
@@ -1169,13 +1186,130 @@ internal static class AiAssistantKnowledgeSource
             """
             ترسل المنصة إشعارات عند الأحداث المهمة مثل تغير حالة الطلب، واعتماد الإعلان أو رفضه، وقبول أو رفض العرض المقدم.
             تأكد من السماح بالإشعارات لتطبيق الراس الذكي في إعدادات جهازك حتى تصلك التنبيهات.
-            حتى إن لم تصلك الإشعارات يمكنك دائماً متابعة الحالة يدوياً من صفحة طلباتي أو صفحة الحساب.
+            حتى إن لم تصلك الإشعارات يمكنك دائماً متابعة الحالة يدوياً من صفحة طلباتي أو صفحة الحساب؛ قائمة الطلبات في التطبيق تُحدَّث تلقائياً عند تغير أي حالة.
             """);
         Add(chunks, "notifications", "Notifications", "en", SignedIn,
             """
             The platform sends notifications for important events such as order status changes, listing approval or rejection, acceptance or rejection of a submitted offer.
             Make sure notifications are allowed for the Al Ras Smart app in your device settings so alerts reach you.
-            Even without notifications you can always check status manually from My Orders or the Account page.
+            Even without notifications you can always check status manually from My Orders or the Account page; the order list in the app refreshes automatically when any status changes.
+            """);
+    }
+
+    // ---------------------------------------------------------------------
+    // 9b. Recent orders & ads UX (My Orders tabs, realtime, retail address)
+    // ---------------------------------------------------------------------
+
+    private static void AddRecentOrdersAndAdsUpdates(ICollection<AiKnowledgeChunk> chunks)
+    {
+        Add(chunks, "my-orders-tabs", "تبويبات صفحة طلباتي حسب نوع الحساب", "ar", Buyers,
+            """
+            سؤال: وين الطلبات الواردة؟ وين المشتريات؟ كم تبويب في طلباتي؟
+            صفحة طلباتي (My Orders) في البار السفلي تعرض محتوى مختلفاً حسب نوع حسابك:
+            العميل الفردي (Personal): قائمة واحدة فقط للمشتريات — كل طلبات Retail التي اشتراها، بدون تبويبات.
+            المورد (Supplier): تبويبان — الواردة (Incoming): الطلبات والعروض الواردة على إعلاناته التي يحتاج قبولها أو رفضها كبائع؛ والمشتريات (Purchases): ما اشتراه المورد كمشتري.
+            عميل الشركة (Company customer): تبويبان — طلباتي (Requests): شبكة إعلانات Request التي نشرها ثم قائمة العروض الواردة من الموردين عليها (قبول/رفض)؛ والمشتريات (Orders): مشترياته كمشتري (Retail أو Booking أو غيرها).
+            شركة الشحن ليس لديها صفحة طلباتي.
+            """);
+        Add(chunks, "my-orders-tabs", "My Orders tabs by account type", "en", Buyers,
+            """
+            Question: where are incoming orders? where are purchases? how many tabs in My Orders?
+            The My Orders page in the bottom bar shows different content by account type:
+            Personal customer: a single Purchases list — all Retail orders they bought, no tabs.
+            Supplier: two tabs — Incoming: orders and offers received on their ads that need accept/reject as seller; Purchases: orders the supplier placed as a buyer.
+            Company customer: two tabs — Requests: a grid of Request ads you published, then incoming supplier offers on them (accept/reject); Orders (Purchases): their buyer purchases (Retail, Booking, etc.).
+            Shipping companies do not have a My Orders page.
+            """);
+
+        Add(chunks, "orders-realtime-badge", "تحديث الطلبات تلقائياً والشارة الحمراء", "ar", ["supplier", "company_customer", "personal"],
+            """
+            سؤال: ليه في رقم أحمر على طلباتي؟ ليه القائمة تتحدث لوحدها؟
+            عند تغير حالة أي طلب مرتبط بحسابك تُحدَّث قائمة طلباتي في التطبيق تلقائياً دون إعادة فتح الصفحة (تحديث فوري).
+            للمورد: تظهر شارة حمراء على أيقونة طلباتي في البار السفلي بعدد الطلبات الواردة التي بانتظار موافقتك كبائع (حالة بانتظار موافقة البائع).
+            الشارة تختفي أو ينقص العدد بعد قبولك أو رفضك للطلبات.
+            عميل الشركة والعميل الفردي لا يرون هذه الشارة؛ هم يتابعون مشترياتهم فقط (أو تبويب المشتريات لعميل الشركة).
+            """);
+        Add(chunks, "orders-realtime-badge", "Automatic order refresh and red badge", "en", ["supplier", "company_customer", "personal"],
+            """
+            Question: why is there a red number on My Orders? why does the list update by itself?
+            When any order linked to your account changes status, the My Orders list in the app refreshes automatically without reopening the page (live update).
+            For suppliers: a red badge on the My Orders icon in the bottom bar shows how many incoming orders are awaiting your approval as seller (Awaiting seller approval status).
+            The badge clears or the count drops after you accept or reject those orders.
+            Company and personal customers do not see this badge; they follow their purchases only (or the Purchases tab for company customers).
+            """);
+
+        Add(chunks, "seller-awaiting-label", "نص بانتظار موافقتك للمورد في الجوال", "ar", ["supplier"],
+            """
+            سؤال: معنى "بانتظار موافقتك" على الطلب؟
+            في تطبيق الجوال، عندما يكون الطلب الوارد على إعلانك في حالة بانتظار موافقة البائع، قد يظهر نص مختصر "بانتظار موافقتك" على بطاقة الطلب.
+            هذا يعني أن العميل قدّم الطلب ويُنتظر قبولك أو رفضك كبائع (يخص الطلبات غير التجزئة عادةً).
+            افتح تبويب الواردة في طلباتي لقبول الطلب أو رفضه.
+            النص الكامل للحالة في النظام هو "بانتظار موافقة البائع"؛ الاختصار للعرض في الجوال فقط.
+            """);
+        Add(chunks, "seller-awaiting-label", "Awaiting your approval label for suppliers on mobile", "en", ["supplier"],
+            """
+            Question: what does "Awaiting your approval" mean on an order?
+            On the mobile app, when an incoming order on your listing is in Awaiting seller approval status, the order card may show the shorter label "Awaiting your approval".
+            This means the customer placed the order and your accept or reject decision as seller is pending (usually for non-retail orders).
+            Open the Incoming tab in My Orders to accept or reject the order.
+            The full system status is "Awaiting seller approval"; the shorter label is for mobile display only.
+            """);
+
+        Add(chunks, "retail-address-checkout", "عنوان التوصيل Retail عند الدفع", "ar", ["personal", "public"],
+            """
+            سؤال: كيف أدخل عنوان التوصيل للتجزئة؟ رقم الغرفة والمبنى؟
+            عند شراء Retail والتوصيل للمنزل داخل الإمارات، يمكنك اختيار عنوان محفوظ أو إضافة عنوان جديد.
+            في نموذج العنوان Retail: أدخل السطر الأول (الشارع/المنطقة)، ورقم الغرفة أو المكتب، واسم المبنى.
+            يُحفظ العنوان تلقائياً بصيغة "رقم X في اسم المبنى" (Room number X at building name).
+            يظهر تنبيه رمادي: رسوم شحن إضافية محتملة إذا تجاوز وزن المنتجات 10 كيلو — 2 درهم لكل كيلو فوق 10، وأول 10 كيلو مجاناً.
+            في لوحة الإدارة، عند طباعة أمر التسليم لطلب Retail، يظهر عنوان التسليم الكامل (المدينة + العنوان).
+            """);
+        Add(chunks, "retail-address-checkout", "Retail delivery address at checkout", "en", ["personal", "public"],
+            """
+            Question: how do I enter a Retail delivery address? room and building?
+            When buying Retail with home delivery inside the UAE, you can pick a saved address or add a new one.
+            In the Retail address form: enter line 1 (street/area), room or unit number, and building name.
+            The address is saved automatically as "Room number X at {building name}".
+            A gray note warns that extra shipping may apply if total product weight exceeds 10 kg — AED 2 per kg above 10; the first 10 kg are free.
+            In the admin dashboard, printing a Retail delivery sheet shows the full delivery address (city + address line).
+            """);
+
+        Add(chunks, "ads-vs-orders-company", "الفرق بين إعلانات Request والطلبات لعميل الشركة", "ar", ["company_customer"],
+            """
+            سؤال: وين إعلاناتي؟ وين طلباتي؟ الفرق بين الحساب وطلباتي؟
+            عميل الشركة ينشر إعلانات Request فقط (طلب بضاعة يريد شراءها بالجملة).
+            صفحة الحساب (Account): إعلاناتي فقط — كل إعلانات Request التي نشرتها؛ لا يوجد قسم عروضي (My Offers) لعميل الشركة.
+            صفحة طلباتي — تبويب طلباتي (Requests): إعلانات Request التي نشرتها (في الأعلى) والعروض الواردة من الموردين عليها (في الأسفل) مع قبولها أو رفضها.
+            صفحة طلباتي — تبويب المشتريات (Orders): الطلبات التي أكملتها كمشتري (شراء Retail أو Booking أو غيره)، وليست إعلانات Request.
+            إذا سألت عن "إعلان Request" فالجواب من الحساب أو تبويب Requests؛ إذا سألت عن "طلب شراء" أو "مشترياتي" فالجواب من تبويب المشتريات.
+            """);
+        Add(chunks, "ads-vs-orders-company", "Request ads vs orders for company customers", "en", ["company_customer"],
+            """
+            Question: where are my ads? where are my orders? Account vs My Orders?
+            A company customer publishes Request ads only (wholesale sourcing requests).
+            Account page: My Ads only — every Request ad you published; there is no My Offers section for company customers.
+            My Orders — Requests tab: your published Request ads (at the top) and incoming supplier offers on them (below), with accept/reject actions.
+            My Orders — Orders (Purchases) tab: orders you completed as a buyer (Retail, Booking, etc.), not Request ads.
+            If you ask about a "Request ad" the answer is Account or the Requests tab; if you ask about a "purchase" or "my orders" the answer is the Purchases tab.
+            """);
+
+        Add(chunks, "ads-vs-orders-supplier", "الفرق بين الإعلانات والطلبات للمورد", "ar", ["supplier"],
+            """
+            سؤال: وين إعلاناتي؟ وين الطلبات الواردة؟
+            المورد ينشر إعلانات Booking و Retail و Offers و Shipping (لا ينشر Request).
+            صفحة الحساب (Account): إعلاناتي — إعلاناتك المنشورة؛ عروضي — عروضك على إعلانات Request للشركات.
+            صفحة طلباتي — تبويب الواردة: الطلبات والعروض الواردة على إعلاناتك (قبول/رفض كبائع).
+            صفحة طلباتي — تبويب المشتريات: ما اشتراه المورد كمشتري.
+            تعديل السعر أو الكمية في الإعلان من الحساب → إعلاناتي؛ متابعة طلب وارد على إعلانك من طلباتي → الواردة.
+            """);
+        Add(chunks, "ads-vs-orders-supplier", "Ads vs orders for suppliers", "en", ["supplier"],
+            """
+            Question: where are my ads? where are incoming orders?
+            A supplier publishes Booking, Retail, Offers, and Shipping ads (not Request ads).
+            Account page: My Ads — your published listings; My Offers — your offers on companies' Request ads.
+            My Orders — Incoming tab: orders and offers received on your ads (accept/reject as seller).
+            My Orders — Purchases tab: orders the supplier placed as a buyer.
+            Edit price or quantity from Account → My Ads; follow an incoming order on your listing from My Orders → Incoming.
             """);
     }
 
@@ -2112,36 +2246,42 @@ internal static class AiAssistantKnowledgeSource
 
         Add(chunks, "orders-vs-account", "الفرق بين صفحة طلباتي وصفحة الحساب", "ar", ["supplier", "company_customer", "public"],
             """
-            صفحة طلباتي (My Orders) تخص عمليات الشراء: الطلبات التي قمت أنت بشرائها وحالة كل منها.
-            صفحة الحساب (Account) تخص ما نشرته أنت: قسم إعلاناتي وقسم عروضي.
-            المورد لديه الصفحتان: طلباتي لمشترياته، والحساب لإعلاناته وعروضه.
-            عميل الشركة لديه الصفحتان أيضاً: طلباتي لمشترياته، والحساب لطلبات Request التي نشرها والعروض التي قدمها.
-            العميل الفردي لديه صفحة طلباتي فقط لأنه لا ينشر إعلانات.
-            إذا كنت تبحث عن حالة شراء فافتح طلباتي، وإذا كنت تبحث عن حالة إعلان أو عرض فافتح الحساب.
+            صفحة طلباتي (My Orders) تخص عمليات الشراء والطلبات الواردة حسب نوع حسابك.
+            المورد: تبويب الواردة للطلبات على إعلاناتك، وتبويب المشتريات لما اشتريته أنت.
+            عميل الشركة: تبويب طلباتي (Requests) يعرض إعلانات Request المنشورة والعروض الواردة عليها، وتبويب المشتريات (Orders) لمشترياتك كمشتري.
+            صفحة الحساب (Account) لعميل الشركة: إعلاناتي فقط (Request ads) — بدون قسم عروضي. المورد فقط لديه إعلاناتي وعروضي في الحساب.
+            العميل الفردي لديه صفحة طلباتي فقط (مشتريات بدون تبويبات) لأنه لا ينشر إعلانات.
+            إذا كنت تبحث عن حالة شراء Retail أو Booking فافتح تبويب المشتريات في طلباتي (أو طلباتي مباشرة للعميل الفردي).
+            إذا كنت تبحث عن حالة إعلان Request أو عرض سعري فافتح الحساب أو تبويب طلباتي (Requests) لعميل الشركة.
             """);
         Add(chunks, "orders-vs-account", "The difference between My Orders and the Account page", "en", ["supplier", "company_customer", "public"],
             """
-            My Orders is about purchases: the orders you bought and the status of each.
-            The Account page is about what you published: the My Ads section and the My Offers section.
-            A supplier has both: My Orders for purchases, and Account for their listings and offers.
-            A company customer also has both: My Orders for purchases, and Account for the Requests they published and the offers they submitted.
-            A personal customer has My Orders only, because this account does not publish listings.
-            If you are looking for a purchase status open My Orders; if you are looking for a listing or offer status open Account.
+            My Orders covers purchases and incoming orders depending on your account type.
+            Supplier: Incoming tab for orders on your ads, Purchases tab for orders you placed as a buyer.
+            Company customer: Requests tab shows published Request ads and incoming offers on them; Orders (Purchases) tab for your buyer purchases.
+            The Account page for a company customer is My Ads only (Request ads) — no My Offers section. Only suppliers have both My Ads and My Offers on Account.
+            A personal customer has My Orders only (purchases, no tabs) because this account does not publish listings.
+            If you need a Retail or Booking purchase status, open the Purchases tab in My Orders (or My Orders directly for personal customers).
+            If you need a Request ad or price-offer status, open Account or the Requests tab in My Orders for company customers.
             """);
 
         Add(chunks, "supplier-incoming-orders", "كيف يتابع المورد الطلبات الواردة على إعلاناته", "ar", ["supplier"],
             """
             عندما يشتري عميل من أحد إعلاناتك يُنشأ طلب ويصلك إشعار به.
-            تابع مراحل الطلب حتى التسليم والتحصيل.
-            في الطلبات غير التجزئة قد يُطلب منك قبول الطلب أو رفضه في مرحلة بانتظار موافقة البائع.
+            تابع الطلبات الواردة من تبويب الواردة في صفحة طلباتي (My Orders)، وليس من صفحة الحساب.
+            في الطلبات غير التجزئة قد يُطلب منك قبول الطلب أو رفضه في مرحلة بانتظار موافقة البائع؛ ستظهر شارة حمراء على أيقونة طلباتي بعدد الطلبات التي بانتظار موافقتك.
+            في تطبيق الجوال قد ترى على الطلب الوارد نص "بانتظار موافقتك" بدلاً من النص الكامل للحالة.
+            تُحدَّث قائمة الطلبات تلقائياً عند أي تغيير في الحالة.
             حافظ على تحديث الكميات في إعلاناتك حتى لا تصلك طلبات لبضاعة نفدت.
             عند وجود مشكلة في طلب وارد تواصل مع الدعم عبر Live Chat مع رقم الطلب.
             """);
         Add(chunks, "supplier-incoming-orders", "How a supplier follows incoming orders on their listings", "en", ["supplier"],
             """
             When a customer buys from one of your listings an order is created and you receive a notification.
-            Follow the order's stages through delivery and collection.
-            For non-retail orders you may be asked to accept or reject the order during the Awaiting seller approval stage.
+            Follow incoming orders from the Incoming tab in My Orders, not from the Account page.
+            For non-retail orders you may be asked to accept or reject the order during Awaiting seller approval; a red badge on the My Orders icon shows how many orders need your approval.
+            On the mobile app you may see "Awaiting your approval" on an incoming order instead of the full status text.
+            The order list refreshes automatically when any status changes.
             Keep your listing quantities updated so you do not receive orders for goods that are out of stock.
             If there is a problem with an incoming order, contact support via Live Chat with the order number.
             """);

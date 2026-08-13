@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/router/app_router.dart';
+import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
 import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
@@ -106,9 +107,13 @@ class _MyAdsViewState extends State<MyAdsView> {
     return MyAdsFilter.all;
   }
 
+  bool get _isCompanyCustomerAccount =>
+      AuthService.instance.isCompanyCustomerAccount;
+
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
+    final showMyOffersSection = !_isCompanyCustomerAccount;
     final typeItems = MyAdsFilter.values
         .map(
           (filter) => MyAdsFilterChipItem(
@@ -137,11 +142,12 @@ class _MyAdsViewState extends State<MyAdsView> {
             children: [
               MyAdsHeaderWidget(showBackButton: !widget.isTabView),
               const ChangePricesBanner(),
-              _AccountSectionTabs(
-                selectedIndex: _accountSectionIndex,
-                onSelected: _onAccountSectionSelected,
-              ),
-              if (_accountSectionIndex == 0) ...[
+              if (showMyOffersSection)
+                _AccountSectionTabs(
+                  selectedIndex: _accountSectionIndex,
+                  onSelected: _onAccountSectionSelected,
+                ),
+              if (!showMyOffersSection || _accountSectionIndex == 0) ...[
                 MyAdsTypeFilterCards(
                   items: typeItems,
                   selectedIndex: _selectedTypeFilterIndex,
@@ -167,7 +173,7 @@ class _MyAdsViewState extends State<MyAdsView> {
                     onHighlightedProductFound: _onHighlightedProductFound,
                   ),
                 ),
-              ] else
+              ] else if (showMyOffersSection)
                 const Expanded(
                   child: _MyOffersRefreshableList(),
                 ),

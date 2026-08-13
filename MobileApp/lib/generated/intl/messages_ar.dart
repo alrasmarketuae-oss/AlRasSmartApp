@@ -462,8 +462,17 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "company": MessageLookupByLibrary.simpleMessage("شركة"),
     "companyCustomerAccount": MessageLookupByLibrary.simpleMessage("حساب شركة"),
+    "companyCustomerIncomingOffersHeader": MessageLookupByLibrary.simpleMessage(
+      "العروض الواردة على طلباتي",
+    ),
     "companyCustomerOrdersTab": MessageLookupByLibrary.simpleMessage(
       "المشتريات",
+    ),
+    "companyCustomerRequestAdsHeader": MessageLookupByLibrary.simpleMessage(
+      "إعلانات طلباتي",
+    ),
+    "companyCustomerRequestsSubtitle": MessageLookupByLibrary.simpleMessage(
+      "إعلانات Request التي نشرتها والعروض الواردة عليها.",
     ),
     "companyCustomerRequestsTab": MessageLookupByLibrary.simpleMessage(
       "طلباتي",
@@ -963,6 +972,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "noProductsInCategory": MessageLookupByLibrary.simpleMessage(
       "لا توجد منتجات في هذه الفئة.",
+    ),
+    "noPurchasesYet": MessageLookupByLibrary.simpleMessage(
+      "لا توجد مشتريات بعد.",
+    ),
+    "noRequestAdsYet": MessageLookupByLibrary.simpleMessage(
+      "لم تنشر أي إعلان Request بعد.",
     ),
     "noSavedAddresses": MessageLookupByLibrary.simpleMessage(
       "لا توجد عناوين محفوظة بعد.",

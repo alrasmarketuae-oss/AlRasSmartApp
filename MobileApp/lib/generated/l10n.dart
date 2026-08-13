@@ -914,6 +914,56 @@ class S {
     );
   }
 
+  /// `No purchases yet.`
+  String get noPurchasesYet {
+    return Intl.message(
+      'No purchases yet.',
+      name: 'noPurchasesYet',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Your Request ads and supplier offers on them.`
+  String get companyCustomerRequestsSubtitle {
+    return Intl.message(
+      'Your Request ads and supplier offers on them.',
+      name: 'companyCustomerRequestsSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `My Request ads`
+  String get companyCustomerRequestAdsHeader {
+    return Intl.message(
+      'My Request ads',
+      name: 'companyCustomerRequestAdsHeader',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Offers on my requests`
+  String get companyCustomerIncomingOffersHeader {
+    return Intl.message(
+      'Offers on my requests',
+      name: 'companyCustomerIncomingOffersHeader',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `You have not published any Request ads yet.`
+  String get noRequestAdsYet {
+    return Intl.message(
+      'You have not published any Request ads yet.',
+      name: 'noRequestAdsYet',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `All Orders`
   String get allOrders {
     return Intl.message('All Orders', name: 'allOrders', desc: '', args: []);

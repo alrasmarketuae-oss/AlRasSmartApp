@@ -461,7 +461,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "companyCustomerAccount": MessageLookupByLibrary.simpleMessage(
       "Company Account",
     ),
+    "companyCustomerIncomingOffersHeader": MessageLookupByLibrary.simpleMessage(
+      "Offers on my requests",
+    ),
     "companyCustomerOrdersTab": MessageLookupByLibrary.simpleMessage("Orders"),
+    "companyCustomerRequestAdsHeader": MessageLookupByLibrary.simpleMessage(
+      "My Request ads",
+    ),
+    "companyCustomerRequestsSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Your Request ads and supplier offers on them.",
+    ),
     "companyCustomerRequestsTab": MessageLookupByLibrary.simpleMessage(
       "Requests",
     ),
@@ -958,6 +967,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "noProductsInCategory": MessageLookupByLibrary.simpleMessage(
       "No products found in this category.",
+    ),
+    "noPurchasesYet": MessageLookupByLibrary.simpleMessage("No purchases yet."),
+    "noRequestAdsYet": MessageLookupByLibrary.simpleMessage(
+      "You have not published any Request ads yet.",
     ),
     "noSavedAddresses": MessageLookupByLibrary.simpleMessage(
       "No saved addresses yet.",

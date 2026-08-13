@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/serveses/app_order_listener_service.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
+import 'package:alrasmarket/core/services_locator/services_locator.dart';
 import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
+import 'package:alrasmarket/core/utils/product_grid_layout.dart';
 import 'package:alrasmarket/features/clint/data/models/my_order_model.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_states.dart';
@@ -14,6 +16,9 @@ import 'package:alrasmarket/features/clint/presentation/helpers/product_details_
 import 'package:alrasmarket/features/clint/presentation/models/my_orders_chip_filter.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/order_card.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/search_header.dart';
+import 'package:alrasmarket/features/company/presentation/controller/cubit/company_cubit.dart';
+import 'package:alrasmarket/features/company/presentation/controller/cubit/company_states.dart';
+import 'package:alrasmarket/features/company/presentation/widgets/my_ads/my_ad_announcement_card.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/my_ads/request_offer_card.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
@@ -51,6 +56,12 @@ class _MyOrdersViewState extends State<MyOrdersView> {
   bool get _isPurchasesSection =>
       !_showIncomingTab || _sectionIndex != 0;
 
+  void _loadCompanyRequestsData() {
+    final cubit = context.read<ClintCubit>();
+    unawaited(cubit.fetchIncomingOrders());
+    unawaited(sl<CompanyCubit>().reloadMyListings());
+  }
+
   @override
   void initState() {
     super.initState();
@@ -62,6 +73,8 @@ class _MyOrdersViewState extends State<MyOrdersView> {
       final cubit = context.read<ClintCubit>();
       if (_isPurchasesSection) {
         unawaited(cubit.fetchMyOrders());
+      } else if (_isCompanyCustomerAccount) {
+        _loadCompanyRequestsData();
       } else {
         unawaited(cubit.fetchIncomingOrders());
       }
@@ -70,7 +83,12 @@ class _MyOrdersViewState extends State<MyOrdersView> {
       if (!mounted) return;
       final cubit = context.read<ClintCubit>();
       if (_showIncomingTab) {
-        cubit.fetchIncomingOrders();
+        if (_isCompanyCustomerAccount) {
+          _loadCompanyRequestsData();
+        } else {
+          cubit.fetchIncomingOrders();
+        }
+        unawaited(cubit.fetchMyOrders());
       } else {
         cubit.fetchMyOrders();
       }
@@ -92,7 +110,11 @@ class _MyOrdersViewState extends State<MyOrdersView> {
     setState(() => _sectionIndex = index);
     final cubit = context.read<ClintCubit>();
     if (index == 0) {
-      cubit.fetchIncomingOrders();
+      if (_isCompanyCustomerAccount) {
+        _loadCompanyRequestsData();
+      } else {
+        cubit.fetchIncomingOrders();
+      }
     } else {
       cubit.fetchMyOrders();
     }
@@ -250,13 +272,249 @@ class _MyOrdersViewState extends State<MyOrdersView> {
                 Expanded(
                   child: _isPurchasesSection
                       ? _buildPurchasesSection(context, s, fontFamily)
-                      : _buildIncomingSection(context, s, fontFamily),
+                      : _isCompanyCustomerAccount
+                          ? _buildCompanyRequestsSection(
+                              context,
+                              s,
+                              fontFamily,
+                            )
+                          : _buildIncomingSection(context, s, fontFamily),
                 ),
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildCompanyRequestsSection(
+    BuildContext context,
+    S s,
+    String fontFamily,
+  ) {
+    final cubit = ClintCubit.get(context);
+
+    return BlocProvider.value(
+      value: sl<CompanyCubit>(),
+      child: BlocBuilder<ClintCubit, ClintStates>(
+        buildWhen: (previous, current) =>
+            current is FetchIncomingOrdersLoadingState ||
+            current is FetchIncomingOrdersSuccessState ||
+            current is FetchIncomingOrdersErrorState ||
+            current is IncomingOrderStatusUpdatingState ||
+            current is IncomingOrderStatusUpdatedState,
+        builder: (context, _) {
+          return BlocBuilder<CompanyCubit, CompanyStates>(
+            buildWhen: (previous, current) =>
+                current is CompanyMyListingsState,
+            builder: (context, companyState) {
+              final listingsState = companyState is CompanyMyListingsState
+                  ? companyState
+                  : null;
+              final requestAds = (listingsState?.products ?? const [])
+                  .where((product) => product.isRequestProduct)
+                  .toList(growable: false);
+              final offers = cubit.incomingOrders;
+              final isLoadingListings =
+                  listingsState == null || listingsState.isLoading;
+              final isLoadingOffers =
+                  cubit.isLoadingIncomingOrders && offers.isEmpty;
+
+              if ((isLoadingListings && requestAds.isEmpty) &&
+                  isLoadingOffers) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              return RefreshIndicator(
+                onRefresh: () async {
+                  await Future.wait([
+                    cubit.fetchIncomingOrders(),
+                    sl<CompanyCubit>().reloadMyListings(),
+                  ]);
+                },
+                child: CustomScrollView(
+                  controller: _incomingScrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(24.w, 8.h, 24.w, 8.h),
+                        child: Text(
+                          s.companyCustomerRequestsSubtitle,
+                          style: TextStyle(
+                            fontFamily: fontFamily,
+                            fontSize: 13.sp,
+                            color: const Color(0xFF64748B),
+                            height: 1.35,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 8.h),
+                        child: Text(
+                          s.companyCustomerRequestAdsHeader,
+                          style: TextStyle(
+                            fontFamily: fontFamily,
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF0F172A),
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (listingsState?.errorMessage != null &&
+                        requestAds.isEmpty)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 24.w),
+                          child: Text(
+                            listingsState!.errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: fontFamily,
+                              fontSize: 14.sp,
+                            ),
+                          ),
+                        ),
+                      )
+                    else if (isLoadingListings && requestAds.isEmpty)
+                      const SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 32),
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                      )
+                    else if (requestAds.isEmpty)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 16.h),
+                          child: Text(
+                            s.noRequestAdsYet,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: fontFamily,
+                              fontSize: 14.sp,
+                              color: const Color(0xFF64748B),
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      SliverPadding(
+                        padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 12.h),
+                        sliver: SliverGrid(
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount:
+                                ProductGridLayout.isTablet(context) ? 3 : 2,
+                            crossAxisSpacing: 10.w,
+                            mainAxisSpacing: 10.h,
+                            childAspectRatio: 0.72,
+                          ),
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final product = requestAds[index];
+                              return MyAdAnnouncementCard(
+                                product: product,
+                                compact: true,
+                                persistentGlow:
+                                    product.pendingOffersCount > 0,
+                              );
+                            },
+                            childCount: requestAds.length,
+                          ),
+                        ),
+                      ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(24.w, 8.h, 24.w, 8.h),
+                        child: Text(
+                          s.companyCustomerIncomingOffersHeader,
+                          style: TextStyle(
+                            fontFamily: fontFamily,
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF0F172A),
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (cubit.incomingOrdersError != null && offers.isEmpty)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 24.w),
+                          child: Text(
+                            cubit.incomingOrdersError!,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: fontFamily,
+                              fontSize: 14.sp,
+                            ),
+                          ),
+                        ),
+                      )
+                    else if (offers.isEmpty)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 24.h),
+                          child: Text(
+                            s.noIncomingOrdersYet,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: fontFamily,
+                              fontSize: 14.sp,
+                              color: const Color(0xFF64748B),
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      SliverPadding(
+                        padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 24.h),
+                        sliver: SliverList.separated(
+                          itemCount: offers.length,
+                          separatorBuilder: (_, __) =>
+                              SizedBox(height: 12.h),
+                          itemBuilder: (context, index) {
+                            final offer = offers[index];
+                            final isUpdating =
+                                cubit.updatingIncomingOrderId ==
+                                    offer.orderId;
+                            return RequestOfferCard(
+                              offer: offer,
+                              fontFamily: fontFamily,
+                              isUpdating: isUpdating,
+                              acceptLabel: s.acceptOrderAction,
+                              rejectLabel: s.rejectOrderAction,
+                              onTrack: offer.orderId > 0
+                                  ? () => context.push(
+                                        AppRoutes.kTrackOrderView,
+                                        extra: {
+                                          'orderId': offer.orderId,
+                                          'showBuyerActions': false,
+                                        },
+                                      )
+                                  : null,
+                              onAccept: offer.canAccept
+                                  ? () => _onAcceptIncoming(offer.orderId)
+                                  : null,
+                              onReject: offer.canReject
+                                  ? () => _onRejectIncoming(offer.orderId)
+                                  : null,
+                            );
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 
@@ -398,7 +656,7 @@ class _MyOrdersViewState extends State<MyOrdersView> {
               hasScrollBody: false,
               child: Center(
                 child: Text(
-                  s.purchasesSubtitle,
+                  s.noPurchasesYet,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamily: fontFamily,

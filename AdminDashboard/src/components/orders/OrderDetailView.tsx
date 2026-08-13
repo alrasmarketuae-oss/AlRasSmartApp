@@ -24,12 +24,14 @@ import CompactMediaStrip from './CompactMediaStrip'
 import OrderNotifyPartyDialog from './OrderNotifyPartyDialog'
 import OrderStatusActionButtons from './OrderStatusActionButtons'
 import OrderStatusHistoryStrip from './OrderStatusHistoryStrip'
+import OrderPrintOptionsDialog from './OrderPrintOptionsDialog'
+import OrderPrintSheet from './OrderPrintSheet'
+import { DEFAULT_ORDER_PRINT_OPTIONS, type OrderPrintOptions } from '../../utils/orderPrintOptions'
 import { formatAdAmount, amountsLookEqual, formatPackagingLabel, formatPriceTypeLabel, productTypeBadgeClass, resolveOrderChannelTypeKey, resolveOrderChannelTypeName } from '../../utils/adsDisplay'
 import {
   formatOrderAmount,
   formatOrderQuantityWithUnit,
   getDeliveryMethodLabel,
-  resolveOrderDeliveryPrint,
   resolveOrderedQuantity,
   resolveOfferedQuantity,
   resolveRequiredQuantity,
@@ -395,13 +397,16 @@ export default function OrderDetailView({
   const [customStatusError, setCustomStatusError] = useState<string | null>(null)
   const [customStatusSuccess, setCustomStatusSuccess] = useState<string | null>(null)
   const [confirmMarkReceived, setConfirmMarkReceived] = useState(false)
+  const [printDialogOpen, setPrintDialogOpen] = useState(false)
+  const [printOptions, setPrintOptions] = useState<OrderPrintOptions>(
+    DEFAULT_ORDER_PRINT_OPTIONS,
+  )
 
   const status = getOrderStatusStyle(order.statusId)
   const statusLabel =
     locale === 'ar'
       ? order.statusLabelAr?.trim() || getOrderStatusLabel(order.statusId, locale)
       : order.statusName?.trim() || getOrderStatusLabel(order.statusId, locale)
-  const deliveryPrint = resolveOrderDeliveryPrint(order)
 
   const hasReturnRequest =
     order.statusId === 9 ||
@@ -527,6 +532,14 @@ export default function OrderDetailView({
     { key: 'shipping', label: t('orders.tabShipping') },
     { key: 'history', label: t('orders.tabHistory') },
   ]
+
+  const handleConfirmPrint = (options: OrderPrintOptions) => {
+    setPrintOptions(options)
+    setPrintDialogOpen(false)
+    requestAnimationFrame(() => {
+      window.print()
+    })
+  }
 
   function submitReturnDecision(approved: boolean) {
     setReturnError(null)
@@ -677,7 +690,7 @@ export default function OrderDetailView({
         <div className="flex flex-wrap items-center gap-2 print:hidden">
           <button
             type="button"
-            onClick={() => window.print()}
+            onClick={() => setPrintDialogOpen(true)}
             className="keep-white inline-flex h-10 items-center gap-2 rounded-xl bg-[#2563eb] px-4 text-xs font-bold text-white shadow-sm transition hover:bg-[#1d4ed8]"
           >
             {Icons.printer}
@@ -816,115 +829,35 @@ export default function OrderDetailView({
         </section>
       )}
 
-      {/* Print sheet: landscape A4 — order basics + buyer + supplier */}
-      <section className="order-print-sheet hidden print:block">
-        <div className="mb-3 flex items-end justify-between gap-4 border-b border-slate-300 pb-2">
-          <div>
-            <p className="text-xs font-semibold text-slate-500">{t('orders.orderDetailsPage')}</p>
-            <h2 className="text-xl font-bold text-slate-900">
-              {t('orders.orderNumber')} #{order.id}
-            </h2>
-          </div>
-          <div className="text-end text-xs text-slate-600">
-            <p>
-              <span className="font-semibold">{t('orders.createdOn')}: </span>
-              {formatDetailDate(order.createdAt, locale)}
-            </p>
-            <p className="mt-0.5">
-              <span className="font-semibold">{t('orders.currentStatus')}: </span>
-              {statusLabel}
-            </p>
-          </div>
-        </div>
+      <OrderPrintSheet
+        order={order}
+        locale={locale}
+        t={t}
+        options={printOptions}
+        statusLabel={statusLabel}
+        typeName={typeName}
+        isRequestOrder={isRequestOrder}
+        customerUnitPrice={customerUnitPrice}
+        grandTotal={grandTotal}
+        supplierTotal={supplierTotal}
+        supplierUnitPrice={supplierUnitPrice}
+        customerTotal={customerTotal}
+        appProfit={appProfit}
+        chargedAmount={chargedAmount ?? undefined}
+        vatAmount={vatAmount !== '—' ? vatAmount : undefined}
+        shippingAmount={shippingCost !== '—' ? shippingCost : undefined}
+        orderedQuantity={orderedQuantity}
+        offeredQuantity={offeredQuantity}
+        specsComments={specsComments}
+        statusHistory={statusHistory}
+      />
 
-        <div className="mb-3 grid grid-cols-4 gap-2 text-xs">
-          <div className="rounded border border-slate-200 p-2">
-            <p className="font-semibold text-slate-500">{t('orders.productName')}</p>
-            <p className="mt-0.5 font-bold text-slate-900">{order.productName || '—'}</p>
-          </div>
-          <div className="rounded border border-slate-200 p-2">
-            <p className="font-semibold text-slate-500">{t('orders.unitPrice')}</p>
-            <p className="mt-0.5 font-bold text-slate-900">
-              {formatAdAmount(customerUnitPrice, locale)}
-            </p>
-          </div>
-          <div className="rounded border border-slate-200 p-2">
-            <p className="font-semibold text-slate-500">
-              {isRequestOrder ? t('orders.offeredQuantity') : t('orders.orderedQuantity')}
-            </p>
-            <p className="mt-0.5 font-bold text-slate-900">
-              {formatOrderQuantityWithUnit(
-                isRequestOrder ? offeredQuantity : orderedQuantity,
-                order.unitName,
-              )}
-            </p>
-          </div>
-          <div className="rounded border border-slate-200 p-2">
-            <p className="font-semibold text-slate-500">{t('orders.totalAmount')}</p>
-            <p className="mt-0.5 font-bold text-slate-900">
-              {formatAdAmount(grandTotal, locale)}
-            </p>
-          </div>
-          <div className="rounded border border-slate-200 p-2">
-            <p className="font-semibold text-slate-500">{t('orders.category')}</p>
-            <p className="mt-0.5 font-semibold text-slate-800">{order.categoryName || '—'}</p>
-          </div>
-          <div className="rounded border border-slate-200 p-2">
-            <p className="font-semibold text-slate-500">{t('orders.productType')}</p>
-            <p className="mt-0.5 font-semibold text-slate-800">{typeName || '—'}</p>
-          </div>
-          <div className="rounded border border-slate-200 p-2">
-            <p className="font-semibold text-slate-500">{t('orders.paymentMethod')}</p>
-            <p className="mt-0.5 font-semibold text-slate-800">
-              {paymentLabel(order.paymentMethodName, t)}
-            </p>
-          </div>
-          <div className="rounded border border-slate-200 p-2">
-            <p className="font-semibold text-slate-500">{t('orders.supplierTotalPrice')}</p>
-            <p className="mt-0.5 font-semibold text-slate-800">
-              {formatAdAmount(supplierTotal, locale)}
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded border border-slate-300 p-3">
-            <h3 className="mb-2 text-sm font-bold text-slate-900">
-              {isRequestOrder ? t('reqsOffers.requestOwnerInfo') : t('orders.customerInfo')}
-            </h3>
-            <div className="space-y-1 text-xs text-slate-800">
-              <p className="text-sm font-bold">{order.customerName || '—'}</p>
-              <p dir="ltr">{order.customerPhone?.trim() || '—'}</p>
-              <p className="break-all">{order.customerEmail || '—'}</p>
-              {deliveryPrint ? (
-                <>
-                  <p className="pt-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                    {t('orders.deliveryAddress')}
-                  </p>
-                  <p className="font-semibold text-slate-900">{deliveryPrint.city}</p>
-                  <p className="whitespace-pre-wrap break-words text-slate-800">
-                    {deliveryPrint.addressLine}
-                  </p>
-                </>
-              ) : (
-                <p className="text-slate-600">
-                  {order.deliveryCityName?.trim() || order.destinationCountryName?.trim() || '—'}
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="rounded border border-slate-300 p-3">
-            <h3 className="mb-2 text-sm font-bold text-slate-900">
-              {isRequestOrder ? t('reqsOffers.offeringSupplierInfo') : t('orders.supplierInfo')}
-            </h3>
-            <div className="space-y-1 text-xs text-slate-800">
-              <p className="text-sm font-bold">{order.supplierName || '—'}</p>
-              <p dir="ltr">{order.supplierPhone?.trim() || '—'}</p>
-              <p className="break-all">{order.supplierEmail || '—'}</p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <OrderPrintOptionsDialog
+        open={printDialogOpen}
+        initialOptions={printOptions}
+        onClose={() => setPrintDialogOpen(false)}
+        onConfirm={handleConfirmPrint}
+      />
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(260px,300px)]">
         <div className="space-y-4">
