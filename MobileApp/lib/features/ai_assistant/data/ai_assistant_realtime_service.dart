@@ -87,8 +87,8 @@ class AiAssistantRealtimeService {
       if (_closed || generation != _connectGeneration) return;
       final data = _map(args);
       final answer = data?['answer']?.toString() ?? '';
-      final offer = data?['offerSupportCallback'] == true ||
-          data?['OfferSupportCallback'] == true;
+      final offer = _asBool(data?['offerSupportCallback']) ||
+          _asBool(data?['OfferSupportCallback']);
       onCompleted(answer, offerSupportCallback: offer);
     });
     hub.on('aiError', (args) {
@@ -151,5 +151,15 @@ class AiAssistantRealtimeService {
   Map<String, dynamic>? _map(List<Object?>? args) {
     if (args == null || args.isEmpty || args.first is! Map) return null;
     return Map<String, dynamic>.from(args.first! as Map);
+  }
+
+  static bool _asBool(dynamic value) {
+    if (value == true) return true;
+    if (value is num) return value != 0;
+    if (value is String) {
+      final v = value.trim().toLowerCase();
+      return v == 'true' || v == '1' || v == 'yes';
+    }
+    return false;
   }
 }

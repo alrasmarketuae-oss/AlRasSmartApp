@@ -827,13 +827,26 @@ public sealed class AiAssistantAppService(
 
         string[] markers =
         [
+            // Arabic
             "دعم فني", "الدعم الفني", "دعم بشري", "الدعم البشري",
             "كلم الدعم", "كلم حد", "عاوز اكلم", "عايز اكلم", "عاوز أكلم", "عايز أكلم",
+            "محتاج اكلم", "محتاج أكلم", "محتاج الدعم", "محتاج دعم",
+            "محاج اكلم", "محاج أكلم", "ابي اكلم", "أبي أكلم", "أبغى أكلم",
             "موظف دعم", "خدمة العملاء", "كلمني", "اتصلوا بيا", "اتصل بيا",
-            "رقم الدعم", "تليفون الدعم", "هاتف الدعم",
-            "technical support", "human support", "talk to support", "contact support",
-            "speak to agent", "speak to someone", "call me", "customer service",
-            "support agent", "help desk", "live agent"
+            "رقم الدعم", "تليفون الدعم", "هاتف الدعم", "تواصل مع الدعم",
+            // English — keep broad so natural phrasing still matches
+            "technical support", "tech support", "human support",
+            "talk to support", "talk to technical", "talk to tech",
+            "talk with support", "speak to support", "speak with support",
+            "speak to agent", "speak to someone", "speak with someone",
+            "contact support", "contact technical", "contact tech support",
+            "call me", "call support", "call technical",
+            "customer service", "customer care", "customer support",
+            "support agent", "help desk", "live agent", "live support",
+            "need support", "need technical", "need to talk", "need to speak",
+            "want support", "want to talk", "want to speak",
+            "human agent", "real person", "real human", "talk to a human",
+            "speak to a human", "human help", "phone support"
         ];
 
         return markers.Any(m => q.Contains(m, StringComparison.Ordinal));

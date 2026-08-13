@@ -537,6 +537,11 @@ class _AiAssistantViewState extends State<AiAssistantView> {
               ? 'تم إنشاء الإعلان بنجاح وإرساله للمراجعة من الإدارة.'
               : 'Your ad was created and submitted for admin review.';
         }
+        // Fallback: show callback form when user asked for human/tech support
+        // even if the server flag is missing (older hub / phrasing miss).
+        final shouldShowForm = offerSupportCallback ||
+            looksLikeSupportCallbackIntent(_lastUserQuestion) ||
+            looksLikeSupportCallbackCue(finalAnswer);
         setState(() {
           _isThinking = false;
           if (finalAnswer.isNotEmpty) {
@@ -551,7 +556,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
                   ..clear()
                   ..addAll(_thinkingSteps);
               }
-              last.showSupportCallbackForm = offerSupportCallback;
+              last.showSupportCallbackForm = shouldShowForm;
               last.supportQuestion = _lastUserQuestion;
             } else if (_messages.isEmpty || _messages.last.isUser) {
               _messages.add(
@@ -559,11 +564,22 @@ class _AiAssistantViewState extends State<AiAssistantView> {
                   text: finalAnswer,
                   isUser: false,
                   thinkingSteps: List<String>.from(_thinkingSteps),
-                  showSupportCallbackForm: offerSupportCallback,
+                  showSupportCallbackForm: shouldShowForm,
                   supportQuestion: _lastUserQuestion,
                 ),
               );
             }
+          } else if (shouldShowForm) {
+            _messages.add(
+              _ChatMessage(
+                text: isAr
+                    ? 'اكتب اسمك ورقم تليفونك وبريدك الإلكتروني، وهيتم الاتصال بيك خلال خمس دقايق.'
+                    : 'Please leave your name, phone, and email — we’ll call you within five minutes.',
+                isUser: false,
+                showSupportCallbackForm: true,
+                supportQuestion: _lastUserQuestion,
+              ),
+            );
           }
           _thinkingSteps.clear();
           if (_planMode && looksLikeAdCreateSuccess(finalAnswer)) {
@@ -1581,6 +1597,72 @@ TextDirection _detectTextDirection(String text) {
   }
   if (arabic == 0 && latin == 0) return TextDirection.ltr;
   return arabic >= latin ? TextDirection.rtl : TextDirection.ltr;
+}
+
+bool looksLikeSupportCallbackIntent(String? message) {
+  final q = (message ?? '').trim().toLowerCase();
+  if (q.isEmpty) return false;
+  const markers = <String>[
+    'دعم فني',
+    'الدعم الفني',
+    'دعم بشري',
+    'الدعم البشري',
+    'كلم الدعم',
+    'محتاج اكلم',
+    'محتاج أكلم',
+    'محتاج الدعم',
+    'خدمة العملاء',
+    'كلمني',
+    'technical support',
+    'tech support',
+    'human support',
+    'talk to support',
+    'talk to technical',
+    'talk with support',
+    'speak to support',
+    'speak with support',
+    'contact support',
+    'contact technical',
+    'call support',
+    'customer service',
+    'customer care',
+    'customer support',
+    'support agent',
+    'help desk',
+    'live agent',
+    'need support',
+    'need technical',
+    'need to talk',
+    'need to speak',
+    'want to talk',
+    'want to speak',
+    'talk to a human',
+    'speak to a human',
+    'real person',
+    'real human',
+    'phone support',
+  ];
+  return markers.any(q.contains);
+}
+
+bool looksLikeSupportCallbackCue(String answer) {
+  final text = answer.trim().toLowerCase();
+  if (text.isEmpty) return false;
+  const markers = <String>[
+    'خمس دقايق',
+    'خلال خمس',
+    'خلال 5',
+    'النموذج تحت',
+    'رقم تليفونك',
+    'five minutes',
+    'form below',
+    'leave your name',
+    'phone number, and email',
+    'technical support will call',
+    'we’ll call you',
+    "we'll call you",
+  ];
+  return markers.any(text.contains);
 }
 
 class _AttachmentChip extends StatelessWidget {
