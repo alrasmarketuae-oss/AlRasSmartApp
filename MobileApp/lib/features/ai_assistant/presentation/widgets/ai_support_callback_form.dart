@@ -4,6 +4,7 @@ import 'package:alrasmarket/core/services/dio_helper.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// Collects name / phone / email so human tech support can call within 5 minutes.
@@ -103,22 +104,29 @@ class _AiSupportCallbackFormState extends State<AiSupportCallbackForm> {
       });
       widget.onSubmitted?.call();
     } on DioException catch (e) {
-      final msg = e.response?.data is Map
-          ? (e.response!.data['message']?.toString() ??
-              e.response!.data['Message']?.toString())
-          : null;
+      final raw = e.response?.data;
+      String? msg;
+      if (raw is Map) {
+        msg = raw['message']?.toString() ?? raw['Message']?.toString();
+      } else if (raw is String && raw.trim().isNotEmpty) {
+        msg = raw.trim();
+      }
       if (!mounted) return;
       setState(() {
         _submitting = false;
         _error = msg?.trim().isNotEmpty == true
             ? msg!.trim()
-            : (isAr ? 'تعذر إرسال الطلب. حاول مرة أخرى.' : 'Could not send request. Try again.');
+            : (isAr
+                ? 'تعذر إرسال الطلب. حاول مرة أخرى.'
+                : 'Could not send request. Try again.');
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _submitting = false;
-        _error = isAr ? 'تعذر إرسال الطلب. حاول مرة أخرى.' : 'Could not send request. Try again.';
+        _error = isAr
+            ? 'تعذر إرسال الطلب. حاول مرة أخرى.'
+            : 'Could not send request. Try again.';
       });
     }
   }
@@ -154,7 +162,8 @@ class _AiSupportCallbackFormState extends State<AiSupportCallbackForm> {
           isDense: true,
           filled: true,
           fillColor: Colors.white,
-          contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+          contentPadding:
+              EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.r)),
         );
 
@@ -165,7 +174,9 @@ class _AiSupportCallbackFormState extends State<AiSupportCallbackForm> {
       decoration: BoxDecoration(
         color: const Color(0xFFF5F8FF),
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: LightColor.defaultColor.withValues(alpha: 0.35)),
+        border: Border.all(
+          color: LightColor.defaultColor.withValues(alpha: 0.35),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -191,22 +202,35 @@ class _AiSupportCallbackFormState extends State<AiSupportCallbackForm> {
           TextField(
             controller: _name,
             textInputAction: TextInputAction.next,
+            textAlign: isAr ? TextAlign.right : TextAlign.left,
             decoration: deco(isAr ? 'الاسم' : 'Name'),
           ),
           SizedBox(height: 8.h),
-          TextField(
-            controller: _phone,
-            keyboardType: TextInputType.phone,
-            textInputAction: TextInputAction.next,
-            decoration: deco(isAr ? 'رقم التليفون' : 'Phone'),
+          // Keep phone LTR so digits/+ are not mirrored in Arabic UI.
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: TextField(
+              controller: _phone,
+              keyboardType: TextInputType.phone,
+              textInputAction: TextInputAction.next,
+              textAlign: TextAlign.left,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[\d+\s\-()]')),
+              ],
+              decoration: deco(isAr ? 'رقم التليفون' : 'Phone'),
+            ),
           ),
           SizedBox(height: 8.h),
-          TextField(
-            controller: _email,
-            keyboardType: TextInputType.emailAddress,
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => _submit(),
-            decoration: deco(isAr ? 'البريد الإلكتروني' : 'Email'),
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: TextField(
+              controller: _email,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.done,
+              textAlign: TextAlign.left,
+              onSubmitted: (_) => _submit(),
+              decoration: deco(isAr ? 'البريد الإلكتروني' : 'Email'),
+            ),
           ),
           if (_error != null) ...[
             SizedBox(height: 8.h),
