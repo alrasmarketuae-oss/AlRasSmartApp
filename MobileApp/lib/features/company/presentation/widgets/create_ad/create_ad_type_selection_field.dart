@@ -90,7 +90,23 @@ class CreateAdTypeSelectionField extends StatelessWidget {
               .map(
                 (value) => DropdownMenuItem<String>(
                   value: value,
-                  child: Text(value, style: fieldTextStyle),
+                  child: Text(
+                    CreateAdType.localizedDisplayLabel(value, S.of(context)),
+                    style: fieldTextStyle,
+                  ),
+                ),
+              )
+              .toList(),
+          selectedItemBuilder: (context) => typeLabels
+              .map(
+                (value) => Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    CreateAdType.localizedDisplayLabel(value, S.of(context)),
+                    style: fieldTextStyle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               )
               .toList(),

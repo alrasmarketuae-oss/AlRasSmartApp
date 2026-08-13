@@ -1,5 +1,4 @@
 import 'package:alrasmarket/core/theme/app_fonts.dart';
-import 'package:alrasmarket/core/utils/category_localization.dart';
 import 'package:alrasmarket/features/clint/data/models/category_model.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/category_image.dart';
 import 'package:alrasmarket/generated/l10n.dart';
@@ -119,6 +118,19 @@ class CreateAdCategorySelectionField extends StatelessWidget {
                 ),
               )
               .toList(),
+          selectedItemBuilder: (context) => categories
+              .map(
+                (category) => Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    category.displayName(context),
+                    style: fieldTextStyle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              )
+              .toList(),
           validator: (value) {
             if (value == null) {
               return S.of(context).thisFieldIsRequired;
@@ -132,6 +144,7 @@ class CreateAdCategorySelectionField extends StatelessWidget {
                   final category = categories.firstWhere(
                     (item) => item.categoryId == value,
                   );
+                  // Keep English label for API matching; UI uses displayName.
                   onCategoryChanged(
                     category.categoryId,
                     category.nameEn.trim().isNotEmpty
