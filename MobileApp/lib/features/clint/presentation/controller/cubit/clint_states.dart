@@ -5,6 +5,7 @@ import 'package:alrasmarket/features/clint/data/models/category_model.dart';
 import 'package:alrasmarket/features/clint/domain/entities/cart_entity.dart';
 import 'package:alrasmarket/features/clint/domain/entities/cart_payment_method.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
+import 'package:alrasmarket/features/company/data/models/my_request_offer_model.dart';
 import 'package:equatable/equatable.dart';
 
 abstract class ClintStates extends Equatable {
@@ -208,6 +209,44 @@ class FetchMyOffersErrorState extends ClintStates {
 
   @override
   List<Object?> get props => [message];
+}
+
+class FetchIncomingOrdersLoadingState extends ClintStates {}
+
+class FetchIncomingOrdersSuccessState extends ClintStates {
+  const FetchIncomingOrdersSuccessState(this.offers);
+
+  final List<MyRequestOfferModel> offers;
+
+  @override
+  List<Object?> get props => [offers];
+}
+
+class FetchIncomingOrdersErrorState extends ClintStates {
+  const FetchIncomingOrdersErrorState(this.message);
+
+  final String message;
+
+  @override
+  List<Object?> get props => [message];
+}
+
+class IncomingOrderStatusUpdatingState extends ClintStates {
+  const IncomingOrderStatusUpdatingState(this.orderId);
+
+  final int orderId;
+
+  @override
+  List<Object?> get props => [orderId];
+}
+
+class IncomingOrderStatusUpdatedState extends ClintStates {
+  const IncomingOrderStatusUpdatedState(this.orderId);
+
+  final int orderId;
+
+  @override
+  List<Object?> get props => [orderId];
 }
 
 class CancelOrderLoadingState extends ClintStates {

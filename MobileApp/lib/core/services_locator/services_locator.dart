@@ -139,8 +139,10 @@ class ServicesLocator {
     sl.registerLazySingleton(() => CreateOrderUseCase(sl()));
     sl.registerLazySingleton(() => GetMyOrdersUseCase(sl()));
     sl.registerLazySingleton(() => GetMyOffersUseCase(sl()));
+    sl.registerLazySingleton(() => GetMyOffersOnMyRequestsUseCase(sl()));
     sl.registerLazySingleton(() => GetOrderByIdUseCase(sl()));
     sl.registerLazySingleton(() => RequestOrderReturnUseCase(sl()));
+    sl.registerLazySingleton(() => UpdateOrderStatusUseCase(sl()));
 
     // Cubit
     sl.registerLazySingleton(
@@ -160,6 +162,7 @@ class ServicesLocator {
         createOrderUseCase: sl(),
         getMyOrdersUseCase: sl(),
         getMyOffersUseCase: sl(),
+        getMyOffersOnMyRequestsUseCase: sl(),
         getOrderByIdUseCase: sl(),
         updateOrderStatusUseCase: sl(),
         requestOrderReturnUseCase: sl(),
@@ -174,8 +177,6 @@ class ServicesLocator {
     sl.registerLazySingleton(() => UpdateProductListingStatusUseCase(sl()));
     sl.registerLazySingleton(() => UpdateProductPriceUseCase(sl()));
     sl.registerLazySingleton(() => MarkProductSoldOutUseCase(sl()));
-    sl.registerLazySingleton(() => GetMyOffersOnMyRequestsUseCase(sl()));
-    sl.registerLazySingleton(() => UpdateOrderStatusUseCase(sl()));
     sl.registerLazySingleton(
       () => CompanyCubit(
         getMyListingsUseCase: sl(),

@@ -83,6 +83,31 @@ rm -f BusinessLayer/Interfaces/IProductImageIndexingQueue.cs
 rm -f BusinessLayer/Interfaces/IProductImageVectorIndex.cs
 # Stale Grafana cookie-proxy helper removed when monitoring moved into the dashboard.
 rm -f BusinessLayer/Services/MonitoringAccessService.cs
+# Stale supplier wallet / IBAN / withdrawal stack (removed from codebase).
+rm -f BusinessLayer/Caching/SupplierBalanceCacheVersions.cs
+rm -f BusinessLayer/Dtos/FinanceDtos.cs
+rm -f BusinessLayer/Services/FinanceAppService.cs
+rm -f BusinessLayer/Services/SupplierBalanceService.cs
+rm -f DataLayer/Interfaces/IBalanceDataAccess.cs
+rm -f DataLayer/Models/Balance.cs
+rm -f DataLayer/Models/UserIban.cs
+rm -f DataLayer/Models/WithdrawalRequest.cs
+rm -f DataLayer/Repositories/BalanceDataAccess.cs
+rm -f DataLayer/Seeding/BalanceSchemaMigrator.cs
+rm -f DataLayer/Seeding/UserIbanSchemaMigrator.cs
+rm -f DataLayer/Seeding/WithdrawalRequestSchemaMigrator.cs
+rm -f RasAlSouqPresentaionLayer/Controllers/AdminFinanceController.cs
+rm -f RasAlSouqPresentaionLayer/Controllers/SupplierBalanceController.cs
+rm -f deploy/zero-all-balances.sql
+# Stale legacy OffersOnRequests / OffersOnNegotiable stack (superseded by Orders).
+rm -f BusinessLayer/Services/OffersAppService.cs
+rm -f DataLayer/Models/Offer.cs
+rm -f DataLayer/Models/OfferOnNegotiable.cs
+rm -f DataLayer/Models/OfferOnRequestDocument.cs
+rm -f DataLayer/Models/OfferOnRequestImage.cs
+rm -f DataLayer/Models/OfferStatus.cs
+rm -f DataLayer/Seeding/OfferSchemaMigrator.cs
+rm -f RasAlSouqPresentaionLayer/Controllers/OffersController.cs
 mkdir -p deploy/certbot/conf deploy/certbot/www
 echo '==> Building & restarting...'
 if [ -n '$serviceList' ]; then

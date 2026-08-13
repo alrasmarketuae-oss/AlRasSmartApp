@@ -844,11 +844,51 @@ class S {
     return Intl.message('My Orders', name: 'myOrders', desc: '', args: []);
   }
 
-  /// `Track and manage all your orders in one place.`
+  /// `Incoming sales and your purchases in one place.`
   String get myOrdersSubtitle {
     return Intl.message(
-      'Track and manage all your orders in one place.',
+      'Incoming sales and your purchases in one place.',
       name: 'myOrdersSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Incoming`
+  String get incomingOrders {
+    return Intl.message('Incoming', name: 'incomingOrders', desc: '', args: []);
+  }
+
+  /// `Orders and offers received on your ads.`
+  String get incomingOrdersSubtitle {
+    return Intl.message(
+      'Orders and offers received on your ads.',
+      name: 'incomingOrdersSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Purchases`
+  String get purchases {
+    return Intl.message('Purchases', name: 'purchases', desc: '', args: []);
+  }
+
+  /// `Orders you placed as a buyer.`
+  String get purchasesSubtitle {
+    return Intl.message(
+      'Orders you placed as a buyer.',
+      name: 'purchasesSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No incoming orders yet.`
+  String get noIncomingOrdersYet {
+    return Intl.message(
+      'No incoming orders yet.',
+      name: 'noIncomingOrdersYet',
       desc: '',
       args: [],
     );

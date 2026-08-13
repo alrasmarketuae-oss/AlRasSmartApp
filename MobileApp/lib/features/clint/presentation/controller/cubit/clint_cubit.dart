@@ -43,6 +43,8 @@ import 'package:alrasmarket/features/company/domain/usecases/ad_offers_usecases.
 import 'package:alrasmarket/features/clint/domain/usecases/reduce_cart_item_quantity_usecase.dart';
 import 'package:alrasmarket/features/clint/domain/usecases/remove_cart_item_usecase.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
+import 'package:alrasmarket/features/company/data/models/my_request_offer_model.dart';
+import 'package:alrasmarket/features/company/data/models/request_offer_order_status.dart';
 import 'package:alrasmarket/features/company/domain/usecases/get_geo_usecases.dart';
 import 'package:alrasmarket/features/company/presentation/helpers/create_ad_form_mapper.dart';
 import 'package:dartz/dartz.dart';
@@ -77,6 +79,7 @@ class ClintCubit extends Cubit<ClintStates> {
     required CreateOrderUseCase createOrderUseCase,
     required GetMyOrdersUseCase getMyOrdersUseCase,
     required GetMyOffersUseCase getMyOffersUseCase,
+    required GetMyOffersOnMyRequestsUseCase getMyOffersOnMyRequestsUseCase,
     required GetOrderByIdUseCase getOrderByIdUseCase,
     required UpdateOrderStatusUseCase updateOrderStatusUseCase,
     required RequestOrderReturnUseCase requestOrderReturnUseCase,
@@ -97,6 +100,7 @@ class ClintCubit extends Cubit<ClintStates> {
        _createOrderUseCase = createOrderUseCase,
        _getMyOrdersUseCase = getMyOrdersUseCase,
        _getMyOffersUseCase = getMyOffersUseCase,
+       _getMyOffersOnMyRequestsUseCase = getMyOffersOnMyRequestsUseCase,
        _getOrderByIdUseCase = getOrderByIdUseCase,
        _updateOrderStatusUseCase = updateOrderStatusUseCase,
        _requestOrderReturnUseCase = requestOrderReturnUseCase,
@@ -119,6 +123,7 @@ class ClintCubit extends Cubit<ClintStates> {
   final CreateOrderUseCase _createOrderUseCase;
   final GetMyOrdersUseCase _getMyOrdersUseCase;
   final GetMyOffersUseCase _getMyOffersUseCase;
+  final GetMyOffersOnMyRequestsUseCase _getMyOffersOnMyRequestsUseCase;
   final GetOrderByIdUseCase _getOrderByIdUseCase;
   final UpdateOrderStatusUseCase _updateOrderStatusUseCase;
   final RequestOrderReturnUseCase _requestOrderReturnUseCase;
@@ -223,6 +228,13 @@ class ClintCubit extends Cubit<ClintStates> {
   String? myOffersError;
   int myOffersTotalCount = 0;
   int myOffersTotalPages = 0;
+
+  List<MyRequestOfferModel> incomingOrders = [];
+  bool isLoadingIncomingOrders = false;
+  String? incomingOrdersError;
+  int incomingOrdersTotalCount = 0;
+  int incomingOrdersTotalPages = 0;
+  int? updatingIncomingOrderId;
 
   List<MyListingProductModel> categoryProducts = [];
   bool isLoadingCategoryProducts = false;
@@ -1711,6 +1723,99 @@ class ClintCubit extends Cubit<ClintStates> {
         myOffersError = null;
         isLoadingMyOffers = false;
         emit(FetchMyOffersSuccessState(pageModel.items));
+      },
+    );
+  }
+
+  /// GET /api/Orders/getMyOffersOnMyRequests — seller/incoming orders on my ads.
+  Future<void> fetchIncomingOrders({int page = 1, int pageSize = 20}) async {
+    final token = AuthService.instance.currentToken;
+    if (token == null || token.isEmpty) {
+      incomingOrdersError = S.current.pleaseLoginToViewYourOrders;
+      incomingOrders = [];
+      isLoadingIncomingOrders = false;
+      updatingIncomingOrderId = null;
+      emit(FetchIncomingOrdersErrorState(S.current.pleaseLoginToViewYourOrders));
+      return;
+    }
+
+    isLoadingIncomingOrders = true;
+    incomingOrdersError = null;
+    emit(FetchIncomingOrdersLoadingState());
+
+    final result = await _getMyOffersOnMyRequestsUseCase(
+      GetMyOffersOnMyRequestsParams(
+        page: page,
+        pageSize: pageSize,
+        token: token,
+      ),
+    );
+
+    result.fold(
+      (failure) {
+        incomingOrdersError = failure.message;
+        incomingOrders = [];
+        incomingOrdersTotalCount = 0;
+        incomingOrdersTotalPages = 0;
+        isLoadingIncomingOrders = false;
+        emit(FetchIncomingOrdersErrorState(failure.message));
+      },
+      (pageModel) {
+        incomingOrders = pageModel.items;
+        incomingOrdersTotalCount = pageModel.totalCount;
+        incomingOrdersTotalPages = pageModel.totalPages;
+        incomingOrdersError = null;
+        isLoadingIncomingOrders = false;
+        emit(FetchIncomingOrdersSuccessState(pageModel.items));
+      },
+    );
+  }
+
+  Future<String?> acceptIncomingOrder(int orderId) {
+    return _updateIncomingOrderStatus(
+      orderId: orderId,
+      statusId: RequestOfferOrderStatus.approved,
+    );
+  }
+
+  Future<String?> rejectIncomingOrder(int orderId) {
+    return _updateIncomingOrderStatus(
+      orderId: orderId,
+      statusId: RequestOfferOrderStatus.cancelled,
+    );
+  }
+
+  Future<String?> _updateIncomingOrderStatus({
+    required int orderId,
+    required int statusId,
+  }) async {
+    final token = AuthService.instance.currentToken;
+    if (token == null || token.isEmpty) {
+      return S.current.pleaseLoginToContinue;
+    }
+
+    updatingIncomingOrderId = orderId;
+    emit(IncomingOrderStatusUpdatingState(orderId));
+
+    final result = await _updateOrderStatusUseCase(
+      UpdateOrderStatusParams(
+        orderId: orderId,
+        statusId: statusId,
+        token: token,
+      ),
+    );
+
+    return result.fold(
+      (failure) {
+        updatingIncomingOrderId = null;
+        emit(IncomingOrderStatusUpdatedState(orderId));
+        return failure.message;
+      },
+      (_) async {
+        updatingIncomingOrderId = null;
+        await fetchIncomingOrders();
+        emit(IncomingOrderStatusUpdatedState(orderId));
+        return null;
       },
     );
   }

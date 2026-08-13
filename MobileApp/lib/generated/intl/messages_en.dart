@@ -793,6 +793,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "imageVideoFormatsHint": m15,
     "inProgress": MessageLookupByLibrary.simpleMessage("In Progress"),
+    "incomingOrders": MessageLookupByLibrary.simpleMessage("Incoming"),
+    "incomingOrdersSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Orders and offers received on your ads.",
+    ),
     "invalidEmail": MessageLookupByLibrary.simpleMessage("Invalid email"),
     "invalidPrice": MessageLookupByLibrary.simpleMessage(
       "Enter a valid price greater than zero",
@@ -896,7 +900,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "myOrders": MessageLookupByLibrary.simpleMessage("My Orders"),
     "myOrdersSubtitle": MessageLookupByLibrary.simpleMessage(
-      "Track and manage all your orders in one place.",
+      "Incoming sales and your purchases in one place.",
     ),
     "natureIntermediary": MessageLookupByLibrary.simpleMessage(
       "Merge Spice acts as an intermediary between the supplier and the client, with all sales and purchases conducted through the app.",
@@ -918,6 +922,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "You have no ads yet",
     ),
     "noDetailsAvailable": MessageLookupByLibrary.simpleMessage("No details"),
+    "noIncomingOrdersYet": MessageLookupByLibrary.simpleMessage(
+      "No incoming orders yet.",
+    ),
     "noLiabilityAppLosses": MessageLookupByLibrary.simpleMessage(
       "Any losses due to misuse of the app",
     ),
@@ -1226,6 +1233,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "pulses": MessageLookupByLibrary.simpleMessage("Pulses"),
     "purchaseOrder": MessageLookupByLibrary.simpleMessage("Purchase Order"),
+    "purchases": MessageLookupByLibrary.simpleMessage("Purchases"),
+    "purchasesSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Orders you placed as a buyer.",
+    ),
     "quantity": MessageLookupByLibrary.simpleMessage("Quantity"),
     "quantityExceedsRequired": m26,
     "quantityTypeManuallyHint": MessageLookupByLibrary.simpleMessage(

@@ -798,6 +798,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "imageVideoFormatsHint": m15,
     "inProgress": MessageLookupByLibrary.simpleMessage("قيد التنفيذ"),
+    "incomingOrders": MessageLookupByLibrary.simpleMessage("الواردة"),
+    "incomingOrdersSubtitle": MessageLookupByLibrary.simpleMessage(
+      "الطلبات والعروض الواردة على إعلاناتك.",
+    ),
     "invalidEmail": MessageLookupByLibrary.simpleMessage(
       "بريد إلكتروني غير صالح",
     ),
@@ -899,7 +903,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "myOrders": MessageLookupByLibrary.simpleMessage("طلباتي"),
     "myOrdersSubtitle": MessageLookupByLibrary.simpleMessage(
-      "تابع وأدر كل طلباتك من مكان واحد.",
+      "الطلبات الواردة ومشترياتك في مكان واحد.",
     ),
     "natureIntermediary": MessageLookupByLibrary.simpleMessage(
       "تعمل شركة ميرج سبايس كوسيط بين المورد والعميل، حيث تتم جميع عمليات البيع والشراء من خلال التطبيق.",
@@ -922,6 +926,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "noDetailsAvailable": MessageLookupByLibrary.simpleMessage(
       "لا توجد تفاصيل",
+    ),
+    "noIncomingOrdersYet": MessageLookupByLibrary.simpleMessage(
+      "لا توجد طلبات واردة بعد.",
     ),
     "noLiabilityAppLosses": MessageLookupByLibrary.simpleMessage(
       "أي خسائر ناتجة عن سوء استخدام التطبيق",
@@ -1223,6 +1230,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "pulses": MessageLookupByLibrary.simpleMessage("بقوليات"),
     "purchaseOrder": MessageLookupByLibrary.simpleMessage("طلب الشراء"),
+    "purchases": MessageLookupByLibrary.simpleMessage("المشتريات"),
+    "purchasesSubtitle": MessageLookupByLibrary.simpleMessage(
+      "الطلبات التي قدّمتها كمشتري.",
+    ),
     "quantity": MessageLookupByLibrary.simpleMessage("الكمية"),
     "quantityExceedsRequired": m26,
     "quantityTypeManuallyHint": MessageLookupByLibrary.simpleMessage(
