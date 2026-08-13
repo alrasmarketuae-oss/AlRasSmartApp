@@ -29,6 +29,7 @@ import OrderStatusHistoryStrip from './OrderStatusHistoryStrip'
 import OrderPrintOptionsDialog from './OrderPrintOptionsDialog'
 import OrderPrintSheet from './OrderPrintSheet'
 import { DEFAULT_ORDER_PRINT_OPTIONS, type OrderPrintOptions } from '../../utils/orderPrintOptions'
+import { triggerOrderPrintAfterRender } from '../../utils/fitOrderPrintToA4'
 import { formatAdAmount, amountsLookEqual, productTypeFieldAccent, resolveOrderChannelTypeKey, resolveOrderChannelTypeName } from '../../utils/adsDisplay'
 import {
   formatOrderAmount,
@@ -524,9 +525,7 @@ export default function OffersOrderDetailView({
   const handleConfirmPrint = (options: OrderPrintOptions) => {
     setPrintOptions(options)
     setPrintDialogOpen(false)
-    requestAnimationFrame(() => {
-      window.print()
-    })
+    triggerOrderPrintAfterRender(() => window.print())
   }
 
   function submitReturnDecision(approved: boolean) {

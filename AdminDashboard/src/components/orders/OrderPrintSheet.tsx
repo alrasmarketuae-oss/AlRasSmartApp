@@ -84,170 +84,171 @@ export default function OrderPrintSheet({
     (options.customerInfo ? 1 : 0) + (options.supplierInfo ? 1 : 0) > 0
 
   return (
-    <section className="order-print-sheet hidden print:block">
-      {options.orderSummary ? (
-        <>
-          <div className="mb-3 flex items-end justify-between gap-4 border-b border-slate-300 pb-2">
-            <div>
-              <p className="text-xs font-semibold text-slate-500">{t('orders.orderDetailsPage')}</p>
-              <h2 className="text-xl font-bold text-slate-900">
-                {t('orders.orderNumber')} #{order.id}
-              </h2>
-            </div>
-            <div className="text-end text-xs text-slate-600">
-              <p>
-                <span className="font-semibold">{t('orders.createdOn')}: </span>
-                {formatDetailDate(order.createdAt, locale)}
-              </p>
-              <p className="mt-0.5">
-                <span className="font-semibold">{t('orders.currentStatus')}: </span>
-                {statusLabel}
-              </p>
-            </div>
-          </div>
-
-          <div className="mb-3 grid grid-cols-4 gap-2 text-xs">
-            <PrintCell label={t('orders.productName')} value={order.productName || '—'} bold />
-            <PrintCell label={t('orders.unitPrice')} value={formatAdAmount(customerUnitPrice, locale)} bold />
-            <PrintCell
-              label={quantityLabel}
-              value={formatOrderQuantityWithUnit(quantityValue, order.unitName)}
-              bold
-            />
-            <PrintCell label={t('orders.totalAmount')} value={formatAdAmount(grandTotal, locale)} bold />
-            <PrintCell label={t('orders.category')} value={order.categoryName || '—'} />
-            <PrintCell label={t('orders.productType')} value={typeName || '—'} />
-            <PrintCell
-              label={t('orders.paymentMethod')}
-              value={paymentLabel(order.paymentMethodName, t)}
-            />
-            <PrintCell
-              label={t('orders.supplierTotalPrice')}
-              value={formatAdAmount(supplierTotal, locale)}
-            />
-          </div>
-        </>
-      ) : null}
-
-      {options.pricingBreakdown ? (
-        <div className="mb-3 rounded border border-slate-200 p-3 text-xs">
-          <h3 className="mb-2 text-sm font-bold text-slate-900">{t('orders.printSection.pricingBreakdown')}</h3>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            <PrintCell label={t('orders.unitPrice')} value={formatAdAmount(customerUnitPrice, locale)} />
-            {customerTotal ? (
-              <PrintCell label={t('orders.customerTotalPrice')} value={formatAdAmount(customerTotal, locale)} />
-            ) : null}
-            {!amountsLookEqual(supplierUnitPrice, supplierTotal) ? (
-              <PrintCell label={t('orders.supplierUnitPrice')} value={formatAdAmount(supplierUnitPrice, locale)} />
-            ) : null}
-            <PrintCell label={t('orders.supplierTotalPrice')} value={formatAdAmount(supplierTotal, locale)} />
-            {vatAmount ? <PrintCell label={t('orders.vatAmount')} value={formatAdAmount(vatAmount, locale)} /> : null}
-            {shippingAmount ? (
-              <PrintCell label={t('orders.shippingCost')} value={formatAdAmount(shippingAmount, locale)} />
-            ) : null}
-            <PrintCell label={t('orders.grandTotal')} value={formatAdAmount(grandTotal, locale)} bold />
-            {appProfit ? (
-              <PrintCell label={t('orders.appProfitAmount')} value={formatAdAmount(appProfit, locale)} />
-            ) : null}
-            {chargedAmount && !amountsLookEqual(chargedAmount, grandTotal) ? (
-              <PrintCell label={t('orders.chargedAmount')} value={formatAdAmount(chargedAmount, locale)} />
-            ) : null}
-          </div>
-        </div>
-      ) : null}
-
-      {showParties ? (
-        <div
-          className={`grid gap-3 ${options.customerInfo && options.supplierInfo ? 'grid-cols-2' : 'grid-cols-1'}`}
-        >
-          {options.customerInfo ? (
-            <div className="rounded border border-slate-300 p-3">
-              <h3 className="mb-2 text-sm font-bold text-slate-900">
-                {isRequestOrder ? t('reqsOffers.requestOwnerInfo') : t('orders.customerInfo')}
-              </h3>
-              <div className="space-y-1 text-xs text-slate-800">
-                <p className="text-sm font-bold">{order.customerName || '—'}</p>
-                <p dir="ltr">{order.customerPhone?.trim() || '—'}</p>
-                <p className="break-all">{order.customerEmail || '—'}</p>
-                <p>
-                  <span className="font-semibold text-slate-500">{t('orders.deliveryMethod')}: </span>
-                  {getDeliveryMethodLabel(Boolean(order.isSelfPickup), locale)}
-                </p>
-                {deliveryPrint ? (
-                  <>
-                    <p className="pt-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                      {t('orders.deliveryAddress')}
-                    </p>
-                    <p className="font-semibold text-slate-900">{deliveryPrint.city}</p>
-                    <p className="whitespace-pre-wrap break-words text-slate-800">
-                      {deliveryPrint.addressLine}
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-slate-600">
-                    {order.deliveryCityName?.trim() || order.destinationCountryName?.trim() || '—'}
-                  </p>
-                )}
+    <div className="order-print-fit-host hidden print:block">
+      <section className="order-print-sheet">
+        {options.orderSummary ? (
+          <>
+            <div className="order-print-header">
+              <div>
+                <p className="order-print-kicker">{t('orders.orderDetailsPage')}</p>
+                <h2 className="order-print-title">
+                  {t('orders.orderNumber')} #{order.id}
+                </h2>
               </div>
-            </div>
-          ) : null}
-
-          {options.supplierInfo ? (
-            <div className="rounded border border-slate-300 p-3">
-              <h3 className="mb-2 text-sm font-bold text-slate-900">
-                {isRequestOrder ? t('reqsOffers.offeringSupplierInfo') : t('orders.supplierInfo')}
-              </h3>
-              <div className="space-y-1 text-xs text-slate-800">
-                <p className="text-sm font-bold">{order.supplierName || '—'}</p>
-                <p dir="ltr">{order.supplierPhone?.trim() || '—'}</p>
-                <p className="break-all">{order.supplierEmail || '—'}</p>
-                {order.originCountryName?.trim() ? (
-                  <p>
-                    <span className="font-semibold text-slate-500">{t('ads.originCountry')}: </span>
-                    {order.originCountryName.trim()}
-                  </p>
-                ) : null}
-                {!amountsLookEqual(supplierUnitPrice, supplierTotal) ? (
-                  <p>
-                    <span className="font-semibold text-slate-500">{t('orders.supplierUnitPrice')}: </span>
-                    {formatAdAmount(supplierUnitPrice, locale)}
-                  </p>
-                ) : null}
+              <div className="order-print-meta">
                 <p>
-                  <span className="font-semibold text-slate-500">{t('orders.supplierTotalPrice')}: </span>
-                  {formatAdAmount(supplierTotal, locale)}
+                  <span className="order-print-meta-label">{t('orders.createdOn')}: </span>
+                  {formatDetailDate(order.createdAt, locale)}
+                </p>
+                <p>
+                  <span className="order-print-meta-label">{t('orders.currentStatus')}: </span>
+                  {statusLabel}
                 </p>
               </div>
             </div>
-          ) : null}
-        </div>
-      ) : null}
 
-      {options.specifications && specsComments.trim() ? (
-        <div className="mt-3 rounded border border-slate-200 p-3 text-xs">
-          <h3 className="mb-1 text-sm font-bold text-slate-900">{t('orders.specificationsComments')}</h3>
-          <p className="whitespace-pre-wrap text-slate-800">{specsComments.trim()}</p>
-        </div>
-      ) : null}
+            <div className="order-print-grid-4">
+              <PrintCell label={t('orders.productName')} value={order.productName || '—'} bold />
+              <PrintCell label={t('orders.unitPrice')} value={formatAdAmount(customerUnitPrice, locale)} price />
+              <PrintCell
+                label={quantityLabel}
+                value={formatOrderQuantityWithUnit(quantityValue, order.unitName)}
+                bold
+              />
+              <PrintCell label={t('orders.totalAmount')} value={formatAdAmount(grandTotal, locale)} price />
+              <PrintCell label={t('orders.category')} value={order.categoryName || '—'} />
+              <PrintCell label={t('orders.productType')} value={typeName || '—'} />
+              <PrintCell
+                label={t('orders.paymentMethod')}
+                value={paymentLabel(order.paymentMethodName, t)}
+              />
+              <PrintCell
+                label={t('orders.supplierTotalPrice')}
+                value={formatAdAmount(supplierTotal, locale)}
+                price
+              />
+            </div>
+          </>
+        ) : null}
 
-      {options.statusHistory && statusHistory.length > 0 ? (
-        <div className="mt-3 rounded border border-slate-200 p-3 text-xs">
-          <h3 className="mb-2 text-sm font-bold text-slate-900">{t('orders.tabHistory')}</h3>
-          <ul className="space-y-1">
-            {statusHistory.map((entry) => (
-              <li key={entry.id} className="flex flex-wrap justify-between gap-2 border-b border-slate-100 py-1 last:border-0">
-                <span className="font-semibold">
-                  {locale === 'ar'
-                    ? entry.statusNameAr?.trim() || entry.statusNameEn
-                    : entry.statusNameEn?.trim() || entry.statusNameAr}
-                </span>
-                <span className="text-slate-600">{formatDetailDate(entry.createdAtUtc, locale)}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-    </section>
+        {options.pricingBreakdown ? (
+          <div className="order-print-section">
+            <h3 className="order-print-section-title">{t('orders.printSection.pricingBreakdown')}</h3>
+            <div className="order-print-grid-3">
+              <PrintCell label={t('orders.unitPrice')} value={formatAdAmount(customerUnitPrice, locale)} price />
+              {customerTotal ? (
+                <PrintCell label={t('orders.customerTotalPrice')} value={formatAdAmount(customerTotal, locale)} price />
+              ) : null}
+              {!amountsLookEqual(supplierUnitPrice, supplierTotal) ? (
+                <PrintCell label={t('orders.supplierUnitPrice')} value={formatAdAmount(supplierUnitPrice, locale)} price />
+              ) : null}
+              <PrintCell label={t('orders.supplierTotalPrice')} value={formatAdAmount(supplierTotal, locale)} price />
+              {vatAmount ? <PrintCell label={t('orders.vatAmount')} value={formatAdAmount(vatAmount, locale)} price /> : null}
+              {shippingAmount ? (
+                <PrintCell label={t('orders.shippingCost')} value={formatAdAmount(shippingAmount, locale)} price />
+              ) : null}
+              <PrintCell label={t('orders.grandTotal')} value={formatAdAmount(grandTotal, locale)} price />
+              {appProfit ? (
+                <PrintCell label={t('orders.appProfitAmount')} value={formatAdAmount(appProfit, locale)} price />
+              ) : null}
+              {chargedAmount && !amountsLookEqual(chargedAmount, grandTotal) ? (
+                <PrintCell label={t('orders.chargedAmount')} value={formatAdAmount(chargedAmount, locale)} price />
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        {showParties ? (
+          <div
+            className={`order-print-parties ${options.customerInfo && options.supplierInfo ? 'order-print-parties--two' : ''}`}
+          >
+            {options.customerInfo ? (
+              <div className="order-print-section order-print-party">
+                <h3 className="order-print-section-title">
+                  {isRequestOrder ? t('reqsOffers.requestOwnerInfo') : t('orders.customerInfo')}
+                </h3>
+                <div className="order-print-party-body">
+                  <p className="order-print-party-name">{order.customerName || '—'}</p>
+                  <p dir="ltr">{order.customerPhone?.trim() || '—'}</p>
+                  <p className="order-print-break">{order.customerEmail || '—'}</p>
+                  <p>
+                    <span className="order-print-inline-label">{t('orders.deliveryMethod')}: </span>
+                    {getDeliveryMethodLabel(Boolean(order.isSelfPickup), locale)}
+                  </p>
+                  {deliveryPrint ? (
+                    <>
+                      <p className="order-print-address-label">{t('orders.deliveryAddress')}</p>
+                      <p className="order-print-party-name">{deliveryPrint.city}</p>
+                      <p className="order-print-address-line">{deliveryPrint.addressLine}</p>
+                    </>
+                  ) : (
+                    <p>
+                      {order.deliveryCityName?.trim() || order.destinationCountryName?.trim() || '—'}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : null}
+
+            {options.supplierInfo ? (
+              <div className="order-print-section order-print-party">
+                <h3 className="order-print-section-title">
+                  {isRequestOrder ? t('reqsOffers.offeringSupplierInfo') : t('orders.supplierInfo')}
+                </h3>
+                <div className="order-print-party-body">
+                  <p className="order-print-party-name">{order.supplierName || '—'}</p>
+                  <p dir="ltr">{order.supplierPhone?.trim() || '—'}</p>
+                  <p className="order-print-break">{order.supplierEmail || '—'}</p>
+                  {order.originCountryName?.trim() ? (
+                    <p>
+                      <span className="order-print-inline-label">{t('ads.originCountry')}: </span>
+                      {order.originCountryName.trim()}
+                    </p>
+                  ) : null}
+                  {!amountsLookEqual(supplierUnitPrice, supplierTotal) ? (
+                    <p>
+                      <span className="order-print-inline-label">{t('orders.supplierUnitPrice')}: </span>
+                      <span className="order-print-price">{formatAdAmount(supplierUnitPrice, locale)}</span>
+                    </p>
+                  ) : null}
+                  <p>
+                    <span className="order-print-inline-label">{t('orders.supplierTotalPrice')}: </span>
+                    <span className="order-print-price">{formatAdAmount(supplierTotal, locale)}</span>
+                  </p>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {options.specifications && specsComments.trim() ? (
+          <div className="order-print-section order-print-specs">
+            <h3 className="order-print-section-title">{t('orders.specificationsComments')}</h3>
+            <p className="order-print-specs-text">{specsComments.trim()}</p>
+          </div>
+        ) : null}
+
+        {options.statusHistory && statusHistory.length > 0 ? (
+          <div className="order-print-section order-print-history">
+            <h3 className="order-print-section-title">{t('orders.tabHistory')}</h3>
+            <ul className="order-print-history-list">
+              {statusHistory.map((entry) => (
+                <li key={entry.id} className="order-print-history-item">
+                  <span className="order-print-history-status">
+                    {locale === 'ar'
+                      ? entry.statusNameAr?.trim() || entry.statusNameEn
+                      : entry.statusNameEn?.trim() || entry.statusNameAr}
+                  </span>
+                  <span className="order-print-history-date">
+                    {formatDetailDate(entry.createdAtUtc, locale)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </section>
+    </div>
   )
 }
 
@@ -255,15 +256,25 @@ function PrintCell({
   label,
   value,
   bold = false,
+  price = false,
 }: {
   label: string
   value: string
   bold?: boolean
+  price?: boolean
 }) {
   return (
-    <div className="rounded border border-slate-200 p-2">
-      <p className="font-semibold text-slate-500">{label}</p>
-      <p className={`mt-0.5 ${bold ? 'font-bold text-slate-900' : 'font-semibold text-slate-800'}`}>
+    <div className="order-print-cell">
+      <p className="order-print-cell-label">{label}</p>
+      <p
+        className={[
+          'order-print-cell-value',
+          bold ? 'order-print-cell-value--bold' : '',
+          price ? 'order-print-price' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
         {value}
       </p>
     </div>

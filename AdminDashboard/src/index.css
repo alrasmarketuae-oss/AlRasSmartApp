@@ -728,7 +728,7 @@ body {
 
 @media print {
   @page {
-    margin: 10mm;
+    margin: 6mm;
     size: A4 landscape;
   }
 
@@ -776,14 +776,244 @@ body {
     gap: 0 !important;
   }
 
-  .order-print-root > *:not(.order-print-sheet) {
+  .order-print-root > *:not(.order-print-fit-host) {
     display: none !important;
   }
 
-  .order-print-sheet {
+  .order-print-fit-host {
     display: block !important;
     width: 100%;
+    min-height: 198mm;
+    overflow: hidden;
+    background: #fff !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .order-print-sheet {
+    display: flex !important;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    min-height: 198mm;
+    box-sizing: border-box;
     color: #0f172a;
+    background: #fff !important;
+    font-size: 10pt;
+    line-height: 1.35;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .order-print-sheet.order-print-fit-scaled {
+    min-height: 0;
+    page-break-after: avoid;
+  }
+
+  .order-print-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 2px;
+    padding-bottom: 6px;
+    border-bottom: 1.5px solid #0f172a;
+    background: #fff !important;
+  }
+
+  .order-print-kicker {
+    margin: 0;
+    font-size: 8.5pt;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  .order-print-title {
+    margin: 0;
+    font-size: 16pt;
+    font-weight: 800;
+    line-height: 1.15;
+    color: #0f172a;
+  }
+
+  .order-print-meta {
+    text-align: end;
+    font-size: 8.5pt;
+    color: #0f172a;
+  }
+
+  .order-print-meta p {
+    margin: 0;
+  }
+
+  .order-print-meta-label {
+    font-weight: 700;
+  }
+
+  .order-print-grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+    flex: 0 0 auto;
+  }
+
+  .order-print-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .order-print-cell {
+    border: 1px solid #0f172a;
+    border-radius: 0;
+    padding: 6px 8px;
+    min-width: 0;
+    background: #fff !important;
+  }
+
+  .order-print-cell-label {
+    margin: 0;
+    font-size: 8pt;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.25;
+  }
+
+  .order-print-cell-value {
+    margin: 2px 0 0;
+    font-size: 9.5pt;
+    font-weight: 600;
+    color: #0f172a;
+    word-break: break-word;
+    line-height: 1.25;
+  }
+
+  .order-print-cell-value--bold {
+    font-weight: 800;
+  }
+
+  .order-print-price {
+    font-weight: 800 !important;
+  }
+
+  .order-print-section {
+    border: 1px solid #0f172a;
+    border-radius: 0;
+    padding: 8px 10px;
+    background: #fff !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .order-print-section-title {
+    margin: 0 0 6px;
+    font-size: 11pt;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  .order-print-parties {
+    display: grid;
+    gap: 6px;
+    flex: 1 1 auto;
+    align-content: stretch;
+    min-height: 0;
+  }
+
+  .order-print-parties--two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .order-print-party {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
+
+  .order-print-party-body {
+    flex: 1;
+    font-size: 9.5pt;
+    color: #0f172a;
+  }
+
+  .order-print-party-body p {
+    margin: 0 0 4px;
+  }
+
+  .order-print-party-name {
+    font-size: 11pt !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+  }
+
+  .order-print-inline-label,
+  .order-print-address-label {
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .order-print-address-label {
+    margin-top: 4px !important;
+    font-size: 7.5pt !important;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .order-print-address-line {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 10pt;
+    font-weight: 600;
+  }
+
+  .order-print-break {
+    word-break: break-all;
+  }
+
+  .order-print-specs {
+    flex: 0 0 auto;
+  }
+
+  .order-print-specs-text {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 9.5pt;
+  }
+
+  .order-print-history {
+    flex: 1 1 auto;
+  }
+
+  .order-print-history-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 12px;
+  }
+
+  .order-print-history-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 3px 0;
+    border-bottom: 1px solid #0f172a;
+    font-size: 8.5pt;
+    background: #fff !important;
+  }
+
+  .order-print-history-status {
+    font-weight: 700;
+    min-width: 0;
+  }
+
+  .order-print-history-date {
+    flex-shrink: 0;
+    color: #0f172a;
+    font-size: 8pt;
+    font-weight: 600;
   }
 
   .order-print-root .admin-card,
