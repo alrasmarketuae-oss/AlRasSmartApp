@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:alrasmarket/core/router/app_router.dart';
+import 'package:alrasmarket/core/serveses/app_order_listener_service.dart';
 import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
@@ -33,12 +36,23 @@ class _MyOrdersViewState extends State<MyOrdersView> {
   final Map<int, GlobalKey> _orderKeys = {};
   int? _highlightOrderId;
   int? _scrolledForOrderId;
+  StreamSubscription<void>? _ordersRealtimeSub;
 
   @override
   void initState() {
     super.initState();
     NotificationNavigationHelper.pendingHighlightOrderId
         .addListener(_onPendingHighlight);
+    _ordersRealtimeSub =
+        AppOrderListenerService.instance.userOrdersUpdatedStream.listen((_) {
+      if (!mounted) return;
+      final cubit = context.read<ClintCubit>();
+      if (_sectionIndex == 0) {
+        unawaited(cubit.fetchIncomingOrders());
+      } else {
+        unawaited(cubit.fetchMyOrders());
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<ClintCubit>().fetchIncomingOrders();
@@ -50,6 +64,7 @@ class _MyOrdersViewState extends State<MyOrdersView> {
   void dispose() {
     NotificationNavigationHelper.pendingHighlightOrderId
         .removeListener(_onPendingHighlight);
+    _ordersRealtimeSub?.cancel();
     _purchasesScrollController.dispose();
     _incomingScrollController.dispose();
     super.dispose();

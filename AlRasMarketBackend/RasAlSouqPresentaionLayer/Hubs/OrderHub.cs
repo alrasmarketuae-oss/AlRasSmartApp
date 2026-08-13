@@ -55,7 +55,34 @@ public sealed class OrderHub(IRasAlSouqDbContext dbContext) : Hub
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, GetGroupName(orderId));
     }
 
+    /// <summary>
+    /// Joins the authenticated user's inbox group for order-list refresh events.
+    /// </summary>
+    public async Task JoinUserOrders()
+    {
+        var userId = GetCurrentUserId();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return;
+        }
+
+        await Groups.AddToGroupAsync(Context.ConnectionId, GetUserGroupName(userId));
+    }
+
+    public async Task LeaveUserOrders()
+    {
+        var userId = GetCurrentUserId();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return;
+        }
+
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, GetUserGroupName(userId));
+    }
+
     internal static string GetGroupName(long orderId) => $"Order_{orderId}";
+
+    internal static string GetUserGroupName(string userId) => $"UserOrders_{userId}";
 
     private string? GetCurrentUserId() =>
         Context.User?.FindFirst("EntityId")?.Value

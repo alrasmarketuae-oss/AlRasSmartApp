@@ -1644,6 +1644,16 @@ class S {
     );
   }
 
+  /// `Awaiting your approval`
+  String get awaitingYourApproval {
+    return Intl.message(
+      'Awaiting your approval',
+      name: 'awaitingYourApproval',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Active`
   String get listingActive {
     return Intl.message('Active', name: 'listingActive', desc: '', args: []);

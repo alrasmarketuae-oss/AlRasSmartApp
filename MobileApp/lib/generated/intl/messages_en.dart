@@ -309,6 +309,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "awaitingSellerApproval": MessageLookupByLibrary.simpleMessage(
       "Awaiting seller approval",
     ),
+    "awaitingYourApproval": MessageLookupByLibrary.simpleMessage(
+      "Awaiting your approval",
+    ),
     "backToHome": MessageLookupByLibrary.simpleMessage("Back to Home"),
     "beauty": MessageLookupByLibrary.simpleMessage("Beauty"),
     "beforeDiscount": MessageLookupByLibrary.simpleMessage("Before Discount"),

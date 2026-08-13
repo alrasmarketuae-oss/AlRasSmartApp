@@ -13,6 +13,7 @@ public sealed class OrderRealtimeNotificationService(
         byte? statusId = null,
         string? statusNameEn = null,
         string? statusNameAr = null,
+        IEnumerable<Guid>? participantUserIds = null,
         CancellationToken cancellationToken = default)
     {
         if (orderId <= 0)
@@ -20,25 +21,47 @@ public sealed class OrderRealtimeNotificationService(
             return;
         }
 
+        var payload = new
+        {
+            orderId,
+            statusId,
+            statusNameEn,
+            statusNameAr,
+            updatedAtUtc = DateTime.UtcNow
+        };
+
         try
         {
             await hubContext.Clients
                 .Group(OrderHub.GetGroupName(orderId))
-                .SendAsync(
-                    "orderUpdated",
-                    new
-                    {
-                        orderId,
-                        statusId,
-                        statusNameEn,
-                        statusNameAr,
-                        updatedAtUtc = DateTime.UtcNow
-                    },
-                    cancellationToken);
+                .SendAsync("orderUpdated", payload, cancellationToken);
         }
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Failed broadcasting orderUpdated for order {OrderId}", orderId);
+        }
+
+        if (participantUserIds == null)
+        {
+            return;
+        }
+
+        foreach (var userId in participantUserIds.Where(id => id != Guid.Empty).Distinct())
+        {
+            try
+            {
+                await hubContext.Clients
+                    .Group(OrderHub.GetUserGroupName(userId.ToString()))
+                    .SendAsync("orderUpdated", payload, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(
+                    ex,
+                    "Failed broadcasting orderUpdated for order {OrderId} to user {UserId}",
+                    orderId,
+                    userId);
+            }
         }
     }
 }

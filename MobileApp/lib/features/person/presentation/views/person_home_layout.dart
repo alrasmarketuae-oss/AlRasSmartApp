@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:alrasmarket/core/serveses/notifications_service.dart';
 import 'package:alrasmarket/core/widgets/scroll_aware_bottom_nav_scaffold.dart';
+import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
+import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_states.dart';
 import 'package:alrasmarket/features/clint/presentation/views/home_view.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/user_bottom_nav_bar.dart';
 import 'package:alrasmarket/features/person/presentation/controller/cubit/person_cubit.dart';
@@ -22,6 +26,12 @@ class _PersonHomeLayoutState extends State<PersonHomeLayout> {
   void initState() {
     super.initState();
     NotificationsService.instance.refreshUnreadCount();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final cubit = context.read<ClintCubit>();
+      unawaited(cubit.ensureOrdersRealtimeListener());
+      unawaited(cubit.fetchIncomingOrders());
+    });
   }
 
   @override
@@ -48,15 +58,22 @@ class _PersonHomeLayoutState extends State<PersonHomeLayout> {
           bottomNavigationBar: ListenableBuilder(
             listenable: NotificationsService.instance,
             builder: (context, _) {
-              return UserBottomNavBar(
-                currentIndex: cubit.currentIndex,
-                onTap: (index) =>
-                    context.read<PersonCubit>().setTab(index),
-                context: context,
-                isPerson: true,
-                showMyAds: false,
-                unreadBadgeCount:
-                    NotificationsService.instance.unreadCount,
+              return BlocSelector<ClintCubit, ClintStates, int>(
+                selector: (state) =>
+                    context.read<ClintCubit>().pendingIncomingApprovalCount,
+                builder: (context, pendingOrdersBadgeCount) {
+                  return UserBottomNavBar(
+                    currentIndex: cubit.currentIndex,
+                    onTap: (index) =>
+                        context.read<PersonCubit>().setTab(index),
+                    context: context,
+                    isPerson: true,
+                    showMyAds: false,
+                    unreadBadgeCount:
+                        NotificationsService.instance.unreadCount,
+                    pendingOrdersBadgeCount: pendingOrdersBadgeCount,
+                  );
+                },
               );
             },
           ),

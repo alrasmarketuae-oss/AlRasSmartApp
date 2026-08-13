@@ -304,6 +304,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "awaitingSellerApproval": MessageLookupByLibrary.simpleMessage(
       "بانتظار موافقة البائع",
     ),
+    "awaitingYourApproval": MessageLookupByLibrary.simpleMessage(
+      "بانتظار موافقتك",
+    ),
     "backToHome": MessageLookupByLibrary.simpleMessage("العودة للرئيسية"),
     "beauty": MessageLookupByLibrary.simpleMessage("تجميل"),
     "beforeDiscount": MessageLookupByLibrary.simpleMessage("قبل الخصم"),

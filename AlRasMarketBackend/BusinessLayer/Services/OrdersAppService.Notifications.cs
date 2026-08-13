@@ -213,6 +213,7 @@ public partial class OrdersAppService
                 order.StatusId,
                 RequestOfferStatusLabels.ResolveNameEn(order),
                 RequestOfferStatusLabels.ResolveNameAr(order),
+                ResolveOrderParticipantUserIds(order),
                 cancellationToken);
         }
         catch (Exception ex)

@@ -221,6 +221,7 @@
     "returnsFilter": "المرتجعات",
     "awaitingAdminApproval": "بانتظار موافقة التطبيق",
     "awaitingSellerApproval": "بانتظار موافقة البائع",
+    "awaitingYourApproval": "بانتظار موافقتك",
     "listingActive": "نشط",
     "listingPaused": "متوقف",
     "noOrdersMatchFilter": "لا توجد طلبات مطابقة لهذا الفلتر.",

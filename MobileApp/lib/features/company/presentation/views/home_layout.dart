@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:alrasmarket/core/serveses/notifications_service.dart';
 import 'package:alrasmarket/core/widgets/scroll_aware_bottom_nav_scaffold.dart';
+import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
+import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_states.dart';
 import 'package:alrasmarket/features/clint/presentation/views/home_view.dart';
 
 import 'package:alrasmarket/features/clint/presentation/views/my_orders_view.dart';
@@ -26,6 +30,12 @@ class _CompanyHomeLayoutState extends State<CompanyHomeLayout> {
   void initState() {
     super.initState();
     NotificationsService.instance.refreshUnreadCount();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final cubit = context.read<ClintCubit>();
+      unawaited(cubit.ensureOrdersRealtimeListener());
+      unawaited(cubit.fetchIncomingOrders());
+    });
   }
 
   @override
@@ -64,14 +74,21 @@ class _CompanyHomeLayoutState extends State<CompanyHomeLayout> {
           bottomNavigationBar: ListenableBuilder(
             listenable: NotificationsService.instance,
             builder: (context, _) {
-              return CompanyBottomNavBar(
-                currentIndex: currentIndex,
-                onTap: (index) =>
-                    context.read<CompanyCubit>().setTab(index),
-                context: context,
-                showMyAds: showMyAds,
-                unreadBadgeCount:
-                    NotificationsService.instance.unreadCount,
+              return BlocSelector<ClintCubit, ClintStates, int>(
+                selector: (state) =>
+                    context.read<ClintCubit>().pendingIncomingApprovalCount,
+                builder: (context, pendingOrdersBadgeCount) {
+                  return CompanyBottomNavBar(
+                    currentIndex: currentIndex,
+                    onTap: (index) =>
+                        context.read<CompanyCubit>().setTab(index),
+                    context: context,
+                    showMyAds: showMyAds,
+                    unreadBadgeCount:
+                        NotificationsService.instance.unreadCount,
+                    pendingOrdersBadgeCount: pendingOrdersBadgeCount,
+                  );
+                },
               );
             },
           ),

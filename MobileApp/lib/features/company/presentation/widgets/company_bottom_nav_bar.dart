@@ -15,6 +15,7 @@ class CompanyBottomNavBar extends StatelessWidget {
     required this.context,
     this.showMyAds = true,
     this.unreadBadgeCount = 0,
+    this.pendingOrdersBadgeCount = 0,
   });
 
   final int currentIndex;
@@ -22,6 +23,7 @@ class CompanyBottomNavBar extends StatelessWidget {
   final BuildContext context;
   final bool showMyAds;
   final int unreadBadgeCount;
+  final int pendingOrdersBadgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +47,7 @@ class CompanyBottomNavBar extends StatelessWidget {
         icon: AppAssets.ordersIcon,
         label: S.of(context).myOrders,
         outlinedCircle: false,
-        badgeCount: 0,
+        badgeCount: pendingOrdersBadgeCount,
       ),
       if (showMyAds)
         (

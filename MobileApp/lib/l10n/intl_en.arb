@@ -210,6 +210,7 @@
     "returnsFilter": "Returns",
     "awaitingAdminApproval": "Awaiting app approval",
     "awaitingSellerApproval": "Awaiting seller approval",
+    "awaitingYourApproval": "Awaiting your approval",
     "listingActive": "Active",
     "listingPaused": "Paused",
     "noOrdersMatchFilter": "No orders match this filter.",

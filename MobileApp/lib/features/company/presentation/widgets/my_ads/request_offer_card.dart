@@ -6,6 +6,7 @@ import 'package:alrasmarket/features/clint/presentation/models/product_media_ite
 import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_media_preview_screen.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_video_thumbnail.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/track_order_widgets/order_status_style.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/track_order_widgets/track_order_status_helper.dart';
 import 'package:alrasmarket/features/company/data/models/my_request_offer_model.dart';
 import 'package:alrasmarket/features/company/presentation/helpers/create_ad_form_mapper.dart';
 import 'package:alrasmarket/features/company/presentation/helpers/create_ad_price_labels.dart';
@@ -61,7 +62,7 @@ class RequestOfferCard extends StatelessWidget {
       offer.unitName,
     );
     final mediaItems = _mediaItems();
-    final statusLabel = offer.statusLabel(isArabic: isArabic);
+    final statusLabel = _statusLabel(s, isArabic);
     final statusColors = OrderStatusStyle.forStatusId(
       offer.statusId,
       fallbackName: offer.statusName,
@@ -430,6 +431,13 @@ class RequestOfferCard extends StatelessWidget {
     final trimmed = formatted.trim();
     if (trimmed.isEmpty) return '';
     return trimmed.replaceAll(RegExp(r'[^0-9.,]'), '').trim();
+  }
+
+  String _statusLabel(S s, bool isArabic) {
+    if (offer.statusId == OrderStatusCodes.awaitingSellerApproval) {
+      return s.awaitingYourApproval;
+    }
+    return offer.statusLabel(isArabic: isArabic);
   }
 
   String _resolvedCurrency() {

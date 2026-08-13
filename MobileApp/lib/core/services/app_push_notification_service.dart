@@ -357,7 +357,10 @@ class AppPushNotificationService {
     }
     // Chat / non-order pushes should not force a full orders refresh.
     if (type.contains('chat')) return;
-    unawaited(cubit.fetchMyOrders());
+    unawaited(Future.wait([
+      cubit.fetchIncomingOrders(),
+      cubit.fetchMyOrders(),
+    ]));
   }
 
   Future<void> _refreshProfileFromData(Map<String, dynamic> data) async {

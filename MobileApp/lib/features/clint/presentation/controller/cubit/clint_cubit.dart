@@ -14,6 +14,7 @@ import 'package:alrasmarket/core/cache/product_list_cache.dart';
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/services/dio_helper.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
+import 'package:alrasmarket/core/serveses/app_order_listener_service.dart';
 import 'package:alrasmarket/core/utils/localized_product_text.dart';
 import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_ownership_helper.dart';
@@ -235,6 +236,30 @@ class ClintCubit extends Cubit<ClintStates> {
   int incomingOrdersTotalCount = 0;
   int incomingOrdersTotalPages = 0;
   int? updatingIncomingOrderId;
+
+  StreamSubscription<void>? _userOrdersRealtimeSub;
+  bool _ordersRealtimeStarted = false;
+
+  /// Orders on my ads that still need seller approval (incoming tab badge).
+  int get pendingIncomingApprovalCount =>
+      incomingOrders.where((order) => order.canAccept).length;
+
+  Future<void> ensureOrdersRealtimeListener() async {
+    if (_ordersRealtimeStarted) return;
+    _ordersRealtimeStarted = true;
+    _userOrdersRealtimeSub ??=
+        AppOrderListenerService.instance.userOrdersUpdatedStream.listen((_) {
+      unawaited(refreshOrdersFromRealtime());
+    });
+    await AppOrderListenerService.instance.startUserOrdersListener();
+  }
+
+  Future<void> refreshOrdersFromRealtime() async {
+    await Future.wait([
+      fetchIncomingOrders(),
+      fetchMyOrders(),
+    ]);
+  }
 
   List<MyListingProductModel> categoryProducts = [];
   bool isLoadingCategoryProducts = false;

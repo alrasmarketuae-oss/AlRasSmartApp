@@ -711,4 +711,20 @@ public partial class OrdersAppService
 
         return fallback;
     }
+
+    private static IEnumerable<Guid> ResolveOrderParticipantUserIds(Order order)
+    {
+        yield return order.FromUserId;
+
+        if (order.ToUserId != Guid.Empty)
+        {
+            yield return order.ToUserId;
+        }
+
+        var ownerId = order.Product?.OwnerId ?? Guid.Empty;
+        if (ownerId != Guid.Empty && ownerId != order.ToUserId)
+        {
+            yield return ownerId;
+        }
+    }
 }

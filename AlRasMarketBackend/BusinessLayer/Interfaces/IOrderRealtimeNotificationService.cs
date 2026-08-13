@@ -10,5 +10,6 @@ public interface IOrderRealtimeNotificationService
         byte? statusId = null,
         string? statusNameEn = null,
         string? statusNameAr = null,
+        IEnumerable<Guid>? participantUserIds = null,
         CancellationToken cancellationToken = default);
 }

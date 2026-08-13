@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../core/cache/api_cache_store.dart';
 import '../../../core/helper/cach_helper.dart';
 import '../../../core/serveses/app_chat_listener_service.dart';
+import '../../../core/serveses/app_order_listener_service.dart';
 import '../../../core/serveses/cached_constants.dart';
 import '../../../core/services/api_constants.dart';
 import '../../../core/services/biometric_auth_service.dart';
@@ -184,6 +185,7 @@ class AuthService {
         await CachHelper.removeData('token');
         token = null;
         await AppChatListenerService.instance.stop();
+        await AppOrderListenerService.instance.stop();
       }
 
       // Save email
@@ -408,6 +410,7 @@ class AuthService {
     await BiometricAuthService.instance.stashSessionBeforeLogout();
     await _clearFcmTokenOnServer();
     await AppChatListenerService.instance.stop();
+    await AppOrderListenerService.instance.stop();
     await ApiCacheStore.instance.invalidateUserData();
     await clearAuthData();
     debugPrint('User logged out');

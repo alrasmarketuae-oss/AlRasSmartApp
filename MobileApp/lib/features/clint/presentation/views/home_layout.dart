@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:alrasmarket/core/serveses/notifications_service.dart';
 import 'package:alrasmarket/core/widgets/scroll_aware_bottom_nav_scaffold.dart';
 import 'package:alrasmarket/features/clint/presentation/views/home_view.dart';
@@ -24,6 +26,12 @@ class _HomeLayoutState extends State<HomeLayout> {
   void initState() {
     super.initState();
     NotificationsService.instance.refreshUnreadCount();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final cubit = context.read<ClintCubit>();
+      unawaited(cubit.ensureOrdersRealtimeListener());
+      unawaited(cubit.fetchIncomingOrders());
+    });
   }
 
   @override
@@ -62,13 +70,20 @@ class _HomeLayoutState extends State<HomeLayout> {
           bottomNavigationBar: ListenableBuilder(
             listenable: NotificationsService.instance,
             builder: (context, _) {
-              return UserBottomNavBar(
-                currentIndex: currentIndex,
-                onTap: (index) => context.read<ClintCubit>().setTab(index),
-                context: context,
-                showMyAds: showMyAds,
-                unreadBadgeCount:
-                    NotificationsService.instance.unreadCount,
+              return BlocSelector<ClintCubit, ClintStates, int>(
+                selector: (state) =>
+                    context.read<ClintCubit>().pendingIncomingApprovalCount,
+                builder: (context, pendingOrdersBadgeCount) {
+                  return UserBottomNavBar(
+                    currentIndex: currentIndex,
+                    onTap: (index) => context.read<ClintCubit>().setTab(index),
+                    context: context,
+                    showMyAds: showMyAds,
+                    unreadBadgeCount:
+                        NotificationsService.instance.unreadCount,
+                    pendingOrdersBadgeCount: pendingOrdersBadgeCount,
+                  );
+                },
               );
             },
           ),
