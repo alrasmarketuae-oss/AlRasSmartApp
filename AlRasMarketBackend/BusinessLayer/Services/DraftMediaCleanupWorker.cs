@@ -235,24 +235,6 @@ public sealed class DraftMediaCleanupWorker(
             Add(path);
         }
 
-        var offerImagePaths = await db.OfferOnRequestImages
-            .AsNoTracking()
-            .Select(i => i.ImagePath)
-            .ToListAsync(cancellationToken);
-        foreach (var path in offerImagePaths)
-        {
-            Add(path);
-        }
-
-        var offerDocumentPaths = await db.OfferOnRequestDocuments
-            .AsNoTracking()
-            .Select(d => d.DocumentPath)
-            .ToListAsync(cancellationToken);
-        foreach (var path in offerDocumentPaths)
-        {
-            Add(path);
-        }
-
         var companyImagePaths = await db.CompanyImages
             .AsNoTracking()
             .Select(i => i.ImagePath)

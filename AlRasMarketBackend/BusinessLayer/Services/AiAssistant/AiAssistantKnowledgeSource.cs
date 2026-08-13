@@ -28,7 +28,6 @@ internal static class AiAssistantKnowledgeSource
         AddSupplierAdCreation(chunks);
         AddAdManagement(chunks);
         AddRequestsAndOffers(chunks);
-        AddBalanceAndWithdrawals(chunks);
         AddShippingCompany(chunks);
         AddSupport(chunks);
         AddCommonQuestions(chunks);
@@ -51,7 +50,7 @@ internal static class AiAssistantKnowledgeSource
             الإجابة: أنا الراس الذكي (Alras Smart)، المساعد الرسمي داخل تطبيق الراس الذكي.
             اسمي بالعربية: الراس الذكي. واسمي بالإنجليزية: Alras Smart.
             أقدر بدقة (حسب نوع حسابك): إضافة إعلانات، تعديل الأسعار والكميات، البحث في المنتجات ومقارنة الأسعار، جلب الأرخص والأغلى، معرفة أسعار الشحن إلى دولة معيّنة، جلب تفاصيل إعلاناتك وطلباتك، ومعرفة مبيعاتك والطلبات المعلّقة على إعلاناتك.
-            ما أقدر أعمله يعتمد على نوع الحساب: المورد ينشئ أنواع إعلانات متعددة ويدير الإعلانات والمبيعات والسحب؛ عميل الشركة ينشئ Request فقط؛ شركة الشحن تنشئ إعلان شحن فقط؛ العميل الفردي يشتري ويتابع الطلبات ولا ينشئ إعلانات.
+            ما أقدر أعمله يعتمد على نوع الحساب: المورد ينشئ أنواع إعلانات متعددة ويدير الإعلانات والمبيعات؛ عميل الشركة ينشئ Request فقط؛ شركة الشحن تنشئ إعلان شحن فقط؛ العميل الفردي يشتري ويتابع الطلبات ولا ينشئ إعلانات.
             إذا طلب أحد إنشاء إعلان وهو غير مخوّل، أرفض فوراً قبل جمع أي حقول.
             أنا لست موظف دعم بشري: للحالات الفردية التي تحتاج تدخلاً بشرياً استخدم Live Chat من الملف الشخصي.
             أرد بلغة رسالتك: تكتب بالعربية أرد بالعربية، وتكتب بالإنجليزية أرد بالإنجليزية.
@@ -62,7 +61,7 @@ internal static class AiAssistantKnowledgeSource
             Answer: I am Alras Smart (الراس الذكي), the official AI agent inside the Al Ras Smart app.
             My English name is Alras Smart. My Arabic name is الراس الذكي.
             Precisely, I can (depending on your account type): create ads, update prices and quantities, search products and compare prices, fetch the cheapest and most expensive listings, look up shipping prices to a country, fetch details of your ads and orders, and report your sales and pending orders on your ads.
-            What I can do depends on account type: suppliers can create multiple ad types and manage ads/sales/withdrawals; company customers can create Request only; shipping companies create shipping ads only; personal customers buy and track orders and cannot create ads.
+            What I can do depends on account type: suppliers can create multiple ad types and manage ads and sales; company customers can create Request only; shipping companies create shipping ads only; personal customers buy and track orders and cannot create ads.
             If someone tries to create an ad they are not authorized for, I refuse immediately before collecting any fields.
             I am not a human support agent: for individual cases needing human action, use Live Chat from Profile.
             I reply in the language of your message: Arabic in, Arabic out; English in, English out.
@@ -94,7 +93,7 @@ internal static class AiAssistantKnowledgeSource
             سؤال: كيف أبدأ؟ ماذا أفعل أولاً؟ من أين أبدأ في التطبيق؟ كيف أستخدم التطبيق؟
             الإجابة: ابدأ بتسجيل الدخول أو إنشاء حساب، لأن معظم الإجراءات تحتاج حساباً.
             إن كنت مشترياً فرداً فأنشئ حسابك بجوجل أو أبل في ثوانٍ، ثم تصفح منتجات التجزئة في الصفحة الرئيسية أو ابحث عما تريد بالاسم أو بالصورة، ثم أضف إلى السلة وأكمل الشراء، وتابع طلبك من صفحة طلباتي.
-            إن كنت مورداً فأكمل التسجيل بالرخصة التجارية وصور الشركة وانتظر الاعتماد، ثم أنشئ إعلاناتك من زر إنشاء إعلان، وتابعها من صفحة الحساب، ورصيدك من صفحة الرصيد. المورد يستطيع أيضاً الشراء وطلب البضائع مثل أي مشتري ويتابع مشترياته من صفحة طلباتي، بالإضافة لمتابعة الطلبات الواردة على إعلاناته.
+            إن كنت مورداً فأكمل التسجيل بالرخصة التجارية وصور الشركة وانتظر الاعتماد، ثم أنشئ إعلاناتك من زر إنشاء إعلان، وتابعها من صفحة الحساب. المورد يستطيع أيضاً الشراء وطلب البضائع مثل أي مشتري ويتابع مشترياته من صفحة طلباتي، بالإضافة لمتابعة الطلبات الواردة على إعلاناته.
             إن كنت شركة تشتري بالجملة فتصفح الأصناف، وإن لم تجد ما تريد فانشر إعلان Request من صفحة إنشاء طلب واستقبل العروض.
             إن كنت شركة شحن فأضف إعلان الشحن من الصفحة الرئيسية وأدر إعلاناتك من نفس المكان.
             في أي وقت يمكنك سؤالي عن أي خطوة، أو التواصل مع Live Chat لمساعدة بشرية.
@@ -104,7 +103,7 @@ internal static class AiAssistantKnowledgeSource
             Question: how do I start? What should I do first? Where do I begin in the app? How do I use the app?
             Answer: start by signing in or creating an account, because most actions require one.
             If you are an individual buyer, create your account with Google or Apple in seconds, then browse retail products on home or search by name or image, add to cart and complete the purchase, and follow your order from My Orders.
-            If you are a supplier, complete registration with your trade license and company images and wait for approval, then create listings from the Create Ad button, follow them from the Account page, and track earnings on the Balance page. Suppliers can also buy and place orders like any buyer and track those purchases from My Orders, in addition to incoming orders on their ads.
+            If you are a supplier, complete registration with your trade license and company images and wait for approval, then create listings from the Create Ad button, follow them from the Account page. Suppliers can also buy and place orders like any buyer and track those purchases from My Orders, in addition to incoming orders on their ads.
             If you are a company buying wholesale, browse the categories, and if you cannot find what you need publish a Request ad from the Create Order page and receive offers.
             If you are a shipping company, add your shipping ad from Home and manage your ads from the same place.
             At any time you can ask me about any step, or use Live Chat for human help.
@@ -139,7 +138,7 @@ internal static class AiAssistantKnowledgeSource
             للتواصل عبر البريد يجب إظهار هذا الرابط بهذه الصيغة بالضبط: [اضغط هنا لإرسال بريد إلكتروني](mailto:nasermostafa.ma122@gmail.com)
             يجب أن تكون عبارة «اضغط هنا» قابلة للضغط، ولا تعرض الرابط الخام وحده بدلاً منها.
             تنبيه مهم: ناصر هو باني ومصمم ومبرمج التطبيقات والمنصة ومدرّب نموذج الذكاء الاصطناعي، أما الشركة التي تشغّل السوق وتدير عملياته التجارية فهي شركة ميرج سبايس لتجارة المواد الغذائية. لا تخلط بين البناء والتطوير والتدريب وبين التشغيل التجاري.
-            للاستفسارات التقنية والتواصل مع المطوّر استخدم بيانات ناصر أعلاه، أما مشكلات الطلبات والاسترجاع والرصيد والحساب فتُتابع مع دعم الراس الذكي عبر Live Chat.
+            للاستفسارات التقنية والتواصل مع المطوّر استخدم بيانات ناصر أعلاه، أما مشكلات الطلبات والاسترجاع والحساب فتُتابع مع دعم الراس الذكي عبر Live Chat.
             """);
         Add(chunks, "app-developer", "Who made the program, developed or built Al Ras Smart, who trained the AI model", "en", All,
             """
@@ -151,7 +150,7 @@ internal static class AiAssistantKnowledgeSource
             For email, show exactly: [Click here to send an email](mailto:nasermostafa.ma122@gmail.com)
             “Click here” must be clickable; do not replace it with a raw URL alone.
             Important distinction: Nasser built and developed the apps and platform and trained the AI model, while Merge Spice Foodstuff Trading LLC operates the marketplace and its commercial activities. Do not confuse building, development, and AI training with commercial operation.
-            Use Nasser's details above for technical enquiries or contacting the developer; order, return, balance, and account issues should go to Al Ras Smart support through Live Chat.
+            Use Nasser's details above for technical enquiries or contacting the developer; order, return, and account issues should go to Al Ras Smart support through Live Chat.
             """);
 
         Add(chunks, "what-can-i-do", "ماذا يمكنني أن أفعل في التطبيق بحسابي", "ar", SignedIn,
@@ -159,7 +158,7 @@ internal static class AiAssistantKnowledgeSource
             سؤال: ماذا أستطيع أن أفعل هنا؟ ما الميزات المتاحة لي؟ ما الذي يمكنني فعله بحسابي؟
             الإجابة: كل مستخدم مسجل يستطيع: تصفح المنتجات المتاحة لنوع حسابه، والبحث بالنص أو بالصورة، وفتح تفاصيل الإعلانات، وحفظ الإعلانات المفضلة، وإدارة العناوين المحفوظة، وتعديل ملفه الشخصي وكلمة السر واللغة والبصمة، والتواصل مع Live Chat، وتصفح المساعدة والدعم.
             المشترون إضافة إلى ذلك: يشترون ويتابعون طلباتهم من صفحة طلباتي ويطلبون الاسترجاع للحالات المؤهلة.
-            المورد داخل الإمارات ينشئ كل أنواع الإعلانات تقريباً. أما المورد المسجل برقم هاتف غير إماراتي والموجود خارج الإمارات فينشئ Booking فقط. ويدير المورد إعلانه من قسم إعلاناتي، ويتابع عروضه من قسم عروضي، ويتابع رصيده ويطلب السحب.
+            المورد داخل الإمارات ينشئ كل أنواع الإعلانات تقريباً. أما المورد المسجل برقم هاتف غير إماراتي والموجود خارج الإمارات فينشئ Booking فقط. ويدير المورد إعلانه من قسم إعلاناتي، ويتابع عروضه من قسم عروضي.
             مهم: المورد يستطيع أيضاً الشراء وطلب المنتجات ومتابعة مشترياته من صفحة طلباتي مثل أي مشتري، فهذا غير مقتصر على العملاء فقط.
             عميل الشركة إضافة إلى ذلك: ينشر إعلانات Request ويستقبل العروض ويقبل أو يرفض.
             شركة الشحن: تضيف إعلانات الشحن وتديرها فقط.
@@ -169,7 +168,7 @@ internal static class AiAssistantKnowledgeSource
             Question: what can I do here? What features are available to me? What can I do with my account?
             Answer: every signed-in user can browse the products available to their account type, search by text or image, open listing details, save favourite listings, manage saved addresses, edit their profile, password, language, and biometric unlock, use Live Chat, and read Help and Support.
             Buyers additionally purchase, follow their orders from My Orders, and request returns for eligible cases.
-            UAE-based suppliers additionally create almost all ad types. A supplier registered with a non-UAE phone number and located outside the UAE can create Booking ads only. Suppliers manage listings in My Ads, follow bids in My Offers, and track balance and request withdrawals.
+            UAE-based suppliers additionally create almost all ad types. A supplier registered with a non-UAE phone number and located outside the UAE can create Booking ads only. Suppliers manage listings in My Ads, follow bids in My Offers.
             Important: suppliers can also buy products, place orders, and track their purchases from My Orders like any buyer — buying is not limited to customer accounts.
             Company customers additionally publish Request ads and receive, accept, or reject offers.
             Shipping companies add and manage shipping ads only.
@@ -240,7 +239,7 @@ internal static class AiAssistantKnowledgeSource
             The platform processes account, contact, device, search, order, payment, and support data to operate, secure, and improve the service.
             Personal data is not sold for external marketing.
             Full card details are handled by an approved payment provider and are not stored by the platform.
-            You can request correction of your data or deletion of your account, subject to legal obligations and after open orders and balances are settled.
+            You can request correction of your data or deletion of your account, subject to legal obligations and after open orders are settled.
             Image-search uploads are used for matching and service improvement under the Terms, not to identify people.
             """);
 
@@ -299,7 +298,7 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "account-types", "أنواع الحسابات في الراس الذكي", "ar", All,
             """
             توجد خمس حالات للمستخدم: الزائر (غير مسجل)، والمورد (Supplier)، والعميل الفردي (Personal customer)، وعميل الشركة (Company customer)، وشركة الشحن (Shipping company).
-            المورد: شركة تبيع وتعرض بضائعها؛ المورد داخل الإمارات ينشئ معظم أنواع الإعلانات، والمورد خارج الإمارات المسجل برقم غير إماراتي ينشئ Booking فقط. والمورد هو الوحيد الذي لديه صفحة الرصيد. والمورد يستطيع أيضاً الشراء والطلب من المنصة ومتابعة مشترياته من طلباتي.
+            المورد: شركة تبيع وتعرض بضائعها؛ المورد داخل الإمارات ينشئ معظم أنواع الإعلانات، والمورد خارج الإمارات المسجل برقم غير إماراتي ينشئ Booking فقط. والمورد يستطيع أيضاً الشراء والطلب من المنصة ومتابعة مشترياته من طلباتي.
             العميل الفردي: مشترٍ أفراد، يشتري منتجات التجزئة فقط ولا ينشئ إعلانات.
             عميل الشركة: شركة تشتري بالجملة، تتصفح الأصناف وأنواع الإعلانات وتنشئ إعلان طلب (Request) فقط.
             شركة الشحن: تعرض خدمات الشحن من ميناء إلى ميناء فقط.
@@ -308,7 +307,7 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "account-types", "Account types on Al Ras Smart", "en", All,
             """
             There are five user states: Guest (not signed in), Supplier, Personal customer, Company customer, and Shipping company.
-            Supplier: a company that sells and lists goods. A UAE-based supplier can create most ad types, while an overseas supplier registered with a non-UAE phone number can create Booking only. Supplier is the only account with a Balance page. Suppliers can also buy from the marketplace and track their purchases in My Orders.
+            Supplier: a company that sells and lists goods. A UAE-based supplier can create most ad types, while an overseas supplier registered with a non-UAE phone number can create Booking only. Suppliers can also buy from the marketplace and track their purchases in My Orders.
             Personal customer: an individual buyer who purchases retail products and cannot create ads.
             Company customer: a company that buys wholesale, browses categories and ad types, and can create Request ads only.
             Shipping company: publishes port-to-port shipping services only.
@@ -325,7 +324,7 @@ internal static class AiAssistantKnowledgeSource
             تعديل الملف الشخصي وتغيير كلمة السر وتغيير اللغة وتفعيل البصمة/بصمة الوجه.
             التواصل مع الدعم البشري عبر Live Chat ومن صفحة المساعدة والدعم.
             طلب استرجاع للحالات المؤهلة، وحذف الحساب أو تسجيل الخروج.
-            مهم: القيود على أنواع الحسابات تخص إنشاء ونشر الإعلانات وصفحة الرصيد فقط، ولا تمنع أي مستخدم من تتبع طلباته أو البحث أو استخدام الدعم.
+            مهم: القيود على أنواع الحسابات تخص إنشاء ونشر الإعلانات فقط، ولا تمنع أي مستخدم من تتبع طلباته أو البحث أو استخدام الدعم.
             """);
         Add(chunks, "common-capabilities", "What every signed-in user can do regardless of account type", "en", SignedIn,
             """
@@ -337,7 +336,7 @@ internal static class AiAssistantKnowledgeSource
             Editing the profile, changing the password, changing the language, and enabling fingerprint/face unlock.
             Contacting human support through Live Chat and the Help & Support page.
             Requesting a return for eligible cases, and deleting the account or signing out.
-            Important: account-type restrictions apply only to creating and publishing ads and to the Balance page. They never prevent a user from tracking their orders, searching, or using support.
+            Important: account-type restrictions apply only to creating and publishing ads. They never prevent a user from tracking their orders, searching, or using support.
             """);
 
         Add(chunks, "ad-types-matrix", "من يستطيع إنشاء كل نوع إعلان", "ar", All,
@@ -458,7 +457,6 @@ internal static class AiAssistantKnowledgeSource
             البار السفلي للمورد يشمل: الصفحة الرئيسية، إنشاء إعلان، طلباتي (My Orders)، الحساب (Account)، الملف الشخصي (Profile).
             صفحة الحساب تنقسم إلى قسمين: إعلاناتي (My Ads) وعروضي (My Offers).
             صفحة طلباتي للمورد تعرض مشترياته (الطلبات التي اشتراها كمشترٍ)، والمورد يستطيع الشراء والطلب كأي مشتري بالإضافة لمتابعة الطلبات الواردة على إعلاناته.
-            المورد هو النوع الوحيد الذي يرى صفحة الرصيد (Balance) داخل الملف الشخصي.
             """);
         Add(chunks, "supplier-nav", "Supplier interface and navigation", "en", ["supplier"],
             """
@@ -467,7 +465,6 @@ internal static class AiAssistantKnowledgeSource
             The supplier bottom bar includes: Home, Create Ad, My Orders, Account, and Profile.
             The Account page has two sections: My Ads and My Offers.
             My Orders for a supplier shows purchases they placed as a buyer; suppliers can buy and order like any buyer, in addition to incoming orders on their ads.
-            Supplier is the only account type that sees the Balance page inside Profile.
             """);
 
         Add(chunks, "personal-nav", "واجهة العميل الفردي والتنقل", "ar", ["personal"],
@@ -475,18 +472,18 @@ internal static class AiAssistantKnowledgeSource
             الصفحة الرئيسية للعميل الفردي تعرض اسمه في الأعلى ثم شريط البحث والبحث بالصورة، ثم منتجات Retail فقط.
             العميل الفردي لا يرى الأصناف (Categories) في الصفحة الرئيسية ولا يرى منتجات الجملة، لأنه يشتري بالتجزئة.
             البار السفلي للعميل الفردي يحتوي على ثلاث صفحات فقط: الصفحة الرئيسية (Home)، وطلباتي (My Orders)، والملف الشخصي (Profile).
-            لا يظهر له زر إنشاء إعلان ولا صفحة الحساب الخاصة بالإعلانات ولا صفحة الرصيد.
+            لا يظهر له زر إنشاء إعلان ولا صفحة الحساب الخاصة بالإعلانات.
             صفحة طلباتي متاحة له بالكامل ومنها يتابع مشترياته وحالة كل طلب.
-            الملف الشخصي يحتوي على كل الإعدادات والدعم عدا الرصيد.
+            الملف الشخصي يحتوي على كل الإعدادات والدعم.
             """);
         Add(chunks, "personal-nav", "Personal customer interface and navigation", "en", ["personal"],
             """
             The personal customer home shows the account name at the top, then the search bar with image search, then Retail products only.
             A personal customer does not see Categories on home and does not see wholesale products, because this account buys at retail.
             The bottom bar has three pages only: Home, My Orders, and Profile.
-            There is no Create Ad button, no ads Account page, and no Balance page.
+            There is no Create Ad button, no ads Account page.
             My Orders is fully available and is where this account follows its purchases and each order's status.
-            Profile contains all settings and support except Balance.
+            Profile contains all settings and support.
             """);
 
         Add(chunks, "company-nav", "واجهة عميل الشركة والتنقل", "ar", ["company_customer"],
@@ -496,7 +493,6 @@ internal static class AiAssistantKnowledgeSource
             البار السفلي: الصفحة الرئيسية (Home)، وإنشاء طلب (Create Order)، والحساب (Account)، وطلباتي (My Orders)، والملف الشخصي (Profile).
             صفحة Create Order مخصصة لإنشاء إعلان Request فقط لأنه عملية شراء/طلب بضاعة.
             صفحة الحساب تعرض إعلانات Request التي نشرها والعروض التي قدمها على طلبات الآخرين.
-            لا يوجد لعميل الشركة صفحة رصيد.
             """);
         Add(chunks, "company-nav", "Company customer interface and navigation", "en", ["company_customer"],
             """
@@ -505,7 +501,6 @@ internal static class AiAssistantKnowledgeSource
             Bottom bar: Home, Create Order, Account, My Orders, and Profile.
             Create Order is dedicated to creating Request ads only, since a request is a purchase/sourcing action.
             The Account page shows the Request ads it published and the offers it submitted on other companies' requests.
-            A company customer has no Balance page.
             """);
 
         Add(chunks, "shipping-nav", "واجهة شركة الشحن والتنقل", "ar", ["shipping"],
@@ -513,14 +508,14 @@ internal static class AiAssistantKnowledgeSource
             شركة الشحن لديها صفحتان فقط في البار السفلي: الصفحة الرئيسية (Home) والملف الشخصي (Profile).
             الصفحة الرئيسية لا تحتوي على متجر أو منتجات، بل على خيارين: إضافة إعلان شحن (Add shipping ad) وإدارة إعلاناتك (Manage your ads).
             الملف الشخصي يحتوي على الدعم الفني، وتعديل المعلومات الشخصية، واختيار اللغة، وعدد الإعلانات.
-            شركة الشحن لا تشتري منتجات ولا تنشئ Booking أو Retail أو Request، ولا يوجد لديها صفحة طلبات أو رصيد.
+            شركة الشحن لا تشتري منتجات ولا تنشئ Booking أو Retail أو Request، ولا يوجد لديها صفحة طلبات.
             """);
         Add(chunks, "shipping-nav", "Shipping company interface and navigation", "en", ["shipping"],
             """
             A shipping company has only two pages in the bottom bar: Home and Profile.
             Home has no storefront or products; it offers two actions: Add shipping ad and Manage your ads.
             Profile contains support, personal information editing, language selection, and the ad count.
-            A shipping company does not buy products and cannot create Booking, Retail, or Request ads; it has no orders page and no balance page.
+            A shipping company does not buy products and cannot create Booking, Retail, or Request ads; it has no orders page.
             """);
     }
 
@@ -630,7 +625,6 @@ internal static class AiAssistantKnowledgeSource
             ثم العناوين المحفوظة، والإعلانات المحفوظة، وزر إعلاناتي الذي ينقلك إلى صفحة الحساب في البار السفلي.
             ثم المساعدة والدعم (Help and support).
             ثم حذف الحساب، وتسجيل الخروج، وتفعيل البصمة أو بصمة الوجه، وتغيير اللغة.
-            إذا كان الحساب مورداً تظهر له أيضاً صفحة الرصيد (Balance).
             """);
         Add(chunks, "profile", "What the Profile page contains", "en", ["supplier", "personal", "company_customer", "public"],
             """
@@ -641,7 +635,6 @@ internal static class AiAssistantKnowledgeSource
             Then saved addresses, saved ads, and a My Ads button that navigates to the Account page in the bottom bar.
             Then Help and support.
             Then delete account, sign out, biometric (fingerprint/face) unlock, and language selection.
-            Supplier accounts additionally see the Balance page.
             """);
 
         Add(chunks, "profile-edit", "تعديل بيانات الملف الشخصي والمراجعة", "ar", ["supplier", "personal", "company_customer", "public"],
@@ -758,7 +751,7 @@ internal static class AiAssistantKnowledgeSource
             زر تسجيل الخروج في الملف الشخصي ينهي الجلسة الحالية فقط ويحتفظ ببياناتك، ويمكنك الدخول مرة أخرى في أي وقت.
             زر حذف الحساب يطلب إزالة حسابك من المنصة.
             الحذف إجراء نهائي ويؤثر على وصولك إلى سجل طلباتك وإعلاناتك.
-            يُنفَّذ الحذف ضمن الالتزامات القانونية وبعد إغلاق الطلبات القائمة وتسوية أي مستحقات أو رصيد.
+            يُنفَّذ الحذف ضمن الالتزامات القانونية وبعد إغلاق الطلبات القائمة وتسوية أي مستحقات.
             إذا واجهت مشكلة في الحذف تواصل مع الدعم عبر Live Chat.
             """);
         Add(chunks, "delete-account", "Deleting your account and signing out", "en", SignedIn,
@@ -766,7 +759,7 @@ internal static class AiAssistantKnowledgeSource
             The sign-out button in Profile ends the current session only and keeps your data; you can sign back in at any time.
             The delete account button requests removal of your account from the platform.
             Deletion is permanent and affects your access to your order history and listings.
-            It is carried out subject to legal obligations and after open orders are closed and any dues or balance are settled.
+            It is carried out subject to legal obligations and after open orders are closed and any dues are settled.
             If you have trouble deleting the account, contact support via Live Chat.
             """);
     }
@@ -995,14 +988,14 @@ internal static class AiAssistantKnowledgeSource
             """
             في الدفع عند الاستلام تدفع قيمة الطلب نقداً عند تسليم البضاعة إليك.
             حالة الطلب تنتقل عبر مراحل حتى تصل إلى تم التسليم بعد استلامك للبضاعة ودفع قيمتها.
-            من ناحية المورد، لا يزيد رصيده في هذه الحالة إلا بعد تحصيل الأموال فعلياً وتأكيد الاستلام.
+            من ناحية المورد، مستحقاته في هذه الحالة تُتابع بعد تحصيل الأموال فعلياً.
             تأكد من فحص البضاعة عند الاستلام، لأن مهلة الإبلاغ عن مشكلة تبدأ من تأكيد الاستلام.
             """);
         Add(chunks, "payment-cod", "Cash on delivery", "en", Buyers,
             """
             With cash on delivery you pay the order value in cash when the goods are handed to you.
             The order status moves through its stages until it reaches Delivered after you receive the goods and pay.
-            On the supplier side, balance in this case increases only after the funds are actually collected and receipt is confirmed.
+            On the supplier side, dues in this case are followed after the funds are actually collected.
             Inspect the goods at delivery, because the window for reporting a problem starts from confirmed receipt.
             """);
 
@@ -1025,14 +1018,14 @@ internal static class AiAssistantKnowledgeSource
             """
             الدفع الذاتي عبر المنصة مخصص لتجارة التجزئة (Retail).
             أما طلبات الأنواع الأخرى مثل الجملة وBooking وRequests فتتم متابعتها ومعالجتها بواسطة فريق الراس الذكي، الذي ينسق بين المشتري والمورد ويتابع التحصيل والتسليم.
-            لذلك لا توجد صفحة رصيد لعميل الشركة، لأن الدفع في تجارة الجملة يتم عبر فريق الراس الذكي وليس عبر رصيد داخل التطبيق.
+            الدفع في تجارة الجملة يتم عبر فريق الراس الذكي.
             يمكنك متابعة حالة الطلب من صفحة طلباتي، والتواصل مع الدعم عبر Live Chat لأي استفسار عن الصفقة.
             """);
         Add(chunks, "wholesale-flow", "How wholesale deals are handled", "en", ["supplier", "company_customer", "public"],
             """
             Self-service payment inside the platform is dedicated to Retail trade.
             Orders of other types such as wholesale, Booking, and Requests are followed up and processed by the Al Ras Smart team, which coordinates between buyer and supplier and manages collection and delivery.
-            This is why a company customer has no Balance page: wholesale payment runs through the Al Ras Smart team rather than an in-app balance.
+            Wholesale payment runs through the Al Ras Smart team.
             You can still follow the order status from My Orders and contact support via Live Chat with any question about the deal.
             """);
     }
@@ -1069,27 +1062,27 @@ internal static class AiAssistantKnowledgeSource
             نعم، حسابك كعميل فردي يستطيع تتبع طلباته بشكل كامل.
             صفحة طلباتي (My Orders) موجودة في البار السفلي بجوار الصفحة الرئيسية والملف الشخصي.
             افتحها لترى كل مشترياتك وحالة كل طلب، واضغط على الطلب لعرض تفاصيله وسجل حالته.
-            القيود على حساب العميل الفردي تخص إنشاء الإعلانات وصفحة الرصيد فقط، ولا علاقة لها بتتبع الطلبات أو الشراء أو البحث.
+            القيود على حساب العميل الفردي تخص إنشاء الإعلانات فقط، ولا علاقة لها بتتبع الطلبات أو الشراء أو البحث.
             """);
         Add(chunks, "orders-track-personal", "Order tracking for a personal customer account", "en", ["personal"],
             """
             Yes, a personal customer account can fully track its orders.
             The My Orders page is in the bottom bar next to Home and Profile.
             Open it to see all your purchases and each order's status, and tap an order to view its details and status history.
-            The restrictions on a personal customer account apply only to creating ads and to the Balance page; they have nothing to do with order tracking, buying, or searching.
+            The restrictions on a personal customer account apply only to creating ads; they have nothing to do with order tracking, buying, or searching.
             """);
 
         Add(chunks, "orders-track-supplier", "تتبع الطلبات والمبيعات للمورد", "ar", ["supplier"],
             """
             المورد لديه صفحة طلباتي (My Orders) في البار السفلي لتتبع الطلبات التي اشتراها هو، ومتابعة طلباته المفتوحة حالياً.
-            كما يتابع المورد الطلبات الواردة على إعلاناته ومراحل تنفيذها وحالة التحصيل، وينعكس ذلك على صفحة الرصيد.
+            كما يتابع المورد الطلبات الواردة على إعلاناته ومراحل تنفيذها وحالة التحصيل.
             في الطلبات غير التجزئة قد تحتاج بعض الطلبات موافقة البائع، وتظهر بحالة بانتظار موافقة البائع حتى يقبلها أو يرفضها.
             صفحة الحساب (Account) منفصلة عن الطلبات وتخص إعلاناته وعروضه.
             """);
         Add(chunks, "orders-track-supplier", "Order and sales tracking for suppliers", "en", ["supplier"],
             """
             A supplier has a My Orders page in the bottom bar to track orders they purchased and to follow their currently open orders.
-            Suppliers also follow incoming orders on their listings, their fulfilment stages, and collection status, which is reflected on the Balance page.
+            Suppliers also follow incoming orders on their listings, their fulfilment stages, and collection status.
             For non-retail orders, some orders need seller approval and appear as Awaiting seller approval until accepted or rejected.
             The Account page is separate from orders and covers the supplier's ads and offers.
             """);
@@ -1174,13 +1167,13 @@ internal static class AiAssistantKnowledgeSource
 
         Add(chunks, "notifications", "الإشعارات", "ar", SignedIn,
             """
-            ترسل المنصة إشعارات عند الأحداث المهمة مثل تغير حالة الطلب، واعتماد الإعلان أو رفضه، وقبول أو رفض العرض المقدم، وزيادة الرصيد للمورد عند نجاح عملية بيع.
+            ترسل المنصة إشعارات عند الأحداث المهمة مثل تغير حالة الطلب، واعتماد الإعلان أو رفضه، وقبول أو رفض العرض المقدم.
             تأكد من السماح بالإشعارات لتطبيق الراس الذكي في إعدادات جهازك حتى تصلك التنبيهات.
             حتى إن لم تصلك الإشعارات يمكنك دائماً متابعة الحالة يدوياً من صفحة طلباتي أو صفحة الحساب.
             """);
         Add(chunks, "notifications", "Notifications", "en", SignedIn,
             """
-            The platform sends notifications for important events such as order status changes, listing approval or rejection, acceptance or rejection of a submitted offer, and supplier balance increases after a successful sale.
+            The platform sends notifications for important events such as order status changes, listing approval or rejection, acceptance or rejection of a submitted offer.
             Make sure notifications are allowed for the Al Ras Smart app in your device settings so alerts reach you.
             Even without notifications you can always check status manually from My Orders or the Account page.
             """);
@@ -1198,7 +1191,6 @@ internal static class AiAssistantKnowledgeSource
             الحالات المقبولة عادة: بضاعة تالفة أو فاسدة، بضاعة منتهية الصلاحية بخلاف ما ذُكر في الإعلان، منتج مختلف جوهرياً عن الوصف، أو نقص واضح في الكمية.
             الحالات غير المقبولة عادة: تغيير الرأي دون وجود عيب، سوء التخزين أو التعامل بعد التسليم، أو استهلاك معظم الكمية دون عيب مثبت.
             إذا وافق الدعم الفني على الإرجاع يتم رد الأموال خلال يوم عمل واحد من الموافقة.
-            عند اعتماد الاسترجاع يُخصم المبلغ من رصيد المورد إذا كان قد أُضيف إليه سابقاً.
             """);
         Add(chunks, "returns", "Returns and refunds policy", "en", All,
             """
@@ -1206,7 +1198,6 @@ internal static class AiAssistantKnowledgeSource
             Typically accepted: damaged or spoiled goods, goods expired contrary to the listing, an item materially different from the description, or a clear quantity shortage.
             Typically not accepted: change of mind with no defect, poor storage or handling after delivery, or consuming most of the goods without a proven defect.
             If support approves the return, the refund is issued within one business day of approval.
-            When a return is approved, the amount is deducted from the supplier's balance if it had previously been credited.
             """);
 
         Add(chunks, "returns-how", "كيف أقدم طلب استرجاع خطوة بخطوة", "ar", Buyers,
@@ -1236,7 +1227,7 @@ internal static class AiAssistantKnowledgeSource
             بلّغ خلال 24 ساعة عمل من تأكيد الاستلام مع صور أو فيديو واضح يوضح التلف أو تاريخ انتهاء الصلاحية على العبوة.
             لا تتخلص من البضاعة أو العبوة قبل انتهاء مراجعة الدعم، لأنها دليل الحالة.
             إذا وافق الدعم يتم رد الأموال خلال يوم عمل واحد من الموافقة.
-            المورد مسؤول عن مطابقة البضاعة للوصف وعن صلاحيتها، ويُخصم المبلغ من رصيده عند اعتماد الاسترجاع.
+            المورد مسؤول عن مطابقة البضاعة للوصف وعن صلاحيتها.
             """);
         Add(chunks, "returns-damaged", "Damaged or expired goods", "en", All,
             """
@@ -1244,7 +1235,7 @@ internal static class AiAssistantKnowledgeSource
             Report it within 24 business hours of confirmed receipt with clear photos or video showing the damage or the expiry date on the packaging.
             Do not dispose of the goods or packaging before support finishes its review, as they are the evidence.
             If support approves, the refund is issued within one business day of approval.
-            The supplier is responsible for the goods matching the description and for their validity, and the amount is deducted from the supplier balance when the return is approved.
+            The supplier is responsible for the goods matching the description and for their validity.
             """);
 
         Add(chunks, "returns-rejected", "لماذا قد يُرفض طلب الاسترجاع", "ar", All,
@@ -1265,14 +1256,12 @@ internal static class AiAssistantKnowledgeSource
             بعد موافقة الدعم الفني على طلب الاسترجاع يتم رد الأموال خلال يوم عمل واحد من الموافقة.
             في الدفع الإلكتروني يُرد المبلغ عبر مزود الدفع، وقد يستغرق ظهوره في كشف حسابك البنكي وقتاً إضافياً حسب البنك.
             في الدفع عند الاستلام تتم التسوية وفق آلية المنصة وفريق الراس الذكي.
-            في المقابل يُخصم المبلغ من رصيد المورد إذا كان قد أُضيف إليه من قبل.
             """);
         Add(chunks, "refund-timing", "When the refund is issued after approval", "en", All,
             """
             After support approves the return, the refund is issued within one business day of approval.
             For card payments the amount is refunded through the payment provider, and it may take extra time to appear on your bank statement depending on your bank.
             For cash on delivery, settlement follows the platform process and the Al Ras Smart team.
-            On the other side, the amount is deducted from the supplier's balance if it had been credited earlier.
             """);
     }
 
@@ -1591,6 +1580,25 @@ internal static class AiAssistantKnowledgeSource
             Make sure image and video uploads finished, because a listing may not be submitted for review until uploads complete.
             If review takes longer than usual, contact support via Live Chat.
             """);
+
+        Add(chunks, "ai-tools-voice-actions", "تعديل سعر أو كمية الإعلان بالصوت، أرخص منتج، مبيعاتي، فويس شات للذكاء الاصطناعي", "ar", All,
+            """
+            يمكن للمساعد الذكي تنفيذ إجراءات مباشرة عبر أدوات (MCP-style tools) عندما تكون مسجلاً دخولك:
+            1) تعديل سعر و/أو كمية إعلانك: اذكر اسم الإعلان أو ProductCode مع السعر أو الكمية الجديدة. إذا كان لديك أكثر من إعلان بنفس الاسم سيطلب منك المساعد ProductCode.
+            2) البحث عن أرخص منتج معتمد في السوق باسم المنتج.
+            3) معرفة عدد مبيعاتك كمورد: عدد الطلبات التي أنت مالك منتجها (ProductOwner / ToUserId) وحالتها تم الاستلام أو تم التسليم.
+            الفويس مع المساعد: المساعد هو من يستمع ويعالج الكلام؛ يظهر النص مباشرة أثناء الحديث، وبعد الانتهاء يصحّح الأخطاء اللغوية/الإملائية الناتجة عن التعرف على الصوت ثم يعرض النص النهائي في حقل الكتابة لتختار إرسال أو إلغاء.
+            شات المساعد يقبل حالياً النص والفويس فقط، ولا يدعم الصور أو الفيديو أو الملفات أو الموقع الآن، ومن المتوقع دعم الصور مستقبلاً. لإرسال صور/فيديو/ملفات/موقع استخدم Live Chat.
+            """);
+        Add(chunks, "ai-tools-voice-actions", "Update ad price quantity by voice, cheapest product, my sales, AI voice chat", "en", All,
+            """
+            The AI assistant can run live marketplace actions via tools when you are signed in:
+            1) Update your own ad price and/or quantity by ad name or ProductCode. If several of your ads share the same name, the assistant asks for the ProductCode.
+            2) Find the cheapest approved marketplace product by name.
+            3) Report your seller sales count: orders where you are the product owner (ToUserId) and status is received/delivered.
+            Voice with the assistant: the AI listens and processes speech; text appears live while you talk, then the AI corrects speech-recognition mistakes and puts the cleaned text in the field so you can send or cancel.
+            The AI chat currently accepts text and voice only — not images, video, files, or location yet; image support is expected later. To send images/video/files/location use Live Chat.
+            """);
     }
 
     // ---------------------------------------------------------------------
@@ -1715,180 +1723,7 @@ internal static class AiAssistantKnowledgeSource
     }
 
     // ---------------------------------------------------------------------
-    // 14. Balance and withdrawals (supplier only)
-    // ---------------------------------------------------------------------
-
-    private static void AddBalanceAndWithdrawals(ICollection<AiKnowledgeChunk> chunks)
-    {
-        Add(chunks, "balance", "صفحة الرصيد للمورد", "ar", ["supplier"],
-            """
-            المورد هو نوع الحساب الوحيد الذي لديه صفحة الرصيد (Balance) داخل الملف الشخصي.
-            من هذه الصفحة يتابع المورد رصيده الحالي وحركة الإضافة والخصم، وينشئ طلب سحب.
-            الرصيد يزيد من عمليات البيع بعد تحصيل قيمتها، وينقص عند اعتماد استرجاع أو عند سحب الأموال.
-            العميل الفردي وعميل الشركة وشركة الشحن لا يوجد لديهم صفحة رصيد، لأنهم لا يعرضون إعلانات بيع تُحصَّل عبر المنصة بهذه الطريقة.
-            """);
-        Add(chunks, "balance", "The supplier Balance page", "en", ["supplier"],
-            """
-            Supplier is the only account type with a Balance page inside Profile.
-            From this page the supplier follows the current balance and its credits and debits, and creates a withdrawal request.
-            Balance increases from sales after their value is collected, and decreases when a return is approved or when funds are withdrawn.
-            Personal customers, company customers, and shipping companies have no balance page because they do not publish sales listings collected through the platform in this way.
-            """);
-
-        Add(chunks, "balance-credit", "متى يزيد رصيد المورد", "ar", ["supplier"],
-            """
-            فرّق دائماً بين طلبات التجزئة (Retail) وطلبات غير التجزئة (Category / Booking / Offer / Request / جملة).
-
-            غير التجزئة: مستحقاتك تُحتسب بعد أن يدفع المشتري قيمة الطلب فعلياً. لا تربط الصرف بتأكيد الاستلام من المشتري ولا بموافقته بعد التسليم — المعيار هو الدفع/التحصيل من المشتري. موافقتك على الطلب أو تسليم البضاعة وحدهما لا يكفيان لاستحقاق الفلوس.
-
-            Retail والدفع بالبطاقة (فيزا): يزيد رصيدك فوراً بعد نجاح الدفع مع إشعار.
-            Retail والدفع عند الاستلام: يزيد الرصيد بعد تحصيل الأموال فعلياً من العميل عند التسليم.
-
-            إذا اعتُمد استرجاع لاحقاً يُخصم المبلغ من رصيدك.
-            """);
-        Add(chunks, "balance-credit", "When a supplier's balance increases", "en", ["supplier"],
-            """
-            Always distinguish Retail orders from non-Retail orders (Category / Booking / Offer / Request / wholesale).
-
-            Non-Retail: your dues are earned after the buyer actually pays the order value. Do NOT tie payout to the buyer confirming receipt or confirming the order after delivery — the trigger is the buyer's payment/collection. Accepting the order or delivering goods alone does not unlock payment.
-
-            Retail paid by card: balance increases immediately after successful payment with a notification.
-            Retail cash on delivery: balance increases after the money is actually collected from the customer at delivery.
-
-            If a return is later approved, the amount is deducted from your balance.
-            """);
-
-        Add(chunks, "withdraw", "عاوز أسحب فلوسي، سحب الأرباح، كيف أنشئ طلب سحب للرصيد", "ar", ["supplier"],
-            """
-            سؤال: عاوز أسحب فلوسي. أسحب أرباحي إزاي؟ ازاي أحول رصيدي للبنك؟ كيف أطلب سحب الرصيد؟ أين أجد أموالي؟
-            الإجابة: بما أن حسابك مورد (Supplier)، تستطيع سحب رصيدك المتاح والمحصّل من صفحة الرصيد.
-            افتح صفحة الرصيد (Balance) من الملف الشخصي.
-            اختر إنشاء طلب سحب.
-            أدخل رقم الآيبان (IBAN) الخاص بحسابك البنكي والمبلغ المطلوب سحبه.
-            أرسل الطلب، وسيصل إلى فريق الدعم الفني لمراجعته.
-            بعد الموافقة يتم تحويل الأرباح المعتمدة خلال 7 أيام عمل.
-            تأكد من صحة الآيبان وأن الحساب البنكي باسم الشركة المسجلة، لأن بيانات خاطئة تؤخر التحويل.
-            لا يمكن سحب مبلغ أكبر من الرصيد المتاح والمحصّل فعلياً.
-            المساعد يشرح لك الخطوات لكنه لا يستطيع إنشاء طلب السحب أو تحويل الأموال نيابة عنك.
-            """);
-        Add(chunks, "withdraw", "I want to withdraw my money, withdraw earnings, create a balance withdrawal", "en", ["supplier"],
-            """
-            Question: I want to withdraw my money. How do I withdraw my earnings? How do I transfer my balance to my bank? Where is my money?
-            Answer: Because your account is a Supplier account, you can withdraw your available, collected balance from the Balance page.
-            Open the Balance page from Profile.
-            Choose to create a withdrawal request.
-            Enter your bank account IBAN and the amount you want to withdraw.
-            Submit the request; it reaches the support team for review.
-            After approval, approved earnings are transferred within 7 business days.
-            Make sure the IBAN is correct and the bank account is in the registered company's name, because wrong details delay the transfer.
-            You cannot withdraw more than the available, actually collected balance.
-            The assistant can explain the steps but cannot create the withdrawal request or transfer funds for you.
-            """);
-
-        Add(chunks, "supplier-settlement", "سياسة تحصيل مستحقات المورد", "ar", ["supplier", "company_customer", "public"],
-            """
-            تسليم المورد البضاعة لا يعني استحقاق الدفع فوراً.
-            للطلبات غير التجزئة (جملة / Booking / Offer / Request / Category): تُصرف المستحقات بعد دفع المشتري لقيمة الطلب — وليس بعد «تأكيد الاستلام» أو «تأكيد الطلب» من المشتري.
-            لتجزئة Retail: البطاقة تزيد الرصيد فور الدفع؛ والدفع عند الاستلام بعد التحصيل الفعلي.
-            بعد أن تصبح المستحقات قابلة للتسوية، تحويل الأرباح المعتمدة خلال 7 أيام عمل من موافقة طلب السحب.
-            إذا لم يدفع المشتري / لم تُحصَّل الأموال فلا تُدفع قيمة البضاعة للمورد.
-            """);
-        Add(chunks, "supplier-settlement", "Supplier settlement and collection policy", "en", ["supplier", "company_customer", "public"],
-            """
-            Handing over goods does not create an immediate right to payment.
-            For non-Retail orders (wholesale / Booking / Offer / Request / Category): dues are released after the buyer pays the order value — NOT after the buyer "confirms receipt" or "confirms the order".
-            For Retail: card credits balance immediately after payment; cash on delivery after actual collection.
-            Once dues are settleable, approved earnings transfer within 7 business days after withdrawal approval.
-            If the buyer has not paid / funds were not collected, the supplier is not paid for those goods.
-            """);
-
-        Add(chunks, "supplier-payout-timing", "هستلم فلوسي امتى بعد ما الشركة خدت بضاعتي، متى أقبض ثمن البضاعة", "ar", ["supplier", "public"],
-            """
-            سؤال: أنا عامل إعلان وجالي عليه طلب ووافقت عليه وسلمت البضاعة، هستلم فلوسي إمتى؟ الشركة خدت بضاعتي هقبض إمتى؟ متى أستلم ثمن الطن أو الشحنة؟ سلمت 5 طن فمتى تتحول لي الأموال؟ إمتى ينزل الفلوس في حسابي؟
-            الإجابة حسب نوع الطلب — لا تخلط بينها:
-
-            1) طلب غير تجزئة (Category / Booking / Offer / Request / جملة): الفلوس/المستحقات بعد ما المشتري يدفع قيمة الطلب. لا تقل أبداً «بعد ما المشتري يأكد الطلب» أو «بعد تأكيد الاستلام من المشتري». موافقتك على الطلب أو تسليم البضاعة وحدهما لا يكفيان؛ المعيار هو دفع المشتري.
-            صفقات غير التجزئة يتابعها فريق الراس الذكي وينسّق التحصيل/الدفع من المشتري ثم تسوية مستحقاتك.
-
-            2) طلب Retail مدفوع بالبطاقة: يزيد رصيدك فور نجاح الدفع.
-            3) طلب Retail بالدفع عند الاستلام: يزيد الرصيد بعد التحصيل الفعلي عند التسليم.
-
-            بعد ما يصير عندك رصيد محصّل: أنشئ طلب سحب من صفحة الرصيد، وبعد موافقة الدعم التحويل خلال 7 أيام عمل.
-            إذا اعتُمد استرجاع لاحقاً يُخصم من رصيدك.
-            لموعد دقيق لطلب بعينه تواصل مع الدعم عبر Live Chat مع رقم الطلب.
-            """);
-        Add(chunks, "supplier-payout-timing", "When do I get paid after the company took my goods", "en", ["supplier", "public"],
-            """
-            Question: I have an ad, got an order, accepted it, delivered the goods — when do I get paid? When will the money hit my account after the company took my goods?
-            Answer by order type — do not mix them:
-
-            1) Non-Retail (Category / Booking / Offer / Request / wholesale): you get paid / dues after the buyer pays the order value. NEVER say "after the buyer confirms the order" or "after the buyer confirms receipt". Accepting the order or delivering alone is not enough; the trigger is the buyer's payment.
-            Non-Retail deals are followed by the Al Ras Smart team, which coordinates collection/payment from the buyer then settles your dues.
-
-            2) Retail paid by card: balance increases immediately after successful payment.
-            3) Retail cash on delivery: balance increases after actual collection at delivery.
-
-            Once you have collected balance: create a withdrawal from the Balance page; after support approval, transfer within 7 business days.
-            If a return is later approved, it is deducted from your balance.
-            For an exact date on a specific order, contact support via Live Chat with the order number.
-            """);
-
-        Add(chunks, "ai-tools-voice-actions", "تعديل سعر أو كمية الإعلان بالصوت، أرخص منتج، مبيعاتي، فويس شات للذكاء الاصطناعي", "ar", All,
-            """
-            يمكن للمساعد الذكي تنفيذ إجراءات مباشرة عبر أدوات (MCP-style tools) عندما تكون مسجلاً دخولك:
-            1) تعديل سعر و/أو كمية إعلانك: اذكر اسم الإعلان أو ProductCode مع السعر أو الكمية الجديدة. إذا كان لديك أكثر من إعلان بنفس الاسم سيطلب منك المساعد ProductCode.
-            2) البحث عن أرخص منتج معتمد في السوق باسم المنتج.
-            3) معرفة عدد مبيعاتك كمورد: عدد الطلبات التي أنت مالك منتجها (ProductOwner / ToUserId) وحالتها تم الاستلام أو تم التسليم.
-            الفويس مع المساعد: المساعد هو من يستمع ويعالج الكلام؛ يظهر النص مباشرة أثناء الحديث، وبعد الانتهاء يصحّح الأخطاء اللغوية/الإملائية الناتجة عن التعرف على الصوت ثم يعرض النص النهائي في حقل الكتابة لتختار إرسال أو إلغاء.
-            شات المساعد يقبل حالياً النص والفويس فقط، ولا يدعم الصور أو الفيديو أو الملفات أو الموقع الآن، ومن المتوقع دعم الصور مستقبلاً. لإرسال صور/فيديو/ملفات/موقع استخدم Live Chat.
-            """);
-        Add(chunks, "ai-tools-voice-actions", "Update ad price quantity by voice, cheapest product, my sales, AI voice chat", "en", All,
-            """
-            The AI assistant can run live marketplace actions via tools when you are signed in:
-            1) Update your own ad price and/or quantity by ad name or ProductCode. If several of your ads share the same name, the assistant asks for the ProductCode.
-            2) Find the cheapest approved marketplace product by name.
-            3) Report your seller sales count: orders where you are the product owner (ToUserId) and status is received/delivered.
-            Voice with the assistant: the AI listens and processes speech; text appears live while you talk, then the AI corrects speech-recognition mistakes and puts the cleaned text in the field so you can send or cancel.
-            The AI chat currently accepts text and voice only — not images, video, files, or location yet; image support is expected later. To send images/video/files/location use Live Chat.
-            """);
-
-        Add(chunks, "balance-not-credited", "لماذا لم يزد رصيدي بعد البيع", "ar", ["supplier"],
-            """
-            الأسباب الشائعة: الطلب غير التجزئة ولم يدفع المشتري بعد، فالرصيد لا يزيد قبل دفع المشتري.
-            أو طلب تجزئة بالدفع عند الاستلام ولم يتم التحصيل بعد.
-            أو أن الطلب ما زال في مرحلة مبكرة ولم يكتمل تنفيذه.
-            أو أن العميل قدّم طلب استرجاع ووافق عليه الدعم فتم الخصم.
-            أو أن الطلب أُلغي.
-            راجع حالة الطلب من صفحة طلباتي وحركة الرصيد من صفحة الرصيد، فإن بقي الأمر غير واضح تواصل مع الدعم عبر Live Chat مع رقم الطلب.
-            """);
-        Add(chunks, "balance-not-credited", "Why my balance did not increase after a sale", "en", ["supplier"],
-            """
-            Common reasons: a non-Retail order where the buyer has not paid yet — balance does not increase before the buyer pays.
-            Or a Retail cash-on-delivery order that has not been collected yet.
-            Or the order is still at an early stage and fulfillment is not complete.
-            Or the customer submitted a return that support approved, so the amount was deducted.
-            Or the order was cancelled.
-            Check the order status in My Orders and the balance movements on the Balance page; if it remains unclear, contact support via Live Chat with the order number.
-            """);
-
-        Add(chunks, "withdraw-delayed", "تأخر تحويل طلب السحب", "ar", ["supplier"],
-            """
-            طلب السحب يمر بمراجعة من الدعم الفني قبل التحويل، ويتم تحويل الأرباح المعتمدة خلال 7 أيام عمل بعد الموافقة.
-            من أسباب التأخير: رقم آيبان غير صحيح، أو اسم الحساب البنكي لا يطابق الشركة المسجلة، أو وجود مبالغ غير محصّلة بعد، أو وجود طلب استرجاع قيد الدراسة يؤثر على الرصيد.
-            راجع بيانات الآيبان في طلب السحب أولاً.
-            إذا تجاوزت المدة 7 أيام عمل بعد الموافقة تواصل مع الدعم عبر Live Chat مع تاريخ الطلب والمبلغ.
-            """);
-        Add(chunks, "withdraw-delayed", "My withdrawal transfer is delayed", "en", ["supplier"],
-            """
-            A withdrawal request is reviewed by support before transfer, and approved earnings are transferred within 7 business days after approval.
-            Delay causes include: an incorrect IBAN, a bank account name that does not match the registered company, amounts not yet collected, or a return under review affecting the balance.
-            Check the IBAN details on the withdrawal request first.
-            If more than 7 business days have passed since approval, contact support via Live Chat with the request date and amount.
-            """);
-    }
-
-    // ---------------------------------------------------------------------
-    // 15. Shipping company
+    // 14. Shipping company
     // ---------------------------------------------------------------------
 
     private static void AddShippingCompany(ICollection<AiKnowledgeChunk> chunks)
@@ -1930,13 +1765,13 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "shipping-profile", "الملف الشخصي لشركة الشحن", "ar", ["shipping"],
             """
             الملف الشخصي لشركة الشحن يحتوي على الدعم الفني، وتعديل المعلومات الشخصية وبيانات الشركة، واختيار اللغة، وعدد الإعلانات المنشورة.
-            محتويات الملف الشخصي لشركة الشحن أبسط من باقي الحسابات، فلا توجد عناوين محفوظة ولا إعلانات محفوظة ولا رصيد ولا صفحة طلبات.
+            محتويات الملف الشخصي لشركة الشحن أبسط من باقي الحسابات، فلا توجد عناوين محفوظة ولا إعلانات محفوظة ولا صفحة طلبات.
             للتواصل مع فريق الدعم استخدم خيار الدعم داخل الملف الشخصي.
             """);
         Add(chunks, "shipping-profile", "The shipping company Profile page", "en", ["shipping"],
             """
             A shipping company's Profile contains support, editing of personal and company information, language selection, and the number of published ads.
-            This Profile is simpler than other accounts: there are no saved addresses, no saved listings, no balance, and no orders page.
+            This Profile is simpler than other accounts: there are no saved addresses, no saved listings, and no orders page.
             To reach the support team, use the support option inside Profile.
             """);
     }
@@ -1952,7 +1787,7 @@ internal static class AiAssistantKnowledgeSource
             Live Chat هي محادثة مباشرة مع أحد موظفي الدعم البشري في الراس الذكي.
             تجدها في صفحة الملف الشخصي أسفل زر تعديل الملف الشخصي.
             بمجرد إرسال أول رسالة تُفتح جلسة بينك وبين أحد موظفي الراس الذكي ويرد عليك.
-            استخدم Live Chat للمشكلات التي تحتاج تدخلاً بشرياً: مشكلة في طلب معين، أو طلب استرجاع، أو تأخر تحويل رصيد، أو استفسار عن رفض إعلان أو حساب.
+            استخدم Live Chat للمشكلات التي تحتاج تدخلاً بشرياً: مشكلة في طلب معين، أو طلب استرجاع، أو استفسار عن رفض إعلان أو حساب.
             عند التواصل اذكر رقم الطلب أو اسم الإعلان لتسريع المساعدة.
             في Live Chat / شات الدعم الفني يمكنك إرسال: رسائل نصية، ورسائل صوتية (فويس)، وصور، وفيديوهات، وملفات/مستندات، وموقعك الجغرافي.
             """);
@@ -1961,7 +1796,7 @@ internal static class AiAssistantKnowledgeSource
             Live Chat is a direct conversation with a human Al Ras Smart support agent.
             You find it on the Profile page below the Edit profile button.
             Sending the first message opens a session between you and an Al Ras Smart agent who replies to you.
-            Use Live Chat for anything needing human action: a problem with a specific order, a return request, a delayed balance transfer, or a question about a rejected listing or account.
+            Use Live Chat for anything needing human action: a problem with a specific order, a return request, or a question about a rejected listing or account.
             Mention the order number or listing name to speed up the help you get.
             In Live Chat / support chat you can send: text messages, voice messages, images, videos, files/documents, and your location.
             """);
@@ -2007,7 +1842,7 @@ internal static class AiAssistantKnowledgeSource
             عند السؤال عن إنشاء إعلان، يطبّق المساعد صلاحيات نوع حسابك الحالي فقط — لا يطبّق قيود أنواع حسابات أخرى.
             المورد يستطيع إنشاء Booking وغيره مباشرة من الشات عبر create_booking_ad وغيرها؛ لا يرفض المورد طلب Booking.
             عميل الشركة يستطيع Request فقط عبر create_request_ad.
-            القيود تخص إنشاء الإعلانات والرصيد فقط، ولا تمنع تتبع الطلبات أو البحث أو الدعم.
+            القيود تخص إنشاء الإعلانات فقط، ولا تمنع تتبع الطلبات أو البحث أو الدعم.
             """);
         Add(chunks, "assistant", "AI Assistant policy", "en", All,
             """
@@ -2020,7 +1855,7 @@ internal static class AiAssistantKnowledgeSource
             When asked to create an ad, the assistant applies ONLY your current account type's permissions — never rules meant for other account types.
             Suppliers can create Booking and other types directly in chat via create_booking_ad and related tools; a supplier's Booking request is never refused.
             Company customers can create Request only via create_request_ad.
-            Restrictions cover only creating ads and the Balance page, and never block order tracking, search, or support.
+            Restrictions cover only creating ads, and never block order tracking, search, or support.
             """);
     }
 
@@ -2154,14 +1989,14 @@ internal static class AiAssistantKnowledgeSource
             معلومات ساعات العمل الرسمية موجودة داخل صفحة المساعدة والدعم (Help and support) في الملف الشخصي.
             من نفس الصفحة تجد زر الاتصال المباشر بالشركة، وزر مراسلة الدعم، وزر إرسال بريد إلكتروني.
             Live Chat يوفر محادثة مباشرة مع موظف دعم بشري خلال ساعات العمل.
-            بعض الإجراءات مثل مراجعة الإعلانات وطلبات السحب وطلبات الاسترجاع تُحسب مدتها بأيام أو ساعات العمل وليس الأيام التقويمية.
+            بعض الإجراءات مثل مراجعة الإعلانات وطلبات الاسترجاع تُحسب مدتها بأيام أو ساعات العمل وليس الأيام التقويمية.
             """);
         Add(chunks, "working-hours", "Working hours and contact channels", "en", All,
             """
             Official working hours are shown inside the Help and support page in Profile.
             The same page has a button to call the company directly, a button to message support, and a button to send an email.
             Live Chat provides a direct conversation with a human support agent during working hours.
-            Some processes such as listing review, withdrawal requests, and return requests are measured in business days or business hours rather than calendar days.
+            Some processes such as listing review and return requests are measured in business days or business hours rather than calendar days.
             """);
 
         Add(chunks, "banners", "البانرات في الصفحة الرئيسية", "ar", ["supplier", "company_customer", "guest", "public"],
@@ -2194,21 +2029,6 @@ internal static class AiAssistantKnowledgeSource
             If the seller accepts, the order moves into fulfilment and shipping; if they reject, the order is cancelled and the buyer is informed.
             This stage does not apply to Retail orders.
             You can follow this status from the My Orders page.
-            """);
-
-        Add(chunks, "iban", "ما هو الآيبان المطلوب في طلب السحب", "ar", ["supplier"],
-            """
-            الآيبان (IBAN) هو رقم الحساب المصرفي الدولي الخاص بحسابك البنكي، وتحتاجه المنصة لتحويل مستحقاتك عند طلب السحب.
-            أدخل الآيبان كاملاً وبدون مسافات أو أخطاء، وتأكد أنه يخص حساباً باسم الشركة المسجلة في حسابك على المنصة.
-            رقم آيبان خاطئ أو حساب باسم مختلف يؤدي إلى رفض التحويل أو تأخيره.
-            لا تشارك بيانات حسابك البنكي مع أي شخص خارج قنوات الدعم الرسمية داخل المنصة.
-            """);
-        Add(chunks, "iban", "What the IBAN in a withdrawal request is", "en", ["supplier"],
-            """
-            The IBAN is your bank account's international account number, and the platform needs it to transfer your dues when you request a withdrawal.
-            Enter the IBAN in full with no spaces or typos, and make sure it belongs to an account in the name of the company registered on your platform account.
-            A wrong IBAN or an account under a different name causes the transfer to be rejected or delayed.
-            Never share your bank details with anyone outside the official support channels inside the platform.
             """);
 
         Add(chunks, "account-security", "أمان الحساب", "ar", SignedIn,
@@ -2312,7 +2132,7 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "supplier-incoming-orders", "كيف يتابع المورد الطلبات الواردة على إعلاناته", "ar", ["supplier"],
             """
             عندما يشتري عميل من أحد إعلاناتك يُنشأ طلب ويصلك إشعار به.
-            تابع مراحل الطلب حتى التسليم والتحصيل، لأن الرصيد يتأثر بمرحلة التحصيل وليس بمجرد إنشاء الطلب.
+            تابع مراحل الطلب حتى التسليم والتحصيل.
             في الطلبات غير التجزئة قد يُطلب منك قبول الطلب أو رفضه في مرحلة بانتظار موافقة البائع.
             حافظ على تحديث الكميات في إعلاناتك حتى لا تصلك طلبات لبضاعة نفدت.
             عند وجود مشكلة في طلب وارد تواصل مع الدعم عبر Live Chat مع رقم الطلب.
@@ -2320,7 +2140,7 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "supplier-incoming-orders", "How a supplier follows incoming orders on their listings", "en", ["supplier"],
             """
             When a customer buys from one of your listings an order is created and you receive a notification.
-            Follow the order's stages through delivery and collection, because your balance depends on the collection stage rather than on the order simply being created.
+            Follow the order's stages through delivery and collection.
             For non-retail orders you may be asked to accept or reject the order during the Awaiting seller approval stage.
             Keep your listing quantities updated so you do not receive orders for goods that are out of stock.
             If there is a problem with an incoming order, contact support via Live Chat with the order number.
@@ -2354,8 +2174,6 @@ internal static class AiAssistantKnowledgeSource
             Booking: شحنة دولية من ميناء إلى ميناء بالدولار.
             Offer: إما إعلان بخصم، أو عرض سعر تقدمه على إعلان Request.
             Request: إعلان طلب بضاعة غير متوفرة لدى صاحبه.
-            الرصيد (Balance): صفحة المورد لمتابعة مستحقاته وطلب سحبها.
-            الآيبان (IBAN): رقم الحساب البنكي المستخدم في طلب السحب.
             Live Chat: محادثة مباشرة مع موظف دعم بشري.
             الراس الذكي (Alras Smart): مساعد ذكي يشرح المنصة وسياساتها وينفّذ أدوات محددة.
             """);
@@ -2370,22 +2188,20 @@ internal static class AiAssistantKnowledgeSource
             Booking: an international port-to-port shipment priced in USD.
             Offer: either a discounted ad, or a quotation you submit on a Request ad.
             Request: an ad asking for goods the owner does not have.
-            Balance: the supplier page for following dues and requesting withdrawals.
-            IBAN: the bank account number used in a withdrawal request.
             Live Chat: a direct conversation with a human support agent.
             Alras Smart (الراس الذكي): an AI agent that explains the platform and its policies and can run specific tools.
             """);
 
         Add(chunks, "assistant-scope", "ما الذي يستطيع المساعد الإجابة عنه", "ar", All,
             """
-            يستطيع المساعد شرح: أنواع الحسابات وصلاحياتها، وكيفية التسجيل وتسجيل الدخول، والتنقل بين صفحات التطبيق، والبحث النصي والبحث بالصور، وأنواع الإعلانات وكيفية إنشائها لمن يملك الصلاحية، والشراء وطرق الدفع، وتتبع الطلبات ومعاني حالاتها، وسياسة الاسترجاع ورد الأموال، ورصيد المورد وطلبات السحب، وإعلانات الشحن، وسياسات الشروط والخصوصية، وطرق التواصل مع الدعم.
+            يستطيع المساعد شرح: أنواع الحسابات وصلاحياتها، وكيفية التسجيل وتسجيل الدخول، والتنقل بين صفحات التطبيق، والبحث النصي والبحث بالصور، وأنواع الإعلانات وكيفية إنشائها لمن يملك الصلاحية، والشراء وطرق الدفع، وتتبع الطلبات ومعاني حالاتها، وسياسة الاسترجاع ورد الأموال، وإعلانات الشحن، وسياسات الشروط والخصوصية، وطرق التواصل مع الدعم.
             لا يستطيع المساعد: تنفيذ أي إجراء نيابة عنك، ولا فتح تفاصيل طلب بعينه، ولا الموافقة على استرجاع، ولا تحويل أموال، ولا تعديل حسابك أو إعلانك.
             لا يجيب عن أسئلة عامة خارج الراس الذكي مثل الطقس أو الأخبار أو الوقت.
             للحالات الفردية التي تحتاج تدخلاً بشرياً استخدم Live Chat من الملف الشخصي.
             """);
         Add(chunks, "assistant-scope", "What the assistant can answer", "en", All,
             """
-            The assistant can explain: account types and their permissions, registration and sign-in, navigating the app's pages, text and image search, ad types and how to create them for accounts that are allowed, buying and payment methods, order tracking and status meanings, the returns and refunds policy, supplier balance and withdrawal requests, shipping ads, terms and privacy policies, and how to reach support.
+            The assistant can explain: account types and their permissions, registration and sign-in, navigating the app's pages, text and image search, ad types and how to create them for accounts that are allowed, buying and payment methods, order tracking and status meanings, the returns and refunds policy, shipping ads, terms and privacy policies, and how to reach support.
             The assistant cannot: perform any action for you, open a specific order's details, approve a return, transfer money, or edit your account or listing.
             It does not answer general questions outside Al Ras Smart such as weather, news, or the time.
             For individual cases that need human intervention, use Live Chat from Profile.
@@ -2410,7 +2226,7 @@ internal static class AiAssistantKnowledgeSource
             """
             الواجهة تختلف حسب نوع الحساب، ولذلك قد لا تظهر لك صفحة موجودة عند غيرك.
             زر إنشاء إعلان يظهر للمورد فقط، وإنشاء طلب (Create Order) لعميل الشركة فقط.
-            صفحة الحساب (Account) للمورد وعميل الشركة، وصفحة الرصيد للمورد فقط.
+            صفحة الحساب (Account) للمورد وعميل الشركة.
             العميل الفردي لديه ثلاث صفحات فقط: الرئيسية وطلباتي والملف الشخصي.
             شركة الشحن لديها صفحتان فقط: الرئيسية والملف الشخصي.
             إذا كنت تتوقع ظهور صفحة تخص نوع حسابك ولا تراها، تأكد من اكتمال اعتماد حسابك ثم تواصل مع الدعم عبر Live Chat.
@@ -2419,7 +2235,7 @@ internal static class AiAssistantKnowledgeSource
             """
             The interface differs by account type, so a page that exists for someone else may not appear for you.
             The Create Ad button is for suppliers only, and Create Order is for company customers only.
-            The Account page is for suppliers and company customers, and the Balance page is for suppliers only.
+            The Account page is for suppliers and company customers.
             A personal customer has three pages only: Home, My Orders, and Profile.
             A shipping company has two pages only: Home and Profile.
             If you expect a page that belongs to your account type and cannot see it, confirm your account approval is complete and then contact support via Live Chat.

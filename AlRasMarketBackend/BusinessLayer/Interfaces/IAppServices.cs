@@ -69,26 +69,6 @@ public interface IProfileAppService
         CancellationToken cancellationToken = default);
 }
 
-public interface IUserIbanAppService
-{
-    Task<object> GetMyIbansAsync(string userId, CancellationToken cancellationToken = default);
-    Task<object> AddMyIbanAsync(string userId, CreateUserIbanRequest input, CancellationToken cancellationToken = default);
-}
-
-public interface IWithdrawalRequestsAppService
-{
-    Task<object> GetMyWithdrawalRequestsAsync(string userId, CancellationToken cancellationToken = default);
-    Task<object> CreateMyWithdrawalRequestAsync(string userId, CreateWithdrawalRequestInput input, CancellationToken cancellationToken = default);
-}
-
-public interface IAdminFinanceAppService
-{
-    Task<object> GetWithdrawalRequestsAsync(AdminGetWithdrawalRequestsInput input, CancellationToken cancellationToken = default);
-    Task<object> GetCompanyFinanceProfileAsync(string userId, CancellationToken cancellationToken = default);
-    Task<object> GetCompanyBalanceStatementAsync(string userId, int page, int pageSize, CancellationToken cancellationToken = default);
-    Task<object> MarkWithdrawalPaidAsync(string adminUserId, string withdrawalRequestId, AdminMarkWithdrawalPaidInput input, CancellationToken cancellationToken = default);
-}
-
 public sealed class UpdateProfileInput
 {
     public string? FullName { get; set; }
@@ -394,14 +374,6 @@ public interface IAddressesAppService
     Task<object> AddAsync(AddAddressInput input, CancellationToken cancellationToken = default);
     Task<object> UpdateAsync(UpdateAddressInput input, CancellationToken cancellationToken = default);
     Task DeleteAsync(string userId, Guid addressId, CancellationToken cancellationToken = default);
-}
-
-public interface IOffersAppService
-{
-    Task<object> CreateAsync(CreateOfferInput input, CancellationToken cancellationToken = default);
-    Task<object> GetOffersOnRequestsAsync(string? productId, CancellationToken cancellationToken = default);
-    Task<object> CreateOfferOnNegotiableAsync(CreateOfferOnNegotiableInput input, CancellationToken cancellationToken = default);
-    Task<object> GetOfferOnNegotiableAsync(string? productId, CancellationToken cancellationToken = default);
 }
 
 public interface IInternationalShippingAppService

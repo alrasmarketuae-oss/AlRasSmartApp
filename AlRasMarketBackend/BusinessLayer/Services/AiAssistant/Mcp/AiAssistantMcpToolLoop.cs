@@ -17,7 +17,7 @@ public sealed class AiAssistantMcpToolLoop(
     private const int MaxToolRounds = 6;
     /// <summary>
     /// Hard cap: never apply more than one successful mutating account action
-    /// per user turn (price/qty, pause/active, sold-out, delete, or withdrawal).
+    /// per user turn (price/qty, pause/active, sold-out, or delete).
     /// </summary>
     private const int MaxSuccessfulMutationsPerTurn = 1;
 
@@ -27,7 +27,6 @@ public sealed class AiAssistantMcpToolLoop(
         "set_ad_listing_status",
         "mark_ad_sold_out",
         "delete_ad",
-        "create_withdrawal",
         "create_request_ad",
         "create_booking_ad",
         "create_offer_ad",
@@ -147,7 +146,7 @@ public sealed class AiAssistantMcpToolLoop(
                                 blocked_bulk_update = true,
                                 error =
                                     "Only ONE account-changing action is allowed per user message " +
-                                    "(update price/qty, pause/active, sold-out, delete, or withdrawal). " +
+                                    "(update price/qty, pause/active, sold-out, or delete). " +
                                     "Tell the user to send another message for the next change."
                             })
                         });
@@ -248,8 +247,6 @@ public sealed class AiAssistantMcpToolLoop(
             "set_ad_listing_status" => "بستدعي أداة: إيقاف/تفعيل إعلان…",
             "mark_ad_sold_out" => "بستدعي أداة: تعليم نفاد الكمية…",
             "delete_ad" => "بستدعي أداة: حذف إعلان…",
-            "list_my_ibans" => "بستدعي أداة: الآيبان والرصيد…",
-            "create_withdrawal" => "بستدعي أداة: طلب سحب…",
             "lookup_create_ad_reference" => "بستدعي أداة: مراجع إنشاء الإعلان (وحدات/دول/موانئ)…",
             "list_my_addresses" => "بستدعي أداة: عناوين التسليم المحفوظة…",
             "create_request_ad" => "جاري إنشاء إعلان طلب على السحابة…",
@@ -280,8 +277,6 @@ public sealed class AiAssistantMcpToolLoop(
             "set_ad_listing_status" => "Calling tool: pause or activate an ad…",
             "mark_ad_sold_out" => "Calling tool: mark sold out…",
             "delete_ad" => "Calling tool: delete an ad…",
-            "list_my_ibans" => "Calling tool: balance and saved IBANs…",
-            "create_withdrawal" => "Calling tool: create withdrawal request…",
             "lookup_create_ad_reference" => "Exploring ad requirements (units/countries/port)…",
             "list_my_addresses" => "Listing saved delivery addresses…",
             "create_request_ad" => "Creating the Request ad on the server…",

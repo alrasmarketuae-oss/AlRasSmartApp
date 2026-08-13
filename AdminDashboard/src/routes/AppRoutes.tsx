@@ -26,7 +26,6 @@ import MonitoringPage from '../pages/MonitoringPage'
 import MissedProductSearchesPage from '../pages/MissedProductSearchesPage'
 import TechSupportCallbacksPage from '../pages/TechSupportCallbacksPage'
 import EmployeesPage from '../pages/EmployeesPage'
-import FinancePage from '../pages/FinancePage'
 import PermissionRoute from './PermissionRoute'
 import { getAuthToken, getAuthUser } from '../lib/authStorage'
 import { getDefaultRoute, isSuperAdmin, PERMISSIONS } from '../lib/permissions'
@@ -287,14 +286,6 @@ export default function AppRoutes() {
           element={
             <PermissionRoute permission={PERMISSIONS.settingsView}>
               <SettingsPage />
-            </PermissionRoute>
-          }
-        />
-        <Route
-          path="/finance"
-          element={
-            <PermissionRoute permission={PERMISSIONS.financeView}>
-              <FinancePage />
             </PermissionRoute>
           }
         />

@@ -1679,51 +1679,6 @@ class S {
     return Intl.message('Account', name: 'account', desc: '', args: []);
   }
 
-  /// `Account Overview`
-  String get accountOverview {
-    return Intl.message(
-      'Account Overview',
-      name: 'accountOverview',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Manage & track your advertisements`
-  String get myAdsOverviewSubtitle {
-    return Intl.message(
-      'Manage & track your advertisements',
-      name: 'myAdsOverviewSubtitle',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `View & manage your offers`
-  String get myOffersOverviewSubtitle {
-    return Intl.message(
-      'View & manage your offers',
-      name: 'myOffersOverviewSubtitle',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Recent Listings`
-  String get recentListings {
-    return Intl.message(
-      'Recent Listings',
-      name: 'recentListings',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Edit Price`
-  String get editPrice {
-    return Intl.message('Edit Price', name: 'editPrice', desc: '', args: []);
-  }
-
   /// `Personal Information`
   String get personalInformation {
     return Intl.message(
@@ -2029,7 +1984,7 @@ class S {
     );
   }
 
-  /// `Update all your ad prices in one place`
+  /// `Update and manage product prices easily`
   String get changePricesSubtitle {
     return Intl.message(
       'Update and manage product prices easily',
@@ -2037,6 +1992,51 @@ class S {
       desc: '',
       args: [],
     );
+  }
+
+  /// `Account Overview`
+  String get accountOverview {
+    return Intl.message(
+      'Account Overview',
+      name: 'accountOverview',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Manage & track your advertisements`
+  String get myAdsOverviewSubtitle {
+    return Intl.message(
+      'Manage & track your advertisements',
+      name: 'myAdsOverviewSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `View & manage your offers`
+  String get myOffersOverviewSubtitle {
+    return Intl.message(
+      'View & manage your offers',
+      name: 'myOffersOverviewSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Recent Listings`
+  String get recentListings {
+    return Intl.message(
+      'Recent Listings',
+      name: 'recentListings',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Edit Price`
+  String get editPrice {
+    return Intl.message('Edit Price', name: 'editPrice', desc: '', args: []);
   }
 
   /// `Search ads`
@@ -2104,16 +2104,6 @@ class S {
     return Intl.message(
       'Manage your advertisements',
       name: 'myAdsSubtitle',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Track your balance and withdrawals`
-  String get myBalanceSubtitle {
-    return Intl.message(
-      'Track your balance and withdrawals',
-      name: 'myBalanceSubtitle',
       desc: '',
       args: [],
     );
@@ -2679,10 +2669,10 @@ class S {
     );
   }
 
-  /// `Online card payment is available for Retail orders only. Cash on delivery applies to other deal types per platform process. Supplier payouts follow the approved verification policy.`
+  /// `Online card payment is available for Retail orders only. Cash on delivery applies to other deal types per platform process.`
   String get mechanismCodPolicy {
     return Intl.message(
-      'Online card payment is available for Retail orders only. Cash on delivery applies to other deal types per platform process. Supplier payouts follow the approved verification policy.',
+      'Online card payment is available for Retail orders only. Cash on delivery applies to other deal types per platform process.',
       name: 'mechanismCodPolicy',
       desc: '',
       args: [],
@@ -6681,116 +6671,6 @@ class S {
     return Intl.message('Got it', name: 'gotIt', desc: '', args: []);
   }
 
-  /// `My Balance`
-  String get myBalance {
-    return Intl.message('My Balance', name: 'myBalance', desc: '', args: []);
-  }
-
-  /// `Account statement`
-  String get accountStatement {
-    return Intl.message(
-      'Account statement',
-      name: 'accountStatement',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Current balance`
-  String get currentBalance {
-    return Intl.message(
-      'Current balance',
-      name: 'currentBalance',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Deposit`
-  String get balanceDeposit {
-    return Intl.message('Deposit', name: 'balanceDeposit', desc: '', args: []);
-  }
-
-  /// `Withdrawal`
-  String get balanceWithdrawal {
-    return Intl.message(
-      'Withdrawal',
-      name: 'balanceWithdrawal',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `No balance transactions yet.`
-  String get noBalanceTransactions {
-    return Intl.message(
-      'No balance transactions yet.',
-      name: 'noBalanceTransactions',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Order #{orderId}`
-  String balanceOrderLabel(String orderId) {
-    return Intl.message(
-      'Order #$orderId',
-      name: 'balanceOrderLabel',
-      desc: '',
-      args: [orderId],
-    );
-  }
-
-  /// `Failed to load balance statement.`
-  String get failedToLoadBalance {
-    return Intl.message(
-      'Failed to load balance statement.',
-      name: 'failedToLoadBalance',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Deposits`
-  String get balanceDepositsSection {
-    return Intl.message(
-      'Deposits',
-      name: 'balanceDepositsSection',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Withdrawals`
-  String get balanceWithdrawalsSection {
-    return Intl.message(
-      'Withdrawals',
-      name: 'balanceWithdrawalsSection',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `No deposits from the platform yet.`
-  String get noDepositsYet {
-    return Intl.message(
-      'No deposits from the platform yet.',
-      name: 'noDepositsYet',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `No withdrawal requests yet.`
-  String get noWithdrawalsYet {
-    return Intl.message(
-      'No withdrawal requests yet.',
-      name: 'noWithdrawalsYet',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `Alras Smart`
   String get aiAssistantTitle {
     return Intl.message(
@@ -7026,21 +6906,11 @@ class S {
     );
   }
 
-  /// `For damaged, expired, or materially different goods: report within 24 business hours of receipt with photos. If support approves, refund is issued within 1 business day, and the supplier balance is adjusted if it was credited.`
+  /// `For damaged, expired, or materially different goods: report within 24 business hours of receipt with photos. If support approves, refund is issued within 1 business day.`
   String get aiAssistantReturnPolicyHint {
     return Intl.message(
-      'For damaged, expired, or materially different goods: report within 24 business hours of receipt with photos. If support approves, refund is issued within 1 business day, and the supplier balance is adjusted if it was credited.',
+      'For damaged, expired, or materially different goods: report within 24 business hours of receipt with photos. If support approves, refund is issued within 1 business day.',
       name: 'aiAssistantReturnPolicyHint',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Supplier balance increases immediately on Retail card payments. Cash-on-delivery credits after collection/receipt. Withdrawals via IBAN are processed within 7 business days after support approval.`
-  String get aiAssistantBalanceHint {
-    return Intl.message(
-      'Supplier balance increases immediately on Retail card payments. Cash-on-delivery credits after collection/receipt. Withdrawals via IBAN are processed within 7 business days after support approval.',
-      name: 'aiAssistantBalanceHint',
       desc: '',
       args: [],
     );
@@ -7056,31 +6926,11 @@ class S {
     );
   }
 
-  /// `Alras Smart is an AI agent that can control important account actions such as creating withdrawal requests, changing prices, and deleting ads. Security verification is required. Thank you for your patience.`
+  /// `Alras Smart is an AI agent that can control important account actions such as changing prices and deleting ads. Security verification is required. Thank you for your patience.`
   String get sensitiveAccessWarningBody {
     return Intl.message(
-      'Alras Smart is an AI agent that can control important account actions such as creating withdrawal requests, changing prices, and deleting ads. Security verification is required. Thank you for your patience.',
+      'Alras Smart is an AI agent that can control important account actions such as changing prices and deleting ads. Security verification is required. Thank you for your patience.',
       name: 'sensitiveAccessWarningBody',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Balance access`
-  String get sensitiveAccessBalanceWarningTitle {
-    return Intl.message(
-      'Balance access',
-      name: 'sensitiveAccessBalanceWarningTitle',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Opening Balance shows your deposits and lets you add IBANs or request withdrawals. Verify your identity before continuing.`
-  String get sensitiveAccessBalanceWarningBody {
-    return Intl.message(
-      'Opening Balance shows your deposits and lets you add IBANs or request withdrawals. Verify your identity before continuing.',
-      name: 'sensitiveAccessBalanceWarningBody',
       desc: '',
       args: [],
     );
@@ -7196,21 +7046,11 @@ class S {
     );
   }
 
-  /// `If support approves the return, funds are refunded within 1 business day of approval, and the supplier balance is deducted if it was credited from the same order.`
+  /// `If support approves the return, funds are refunded within 1 business day of approval.`
   String get returnPolicyRefund {
     return Intl.message(
-      'If support approves the return, funds are refunded within 1 business day of approval, and the supplier balance is deducted if it was credited from the same order.',
+      'If support approves the return, funds are refunded within 1 business day of approval.',
       name: 'returnPolicyRefund',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Approved supplier earnings transfers are completed within 7 business days per platform process.`
-  String get returnPolicyPayout {
-    return Intl.message(
-      'Approved supplier earnings transfers are completed within 7 business days per platform process.',
-      name: 'returnPolicyPayout',
       desc: '',
       args: [],
     );
@@ -7231,16 +7071,6 @@ class S {
     return Intl.message(
       'Cash on delivery applies to other deal types according to platform process and the Al Ras team.',
       name: 'paymentCodAll',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `A supplier handing goods to the Al Ras Smart app or team does not trigger immediate payment. Supplier funds are released only after the order value is actually collected from the buyer/customer. After collection, approved earnings are transferred within 7 business days.`
-  String get supplierCollectionPolicy {
-    return Intl.message(
-      'A supplier handing goods to the Al Ras Smart app or team does not trigger immediate payment. Supplier funds are released only after the order value is actually collected from the buyer/customer. After collection, approved earnings are transferred within 7 business days.',
-      name: 'supplierCollectionPolicy',
       desc: '',
       args: [],
     );

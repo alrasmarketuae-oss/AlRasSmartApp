@@ -340,58 +340,6 @@ public sealed partial class AiAssistantMcpToolsService(
             type = "function",
             function = new
             {
-                name = "list_my_ibans",
-                description =
-                    "List the signed-in seller's saved IBANs (numbered 1..n) and available withdrawal balance. " +
-                    "Call this BEFORE create_withdrawal. If they want a different IBAN not in the list, " +
-                    "tell them to add it from the Balance page — do not invent IBANs.",
-                parameters = new
-                {
-                    type = "object",
-                    properties = new { },
-                    additionalProperties = false
-                }
-            }
-        },
-        new
-        {
-            type = "function",
-            function = new
-            {
-                name = "create_withdrawal",
-                description =
-                    "Create ONE withdrawal request for the signed-in seller. " +
-                    "Requires amount and either iban_choice (1-based index from list_my_ibans) or user_iban_id. " +
-                    "If they have not chosen an IBAN yet, call list_my_ibans and ask: رقم 1 أم 2 أم 3؟ " +
-                    "If they want another IBAN, direct them to the Balance page to add it.",
-                parameters = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        amount = new { type = "number", description = "Withdrawal amount (AED)." },
-                        iban_choice = new
-                        {
-                            type = "integer",
-                            description = "1-based index from the last list_my_ibans result."
-                        },
-                        user_iban_id = new
-                        {
-                            type = "string",
-                            description = "Exact UserIban Guid when known."
-                        },
-                        notes = new { type = "string", description = "Optional notes." }
-                    },
-                    required = new[] { "amount" },
-                    additionalProperties = false
-                }
-            }
-        },
-        new
-        {
-            type = "function",
-            function = new
-            {
                 name = "get_my_purchase_summary",
                 description =
                     "AS BUYER — how much THIS USER spent on purchases they placed (My Orders / طلباتي / اشتريت بكام). " +
@@ -692,10 +640,6 @@ public sealed partial class AiAssistantMcpToolsService(
                     userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
                 "delete_ad" => await DeleteAdAsync(
                     userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
-                "list_my_ibans" => await ListMyIbansAsync(
-                    userId, cancellationToken).ConfigureAwait(false),
-                "create_withdrawal" => await CreateWithdrawalAsync(
-                    userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
                 "get_my_purchase_summary" => await GetMyPurchaseSummaryAsync(
                     userId, cancellationToken).ConfigureAwait(false),
                 "get_my_last_order" => await GetMyLastOrderAsync(
@@ -853,16 +797,16 @@ public sealed partial class AiAssistantMcpToolsService(
         {
             var strongPeers = ranked.Where(x => x.Score == best.Score).ToList();
             if (strongPeers.Count == 1)
-            {
-                var tracked = await dbContext.Products
-                    .Include(p => p.Unit)
+        {
+            var tracked = await dbContext.Products
+                .Include(p => p.Unit)
                     .Include(p => p.RetailUnit)
                     .FirstAsync(p => p.ProductId == best.ProductId, cancellationToken)
-                    .ConfigureAwait(false);
+                .ConfigureAwait(false);
 
                 return await ApplyPriceQuantityUpdateAsync(
                         tracked, price, quantity, channel, cancellationToken)
-                    .ConfigureAwait(false);
+                .ConfigureAwait(false);
             }
         }
 
@@ -1197,21 +1141,21 @@ public sealed partial class AiAssistantMcpToolsService(
                     markedUp, commissionTypeId ?? r.ProductTypeId, r.Currency, usdToAedRate);
 
                 channelRows.Add(new NameCandidate(
-                    r.ProductId,
-                    r.ProductCode,
-                    r.NameEn,
-                    r.NameAr,
-                    r.USDPrice,
+            r.ProductId,
+            r.ProductCode,
+            r.NameEn,
+            r.NameAr,
+            r.USDPrice,
                     priced.Price,
                     priced.Currency,
                     priced.PriceUsd,
                     priced.PriceAed,
                     commissionPercent,
-                    r.Quantity,
-                    r.UnitName,
-                    r.Currency,
-                    r.Status,
-                    r.IsApproved,
+            r.Quantity,
+            r.UnitName,
+            r.Currency,
+            r.Status,
+            r.IsApproved,
                     r.CategoryId,
                     r.ProductTypeId,
                     r.SellerCompany,

@@ -465,33 +465,6 @@ public sealed class AddressListItemDto
     public string? AddressLine2 { get; set; }
 }
 
-public sealed class CreateOfferInput
-{
-    public string FromUserId { get; set; } = string.Empty;
-    public string ToUserId { get; set; } = string.Empty;
-    public string CountryName { get; set; } = string.Empty;
-    public string PortName { get; set; } = string.Empty;
-    public string DeliveryWindow { get; set; } = string.Empty;
-    public string ProductId { get; set; } = string.Empty;
-    public decimal RequestedQuantity { get; set; }
-    public string UnitName { get; set; } = string.Empty;
-    public decimal UnitPrice { get; set; }
-    public decimal TotalPrice { get; set; }
-    public List<string>? ImagePaths { get; set; }
-    public List<string>? DocumentPaths { get; set; }
-}
-
-public sealed class CreateOfferOnNegotiableInput
-{
-    public string FromUserId { get; set; } = string.Empty;
-    public string ToUserId { get; set; } = string.Empty;
-    public string ProductId { get; set; } = string.Empty;
-    public decimal OfferedPrice { get; set; }
-    public string UnitName { get; set; } = string.Empty;
-    public decimal BaseUnitPrice { get; set; }
-    public decimal RequestedQuantity { get; set; }
-}
-
 public sealed class CreateInternationalShippingPostInput
 {
     public string PublisherUserId { get; set; } = string.Empty;

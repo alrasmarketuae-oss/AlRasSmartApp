@@ -24,7 +24,6 @@ public partial class OrdersAppService(
     IServiceProvider serviceProvider,
     ILogger<OrdersAppService> logger,
     IMediaStorageService mediaStorage,
-    ISupplierBalanceService supplierBalanceService,
     IOrderOfferAutoModerationQueue orderOfferAutoModerationQueue) : IOrdersAppService
 {
     public async Task<object> PlaceBookingOrderAsync(CreateDirectOrderInput input, CancellationToken cancellationToken = default)

@@ -108,7 +108,10 @@ public class AdminDashboardAppService(IRasAlSouqDbContext dbContext) : IAdminDas
 
         var pendingCompanies = await dbContext.Users.CountAsync(x => x.RoleId == 2 && !x.IsActive, cancellationToken);
         var totalProducts = await dbContext.Products.CountAsync(cancellationToken);
-        var totalOffers = await dbContext.OffersOnNegotiable.CountAsync(cancellationToken);
+        var totalOffers = await visibleOrders
+            .CountAsync(
+                x => x.Product != null && x.Product.ProductTypeId == ProductTypeCodes.Requests,
+                cancellationToken);
         var notificationCount = await dbContext.Notifications.CountAsync(cancellationToken);
 
         var pendingOrders = await visibleOrders.CountAsync(
@@ -329,7 +332,8 @@ public class AdminDashboardAppService(IRasAlSouqDbContext dbContext) : IAdminDas
             .Select(x => new { x.Id, x.CreatedAt })
             .ToListAsync(cancellationToken);
 
-        var offerActivity = await dbContext.OffersOnNegotiable
+        var offerActivity = await AdminOrderVisibilityHelper.WhereVisibleInAdminDashboard(dbContext.Orders)
+            .Where(x => x.Product != null && x.Product.ProductTypeId == ProductTypeCodes.Requests)
             .OrderByDescending(x => x.CreatedAt)
             .Take(4)
             .Select(x => new { x.Id, x.CreatedAt })

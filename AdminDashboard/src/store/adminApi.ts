@@ -85,11 +85,6 @@ import type { AdminLiveCounts } from '../types/adminRealtime'
 import { normalizeAdminLiveCounts } from '../types/adminRealtime'
 import type { AdminUsersResponse } from '../types/user'
 import type { AdminUserDetail } from '../types/adminUserDetail'
-import type {
-  AdminBalanceStatementResponse,
-  AdminCompanyFinanceProfile,
-  AdminFinanceWithdrawalsResponse,
-} from '../types/adminFinance'
 import {
   getOrderStatusLabelAr,
   getOrderStatusLabelEn,
@@ -155,7 +150,6 @@ export const adminApi = createApi({
     'Monitoring',
     'MissedProductSearches',
     'SupportCallbacks',
-    'Finance',
   ],
   ...defaultCachePolicy,
   endpoints: (builder) => ({
@@ -1878,50 +1872,6 @@ export const adminApi = createApi({
       invalidatesTags: [{ type: 'Employees', id: 'LIST' }],
     }),
 
-    getFinanceWithdrawals: builder.query<
-      AdminFinanceWithdrawalsResponse,
-      { page?: number; pageSize?: number; statusId?: number; search?: string }
-    >({
-      query: (params) => ({
-        url: '/api/admin/finance/withdrawals',
-        params,
-      }),
-      providesTags: [{ type: 'Finance', id: 'WITHDRAWALS' }],
-    }),
-
-    getCompanyFinanceProfile: builder.query<AdminCompanyFinanceProfile, string>({
-      query: (userId) => `/api/admin/finance/companies/${userId}`,
-      providesTags: (_result, _error, userId) => [{ type: 'Finance', id: `PROFILE-${userId}` }],
-    }),
-
-    getCompanyFinanceStatement: builder.query<
-      AdminBalanceStatementResponse,
-      { userId: string; page?: number; pageSize?: number }
-    >({
-      query: ({ userId, page, pageSize }) => ({
-        url: `/api/admin/finance/companies/${userId}/statement`,
-        params: { page, pageSize },
-      }),
-      providesTags: (_result, _error, { userId }) => [{ type: 'Finance', id: `STATEMENT-${userId}` }],
-    }),
-
-    markWithdrawalPaid: builder.mutation<
-      { message: string; id: string; completedAtUtc: string },
-      { withdrawalRequestId: string; notes?: string | null; supplierId: string }
-    >({
-      query: ({ withdrawalRequestId, notes }) => ({
-        url: `/api/admin/finance/withdrawals/${withdrawalRequestId}/mark-paid`,
-        method: 'POST',
-        body: { notes: notes ?? null },
-      }),
-      invalidatesTags: (_result, _error, { supplierId }) => [
-        { type: 'Finance', id: 'WITHDRAWALS' },
-        { type: 'Finance', id: `PROFILE-${supplierId}` },
-        { type: 'Finance', id: `STATEMENT-${supplierId}` },
-        { type: 'AuditLogs', id: 'LIST' },
-      ],
-    }),
-
     claimSupportConversation: builder.mutation<ChatSupportAssignment, { otherUserId: string }>({
       query: (body) => ({
         url: '/api/Chat/support/claim',
@@ -2094,10 +2044,6 @@ export const {
   useCreateEmployeeMutation,
   useUpdateEmployeeMutation,
   useDeleteEmployeeMutation,
-  useGetFinanceWithdrawalsQuery,
-  useGetCompanyFinanceProfileQuery,
-  useGetCompanyFinanceStatementQuery,
-  useMarkWithdrawalPaidMutation,
   useClaimSupportConversationMutation,
   useReleaseSupportConversationMutation,
   useGetAdminAiConversationsQuery,

@@ -9,8 +9,7 @@ namespace BusinessLayer.Services;
 public class ProfileAppService(
     IRasAlSouqDbContext dbContext,
     IAdminRealtimeNotificationService adminRealtimeNotificationService,
-    IMediaStorageService mediaStorage,
-    ISupplierBalanceService supplierBalanceService) : IProfileAppService
+    IMediaStorageService mediaStorage) : IProfileAppService
 {
     public async Task<object> GetMyProfileAsync(string userId, CancellationToken cancellationToken = default)
     {
@@ -208,19 +207,15 @@ public class ProfileAppService(
         return await MapProfileAsync(user, cancellationToken);
     }
 
-    private async Task<object> MapProfileAsync(
+    private Task<object> MapProfileAsync(
         DataLayer.Models.User user,
         CancellationToken cancellationToken)
     {
+        _ = cancellationToken;
         var pending = PendingCompanyProfileChangeHelper.TryParse(user.PendingProfileChanges);
         var isCompanyAccount = user.RoleId == RoleIds.Seller;
-        decimal? balance = null;
-        if (isCompanyAccount)
-        {
-            balance = await supplierBalanceService.GetBalanceAsync(user.Id, cancellationToken);
-        }
 
-        return new
+        return Task.FromResult<object>(new
         {
             id = user.Id,
             fullName = user.FullName,
@@ -247,8 +242,7 @@ public class ProfileAppService(
             // Social accounts have no hash, so the app hides the current-password field.
             hasPassword = !string.IsNullOrWhiteSpace(user.HashedPassword),
             hasPendingProfileChanges = pending?.HasAnyChange == true,
-            pendingProfileChanges = pending,
-            balance
-        };
+            pendingProfileChanges = pending
+        });
     }
 }

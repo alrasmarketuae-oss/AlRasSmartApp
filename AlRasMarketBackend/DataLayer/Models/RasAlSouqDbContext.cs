@@ -21,11 +21,6 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
     public DbSet<OrderVideo> OrderVideos => Set<OrderVideo>();
     public DbSet<OrderImage> OrderImages => Set<OrderImage>();
     public DbSet<OrderStatusHistory> OrderStatusHistories => Set<OrderStatusHistory>();
-    public DbSet<Offer> Offers => Set<Offer>();
-    public DbSet<OfferOnNegotiable> OffersOnNegotiable => Set<OfferOnNegotiable>();
-    public DbSet<OfferOnRequestImage> OfferOnRequestImages => Set<OfferOnRequestImage>();
-    public DbSet<OfferOnRequestDocument> OfferOnRequestDocuments => Set<OfferOnRequestDocument>();
-    public DbSet<OfferStatus> OfferStatuses => Set<OfferStatus>();
     public DbSet<InternationalShippingPost> InternationalShippingPosts => Set<InternationalShippingPost>();
     public DbSet<ShipmentStatus> ShipmentStatuses => Set<ShipmentStatus>();
     public DbSet<InternationalShipment> InternationalShipments => Set<InternationalShipment>();
@@ -60,9 +55,6 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
     public DbSet<MissedProductSearch> MissedProductSearches => Set<MissedProductSearch>();
     public DbSet<SupportCallbackRequest> SupportCallbackRequests => Set<SupportCallbackRequest>();
     public DbSet<ContentTranslation> ContentTranslations => Set<ContentTranslation>();
-    public DbSet<Balance> Balances => Set<Balance>();
-    public DbSet<UserIban> UserIbans => Set<UserIban>();
-    public DbSet<WithdrawalRequest> WithdrawalRequests => Set<WithdrawalRequest>();
     public DbSet<AiKnowledgeIndexState> AiKnowledgeIndexStates => Set<AiKnowledgeIndexState>();
     public DbSet<AiConversation> AiConversations => Set<AiConversation>();
     public DbSet<AiConversationMessage> AiConversationMessages => Set<AiConversationMessage>();
@@ -186,57 +178,6 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.HasIndex(x => x.CreatedAtUtc);
             entity.HasIndex(x => new { x.Status, x.CreatedAtUtc });
             entity.HasIndex(x => new { x.UserId, x.CreatedAtUtc });
-        });
-
-        modelBuilder.Entity<Balance>(entity =>
-        {
-            entity.ToTable("Balances");
-            entity.HasKey(x => x.Id);
-            entity.Property(x => x.Id).HasMaxLength(64);
-            entity.Property(x => x.BalanceAmount).HasColumnType("decimal(18,2)");
-            entity.Property(x => x.ReasonEn).HasMaxLength(300);
-            entity.Property(x => x.ReasonAr).HasMaxLength(300);
-            entity.Property(x => x.CreatedAtUtc).HasColumnType("datetime2");
-            // User: NO ACTION — SQL Server rejects CASCADE (Users→Products→Orders→Balances).
-            // Order: CASCADE so order cleanup removes ledger rows automatically.
-            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
-            entity.HasOne(x => x.Order).WithMany().HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.Cascade);
-            entity.HasIndex(x => new { x.UserId, x.CreatedAtUtc });
-            entity.HasIndex(x => new { x.OrderId, x.EntryType })
-                .IsUnique()
-                .HasFilter("[OrderId] IS NOT NULL");
-        });
-
-        modelBuilder.Entity<UserIban>(entity =>
-        {
-            entity.ToTable("UserIbans");
-            entity.HasKey(x => x.Id);
-            entity.Property(x => x.Iban).HasMaxLength(34).IsUnicode(false).IsRequired();
-            entity.Property(x => x.AccountHolderName).HasMaxLength(150);
-            entity.Property(x => x.BankName).HasMaxLength(150);
-            entity.Property(x => x.CreatedAtUtc).HasColumnType("datetime2");
-            entity.HasOne(x => x.User).WithMany(x => x.UserIbans).HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
-            entity.HasIndex(x => new { x.UserId, x.Iban }).IsUnique();
-            entity.HasIndex(x => new { x.UserId, x.IsDefault });
-        });
-
-        modelBuilder.Entity<WithdrawalRequest>(entity =>
-        {
-            entity.ToTable("WithdrawalRequests");
-            entity.HasKey(x => x.Id);
-            entity.Property(x => x.Id).HasMaxLength(64);
-            entity.Property(x => x.Amount).HasColumnType("decimal(18,2)");
-            entity.Property(x => x.Notes).HasMaxLength(500);
-            entity.Property(x => x.IbanSnapshot).HasMaxLength(34).IsUnicode(false).IsRequired();
-            entity.Property(x => x.AccountHolderNameSnapshot).HasMaxLength(150);
-            entity.Property(x => x.BankNameSnapshot).HasMaxLength(150);
-            entity.Property(x => x.RequestedAtUtc).HasColumnType("datetime2");
-            entity.Property(x => x.CompletedAtUtc).HasColumnType("datetime2");
-            entity.HasOne(x => x.User).WithMany(x => x.WithdrawalRequests).HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
-            entity.HasOne(x => x.UserIban).WithMany(x => x.WithdrawalRequests).HasForeignKey(x => x.UserIbanId).OnDelete(DeleteBehavior.Restrict);
-            entity.HasOne(x => x.CompletedByAdminUser).WithMany().HasForeignKey(x => x.CompletedByAdminUserId).OnDelete(DeleteBehavior.Restrict);
-            entity.HasIndex(x => new { x.UserId, x.RequestedAtUtc });
-            entity.HasIndex(x => new { x.StatusId, x.RequestedAtUtc });
         });
 
         modelBuilder.Entity<ContentTranslation>(entity =>
@@ -533,76 +474,6 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
                 new OrderStatus { Id = 5, Name = "Delivered" },
                 new OrderStatus { Id = 6, Name = "Cancelled" }
             );
-        });
-
-        modelBuilder.Entity<OfferStatus>(entity =>
-        {
-            entity.ToTable("OfferStatuses");
-            entity.HasKey(x => x.Id);
-            entity.Property(x => x.Id).ValueGeneratedNever();
-            entity.Property(x => x.NameEn).HasMaxLength(50).IsUnicode(false).IsRequired();
-            entity.HasData(
-                new OfferStatus { Id = 1, NameEn = "Pending" },
-                new OfferStatus { Id = 2, NameEn = "Accepted" },
-                new OfferStatus { Id = 3, NameEn = "Rejected" }
-            );
-        });
-
-        modelBuilder.Entity<Offer>(entity =>
-        {
-            entity.ToTable("OffersOnRequests");
-            entity.HasKey(x => x.Id);
-            entity.Property(x => x.Id).ValueGeneratedOnAdd();
-            entity.Property(x => x.DeliveryWindow).HasMaxLength(100).IsUnicode(false).IsRequired();
-            entity.Property(x => x.RequestedQuantity).HasColumnType("decimal(18,3)");
-            entity.Property(x => x.UnitPrice).HasColumnType("decimal(12,2)");
-            entity.Property(x => x.TotalPrice).HasColumnType("decimal(12,2)");
-            entity.Property(x => x.CreatedAt).HasColumnType("datetime").HasDefaultValueSql("(getutcdate())");
-            entity.HasOne(x => x.FromUser).WithMany().HasForeignKey(x => x.FromUserId).OnDelete(DeleteBehavior.NoAction);
-            entity.HasOne(x => x.ToUser).WithMany().HasForeignKey(x => x.ToUserId).OnDelete(DeleteBehavior.NoAction);
-            entity.HasOne(x => x.Country).WithMany().HasForeignKey(x => x.CountryId).OnDelete(DeleteBehavior.NoAction);
-            entity.HasOne(x => x.Port).WithMany().HasForeignKey(x => x.PortId).OnDelete(DeleteBehavior.NoAction);
-            entity.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.NoAction);
-            entity.HasOne(x => x.Unit).WithMany().HasForeignKey(x => x.UnitId).OnDelete(DeleteBehavior.NoAction);
-            entity.HasOne(x => x.Status).WithMany(x => x.Offers).HasForeignKey(x => x.StatusId).OnDelete(DeleteBehavior.NoAction);
-        });
-
-        modelBuilder.Entity<OfferOnRequestImage>(entity =>
-        {
-            entity.ToTable("OfferOnRequestImages");
-            entity.HasKey(x => x.Id);
-            entity.Property(x => x.Id).ValueGeneratedOnAdd();
-            entity.Property(x => x.ImagePath).HasMaxLength(500).IsRequired();
-            entity.Property(x => x.CreatedAt).HasColumnType("datetime").HasDefaultValueSql("(getutcdate())");
-            entity.HasOne(x => x.Offer).WithMany(x => x.Images).HasForeignKey(x => x.OfferId).OnDelete(DeleteBehavior.Cascade);
-            entity.HasIndex(x => x.OfferId);
-        });
-
-        modelBuilder.Entity<OfferOnRequestDocument>(entity =>
-        {
-            entity.ToTable("OfferOnRequestDocuments");
-            entity.HasKey(x => x.Id);
-            entity.Property(x => x.Id).ValueGeneratedOnAdd();
-            entity.Property(x => x.DocumentPath).HasMaxLength(500).IsRequired();
-            entity.Property(x => x.CreatedAt).HasColumnType("datetime").HasDefaultValueSql("(getutcdate())");
-            entity.HasOne(x => x.Offer).WithMany(x => x.Documents).HasForeignKey(x => x.OfferId).OnDelete(DeleteBehavior.Cascade);
-            entity.HasIndex(x => x.OfferId);
-        });
-
-        modelBuilder.Entity<OfferOnNegotiable>(entity =>
-        {
-            entity.ToTable("OffersOnNegotiable");
-            entity.HasKey(x => x.Id);
-            entity.Property(x => x.Id).ValueGeneratedOnAdd();
-            entity.Property(x => x.OfferedPrice).HasColumnType("decimal(12,2)");
-            entity.Property(x => x.BaseUnitPrice).HasColumnType("decimal(12,2)");
-            entity.Property(x => x.RequestedQuantity).HasColumnType("decimal(18,3)");
-            entity.Property(x => x.CreatedAt).HasColumnType("datetime").HasDefaultValueSql("(getutcdate())");
-            entity.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.NoAction);
-            entity.HasOne(x => x.FromUser).WithMany().HasForeignKey(x => x.FromUserId).OnDelete(DeleteBehavior.NoAction);
-            entity.HasOne(x => x.ToUser).WithMany().HasForeignKey(x => x.ToUserId).OnDelete(DeleteBehavior.NoAction);
-            entity.HasOne(x => x.Unit).WithMany().HasForeignKey(x => x.UnitId).OnDelete(DeleteBehavior.NoAction);
-            entity.HasOne(x => x.Status).WithMany(x => x.OffersOnNegotiable).HasForeignKey(x => x.StatusId).OnDelete(DeleteBehavior.NoAction);
         });
 
         modelBuilder.Entity<InternationalShippingPost>(entity =>

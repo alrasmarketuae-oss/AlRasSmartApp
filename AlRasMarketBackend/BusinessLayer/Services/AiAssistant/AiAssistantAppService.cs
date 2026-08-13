@@ -53,14 +53,14 @@ public sealed class AiAssistantAppService(
                   The user spoke in Arabic. Return ONLY corrected natural Arabic script in the same spoken register/dialect they used (Egyptian عامية, Gulf, Levantine, MSA, etc.) — do not force formal MSA if they spoke colloquially.
                   If the transcript is Latin letters, English words, Franco-Arab, or broken STT, rewrite it as clear Arabic matching the spoken marketplace intent (e.g. هاتلي أرخص هيل، اشتريت بكام، غيّر السعر).
                   Fix recognition errors; do not answer the question; no quotes, labels, or English output.
-                  Keep marketplace terms such as ProductCode, Booking, Retail, Live Chat, IBAN when clearly intended.
+                  Keep marketplace terms such as ProductCode, Booking, Retail, Live Chat when clearly intended.
                   """
                 : """
                   You correct speech-to-text transcripts for the Al Ras Smart AI Assistant.
                   The user spoke in English. Return ONLY corrected English text.
                   Fix recognition errors, missing words, and broken spelling while preserving intent.
                   Do not answer the question. Do not add greetings. Do not invent facts. No quotes or labels.
-            Keep marketplace terms such as ProductCode, Booking, Retail, Live Chat, IBAN when clearly intended.
+            Keep marketplace terms such as ProductCode, Booking, Retail, Live Chat when clearly intended.
             """;
 
         using var httpRequest = new HttpRequestMessage(
@@ -247,11 +247,6 @@ public sealed class AiAssistantAppService(
             return BuildSupportCallbackOfferAnswer(language, account.DisplayName, message);
         }
 
-        if (IsSupplierPayoutTimingQuestion(message))
-        {
-            return BuildSupplierPayoutTimingAnswer(language, account);
-        }
-
         if (IsClearlyOutOfScope(message))
         {
             return new AiAssistantAnswer(
@@ -378,7 +373,7 @@ public sealed class AiAssistantAppService(
             - shipping → shipping ads only; refuse product Booking/Offer/Retail/Category/Request immediately.
             - supplier → allowed (Booking always; other types as permitted). Never refuse supplier Booking.
             CAPABILITIES (answer precisely when asked who you are / what you can do — adapt to audience {account.Audience}):
-            You can: create ads (when allowed), update price/quantity on the seller's ads, search products, compare prices, find cheapest/most expensive listings, search shipping prices country-to-country, show the user's own ad details, buyer order details (طلباتي), seller sales and pending orders on ads, and withdrawals for suppliers.
+            You can: create ads (when allowed), update price/quantity on the seller's ads, search products, compare prices, find cheapest/most expensive listings, search shipping prices country-to-country, show the user's own ad details, buyer order details (طلباتي), and seller sales and pending orders on ads.
             Always state that available actions depend on the current account type.
             Answer in {responseLanguage} only, even if earlier turns in this conversation used another language.
             If the user writes in an unsupported language, understand/translate it internally, but answer in {responseLanguage}.
@@ -388,11 +383,6 @@ public sealed class AiAssistantAppService(
             Keep marketplace facts accurate; only the wording/style should adapt. Do not switch dialect mid-answer without a user cue.
             The earlier messages in this conversation are real context: resolve follow-up questions, pronouns, and short replies such as "and then?" against them instead of asking the user to repeat.
             Use the supplied knowledge context for platform policy and how-to questions. Never invent policy, timing, permissions, or features.
-            CRITICAL supplier payout timing (هستلم فلوسي امتى / when do I get paid after I accepted and delivered):
-            - Non-Retail orders (Category / Booking / Offer / Request / wholesale): money/dues AFTER the buyer PAYS. Never say after the buyer confirms the order or confirms receipt.
-            - Retail card: balance immediately after successful payment.
-            - Retail COD: after actual collection at delivery.
-            Accepting an order or delivering goods alone does not unlock payment for non-Retail.
             You have tools for live marketplace actions:
             - list_my_ads: list every ad the signed-in seller owns (names + ProductCode). Use when choosing which ad to edit or manage.
             - get_my_last_ad: SELLER listing — their most recently created ad (آخر إعلان نزلته / نشرته / أضفته / هات آخر إعلان). NOT an order.
@@ -400,9 +390,7 @@ public sealed class AiAssistantAppService(
             - update_ad_price_quantity: update price/quantity on EXACTLY ONE of the seller's own ads per user message. NEVER update all ads or multiple ads in one turn, even if the user says "change all my ads / غير كل إعلاناتي". Refuse bulk requests and ask which single ad (name or ProductCode) to change. For HYBRID ads (wholesale + retail), NEVER change both channels: if the user did not say جملة/تجزئة or wholesale/retail, ask first — the tool returns needs_channel_clarification. Then call again with channel=wholesale or channel=retail. If the name uniquely matches one catalog ad and channel is known, update immediately. If the tool returns needs_clarification with suggestions, ask the user clearly: هل تقصد هذا الإعلان أم هذا؟ (list the suggested names) and wait; when they pick one, call the tool again with that product_code or exact product_name. Never invent ad names outside the catalog/tool results.
             - set_ad_listing_status: pause or activate EXACTLY ONE owned ad (action=pause|active). Same name-clarification rules as update.
             - mark_ad_sold_out: set quantity to zero on ONE channel of ONE owned ad. For hybrid ads ask جملة/تجزئة first (channel=wholesale|retail). Same one-action-per-turn rule.
-            - delete_ad: permanently delete ONE owned ad. First call without confirm (or confirm=false) so you can ask the user; only after they clearly agree, call again with confirm=true.
-            - list_my_ibans: show available balance and numbered saved IBANs. Call before withdrawals. You cannot add a new IBAN — if they need a different one, tell them to add it from the Balance page.
-            - create_withdrawal: create one withdrawal request with amount + iban_choice (1-based from list_my_ibans) or user_iban_id. Ask which IBAN number if unclear. Only one mutating account action (update/pause/sold-out/delete/withdrawal) per user message.
+            - delete_ad: permanently delete ONE owned ad. First call without confirm (or confirm=false) so you can ask the user; only after they clearly agree, call again with confirm=true. Only one mutating account action (update/pause/sold-out/delete) per user message.
             - find_cheapest_product: find the cheapest approved public listing by product name (Arabic/English synonyms like هيل/cardamom). Hybrid ads expose wholesale and retail as separate candidates — use the tool's productCode for that channel (RetailCode when channel=retail). Report customerPrice AFTER commission with currency, channel, and quantity with unitName (never invent grams/kg).
             - find_most_expensive_product: same rules as find_cheapest_product but for the highest buyer-facing price.
             - get_my_sales_count: SELLER role — orders customers placed on THIS USER's ads (الطلبات على إعلاناتي / مبيعاتي). Never confuse with My Orders.
@@ -460,7 +448,7 @@ public sealed class AiAssistantAppService(
             Call tools when the user asks for those actions or facts. Trust tool results; do not invent prices, quantities, or units.
             When a SELLER ADS CATALOG message is present, treat it as the authoritative list of this seller's ads for update/disambiguation.
             Enforce account visibility: do not describe private features belonging to another audience as if this user can use them.
-            Account-type restrictions cover ONLY creating/publishing ads and the supplier Balance page.
+            Account-type restrictions cover ONLY creating/publishing ads.
             Browsing, searching, image search, buying, tracking orders in My Orders, returns, saved ads and addresses, profile settings, and support are available to every signed-in account.
             Never tell a user their account type prevents them from tracking orders, searching, buying, or contacting support.
             When the user asks to CREATE or PUBLISH an ad, apply ONLY the permission rules for the current audience ({account.Audience}), not rules listed for other audiences in knowledge chunks.
@@ -476,7 +464,7 @@ public sealed class AiAssistantAppService(
             Decline only genuinely unrelated general-knowledge questions (weather, news, sports, politics, coding, other companies), politely, with a suggestion of platform topics you can help with.
             If asked whether the platform is trustworthy, explain concrete safeguards and the intermediary role from context; never promise zero risk or guarantee supplier product quality.
             If the user asks for human support, technical support, support staff, or a phone call — OR if context is insufficient and no tool applies — say you are not certain / a human agent will help, and ask them to leave their name, phone number, and email in the form that appears so support can call them within five minutes. Do NOT only send them to Live Chat for these cases.
-            Do not claim to approve returns, pay out money yourself, or change order statuses. You may manage the seller's own ads (price/qty, pause/active, sold-out, delete) and create withdrawal requests via tools, then report tool results accurately. Withdrawals stay pending until admin pays them.
+            Do not claim to approve returns, pay out money yourself, or change order statuses. You may manage the seller's own ads (price/qty, pause/active, sold-out, delete) via tools, then report tool results accurately.
             """;
 
         var messages = new List<object>
@@ -1045,7 +1033,7 @@ public sealed class AiAssistantAppService(
         var bodyAr = account.Audience switch
         {
             "supplier" =>
-                "أقدر: أضيف إعلاناتك (Booking/Offer/Retail/Category/Request حسب صلاحياتك)، أعدّل الأسعار والكميات، أبحث في المنتجات وأقارن الأسعار، أجيبك بالأرخص والأغلى، أعرف أسعار الشحن لدولة معيّنة، وأجيبك بتفاصيل إعلاناتك وطلباتك ومبيعاتك والطلبات المعلّقة على إعلاناتك وطلبات السحب.",
+                "أقدر: أضيف إعلاناتك (Booking/Offer/Retail/Category/Request حسب صلاحياتك)، أعدّل الأسعار والكميات، أبحث في المنتجات وأقارن الأسعار، أجيبك بالأرخص والأغلى، أعرف أسعار الشحن لدولة معيّنة، وأجيبك بتفاصيل إعلاناتك وطلباتك ومبيعاتك والطلبات المعلّقة على إعلاناتك.",
             "company_customer" =>
                 "أقدر: أضيف إعلان طلب (Request) فقط، أبحث في المنتجات وأقارن الأسعار، أجيبك بالأرخص والأغلى، أعرف أسعار الشحن لدولة معيّنة، وأجيبك بتفاصيل طلباتك في طلباتي.",
             "shipping" =>
@@ -1059,7 +1047,7 @@ public sealed class AiAssistantAppService(
         var bodyEn = account.Audience switch
         {
             "supplier" =>
-                "I can: create your ads (Booking/Offer/Retail/Category/Request as allowed), update prices and quantities, search products and compare prices, find the cheapest and most expensive listings, look up shipping prices to a country, and show details of your ads, orders, sales, pending ad orders, and withdrawals.",
+                "I can: create your ads (Booking/Offer/Retail/Category/Request as allowed), update prices and quantities, search products and compare prices, find the cheapest and most expensive listings, look up shipping prices to a country, and show details of your ads, orders, sales, and pending ad orders.",
             "company_customer" =>
                 "I can: create Request ads only, search products and compare prices, find cheapest/most expensive listings, look up shipping prices to a country, and show your My Orders details.",
             "shipping" =>
@@ -1081,65 +1069,6 @@ public sealed class AiAssistantAppService(
 
         return new AiAssistantAnswer(
             $"Welcome{nameEn}. I’m Alras Smart (الراس الذكي).\n{bodyEn}\nWhat I can do depends on your account type. For human support, use Live Chat from Profile.",
-            language,
-            false,
-            []);
-    }
-
-    private static bool IsSupplierPayoutTimingQuestion(string message)
-    {
-        var q = message.Trim().ToLowerInvariant();
-        string[] markers =
-        [
-            "هستلم فلوسي", "هستلم فلوس", "هقبض امتى", "هقبض إمتى", "هقبض متى",
-            "امتى الفلوس", "إمتى الفلوس", "متى الفلوس", "امتى الفلوس تجي", "إمتى الفلوس تجي",
-            "فلوس هتجيلي", "الفلوس هتجيلي", "فلوس تجيلي", "امتى ينزل", "إمتى ينزل",
-            "متى أقبض", "متى اقبض", "متى استلم ثمن", "متى أستلم ثمن",
-            "سلمت البضاع", "سلمت البضاعه", "سلمت البضاعة", "وافقت عليه وسلمت",
-            "when do i get paid", "when will i get paid", "when do i receive payment",
-            "when is my money", "when does the money", "payout after delivery",
-            "get paid after", "money after delivery", "when am i paid"
-        ];
-        if (!markers.Any(q.Contains)) return false;
-
-        // Avoid hijacking pure withdrawal-how-to questions ("ازاي أسحب").
-        string[] withdrawHowTo =
-            ["ازاي اسحب", "ازاي أسحب", "كيف اسحب", "كيف أسحب", "how do i withdraw", "create withdrawal"];
-        if (withdrawHowTo.Any(q.Contains) && !q.Contains("امتى") && !q.Contains("إمتى") && !q.Contains("متى")
-            && !q.Contains("when"))
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-    private static AiAssistantAnswer BuildSupplierPayoutTimingAnswer(string language, AccountContext account)
-    {
-        var nameAr = string.IsNullOrWhiteSpace(account.DisplayName) ? "" : $"{account.DisplayName}، ";
-        var nameEn = string.IsNullOrWhiteSpace(account.DisplayName) ? "" : $"{account.DisplayName}, ";
-
-        if (language == "ar")
-        {
-            return new AiAssistantAnswer(
-                $"{nameAr}حسب نوع الطلب:\n"
-                + "• طلب غير تجزئة (جملة / Category / Booking / Offer / Request): تستلم المستحقات بعد ما المشتري يدفع قيمة الطلب. "
-                + "مش بعد تأكيد الاستلام أو تأكيد الطلب من المشتري، ومش بمجرد موافقتك أو تسليم البضاعة.\n"
-                + "• طلب تجزئة (Retail) بالبطاقة: الرصيد يزيد فور نجاح الدفع.\n"
-                + "• طلب تجزئة بالدفع عند الاستلام: الرصيد يزيد بعد التحصيل الفعلي عند التسليم.\n"
-                + "بعد ما يصير عندك رصيد محصّل، اعمل طلب سحب من صفحة الرصيد؛ وبعد موافقة الدعم التحويل خلال 7 أيام عمل.",
-                language,
-                false,
-                []);
-        }
-
-        return new AiAssistantAnswer(
-            $"{nameEn}it depends on the order type:\n"
-            + "• Non-Retail (wholesale / Category / Booking / Offer / Request): you get paid after the buyer pays the order value — "
-            + "not after the buyer confirms receipt/order, and not merely because you accepted or delivered.\n"
-            + "• Retail paid by card: balance increases immediately after successful payment.\n"
-            + "• Retail cash on delivery: balance increases after actual collection at delivery.\n"
-            + "Once you have collected balance, create a withdrawal from the Balance page; after support approval, transfer within 7 business days.",
             language,
             false,
             []);

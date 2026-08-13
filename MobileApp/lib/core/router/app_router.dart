@@ -24,7 +24,6 @@ import 'package:alrasmarket/features/ai_assistant/presentation/views/ai_assistan
 import 'package:alrasmarket/features/clint/presentation/views/profile_views/model_training_view.dart';
 import 'package:alrasmarket/features/chat/presentation/views/support_chat_view.dart';
 import 'package:alrasmarket/features/clint/presentation/views/profile_views/technical_support.dart';
-import 'package:alrasmarket/features/clint/presentation/views/profile_views/supplier_balance_view.dart';
 import 'package:alrasmarket/features/clint/presentation/views/screens/booking_views/booking_details.dart';
 import 'package:alrasmarket/features/clint/presentation/views/screens/booking_views/booking_success.dart';
 import 'package:alrasmarket/features/clint/presentation/views/screens/requsts_views/requst_details.dart';
@@ -105,7 +104,6 @@ abstract class AppRoutes {
   static const String kModelTrainingView = '/ModelTrainingView';
   static const String kMyAdsView = '/MyAdsView';
   static const String kChangePricesView = '/ChangePricesView';
-  static const String kSupplierBalanceView = '/SupplierBalanceView';
   static const String kAdRequestOffersView = '/AdRequestOffersView';
   static const String kSubmitOfferView = '/SubmitOfferView';
   static const String kSubmitOfferSuccessView = '/SubmitOfferSuccessView';
@@ -391,10 +389,6 @@ abstract class AppRoutes {
           }
           return MyAdsView(highlightProductId: highlightProductId);
         },
-      ),
-      GoRoute(
-        path: kSupplierBalanceView,
-        builder: (context, state) => const SupplierBalanceView(),
       ),
       GoRoute(
         path: kAdRequestOffersView,

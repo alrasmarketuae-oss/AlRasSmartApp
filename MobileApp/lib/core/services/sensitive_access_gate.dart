@@ -11,7 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
-/// In-memory unlock for sensitive pages (Alras Smart + Balance).
+/// In-memory unlock for sensitive pages (e.g. Alras Smart).
 /// Session lasts ~15 minutes per route after a successful check.
 class SensitiveAccessGate {
   SensitiveAccessGate._();
@@ -46,13 +46,8 @@ class SensitiveAccessGate {
     }
 
     final l10n = S.of(context);
-    final isBalance = route == AppRoutes.kSupplierBalanceView;
-    final warningTitle = isBalance
-        ? l10n.sensitiveAccessBalanceWarningTitle
-        : l10n.sensitiveAccessWarningTitle;
-    final warningBody = isBalance
-        ? l10n.sensitiveAccessBalanceWarningBody
-        : l10n.sensitiveAccessWarningBody;
+    final warningTitle = l10n.sensitiveAccessWarningTitle;
+    final warningBody = l10n.sensitiveAccessWarningBody;
 
     final proceed = await showDialog<bool>(
       context: context,

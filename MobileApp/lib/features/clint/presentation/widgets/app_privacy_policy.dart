@@ -35,7 +35,7 @@ class AppPrivacyPolicy {
       title: '2) لماذا نجمعها',
       items: [
         'إنشاء الحساب والتحقق من الموردين/الشركات.',
-        'تشغيل السوق: الإعلانات، الطلبات، السلة، التوصيل، الرصيد والسحب.',
+        'تشغيل السوق: الإعلانات، الطلبات، السلة، والتوصيل.',
         'التواصل حول الطلبات والموافقات والاسترجاع والدعم.',
         'تحسين البحث بالصور باستخدام صور الإعلانات المنشورة.',
         'إرسال الإشعارات المهمة والأمان ومنع الاحتيال.',
@@ -103,7 +103,7 @@ class AppPrivacyPolicy {
       title: '2) Why we collect it',
       items: [
         'Account creation and supplier/company verification.',
-        'Marketplace operations: ads, orders, cart, delivery, balance and withdrawals.',
+        'Marketplace operations: ads, orders, cart, and delivery.',
         'Communications about orders, approvals, returns, and support.',
         'Improving image search using published listing images.',
         'Important notifications, security, and fraud prevention.',

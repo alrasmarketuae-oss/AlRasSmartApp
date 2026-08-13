@@ -19,11 +19,6 @@ public interface IRasAlSouqDbContext
     DbSet<OrderVideo> OrderVideos { get; }
     DbSet<OrderImage> OrderImages { get; }
     DbSet<OrderStatusHistory> OrderStatusHistories { get; }
-    DbSet<Offer> Offers { get; }
-    DbSet<OfferOnNegotiable> OffersOnNegotiable { get; }
-    DbSet<OfferOnRequestImage> OfferOnRequestImages { get; }
-    DbSet<OfferOnRequestDocument> OfferOnRequestDocuments { get; }
-    DbSet<OfferStatus> OfferStatuses { get; }
     DbSet<InternationalShippingPost> InternationalShippingPosts { get; }
     DbSet<ShipmentStatus> ShipmentStatuses { get; }
     DbSet<InternationalShipment> InternationalShipments { get; }
@@ -58,9 +53,6 @@ public interface IRasAlSouqDbContext
     DbSet<MissedProductSearch> MissedProductSearches { get; }
     DbSet<SupportCallbackRequest> SupportCallbackRequests { get; }
     DbSet<ContentTranslation> ContentTranslations { get; }
-    DbSet<Balance> Balances { get; }
-    DbSet<UserIban> UserIbans { get; }
-    DbSet<WithdrawalRequest> WithdrawalRequests { get; }
     DbSet<AiKnowledgeIndexState> AiKnowledgeIndexStates { get; }
     DbSet<AiConversation> AiConversations { get; }
     DbSet<AiConversationMessage> AiConversationMessages { get; }

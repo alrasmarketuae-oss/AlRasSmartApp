@@ -3,7 +3,7 @@
 
     Order of deletion respects foreign keys:
       - ContentTranslations.OrderId is a RESTRICT FK -> must be cleared first.
-      - The rest (Balances, InternationalShipments, OrderVideos, OrderImages,
+      - The rest (InternationalShipments, OrderVideos, OrderImages,
         OrderStatusHistories, PendingPayments) are CASCADE, but we delete them
         explicitly so the script also works if the DB was created without cascade.
 
@@ -21,11 +21,7 @@ BEGIN TRY
     DELETE FROM ContentTranslations WHERE OrderId IS NOT NULL;
     PRINT CONCAT('ContentTranslations (order-scoped) deleted: ', @@ROWCOUNT);
 
-    -- 2) Ledger rows tied to orders.
-    DELETE FROM Balances WHERE OrderId IS NOT NULL;
-    PRINT CONCAT('Balances (order-scoped) deleted: ', @@ROWCOUNT);
-
-    -- 3) Payment sessions tied to orders.
+    -- 2) Payment sessions tied to orders.
     DELETE FROM PendingPayments WHERE OrderId IN (SELECT Id FROM Orders);
     PRINT CONCAT('PendingPayments deleted: ', @@ROWCOUNT);
 

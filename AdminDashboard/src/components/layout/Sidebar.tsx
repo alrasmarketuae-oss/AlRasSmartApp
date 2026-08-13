@@ -20,7 +20,6 @@ import {
   IconShipping,
   IconUsers,
   IconBell,
-  IconWallet,
   IconActivity,
   IconLogout,
 } from '../icons'
@@ -77,7 +76,6 @@ const navItems: NavItem[] = [
     permission: PERMISSIONS.chatAccess,
   },
   { to: '/notifications', labelKey: 'nav.notifications', icon: IconBell, permission: PERMISSIONS.notificationsView },
-  { to: '/finance', labelKey: 'Finance', icon: IconWallet, permission: PERMISSIONS.financeView },
   { to: '/missed-searches', labelKey: 'nav.missedSearches', icon: IconAds, permission: PERMISSIONS.searchAccess },
   { to: '/audit-logs', labelKey: 'nav.auditLogs', icon: IconOrders, permission: PERMISSIONS.auditView },
   { to: '/monitoring', labelKey: 'nav.monitoring', icon: IconActivity, permission: PERMISSIONS.monitoringView },

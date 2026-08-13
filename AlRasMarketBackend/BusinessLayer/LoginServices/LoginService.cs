@@ -2,7 +2,6 @@ using BusinessLayer.Constants;
 using BusinessLayer.Factories;
 using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
-using BusinessLayer.Services;
 using DataLayer.Interfaces;
 using DataLayer.Models;
 
@@ -12,8 +11,7 @@ public class LoginService(
     LoginProviderFactory providerFactory,
     ITokenService tokenService,
     IAdminPermissionService permissionService,
-    IUserRepository userRepository,
-    ISupplierBalanceService supplierBalanceService) : ILoginService
+    IUserRepository userRepository) : ILoginService
 {
     private readonly LoginProviderFactory _providerFactory = providerFactory;
     private readonly ITokenService _tokenService = tokenService;
@@ -65,12 +63,6 @@ public class LoginService(
             ? _tokenService.CreateToken(user, permissions.Count > 0 ? permissions : null)
             : null;
 
-        decimal? supplierBalance = null;
-        if (isCompanyAccount)
-        {
-            supplierBalance = await supplierBalanceService.GetBalanceAsync(user.Id);
-        }
-
         return new
         {
             Token = authToken,
@@ -92,7 +84,6 @@ public class LoginService(
             LicenseNumber = user.LicenseNumber,
             LicencePath = user.LicencePath,
             Permissions = permissions,
-            Balance = supplierBalance,
             CompanyImages = user.CompanyImages.Select(x => new
             {
                 x.Id,

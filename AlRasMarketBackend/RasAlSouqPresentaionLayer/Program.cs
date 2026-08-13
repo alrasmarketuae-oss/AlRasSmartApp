@@ -131,11 +131,6 @@ builder.Services.AddScoped<IProductAssetsAppService, ProductAssetsAppService>();
 builder.Services.AddScoped<ProductAdoRepository>();
 builder.Services.AddScoped<IProductDataAccess, ProductDataAccess>();
 builder.Services.AddScoped<IOrderDataAccess, OrderDataAccess>();
-builder.Services.AddScoped<IBalanceDataAccess, BalanceDataAccess>();
-builder.Services.AddScoped<ISupplierBalanceService, SupplierBalanceService>();
-builder.Services.AddScoped<IUserIbanAppService, UserIbanAppService>();
-builder.Services.AddScoped<IWithdrawalRequestsAppService, WithdrawalRequestsAppService>();
-builder.Services.AddScoped<IAdminFinanceAppService, AdminFinanceAppService>();
 builder.Services.AddScoped<IProductsAppService, ProductsAppService>();
 builder.Services.AddHttpClient<IOpenAiVisionService, OpenAiVisionService>(client =>
 {
@@ -195,7 +190,6 @@ builder.Services.AddScoped<IContentTranslationService, ContentTranslationService
 builder.Services.AddScoped<IPortNameArBackfillService, PortNameArBackfillService>();
 builder.Services.AddScoped<IAddressesAppService, AddressesAppService>();
 builder.Services.AddScoped<ICategoriesAppService, CategoriesAppService>();
-builder.Services.AddScoped<IOffersAppService, OffersAppService>();
 builder.Services.AddScoped<IInternationalShippingAppService, InternationalShippingAppService>();
 builder.Services.AddScoped<IShippingCompanyAppService, ShippingCompanyAppService>();
 builder.Services.AddScoped<ICartAppService, CartAppService>();
@@ -509,7 +503,6 @@ await using (var scope = app.Services.CreateAsyncScope())
     await InternalDomesticShippingSchemaMigrator.EnsureAsync(db);
     await ChatSchemaMigrator.EnsureAsync(db);
     await AiConversationSchemaMigrator.EnsureAsync(db);
-    await OfferSchemaMigrator.EnsureAsync(db);
     await ProductOfferDurationSchemaMigrator.EnsureAsync(db);
     await ProductCreatedLanguageSchemaMigrator.EnsureAsync(db);
     await ProductVideoSchemaMigrator.EnsureAsync(db);
@@ -524,9 +517,8 @@ await using (var scope = app.Services.CreateAsyncScope())
     await PortNameArSchemaMigrator.EnsureAsync(db);
     await NotificationSchemaMigrator.EnsureAsync(db);
     await NotificationBilingualSchemaMigrator.EnsureAsync(db);
-    await BalanceSchemaMigrator.EnsureAsync(db);
-    await UserIbanSchemaMigrator.EnsureAsync(db);
-    await WithdrawalRequestSchemaMigrator.EnsureAsync(db);
+    await DropFinanceSchemaMigrator.EnsureAsync(db);
+    await DropOfferLegacySchemaMigrator.EnsureAsync(db);
     CategoriesListCache.Bump();
     ProductsAppService.InvalidateProductListCaches();
 

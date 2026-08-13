@@ -225,13 +225,13 @@ class _ProfileViewState extends State<ProfileView> {
                     Expanded(
                       child: SingleChildScrollView(
                         padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 100.h),
-                        child: Column(
+                          child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             _buildProfileCard(),
                             SizedBox(height: 14.h),
                             Row(
-                              children: [
+                            children: [
                                 Expanded(
                                   child: _ShortcutCard(
                                     title: s.aiAssistantTitle,
@@ -254,9 +254,9 @@ class _ProfileViewState extends State<ProfileView> {
                                     onTap: () =>
                                         context.push(AppRoutes.kSupportChatView),
                                   ),
-                                ),
-                              ],
-                            ),
+                                              ),
+                                            ],
+                                          ),
                             SizedBox(height: 22.h),
                             _SectionTitle(s.account),
                             SizedBox(height: 12.h),
@@ -292,17 +292,6 @@ class _ProfileViewState extends State<ProfileView> {
                               assetIcon: AppAssets.profileAdsIcon,
                               onTap: () => context.push(AppRoutes.kSavedAdsView),
                             ),
-                            if (isSupplier)
-                              _SettingsTile(
-                                title: s.myBalance,
-                                subtitle: s.myBalanceSubtitle,
-                                assetIcon: AppAssets.profileBadgePercentIcon,
-                                onTap: () =>
-                                    SensitiveAccessGate.openProtectedRoute(
-                                  context,
-                                  route: AppRoutes.kSupplierBalanceView,
-                                ),
-                              ),
                             if (isSupplier || isCompany)
                               _SettingsTile(
                                 title: s.myAds,
@@ -373,9 +362,9 @@ class _ProfileViewState extends State<ProfileView> {
                               subtitle: s.deleteAccountSubtitle,
                               assetIcon: AppAssets.profileTrashIcon,
                               iconColors: const [_kRed, _kRedDark],
-                              onTap: isDeletingAccount
-                                  ? null
-                                  : _confirmDeleteAccount,
+                                    onTap: isDeletingAccount
+                                        ? null
+                                        : _confirmDeleteAccount,
                             ),
                             _SettingsTile(
                               title: s.logOut,

@@ -111,25 +111,6 @@ public sealed class ProductDataAccess(
             dbContext.CartItems.RemoveRange(cartItems);
         }
 
-        var offerIds = await dbContext.Offers
-            .Where(x => x.ProductId == productId)
-            .Select(x => x.Id)
-            .ToListAsync(cancellationToken);
-        if (offerIds.Count > 0)
-        {
-            await RemoveRangeAsync(dbContext.OfferOnRequestImages.Where(x => offerIds.Contains(x.OfferId)), cancellationToken);
-            await RemoveRangeAsync(dbContext.OfferOnRequestDocuments.Where(x => offerIds.Contains(x.OfferId)), cancellationToken);
-            await RemoveRangeAsync(dbContext.Offers.Where(x => offerIds.Contains(x.Id)), cancellationToken);
-        }
-
-        var negotiableOffers = await dbContext.OffersOnNegotiable
-            .Where(x => x.ProductId == productId)
-            .ToListAsync(cancellationToken);
-        if (negotiableOffers.Count > 0)
-        {
-            dbContext.OffersOnNegotiable.RemoveRange(negotiableOffers);
-        }
-
         if (product.ProductImages.Count > 0)
         {
             dbContext.ProductImages.RemoveRange(product.ProductImages);

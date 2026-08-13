@@ -141,13 +141,6 @@ class ApiConstants {
   static String userProfileEndPoint = '/users/me';
   static String userProfileImageEndPoint = '/users/me/image';
   static String userPreferredLanguageEndPoint = '/UserPreferences/language';
-  static String supplierBalanceEndPoint = '/supplier/balance';
-  static String supplierBalanceStatementEndPoint =
-      '/supplier/balance/statement';
-  static String supplierBalanceIbansEndPoint = '/supplier/balance/ibans';
-  static String supplierBalanceWithdrawalsEndPoint =
-      '/supplier/balance/withdrawals';
-
   static String categoriesEndPoint = '/Categories';
 
   static String createProductEndPoint = '/Products';

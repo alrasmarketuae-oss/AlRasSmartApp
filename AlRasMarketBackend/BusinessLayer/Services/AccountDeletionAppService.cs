@@ -97,20 +97,10 @@ public class AccountDeletionAppService(
             .Distinct()
             .ToListAsync(cancellationToken);
 
-        var offerIds = await dbContext.Offers
-            .AsNoTracking()
-            .Where(x =>
-                x.FromUserId == userId
-                || x.ToUserId == userId
-                || (ownedProductIds.Count > 0 && ownedProductIds.Contains(x.ProductId)))
-            .Select(x => x.Id)
-            .ToListAsync(cancellationToken);
-
         var filePaths = await CollectUserFilePathsAsync(
             user,
             ownedProductIds,
             orderIds,
-            offerIds,
             cancellationToken);
 
         await using var transaction = await efContext.Database.BeginTransactionAsync(cancellationToken);
@@ -148,32 +138,14 @@ public class AccountDeletionAppService(
                 push.TargetUserId = null;
             }
 
-            // 3) Offers (OffersOnRequests + media + negotiable)
-            await DeleteOffersAsync(userId, ownedProductIds, cancellationToken);
-            await DeleteNegotiableOffersAsync(userId, ownedProductIds, cancellationToken);
-
-            // 4) Shipments tied to user or their orders
+            // 3) Shipments tied to user or their orders
             await RemoveRangeAsync(
                 dbContext.InternationalShipments.Where(x =>
                     x.ProviderUserId == userId
                     || (orderIds.Count > 0 && orderIds.Contains(x.OrderId))),
                 cancellationToken);
 
-            // 4b) Ledger + translations that Restrict on Order/User (must clear before Orders/Users)
-            await RemoveRangeAsync(
-                dbContext.WithdrawalRequests.Where(x => x.UserId == userId || x.CompletedByAdminUserId == userId),
-                cancellationToken);
-
-            await RemoveRangeAsync(
-                dbContext.UserIbans.Where(x => x.UserId == userId),
-                cancellationToken);
-
-            await RemoveRangeAsync(
-                dbContext.Balances.Where(x =>
-                    x.UserId == userId
-                    || (orderIds.Count > 0 && x.OrderId != null && orderIds.Contains(x.OrderId.Value))),
-                cancellationToken);
-
+            // 4b) Translations that Restrict on Order/User (must clear before Orders/Users)
             if (orderIds.Count > 0 || ownedProductIds.Count > 0)
             {
                 await RemoveRangeAsync(
@@ -349,8 +321,6 @@ public class AccountDeletionAppService(
             dbContext.Users.Remove(user);
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
-
-            BusinessLayer.Caching.SupplierBalanceCacheVersions.Bump(userId);
         }
         catch
         {
@@ -391,7 +361,6 @@ public class AccountDeletionAppService(
         User user,
         IReadOnlyList<Guid> ownedProductIds,
         IReadOnlyList<long> orderIds,
-        IReadOnlyList<long> offerIds,
         CancellationToken cancellationToken)
     {
         var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -496,29 +465,6 @@ public class AccountDeletionAppService(
             }
         }
 
-        if (offerIds.Count > 0)
-        {
-            var offerImagePaths = await dbContext.OfferOnRequestImages
-                .AsNoTracking()
-                .Where(x => offerIds.Contains(x.OfferId))
-                .Select(x => x.ImagePath)
-                .ToListAsync(cancellationToken);
-            foreach (var path in offerImagePaths)
-            {
-                Add(path);
-            }
-
-            var offerDocumentPaths = await dbContext.OfferOnRequestDocuments
-                .AsNoTracking()
-                .Where(x => offerIds.Contains(x.OfferId))
-                .Select(x => x.DocumentPath)
-                .ToListAsync(cancellationToken);
-            foreach (var path in offerDocumentPaths)
-            {
-                Add(path);
-            }
-        }
-
         var chatMediaPaths = await dbContext.ChatMessages
             .AsNoTracking()
             .Where(x =>
@@ -573,51 +519,6 @@ public class AccountDeletionAppService(
         {
             await mediaStorage.DeleteAsync(path, cancellationToken);
         }
-    }
-
-    private async Task DeleteOffersAsync(
-        Guid userId,
-        IReadOnlyList<Guid> ownedProductIds,
-        CancellationToken cancellationToken)
-    {
-        var offerIds = await dbContext.Offers
-            .AsNoTracking()
-            .Where(x =>
-                x.FromUserId == userId
-                || x.ToUserId == userId
-                || (ownedProductIds.Count > 0 && ownedProductIds.Contains(x.ProductId)))
-            .Select(x => x.Id)
-            .ToListAsync(cancellationToken);
-
-        if (offerIds.Count == 0)
-        {
-            return;
-        }
-
-        await RemoveRangeAsync(
-            dbContext.OfferOnRequestImages.Where(x => offerIds.Contains(x.OfferId)),
-            cancellationToken);
-
-        await RemoveRangeAsync(
-            dbContext.OfferOnRequestDocuments.Where(x => offerIds.Contains(x.OfferId)),
-            cancellationToken);
-
-        await RemoveRangeAsync(
-            dbContext.Offers.Where(x => offerIds.Contains(x.Id)),
-            cancellationToken);
-    }
-
-    private async Task DeleteNegotiableOffersAsync(
-        Guid userId,
-        IReadOnlyList<Guid> ownedProductIds,
-        CancellationToken cancellationToken)
-    {
-        await RemoveRangeAsync(
-            dbContext.OffersOnNegotiable.Where(x =>
-                x.FromUserId == userId
-                || x.ToUserId == userId
-                || (ownedProductIds.Count > 0 && ownedProductIds.Contains(x.ProductId))),
-            cancellationToken);
     }
 
     private async Task RemoveRangeAsync<TEntity>(
