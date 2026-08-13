@@ -323,6 +323,9 @@ public class AccountDeletionAppService(
 
             await RemoveRangeAsync(
                 dbContext.MissedProductSearches.Where(x => x.UserId == userId),
+                cancellationToken);
+
+            await RemoveRangeAsync(
                 dbContext.SupportCallbackRequests.Where(x => x.UserId == userId),
                 cancellationToken);
 
