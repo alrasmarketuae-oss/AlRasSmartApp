@@ -31,6 +31,7 @@ import {
   formatOrderAmount,
   formatOrderQuantityWithUnit,
   getDeliveryMethodLabel,
+  resolveOrderDeliveryPrint,
   resolveOrderedQuantity,
 } from '../../utils/ordersDisplay'
 import { getOrderStatusLabel, getOrderStatusStyle } from '../../utils/orderStatus'
@@ -411,6 +412,7 @@ export default function OffersOrderDetailView({
     locale === 'ar'
       ? order.statusLabelAr?.trim() || getOrderStatusLabel(order.statusId, locale)
       : order.statusName?.trim() || getOrderStatusLabel(order.statusId, locale)
+  const deliveryPrint = resolveOrderDeliveryPrint(order)
   const isApprovedSeller = Boolean(order.isApproved)
   const statusBadgeClass = isApprovedSeller
     ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
@@ -891,9 +893,21 @@ export default function OffersOrderDetailView({
               <p className="text-sm font-bold">{order.customerName || '—'}</p>
               <p dir="ltr">{order.customerPhone?.trim() || '—'}</p>
               <p className="break-all">{order.customerEmail || '—'}</p>
-              <p className="text-slate-600">
-                {order.deliveryCityName?.trim() || order.destinationCountryName?.trim() || '—'}
-              </p>
+              {deliveryPrint ? (
+                <>
+                  <p className="pt-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                    {t('orders.deliveryAddress')}
+                  </p>
+                  <p className="font-semibold text-slate-900">{deliveryPrint.city}</p>
+                  <p className="whitespace-pre-wrap break-words text-slate-800">
+                    {deliveryPrint.addressLine}
+                  </p>
+                </>
+              ) : (
+                <p className="text-slate-600">
+                  {order.deliveryCityName?.trim() || order.destinationCountryName?.trim() || '—'}
+                </p>
+              )}
             </div>
           </div>
           <div className="rounded border border-slate-300 p-3">

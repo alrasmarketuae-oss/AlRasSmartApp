@@ -462,6 +462,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "company": MessageLookupByLibrary.simpleMessage("شركة"),
     "companyCustomerAccount": MessageLookupByLibrary.simpleMessage("حساب شركة"),
+    "companyCustomerOrdersTab": MessageLookupByLibrary.simpleMessage(
+      "المشتريات",
+    ),
+    "companyCustomerRequestsTab": MessageLookupByLibrary.simpleMessage(
+      "طلباتي",
+    ),
     "companyGuest": MessageLookupByLibrary.simpleMessage("زائر شركة"),
     "companyName": MessageLookupByLibrary.simpleMessage("اسم الشركة"),
     "companyNameIsRequired": MessageLookupByLibrary.simpleMessage(
@@ -608,7 +614,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "dollar": MessageLookupByLibrary.simpleMessage("دولار"),
     "domesticShippingWeightDisclaimer": MessageLookupByLibrary.simpleMessage(
-      "قد يترتب على سعر الشحن هذا مصاريف إضافية إذا كان الوزن أكثر من 10 كيلو.",
+      "قد يتم احتساب رسوم إضافية للشحن إذا كانت المنتجات أكثر من 10 كيلو. لكل كيلو فوق العشرة كيلو درهمان، مع بقاء أول عشرة كيلو مجاني.",
     ),
     "dontHaveAnAccount": MessageLookupByLibrary.simpleMessage("ليس لديك حساب؟"),
     "dragDropOrTapToUpload": MessageLookupByLibrary.simpleMessage(
@@ -670,6 +676,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "أدخل سعر المنتج",
     ),
     "enterQuantity": MessageLookupByLibrary.simpleMessage("أدخل الكمية"),
+    "enterRetailBuildingName": MessageLookupByLibrary.simpleMessage(
+      "ادخل اسم المبنى",
+    ),
+    "enterRetailRoomOrUnitNumber": MessageLookupByLibrary.simpleMessage(
+      "ادخل رقم الغرفة أو المكتب",
+    ),
     "enterShippingCompanyName": MessageLookupByLibrary.simpleMessage(
       "ادخل اسم شركة الشحن",
     ),
@@ -1315,12 +1327,19 @@ class MessageLookup extends MessageLookupByLibrary {
       "يمنع منعاً باتاً:",
     ),
     "retail": MessageLookupByLibrary.simpleMessage("تجزئة"),
+    "retailAddressExcessWeightHint": MessageLookupByLibrary.simpleMessage(
+      "قد يتم احتساب رسوم إضافية للشحن إذا كانت المنتجات أكثر من 10 كيلو. لكل كيلو فوق العشرة كيلو درهمان، مع بقاء أول عشرة كيلو مجاني.",
+    ),
+    "retailBuildingName": MessageLookupByLibrary.simpleMessage("اسم المبنى"),
     "retailPriceLabel": MessageLookupByLibrary.simpleMessage("سعر التجزئة"),
     "retailPricingInfoBody": MessageLookupByLibrary.simpleMessage(
       "عند إضافة سعر تجزئة، سيظهر المنتج في فئته بسعر الجملة، وأيضاً في التجزئة بسعر ووحدة وكمية منفصلة. يمكن استقبال الطلبات من أي من القناتين. يُرجى التأكد من صحة أسعار وحقول التجزئة.",
     ),
     "retailPricingInfoTitle": MessageLookupByLibrary.simpleMessage(
       "تسعير التجزئة",
+    ),
+    "retailRoomOrUnitNumber": MessageLookupByLibrary.simpleMessage(
+      "رقم الغرفة / المكتب",
     ),
     "retailVisaPaymentHint": MessageLookupByLibrary.simpleMessage(
       "الدفع بالبطاقة متاح لطلبات التجزئة فقط.",

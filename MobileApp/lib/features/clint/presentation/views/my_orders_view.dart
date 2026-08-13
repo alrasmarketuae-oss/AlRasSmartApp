@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/serveses/app_order_listener_service.dart';
+import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
@@ -20,7 +21,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
-/// Orders tab: Incoming (sales on my ads) + Purchases (orders I placed).
+/// Orders tab layout varies by account:
+/// - Supplier: Incoming + Purchases
+/// - Company customer: Requests + Orders
+/// - Personal customer: Purchases only
 class MyOrdersView extends StatefulWidget {
   const MyOrdersView({super.key});
 
@@ -38,6 +42,15 @@ class _MyOrdersViewState extends State<MyOrdersView> {
   int? _scrolledForOrderId;
   StreamSubscription<void>? _ordersRealtimeSub;
 
+  bool get _showIncomingTab =>
+      !AuthService.instance.isPersonalCustomerAccount;
+
+  bool get _isCompanyCustomerAccount =>
+      AuthService.instance.isCompanyCustomerAccount;
+
+  bool get _isPurchasesSection =>
+      !_showIncomingTab || _sectionIndex != 0;
+
   @override
   void initState() {
     super.initState();
@@ -47,15 +60,20 @@ class _MyOrdersViewState extends State<MyOrdersView> {
         AppOrderListenerService.instance.userOrdersUpdatedStream.listen((_) {
       if (!mounted) return;
       final cubit = context.read<ClintCubit>();
-      if (_sectionIndex == 0) {
-        unawaited(cubit.fetchIncomingOrders());
-      } else {
+      if (_isPurchasesSection) {
         unawaited(cubit.fetchMyOrders());
+      } else {
+        unawaited(cubit.fetchIncomingOrders());
       }
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<ClintCubit>().fetchIncomingOrders();
+      final cubit = context.read<ClintCubit>();
+      if (_showIncomingTab) {
+        cubit.fetchIncomingOrders();
+      } else {
+        cubit.fetchMyOrders();
+      }
       _consumePendingHighlight();
     });
   }
@@ -90,7 +108,9 @@ class _MyOrdersViewState extends State<MyOrdersView> {
     if (id == null || id <= 0) return;
     NotificationNavigationHelper.pendingHighlightOrderId.value = null;
     setState(() {
-      _sectionIndex = 1;
+      if (_showIncomingTab) {
+        _sectionIndex = 1;
+      }
       _filter = MyOrdersChipFilter.all;
       _highlightOrderId = id;
       _scrolledForOrderId = null;
@@ -167,7 +187,7 @@ class _MyOrdersViewState extends State<MyOrdersView> {
           current is FetchMyOrdersSuccessState ||
           current is RefreshOrderSuccessState,
       listener: (context, state) {
-        if (_sectionIndex != 1) return;
+        if (!_isPurchasesSection) return;
         final orders = context.read<ClintCubit>().myOrders;
         _scrollToHighlightIfNeeded(orders);
       },
@@ -220,14 +240,17 @@ class _MyOrdersViewState extends State<MyOrdersView> {
                     ],
                   ),
                 ),
-                _OrdersSectionTabs(
-                  selectedIndex: _sectionIndex,
-                  onSelected: _onSectionSelected,
-                ),
+                if (_showIncomingTab) ...[
+                  _OrdersSectionTabs(
+                    selectedIndex: _sectionIndex,
+                    onSelected: _onSectionSelected,
+                    isCompanyCustomer: _isCompanyCustomerAccount,
+                  ),
+                ],
                 Expanded(
-                  child: _sectionIndex == 0
-                      ? _buildIncomingSection(context, s, fontFamily)
-                      : _buildPurchasesSection(context, s, fontFamily),
+                  child: _isPurchasesSection
+                      ? _buildPurchasesSection(context, s, fontFamily)
+                      : _buildIncomingSection(context, s, fontFamily),
                 ),
               ],
             ),
@@ -490,18 +513,26 @@ class _OrdersSectionTabs extends StatelessWidget {
   const _OrdersSectionTabs({
     required this.selectedIndex,
     required this.onSelected,
+    required this.isCompanyCustomer,
   });
 
   final int selectedIndex;
   final ValueChanged<int> onSelected;
+  final bool isCompanyCustomer;
 
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
     final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
+    final firstTabLabel = isCompanyCustomer
+        ? s.companyCustomerRequestsTab
+        : s.incomingOrders;
+    final secondTabLabel = isCompanyCustomer
+        ? s.companyCustomerOrdersTab
+        : s.purchases;
     final items = [
-      (label: s.incomingOrders, icon: Icons.inbox_outlined),
-      (label: s.purchases, icon: Icons.shopping_bag_outlined),
+      (label: firstTabLabel, icon: Icons.inbox_outlined),
+      (label: secondTabLabel, icon: Icons.shopping_bag_outlined),
     ];
 
     return Padding(

@@ -269,10 +269,38 @@ public static class AdminOrderMapper
     private static bool ResolveIsSelfPickup(Order x) =>
         x.IsSelfPickup || (x.PendingOrder?.IsSelfPickup ?? false);
 
-    private static string? ResolveDeliveryAddressLine(Order x) =>
-        x.DeliveryAddressLine
-        ?? x.PendingOrder?.DeliveryAddressLine
-        ?? x.PendingOrder?.Address?.AddressLine1;
+    private static string? ResolveDeliveryAddressLine(Order x)
+    {
+        if (!string.IsNullOrWhiteSpace(x.DeliveryAddressLine))
+        {
+            return x.DeliveryAddressLine.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(x.PendingOrder?.DeliveryAddressLine))
+        {
+            return x.PendingOrder!.DeliveryAddressLine!.Trim();
+        }
+
+        var address = x.PendingOrder?.Address;
+        if (address != null)
+        {
+            return FormatAddressSnapshot(address.AddressLine1, address.AddressLine2);
+        }
+
+        return null;
+    }
+
+    private static string? FormatAddressSnapshot(string? line1, string? line2)
+    {
+        var first = line1?.Trim() ?? string.Empty;
+        var second = line2?.Trim() ?? string.Empty;
+        if (string.IsNullOrEmpty(first))
+        {
+            return string.IsNullOrEmpty(second) ? null : second;
+        }
+
+        return string.IsNullOrEmpty(second) ? first : $"{first}, {second}";
+    }
 
     private static string? ResolveDeliveryCityName(Order x) =>
         x.DeliveryCityName

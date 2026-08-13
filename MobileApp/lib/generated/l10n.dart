@@ -869,6 +869,26 @@ class S {
     );
   }
 
+  /// `Requests`
+  String get companyCustomerRequestsTab {
+    return Intl.message(
+      'Requests',
+      name: 'companyCustomerRequestsTab',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Orders`
+  String get companyCustomerOrdersTab {
+    return Intl.message(
+      'Orders',
+      name: 'companyCustomerOrdersTab',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Purchases`
   String get purchases {
     return Intl.message('Purchases', name: 'purchases', desc: '', args: []);
@@ -6091,11 +6111,61 @@ class S {
     );
   }
 
-  /// `This shipping price may include additional fees if the total weight exceeds 10 kg.`
+  /// `Additional shipping fees may apply if products weigh more than 10 kg. Each kg above 10 kg is AED 2; the first 10 kg are free.`
   String get domesticShippingWeightDisclaimer {
     return Intl.message(
-      'This shipping price may include additional fees if the total weight exceeds 10 kg.',
+      'Additional shipping fees may apply if products weigh more than 10 kg. Each kg above 10 kg is AED 2; the first 10 kg are free.',
       name: 'domesticShippingWeightDisclaimer',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Room / unit number`
+  String get retailRoomOrUnitNumber {
+    return Intl.message(
+      'Room / unit number',
+      name: 'retailRoomOrUnitNumber',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enter room or unit number`
+  String get enterRetailRoomOrUnitNumber {
+    return Intl.message(
+      'Enter room or unit number',
+      name: 'enterRetailRoomOrUnitNumber',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Building name`
+  String get retailBuildingName {
+    return Intl.message(
+      'Building name',
+      name: 'retailBuildingName',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enter building name`
+  String get enterRetailBuildingName {
+    return Intl.message(
+      'Enter building name',
+      name: 'enterRetailBuildingName',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Additional shipping fees may apply if products weigh more than 10 kg. Each kg above 10 kg is AED 2; the first 10 kg are free.`
+  String get retailAddressExcessWeightHint {
+    return Intl.message(
+      'Additional shipping fees may apply if products weigh more than 10 kg. Each kg above 10 kg is AED 2; the first 10 kg are free.',
+      name: 'retailAddressExcessWeightHint',
       desc: '',
       args: [],
     );

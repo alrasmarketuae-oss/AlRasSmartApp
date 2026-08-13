@@ -29,6 +29,7 @@ import {
   formatOrderAmount,
   formatOrderQuantityWithUnit,
   getDeliveryMethodLabel,
+  resolveOrderDeliveryPrint,
   resolveOrderedQuantity,
   resolveOfferedQuantity,
   resolveRequiredQuantity,
@@ -400,6 +401,7 @@ export default function OrderDetailView({
     locale === 'ar'
       ? order.statusLabelAr?.trim() || getOrderStatusLabel(order.statusId, locale)
       : order.statusName?.trim() || getOrderStatusLabel(order.statusId, locale)
+  const deliveryPrint = resolveOrderDeliveryPrint(order)
 
   const hasReturnRequest =
     order.statusId === 9 ||
@@ -894,9 +896,21 @@ export default function OrderDetailView({
               <p className="text-sm font-bold">{order.customerName || '—'}</p>
               <p dir="ltr">{order.customerPhone?.trim() || '—'}</p>
               <p className="break-all">{order.customerEmail || '—'}</p>
-              <p className="text-slate-600">
-                {order.deliveryCityName?.trim() || order.destinationCountryName?.trim() || '—'}
-              </p>
+              {deliveryPrint ? (
+                <>
+                  <p className="pt-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                    {t('orders.deliveryAddress')}
+                  </p>
+                  <p className="font-semibold text-slate-900">{deliveryPrint.city}</p>
+                  <p className="whitespace-pre-wrap break-words text-slate-800">
+                    {deliveryPrint.addressLine}
+                  </p>
+                </>
+              ) : (
+                <p className="text-slate-600">
+                  {order.deliveryCityName?.trim() || order.destinationCountryName?.trim() || '—'}
+                </p>
+              )}
             </div>
           </div>
           <div className="rounded border border-slate-300 p-3">

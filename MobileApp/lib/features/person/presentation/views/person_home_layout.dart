@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/serveses/notifications_service.dart';
 import 'package:alrasmarket/core/widgets/scroll_aware_bottom_nav_scaffold.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
@@ -30,7 +31,11 @@ class _PersonHomeLayoutState extends State<PersonHomeLayout> {
       if (!mounted) return;
       final cubit = context.read<ClintCubit>();
       unawaited(cubit.ensureOrdersRealtimeListener());
-      unawaited(cubit.fetchIncomingOrders());
+      if (!AuthService.instance.isPersonalCustomerAccount) {
+        unawaited(cubit.fetchIncomingOrders());
+      } else {
+        unawaited(cubit.fetchMyOrders());
+      }
     });
   }
 

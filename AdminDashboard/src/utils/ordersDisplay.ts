@@ -11,6 +11,29 @@ export function getDeliveryMethodLabel(
   return locale === 'ar' ? 'توصيل للمنزل' : 'Home delivery'
 }
 
+/** City + street/building lines for order print sheets (retail delivery). */
+export function resolveOrderDeliveryPrint(order: {
+  isSelfPickup?: boolean
+  deliveryCityName?: string | null
+  deliveryAddressLine?: string | null
+  destinationCountryName?: string | null
+}): { city: string; addressLine: string } | null {
+  if (order.isSelfPickup) return null
+
+  const city =
+    order.deliveryCityName?.trim() ||
+    order.destinationCountryName?.trim() ||
+    ''
+  const addressLine = order.deliveryAddressLine?.trim() || ''
+
+  if (!city && !addressLine) return null
+
+  return {
+    city: city || '—',
+    addressLine: addressLine || '—',
+  }
+}
+
 /** Formats order quantity without unnecessary trailing zeros (e.g. 1.5 instead of 1.500). */
 export function formatOrderQuantity(quantity: number): string {
   if (!Number.isFinite(quantity) || quantity <= 0) return '—'

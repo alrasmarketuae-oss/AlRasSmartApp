@@ -278,6 +278,9 @@ class _CartViewState extends State<CartView> {
                       freeLabel: s.free,
                       isSelfPickup: state.isSelfPickup,
                       isLoadingShipping: state.isLoadingShipping,
+                      shippingDisclaimer: state.isSelfPickup
+                          ? null
+                          : s.domesticShippingWeightDisclaimer,
                     ),
                     SizedBox(height: 20.h),
                   ],

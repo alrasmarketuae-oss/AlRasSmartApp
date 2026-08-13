@@ -461,6 +461,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "companyCustomerAccount": MessageLookupByLibrary.simpleMessage(
       "Company Account",
     ),
+    "companyCustomerOrdersTab": MessageLookupByLibrary.simpleMessage("Orders"),
+    "companyCustomerRequestsTab": MessageLookupByLibrary.simpleMessage(
+      "Requests",
+    ),
     "companyGuest": MessageLookupByLibrary.simpleMessage("Company Guest"),
     "companyName": MessageLookupByLibrary.simpleMessage("Company Name"),
     "companyNameIsRequired": MessageLookupByLibrary.simpleMessage(
@@ -603,7 +607,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "dollar": MessageLookupByLibrary.simpleMessage("USD"),
     "domesticShippingWeightDisclaimer": MessageLookupByLibrary.simpleMessage(
-      "This shipping price may include additional fees if the total weight exceeds 10 kg.",
+      "Additional shipping fees may apply if products weigh more than 10 kg. Each kg above 10 kg is AED 2; the first 10 kg are free.",
     ),
     "dontHaveAnAccount": MessageLookupByLibrary.simpleMessage(
       "Don\'t have an account?",
@@ -669,6 +673,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "Enter product price",
     ),
     "enterQuantity": MessageLookupByLibrary.simpleMessage("Enter Quantity"),
+    "enterRetailBuildingName": MessageLookupByLibrary.simpleMessage(
+      "Enter building name",
+    ),
+    "enterRetailRoomOrUnitNumber": MessageLookupByLibrary.simpleMessage(
+      "Enter room or unit number",
+    ),
     "enterShippingCompanyName": MessageLookupByLibrary.simpleMessage(
       "Enter shipping company name",
     ),
@@ -1324,12 +1334,19 @@ class MessageLookup extends MessageLookupByLibrary {
       "Strictly prohibited:",
     ),
     "retail": MessageLookupByLibrary.simpleMessage("Retail"),
+    "retailAddressExcessWeightHint": MessageLookupByLibrary.simpleMessage(
+      "Additional shipping fees may apply if products weigh more than 10 kg. Each kg above 10 kg is AED 2; the first 10 kg are free.",
+    ),
+    "retailBuildingName": MessageLookupByLibrary.simpleMessage("Building name"),
     "retailPriceLabel": MessageLookupByLibrary.simpleMessage("Retail price"),
     "retailPricingInfoBody": MessageLookupByLibrary.simpleMessage(
       "If you add a retail price, this product will appear in its category with the wholesale price, and also in Retail with a separate retail price, unit, and quantity. Buyers can place orders from either channel. Make sure retail rates and fields are valid.",
     ),
     "retailPricingInfoTitle": MessageLookupByLibrary.simpleMessage(
       "Retail pricing",
+    ),
+    "retailRoomOrUnitNumber": MessageLookupByLibrary.simpleMessage(
+      "Room / unit number",
     ),
     "retailVisaPaymentHint": MessageLookupByLibrary.simpleMessage(
       "Online card payment is available for retail orders only.",

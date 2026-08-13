@@ -55,6 +55,8 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
   final _formKey = GlobalKey<FormState>();
   final _addressLine1Controller = TextEditingController();
   final _addressLine2Controller = TextEditingController();
+  final _roomOrUnitController = TextEditingController();
+  final _buildingNameController = TextEditingController();
   final _countryController = TextEditingController();
   final _cityController = TextEditingController();
   final _countryFocusNode = FocusNode();
@@ -86,7 +88,13 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
     final existing = widget.existing;
     if (existing != null) {
       _addressLine1Controller.text = existing.addressLine1;
-      _addressLine2Controller.text = existing.addressLine2 ?? '';
+      if (widget.retailMode) {
+        final parsed = _parseRetailAddressLine2(existing.addressLine2 ?? '');
+        _roomOrUnitController.text = parsed.$1;
+        _buildingNameController.text = parsed.$2;
+      } else {
+        _addressLine2Controller.text = existing.addressLine2 ?? '';
+      }
       _cityController.text = existing.cityName;
     }
     _countryFocusNode.addListener(_handleCountryFocusChange);
@@ -100,6 +108,8 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
     _cityFocusNode.removeListener(_handleCityFocusChange);
     _addressLine1Controller.dispose();
     _addressLine2Controller.dispose();
+    _roomOrUnitController.dispose();
+    _buildingNameController.dispose();
     _countryController.dispose();
     _cityController.dispose();
     _countryFocusNode.dispose();
@@ -292,7 +302,13 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
       countryId: country.countryId,
       cityName: cityName,
       addressLine1: _addressLine1Controller.text.trim(),
-      addressLine2: _addressLine2Controller.text.trim(),
+      addressLine2: widget.retailMode
+          ? _composeRetailAddressLine2(
+              room: _roomOrUnitController.text,
+              building: _buildingNameController.text,
+              isArabic: _isArabic,
+            )
+          : _addressLine2Controller.text.trim(),
     );
 
     final existing = widget.existing;
@@ -427,6 +443,60 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
         .trim();
   }
 
+  (String, String) _parseRetailAddressLine2(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return ('', '');
+
+    final enMatch = RegExp(
+      r'^room number\s+(.+?)\s+at\s+(.+)$',
+      caseSensitive: false,
+    ).firstMatch(trimmed);
+    if (enMatch != null) {
+      return (enMatch.group(1)?.trim() ?? '', enMatch.group(2)?.trim() ?? '');
+    }
+
+    final arMatch = RegExp(r'^رقم\s+(.+?)\s+في\s+(.+)$').firstMatch(trimmed);
+    if (arMatch != null) {
+      return (arMatch.group(1)?.trim() ?? '', arMatch.group(2)?.trim() ?? '');
+    }
+
+    return ('', trimmed);
+  }
+
+  String _composeRetailAddressLine2({
+    required String room,
+    required String building,
+    required bool isArabic,
+  }) {
+    final roomText = room.trim();
+    final buildingText = building.trim();
+    if (roomText.isEmpty && buildingText.isEmpty) return '';
+    if (roomText.isEmpty) {
+      return isArabic ? 'في $buildingText' : 'At $buildingText';
+    }
+    if (buildingText.isEmpty) {
+      return isArabic ? 'رقم $roomText' : 'Room number $roomText';
+    }
+    return isArabic
+        ? 'رقم $roomText في $buildingText'
+        : 'Room number $roomText at $buildingText';
+  }
+
+  Widget _retailWeightHint(String fontFamily, String text) {
+    return Padding(
+      padding: EdgeInsets.only(top: 4.h),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: const Color(0xFF6B7280),
+          fontFamily: fontFamily,
+          fontSize: 11.sp,
+          height: 1.4,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
@@ -551,12 +621,40 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
                     return null;
                   },
                 ),
-                SizedBox(height: 12.h),
-                CustomTextFormField(
-                  controller: _addressLine2Controller,
-                  label: s.addressLine2Optional,
-                  hintText: s.enterAddressLine2Optional,
-                ),
+                if (widget.retailMode) ...[
+                  SizedBox(height: 12.h),
+                  CustomTextFormField(
+                    controller: _roomOrUnitController,
+                    label: s.retailRoomOrUnitNumber,
+                    hintText: s.enterRetailRoomOrUnitNumber,
+                    validator: (value) {
+                      if ((value ?? '').trim().isEmpty) {
+                        return s.thisFieldIsRequired;
+                      }
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 12.h),
+                  CustomTextFormField(
+                    controller: _buildingNameController,
+                    label: s.retailBuildingName,
+                    hintText: s.enterRetailBuildingName,
+                    validator: (value) {
+                      if ((value ?? '').trim().isEmpty) {
+                        return s.thisFieldIsRequired;
+                      }
+                      return null;
+                    },
+                  ),
+                  _retailWeightHint(fontFamily, s.retailAddressExcessWeightHint),
+                ] else ...[
+                  SizedBox(height: 12.h),
+                  CustomTextFormField(
+                    controller: _addressLine2Controller,
+                    label: s.addressLine2Optional,
+                    hintText: s.enterAddressLine2Optional,
+                  ),
+                ],
               ],
             ),
           ),
