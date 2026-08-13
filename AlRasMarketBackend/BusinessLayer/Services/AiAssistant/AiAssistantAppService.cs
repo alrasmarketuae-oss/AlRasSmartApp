@@ -60,8 +60,8 @@ public sealed class AiAssistantAppService(
                   The user spoke in English. Return ONLY corrected English text.
                   Fix recognition errors, missing words, and broken spelling while preserving intent.
                   Do not answer the question. Do not add greetings. Do not invent facts. No quotes or labels.
-                  Keep marketplace terms such as ProductCode, Booking, Retail, Live Chat, IBAN when clearly intended.
-                  """;
+            Keep marketplace terms such as ProductCode, Booking, Retail, Live Chat, IBAN when clearly intended.
+            """;
 
         using var httpRequest = new HttpRequestMessage(
             HttpMethod.Post,
@@ -242,6 +242,11 @@ public sealed class AiAssistantAppService(
             return BuildCapabilitiesAnswer(language, account);
         }
 
+        if (IsHumanSupportIntent(message))
+        {
+            return BuildSupportCallbackOfferAnswer(language, account.DisplayName, message);
+        }
+
         if (IsSupplierPayoutTimingQuestion(message))
         {
             return BuildSupplierPayoutTimingAnswer(language, account);
@@ -302,11 +307,23 @@ public sealed class AiAssistantAppService(
                     cancellationToken)
                 .ConfigureAwait(false);
 
+            var usedKnowledge = hits.Count > 0;
+            var offerCallback = !isAdCreation
+                && (IsHumanSupportIntent(message)
+                    || LooksUncertainAnswer(answer)
+                    || (!usedKnowledge && !LooksLikeSuccessfulToolAnswer(answer)));
+
+            if (offerCallback)
+            {
+                answer = AppendSupportCallbackCue(answer, language);
+            }
+
             return new AiAssistantAnswer(
                 answer,
                 language,
-                hits.Count > 0,
-                hits.Select(x => x.Source).Distinct(StringComparer.OrdinalIgnoreCase).ToList());
+                usedKnowledge,
+                hits.Select(x => x.Source).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
+                offerCallback);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -451,14 +468,14 @@ public sealed class AiAssistantAppService(
             If not allowed for this audience, explain what they CAN create and which account type can create the requested type — do this before asking for any ad fields.
             Never refuse a supplier's Booking request — suppliers are always allowed Booking via create_booking_ad.
             You may explain differences between account types when explicitly asked, but never expose personal or confidential data.
-            Keep the answer concise and practical. Distinguish Live Chat (human support) from Alras Smart.
+            Keep the answer concise and practical. Distinguish human technical support callback from Alras Smart.
             Questions about you, about the app itself, about what you can do, and about how to get started are always in scope: answer them warmly and helpfully with the capability list for this audience, never as out of scope.
             If asked who you are or what you can do, say you are Alras Smart (الراس الذكي) and list concrete actions: create ads (if allowed), edit prices/quantities, search and compare products, cheapest/most expensive, shipping prices by country, own ads and orders details, sales and pending seller orders — depending on account type.
             If asked to describe the app or platform, give a short useful introduction from the knowledge context.
             Distinguish building/development/AI training from commercial operation. When asked who made, built, programmed, designed, or developed the apps or platform, or who trained the AI model, state that Nasser Mostafa Mohamed Elbarbary did so and provide his contact details exactly as stated in the knowledge context. Always render both contact actions as Markdown links whose visible labels contain “اضغط هنا” in Arabic or “Click here” in English: one WhatsApp link and one mailto email link. Never output only raw contact URLs. When asked who operates or runs the marketplace and its commercial activities, name the operating company instead. If a question asks both who built and who operates it, explain both roles clearly.
             Decline only genuinely unrelated general-knowledge questions (weather, news, sports, politics, coding, other companies), politely, with a suggestion of platform topics you can help with.
             If asked whether the platform is trustworthy, explain concrete safeguards and the intermediary role from context; never promise zero risk or guarantee supplier product quality.
-            If context is insufficient and no tool applies, say you are not certain and direct the user to Live Chat in Profile.
+            If the user asks for human support, technical support, support staff, or a phone call — OR if context is insufficient and no tool applies — say you are not certain / a human agent will help, and ask them to leave their name, phone number, and email in the form that appears so support can call them within five minutes. Do NOT only send them to Live Chat for these cases.
             Do not claim to approve returns, pay out money yourself, or change order statuses. You may manage the seller's own ads (price/qty, pause/active, sold-out, delete) and create withdrawal requests via tools, then report tool results accurately. Withdrawals stay pending until admin pays them.
             """;
 
@@ -764,11 +781,12 @@ public sealed class AiAssistantAppService(
         return
         new(
             language == "ar"
-                ? $"{prefixAr}السؤال ممكن يكون برا نطاق الراس الذكي أو معنديش معلومات موثّقة كفاية. أقدر أساعدك في الحسابات والإعلانات والطلبات والدفع والاسترجاع؛ ولو محتاج مساعدة أكتر كلم Live Chat من الملف الشخصي."
-                : $"{prefixEn}the question may be outside Al Ras Smart or I may not have enough verified information. I can help with accounts, ads, orders, payments, and returns; for more help, contact Live Chat from Profile.",
+                ? $"{prefixAr}معنديش إجابة مؤكدة دلوقتي. سيب اسمك ورقم تليفونك وبريدك الإلكتروني في النموذج اللي هيظهر تحت الرسالة، وفريق الدعم الفني هيتواصل معاك خلال خمس دقايق."
+                : $"{prefixEn}I don’t have a reliable answer right now. Please leave your name, phone number, and email in the form below, and technical support will call you within five minutes.",
             language,
             false,
-            []);
+            [],
+            OfferSupportCallback: true);
     }
 
     private static AiAssistantAnswer TemporaryFailure(string language, string? displayName)
@@ -777,11 +795,92 @@ public sealed class AiAssistantAppService(
         var prefixEn = string.IsNullOrWhiteSpace(displayName) ? "" : $"{displayName}, ";
         return new(
             language == "ar"
-                ? $"{prefixAr}المساعد مش متاح دلوقتي لسبب تقني مؤقت. جرّب تاني بعد شوية، ولو المشكلة كمّلت كلم Live Chat من الملف الشخصي."
-                : $"{prefixEn}the assistant is temporarily unavailable for a technical reason. Please try again shortly, and if it persists contact Live Chat from Profile.",
+                ? $"{prefixAr}المساعد مش متاح دلوقتي لسبب تقني مؤقت. سيب اسمك ورقم تليفونك وبريدك في النموذج تحت، وفريق الدعم الفني هيتواصل معاك خلال خمس دقايق."
+                : $"{prefixEn}the assistant is temporarily unavailable for a technical reason. Leave your name, phone, and email in the form below and technical support will call you within five minutes.",
             language,
             false,
-            []);
+            [],
+            OfferSupportCallback: true);
+    }
+
+    private static AiAssistantAnswer BuildSupportCallbackOfferAnswer(
+        string language,
+        string? displayName,
+        string question)
+    {
+        var prefixAr = string.IsNullOrWhiteSpace(displayName) ? "" : $"{displayName}، ";
+        var prefixEn = string.IsNullOrWhiteSpace(displayName) ? "" : $"{displayName}, ";
+        return new(
+            language == "ar"
+                ? $"{prefixAr}تمام — هوصّلك بالدعم الفني البشري. اكتب اسمك ورقم تليفونك وبريدك الإلكتروني في النموذج تحت الرسالة، وهيتم الاتصال بيك خلال خمس دقايق."
+                : $"{prefixEn}Got it — I’ll connect you with human technical support. Enter your name, phone number, and email in the form below, and you’ll be called within five minutes.",
+            language,
+            false,
+            [],
+            OfferSupportCallback: true);
+    }
+
+    private static bool IsHumanSupportIntent(string message)
+    {
+        var q = message.Trim().ToLowerInvariant();
+        if (q.Length == 0) return false;
+
+        string[] markers =
+        [
+            "دعم فني", "الدعم الفني", "دعم بشري", "الدعم البشري",
+            "كلم الدعم", "كلم حد", "عاوز اكلم", "عايز اكلم", "عاوز أكلم", "عايز أكلم",
+            "موظف دعم", "خدمة العملاء", "كلمني", "اتصلوا بيا", "اتصل بيا",
+            "رقم الدعم", "تليفون الدعم", "هاتف الدعم",
+            "technical support", "human support", "talk to support", "contact support",
+            "speak to agent", "speak to someone", "call me", "customer service",
+            "support agent", "help desk", "live agent"
+        ];
+
+        return markers.Any(m => q.Contains(m, StringComparison.Ordinal));
+    }
+
+    private static bool LooksUncertainAnswer(string answer)
+    {
+        var text = answer.Trim().ToLowerInvariant();
+        if (text.Length == 0) return true;
+
+        string[] markers =
+        [
+            "مش متأكد", "لست متأكد", "معنديش معلومات", "معلومات موثّقة",
+            "معلومات موثقة", "لا أعرف", "لا اعرف", "مش عارف", "غير متأكد",
+            "i'm not sure", "i am not sure", "i don't know", "i do not know",
+            "not certain", "insufficient", "don't have enough", "do not have enough",
+            "outside al ras", "برا نطاق"
+        ];
+        return markers.Any(m => text.Contains(m, StringComparison.Ordinal));
+    }
+
+    private static bool LooksLikeSuccessfulToolAnswer(string answer)
+    {
+        var text = answer.Trim().ToLowerInvariant();
+        string[] markers =
+        [
+            "تم إنشاء", "تم التعديل", "تم التحديث", "تم الحذف", "تم الإرسال",
+            "created successfully", "updated successfully", "deleted successfully",
+            "submitted for admin", "price is", "quantity is", "shipping"
+        ];
+        return markers.Any(m => text.Contains(m, StringComparison.Ordinal));
+    }
+
+    private static string AppendSupportCallbackCue(string answer, string language)
+    {
+        var cue = language == "ar"
+            ? "سيب اسمك ورقم تليفونك وبريدك الإلكتروني في النموذج تحت الرسالة، وفريق الدعم الفني هيتواصل معاك خلال خمس دقايق."
+            : "Please leave your name, phone number, and email in the form below — technical support will call you within five minutes.";
+
+        if (answer.Contains("خمس دقايق", StringComparison.OrdinalIgnoreCase)
+            || answer.Contains("five minutes", StringComparison.OrdinalIgnoreCase)
+            || answer.Contains("خلال 5", StringComparison.OrdinalIgnoreCase))
+        {
+            return answer;
+        }
+
+        return $"{answer.Trim()}\n\n{cue}";
     }
 
     private static string NormalizeLanguage(string? language) =>

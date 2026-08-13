@@ -32,7 +32,8 @@ public sealed record AiAssistantAnswer(
     string Answer,
     string Language,
     bool UsedKnowledge,
-    IReadOnlyList<string> Sources);
+    IReadOnlyList<string> Sources,
+    bool OfferSupportCallback = false);
 
 public sealed record AiAssistantHistoryMessage(string Role, string Content);
 

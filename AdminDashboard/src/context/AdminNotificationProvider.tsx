@@ -41,6 +41,7 @@ const emptyCounts: AdminLiveCounts = {
   pendingOffers: 0,
   pendingRequestOfferAds: 0,
   pendingShippingAds: 0,
+  pendingSupportCallbacks: 0,
 }
 
 export function AdminNotificationProvider({ children }: { children: ReactNode }) {
@@ -72,6 +73,7 @@ export function AdminNotificationProvider({ children }: { children: ReactNode })
         // Invalidate the whole Orders tag (not just LIST) so an order detail page
         // currently open also refetches on realtime pushes (e.g. status changes).
         { type: 'Orders' },
+        { type: 'SupportCallbacks', id: 'LIST' },
       ]),
     )
   }, [dispatch])
@@ -110,6 +112,7 @@ export function AdminNotificationProvider({ children }: { children: ReactNode })
       requestAds: liveCounts.pendingRequestOfferAds,
       shipping: liveCounts.pendingShippingAds,
       chat: totalUnread,
+      supportCallbacks: liveCounts.pendingSupportCallbacks,
     }),
     [liveCounts, totalUnread],
   )
@@ -126,7 +129,8 @@ export function AdminNotificationProvider({ children }: { children: ReactNode })
     navCounts.offers +
     navCounts.requestAds +
     navCounts.shipping +
-    navCounts.chat
+    navCounts.chat +
+    navCounts.supportCallbacks
 
   const value = useMemo(
     (): AdminNotificationContextValue => ({

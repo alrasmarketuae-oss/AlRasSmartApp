@@ -323,6 +323,7 @@ public class AccountDeletionAppService(
 
             await RemoveRangeAsync(
                 dbContext.MissedProductSearches.Where(x => x.UserId == userId),
+                dbContext.SupportCallbackRequests.Where(x => x.UserId == userId),
                 cancellationToken);
 
             // Admin audit rows Restrict on ActorUserId — remove before Users delete.

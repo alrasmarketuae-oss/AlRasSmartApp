@@ -87,6 +87,8 @@ export {
   useGetAdminMonitoringQuery,
   useGetAdminAuditLogsQuery,
   useGetMissedProductSearchesQuery,
+  useGetSupportCallbacksQuery,
+  useUpdateSupportCallbackStatusMutation,
   useGetEmployeesQuery,
   useGetEmployeeDetailQuery,
   useCreateEmployeeMutation,

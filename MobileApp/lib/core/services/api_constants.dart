@@ -116,6 +116,7 @@ class ApiConstants {
   static String aiAssistantConversationsEndPoint = '/AiAssistant/conversations';
   static String aiAssistantConversationMessagesEndPoint(String conversationId) =>
       '/AiAssistant/conversations/$conversationId/messages';
+  static String supportCallbacksEndPoint = '/api/support-callbacks';
 
   // Auth Endpoints
   static String loginEndPoint = '/Auth/login';

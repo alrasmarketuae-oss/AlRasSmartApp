@@ -24,6 +24,7 @@ import GlobalSearchPage from '../pages/GlobalSearchPage'
 import AuditLogsPage from '../pages/AuditLogsPage'
 import MonitoringPage from '../pages/MonitoringPage'
 import MissedProductSearchesPage from '../pages/MissedProductSearchesPage'
+import TechSupportCallbacksPage from '../pages/TechSupportCallbacksPage'
 import EmployeesPage from '../pages/EmployeesPage'
 import FinancePage from '../pages/FinancePage'
 import PermissionRoute from './PermissionRoute'
@@ -246,6 +247,14 @@ export default function AppRoutes() {
           element={
             <PermissionRoute permission={PERMISSIONS.notificationsView}>
               <NotificationsPage />
+            </PermissionRoute>
+          }
+        />
+        <Route
+          path="/tech-support"
+          element={
+            <PermissionRoute permission={PERMISSIONS.chatAccess}>
+              <TechSupportCallbacksPage />
             </PermissionRoute>
           }
         />

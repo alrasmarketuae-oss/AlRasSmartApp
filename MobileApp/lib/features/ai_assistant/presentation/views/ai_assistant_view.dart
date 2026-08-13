@@ -9,6 +9,7 @@ import 'package:alrasmarket/core/serveses/cached_constants.dart' as cache;
 import 'package:alrasmarket/features/ai_assistant/data/ai_assistant_realtime_service.dart';
 import 'package:alrasmarket/features/ai_assistant/data/ai_assistant_repository.dart';
 import 'package:alrasmarket/features/ai_assistant/presentation/widgets/ai_ad_plan_form.dart';
+import 'package:alrasmarket/features/ai_assistant/presentation/widgets/ai_support_callback_form.dart';
 import 'package:alrasmarket/features/ai_assistant/presentation/views/ai_assistant_history_view.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
@@ -105,6 +106,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   final _draftOps = sl<ProductDraftOpsUseCase>();
   bool _planMode = false;
   AiAdPlanKind? _planInitialKind;
+  String? _lastUserQuestion;
 
   @override
   void initState() {
@@ -131,6 +133,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   Future<void> _send() async {
     final visibleText = _controller.text.trim();
     if (visibleText.isEmpty || _isThinking) return;
+    _lastUserQuestion = visibleText;
 
     FocusManager.instance.primaryFocus?.unfocus();
 
@@ -524,7 +527,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
         });
         _scrollToEnd();
       },
-      onCompleted: (answer) {
+      onCompleted: (answer, {required offerSupportCallback}) {
         if (!mounted) return;
         final isAr = Localizations.localeOf(context).languageCode == 'ar';
         var finalAnswer = answer;
@@ -548,12 +551,16 @@ class _AiAssistantViewState extends State<AiAssistantView> {
                   ..clear()
                   ..addAll(_thinkingSteps);
               }
+              last.showSupportCallbackForm = offerSupportCallback;
+              last.supportQuestion = _lastUserQuestion;
             } else if (_messages.isEmpty || _messages.last.isUser) {
               _messages.add(
                 _ChatMessage(
                   text: finalAnswer,
                   isUser: false,
                   thinkingSteps: List<String>.from(_thinkingSteps),
+                  showSupportCallbackForm: offerSupportCallback,
+                  supportQuestion: _lastUserQuestion,
                 ),
               );
             }
@@ -620,9 +627,11 @@ class _AiAssistantViewState extends State<AiAssistantView> {
       _messages.add(
         _ChatMessage(
           text: isAr
-              ? 'تعذر الوصول للمساعد الآن. حاول مرة أخرى أو تواصل مع المحادثة المباشرة من الملف الشخصي.'
-              : 'The assistant is unavailable right now. Please try again or use Live Chat from Profile.',
+              ? 'تعذر الوصول للمساعد الآن. سيب اسمك ورقم تليفونك وبريدك في النموذج تحت، وفريق الدعم الفني هيتواصل معاك خلال خمس دقايق.'
+              : 'The assistant is unavailable right now. Leave your name, phone, and email below — technical support will call you within five minutes.',
           isUser: false,
+          showSupportCallbackForm: true,
+          supportQuestion: _lastUserQuestion,
         ),
       );
     });
@@ -729,6 +738,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
                   colors: colors,
                   onPickAdMedia: _pickAdMedia,
                   uploadingAdMedia: _uploadingAdMedia,
+                  sessionId: _realtime.sessionId,
                 );
               },
             ),
@@ -978,6 +988,8 @@ class _ChatMessage {
     List<String>? thinkingSteps,
     this.thinkingDurationMs,
     this.showMediaUpload = false,
+    this.showSupportCallbackForm = false,
+    this.supportQuestion,
   }) : thinkingSteps = thinkingSteps ?? <String>[];
 
   String text;
@@ -985,6 +997,8 @@ class _ChatMessage {
   final List<String> thinkingSteps;
   final int? thinkingDurationMs;
   bool showMediaUpload;
+  bool showSupportCallbackForm;
+  String? supportQuestion;
 }
 
 class _MessageBubble extends StatelessWidget {
@@ -993,11 +1007,13 @@ class _MessageBubble extends StatelessWidget {
     required this.colors,
     required this.onPickAdMedia,
     required this.uploadingAdMedia,
+    this.sessionId,
   });
   final _ChatMessage message;
   final _AiChatColors colors;
   final VoidCallback onPickAdMedia;
   final bool uploadingAdMedia;
+  final String? sessionId;
 
   @override
   Widget build(BuildContext context) {
@@ -1071,6 +1087,12 @@ class _MessageBubble extends StatelessWidget {
                   foregroundColor: LightColor.defaultColor,
                   side: BorderSide(color: LightColor.defaultColor.withValues(alpha: 0.5)),
                 ),
+              ),
+            ],
+            if (!isUser && message.showSupportCallbackForm) ...[
+              AiSupportCallbackForm(
+                question: message.supportQuestion,
+                sessionId: sessionId,
               ),
             ],
           ],

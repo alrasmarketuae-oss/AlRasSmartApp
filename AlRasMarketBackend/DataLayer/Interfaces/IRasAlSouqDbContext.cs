@@ -56,6 +56,7 @@ public interface IRasAlSouqDbContext
     DbSet<InternalDomesticShippingConfig> InternalDomesticShippingConfigs { get; }
     DbSet<AdminAuditLog> AdminAuditLogs { get; }
     DbSet<MissedProductSearch> MissedProductSearches { get; }
+    DbSet<SupportCallbackRequest> SupportCallbackRequests { get; }
     DbSet<ContentTranslation> ContentTranslations { get; }
     DbSet<Balance> Balances { get; }
     DbSet<UserIban> UserIbans { get; }

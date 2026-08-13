@@ -136,6 +136,10 @@ public class AdminRealtimeNotificationService(
                     && x.StatusId != OrderStatusCodes.Cancelled,
                 cancellationToken);
 
+        var pendingSupportCallbacks = await dbContext.SupportCallbackRequests
+            .AsNoTracking()
+            .CountAsync(x => x.Status == "Pending", cancellationToken);
+
         return new AdminLiveCountsDto
         {
             PendingUsers = pendingUsers,
@@ -149,7 +153,8 @@ public class AdminRealtimeNotificationService(
             PendingRetailOrders = pendingRetailOrders,
             PendingBookingOrders = pendingBookingOrders,
             PendingOffersOrders = pendingOffersOrders,
-            PendingCategoriesOrders = pendingCategoriesOrders
+            PendingCategoriesOrders = pendingCategoriesOrders,
+            PendingSupportCallbacks = pendingSupportCallbacks
         };
     }
 
@@ -455,6 +460,23 @@ public class AdminRealtimeNotificationService(
         {
             logger.LogWarning(ex, "Failed to push targeted admin chat alert to agent {AgentUserId}", agentUserId);
         }
+    }
+
+    public async Task NotifySupportCallbackAsync(
+        SupportCallbackRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        await PushAlertAsync(new AdminRealtimeAlertDto
+        {
+            Type = "techSupportCallback",
+            ReferenceId = request.Id.ToString(),
+            DisplayName = request.FullName,
+            SecondaryName = request.Phone,
+            TertiaryName = request.Email,
+            Details = string.IsNullOrWhiteSpace(request.Question)
+                ? "طلب اتصال بالدعم الفني"
+                : request.Question
+        }, cancellationToken);
     }
 
     public Task BroadcastCountsAsync(CancellationToken cancellationToken = default) =>

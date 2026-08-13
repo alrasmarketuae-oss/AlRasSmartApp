@@ -154,7 +154,8 @@ public sealed class AiAssistantHub(
                     answer = result.Answer,
                     result.Language,
                     result.UsedKnowledge,
-                    result.Sources
+                    result.Sources,
+                    offerSupportCallback = result.OfferSupportCallback
                 },
                 Context.ConnectionAborted);
         }

@@ -589,6 +589,46 @@ public interface IMissedProductSearchAppService
         CancellationToken cancellationToken = default);
 }
 
+public sealed class CreateSupportCallbackRequestInput
+{
+    public string FullName { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string? Question { get; set; }
+    public string? Language { get; set; }
+    public string? Source { get; set; }
+    public string? AiConversationId { get; set; }
+}
+
+public sealed class UpdateSupportCallbackStatusInput
+{
+    public string Status { get; set; } = string.Empty;
+    public string? AdminNotes { get; set; }
+}
+
+public interface ISupportCallbackAppService
+{
+    Task<object> CreateAsync(
+        Guid? userId,
+        CreateSupportCallbackRequestInput input,
+        CancellationToken cancellationToken = default);
+
+    Task<object> GetPagedAsync(
+        int page,
+        int pageSize,
+        string? search,
+        string? status,
+        CancellationToken cancellationToken = default);
+
+    Task<object> UpdateStatusAsync(
+        Guid id,
+        Guid adminUserId,
+        UpdateSupportCallbackStatusInput input,
+        CancellationToken cancellationToken = default);
+
+    Task<int> CountPendingAsync(CancellationToken cancellationToken = default);
+}
+
 public interface IInternalDomesticShippingAppService
 {
     Task<object> GetAllRatesAsync(CancellationToken cancellationToken = default);

@@ -58,6 +58,7 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
     public DbSet<InternalDomesticShippingConfig> InternalDomesticShippingConfigs => Set<InternalDomesticShippingConfig>();
     public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
     public DbSet<MissedProductSearch> MissedProductSearches => Set<MissedProductSearch>();
+    public DbSet<SupportCallbackRequest> SupportCallbackRequests => Set<SupportCallbackRequest>();
     public DbSet<ContentTranslation> ContentTranslations => Set<ContentTranslation>();
     public DbSet<Balance> Balances => Set<Balance>();
     public DbSet<UserIban> UserIbans => Set<UserIban>();
@@ -163,6 +164,27 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.SetNull);
             entity.HasIndex(x => x.CreatedAtUtc);
             entity.HasIndex(x => x.QueryText);
+            entity.HasIndex(x => new { x.UserId, x.CreatedAtUtc });
+        });
+
+        modelBuilder.Entity<SupportCallbackRequest>(entity =>
+        {
+            entity.ToTable("SupportCallbackRequests");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.FullName).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.Phone).HasMaxLength(50).IsRequired();
+            entity.Property(x => x.Email).HasMaxLength(256).IsRequired();
+            entity.Property(x => x.Question).HasMaxLength(1000);
+            entity.Property(x => x.Language).HasMaxLength(10).IsRequired();
+            entity.Property(x => x.Status).HasMaxLength(30).IsRequired();
+            entity.Property(x => x.Source).HasMaxLength(80);
+            entity.Property(x => x.AiConversationId).HasMaxLength(64);
+            entity.Property(x => x.AdminNotes).HasMaxLength(500);
+            entity.Property(x => x.CreatedAtUtc).HasColumnType("datetime2");
+            entity.Property(x => x.ContactedAtUtc).HasColumnType("datetime2");
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasIndex(x => x.CreatedAtUtc);
+            entity.HasIndex(x => new { x.Status, x.CreatedAtUtc });
             entity.HasIndex(x => new { x.UserId, x.CreatedAtUtc });
         });
 

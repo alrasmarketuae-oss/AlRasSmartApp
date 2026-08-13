@@ -35,7 +35,8 @@ class AiAssistantRealtimeService {
     required void Function(String step) onThinkingStep,
     required void Function() onResponseStarted,
     required void Function(String value) onDelta,
-    required void Function(String answer) onCompleted,
+    required void Function(String answer, {required bool offerSupportCallback})
+        onCompleted,
     required void Function(String message) onError,
   }) async {
     if (_closed) return;
@@ -84,7 +85,11 @@ class AiAssistantRealtimeService {
     });
     hub.on('aiResponseCompleted', (args) {
       if (_closed || generation != _connectGeneration) return;
-      onCompleted(_map(args)?['answer']?.toString() ?? '');
+      final data = _map(args);
+      final answer = data?['answer']?.toString() ?? '';
+      final offer = data?['offerSupportCallback'] == true ||
+          data?['OfferSupportCallback'] == true;
+      onCompleted(answer, offerSupportCallback: offer);
     });
     hub.on('aiError', (args) {
       if (_closed || generation != _connectGeneration) return;

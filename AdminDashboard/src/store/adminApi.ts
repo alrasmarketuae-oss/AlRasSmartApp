@@ -63,6 +63,11 @@ import type {
   MissedProductSearchesResponse,
 } from '../types/missedProductSearch'
 import type {
+  SupportCallbacksFilters,
+  SupportCallbacksResponse,
+} from '../types/supportCallback'
+import { normalizeSupportCallbackItem } from '../types/supportCallback'
+import type {
   AdminEmployeeDetail,
   AdminEmployeesResponse,
   AdminPermissionDefinition,
@@ -149,6 +154,7 @@ export const adminApi = createApi({
     'AuditLogs',
     'Monitoring',
     'MissedProductSearches',
+    'SupportCallbacks',
     'Finance',
   ],
   ...defaultCachePolicy,
@@ -1777,6 +1783,41 @@ export const adminApi = createApi({
       keepUnusedDataFor: 45,
     }),
 
+    getSupportCallbacks: builder.query<
+      SupportCallbacksResponse,
+      SupportCallbacksFilters | void
+    >({
+      query: (params) => ({
+        url: '/api/admin/support-callbacks',
+        params: {
+          page: params?.page ?? 1,
+          pageSize: params?.pageSize ?? 20,
+          search: params?.search || undefined,
+          status: params?.status || undefined,
+        },
+      }),
+      transformResponse: (response: SupportCallbacksResponse) => ({
+        ...response,
+        items: (response.items ?? []).map((item) =>
+          normalizeSupportCallbackItem(item as unknown as Record<string, unknown>),
+        ),
+      }),
+      providesTags: [{ type: 'SupportCallbacks', id: 'LIST' }],
+      keepUnusedDataFor: 20,
+    }),
+
+    updateSupportCallbackStatus: builder.mutation<
+      { id: string; status: string },
+      { id: string; status: string; adminNotes?: string }
+    >({
+      query: ({ id, status, adminNotes }) => ({
+        url: `/api/admin/support-callbacks/${id}/status`,
+        method: 'PATCH',
+        body: { status, adminNotes },
+      }),
+      invalidatesTags: [{ type: 'SupportCallbacks', id: 'LIST' }, { type: 'Dashboard', id: 'LIVE_COUNTS' }],
+    }),
+
     getEmployees: builder.query<
       AdminEmployeesResponse,
       { page?: number; pageSize?: number; search?: string }
@@ -2046,6 +2087,8 @@ export const {
   useGetAdminMonitoringQuery,
   useGetAdminAuditLogsQuery,
   useGetMissedProductSearchesQuery,
+  useGetSupportCallbacksQuery,
+  useUpdateSupportCallbackStatusMutation,
   useGetEmployeesQuery,
   useGetEmployeeDetailQuery,
   useCreateEmployeeMutation,

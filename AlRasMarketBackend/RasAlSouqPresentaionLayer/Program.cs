@@ -100,7 +100,8 @@ builder.Services.AddHttpClient<IAdminMonitoringAppService, AdminMonitoringAppSer
     client.BaseAddress = new Uri(url.TrimEnd('/') + "/");
     client.Timeout = TimeSpan.FromSeconds(8);
 });
-builder.Services.AddScoped<IMissedProductSearchAppService, MissedProductSearchAppService>();
+    builder.Services.AddScoped<IMissedProductSearchAppService, MissedProductSearchAppService>();
+    builder.Services.AddScoped<ISupportCallbackAppService, SupportCallbackAppService>();
 builder.Services.AddScoped<IAdminUsersAppService, AdminUsersAppService>();
 builder.Services.AddScoped<IAdminOrdersAppService, AdminOrdersAppService>();
 builder.Services.AddScoped<IAdminShippingAppService, AdminShippingAppService>();
@@ -517,6 +518,7 @@ await using (var scope = app.Services.CreateAsyncScope())
     await AdminEmployeeSchemaMigrator.EnsureAsync(db);
     await AdminAuditLogSchemaMigrator.EnsureAsync(db);
     await MissedProductSearchSchemaMigrator.EnsureAsync(db);
+    await SupportCallbackRequestSchemaMigrator.EnsureAsync(db);
     await ContentTranslationSchemaMigrator.EnsureAsync(db);
     await ProductUnicodeColumnsMigrator.EnsureAsync(db);
     await PortNameArSchemaMigrator.EnsureAsync(db);
