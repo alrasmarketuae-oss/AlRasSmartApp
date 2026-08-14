@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/serveses/catalog_sync_service.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
@@ -184,12 +185,15 @@ class _ChangePricesViewState extends State<ChangePricesView> {
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
+    final title = AuthService.instance.isCompanyCustomerAccount
+        ? s.changeTargetPrices
+        : s.changePrices;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F9FE),
       body: Column(
         children: [
-          SearchHeader(title: s.changePrices, isSearch: false),
+          SearchHeader(title: title, isSearch: false),
           Expanded(
             child: BlocBuilder<CompanyCubit, CompanyStates>(
               buildWhen: (previous, current) =>

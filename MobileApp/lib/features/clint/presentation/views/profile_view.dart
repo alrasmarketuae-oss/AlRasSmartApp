@@ -301,8 +301,12 @@ class _ProfileViewState extends State<ProfileView> {
                               ),
                             if (isSupplier || isCompany)
                               _SettingsTile(
-                                title: s.changePrices,
-                                subtitle: s.changePricesSubtitle,
+                                title: AuthService.instance.isCompanyCustomerAccount
+                                    ? s.changeTargetPrices
+                                    : s.changePrices,
+                                subtitle: AuthService.instance.isCompanyCustomerAccount
+                                    ? s.changeTargetPricesSubtitle
+                                    : s.changePricesSubtitle,
                                 icon: Icons.sell_rounded,
                                 iconColors: const [
                                   Color(0xFFF59E0B),

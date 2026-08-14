@@ -378,6 +378,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "changePricesSubtitle": MessageLookupByLibrary.simpleMessage(
       "حدّث وأدر أسعار المنتجات بسهولة",
     ),
+    "changeTargetPrices": MessageLookupByLibrary.simpleMessage(
+      "تغيير الأسعار المستهدفة",
+    ),
+    "changeTargetPricesSubtitle": MessageLookupByLibrary.simpleMessage(
+      "حدّث وأدر الأسعار المستهدفة بسهولة",
+    ),
     "chatE2eNoticeBody": MessageLookupByLibrary.simpleMessage(
       "فقط الأشخاص في هذه المحادثة هم من يستطيعون قراءة أو الاستماع لهذه الرسائل.",
     ),
@@ -472,10 +478,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "إعلانات طلباتي",
     ),
     "companyCustomerRequestsSubtitle": MessageLookupByLibrary.simpleMessage(
-      "إعلانات Request التي نشرتها والعروض الواردة عليها.",
+      "عروض الموردين الواردة على إعلانات طلباتك.",
     ),
     "companyCustomerRequestsTab": MessageLookupByLibrary.simpleMessage(
-      "طلباتي",
+      "العروض على طلباتي",
     ),
     "companyGuest": MessageLookupByLibrary.simpleMessage("زائر شركة"),
     "companyName": MessageLookupByLibrary.simpleMessage("اسم الشركة"),

@@ -869,10 +869,10 @@ class S {
     );
   }
 
-  /// `Requests`
+  /// `Offers on my requests`
   String get companyCustomerRequestsTab {
     return Intl.message(
-      'Requests',
+      'Offers on my requests',
       name: 'companyCustomerRequestsTab',
       desc: '',
       args: [],
@@ -924,10 +924,10 @@ class S {
     );
   }
 
-  /// `Your Request ads and supplier offers on them.`
+  /// `Supplier offers received on your Request ads.`
   String get companyCustomerRequestsSubtitle {
     return Intl.message(
-      'Your Request ads and supplier offers on them.',
+      'Supplier offers received on your Request ads.',
       name: 'companyCustomerRequestsSubtitle',
       desc: '',
       args: [],
@@ -2109,6 +2109,26 @@ class S {
     return Intl.message(
       'Update and manage product prices easily',
       name: 'changePricesSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Change target prices`
+  String get changeTargetPrices {
+    return Intl.message(
+      'Change target prices',
+      name: 'changeTargetPrices',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Update and manage target prices easily`
+  String get changeTargetPricesSubtitle {
+    return Intl.message(
+      'Update and manage target prices easily',
+      name: 'changeTargetPricesSubtitle',
       desc: '',
       args: [],
     );

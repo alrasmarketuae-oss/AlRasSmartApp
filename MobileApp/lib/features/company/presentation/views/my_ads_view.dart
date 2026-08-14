@@ -51,13 +51,23 @@ class _MyAdsViewState extends State<MyAdsView> {
       // Clear filters so the highlighted product is visible.
       if (widget.highlightProductId != null &&
           widget.highlightProductId!.trim().isNotEmpty) {
-        cubit.setMyListingsFilter(null);
+        cubit.setMyListingsFilter(
+          _isCompanyCustomerAccount
+              ? MyAdsFilter.requests.productTypeName
+              : null,
+        );
         cubit.setMyListingsStatusFilter(null);
         setState(() {
-          _selectedTypeFilterIndex = 0;
+          _selectedTypeFilterIndex = _isCompanyCustomerAccount
+              ? MyAdsFilter.requests.index
+              : 0;
           _selectedStatusFilterIndex = 0;
           _accountSectionIndex = 0;
         });
+      } else if (_isCompanyCustomerAccount) {
+        // Company customers only publish Requests — lock type filter.
+        cubit.setMyListingsFilter(MyAdsFilter.requests.productTypeName);
+        setState(() => _selectedTypeFilterIndex = MyAdsFilter.requests.index);
       }
       cubit.loadMyListings(context);
     });
@@ -90,6 +100,7 @@ class _MyAdsViewState extends State<MyAdsView> {
   }
 
   void _onHighlightedProductFound(MyListingProductModel product) {
+    if (_isCompanyCustomerAccount) return;
     final filter = _filterForProduct(product);
     final index = MyAdsFilter.values.indexOf(filter);
     if (index < 0 || index == _selectedTypeFilterIndex) return;
@@ -148,11 +159,12 @@ class _MyAdsViewState extends State<MyAdsView> {
                   onSelected: _onAccountSectionSelected,
                 ),
               if (!showMyOffersSection || _accountSectionIndex == 0) ...[
-                MyAdsTypeFilterCards(
-                  items: typeItems,
-                  selectedIndex: _selectedTypeFilterIndex,
-                  onSelected: _onTypeFilterSelected,
-                ),
+                if (!_isCompanyCustomerAccount)
+                  MyAdsTypeFilterCards(
+                    items: typeItems,
+                    selectedIndex: _selectedTypeFilterIndex,
+                    onSelected: _onTypeFilterSelected,
+                  ),
                 MyAdsStatusFilterChips(
                   items: statusItems,
                   selectedIndex: _selectedStatusFilterIndex,
@@ -160,7 +172,11 @@ class _MyAdsViewState extends State<MyAdsView> {
                 ),
                 _RecentListingsHeader(
                   onViewAll: () {
-                    if (_selectedTypeFilterIndex != 0 ||
+                    if (_isCompanyCustomerAccount) {
+                      if (_selectedStatusFilterIndex != 0) {
+                        _onStatusFilterSelected(0);
+                      }
+                    } else if (_selectedTypeFilterIndex != 0 ||
                         _selectedStatusFilterIndex != 0) {
                       _onTypeFilterSelected(0);
                       _onStatusFilterSelected(0);

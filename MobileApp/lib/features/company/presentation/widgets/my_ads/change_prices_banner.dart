@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/router/app_router.dart';
+import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/generated/l10n.dart';
@@ -15,6 +16,12 @@ class ChangePricesBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = S.of(context);
     final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
+    final isCompanyCustomer = AuthService.instance.isCompanyCustomerAccount;
+    final title =
+        isCompanyCustomer ? s.changeTargetPrices : s.changePrices;
+    final subtitle = isCompanyCustomer
+        ? s.changeTargetPricesSubtitle
+        : s.changePricesSubtitle;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(16.w, 2.h, 16.w, 6.h),
@@ -67,7 +74,7 @@ class ChangePricesBanner extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        s.changePrices,
+                        title,
                         style: TextStyle(
                           fontFamily: fontFamily,
                           fontSize: 13.5.sp,
@@ -78,7 +85,7 @@ class ChangePricesBanner extends StatelessWidget {
                       ),
                       SizedBox(height: 1.h),
                       Text(
-                        s.changePricesSubtitle,
+                        subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
