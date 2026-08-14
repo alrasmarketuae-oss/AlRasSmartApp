@@ -27,7 +27,7 @@ services:
       AiAssistant__RetrievalLimit: "6"
       AiAssistant__MinScore: "0.35"
       ImageEmbedding__Enabled: "true"
-      ImageEmbedding__AutoIndexOnCatalogChanges: "false"
+      ImageEmbedding__AutoIndexOnCatalogChanges: "true"
       ImageEmbedding__ClipServiceUrl: "http://clip:8088"
       ImageEmbedding__EmbeddingDimensions: "512"
       ImageEmbedding__MaxConcurrentIndexingJobs: "1"
