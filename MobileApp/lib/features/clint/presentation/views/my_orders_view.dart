@@ -10,6 +10,7 @@ import 'package:alrasmarket/features/clint/data/models/my_order_model.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_states.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/notification_navigation_helper.dart';
+import 'package:alrasmarket/features/clint/presentation/helpers/product_details_opener.dart';
 import 'package:alrasmarket/features/clint/presentation/models/my_orders_chip_filter.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/order_card.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/search_header.dart';

@@ -118,106 +118,115 @@ class _ComplaintsSuggestionsViewState extends State<ComplaintsSuggestionsView> {
     final s = S.of(context);
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
 
-    return Scaffold(
-      body: Column(
-        children: [
-          SearchHeader(title: s.complaintsSuggestions),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      s.complaintsSuggestionsHint,
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: const Color(0xFF6B7280),
-                        height: 1.5,
-                      ),
-                    ),
-                    SizedBox(height: 20.h),
-                    Text(
-                      s.feedbackTypeLabel,
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w600,
-                        color: LightColor.defaultColor,
-                      ),
-                    ),
-                    SizedBox(height: 10.h),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _TypeChip(
-                            label: s.feedbackTypeComplaint,
-                            selected: _type == 'Complaint',
-                            onTap: () => setState(() => _type = 'Complaint'),
-                          ),
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF4F7FA),
+        body: Column(
+          children: [
+            SearchHeader(
+              title: s.complaintsSuggestions,
+              isSearch: false,
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(24.w, 8.h, 24.w, 16.h),
+                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        s.complaintsSuggestionsHint,
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: const Color(0xFF6B7280),
+                          height: 1.5,
                         ),
-                        SizedBox(width: 10.w),
-                        Expanded(
-                          child: _TypeChip(
-                            label: s.feedbackTypeSuggestion,
-                            selected: _type == 'Suggestion',
-                            onTap: () => setState(() => _type = 'Suggestion'),
-                          ),
+                      ),
+                      SizedBox(height: 20.h),
+                      Text(
+                        s.feedbackTypeLabel,
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
+                          color: LightColor.defaultColor,
                         ),
-                      ],
-                    ),
-                    SizedBox(height: 20.h),
-                    CustomTextFormField(
-                      controller: _subjectCtrl,
-                      hintText: s.feedbackSubjectHint,
-                      label: s.feedbackSubjectLabel,
-                      validator: (value) {
-                        final text = value?.trim() ?? '';
-                        if (text.length < 3) {
-                          return isAr
-                              ? 'الموضوع قصير جداً'
-                              : 'Subject is too short';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: 16.h),
-                    CustomTextFormField(
-                      controller: _messageCtrl,
-                      hintText: s.feedbackMessageHint,
-                      label: s.feedbackMessageLabel,
-                      maxLines: 6,
-                      expandHeight: true,
-                      validator: (value) {
-                        final text = value?.trim() ?? '';
-                        if (text.length < 10) {
-                          return isAr
-                              ? 'الرسالة قصيرة جداً'
-                              : 'Message is too short';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: 16.h),
-                    CustomTextFormField(
-                      controller: _orderRefCtrl,
-                      hintText: s.feedbackOrderRefHint,
-                      label: s.feedbackOrderRefLabel,
-                      addOptionalLabel: true,
-                    ),
-                    SizedBox(height: 28.h),
-                    PrimaryButton(
-                      text: s.submitFeedback,
-                      isLoading: _submitting,
-                      onPressed: _submitting ? null : _submit,
-                    ),
-                  ],
+                      ),
+                      SizedBox(height: 10.h),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _TypeChip(
+                              label: s.feedbackTypeComplaint,
+                              selected: _type == 'Complaint',
+                              onTap: () => setState(() => _type = 'Complaint'),
+                            ),
+                          ),
+                          SizedBox(width: 10.w),
+                          Expanded(
+                            child: _TypeChip(
+                              label: s.feedbackTypeSuggestion,
+                              selected: _type == 'Suggestion',
+                              onTap: () => setState(() => _type = 'Suggestion'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 20.h),
+                      CustomTextFormField(
+                        controller: _subjectCtrl,
+                        hintText: s.feedbackSubjectHint,
+                        label: s.feedbackSubjectLabel,
+                        validator: (value) {
+                          final text = value?.trim() ?? '';
+                          if (text.length < 3) {
+                            return isAr
+                                ? 'الموضوع قصير جداً'
+                                : 'Subject is too short';
+                          }
+                          return null;
+                        },
+                      ),
+                      SizedBox(height: 16.h),
+                      CustomTextFormField(
+                        controller: _messageCtrl,
+                        hintText: s.feedbackMessageHint,
+                        label: s.feedbackMessageLabel,
+                        maxLines: 6,
+                        height: 140.h,
+                        validator: (value) {
+                          final text = value?.trim() ?? '';
+                          if (text.length < 10) {
+                            return isAr
+                                ? 'الرسالة قصيرة جداً'
+                                : 'Message is too short';
+                          }
+                          return null;
+                        },
+                      ),
+                      SizedBox(height: 16.h),
+                      CustomTextFormField(
+                        controller: _orderRefCtrl,
+                        hintText: s.feedbackOrderRefHint,
+                        label: s.feedbackOrderRefLabel,
+                        addOptionalLabel: true,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
+          ],
+        ),
+        bottomNavigationBar: Padding(
+          padding: EdgeInsets.fromLTRB(24.w, 8.h, 24.w, 16.h),
+          child: PrimaryButton(
+            text: s.submitFeedback,
+            isLoading: _submitting,
+            onPressed: _submitting ? null : _submit,
           ),
-        ],
+        ),
       ),
     );
   }

@@ -28,7 +28,10 @@ class TechnicalSupportView extends StatelessWidget {
         return Scaffold(
           body: Column(
             children: [
-              SearchHeader(title: S.of(context).helpSupport),
+              SearchHeader(
+                title: S.of(context).helpSupport,
+                isSearch: false,
+              ),
               SizedBox(height: 12.h),
               Expanded(
                 child: SingleChildScrollView(
