@@ -24,6 +24,7 @@ public class AuthAppService(
     PasswordResetNotifierFactory passwordResetNotifierFactory,
     IServiceScopeFactory scopeFactory,
     IEmailOtpService emailOtpService,
+    UserNameTranslationQueue userNameTranslationQueue,
     IAdminRealtimeNotificationService adminRealtimeNotificationService,
     ITurnstileVerifier turnstileVerifier,
     IHttpContextAccessor httpContextAccessor,
@@ -60,6 +61,7 @@ public class AuthAppService(
         };
 
         await userRepository.AddAsync(user);
+        userNameTranslationQueue.Enqueue(user.Id, user.FullName, null, user.PreferredLanguage);
         await SendRegistrationOtpOrRollbackAsync(user.Id, email, cancellationToken);
         await adminRealtimeNotificationService.NotifyNewUserAsync(user, cancellationToken);
         return ("Person account created successfully. OTP has been sent to your email.", user.Id.ToString(), user.ImgPath);
@@ -127,6 +129,11 @@ public class AuthAppService(
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        userNameTranslationQueue.Enqueue(
+            user.Id,
+            user.FullName,
+            user.CompanyName,
+            user.PreferredLanguage);
         await SendRegistrationOtpOrRollbackAsync(user.Id, email, cancellationToken);
         await adminRealtimeNotificationService.NotifyNewUserAsync(user, cancellationToken);
         return ("Company account created and pending admin approval. OTP has been sent to your email.", user.Id.ToString(), user.ImgPath, user.IsCustomer ?? false);
@@ -188,6 +195,11 @@ public class AuthAppService(
 
         await dbContext.Users.AddAsync(user, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
+        userNameTranslationQueue.Enqueue(
+            user.Id,
+            user.FullName,
+            user.CompanyName,
+            user.PreferredLanguage);
         await SendRegistrationOtpOrRollbackAsync(user.Id, email, cancellationToken);
         await adminRealtimeNotificationService.NotifyNewUserAsync(user, cancellationToken);
         return ("Shipping company account created and pending admin approval. OTP has been sent to your email.", user.Id.ToString(), user.ImgPath);

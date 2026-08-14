@@ -153,7 +153,8 @@ public class AccountDeletionAppService(
                         (orderIds.Count > 0 && x.OrderId != null && orderIds.Contains(x.OrderId.Value))
                         || (ownedProductIds.Count > 0
                             && x.ProductId != null
-                            && ownedProductIds.Contains(x.ProductId.Value))),
+                            && ownedProductIds.Contains(x.ProductId.Value))
+                        || x.UserId == user.Id),
                     cancellationToken);
             }
 

@@ -4,6 +4,7 @@ public static class ContentTranslationScopes
 {
     public const string Product = "Product";
     public const string Order = "Order";
+    public const string User = "User";
 }
 
 public static class ContentTranslationFields
@@ -14,9 +15,11 @@ public static class ContentTranslationFields
     public const string SupplierNotes = "SupplierNotes";
     public const string ShippingDescription = "ShippingDescription";
     public const string OfferNotes = "OfferNotes";
+    public const string FullName = "FullName";
+    public const string CompanyName = "CompanyName";
 }
 
-/// <summary>AI bilingual store for product text and order offer notes.</summary>
+/// <summary>AI bilingual store for product text, order offer notes, and user names.</summary>
 public class ContentTranslation
 {
     public Guid Id { get; set; }
@@ -27,6 +30,8 @@ public class ContentTranslation
     public Guid? ProductId { get; set; }
 
     public long? OrderId { get; set; }
+
+    public Guid? UserId { get; set; }
 
     /// <summary><see cref="ContentTranslationFields"/>.</summary>
     public string Field { get; set; } = string.Empty;
@@ -46,4 +51,6 @@ public class ContentTranslation
     public Product? Product { get; set; }
 
     public Order? Order { get; set; }
+
+    public User? User { get; set; }
 }

@@ -7,6 +7,7 @@ import {
   resolveOrderDeliveryPrint,
 } from '../../utils/ordersDisplay'
 import type { OrderPrintOptions } from '../../utils/orderPrintOptions'
+import BilingualNameLines from '../ui/BilingualNameLines'
 
 function formatDetailDate(value: string, locale: Locale) {
   if (!value?.trim()) return '—'
@@ -168,7 +169,15 @@ export default function OrderPrintSheet({
                   {isRequestOrder ? t('reqsOffers.requestOwnerInfo') : t('orders.customerInfo')}
                 </h3>
                 <div className="order-print-party-body">
-                  <p className="order-print-party-name">{order.customerName || '—'}</p>
+                  <div className="order-print-party-name">
+                    <BilingualNameLines
+                      nameEn={order.customerNameEn}
+                      nameAr={order.customerNameAr}
+                      fallback={order.customerName || '—'}
+                      primaryClassName="order-print-party-name"
+                      secondaryClassName="order-print-party-name text-xs mt-0.5"
+                    />
+                  </div>
                   <p dir="ltr">{order.customerPhone?.trim() || '—'}</p>
                   <p className="order-print-break">{order.customerEmail || '—'}</p>
                   <p>
@@ -196,7 +205,15 @@ export default function OrderPrintSheet({
                   {isRequestOrder ? t('reqsOffers.offeringSupplierInfo') : t('orders.supplierInfo')}
                 </h3>
                 <div className="order-print-party-body">
-                  <p className="order-print-party-name">{order.supplierName || '—'}</p>
+                  <div className="order-print-party-name">
+                    <BilingualNameLines
+                      nameEn={order.supplierNameEn}
+                      nameAr={order.supplierNameAr}
+                      fallback={order.supplierName || '—'}
+                      primaryClassName="order-print-party-name"
+                      secondaryClassName="order-print-party-name text-xs mt-0.5"
+                    />
+                  </div>
                   <p dir="ltr">{order.supplierPhone?.trim() || '—'}</p>
                   <p className="order-print-break">{order.supplierEmail || '—'}</p>
                   {order.originCountryName?.trim() ? (
@@ -231,20 +248,7 @@ export default function OrderPrintSheet({
         {options.statusHistory && statusHistory.length > 0 ? (
           <div className="order-print-section order-print-history">
             <h3 className="order-print-section-title">{t('orders.tabHistory')}</h3>
-            <ul className="order-print-history-list">
-              {statusHistory.map((entry) => (
-                <li key={entry.id} className="order-print-history-item">
-                  <span className="order-print-history-status">
-                    {locale === 'ar'
-                      ? entry.statusNameAr?.trim() || entry.statusNameEn
-                      : entry.statusNameEn?.trim() || entry.statusNameAr}
-                  </span>
-                  <span className="order-print-history-date">
-                    {formatDetailDate(entry.createdAtUtc, locale)}
-                  </span>
-                </li>
-              ))}
-            </ul>
+           
           </div>
         ) : null}
       </section>

@@ -16,6 +16,8 @@ export type PendingCompanyProfileChanges = {
 export type AdminUserDetail = {
   id: string
   fullName: string
+  fullNameEn?: string | null
+  fullNameAr?: string | null
   email: string
   phoneNumber: string | null
   landNumber: string | null
@@ -32,6 +34,8 @@ export type AdminUserDetail = {
   createdAt: string
   imgPath: string | null
   companyName: string | null
+  companyNameEn?: string | null
+  companyNameAr?: string | null
   licenseNumber: string | null
   licencePath: string | null
   commercialRegister: string | null

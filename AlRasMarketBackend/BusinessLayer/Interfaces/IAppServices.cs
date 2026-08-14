@@ -522,6 +522,14 @@ public sealed class ProductFieldTranslations
     public string? ShippingDescriptionEn { get; init; }
 }
 
+public sealed class UserFieldTranslations
+{
+    public string? FullNameAr { get; init; }
+    public string? FullNameEn { get; init; }
+    public string? CompanyNameAr { get; init; }
+    public string? CompanyNameEn { get; init; }
+}
+
 public interface IContentTranslationService
 {
     Task UpsertProductFieldsAsync(
@@ -545,8 +553,19 @@ public interface IContentTranslationService
         string? notesAr,
         CancellationToken cancellationToken = default);
 
+    Task UpsertUserFieldsAsync(
+        Guid userId,
+        string? fullName,
+        string? companyName = null,
+        string? preferredLanguageHint = null,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyDictionary<Guid, ProductFieldTranslations>> GetProductTranslationsAsync(
         IEnumerable<Guid> productIds,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyDictionary<Guid, UserFieldTranslations>> GetUserTranslationsAsync(
+        IEnumerable<Guid> userIds,
         CancellationToken cancellationToken = default);
 }
 

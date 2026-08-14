@@ -19,6 +19,7 @@ import {
   InfoFieldIcons,
 } from '../shared/IconInfoField'
 import ConfirmDialog from '../ui/ConfirmDialog'
+import BilingualNameLines from '../ui/BilingualNameLines'
 import CappedText from '../shared/CappedText'
 import CompactMediaStrip from './CompactMediaStrip'
 import OrderNotifyPartyDialog from './OrderNotifyPartyDialog'
@@ -1496,7 +1497,15 @@ export default function OrderDetailView({
                 <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eff6ff] text-xs font-bold text-[#2563eb]">
                   {customerInitials}
                 </span>
-                <p className="admin-text text-sm font-bold">{order.customerName || '—'}</p>
+                <div className="min-w-0">
+                  <BilingualNameLines
+                    nameEn={order.customerNameEn}
+                    nameAr={order.customerNameAr}
+                    fallback={order.customerName || '—'}
+                    primaryClassName="admin-text text-sm font-bold"
+                    secondaryClassName="admin-text-muted text-xs mt-0.5"
+                  />
+                </div>
               </div>
               <p className="flex items-center gap-2 text-sm" dir="ltr">
                 <CountryFlag phone={order.customerPhone} city={order.deliveryCityName} size={20} />
@@ -1544,7 +1553,15 @@ export default function OrderDetailView({
                 <span className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">
                   {supplierInitials}
                 </span>
-                <p className="admin-text text-sm font-bold">{order.supplierName || '—'}</p>
+                <div className="min-w-0">
+                  <BilingualNameLines
+                    nameEn={order.supplierNameEn}
+                    nameAr={order.supplierNameAr}
+                    fallback={order.supplierName || '—'}
+                    primaryClassName="admin-text text-sm font-bold"
+                    secondaryClassName="admin-text-muted text-xs mt-0.5"
+                  />
+                </div>
               </div>
               <p className="flex items-center gap-2 text-sm" dir="ltr">
                 <CountryFlag

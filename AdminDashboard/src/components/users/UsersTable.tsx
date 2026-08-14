@@ -14,6 +14,7 @@ import {
   localizeTypeLabel,
 } from '../../utils/localizedLabels'
 import type { AdminUser } from '../../types/user'
+import BilingualNameLines from '../ui/BilingualNameLines'
 
 type UsersTableProps = {
   users: AdminUser[]
@@ -47,7 +48,45 @@ function companyCellLabel(user: AdminUser, locale: 'ar' | 'en'): string {
   return customerKindLabel(user, locale)
 }
 
-function CompanyCell({
+function UserNameCell({
+  user,
+  listReturnState,
+}: {
+  user: AdminUser
+  listReturnState: ListReturnState
+}) {
+  const name = (
+    <BilingualNameLines
+      nameEn={user.fullNameEn}
+      nameAr={user.fullNameAr}
+      fallback={user.fullName}
+    />
+  )
+
+  if (isCompanyAccount(user)) {
+    return (
+      <Link
+        to={`/users/${user.id}/ads`}
+        state={listReturnState}
+        className="block min-w-0 text-[#3B7FC7] transition hover:text-[#2f6ab0] hover:underline"
+      >
+        {name}
+      </Link>
+    )
+  }
+
+  return (
+    <Link
+      to={`/users/${user.id}`}
+      state={listReturnState}
+      className="block min-w-0 transition hover:text-[#3B7FC7]"
+    >
+      {name}
+    </Link>
+  )
+}
+
+function CompanyNameCell({
   user,
   locale,
   listReturnState,
@@ -56,17 +95,29 @@ function CompanyCell({
   locale: 'ar' | 'en'
   listReturnState: ListReturnState
 }) {
-  const label = companyCellLabel(user, locale)
   if (!isCompanyAccount(user)) {
-    return <CellText>{label}</CellText>
+    return <CellText>{customerKindLabel(user, locale)}</CellText>
   }
+
+  const label = companyCellLabel(user, locale)
+  const hasBilingualCompany =
+    Boolean(user.companyNameEn?.trim()) || Boolean(user.companyNameAr?.trim())
+
   return (
     <Link
       to={`/users/${user.id}/ads`}
       state={listReturnState}
-      className="font-medium text-[#3B7FC7] transition hover:text-[#2f6ab0] hover:underline"
+      className="block min-w-0 font-medium text-[#3B7FC7] transition hover:text-[#2f6ab0] hover:underline"
     >
-      {label}
+      {hasBilingualCompany ? (
+        <BilingualNameLines
+          nameEn={user.companyNameEn}
+          nameAr={user.companyNameAr}
+          fallback={label}
+        />
+      ) : (
+        label
+      )}
     </Link>
   )
 }
@@ -148,12 +199,20 @@ function UserMobileCard({
               <Link
                 to={`/users/${user.id}/ads`}
                 state={listReturnState}
-                className="admin-text block truncate font-semibold text-[#3B7FC7] hover:underline"
+                className="block min-w-0 text-[#3B7FC7] hover:underline"
               >
-                {user.fullName}
+                <BilingualNameLines
+                  nameEn={user.fullNameEn}
+                  nameAr={user.fullNameAr}
+                  fallback={user.fullName}
+                />
               </Link>
             ) : (
-              <p className="admin-text truncate font-semibold">{user.fullName}</p>
+              <BilingualNameLines
+                nameEn={user.fullNameEn}
+                nameAr={user.fullNameAr}
+                fallback={user.fullName}
+              />
             )}
             <p className="admin-text-muted truncate text-xs" dir="ltr">
               {phoneDisplay}
@@ -167,17 +226,7 @@ function UserMobileCard({
         <div>
           <dt className="admin-text-subtle text-xs">{t('users.company')}</dt>
           <dd className="admin-text-muted mt-0.5">
-            {isCompanyAccount(user) ? (
-              <Link
-                to={`/users/${user.id}/ads`}
-                state={listReturnState}
-                className="font-medium text-[#3B7FC7] hover:underline"
-              >
-                {companyCellLabel(user, locale)}
-              </Link>
-            ) : (
-              customerKindLabel(user, locale)
-            )}
+            <CompanyNameCell user={user} locale={locale} listReturnState={listReturnState} />
           </dd>
         </div>
         <div>
@@ -293,23 +342,7 @@ export default function UsersTable({ users }: UsersTableProps) {
                   <td className="px-5 py-5 text-start">
                     <div className="flex items-center justify-start gap-3">
                       <UserAvatar user={user} />
-                      {isCompanyAccount(user) ? (
-                        <Link
-                          to={`/users/${user.id}/ads`}
-                          state={listReturnState}
-                          className="admin-text font-medium text-[#3B7FC7] transition hover:text-[#2f6ab0] hover:underline"
-                        >
-                          {user.fullName}
-                        </Link>
-                      ) : (
-                        <Link
-                          to={`/users/${user.id}`}
-                          state={listReturnState}
-                          className="admin-text font-medium transition hover:text-[#3B7FC7]"
-                        >
-                          {user.fullName}
-                        </Link>
-                      )}
+                      <UserNameCell user={user} listReturnState={listReturnState} />
                     </div>
                   </td>
                   <td className="px-5 py-5 text-start">
@@ -321,7 +354,7 @@ export default function UsersTable({ users }: UsersTableProps) {
                     <TypeBadge label={user.typeLabelAr} locale={locale} />
                   </td>
                   <td className="px-5 py-5 text-start">
-                    <CompanyCell
+                    <CompanyNameCell
                       user={user}
                       locale={locale}
                       listReturnState={listReturnState}

@@ -20,10 +20,14 @@ export type AdminOrder = {
   id: number
   productId: string
   customerName: string
+  customerNameEn?: string | null
+  customerNameAr?: string | null
   customerEmail: string
   customerPhone: string | null
   customerUserId?: string | null
   supplierName: string
+  supplierNameEn?: string | null
+  supplierNameAr?: string | null
   supplierEmail: string
   supplierPhone: string | null
   supplierUserId?: string | null

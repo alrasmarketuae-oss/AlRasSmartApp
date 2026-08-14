@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import { resolveAssetUrl } from '../../lib/assets'
 import type { AdminOrder } from '../../types/adminOrder'
+import BilingualNameLines from '../ui/BilingualNameLines'
 import { buildListReturnState } from '../../utils/listPageParams'
 import {
   formatAdAmount,
@@ -204,7 +205,15 @@ export default function OrdersTable({
                       />
                       <div className="min-w-0 text-start">
                         <p className="admin-text truncate text-sm font-bold">{order.productName}</p>
-                        <p className="admin-text-muted mt-0.5 truncate text-[11px]">{companyLabel}</p>
+                        <div className="mt-0.5">
+                          <BilingualNameLines
+                            nameEn={order.customerNameEn}
+                            nameAr={order.customerNameAr}
+                            fallback={companyLabel}
+                            primaryClassName="admin-text-muted truncate text-[11px]"
+                            secondaryClassName="admin-text-muted truncate text-[10px] mt-0.5"
+                          />
+                        </div>
                         <span
                           className={`mt-1 inline-flex rounded-md px-2 py-0.5 text-[10px] font-bold ${productTypeBadgeClass(typeKey)}`}
                         >
@@ -218,7 +227,15 @@ export default function OrdersTable({
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-600">
                         {(order.supplierName || '—').slice(0, 2).toUpperCase()}
                       </span>
-                      <span className="admin-text text-sm font-medium">{order.supplierName}</span>
+                      <span className="min-w-0">
+                        <BilingualNameLines
+                          nameEn={order.supplierNameEn}
+                          nameAr={order.supplierNameAr}
+                          fallback={order.supplierName || '—'}
+                          primaryClassName="admin-text text-sm font-medium"
+                          secondaryClassName="admin-text-muted text-xs mt-0.5"
+                        />
+                      </span>
                     </div>
                   </td>
                   {isRequestOffersList ? (

@@ -9,7 +9,8 @@ namespace BusinessLayer.Services;
 
 public class AdminUsersAppService(
     IRasAlSouqDbContext dbContext,
-    IAccountDeletionAppService accountDeletionAppService) : IAdminUsersAppService
+    IAccountDeletionAppService accountDeletionAppService,
+    IContentTranslationService contentTranslationService) : IAdminUsersAppService
 {
     public async Task<object> GetUsersAsync(
         int page,
@@ -122,6 +123,15 @@ public class AdminUsersAppService(
             })
             .ToListAsync(cancellationToken);
 
+        var translations = await contentTranslationService.GetUserTranslationsAsync(
+            items.Select(x => x.Id),
+            cancellationToken);
+        foreach (var item in items)
+        {
+            translations.TryGetValue(item.Id, out var tr);
+            AdminUserTextHelper.ApplyToUserListItem(item, tr);
+        }
+
         return new AdminPagedResult<AdminUserListItemDto>
         {
             Page = page,
@@ -152,7 +162,7 @@ public class AdminUsersAppService(
             o => o.FromUserId == user.Id || o.ToUserId == user.Id,
             cancellationToken);
 
-        return new AdminUserDetailDto
+        var dto = new AdminUserDetailDto
         {
             Id = user.Id,
             FullName = user.FullName,
@@ -203,6 +213,13 @@ public class AdminUsersAppService(
             CanDelete = user.RoleId != RoleIds.Admin
                 && (!user.IsApproved || ordersCount == 0)
         };
+
+        var translations = await contentTranslationService.GetUserTranslationsAsync(
+            [user.Id],
+            cancellationToken);
+        translations.TryGetValue(user.Id, out var tr);
+        AdminUserTextHelper.ApplyToUserDetail(dto, tr);
+        return dto;
     }
 
     private static PendingCompanyProfileChangeDto? MapPendingProfileChanges(string? raw)

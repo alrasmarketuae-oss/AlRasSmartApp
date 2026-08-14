@@ -230,6 +230,129 @@ public class ContentTranslationService(
         return map;
     }
 
+    public async Task UpsertUserFieldsAsync(
+        Guid userId,
+        string? fullName,
+        string? companyName = null,
+        string? preferredLanguageHint = null,
+        CancellationToken cancellationToken = default)
+    {
+        var fields = new (string Field, string? Text)[]
+        {
+            (ContentTranslationFields.FullName, fullName),
+            (ContentTranslationFields.CompanyName, companyName)
+        };
+
+        var pending = new List<PendingUserFieldTranslation>(fields.Length);
+        foreach (var (field, text) in fields)
+        {
+            var prepared = await PrepareUserFieldAsync(
+                userId,
+                field,
+                text,
+                preferredLanguageHint,
+                cancellationToken);
+            if (prepared is not null)
+            {
+                pending.Add(prepared);
+            }
+        }
+
+        if (pending.Count == 0)
+        {
+            return;
+        }
+
+        await Task.WhenAll(pending.Select(async item =>
+        {
+            try
+            {
+                if (item.SourceLang == "ar")
+                {
+                    item.TextAr = item.Trimmed;
+                    item.TextEn = await TranslatePersonNameAsync(
+                        item.Trimmed,
+                        "ar",
+                        "en",
+                        cancellationToken);
+                }
+                else
+                {
+                    item.TextEn = item.Trimmed;
+                    item.TextAr = await TranslatePersonNameAsync(
+                        item.Trimmed,
+                        "en",
+                        "ar",
+                        cancellationToken);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(
+                    ex,
+                    "AI user-name translation failed for User/{Field}; storing source language only.",
+                    item.Field);
+                item.TextAr = item.SourceLang == "ar" ? item.Trimmed : item.Existing?.TextAr;
+                item.TextEn = item.SourceLang == "en" ? item.Trimmed : item.Existing?.TextEn;
+            }
+        }));
+
+        foreach (var item in pending)
+        {
+            await PersistUserFieldAsync(item, cancellationToken);
+        }
+    }
+
+    public async Task<IReadOnlyDictionary<Guid, UserFieldTranslations>> GetUserTranslationsAsync(
+        IEnumerable<Guid> userIds,
+        CancellationToken cancellationToken = default)
+    {
+        var ids = userIds.Distinct().ToList();
+        if (ids.Count == 0)
+        {
+            return new Dictionary<Guid, UserFieldTranslations>();
+        }
+
+        var rows = await dbContext.ContentTranslations.AsNoTracking()
+            .Where(x =>
+                x.Scope == ContentTranslationScopes.User
+                && x.UserId != null
+                && ids.Contains(x.UserId.Value)
+                && (x.Field == ContentTranslationFields.FullName
+                    || x.Field == ContentTranslationFields.CompanyName))
+            .ToListAsync(cancellationToken);
+
+        var map = new Dictionary<Guid, UserFieldTranslations>();
+        foreach (var group in rows.GroupBy(x => x.UserId!.Value))
+        {
+            string? fullNameAr = null, fullNameEn = null, companyNameAr = null, companyNameEn = null;
+            foreach (var row in group)
+            {
+                switch (row.Field)
+                {
+                    case ContentTranslationFields.FullName:
+                        fullNameAr = row.TextAr;
+                        fullNameEn = row.TextEn;
+                        break;
+                    case ContentTranslationFields.CompanyName:
+                        companyNameAr = row.TextAr;
+                        companyNameEn = row.TextEn;
+                        break;
+                }
+            }
+
+            map[group.Key] = new UserFieldTranslations
+            {
+                FullNameAr = fullNameAr,
+                FullNameEn = fullNameEn,
+                CompanyNameAr = companyNameAr,
+                CompanyNameEn = companyNameEn
+            };
+        }
+
+        return map;
+    }
+
     private async Task UpsertFieldAsync(
         string scope,
         Guid? productId,
@@ -370,7 +493,164 @@ public class ContentTranslationService(
         return null;
     }
 
-    private static string DetectLanguage(string text)
+    private async Task<string> TranslatePersonNameAsync(
+        string text,
+        string fromLang,
+        string toLang,
+        CancellationToken cancellationToken)
+    {
+        var fromName = fromLang == "ar" ? "Arabic" : "English";
+        var toName = toLang == "ar" ? "Arabic" : "English";
+        var prompt =
+            $"Translate the following person or company name from {fromName} to {toName}. " +
+            "Keep proper nouns and transliteration natural for the target language. " +
+            "Return ONLY JSON: {{\"translation\":\"...\"}}. No markdown.\n\n" +
+            text;
+
+        return await TranslateWithPromptAsync(prompt, cancellationToken);
+    }
+
+    private async Task<string> TranslateWithPromptAsync(string prompt, CancellationToken cancellationToken)
+    {
+        var apiKey = configuration["OpenAI:ApiKey"];
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            throw new InvalidOperationException("OpenAI ApiKey is not configured.");
+        }
+
+        var payload = new
+        {
+            model = "gpt-4o-mini",
+            temperature = 0.1,
+            response_format = new { type = "json_object" },
+            messages = new object[]
+            {
+                new { role = "user", content = prompt }
+            }
+        };
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+        request.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+        var httpClient = httpClientFactory.CreateClient(nameof(ContentTranslationService));
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"OpenAI translate failed: {(int)response.StatusCode} {body}");
+        }
+
+        using var doc = JsonDocument.Parse(body);
+        var content = doc.RootElement
+            .GetProperty("choices")[0]
+            .GetProperty("message")
+            .GetProperty("content")
+            .GetString();
+
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            throw new InvalidOperationException("OpenAI returned empty translation.");
+        }
+
+        using var contentDoc = JsonDocument.Parse(content);
+        if (!contentDoc.RootElement.TryGetProperty("translation", out var translationEl)
+            || translationEl.ValueKind != JsonValueKind.String)
+        {
+            throw new InvalidOperationException("OpenAI translation JSON missing 'translation'.");
+        }
+
+        var translated = (translationEl.GetString() ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(translated))
+        {
+            throw new InvalidOperationException("OpenAI returned blank translation.");
+        }
+
+        return translated;
+    }
+
+    private async Task<PendingUserFieldTranslation?> PrepareUserFieldAsync(
+        Guid userId,
+        string field,
+        string? sourceText,
+        string? preferredLanguageHint,
+        CancellationToken cancellationToken)
+    {
+        var trimmed = string.IsNullOrWhiteSpace(sourceText) ? null : sourceText.Trim();
+        if (trimmed is null)
+        {
+            var existingEmpty = await FindUserRowAsync(userId, field, cancellationToken);
+            if (existingEmpty is not null)
+            {
+                dbContext.ContentTranslations.Remove(existingEmpty);
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
+
+            return null;
+        }
+
+        var hash = ComputeHash(trimmed);
+        var existing = await FindUserRowAsync(userId, field, cancellationToken);
+        if (existing is not null
+            && string.Equals(existing.SourceHash, hash, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        return new PendingUserFieldTranslation
+        {
+            UserId = userId,
+            Field = field,
+            Trimmed = trimmed,
+            Hash = hash,
+            SourceLang = DetectLanguage(trimmed, preferredLanguageHint),
+            Existing = existing
+        };
+    }
+
+    private async Task PersistUserFieldAsync(
+        PendingUserFieldTranslation item,
+        CancellationToken cancellationToken)
+    {
+        if (item.Existing is null)
+        {
+            dbContext.ContentTranslations.Add(new ContentTranslation
+            {
+                Id = Guid.NewGuid(),
+                Scope = ContentTranslationScopes.User,
+                UserId = item.UserId,
+                Field = item.Field,
+                TextAr = item.TextAr,
+                TextEn = item.TextEn,
+                SourceLanguage = item.SourceLang,
+                SourceHash = item.Hash,
+                UpdatedAtUtc = DateTime.UtcNow
+            });
+        }
+        else
+        {
+            item.Existing.TextAr = item.TextAr;
+            item.Existing.TextEn = item.TextEn;
+            item.Existing.SourceLanguage = item.SourceLang;
+            item.Existing.SourceHash = item.Hash;
+            item.Existing.UpdatedAtUtc = DateTime.UtcNow;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task<ContentTranslation?> FindUserRowAsync(
+        Guid userId,
+        string field,
+        CancellationToken cancellationToken) =>
+        await dbContext.ContentTranslations
+            .FirstOrDefaultAsync(
+                x => x.Scope == ContentTranslationScopes.User
+                    && x.UserId == userId
+                    && x.Field == field,
+                cancellationToken);
+
+    private static string DetectLanguage(string text, string? preferredLanguageHint = null)
     {
         var arabic = 0;
         var latin = 0;
@@ -388,6 +668,11 @@ public class ContentTranslationService(
             {
                 latin++;
             }
+        }
+
+        if (arabic == latin && !string.IsNullOrWhiteSpace(preferredLanguageHint))
+        {
+            return preferredLanguageHint.StartsWith("ar", StringComparison.OrdinalIgnoreCase) ? "ar" : "en";
         }
 
         return arabic > latin ? "ar" : "en";
@@ -472,6 +757,18 @@ public class ContentTranslationService(
         }
 
         return translated;
+    }
+
+    private sealed class PendingUserFieldTranslation
+    {
+        public required Guid UserId { get; init; }
+        public required string Field { get; init; }
+        public required string Trimmed { get; init; }
+        public required string Hash { get; init; }
+        public required string SourceLang { get; init; }
+        public ContentTranslation? Existing { get; init; }
+        public string? TextAr { get; set; }
+        public string? TextEn { get; set; }
     }
 
     private sealed class PendingFieldTranslation

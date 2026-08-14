@@ -1,6 +1,8 @@
 export type AdminUser = {
   id: string
   fullName: string
+  fullNameEn?: string | null
+  fullNameAr?: string | null
   email: string
   phoneNumber: string | null
   roleId: number
@@ -17,6 +19,8 @@ export type AdminUser = {
   createdAt: string
   imgPath: string | null
   companyName: string | null
+  companyNameEn?: string | null
+  companyNameAr?: string | null
   ordersCount: number
 }
 

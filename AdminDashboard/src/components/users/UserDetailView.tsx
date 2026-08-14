@@ -13,6 +13,7 @@ import {
   localizeTypeLabel,
 } from '../../utils/localizedLabels'
 import type { AdminUserDetail } from '../../types/adminUserDetail'
+import BilingualNameLines from '../ui/BilingualNameLines'
 
 type UserDetailViewProps = {
   user: AdminUserDetail
@@ -140,7 +141,13 @@ export default function UserDetailView({
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="admin-text text-2xl font-bold">{user.fullName}</h1>
+          <BilingualNameLines
+            nameEn={user.fullNameEn}
+            nameAr={user.fullNameAr}
+            fallback={user.fullName}
+            primaryClassName="admin-text text-2xl font-bold"
+            secondaryClassName="admin-text-muted text-sm mt-1"
+          />
           <p className="admin-text-muted mt-1 text-sm">{user.email}</p>
         </div>
 
@@ -211,13 +218,33 @@ export default function UserDetailView({
                   user.roleId === 2 || user.roleId === 5 ? (
                     <Link
                       to={`/users/${user.id}/ads`}
-                      className="font-medium text-[#3B7FC7] hover:underline"
+                      className="block min-w-0 font-medium text-[#3B7FC7] hover:underline"
                     >
-                      {user.companyName?.trim() || user.fullName?.trim() || t('users.viewCompanyAds')}
+                      <BilingualNameLines
+                        nameEn={user.companyNameEn}
+                        nameAr={user.companyNameAr}
+                        fallback={
+                          user.companyName?.trim()
+                          || user.fullName?.trim()
+                          || t('users.viewCompanyAds')
+                        }
+                      />
                     </Link>
                   ) : (
                     user.companyName?.trim() || '—'
                   )
+                }
+              />
+              <InfoRow
+                label={t('users.fullName')}
+                value={
+                  <BilingualNameLines
+                    nameEn={user.fullNameEn}
+                    nameAr={user.fullNameAr}
+                    fallback={user.fullName}
+                    primaryClassName="admin-text font-semibold"
+                    secondaryClassName="admin-text-muted text-sm mt-0.5"
+                  />
                 }
               />
               {(user.roleId === 2 || user.roleId === 5) ? (

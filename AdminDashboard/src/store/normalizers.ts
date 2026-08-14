@@ -30,6 +30,10 @@ type RawUser = AdminUser & {
   StatusLabelAr?: string
   OrdersCount?: number
   CompanyName?: string | null
+  FullNameEn?: string | null
+  FullNameAr?: string | null
+  CompanyNameEn?: string | null
+  CompanyNameAr?: string | null
   IsCustomer?: boolean
   isCustomer?: boolean
   IsVerified?: boolean
@@ -84,6 +88,8 @@ export function normalizeUser(raw: RawUser): AdminUser {
   return {
     id: raw.id,
     fullName: raw.fullName,
+    fullNameEn: raw.fullNameEn ?? raw.FullNameEn ?? null,
+    fullNameAr: raw.fullNameAr ?? raw.FullNameAr ?? null,
     email: raw.email,
     phoneNumber: raw.phoneNumber ?? raw.PhoneNumber ?? null,
     roleId,
@@ -123,6 +129,8 @@ export function normalizeUser(raw: RawUser): AdminUser {
     createdAt: raw.createdAt,
     imgPath: raw.imgPath,
     companyName: raw.companyName ?? raw.CompanyName ?? null,
+    companyNameEn: raw.companyNameEn ?? raw.CompanyNameEn ?? null,
+    companyNameAr: raw.companyNameAr ?? raw.CompanyNameAr ?? null,
     ordersCount: raw.ordersCount ?? raw.OrdersCount ?? 0,
   }
 }
@@ -621,10 +629,14 @@ type RawOrderImage = { id?: number; Id?: number; path?: string; Path?: string }
 type RawOrder = AdminOrder & {
   ProductId?: string
   CustomerName?: string
+  CustomerNameEn?: string | null
+  CustomerNameAr?: string | null
   CustomerEmail?: string
   CustomerPhone?: string | null
   CustomerUserId?: string | null
   SupplierName?: string
+  SupplierNameEn?: string | null
+  SupplierNameAr?: string | null
   SupplierEmail?: string
   SupplierPhone?: string | null
   SupplierUserId?: string | null
@@ -772,6 +784,8 @@ export function normalizeOrder(raw: RawOrder): AdminOrder {
     id: raw.id ?? (raw as { Id?: number }).Id ?? 0,
     productId: raw.productId ?? raw.ProductId ?? '',
     customerName: raw.customerName ?? raw.CustomerName ?? '—',
+    customerNameEn: raw.customerNameEn ?? raw.CustomerNameEn ?? null,
+    customerNameAr: raw.customerNameAr ?? raw.CustomerNameAr ?? null,
     customerEmail: raw.customerEmail ?? raw.CustomerEmail ?? '—',
     customerPhone: raw.customerPhone ?? raw.CustomerPhone ?? null,
     customerUserId: (() => {
@@ -781,6 +795,8 @@ export function normalizeOrder(raw: RawOrder): AdminOrder {
       return text.length > 0 ? text : null
     })(),
     supplierName: raw.supplierName ?? raw.SupplierName ?? '—',
+    supplierNameEn: raw.supplierNameEn ?? raw.SupplierNameEn ?? null,
+    supplierNameAr: raw.supplierNameAr ?? raw.SupplierNameAr ?? null,
     supplierEmail: raw.supplierEmail ?? raw.SupplierEmail ?? '—',
     supplierPhone: raw.supplierPhone ?? raw.SupplierPhone ?? null,
     supplierUserId: (() => {
@@ -1227,6 +1243,10 @@ type RawUserDetail = AdminUserDetail & {
   CreatedAt?: string
   ImgPath?: string | null
   CompanyName?: string | null
+  FullNameEn?: string | null
+  FullNameAr?: string | null
+  CompanyNameEn?: string | null
+  CompanyNameAr?: string | null
   LicenseNumber?: string | null
   LicencePath?: string | null
   CommercialRegister?: string | null
@@ -1279,6 +1299,8 @@ export function normalizeUserDetail(raw: RawUserDetail): AdminUserDetail {
   return {
     id: raw.id,
     fullName: raw.fullName,
+    fullNameEn: raw.fullNameEn ?? raw.FullNameEn ?? null,
+    fullNameAr: raw.fullNameAr ?? raw.FullNameAr ?? null,
     email: raw.email,
     phoneNumber: raw.phoneNumber ?? raw.PhoneNumber ?? null,
     landNumber: raw.landNumber ?? raw.LandNumber ?? null,
@@ -1319,6 +1341,8 @@ export function normalizeUserDetail(raw: RawUserDetail): AdminUserDetail {
     createdAt: raw.createdAt ?? raw.CreatedAt ?? '',
     imgPath: raw.imgPath ?? raw.ImgPath ?? null,
     companyName: raw.companyName ?? raw.CompanyName ?? null,
+    companyNameEn: raw.companyNameEn ?? raw.CompanyNameEn ?? null,
+    companyNameAr: raw.companyNameAr ?? raw.CompanyNameAr ?? null,
     licenseNumber: raw.licenseNumber ?? raw.LicenseNumber ?? null,
     licencePath: raw.licencePath ?? raw.LicencePath ?? null,
     commercialRegister: raw.commercialRegister ?? raw.CommercialRegister ?? null,

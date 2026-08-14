@@ -192,13 +192,18 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
             // Restrict: SQL Server rejects Cascade (multiple cascade paths via Orders).
             entity.HasOne(x => x.Order).WithMany().HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
             entity.HasIndex(x => new { x.ProductId, x.Field })
                 .IsUnique()
                 .HasFilter("[ProductId] IS NOT NULL");
             entity.HasIndex(x => new { x.OrderId, x.Field })
                 .IsUnique()
                 .HasFilter("[OrderId] IS NOT NULL");
+            entity.HasIndex(x => new { x.UserId, x.Field })
+                .IsUnique()
+                .HasFilter("[UserId] IS NOT NULL");
             entity.HasIndex(x => x.ProductId);
+            entity.HasIndex(x => x.UserId);
             entity.HasIndex(x => new { x.Scope, x.Field });
         });
 

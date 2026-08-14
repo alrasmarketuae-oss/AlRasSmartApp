@@ -77,6 +77,8 @@ public sealed class AdminRecentUserDto
 {
     public Guid Id { get; set; }
     public string FullName { get; set; } = string.Empty;
+    public string? FullNameEn { get; set; }
+    public string? FullNameAr { get; set; }
     public string Email { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
     public string RoleName { get; set; } = string.Empty;
@@ -114,6 +116,8 @@ public sealed class AdminUserListItemDto
 {
     public Guid Id { get; set; }
     public string FullName { get; set; } = string.Empty;
+    public string? FullNameEn { get; set; }
+    public string? FullNameAr { get; set; }
     public string Email { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
     public byte RoleId { get; set; }
@@ -125,6 +129,8 @@ public sealed class AdminUserListItemDto
     public DateTime CreatedAt { get; set; }
     public string? ImgPath { get; set; }
     public string? CompanyName { get; set; }
+    public string? CompanyNameEn { get; set; }
+    public string? CompanyNameAr { get; set; }
     public string TypeLabelAr { get; set; } = string.Empty;
     public string StatusLabelAr { get; set; } = string.Empty;
     public bool IsCustomer { get; set; }
@@ -144,6 +150,8 @@ public sealed class AdminUserDetailDto
 {
     public Guid Id { get; set; }
     public string FullName { get; set; } = string.Empty;
+    public string? FullNameEn { get; set; }
+    public string? FullNameAr { get; set; }
     public string Email { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
     public string? LandNumber { get; set; }
@@ -159,6 +167,8 @@ public sealed class AdminUserDetailDto
     public DateTime CreatedAt { get; set; }
     public string? ImgPath { get; set; }
     public string? CompanyName { get; set; }
+    public string? CompanyNameEn { get; set; }
+    public string? CompanyNameAr { get; set; }
     public string? LicenseNumber { get; set; }
     public string? LicencePath { get; set; }
     public string? CommercialRegister { get; set; }
@@ -176,6 +186,8 @@ public sealed class AdminUserDetailDto
 public sealed class PendingCompanyProfileChangeDto
 {
     public string? CompanyName { get; set; }
+    public string? CompanyNameEn { get; set; }
+    public string? CompanyNameAr { get; set; }
     public string? CommercialRegister { get; set; }
     public string? TaxNumber { get; set; }
     public string? Website { get; set; }
@@ -198,10 +210,14 @@ public sealed class AdminOrderListItemDto
     public long Id { get; set; }
     public Guid ProductId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerNameEn { get; set; }
+    public string? CustomerNameAr { get; set; }
     public string CustomerEmail { get; set; } = string.Empty;
     public string? CustomerPhone { get; set; }
     public Guid? CustomerUserId { get; set; }
     public string SupplierName { get; set; } = string.Empty;
+    public string? SupplierNameEn { get; set; }
+    public string? SupplierNameAr { get; set; }
     public string SupplierEmail { get; set; } = string.Empty;
     public string? SupplierPhone { get; set; }
     public Guid? SupplierUserId { get; set; }
@@ -615,6 +631,8 @@ public sealed class AdminCreateShippingProviderInput
 {
     public string CompanyName { get; set; } = string.Empty;
     public string FullName { get; set; } = string.Empty;
+    public string? FullNameEn { get; set; }
+    public string? FullNameAr { get; set; }
     public string Email { get; set; } = string.Empty;
     public string PhoneNumber { get; set; } = string.Empty;
     public string FromCountryName { get; set; } = string.Empty;
@@ -629,6 +647,8 @@ public sealed class AdminUpdateShippingProviderInput
 {
     public string CompanyName { get; set; } = string.Empty;
     public string FullName { get; set; } = string.Empty;
+    public string? FullNameEn { get; set; }
+    public string? FullNameAr { get; set; }
     public string Email { get; set; } = string.Empty;
     public string PhoneNumber { get; set; } = string.Empty;
     public string FromCountryName { get; set; } = string.Empty;

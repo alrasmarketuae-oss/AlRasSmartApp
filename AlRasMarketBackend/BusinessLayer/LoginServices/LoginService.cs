@@ -2,6 +2,7 @@ using BusinessLayer.Constants;
 using BusinessLayer.Factories;
 using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
+using BusinessLayer.Services;
 using DataLayer.Interfaces;
 using DataLayer.Models;
 
@@ -11,7 +12,8 @@ public class LoginService(
     LoginProviderFactory providerFactory,
     ITokenService tokenService,
     IAdminPermissionService permissionService,
-    IUserRepository userRepository) : ILoginService
+    IUserRepository userRepository,
+    UserNameTranslationQueue userNameTranslationQueue) : ILoginService
 {
     private readonly LoginProviderFactory _providerFactory = providerFactory;
     private readonly ITokenService _tokenService = tokenService;
@@ -43,6 +45,12 @@ public class LoginService(
         }
 
         LoginAccessHelper.EnsureCanLogin(user);
+
+        userNameTranslationQueue.Enqueue(
+            user.Id,
+            user.FullName,
+            user.CompanyName,
+            string.IsNullOrWhiteSpace(preferredLanguage) ? user.PreferredLanguage : preferredLanguage);
 
         IReadOnlyList<string> permissions = [];
         if (_permissionService.IsEmployee(user.RoleId))

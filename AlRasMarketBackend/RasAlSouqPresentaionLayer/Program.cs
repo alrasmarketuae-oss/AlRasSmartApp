@@ -187,6 +187,7 @@ builder.Services.AddScoped<ProductTextSearchSyncService>();
 builder.Services.AddHostedService<ProductTextSearchBootstrapHostedService>();
 builder.Services.AddHttpClient(nameof(ContentTranslationService));
 builder.Services.AddScoped<IContentTranslationService, ContentTranslationService>();
+builder.Services.AddSingleton<UserNameTranslationQueue>();
 builder.Services.AddScoped<IPortNameArBackfillService, PortNameArBackfillService>();
 builder.Services.AddScoped<IAddressesAppService, AddressesAppService>();
 builder.Services.AddScoped<ICategoriesAppService, CategoriesAppService>();
@@ -513,6 +514,7 @@ await using (var scope = app.Services.CreateAsyncScope())
     await MissedProductSearchSchemaMigrator.EnsureAsync(db);
     await SupportCallbackRequestSchemaMigrator.EnsureAsync(db);
     await ContentTranslationSchemaMigrator.EnsureAsync(db);
+    await UserContentTranslationSchemaMigrator.EnsureAsync(db);
     await ProductUnicodeColumnsMigrator.EnsureAsync(db);
     await PortNameArSchemaMigrator.EnsureAsync(db);
     await NotificationSchemaMigrator.EnsureAsync(db);

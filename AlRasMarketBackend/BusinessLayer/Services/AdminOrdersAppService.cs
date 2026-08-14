@@ -44,6 +44,7 @@ public class AdminOrdersAppService(
 
         var dto = AdminOrderMapper.Map(order);
         await ApplyProductTranslationsAsync(dto, order.Product, cancellationToken);
+        await ApplyUserTranslationsAsync([dto], cancellationToken);
         AdminOrderPricingHelper.ApplyPricingFields(
             dto,
             order,
@@ -153,6 +154,7 @@ public class AdminOrdersAppService(
         }).ToList();
 
         await ApplyProductTranslationsAsync(items, orders, cancellationToken);
+        await ApplyUserTranslationsAsync(items, cancellationToken);
 
         return new AdminPagedResult<AdminOrderListItemDto>
         {
@@ -385,6 +387,41 @@ public class AdminOrdersAppService(
                 product.NameEn,
                 product.DescriptionEn,
                 product.ShippingDescriptionEn);
+        }
+    }
+
+    private async Task ApplyUserTranslationsAsync(
+        IReadOnlyList<AdminOrderListItemDto> items,
+        CancellationToken cancellationToken)
+    {
+        var userIds = items
+            .SelectMany(i => new[] { i.CustomerUserId, i.SupplierUserId })
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .Distinct()
+            .ToList();
+        if (userIds.Count == 0)
+        {
+            return;
+        }
+
+        var translations = await contentTranslationService.GetUserTranslationsAsync(
+            userIds,
+            cancellationToken);
+
+        foreach (var dto in items)
+        {
+            if (dto.CustomerUserId is Guid customerId
+                && translations.TryGetValue(customerId, out var customerTr))
+            {
+                AdminUserTextHelper.ApplyCustomerNames(dto, customerTr);
+            }
+
+            if (dto.SupplierUserId is Guid supplierId
+                && translations.TryGetValue(supplierId, out var supplierTr))
+            {
+                AdminUserTextHelper.ApplySupplierNames(dto, supplierTr);
+            }
         }
     }
 
