@@ -32,7 +32,8 @@ public sealed class AiAssistantMcpToolLoop(
         "create_offer_ad",
         "create_retail_ad",
         "create_category_ad",
-        "create_shipping_ad"
+        "create_shipping_ad",
+        "submit_feedback"
     };
 
     private static readonly HashSet<string> AdCreationToolNames = new(StringComparer.Ordinal)

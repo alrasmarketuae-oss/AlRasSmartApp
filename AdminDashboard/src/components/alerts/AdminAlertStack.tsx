@@ -9,7 +9,7 @@ type AdminAlertStackProps = {
 
 function AlertIcon({ type }: { type: AdminAlertItem['type'] }) {
   const cls = 'h-5 w-5'
-  if (type === 'chat' || type === 'techSupportCallback') {
+  if (type === 'chat' || type === 'techSupportCallback' || type === 'userFeedback') {
     return <IconChat className={cls} />
   }
   if (type === 'newUser' || type === 'profileEdit') {
@@ -27,7 +27,7 @@ function AlertIcon({ type }: { type: AdminAlertItem['type'] }) {
 
 /** Light pastel tones — not dark/saturated. */
 function alertTone(type: AdminAlertItem['type']): string {
-  if (type === 'chat' || type === 'techSupportCallback') {
+  if (type === 'chat' || type === 'techSupportCallback' || type === 'userFeedback') {
     return 'bg-sky-200 text-sky-800'
   }
   if (type === 'newUser' || type === 'profileEdit') {

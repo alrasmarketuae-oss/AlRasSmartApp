@@ -54,6 +54,7 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
     public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
     public DbSet<MissedProductSearch> MissedProductSearches => Set<MissedProductSearch>();
     public DbSet<SupportCallbackRequest> SupportCallbackRequests => Set<SupportCallbackRequest>();
+    public DbSet<UserFeedbackSubmission> UserFeedbackSubmissions => Set<UserFeedbackSubmission>();
     public DbSet<ContentTranslation> ContentTranslations => Set<ContentTranslation>();
     public DbSet<AiKnowledgeIndexState> AiKnowledgeIndexStates => Set<AiKnowledgeIndexState>();
     public DbSet<AiConversation> AiConversations => Set<AiConversation>();
@@ -177,6 +178,31 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.SetNull);
             entity.HasIndex(x => x.CreatedAtUtc);
             entity.HasIndex(x => new { x.Status, x.CreatedAtUtc });
+            entity.HasIndex(x => new { x.UserId, x.CreatedAtUtc });
+        });
+
+        modelBuilder.Entity<UserFeedbackSubmission>(entity =>
+        {
+            entity.ToTable("UserFeedbackSubmissions");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Type).HasMaxLength(20).IsRequired();
+            entity.Property(x => x.Subject).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.Message).HasMaxLength(2000).IsRequired();
+            entity.Property(x => x.OrderReference).HasMaxLength(80);
+            entity.Property(x => x.FullName).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.Email).HasMaxLength(256);
+            entity.Property(x => x.Phone).HasMaxLength(50);
+            entity.Property(x => x.Language).HasMaxLength(10).IsRequired();
+            entity.Property(x => x.Status).HasMaxLength(30).IsRequired();
+            entity.Property(x => x.Source).HasMaxLength(80);
+            entity.Property(x => x.AiConversationId).HasMaxLength(64);
+            entity.Property(x => x.AdminNotes).HasMaxLength(500);
+            entity.Property(x => x.CreatedAtUtc).HasColumnType("datetime2");
+            entity.Property(x => x.ResolvedAtUtc).HasColumnType("datetime2");
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasIndex(x => x.CreatedAtUtc);
+            entity.HasIndex(x => new { x.Status, x.CreatedAtUtc });
+            entity.HasIndex(x => new { x.Type, x.CreatedAtUtc });
             entity.HasIndex(x => new { x.UserId, x.CreatedAtUtc });
         });
 

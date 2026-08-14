@@ -12,6 +12,7 @@ export type AdminLiveCounts = {
   pendingRequestOfferAds: number
   pendingShippingAds: number
   pendingSupportCallbacks: number
+  pendingUserFeedback: number
 }
 
 export type AdminRealtimeAlertType =
@@ -24,6 +25,7 @@ export type AdminRealtimeAlertType =
   | 'newShippingAd'
   | 'chat'
   | 'techSupportCallback'
+  | 'userFeedback'
 
 export type AdminRealtimeAlert = {
   type: AdminRealtimeAlertType
@@ -50,6 +52,7 @@ export type AdminNavCounts = {
   shipping: number
   chat: number
   supportCallbacks: number
+  userFeedback: number
 }
 
 function pickNumber(...values: unknown[]): number {
@@ -84,6 +87,10 @@ export function normalizeAdminLiveCounts(raw: Record<string, unknown>): AdminLiv
     pendingSupportCallbacks: pickNumber(
       raw.pendingSupportCallbacks,
       raw.PendingSupportCallbacks,
+    ),
+    pendingUserFeedback: pickNumber(
+      raw.pendingUserFeedback,
+      raw.PendingUserFeedback,
     ),
   }
 }

@@ -67,6 +67,11 @@ import type {
   SupportCallbacksResponse,
 } from '../types/supportCallback'
 import { normalizeSupportCallbackItem } from '../types/supportCallback'
+import {
+  normalizeUserFeedbackItem,
+  type UserFeedbackFilters,
+  type UserFeedbackResponse,
+} from '../types/userFeedback'
 import type {
   AdminEmployeeDetail,
   AdminEmployeesResponse,
@@ -150,6 +155,7 @@ export const adminApi = createApi({
     'Monitoring',
     'MissedProductSearches',
     'SupportCallbacks',
+    'UserFeedback',
   ],
   ...defaultCachePolicy,
   endpoints: (builder) => ({
@@ -1812,6 +1818,42 @@ export const adminApi = createApi({
       invalidatesTags: [{ type: 'SupportCallbacks', id: 'LIST' }, { type: 'Dashboard', id: 'LIVE_COUNTS' }],
     }),
 
+    getUserFeedback: builder.query<
+      UserFeedbackResponse,
+      UserFeedbackFilters | void
+    >({
+      query: (params) => ({
+        url: '/api/admin/user-feedback',
+        params: {
+          page: params?.page ?? 1,
+          pageSize: params?.pageSize ?? 20,
+          search: params?.search || undefined,
+          status: params?.status || undefined,
+          type: params?.type || undefined,
+        },
+      }),
+      transformResponse: (response: UserFeedbackResponse) => ({
+        ...response,
+        items: (response.items ?? []).map((item) =>
+          normalizeUserFeedbackItem(item as unknown as Record<string, unknown>),
+        ),
+      }),
+      providesTags: [{ type: 'UserFeedback', id: 'LIST' }],
+      keepUnusedDataFor: 20,
+    }),
+
+    updateUserFeedbackStatus: builder.mutation<
+      { id: string; status: string },
+      { id: string; status: string; adminNotes?: string }
+    >({
+      query: ({ id, status, adminNotes }) => ({
+        url: `/api/admin/user-feedback/${id}/status`,
+        method: 'PATCH',
+        body: { status, adminNotes },
+      }),
+      invalidatesTags: [{ type: 'UserFeedback', id: 'LIST' }, { type: 'Dashboard', id: 'LIVE_COUNTS' }],
+    }),
+
     getEmployees: builder.query<
       AdminEmployeesResponse,
       { page?: number; pageSize?: number; search?: string }
@@ -2039,6 +2081,8 @@ export const {
   useGetMissedProductSearchesQuery,
   useGetSupportCallbacksQuery,
   useUpdateSupportCallbackStatusMutation,
+  useGetUserFeedbackQuery,
+  useUpdateUserFeedbackStatusMutation,
   useGetEmployeesQuery,
   useGetEmployeeDetailQuery,
   useCreateEmployeeMutation,

@@ -869,7 +869,7 @@ class S {
     );
   }
 
-  /// `Offers on my requests`
+  /// `Incoming offers`
   String get companyCustomerRequestsTab {
     return Intl.message(
       'Incoming offers',
@@ -947,7 +947,7 @@ class S {
   /// `Offers on my requests`
   String get companyCustomerIncomingOffersHeader {
     return Intl.message(
-      'Incoming offers',
+      'Offers on my requests',
       name: 'companyCustomerIncomingOffersHeader',
       desc: '',
       args: [],
@@ -2029,6 +2029,146 @@ class S {
     return Intl.message(
       'Get help and contact support',
       name: 'helpSupportSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Complaints & Suggestions`
+  String get complaintsSuggestions {
+    return Intl.message(
+      'Complaints & Suggestions',
+      name: 'complaintsSuggestions',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Share a complaint or suggest an improvement`
+  String get complaintsSuggestionsSubtitle {
+    return Intl.message(
+      'Share a complaint or suggest an improvement',
+      name: 'complaintsSuggestionsSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Tell us about a problem or share your idea to improve Al Ras Smart. Our team will review your message.`
+  String get complaintsSuggestionsHint {
+    return Intl.message(
+      'Tell us about a problem or share your idea to improve Al Ras Smart. Our team will review your message.',
+      name: 'complaintsSuggestionsHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Type`
+  String get feedbackTypeLabel {
+    return Intl.message('Type', name: 'feedbackTypeLabel', desc: '', args: []);
+  }
+
+  /// `Complaint`
+  String get feedbackTypeComplaint {
+    return Intl.message(
+      'Complaint',
+      name: 'feedbackTypeComplaint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Suggestion`
+  String get feedbackTypeSuggestion {
+    return Intl.message(
+      'Suggestion',
+      name: 'feedbackTypeSuggestion',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Subject`
+  String get feedbackSubjectLabel {
+    return Intl.message(
+      'Subject',
+      name: 'feedbackSubjectLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Brief title for your message`
+  String get feedbackSubjectHint {
+    return Intl.message(
+      'Brief title for your message',
+      name: 'feedbackSubjectHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Message`
+  String get feedbackMessageLabel {
+    return Intl.message(
+      'Message',
+      name: 'feedbackMessageLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Describe your complaint or suggestion in detail`
+  String get feedbackMessageHint {
+    return Intl.message(
+      'Describe your complaint or suggestion in detail',
+      name: 'feedbackMessageHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Order reference (optional)`
+  String get feedbackOrderRefLabel {
+    return Intl.message(
+      'Order reference (optional)',
+      name: 'feedbackOrderRefLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Order number if related to a specific order`
+  String get feedbackOrderRefHint {
+    return Intl.message(
+      'Order number if related to a specific order',
+      name: 'feedbackOrderRefHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Submit`
+  String get submitFeedback {
+    return Intl.message('Submit', name: 'submitFeedback', desc: '', args: []);
+  }
+
+  /// `Your message was sent successfully.`
+  String get feedbackSubmittedSuccess {
+    return Intl.message(
+      'Your message was sent successfully.',
+      name: 'feedbackSubmittedSuccess',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not send your message. Please try again.`
+  String get feedbackSubmittedError {
+    return Intl.message(
+      'Could not send your message. Please try again.',
+      name: 'feedbackSubmittedError',
       desc: '',
       args: [],
     );

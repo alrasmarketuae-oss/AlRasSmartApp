@@ -25,6 +25,7 @@ import AuditLogsPage from '../pages/AuditLogsPage'
 import MonitoringPage from '../pages/MonitoringPage'
 import MissedProductSearchesPage from '../pages/MissedProductSearchesPage'
 import TechSupportCallbacksPage from '../pages/TechSupportCallbacksPage'
+import UserFeedbackPage from '../pages/UserFeedbackPage'
 import EmployeesPage from '../pages/EmployeesPage'
 import PermissionRoute from './PermissionRoute'
 import { getAuthToken, getAuthUser } from '../lib/authStorage'
@@ -254,6 +255,14 @@ export default function AppRoutes() {
           element={
             <PermissionRoute permission={PERMISSIONS.chatAccess}>
               <TechSupportCallbacksPage />
+            </PermissionRoute>
+          }
+        />
+        <Route
+          path="/user-feedback"
+          element={
+            <PermissionRoute permission={PERMISSIONS.chatAccess}>
+              <UserFeedbackPage />
             </PermissionRoute>
           }
         />

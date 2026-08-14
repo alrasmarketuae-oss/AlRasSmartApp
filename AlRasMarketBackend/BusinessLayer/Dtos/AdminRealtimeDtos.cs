@@ -21,6 +21,8 @@ public sealed class AdminLiveCountsDto
     public int PendingCategoriesOrders { get; set; }
     /// <summary>Pending AI/tech support callback requests.</summary>
     public int PendingSupportCallbacks { get; set; }
+    /// <summary>Pending user complaints and suggestions.</summary>
+    public int PendingUserFeedback { get; set; }
 }
 
 public sealed class AdminRealtimeAlertDto

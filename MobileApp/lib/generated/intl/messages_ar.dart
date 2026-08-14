@@ -497,6 +497,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "companySiteImageSelected": MessageLookupByLibrary.simpleMessage(
       "تم اختيار صور موقع الشركة",
     ),
+    "complaintsSuggestions": MessageLookupByLibrary.simpleMessage(
+      "الشكاوى والاقتراحات",
+    ),
+    "complaintsSuggestionsHint": MessageLookupByLibrary.simpleMessage(
+      "أخبرنا عن مشكلة أو شاركنا فكرة لتحسين الراس الذكي. فريق الدعم هيراجع رسالتك.",
+    ),
+    "complaintsSuggestionsSubtitle": MessageLookupByLibrary.simpleMessage(
+      "قدّم شكوى أو اقتراحاً للتحسين",
+    ),
     "completeOriginDestination": MessageLookupByLibrary.simpleMessage(
       "يرجى إكمال تفاصيل المنشأ والوجهة.",
     ),
@@ -760,6 +769,29 @@ class MessageLookup extends MessageLookupByLibrary {
     "featuredProducts": MessageLookupByLibrary.simpleMessage(
       "المنتجات المميزة",
     ),
+    "feedbackMessageHint": MessageLookupByLibrary.simpleMessage(
+      "اشرح شكواك أو اقتراحك بالتفصيل",
+    ),
+    "feedbackMessageLabel": MessageLookupByLibrary.simpleMessage("الرسالة"),
+    "feedbackOrderRefHint": MessageLookupByLibrary.simpleMessage(
+      "رقم الطلب إن كانت الرسالة متعلقة بطلب محدد",
+    ),
+    "feedbackOrderRefLabel": MessageLookupByLibrary.simpleMessage(
+      "رقم الطلب (اختياري)",
+    ),
+    "feedbackSubjectHint": MessageLookupByLibrary.simpleMessage(
+      "عنوان مختصر لرسالتك",
+    ),
+    "feedbackSubjectLabel": MessageLookupByLibrary.simpleMessage("الموضوع"),
+    "feedbackSubmittedError": MessageLookupByLibrary.simpleMessage(
+      "تعذر إرسال رسالتك. حاول مرة أخرى.",
+    ),
+    "feedbackSubmittedSuccess": MessageLookupByLibrary.simpleMessage(
+      "تم إرسال رسالتك بنجاح.",
+    ),
+    "feedbackTypeComplaint": MessageLookupByLibrary.simpleMessage("شكوى"),
+    "feedbackTypeLabel": MessageLookupByLibrary.simpleMessage("النوع"),
+    "feedbackTypeSuggestion": MessageLookupByLibrary.simpleMessage("اقتراح"),
     "fifthSalesMechanism": MessageLookupByLibrary.simpleMessage(
       "خامساً: آلية البيع والدفع",
     ),
@@ -1574,6 +1606,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "subjectToReconfirm": MessageLookupByLibrary.simpleMessage(
       "قابل لإعادة التأكيد",
     ),
+    "submitFeedback": MessageLookupByLibrary.simpleMessage("إرسال"),
     "submitOffer": MessageLookupByLibrary.simpleMessage("تقديم عرض"),
     "sugar": MessageLookupByLibrary.simpleMessage("سكر"),
     "suggestedNames": MessageLookupByLibrary.simpleMessage("أسماء مقترحة"),

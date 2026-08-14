@@ -89,6 +89,8 @@ export {
   useGetMissedProductSearchesQuery,
   useGetSupportCallbacksQuery,
   useUpdateSupportCallbackStatusMutation,
+  useGetUserFeedbackQuery,
+  useUpdateUserFeedbackStatusMutation,
   useGetEmployeesQuery,
   useGetEmployeeDetailQuery,
   useCreateEmployeeMutation,

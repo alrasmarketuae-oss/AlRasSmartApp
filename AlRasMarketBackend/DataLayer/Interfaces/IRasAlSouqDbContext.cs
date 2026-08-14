@@ -52,6 +52,7 @@ public interface IRasAlSouqDbContext
     DbSet<AdminAuditLog> AdminAuditLogs { get; }
     DbSet<MissedProductSearch> MissedProductSearches { get; }
     DbSet<SupportCallbackRequest> SupportCallbackRequests { get; }
+    DbSet<UserFeedbackSubmission> UserFeedbackSubmissions { get; }
     DbSet<ContentTranslation> ContentTranslations { get; }
     DbSet<AiKnowledgeIndexState> AiKnowledgeIndexStates { get; }
     DbSet<AiConversation> AiConversations { get; }

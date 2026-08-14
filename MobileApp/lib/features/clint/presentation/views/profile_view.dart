@@ -347,9 +347,16 @@ class _ProfileViewState extends State<ProfileView> {
                                       ),
                               ),
                             _SettingsTile(
+                              title: s.complaintsSuggestions,
+                              subtitle: s.complaintsSuggestionsSubtitle,
+                              icon: Icons.feedback_outlined,
+                              onTap: () =>
+                                  context.push(AppRoutes.kComplaintsSuggestionsView),
+                            ),
+                            _SettingsTile(
                               title: s.helpSupport,
                               subtitle: s.helpSupportSubtitle,
-                              assetIcon: AppAssets.profileHelpSupportIcon,
+                             assetIcon: AppAssets.profileHelpSupportIcon,
                               onTap: () =>
                                   context.push(AppRoutes.kTechnicalSupportView),
                             ),

@@ -42,6 +42,7 @@ const emptyCounts: AdminLiveCounts = {
   pendingRequestOfferAds: 0,
   pendingShippingAds: 0,
   pendingSupportCallbacks: 0,
+  pendingUserFeedback: 0,
 }
 
 export function AdminNotificationProvider({ children }: { children: ReactNode }) {
@@ -74,6 +75,7 @@ export function AdminNotificationProvider({ children }: { children: ReactNode })
         // currently open also refetches on realtime pushes (e.g. status changes).
         { type: 'Orders' },
         { type: 'SupportCallbacks', id: 'LIST' },
+        { type: 'UserFeedback', id: 'LIST' },
       ]),
     )
   }, [dispatch])
@@ -113,6 +115,7 @@ export function AdminNotificationProvider({ children }: { children: ReactNode })
       shipping: liveCounts.pendingShippingAds,
       chat: totalUnread,
       supportCallbacks: liveCounts.pendingSupportCallbacks,
+      userFeedback: liveCounts.pendingUserFeedback,
     }),
     [liveCounts, totalUnread],
   )
@@ -130,7 +133,8 @@ export function AdminNotificationProvider({ children }: { children: ReactNode })
     navCounts.requestAds +
     navCounts.shipping +
     navCounts.chat +
-    navCounts.supportCallbacks
+    navCounts.supportCallbacks +
+    navCounts.userFeedback
 
   const value = useMemo(
     (): AdminNotificationContextValue => ({

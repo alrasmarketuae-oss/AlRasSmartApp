@@ -22,7 +22,7 @@ import type { AdminRealtimeAlert } from '../types/adminRealtime'
 
 export type AdminAlertItem = {
   id: string
-  type: 'chat' | 'order' | 'offer' | 'newUser' | 'profileEdit' | 'newAd' | 'newRequest' | 'adEdit' | 'newShippingAd' | 'techSupportCallback'
+  type: 'chat' | 'order' | 'offer' | 'newUser' | 'profileEdit' | 'newAd' | 'newRequest' | 'adEdit' | 'newShippingAd' | 'techSupportCallback' | 'userFeedback'
   title: string
   body: string
   href?: string
@@ -221,6 +221,23 @@ function buildAlertFromRealtime(
         }),
         href: '/tech-support',
         actionLabel: t('alerts.openTechSupport'),
+        dismissLabel: t('alerts.dismiss'),
+      }
+    case 'userFeedback':
+      return {
+        id: `user-feedback-${alert.referenceId ?? Date.now()}`,
+        type: 'userFeedback',
+        title: t('alerts.userFeedbackTitle', {
+          type: alert.tertiaryName === 'Suggestion'
+            ? t('userFeedback.typeSuggestion')
+            : t('userFeedback.typeComplaint'),
+        }),
+        body: t('alerts.userFeedbackBody', {
+          name: alert.displayName ?? '—',
+          subject: alert.secondaryName ?? '—',
+        }),
+        href: '/user-feedback',
+        actionLabel: t('alerts.openUserFeedback'),
         dismissLabel: t('alerts.dismiss'),
       }
     default:

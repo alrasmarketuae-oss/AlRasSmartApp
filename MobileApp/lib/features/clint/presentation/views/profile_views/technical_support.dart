@@ -119,6 +119,15 @@ class TechnicalSupportView extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       CallCard(
+                        icon: AppAssets.profileHelpSupportIcon,
+                        title: S.of(context).complaintsSuggestions,
+                        subtitle: S.of(context).complaintsSuggestionsSubtitle,
+                        buttonText: S.of(context).submitFeedback,
+                        onTap: () =>
+                            context.push(AppRoutes.kComplaintsSuggestionsView),
+                      ),
+                      const SizedBox(height: 12),
+                      CallCard(
                         icon: AppAssets.profileMessageIcon,
                         title: S.of(context).liveChat,
                         subtitle: S.of(context).chatWithTheSupportTeamNow,

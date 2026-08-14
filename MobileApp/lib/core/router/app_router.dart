@@ -24,6 +24,7 @@ import 'package:alrasmarket/features/ai_assistant/presentation/views/ai_assistan
 import 'package:alrasmarket/features/clint/presentation/views/profile_views/model_training_view.dart';
 import 'package:alrasmarket/features/chat/presentation/views/support_chat_view.dart';
 import 'package:alrasmarket/features/clint/presentation/views/profile_views/technical_support.dart';
+import 'package:alrasmarket/features/clint/presentation/views/profile_views/complaints_suggestions_view.dart';
 import 'package:alrasmarket/features/clint/presentation/views/screens/booking_views/booking_details.dart';
 import 'package:alrasmarket/features/clint/presentation/views/screens/booking_views/booking_success.dart';
 import 'package:alrasmarket/features/clint/presentation/views/screens/requsts_views/requst_details.dart';
@@ -99,6 +100,7 @@ abstract class AppRoutes {
   static const String kLanguageView = '/LanguageView';
   static const String kTermsAndConditions = '/TermsAndConditions';
   static const String kTechnicalSupportView = '/TechnicalSupportView';
+  static const String kComplaintsSuggestionsView = '/ComplaintsSuggestionsView';
   static const String kSupportChatView = '/SupportChatView';
   static const String kAiAssistantView = '/AiAssistantView';
   static const String kModelTrainingView = '/ModelTrainingView';
@@ -351,6 +353,29 @@ abstract class AppRoutes {
       GoRoute(
         path: kTechnicalSupportView,
         builder: (context, state) => const TechnicalSupportView(),
+      ),
+      GoRoute(
+        path: kComplaintsSuggestionsView,
+        builder: (context, state) {
+          final extra = state.extra;
+          String initialType = 'Complaint';
+          String? initialSubject;
+          String? initialMessage;
+          String? initialOrderReference;
+          if (extra is Map) {
+            final rawType = extra['type']?.toString().trim();
+            if (rawType == 'Suggestion') initialType = 'Suggestion';
+            initialSubject = extra['subject']?.toString();
+            initialMessage = extra['message']?.toString();
+            initialOrderReference = extra['orderReference']?.toString();
+          }
+          return ComplaintsSuggestionsView(
+            initialType: initialType,
+            initialSubject: initialSubject,
+            initialMessage: initialMessage,
+            initialOrderReference: initialOrderReference,
+          );
+        },
       ),
       GoRoute(
         path: kSupportChatView,

@@ -620,6 +620,50 @@ public interface ISupportCallbackAppService
     Task<int> CountPendingAsync(CancellationToken cancellationToken = default);
 }
 
+public sealed class CreateUserFeedbackInput
+{
+    public string Type { get; set; } = UserFeedbackTypes.Complaint;
+    public string Subject { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public string? OrderReference { get; set; }
+    public string? FullName { get; set; }
+    public string? Email { get; set; }
+    public string? Phone { get; set; }
+    public string? Language { get; set; }
+    public string? Source { get; set; }
+    public string? AiConversationId { get; set; }
+}
+
+public sealed class UpdateUserFeedbackStatusInput
+{
+    public string Status { get; set; } = string.Empty;
+    public string? AdminNotes { get; set; }
+}
+
+public interface IUserFeedbackAppService
+{
+    Task<object> CreateAsync(
+        Guid? userId,
+        CreateUserFeedbackInput input,
+        CancellationToken cancellationToken = default);
+
+    Task<object> GetPagedAsync(
+        int page,
+        int pageSize,
+        string? search,
+        string? status,
+        string? type,
+        CancellationToken cancellationToken = default);
+
+    Task<object> UpdateStatusAsync(
+        Guid id,
+        Guid adminUserId,
+        UpdateUserFeedbackStatusInput input,
+        CancellationToken cancellationToken = default);
+
+    Task<int> CountPendingAsync(CancellationToken cancellationToken = default);
+}
+
 public interface IInternalDomesticShippingAppService
 {
     Task<object> GetAllRatesAsync(CancellationToken cancellationToken = default);

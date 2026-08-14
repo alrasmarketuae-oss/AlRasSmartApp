@@ -140,6 +140,10 @@ public class AdminRealtimeNotificationService(
             .AsNoTracking()
             .CountAsync(x => x.Status == "Pending", cancellationToken);
 
+        var pendingUserFeedback = await dbContext.UserFeedbackSubmissions
+            .AsNoTracking()
+            .CountAsync(x => x.Status == UserFeedbackStatuses.Pending, cancellationToken);
+
         return new AdminLiveCountsDto
         {
             PendingUsers = pendingUsers,
@@ -154,7 +158,8 @@ public class AdminRealtimeNotificationService(
             PendingBookingOrders = pendingBookingOrders,
             PendingOffersOrders = pendingOffersOrders,
             PendingCategoriesOrders = pendingCategoriesOrders,
-            PendingSupportCallbacks = pendingSupportCallbacks
+            PendingSupportCallbacks = pendingSupportCallbacks,
+            PendingUserFeedback = pendingUserFeedback
         };
     }
 
@@ -476,6 +481,22 @@ public class AdminRealtimeNotificationService(
             Details = string.IsNullOrWhiteSpace(request.Question)
                 ? "طلب اتصال بالدعم الفني"
                 : request.Question
+        }, cancellationToken);
+    }
+
+    public async Task NotifyUserFeedbackAsync(
+        UserFeedbackSubmission submission,
+        CancellationToken cancellationToken = default)
+    {
+        var isComplaint = submission.Type == UserFeedbackTypes.Complaint;
+        await PushAlertAsync(new AdminRealtimeAlertDto
+        {
+            Type = "userFeedback",
+            ReferenceId = submission.Id.ToString(),
+            DisplayName = submission.FullName,
+            SecondaryName = submission.Subject,
+            TertiaryName = isComplaint ? "Complaint" : "Suggestion",
+            Details = submission.Message
         }, cancellationToken);
     }
 

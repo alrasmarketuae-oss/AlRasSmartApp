@@ -32,5 +32,9 @@ public interface IAdminRealtimeNotificationService
         SupportCallbackRequest request,
         CancellationToken cancellationToken = default);
 
+    Task NotifyUserFeedbackAsync(
+        UserFeedbackSubmission submission,
+        CancellationToken cancellationToken = default);
+
     Task BroadcastCountsAsync(CancellationToken cancellationToken = default);
 }

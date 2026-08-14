@@ -468,7 +468,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Company Account",
     ),
     "companyCustomerIncomingOffersHeader": MessageLookupByLibrary.simpleMessage(
-      "Incoming offers",
+      "Offers on my requests",
     ),
     "companyCustomerOrdersTab": MessageLookupByLibrary.simpleMessage("Orders"),
     "companyCustomerRequestAdsHeader": MessageLookupByLibrary.simpleMessage(
@@ -493,6 +493,15 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "companySiteImageSelected": MessageLookupByLibrary.simpleMessage(
       "Company site image selected",
+    ),
+    "complaintsSuggestions": MessageLookupByLibrary.simpleMessage(
+      "Complaints & Suggestions",
+    ),
+    "complaintsSuggestionsHint": MessageLookupByLibrary.simpleMessage(
+      "Tell us about a problem or share your idea to improve Al Ras Smart. Our team will review your message.",
+    ),
+    "complaintsSuggestionsSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Share a complaint or suggest an improvement",
     ),
     "completeOriginDestination": MessageLookupByLibrary.simpleMessage(
       "Please complete origin and destination details.",
@@ -754,6 +763,31 @@ class MessageLookup extends MessageLookupByLibrary {
     "featured": MessageLookupByLibrary.simpleMessage("Featured Offers"),
     "featuredProducts": MessageLookupByLibrary.simpleMessage(
       "Featured Products",
+    ),
+    "feedbackMessageHint": MessageLookupByLibrary.simpleMessage(
+      "Describe your complaint or suggestion in detail",
+    ),
+    "feedbackMessageLabel": MessageLookupByLibrary.simpleMessage("Message"),
+    "feedbackOrderRefHint": MessageLookupByLibrary.simpleMessage(
+      "Order number if related to a specific order",
+    ),
+    "feedbackOrderRefLabel": MessageLookupByLibrary.simpleMessage(
+      "Order reference (optional)",
+    ),
+    "feedbackSubjectHint": MessageLookupByLibrary.simpleMessage(
+      "Brief title for your message",
+    ),
+    "feedbackSubjectLabel": MessageLookupByLibrary.simpleMessage("Subject"),
+    "feedbackSubmittedError": MessageLookupByLibrary.simpleMessage(
+      "Could not send your message. Please try again.",
+    ),
+    "feedbackSubmittedSuccess": MessageLookupByLibrary.simpleMessage(
+      "Your message was sent successfully.",
+    ),
+    "feedbackTypeComplaint": MessageLookupByLibrary.simpleMessage("Complaint"),
+    "feedbackTypeLabel": MessageLookupByLibrary.simpleMessage("Type"),
+    "feedbackTypeSuggestion": MessageLookupByLibrary.simpleMessage(
+      "Suggestion",
     ),
     "fifthSalesMechanism": MessageLookupByLibrary.simpleMessage(
       "Fifth: Sales and Payment Mechanism",
@@ -1583,6 +1617,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "subjectToReconfirm": MessageLookupByLibrary.simpleMessage(
       "Subject to reconfirm",
     ),
+    "submitFeedback": MessageLookupByLibrary.simpleMessage("Submit"),
     "submitOffer": MessageLookupByLibrary.simpleMessage("Submit Offer"),
     "sugar": MessageLookupByLibrary.simpleMessage("Sugar"),
     "suggestedNames": MessageLookupByLibrary.simpleMessage("Suggested names"),
