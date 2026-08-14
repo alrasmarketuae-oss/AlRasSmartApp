@@ -872,7 +872,7 @@ class S {
   /// `Offers on my requests`
   String get companyCustomerRequestsTab {
     return Intl.message(
-      'Offers on my requests',
+      'Incoming offers',
       name: 'companyCustomerRequestsTab',
       desc: '',
       args: [],
@@ -947,7 +947,7 @@ class S {
   /// `Offers on my requests`
   String get companyCustomerIncomingOffersHeader {
     return Intl.message(
-      'Offers on my requests',
+      'Incoming offers',
       name: 'companyCustomerIncomingOffersHeader',
       desc: '',
       args: [],

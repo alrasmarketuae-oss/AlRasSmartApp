@@ -1533,7 +1533,6 @@ public class AdminProductsAppService(
         }
 
         var ownerId = owner.Id;
-        var ownerEmail = owner.Email;
         var fcmToken = owner.FcmToken;
         var preferredLanguage = owner.PreferredLanguage;
         var storeTitleEn = TruncateNotify(titleEn ?? fcmTitle, 255);
@@ -1546,7 +1545,6 @@ public class AdminProductsAppService(
             try
             {
                 using var scope = scopeFactory.CreateScope();
-                var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
                 var fcmService = scope.ServiceProvider.GetRequiredService<IFcmNotificationService>();
                 var db = scope.ServiceProvider.GetRequiredService<IRasAlSouqDbContext>();
 
@@ -1577,10 +1575,7 @@ public class AdminProductsAppService(
                     logger.LogWarning(ex, "Failed to persist inbox notification for {LogContext}", logContext);
                 }
 
-                if (!string.IsNullOrWhiteSpace(ownerEmail))
-                {
-                    await emailService.SendAsync(ownerEmail, subject, emailHtml);
-                }
+                // Ad approve/reject: inbox + push only (no email).
 
                 if (!string.IsNullOrWhiteSpace(fcmToken))
                 {

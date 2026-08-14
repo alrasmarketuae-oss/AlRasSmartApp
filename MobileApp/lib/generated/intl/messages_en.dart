@@ -468,7 +468,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Company Account",
     ),
     "companyCustomerIncomingOffersHeader": MessageLookupByLibrary.simpleMessage(
-      "Offers on my requests",
+      "Incoming offers",
     ),
     "companyCustomerOrdersTab": MessageLookupByLibrary.simpleMessage("Orders"),
     "companyCustomerRequestAdsHeader": MessageLookupByLibrary.simpleMessage(
@@ -478,7 +478,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Supplier offers received on your Request ads.",
     ),
     "companyCustomerRequestsTab": MessageLookupByLibrary.simpleMessage(
-      "Offers on my requests",
+      "Incoming offers",
     ),
     "companyGuest": MessageLookupByLibrary.simpleMessage("Company Guest"),
     "companyName": MessageLookupByLibrary.simpleMessage("Company Name"),
