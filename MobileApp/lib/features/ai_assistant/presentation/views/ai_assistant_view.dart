@@ -106,7 +106,9 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   final _draftOps = sl<ProductDraftOpsUseCase>();
   bool _planMode = false;
   AiAdPlanKind? _planInitialKind;
-  String? _lastUserQuestion;
+  int _nextResponseId = 0;
+  int? _inFlightResponseId;
+  final Map<int, String> _questionForResponse = {};
 
   @override
   void initState() {
@@ -133,7 +135,6 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   Future<void> _send() async {
     final visibleText = _controller.text.trim();
     if (visibleText.isEmpty || _isThinking) return;
-    _lastUserQuestion = visibleText;
 
     FocusManager.instance.primaryFocus?.unfocus();
 
@@ -259,6 +260,9 @@ class _AiAssistantViewState extends State<AiAssistantView> {
 
     try {
       final language = isAr ? 'ar' : 'en';
+      final responseId = ++_nextResponseId;
+      _inFlightResponseId = responseId;
+      _questionForResponse[responseId] = visibleText;
       await (_connectFuture ??= _connect());
       await _realtime.ask(message: apiText, language: language);
     } catch (_) {
@@ -490,8 +494,8 @@ class _AiAssistantViewState extends State<AiAssistantView> {
         final durationMs = started == null
             ? null
             : DateTime.now().difference(started).inMilliseconds;
+        final responseId = _inFlightResponseId;
         setState(() {
-          _isThinking = false;
           _thinkingSteps.clear();
           _thinkingStartedAt = null;
           _messages.add(
@@ -501,6 +505,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
               thinkingSteps: trace,
               thinkingDurationMs: durationMs,
               showMediaUpload: _pendingAdMediaButton || _planMode,
+              responseId: responseId,
             ),
           );
           // Keep the button available for the whole plan-mode conversation.
@@ -537,39 +542,45 @@ class _AiAssistantViewState extends State<AiAssistantView> {
               ? 'تم إنشاء الإعلان بنجاح وإرساله للمراجعة من الإدارة.'
               : 'Your ad was created and submitted for admin review.';
         }
-        // Fallback: show callback form when user asked for human/tech support
-        // even if the server flag is missing (older hub / phrasing miss).
-        final shouldShowForm = offerSupportCallback ||
-            looksLikeSupportCallbackIntent(_lastUserQuestion) ||
-            looksLikeSupportCallbackCue(finalAnswer);
+        final responseId = _inFlightResponseId;
+        final supportQuestion = responseId == null
+            ? null
+            : _questionForResponse[responseId];
         setState(() {
           _isThinking = false;
+          _inFlightResponseId = null;
           if (finalAnswer.isNotEmpty) {
-            if (_messages.isNotEmpty && !_messages.last.isUser) {
-              final last = _messages.last;
-              if (last.text.isEmpty ||
-                  looksLikeTemporaryAssistantFailure(last.text)) {
-                last.text = finalAnswer;
+            final targetIndex = responseId == null
+                ? (_messages.lastIndexWhere((m) => !m.isUser))
+                : _messages.lastIndexWhere(
+                    (m) => !m.isUser && m.responseId == responseId,
+                  );
+            if (targetIndex >= 0) {
+              final target = _messages[targetIndex];
+              if (target.text.isEmpty ||
+                  looksLikeTemporaryAssistantFailure(target.text)) {
+                target.text = finalAnswer;
               }
-              if (last.thinkingSteps.isEmpty && _thinkingSteps.isNotEmpty) {
-                last.thinkingSteps
+              if (target.thinkingSteps.isEmpty && _thinkingSteps.isNotEmpty) {
+                target.thinkingSteps
                   ..clear()
                   ..addAll(_thinkingSteps);
               }
-              last.showSupportCallbackForm = shouldShowForm;
-              last.supportQuestion = _lastUserQuestion;
+              target.showSupportCallbackForm = offerSupportCallback;
+              target.supportQuestion = supportQuestion;
             } else if (_messages.isEmpty || _messages.last.isUser) {
               _messages.add(
                 _ChatMessage(
                   text: finalAnswer,
                   isUser: false,
                   thinkingSteps: List<String>.from(_thinkingSteps),
-                  showSupportCallbackForm: shouldShowForm,
-                  supportQuestion: _lastUserQuestion,
+                  showSupportCallbackForm: offerSupportCallback,
+                  supportQuestion: supportQuestion,
+                  responseId: responseId,
                 ),
               );
             }
-          } else if (shouldShowForm) {
+          } else if (offerSupportCallback) {
             _messages.add(
               _ChatMessage(
                 text: isAr
@@ -577,7 +588,8 @@ class _AiAssistantViewState extends State<AiAssistantView> {
                     : 'Please leave your name, phone, and email — we’ll call you within five minutes.',
                 isUser: false,
                 showSupportCallbackForm: true,
-                supportQuestion: _lastUserQuestion,
+                supportQuestion: supportQuestion,
+                responseId: responseId,
               ),
             );
           }
@@ -637,8 +649,13 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   void _showConnectionError() {
     if (!mounted) return;
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    final responseId = _inFlightResponseId;
+    final supportQuestion = responseId == null
+        ? null
+        : _questionForResponse[responseId];
     setState(() {
       _isThinking = false;
+      _inFlightResponseId = null;
       _thinkingSteps.clear();
       _messages.add(
         _ChatMessage(
@@ -647,7 +664,8 @@ class _AiAssistantViewState extends State<AiAssistantView> {
               : 'The assistant is unavailable right now. Leave your name, phone, and email below — technical support will call you within five minutes.',
           isUser: false,
           showSupportCallbackForm: true,
-          supportQuestion: _lastUserQuestion,
+          supportQuestion: supportQuestion,
+          responseId: responseId,
         ),
       );
     });
@@ -755,6 +773,11 @@ class _AiAssistantViewState extends State<AiAssistantView> {
                   onPickAdMedia: _pickAdMedia,
                   uploadingAdMedia: _uploadingAdMedia,
                   sessionId: _realtime.sessionId,
+                  onSupportCallbackSubmitted: () {
+                    setState(() {
+                      _messages[index].showSupportCallbackForm = false;
+                    });
+                  },
                 );
               },
             ),
@@ -1006,6 +1029,7 @@ class _ChatMessage {
     this.showMediaUpload = false,
     this.showSupportCallbackForm = false,
     this.supportQuestion,
+    this.responseId,
   }) : thinkingSteps = thinkingSteps ?? <String>[];
 
   String text;
@@ -1015,6 +1039,7 @@ class _ChatMessage {
   bool showMediaUpload;
   bool showSupportCallbackForm;
   String? supportQuestion;
+  final int? responseId;
 }
 
 class _MessageBubble extends StatelessWidget {
@@ -1024,12 +1049,14 @@ class _MessageBubble extends StatelessWidget {
     required this.onPickAdMedia,
     required this.uploadingAdMedia,
     this.sessionId,
+    this.onSupportCallbackSubmitted,
   });
   final _ChatMessage message;
   final _AiChatColors colors;
   final VoidCallback onPickAdMedia;
   final bool uploadingAdMedia;
   final String? sessionId;
+  final VoidCallback? onSupportCallbackSubmitted;
 
   @override
   Widget build(BuildContext context) {
@@ -1109,6 +1136,7 @@ class _MessageBubble extends StatelessWidget {
               AiSupportCallbackForm(
                 question: message.supportQuestion,
                 sessionId: sessionId,
+                onSubmitted: onSupportCallbackSubmitted,
               ),
             ],
           ],

@@ -855,6 +855,15 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "imageVideoFormatsHint": m15,
     "inProgress": MessageLookupByLibrary.simpleMessage("In Progress"),
+    "inactiveAccountPolicy1": MessageLookupByLibrary.simpleMessage(
+      "Your account may be automatically deleted if there is no meaningful activity — such as completing a purchase or adding/publishing ads — for three (3) consecutive months.",
+    ),
+    "inactiveAccountPolicy2": MessageLookupByLibrary.simpleMessage(
+      "Logging in alone, without a purchase or published ad, is not sufficient activity to prevent automatic deletion under this policy.",
+    ),
+    "inactiveAccountSectionTitle": MessageLookupByLibrary.simpleMessage(
+      "Inactive user accounts",
+    ),
     "incomingOrders": MessageLookupByLibrary.simpleMessage("Incoming"),
     "incomingOrdersSubtitle": MessageLookupByLibrary.simpleMessage(
       "Orders and offers received on your ads.",

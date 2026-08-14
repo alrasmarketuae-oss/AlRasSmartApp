@@ -860,6 +860,15 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "imageVideoFormatsHint": m15,
     "inProgress": MessageLookupByLibrary.simpleMessage("قيد التنفيذ"),
+    "inactiveAccountPolicy1": MessageLookupByLibrary.simpleMessage(
+      "قد يُحذف الحساب تلقائياً إذا لم يُسجّل أي تفاعل ذي معنى — مثل إتمام عملية شراء أو إضافة/نشر إعلانات — لمدة ثلاثة (3) أشهر متتالية.",
+    ),
+    "inactiveAccountPolicy2": MessageLookupByLibrary.simpleMessage(
+      "يُعدّ تسجيل الدخول وحده، دون شراء أو نشر إعلان، تفاعلاً غير كافٍ لمنع الحذف التلقائي وفق هذه السياسة.",
+    ),
+    "inactiveAccountSectionTitle": MessageLookupByLibrary.simpleMessage(
+      "حسابات المستخدمين غير النشطة",
+    ),
     "incomingOrders": MessageLookupByLibrary.simpleMessage("الواردة"),
     "incomingOrdersSubtitle": MessageLookupByLibrary.simpleMessage(
       "الطلبات والعروض الواردة على إعلاناتك.",

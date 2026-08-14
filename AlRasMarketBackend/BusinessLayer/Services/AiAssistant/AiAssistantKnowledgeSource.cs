@@ -192,6 +192,82 @@ internal static class AiAssistantKnowledgeSource
             Merge Spice Foodstuff Trading LLC operates as an intermediary that organises the trade process and does not own the listed goods.
             """);
 
+        Add(chunks, "app-walkthrough-home", "شرح الصفحة الرئيسية وأقسام التطبيق، الطلبات، العروض، الحجز، البيع المحلي، الشحن", "ar", All,
+            """
+            سؤال: اشرح لي التطبيق؟ ما هي أقسام الصفحة الرئيسية؟ ما هي الطلبات والعروض والحجز والبيع المحلي وأسعار الشحن؟ كيف أستخدم الراس الذكي؟
+            الإجابة: تطبيق الراس الذكي منصة B2B ذكية لتجارة المواد الغذائية بالجملة، تربط المشترين والموردين وتجار الجملة وشركات الشحن في منصة واحدة.
+            عند فتح التطبيق يظهر في الأعلى شريط إعلاني متحرك لأخبار السوق والمنتجات الجديدة والفرص والعروض المميزة.
+            أسفل الشريط خمسة أقسام رئيسية:
+            1) الطلبات Requests: طلبات منتجات ينشرها مشترون أو موردون يبحثون عن بضائع؛ يمكنك متابعة طلباتك أو تقديم عرض إذا كان المطلوب متوفراً لديك.
+            2) العروض Offers: للموردين الذين يريدون بيع بضائع بسرعة أو بأسعار مميزة؛ لاكتشاف عروض الجملة والبضائع المخفضة.
+            3) الحجز Booking: منتجات بأسعار حجز للتجارة الدولية؛ المورد ينشر السعر والمنشأ والوجهة وشروط الشحن.
+            4) البيع المحلي Retail: بيع المنتجات داخل دولة الإمارات بسعر محلي إضافي.
+            5) أسعار الشحن Shipping Prices: أسعار وتحديثات شركات الشحن للمقارنة عند التخطيط للاستيراد أو التصدير.
+            بعد ذلك أقسام المواد الغذائية: توابل، هيل، بقوليات، أعشاب، أرز، منتجات حليب، قهوة، مكسرات، بذور، فواكه مجففة وغيرها.
+            أسفل الأقسام تظهر العروض المميزة Featured Offers.
+            في أسفل التطبيق شريط التنقل: الصفحة الرئيسية، الحساب، وإنشاء إعلان جديد أو طلب منتج.
+            """);
+
+        Add(chunks, "app-walkthrough-home", "Home screen sections: Requests, Offers, Booking, Retail, Shipping", "en", All,
+            """
+            Question: explain the app home screen? What are Requests, Offers, Booking, Retail, and Shipping Prices sections?
+            Answer: Al Ras Smart is a smart B2B wholesale food trading platform connecting buyers, suppliers, wholesalers, and shipping companies in one place.
+            At the top is a scrolling news banner for market news, new products, opportunities, and featured offers.
+            Below it are five main sections:
+            1) Requests: product requests posted by buyers or suppliers looking for goods; follow your own requests or submit an offer if you have the product.
+            2) Offers: for suppliers who want to sell quickly or at special prices; discover wholesale deals and discounted goods.
+            3) Booking: products listed at booking prices for international trade; suppliers publish price, origin, destination, and shipping terms.
+            4) Retail: sell products inside the UAE with a local retail price.
+            5) Shipping Prices: freight rates and updates from shipping companies for import/export planning.
+            Then food categories: spices, cardamom, legumes, herbs, rice, dairy, coffee, nuts, seeds, dried fruits, and more.
+            Featured Offers appear below the categories.
+            The bottom navigation bar gives Home, Account, and Create Ad / Create Request.
+            """);
+
+        Add(chunks, "app-walkthrough-create-ads", "كيف أنشئ إعلان، حجز، طلب، عرض، التعبئة، النشر والمراجعة", "ar", All,
+            """
+            سؤال: كيف أنشئ إعلان؟ كيف أنشئ حجز أو طلب أو عرض؟ ما خطوات النشر؟
+            الإجابة: من شريط التنقل اضغط إنشاء إعلان جديد.
+            للمورد: ارفع صور المنتج، اكتب الاسم والكمية والسعر، حدد إن كان للسوق المحلي داخل الإمارات أو لإعادة التصدير، ثم اختر نوع الإعلان: منتج، حجز Booking، بيع محلي Retail، طلب Request، أو عرض Offer، وأضف المواصفات.
+            للحجز Booking: ارفع الصور، أدخل السعر والعملة ووحدة القياس، اختر نوع السعر FOB أو CNF أو CIF، حدد بلد المنشأ وميناء الشحن ودولة الوجهة وميناء الوصول، وعدد أيام الشحن المتوقعة ونوع التعبئة والمواصفات.
+            إذا لم تجد المنتج: أنشئ طلب Request — ارفع صورة أو اكتب الاسم، حدد الكمية والسعر المستهدف والعملة، وهل السعر قابل للتفاوض، وللسوق المحلي أو إعادة التصدير، وأضف تاريخ التسليم ونوع التعبئة والمواصفات؛ الموردون يقدمون عروضهم بعد النشر.
+            نوع التعبئة Packing: اختر التعبئة الأساسية أو أضف خيارات تعبئة متعددة إن وُجدت.
+            للعرض Offer: ارفع الصور، أدخل السعر قبل وبعد الخصم، حدد العملة والوحدة، محلي أو تصدير، قابل للتفاوض أم لا، ومدة العرض بالأيام والتعبئة والمواصفات.
+            بعد إدخال البيانات اضغط نشر Publish؛ يُرسل الإعلان للمراجعة من الإدارة، وبعد الموافقة يظهر داخل التطبيق.
+            """);
+
+        Add(chunks, "app-walkthrough-create-ads", "How to create ads: Booking, Request, Offer, packing, publish", "en", All,
+            """
+            Question: how do I create an ad? How to create Booking, Request, or Offer listings? What are the publish steps?
+            Answer: from the bottom bar tap Create Ad.
+            As a supplier: upload product photos, enter name, quantity, and price, choose local UAE market or re-export, pick ad type Product, Booking, Retail, Request, or Offer, and add specifications.
+            For Booking: upload photos, enter price, currency, and unit, choose FOB, CNF, or CIF, set origin country and port, destination country and port, expected shipping days, packing type, and specs.
+            If the product is not listed: create a Request — upload a photo or type the name, set quantity, target price, currency, negotiable or fixed, local or re-export, delivery date, packing, and specs; suppliers can submit offers after you publish.
+            Packing: choose the primary pack type or add multiple packing options when available.
+            For Offer: upload photos, enter price before and after discount, currency and unit, local or export, negotiable or not, offer duration in days, packing, and specs.
+            Tap Publish; the ad goes to admin review and appears in the app after approval.
+            """);
+
+        Add(chunks, "app-walkthrough-b2b-outro", "منصة B2B متكاملة، حمّل التطبيق، من دبي إلى أسواق العالم", "ar", All,
+            """
+            سؤال: لماذا أستخدم الراس الذكي؟ ما فائدة المنصة؟ حمّل التطبيق
+            الإجابة: مع تطبيق الراس الذكي تصبح تجارة المواد الغذائية بالجملة أسهل: المشتري يصل للمورد، والمورد يصل للمشترين، والموردون يتعاملون مع بعضهم.
+            يمكنك البحث عن البضائع، طلب منتجات غير متوفرة، عرض مخزونك، نشر أسعار الحجز، إنشاء عروض خاصة، البيع داخل الإمارات، ومتابعة أسعار الشحن — كل ذلك من منصة واحدة.
+            من دبي إلى أسواق العالم: اكتشف الفرص، ابحث عن منتجاتك، اشترِ، بع، وتواصل مع موردين وعملاء جدد.
+            تطبيق الراس الذكي — بوابتك الذكية إلى عالم تجارة المواد الغذائية بالجملة.
+            حمّل تطبيق الراس الذكي الآن على iOS وAndroid.
+            """);
+
+        Add(chunks, "app-walkthrough-b2b-outro", "Integrated B2B platform, download the app", "en", All,
+            """
+            Question: why use Al Ras Smart? What is the platform value? Download the app
+            Answer: Al Ras Smart makes wholesale food trading easier: buyers reach suppliers, suppliers reach buyers, and suppliers can trade with each other.
+            Search goods, request unavailable products, list your stock, publish booking prices, create special offers, sell locally in the UAE, and track shipping rates — all in one platform.
+            From Dubai to global markets: discover opportunities, find your products, buy, sell, and connect with new suppliers and customers.
+            Al Ras Smart — your smart gateway to wholesale food trading.
+            Download Al Ras Smart now on iOS and Android.
+            """);
+
         Add(chunks, "terms-privacy", "الشروط والأحكام: طبيعة المنصة والمسؤولية", "ar", All,
             """
             الراس الذكي منصة إلكترونية تعمل فيها شركة ميرج سبايس لتجارة المواد الغذائية كوسيط بين المورد والعميل لتنظيم العمليات التجارية.

@@ -3134,6 +3134,36 @@ class S {
     );
   }
 
+  /// `Inactive user accounts`
+  String get inactiveAccountSectionTitle {
+    return Intl.message(
+      'Inactive user accounts',
+      name: 'inactiveAccountSectionTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Your account may be automatically deleted if there is no meaningful activity — such as completing a purchase or adding/publishing ads — for three (3) consecutive months.`
+  String get inactiveAccountPolicy1 {
+    return Intl.message(
+      'Your account may be automatically deleted if there is no meaningful activity — such as completing a purchase or adding/publishing ads — for three (3) consecutive months.',
+      name: 'inactiveAccountPolicy1',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Logging in alone, without a purchase or published ad, is not sufficient activity to prevent automatic deletion under this policy.`
+  String get inactiveAccountPolicy2 {
+    return Intl.message(
+      'Logging in alone, without a purchase or published ad, is not sufficient activity to prevent automatic deletion under this policy.',
+      name: 'inactiveAccountPolicy2',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Eighth: Amendments`
   String get eighthAmendments {
     return Intl.message(

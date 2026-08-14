@@ -303,22 +303,13 @@ public sealed class AiAssistantAppService(
                 .ConfigureAwait(false);
 
             var usedKnowledge = hits.Count > 0;
-            var offerCallback = !isAdCreation
-                && (IsHumanSupportIntent(message)
-                    || LooksUncertainAnswer(answer)
-                    || (!usedKnowledge && !LooksLikeSuccessfulToolAnswer(answer)));
-
-            if (offerCallback)
-            {
-                answer = AppendSupportCallbackCue(answer, language);
-            }
 
             return new AiAssistantAnswer(
                 answer,
                 language,
                 usedKnowledge,
                 hits.Select(x => x.Source).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
-                offerCallback);
+                OfferSupportCallback: false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

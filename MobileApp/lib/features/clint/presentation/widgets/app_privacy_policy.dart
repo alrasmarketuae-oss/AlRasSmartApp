@@ -7,7 +7,7 @@ class AppPrivacyPolicy {
       : 'Privacy Policy — Al Ras Smart';
 
   static String lastUpdated(bool isAr) =>
-      isAr ? 'آخر تحديث: 6 أغسطس 2026' : 'Last updated: 6 August 2026';
+      isAr ? 'آخر تحديث: 14 أغسطس 2026' : 'Last updated: 14 August 2026';
 
   static String intro(bool isAr) => isAr
       ? 'تشرح هذه السياسة ما البيانات التي يجمعها التطبيق وكيف نستخدمها ونحفظها ونشاركها ونحذفها. المشغّل: شركة ميرج سبايس لتجارة المواد الغذائية — دبي، الإمارات. البريد: support@alrasmarket.com'
@@ -72,6 +72,7 @@ class AppPrivacyPolicy {
       items: [
         'يمكنك تعديل بيانات ملفك من التطبيق.',
         'اطلب حذف الحساب عبر التطبيق أو الصفحة العامة لحذف الحساب أو البريد support@alrasmarket.com بعد التحقق وتسوية الطلبات المفتوحة.',
+        'قد يُحذف الحساب تلقائياً إذا لم يُسجّل أي تفاعل ذي معنى — مثل إتمام عملية شراء أو إضافة/نشر إعلانات — لمدة ثلاثة (3) أشهر متتالية.',
         'يمكنك سحب أذونات الجهاز من إعدادات الهاتف.',
       ],
     ),
@@ -140,6 +141,7 @@ class AppPrivacyPolicy {
       items: [
         'You can update profile data in the app.',
         'Request account deletion via the app, the public delete-account page, or support@alrasmarket.com after verification and settling open orders.',
+        'Your account may be automatically deleted if there is no meaningful activity — such as completing a purchase or adding/publishing ads — for three (3) consecutive months.',
         'You may revoke device permissions in system settings.',
       ],
     ),
