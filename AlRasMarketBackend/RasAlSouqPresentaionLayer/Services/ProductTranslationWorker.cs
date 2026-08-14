@@ -1,3 +1,4 @@
+using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using BusinessLayer.Options;
 using BusinessLayer.Services;
@@ -64,7 +65,8 @@ public sealed class ProductTranslationWorker(
                 logger.LogWarning(ex, "Background product translation failed for {ProductId}", workItem.ProductId);
             }
 
-            if (workItem.QueueImageEmbeddingAfterTranslation && imageEmbeddingOptions.Value.Enabled)
+            if (workItem.QueueImageEmbeddingAfterTranslation
+                && ImageEmbeddingIndexingGate.ShouldAutoIndexOnCatalogChange(imageEmbeddingOptions.Value))
             {
                 try
                 {

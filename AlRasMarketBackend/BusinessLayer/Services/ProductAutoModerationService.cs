@@ -435,7 +435,7 @@ public sealed class ProductAutoModerationService(
 
     private async Task QueueClipAsync(Guid productId, CancellationToken cancellationToken)
     {
-        if (!imageEmbeddingOptions.Value.Enabled)
+        if (!ImageEmbeddingIndexingGate.ShouldAutoIndexOnCatalogChange(imageEmbeddingOptions.Value))
         {
             return;
         }

@@ -202,3 +202,4 @@ docker compose exec redis redis-cli KEYS 'alras:notifications:*' | head
 - قاعدة البيانات حالياً على Site4Now — الـ VPS بيتصل بيها من الإنترنت (افتح firewall عند SQL لو لزم).
 - Redis + Qdrant + CLIP على نفس الـ VPS (شبكة Docker داخلية فقط).
 - لو الـ RAM قليلة وCLIP بطيء: زوّد الخطة أو عطّل CLIP مؤقتاً بـ `ImageEmbedding__Enabled=false`.
+- إيقاف الفهرسة التلقائية أثناء إضافة الإعلانات (تجربة الداشبورد): `ImageEmbedding__AutoIndexOnCatalogChanges=false` في `docker-compose.yml` ثم `docker compose up -d api`. لإعادة التشغيل: `"true"`.

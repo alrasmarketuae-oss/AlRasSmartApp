@@ -736,7 +736,7 @@ public partial class ProductsAppService(
     /// </summary>
     private void QueueProductImagesForClipIndexing(Guid productId)
     {
-        if (!imageEmbeddingOptions.Value.Enabled)
+        if (!ImageEmbeddingIndexingGate.ShouldAutoIndexOnCatalogChange(imageEmbeddingOptions.Value))
         {
             return;
         }

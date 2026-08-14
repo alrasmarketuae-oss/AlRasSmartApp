@@ -16,6 +16,7 @@ Health: `GET http://localhost:8088/health`
 ```json
 "ImageEmbedding": {
   "Enabled": true,
+  "AutoIndexOnCatalogChanges": true,
   "ClipServiceUrl": "http://localhost:8088",
   "EmbeddingDimensions": 512,
   "ClipImageWeight": 0.7,

@@ -72,6 +72,14 @@ import {
   type UserFeedbackFilters,
   type UserFeedbackResponse,
 } from '../types/userFeedback'
+import {
+  normalizeClipReferenceImagesPage,
+  normalizeImageSearchStatus,
+  normalizeImageSearchTestResult,
+  type AdminImageSearchStatus,
+  type ClipReferenceImagesPage,
+  type ImageSearchTestResult,
+} from '../types/adminImageSearch'
 import type {
   AdminEmployeeDetail,
   AdminEmployeesResponse,
@@ -156,6 +164,7 @@ export const adminApi = createApi({
     'MissedProductSearches',
     'SupportCallbacks',
     'UserFeedback',
+    'ImageSearch',
   ],
   ...defaultCachePolicy,
   endpoints: (builder) => ({
@@ -1854,6 +1863,152 @@ export const adminApi = createApi({
       invalidatesTags: [{ type: 'UserFeedback', id: 'LIST' }, { type: 'Dashboard', id: 'LIVE_COUNTS' }],
     }),
 
+    getAdminImageSearchStatus: builder.query<AdminImageSearchStatus, void>({
+      query: () => '/api/admin/image-search/status',
+      transformResponse: (response: Record<string, unknown>) => normalizeImageSearchStatus(response),
+      providesTags: [{ type: 'ImageSearch', id: 'STATUS' }],
+      keepUnusedDataFor: 20,
+    }),
+
+    reindexImageVectors: builder.mutation<{ enqueued: number; message: string }, void>({
+      query: () => ({
+        url: '/api/admin/products/reindex-image-vectors',
+        method: 'POST',
+      }),
+      invalidatesTags: [{ type: 'ImageSearch', id: 'STATUS' }],
+    }),
+
+    testImageSearch: builder.mutation<ImageSearchTestResult, { file: File }>({
+      queryFn: async ({ file }) => {
+        const token = getAuthToken()
+        const form = new FormData()
+        form.append('File', file)
+
+        try {
+          const response = await fetch(apiUrl('/api/admin/image-search/test'), {
+            method: 'POST',
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            body: form,
+          })
+
+          const data: unknown = await response.json().catch(() => ({}))
+
+          if (!response.ok) {
+            const error = data as { message?: string }
+            return {
+              error: {
+                status: response.status,
+                data: { message: error.message ?? 'Image search test failed.' },
+              },
+            }
+          }
+
+          return {
+            data: normalizeImageSearchTestResult(data as Record<string, unknown>),
+          }
+        } catch (error) {
+          return {
+            error: {
+              status: 'FETCH_ERROR',
+              error: error instanceof Error ? error.message : 'Image search test failed.',
+            },
+          }
+        }
+      },
+    }),
+
+    getClipReferenceImages: builder.query<
+      ClipReferenceImagesPage,
+      { page?: number; pageSize?: number; search?: string }
+    >({
+      query: (params) => ({
+        url: '/api/admin/image-search/reference-images',
+        params: {
+          page: params.page ?? 1,
+          pageSize: params.pageSize ?? 20,
+          search: params.search || undefined,
+        },
+      }),
+      transformResponse: (response: Record<string, unknown>) => normalizeClipReferenceImagesPage(response),
+      providesTags: [{ type: 'ImageSearch', id: 'REFERENCES' }],
+    }),
+
+    uploadClipReferenceImages: builder.mutation<
+      { uploaded: number; productName: string },
+      {
+        productName: string
+        productNameAr?: string
+        productCode?: string
+        files: File[]
+      }
+    >({
+      queryFn: async ({ productName, productNameAr, productCode, files }) => {
+        const token = getAuthToken()
+        const form = new FormData()
+        form.append('ProductName', productName)
+        if (productNameAr) form.append('ProductNameAr', productNameAr)
+        if (productCode) form.append('ProductCode', productCode)
+        for (const file of files) {
+          form.append('Files', file)
+        }
+
+        try {
+          const response = await fetch(apiUrl('/api/admin/image-search/reference-images'), {
+            method: 'POST',
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            body: form,
+          })
+          const data: unknown = await response.json().catch(() => ({}))
+          if (!response.ok) {
+            const error = data as { message?: string }
+            return {
+              error: {
+                status: response.status,
+                data: { message: error.message ?? 'Upload failed.' },
+              },
+            }
+          }
+          const raw = data as Record<string, unknown>
+          return {
+            data: {
+              uploaded: Number(raw.uploaded ?? raw.Uploaded ?? files.length),
+              productName: String(raw.productName ?? raw.ProductName ?? productName),
+            },
+          }
+        } catch (error) {
+          return {
+            error: {
+              status: 'FETCH_ERROR',
+              error: error instanceof Error ? error.message : 'Upload failed.',
+            },
+          }
+        }
+      },
+      invalidatesTags: [
+        { type: 'ImageSearch', id: 'REFERENCES' },
+        { type: 'ImageSearch', id: 'STATUS' },
+      ],
+    }),
+
+    deleteClipReferenceImage: builder.mutation<{ message: string }, number>({
+      query: (id) => ({
+        url: `/api/admin/image-search/reference-images/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: [
+        { type: 'ImageSearch', id: 'REFERENCES' },
+        { type: 'ImageSearch', id: 'STATUS' },
+      ],
+    }),
+
+    reindexClipReferenceImages: builder.mutation<{ enqueued: number; message: string }, void>({
+      query: () => ({
+        url: '/api/admin/image-search/reference-images/reindex',
+        method: 'POST',
+      }),
+      invalidatesTags: [{ type: 'ImageSearch', id: 'STATUS' }],
+    }),
+
     getEmployees: builder.query<
       AdminEmployeesResponse,
       { page?: number; pageSize?: number; search?: string }
@@ -2083,6 +2238,13 @@ export const {
   useUpdateSupportCallbackStatusMutation,
   useGetUserFeedbackQuery,
   useUpdateUserFeedbackStatusMutation,
+  useGetAdminImageSearchStatusQuery,
+  useReindexImageVectorsMutation,
+  useTestImageSearchMutation,
+  useGetClipReferenceImagesQuery,
+  useUploadClipReferenceImagesMutation,
+  useDeleteClipReferenceImageMutation,
+  useReindexClipReferenceImagesMutation,
   useGetEmployeesQuery,
   useGetEmployeeDetailQuery,
   useCreateEmployeeMutation,

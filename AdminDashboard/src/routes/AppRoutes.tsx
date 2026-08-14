@@ -22,6 +22,7 @@ import SettingsPage from '../pages/SettingsPage'
 import NotificationsPage from '../pages/NotificationsPage'
 import GlobalSearchPage from '../pages/GlobalSearchPage'
 import AuditLogsPage from '../pages/AuditLogsPage'
+import ImageSearchPage from '../pages/ImageSearchPage'
 import MonitoringPage from '../pages/MonitoringPage'
 import MissedProductSearchesPage from '../pages/MissedProductSearchesPage'
 import TechSupportCallbacksPage from '../pages/TechSupportCallbacksPage'
@@ -279,6 +280,14 @@ export default function AppRoutes() {
           element={
             <PermissionRoute permission={PERMISSIONS.auditView}>
               <AuditLogsPage />
+            </PermissionRoute>
+          }
+        />
+        <Route
+          path="/image-search"
+          element={
+            <PermissionRoute permission={PERMISSIONS.productsView}>
+              <ImageSearchPage />
             </PermissionRoute>
           }
         />

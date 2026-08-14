@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using BusinessLayer.Constants;
 using BusinessLayer.Interfaces;
 using BusinessLayer.Options;
 using Microsoft.Extensions.Logging;
@@ -142,7 +143,9 @@ public sealed class QdrantProductImageVectorIndex(
                         productImageId = point.ProductImageId,
                         productCode = point.ProductCode ?? string.Empty,
                         productName = point.ProductName ?? string.Empty,
-                        imagePath = point.ImagePath ?? string.Empty
+                        imagePath = point.ImagePath ?? string.Empty,
+                        isReference = point.IsReference,
+                        referenceImageId = point.ReferenceImageId,
                     }
                 }
             }
@@ -291,11 +294,7 @@ public sealed class QdrantProductImageVectorIndex(
             {
                 var score = item.TryGetProperty("score", out var scoreEl) ? scoreEl.GetSingle() : 0f;
                 var payload = item.TryGetProperty("payload", out var p) ? p : default;
-                var productIdRaw = ReadPayloadString(payload, "productId");
-                if (!Guid.TryParse(productIdRaw, out var productId))
-                {
-                    continue;
-                }
+                var isReference = ReadPayloadBool(payload, "isReference");
 
                 long imageId = 0;
                 if (payload.ValueKind == JsonValueKind.Object
@@ -311,6 +310,30 @@ public sealed class QdrantProductImageVectorIndex(
                     }
                 }
 
+                long referenceImageId = 0;
+                if (isReference)
+                {
+                    referenceImageId = ReadPayloadLong(payload, "referenceImageId");
+                    if (referenceImageId <= 0 && ClipVectorIds.IsReferencePointId(imageId))
+                    {
+                        referenceImageId = ClipVectorIds.ToReferenceImageId(imageId);
+                    }
+                }
+
+                Guid productId;
+                if (isReference)
+                {
+                    productId = ClipVectorIds.ReferenceProductId;
+                }
+                else
+                {
+                    var productIdRaw = ReadPayloadString(payload, "productId");
+                    if (!Guid.TryParse(productIdRaw, out productId))
+                    {
+                        continue;
+                    }
+                }
+
                 list.Add(new ProductImageVectorHit
                 {
                     ProductId = productId,
@@ -318,7 +341,9 @@ public sealed class QdrantProductImageVectorIndex(
                     ProductCode = ReadPayloadString(payload, "productCode"),
                     ProductName = ReadPayloadString(payload, "productName"),
                     ImagePath = ReadPayloadString(payload, "imagePath"),
-                    Score = score
+                    Score = score,
+                    IsReference = isReference,
+                    ReferenceImageId = referenceImageId,
                 });
             }
         }
@@ -341,8 +366,42 @@ public sealed class QdrantProductImageVectorIndex(
         {
             JsonValueKind.String => el.GetString()?.Trim() ?? string.Empty,
             JsonValueKind.Number => el.ToString(),
+            JsonValueKind.True => "true",
+            JsonValueKind.False => "false",
             _ => string.Empty
         };
+    }
+
+    private static bool ReadPayloadBool(JsonElement payload, string key)
+    {
+        if (payload.ValueKind != JsonValueKind.Object || !payload.TryGetProperty(key, out var el))
+        {
+            return false;
+        }
+
+        return el.ValueKind switch
+        {
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.String => bool.TryParse(el.GetString(), out var b) && b,
+            JsonValueKind.Number => el.TryGetInt32(out var n) && n != 0,
+            _ => false
+        };
+    }
+
+    private static long ReadPayloadLong(JsonElement payload, string key)
+    {
+        if (payload.ValueKind != JsonValueKind.Object || !payload.TryGetProperty(key, out var el))
+        {
+            return 0;
+        }
+
+        if (el.ValueKind == JsonValueKind.Number && el.TryGetInt64(out var n))
+        {
+            return n;
+        }
+
+        return long.TryParse(el.GetString(), out var parsed) ? parsed : 0;
     }
 
     private void ApplyAuth()

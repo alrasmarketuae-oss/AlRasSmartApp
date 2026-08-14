@@ -114,6 +114,11 @@ builder.Services.AddHostedService<AdminPushNotificationWorker>();
 builder.Services.AddHostedService<BusinessLayer.Services.DraftMediaCleanupWorker>();
 builder.Services.AddScoped<IProductImageVectorIndexingProcessor, ProductImageVectorIndexingProcessor>();
 builder.Services.AddScoped<IAdminProductsAppService, AdminProductsAppService>();
+builder.Services.AddHttpClient<IAdminImageSearchAppService, AdminImageSearchAppService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(8);
+});
+builder.Services.AddScoped<IClipReferenceImageAppService, ClipReferenceImageAppService>();
 builder.Services.AddScoped<IProductAutoModerationService, ProductAutoModerationService>();
 builder.Services.AddScoped<IOrderOfferAutoModerationService, OrderOfferAutoModerationService>();
 builder.Services.AddScoped<IAdminSettingsAppService, AdminSettingsAppService>();
@@ -515,6 +520,7 @@ await using (var scope = app.Services.CreateAsyncScope())
     await MissedProductSearchSchemaMigrator.EnsureAsync(db);
     await SupportCallbackRequestSchemaMigrator.EnsureAsync(db);
     await UserFeedbackSubmissionSchemaMigrator.EnsureAsync(db);
+    await ClipReferenceImageSchemaMigrator.EnsureAsync(db);
     await ContentTranslationSchemaMigrator.EnsureAsync(db);
     await UserContentTranslationSchemaMigrator.EnsureAsync(db);
     await ProductUnicodeColumnsMigrator.EnsureAsync(db);

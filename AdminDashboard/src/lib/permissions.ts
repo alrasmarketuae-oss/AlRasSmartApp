@@ -60,6 +60,7 @@ export function getDefaultRoute(): string {
     { permission: PERMISSIONS.ordersView, path: '/orders/all' },
     { permission: PERMISSIONS.ordersReqsOffers, path: '/reqs-offers' },
     { permission: PERMISSIONS.productsView, path: '/ads' },
+    { permission: PERMISSIONS.productsView, path: '/image-search' },
     { permission: PERMISSIONS.productsAdEdits, path: '/ads?adEdits=1' },
     { permission: PERMISSIONS.usersView, path: '/users' },
     { permission: PERMISSIONS.usersProfileEdits, path: '/users?profileEdits=1' },

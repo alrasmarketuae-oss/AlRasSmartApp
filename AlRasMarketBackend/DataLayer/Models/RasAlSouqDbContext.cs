@@ -55,6 +55,7 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
     public DbSet<MissedProductSearch> MissedProductSearches => Set<MissedProductSearch>();
     public DbSet<SupportCallbackRequest> SupportCallbackRequests => Set<SupportCallbackRequest>();
     public DbSet<UserFeedbackSubmission> UserFeedbackSubmissions => Set<UserFeedbackSubmission>();
+    public DbSet<ClipReferenceImage> ClipReferenceImages => Set<ClipReferenceImage>();
     public DbSet<ContentTranslation> ContentTranslations => Set<ContentTranslation>();
     public DbSet<AiKnowledgeIndexState> AiKnowledgeIndexStates => Set<AiKnowledgeIndexState>();
     public DbSet<AiConversation> AiConversations => Set<AiConversation>();
@@ -204,6 +205,19 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.HasIndex(x => new { x.Status, x.CreatedAtUtc });
             entity.HasIndex(x => new { x.Type, x.CreatedAtUtc });
             entity.HasIndex(x => new { x.UserId, x.CreatedAtUtc });
+        });
+
+        modelBuilder.Entity<ClipReferenceImage>(entity =>
+        {
+            entity.ToTable("ClipReferenceImages");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.ProductName).HasMaxLength(300).IsRequired();
+            entity.Property(x => x.ProductNameAr).HasMaxLength(300);
+            entity.Property(x => x.ProductCode).HasMaxLength(80);
+            entity.Property(x => x.ImagePath).HasMaxLength(500).IsRequired();
+            entity.Property(x => x.CreatedAtUtc).HasColumnType("datetime2");
+            entity.HasIndex(x => x.CreatedAtUtc);
+            entity.HasIndex(x => x.ProductName);
         });
 
         modelBuilder.Entity<ContentTranslation>(entity =>

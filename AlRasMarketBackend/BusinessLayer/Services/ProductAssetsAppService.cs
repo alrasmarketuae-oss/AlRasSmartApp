@@ -1394,6 +1394,11 @@ public class ProductAssetsAppService(
     /// <summary>Fire-and-forget enqueue - never await CLIP/Qdrant on the request thread.</summary>
     private void QueueImageIndexing(long productImageId)
     {
+        if (!ImageEmbeddingIndexingGate.ShouldAutoIndexOnCatalogChange(_embeddingOptions))
+        {
+            return;
+        }
+
         _ = productImageIndexingQueue.EnqueueAsync(productImageId, CancellationToken.None);
     }
 }

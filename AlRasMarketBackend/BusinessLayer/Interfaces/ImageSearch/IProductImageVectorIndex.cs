@@ -8,6 +8,8 @@ public sealed class ProductImageVectorPoint
     public string ProductName { get; init; } = string.Empty;
     public string ImagePath { get; init; } = string.Empty;
     public required float[] Vector { get; init; }
+    public bool IsReference { get; init; }
+    public long ReferenceImageId { get; init; }
 }
 
 public sealed class ProductImageVectorHit
@@ -18,6 +20,10 @@ public sealed class ProductImageVectorHit
     public string ProductName { get; init; } = string.Empty;
     public string ImagePath { get; init; } = string.Empty;
     public float Score { get; init; }
+
+    public bool IsReference { get; init; }
+
+    public long ReferenceImageId { get; init; }
 }
 
 public interface IProductImageVectorIndex

@@ -47,6 +47,12 @@ public sealed class ImageEmbeddingOptions
 
     public bool Enabled { get; set; } = true;
 
+    /// <summary>
+    /// When false, new/edited ads do not enqueue CLIP indexing automatically.
+    /// Admin manual reindex from the dashboard still runs.
+    /// </summary>
+    public bool AutoIndexOnCatalogChanges { get; set; } = true;
+
     /// <summary>Parallel background workers for CLIP + Qdrant upsert.</summary>
     public int MaxConcurrentIndexingJobs { get; set; } = 2;
 

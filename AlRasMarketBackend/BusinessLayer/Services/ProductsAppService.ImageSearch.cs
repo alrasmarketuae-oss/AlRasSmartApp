@@ -1,3 +1,4 @@
+using BusinessLayer.Constants;
 using BusinessLayer.Dtos;
 using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
@@ -210,16 +211,22 @@ public partial class ProductsAppService
                 return EmptyImageSearchResult();
             }
 
-            var orderedIds = hits
+            var referenceHits = hits.Where(h => h.IsReference).ToList();
+            var catalogHits = hits.Where(h => !h.IsReference).ToList();
+
+            var orderedIds = catalogHits
                 .GroupBy(h => h.ProductId)
                 .Select(g => new { ProductId = g.Key, Score = g.Max(x => x.Score) })
                 .OrderByDescending(x => x.Score)
                 .Select(x => x.ProductId)
+                .Where(id => id != ClipVectorIds.ReferenceProductId)
                 .ToList();
 
-            var rows = await productData
-                .GetProductsByIdsAsync(orderedIds, cancellationToken)
-                .ConfigureAwait(false);
+            var rows = orderedIds.Count > 0
+                ? await productData
+                    .GetProductsByIdsAsync(orderedIds, cancellationToken)
+                    .ConfigureAwait(false)
+                : [];
 
             var byId = rows.ToDictionary(x => x.ProductId);
             var ranked = orderedIds
@@ -227,16 +234,39 @@ public partial class ProductsAppService
                 .Select(id => byId[id])
                 .ToList();
 
-            var items = await BuildPublicProductListItemsAsync(
-                    ranked,
-                    cancellationToken,
-                    expandHybridSearchChannels: true)
-                .ConfigureAwait(false);
+            var items = ranked.Count > 0
+                ? await BuildPublicProductListItemsAsync(
+                        ranked,
+                        cancellationToken,
+                        expandHybridSearchChannels: true)
+                    .ConfigureAwait(false)
+                : [];
 
             var topName = hits
                 .Select(h => h.ProductName)
                 .FirstOrDefault(n => !string.IsNullOrWhiteSpace(n))
                 ?? string.Empty;
+
+            var referenceMatches = referenceHits
+                .GroupBy(h => h.ReferenceImageId)
+                .Select(g =>
+                {
+                    var best = g.OrderByDescending(x => x.Score).First();
+                    return new
+                    {
+                        referenceImageId = best.ReferenceImageId,
+                        productName = best.ProductName,
+                        imagePath = best.ImagePath,
+                        score = best.Score,
+                        isReference = true,
+                    };
+                })
+                .OrderByDescending(x => x.score)
+                .ToList();
+
+            var suggestedFromReferences = referenceMatches
+                .Select(x => x.productName)
+                .Where(n => !string.IsNullOrWhiteSpace(n));
 
             return new
             {
@@ -244,13 +274,16 @@ public partial class ProductsAppService
                 detectedBrand = string.Empty,
                 suggestedNames = hits
                     .Select(h => h.ProductName)
+                    .Concat(suggestedFromReferences)
                     .Where(n => !string.IsNullOrWhiteSpace(n))
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .Take(8)
                     .ToList(),
                 count = items.Count,
                 items,
-                scores = hits
+                referenceMatches,
+                referenceCount = referenceMatches.Count,
+                scores = catalogHits
                     .GroupBy(h => h.ProductId)
                     .Select(g => new
                     {
@@ -258,6 +291,14 @@ public partial class ProductsAppService
                         score = g.Max(x => x.Score)
                     })
                     .OrderByDescending(x => x.score)
+                    .ToList(),
+                referenceScores = referenceMatches
+                    .Select(x => new
+                    {
+                        referenceImageId = x.referenceImageId,
+                        productName = x.productName,
+                        score = x.score,
+                    })
                     .ToList(),
                 searchMode = "clip-qdrant",
                 products = new
@@ -288,6 +329,9 @@ public partial class ProductsAppService
         suggestedNames = Array.Empty<string>(),
         count = 0,
         items = Array.Empty<object>(),
+        referenceMatches = Array.Empty<object>(),
+        referenceCount = 0,
+        referenceScores = Array.Empty<object>(),
         searchMode = "clip-qdrant",
         products = EmptySuggestedNamesSearch([])
     };

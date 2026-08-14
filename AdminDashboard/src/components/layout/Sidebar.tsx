@@ -85,6 +85,7 @@ const navItems: NavItem[] = [
   },
   { to: '/notifications', labelKey: 'nav.notifications', icon: IconBell, permission: PERMISSIONS.notificationsView },
   { to: '/missed-searches', labelKey: 'nav.missedSearches', icon: IconAds, permission: PERMISSIONS.searchAccess },
+  { to: '/image-search', labelKey: 'nav.imageSearch', icon: IconActivity, permission: PERMISSIONS.productsView },
   { to: '/audit-logs', labelKey: 'nav.auditLogs', icon: IconOrders, permission: PERMISSIONS.auditView },
   { to: '/monitoring', labelKey: 'nav.monitoring', icon: IconActivity, permission: PERMISSIONS.monitoringView },
   { to: '/employees', labelKey: 'nav.employees', icon: IconUsers, superAdminOnly: true },
