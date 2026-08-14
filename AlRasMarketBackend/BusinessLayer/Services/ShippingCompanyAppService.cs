@@ -235,12 +235,19 @@ public class ShippingCompanyAppService(
             throw new ArgumentException("Container prices must be greater than zero.");
         }
 
-        if (input.MinDurationDays is <= 0 || input.MaxDurationDays is <= 0)
+        if (input.MinDurationDays is <= 0)
         {
-            throw new ArgumentException("Shipping duration days must be greater than zero.");
+            throw new ArgumentException("Minimum shipping duration days must be greater than zero when provided.");
         }
 
-        if (input.MinDurationDays > input.MaxDurationDays)
+        if (input.MaxDurationDays is <= 0)
+        {
+            throw new ArgumentException("Maximum shipping duration days must be greater than zero when provided.");
+        }
+
+        if (input.MinDurationDays.HasValue
+            && input.MaxDurationDays.HasValue
+            && input.MinDurationDays > input.MaxDurationDays)
         {
             throw new ArgumentException("Minimum duration cannot exceed maximum duration.");
         }
