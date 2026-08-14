@@ -404,15 +404,18 @@ class _MyOrdersViewState extends State<MyOrdersView> {
                       )
                     else
                       SliverPadding(
-                        padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 12.h),
+                        // Match Account → My Ads grid (padding, spacing, card height).
+                        padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 12.h),
                         sliver: SliverGrid(
                           gridDelegate:
                               SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount:
                                 ProductGridLayout.isTablet(context) ? 3 : 2,
-                            crossAxisSpacing: 10.w,
-                            mainAxisSpacing: 10.h,
-                            childAspectRatio: 0.72,
+                            crossAxisSpacing: 12.w,
+                            mainAxisSpacing: 12.h,
+                            mainAxisExtent: ProductGridLayout.isTablet(context)
+                                ? 380.h
+                                : 330.h,
                           ),
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
