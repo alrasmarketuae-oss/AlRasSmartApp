@@ -16,6 +16,7 @@ class ChangePricesBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = S.of(context);
     final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
     final isCompanyCustomer = AuthService.instance.isCompanyCustomerAccount;
     final title =
         isCompanyCustomer ? s.changeTargetPrices : s.changePrices;
@@ -98,12 +99,15 @@ class ChangePricesBanner extends StatelessWidget {
                     ],
                   ),
                 ),
-                Icon(
-                  Directionality.of(context) == TextDirection.rtl
-                      ? Icons.chevron_left_rounded
-                      : Icons.chevron_right_rounded,
-                  color: LightColor.defaultColor,
-                  size: 22.sp,
+                Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: Icon(
+                    isRtl
+                        ? Icons.chevron_left_rounded
+                        : Icons.chevron_right_rounded,
+                    color: LightColor.defaultColor,
+                    size: 22.sp,
+                  ),
                 ),
               ],
             ),

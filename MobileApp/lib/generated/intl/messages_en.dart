@@ -1584,7 +1584,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "shippingOffersSection": MessageLookupByLibrary.simpleMessage(
       "Shipping offers",
     ),
-    "shippingPrice": MessageLookupByLibrary.simpleMessage("Shipping \n Price"),
+    "shippingPrice": MessageLookupByLibrary.simpleMessage("Shipping"),
     "shippingProfileReviewNote": MessageLookupByLibrary.simpleMessage(
       "Please ensure the entered data is correct. Any changes to shipping company data will be reviewed before approval.",
     ),

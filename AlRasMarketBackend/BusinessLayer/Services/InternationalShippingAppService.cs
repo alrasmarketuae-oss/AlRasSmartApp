@@ -116,13 +116,16 @@ public class InternationalShippingAppService(
             entity.PhoneNumber,
             entity.Container20ftPriceUsd,
             entity.Container40ftPriceUsd,
+            minDurationDays = entity.MinDurationDays,
+            maxDurationDays = entity.MaxDurationDays,
+            details = entity.Details ?? string.Empty,
             entity.PublisherUserId
         };
     }
 
     public async Task<object> SearchAsync(SearchInternationalShippingInput input, CancellationToken cancellationToken = default)
     {
-        var cacheKey = $"shipping:search:{(input.FromCountryName ?? "").Trim().ToLowerInvariant()}|{(input.FromPortName ?? "").Trim().ToLowerInvariant()}|{(input.ToCountryName ?? "").Trim().ToLowerInvariant()}|{(input.ToPortName ?? "").Trim().ToLowerInvariant()}";
+        var cacheKey = $"shipping:search:v2:{(input.FromCountryName ?? "").Trim().ToLowerInvariant()}|{(input.FromPortName ?? "").Trim().ToLowerInvariant()}|{(input.ToCountryName ?? "").Trim().ToLowerInvariant()}|{(input.ToPortName ?? "").Trim().ToLowerInvariant()}";
         if (cache.TryGetValue(cacheKey, out object? cached) && cached is not null)
         {
             return cached;

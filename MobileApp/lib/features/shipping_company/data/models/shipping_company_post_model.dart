@@ -44,22 +44,30 @@ class ShippingCompanyPostModel {
 
   factory ShippingCompanyPostModel.fromJson(Map<String, dynamic> json) {
     return ShippingCompanyPostModel(
-      id: json['id'] as int? ?? 0,
-      fromCountry: json['fromCountry']?.toString() ?? '',
-      fromPort: json['fromPort']?.toString() ?? '',
-      toCountry: json['toCountry']?.toString() ?? '',
-      toPort: json['toPort']?.toString() ?? '',
-      container20ftPriceUsd: _toPositiveDouble(json['container20ftPriceUsd']),
-      container40ftPriceUsd: _toPositiveDouble(json['container40ftPriceUsd']),
-      phoneNumber: json['phoneNumber']?.toString() ?? '',
-      status: json['status']?.toString() ?? '',
+      id: _toInt(json['id'] ?? json['Id']) ?? 0,
+      fromCountry: _readString(json, const ['fromCountry', 'FromCountry']),
+      fromPort: _readString(json, const ['fromPort', 'FromPort']),
+      toCountry: _readString(json, const ['toCountry', 'ToCountry']),
+      toPort: _readString(json, const ['toPort', 'ToPort']),
+      container20ftPriceUsd: _toPositiveDouble(
+        json['container20ftPriceUsd'] ?? json['Container20ftPriceUsd'],
+      ),
+      container40ftPriceUsd: _toPositiveDouble(
+        json['container40ftPriceUsd'] ?? json['Container40ftPriceUsd'],
+      ),
+      phoneNumber: _readString(json, const ['phoneNumber', 'PhoneNumber']),
+      status: _readString(json, const ['status', 'Status']),
       isApproved: json['isApproved'] == true || json['IsApproved'] == true,
-      minDurationDays: json['minDurationDays'] as int?,
-      maxDurationDays: json['maxDurationDays'] as int?,
-      details: json['details']?.toString() ?? '',
-      publisherName: json['publisherName']?.toString() ?? '',
-      publisherImgPath: _resolveImagePath(json['publisherImgPath']),
-      createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? ''),
+      minDurationDays: _toInt(json['minDurationDays'] ?? json['MinDurationDays']),
+      maxDurationDays: _toInt(json['maxDurationDays'] ?? json['MaxDurationDays']),
+      details: _readString(json, const ['details', 'Details']),
+      publisherName: _readString(json, const ['publisherName', 'PublisherName']),
+      publisherImgPath: _resolveImagePath(
+        json['publisherImgPath'] ?? json['PublisherImgPath'],
+      ),
+      createdAt: DateTime.tryParse(
+        (json['createdAt'] ?? json['CreatedAt'])?.toString() ?? '',
+      ),
     );
   }
 
@@ -75,6 +83,23 @@ class ShippingCompanyPostModel {
         'maxDurationDays': maxDurationDays,
         'details': details.isEmpty ? null : details,
       };
+
+  static String _readString(Map<String, dynamic> json, List<String> keys) {
+    for (final key in keys) {
+      final value = json[key];
+      if (value == null) continue;
+      final text = value.toString().trim();
+      if (text.isNotEmpty) return text;
+    }
+    return '';
+  }
+
+  static int? _toInt(Object? value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString());
+  }
 
   static String? _resolveImagePath(Object? path) {
     if (path == null) return null;

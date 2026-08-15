@@ -85,8 +85,8 @@ class ShippingCard extends StatelessWidget {
               context,
               s,
               isTablet,
-              showPhone: false,
-              detailsMaxLines: 3,
+              showPhone: true,
+              detailsMaxLines: 8,
             ),
           ),
         ),
@@ -207,6 +207,15 @@ class ShippingCard extends StatelessWidget {
         ],
         if (details.isNotEmpty) ...[
           SizedBox(height: 10.h),
+          Text(
+            s.details,
+            style: TextStyle(
+              color: AppColors.title(context),
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          SizedBox(height: 4.h),
           Text(
             details,
             maxLines: detailsMaxLines,

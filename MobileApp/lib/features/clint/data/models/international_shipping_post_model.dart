@@ -71,30 +71,59 @@ class InternationalShippingPostModel {
 
   factory InternationalShippingPostModel.fromJson(Map<String, dynamic> json) {
     return InternationalShippingPostModel(
-      id: json['id'] as int? ?? 0,
-      fromCountry: json['fromCountry']?.toString() ?? '',
-      fromPort: json['fromPort']?.toString() ?? '',
-      toCountry: json['toCountry']?.toString() ?? '',
-      toPort: json['toPort']?.toString() ?? '',
-      priceUsd: _toDouble(json['priceUsd']) ?? 0,
-      shippingCostUsd: _toDouble(json['shippingCostUsd']) ?? 0,
-      phoneNumber: json['phoneNumber']?.toString() ?? '',
-      container20ftPriceUsd: _toPositiveDouble(json['container20ftPriceUsd']),
-      container40ftPriceUsd: _toPositiveDouble(json['container40ftPriceUsd']),
-      publisherUserId: json['publisherUserId']?.toString() ?? '',
-      publisherName: json['publisherName']?.toString() ?? '',
-      minDurationDays: _toInt(json['minDurationDays']),
-      maxDurationDays: _toInt(json['maxDurationDays']),
-      details: json['details']?.toString() ?? '',
+      id: _toInt(json['id'] ?? json['Id']) ?? 0,
+      fromCountry: _readString(
+        json,
+        const ['fromCountry', 'FromCountry', 'fromCountryNameEn', 'FromCountryNameEn'],
+      ),
+      fromPort: _readString(
+        json,
+        const ['fromPort', 'FromPort', 'fromPortNameEn', 'FromPortNameEn'],
+      ),
+      toCountry: _readString(
+        json,
+        const ['toCountry', 'ToCountry', 'toCountryNameEn', 'ToCountryNameEn'],
+      ),
+      toPort: _readString(
+        json,
+        const ['toPort', 'ToPort', 'toPortNameEn', 'ToPortNameEn'],
+      ),
+      priceUsd: _toDouble(json['priceUsd'] ?? json['PriceUsd']) ?? 0,
+      shippingCostUsd: _toDouble(json['shippingCostUsd'] ?? json['ShippingCostUsd']) ?? 0,
+      phoneNumber: _readString(json, const ['phoneNumber', 'PhoneNumber']),
+      container20ftPriceUsd: _toPositiveDouble(
+        json['container20ftPriceUsd'] ?? json['Container20ftPriceUsd'],
+      ),
+      container40ftPriceUsd: _toPositiveDouble(
+        json['container40ftPriceUsd'] ?? json['Container40ftPriceUsd'],
+      ),
+      publisherUserId: _readString(json, const ['publisherUserId', 'PublisherUserId']),
+      publisherName: _readString(json, const ['publisherName', 'PublisherName']),
+      minDurationDays: _toInt(json['minDurationDays'] ?? json['MinDurationDays']),
+      maxDurationDays: _toInt(json['maxDurationDays'] ?? json['MaxDurationDays']),
+      details: _readString(json, const ['details', 'Details']),
       publisherImgPath: _resolveImagePath(
         json['publisherImgPath'] ??
+            json['PublisherImgPath'] ??
             json['imgPath'] ??
             json['ImgPath'] ??
             json['companyImagePath'] ??
             json['publisherImagePath'],
       ),
-      createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? ''),
+      createdAt: DateTime.tryParse(
+        (json['createdAt'] ?? json['CreatedAt'])?.toString() ?? '',
+      ),
     );
+  }
+
+  static String _readString(Map<String, dynamic> json, List<String> keys) {
+    for (final key in keys) {
+      final value = json[key];
+      if (value == null) continue;
+      final text = value.toString().trim();
+      if (text.isNotEmpty) return text;
+    }
+    return '';
   }
 
   static String? _resolveImagePath(Object? path) {

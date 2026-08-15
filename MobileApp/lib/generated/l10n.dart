@@ -1039,10 +1039,10 @@ class S {
     return Intl.message('Profile', name: 'profile', desc: '', args: []);
   }
 
-  /// `Shipping \n Price`
+  /// `Shipping`
   String get shippingPrice {
     return Intl.message(
-      'Shipping \n Price',
+      'Shipping',
       name: 'shippingPrice',
       desc: '',
       args: [],

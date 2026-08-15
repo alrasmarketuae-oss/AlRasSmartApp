@@ -379,12 +379,16 @@ export default function ImageSearchPage() {
   }
 
   async function handleReferenceUpload() {
-    if (!canManage || stagedTrainingImages.length === 0 || !productName.trim()) return
+    if (!canManage || stagedTrainingImages.length === 0) return
+    const nameEn = productName.trim()
+    const nameAr = productNameAr.trim()
+    const productLabel = nameEn || nameAr
+    if (!productLabel) return
 
     try {
       await uploadReferences({
-        productName: productName.trim(),
-        productNameAr: productNameAr.trim() || undefined,
+        productName: productLabel,
+        productNameAr: nameAr || undefined,
         productCode: productCode.trim() || undefined,
         files: stagedTrainingImages.map((item) => item.file),
       }).unwrap()
@@ -411,6 +415,12 @@ export default function ImageSearchPage() {
   const qdrantUp = Boolean(data?.qdrantReachable)
   const systemUp = Boolean(data?.enabled) && clipUp && qdrantUp
   const autoIndexOff = data ? !data.autoIndexOnCatalogChanges : false
+  const hasTrainingName = Boolean(productName.trim() || productNameAr.trim())
+  const canTrain =
+    canManage &&
+    !uploadReferencesState.isLoading &&
+    stagedTrainingImages.length > 0 &&
+    hasTrainingName
 
   return (
     <div className="space-y-6">
@@ -524,6 +534,87 @@ export default function ImageSearchPage() {
             </p>
           </div>
 
+          <input
+            ref={referenceInputRef}
+            type="file"
+            multiple
+            accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={(e) => {
+              stageReferenceFiles(e.target.files)
+              e.target.value = ''
+            }}
+          />
+
+          <div
+            className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/80 p-4 dark:border-slate-600 dark:bg-slate-900/30"
+            onDragOver={(e) => {
+              e.preventDefault()
+              e.dataTransfer.dropEffect = 'copy'
+            }}
+            onDrop={(e) => {
+              e.preventDefault()
+              if (!uploadReferencesState.isLoading) {
+                stageReferenceFiles(e.dataTransfer.files)
+              }
+            }}
+          >
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white dark:bg-slate-100 dark:text-slate-900"
+                disabled={uploadReferencesState.isLoading}
+                onClick={() => referenceInputRef.current?.click()}
+              >
+                {t('imageSearch.selectTrainingImages')}
+              </button>
+              {stagedTrainingImages.length > 0 ? (
+                <button
+                  type="button"
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700"
+                  disabled={uploadReferencesState.isLoading}
+                  onClick={clearStagedTrainingImages}
+                >
+                  {t('imageSearch.clearStaged')}
+                </button>
+              ) : null}
+            </div>
+
+            {stagedTrainingImages.length > 0 ? (
+              <div className="mt-4 space-y-2">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {t('imageSearch.stagedImagesHint', { count: stagedTrainingImages.length })}
+                </p>
+                <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8">
+                  {stagedTrainingImages.map((item) => (
+                    <div
+                      key={item.id}
+                      className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700"
+                    >
+                      <img
+                        src={item.previewUrl}
+                        alt={item.file.name}
+                        className="aspect-square w-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        className="absolute end-1 top-1 rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-semibold text-white"
+                        disabled={uploadReferencesState.isLoading}
+                        onClick={() => removeStagedTrainingImage(item.id)}
+                      >
+                        {t('imageSearch.removeStaged')}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                {t('imageSearch.noStagedImages')}
+              </p>
+            )}
+          </div>
+
           <div className="grid gap-3 md:grid-cols-3">
             <input
               className="admin-input rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700"
@@ -546,49 +637,16 @@ export default function ImageSearchPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <input
-              ref={referenceInputRef}
-              type="file"
-              multiple
-              accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-              className="hidden"
-              onChange={(e) => {
-                stageReferenceFiles(e.target.files)
-                e.target.value = ''
-              }}
-            />
-            <button
-              type="button"
-              className="rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700"
-              disabled={uploadReferencesState.isLoading}
-              onClick={() => referenceInputRef.current?.click()}
-            >
-              {t('imageSearch.selectTrainingImages')}
-            </button>
             <button
               type="button"
               className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-              disabled={
-                uploadReferencesState.isLoading ||
-                !productName.trim() ||
-                stagedTrainingImages.length === 0
-              }
+              disabled={!canTrain}
               onClick={() => void handleReferenceUpload()}
             >
               {uploadReferencesState.isLoading
                 ? t('imageSearch.uploadingReferences')
                 : t('imageSearch.trainNow')}
             </button>
-            {stagedTrainingImages.length > 0 ? (
-              <button
-                type="button"
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700"
-                disabled={uploadReferencesState.isLoading}
-                onClick={clearStagedTrainingImages}
-              >
-                {t('imageSearch.clearStaged')}
-              </button>
-            ) : null}
             <button
               type="button"
               className="rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700"
@@ -599,36 +657,17 @@ export default function ImageSearchPage() {
                 ? t('imageSearch.reindexing')
                 : t('imageSearch.reindexReferences')}
             </button>
-          </div>
-
-          {stagedTrainingImages.length > 0 ? (
-            <div className="space-y-2">
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {t('imageSearch.stagedImagesHint', { count: stagedTrainingImages.length })}
+            {stagedTrainingImages.length > 0 && !hasTrainingName ? (
+              <p className="text-xs text-amber-700 dark:text-amber-300">
+                {t('imageSearch.trainNeedsName')}
               </p>
-              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8">
-                {stagedTrainingImages.map((item) => (
-                  <div key={item.id} className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
-                    <img
-                      src={item.previewUrl}
-                      alt={item.file.name}
-                      className="aspect-square w-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      className="absolute end-1 top-1 rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-semibold text-white"
-                      disabled={uploadReferencesState.isLoading}
-                      onClick={() => removeStagedTrainingImage(item.id)}
-                    >
-                      {t('imageSearch.removeStaged')}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <p className="text-xs text-slate-500 dark:text-slate-400">{t('imageSearch.noStagedImages')}</p>
-          )}
+            ) : null}
+            {hasTrainingName && stagedTrainingImages.length === 0 ? (
+              <p className="text-xs text-amber-700 dark:text-amber-300">
+                {t('imageSearch.trainNeedsImages')}
+              </p>
+            ) : null}
+          </div>
 
           {uploadReferencesState.error ? (
             <p className="text-sm text-red-600">

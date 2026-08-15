@@ -2098,8 +2098,12 @@ class ClintCubit extends Cubit<ClintStates> {
       }
 
       final posts = data
-          .whereType<Map<String, dynamic>>()
-          .map(InternationalShippingPostModel.fromJson)
+          .whereType<Map>()
+          .map(
+            (item) => InternationalShippingPostModel.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
+          )
           .toList();
 
       shippingPosts = posts;

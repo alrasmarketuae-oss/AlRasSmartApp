@@ -81,14 +81,12 @@ class _ShippingPostDetailsViewState extends State<ShippingPostDetailsView> {
                         value: '${post.toCountry}\n${post.toPort}',
                         valueBold: true,
                       ),
-                      if (post.minDurationDays != null ||
-                          post.maxDurationDays != null)
-                        BookingDetailsFactTile(
-                          icon: Icons.schedule_outlined,
-                          label: s.shippingDurationDays,
-                          fontFamily: fontFamily,
-                          value: s.shippingTimeRange(daysMin, daysMax),
-                        ),
+                      BookingDetailsFactTile(
+                        icon: Icons.schedule_outlined,
+                        label: s.shippingDurationDays,
+                        fontFamily: fontFamily,
+                        value: s.shippingTimeRange(daysMin, daysMax),
+                      ),
                     ],
                   ),
                 ),
@@ -107,39 +105,32 @@ class _ShippingPostDetailsViewState extends State<ShippingPostDetailsView> {
                     ),
                   ),
                 ),
-                if (price20.isNotEmpty || price40.isNotEmpty) ...[
-                  SizedBox(height: 12.h),
-                  BookingDetailsSectionCard(
-                    title: [
-                      if (price20.isNotEmpty) s.price20ftLabel,
-                      if (price40.isNotEmpty) s.price40ftLabel,
-                    ].join(' · '),
-                    icon: Icons.attach_money,
-                    fontFamily: fontFamily,
-                    child: Column(
-                      children: [
-                        if (price20.isNotEmpty)
-                          BookingDetailsFactTile(
-                            icon: Icons.inventory_2_outlined,
-                            label: s.container20f,
-                            fontFamily: fontFamily,
-                            value: price20,
-                            valueBold: true,
-                            valueColor: const Color(0xFF0066CC),
-                          ),
-                        if (price40.isNotEmpty)
-                          BookingDetailsFactTile(
-                            icon: Icons.inventory_2_outlined,
-                            label: s.container40f,
-                            fontFamily: fontFamily,
-                            value: price40,
-                            valueBold: true,
-                            valueColor: const Color(0xFF0066CC),
-                          ),
-                      ],
-                    ),
+                SizedBox(height: 12.h),
+                BookingDetailsSectionCard(
+                  title: s.shippingPrice,
+                  icon: Icons.attach_money,
+                  fontFamily: fontFamily,
+                  child: Column(
+                    children: [
+                      BookingDetailsFactTile(
+                        icon: Icons.inventory_2_outlined,
+                        label: s.container20f,
+                        fontFamily: fontFamily,
+                        value: price20.isEmpty ? '—' : price20,
+                        valueBold: true,
+                        valueColor: const Color(0xFF0066CC),
+                      ),
+                      BookingDetailsFactTile(
+                        icon: Icons.inventory_2_outlined,
+                        label: s.container40f,
+                        fontFamily: fontFamily,
+                        value: price40.isEmpty ? '—' : price40,
+                        valueBold: true,
+                        valueColor: const Color(0xFF0066CC),
+                      ),
+                    ],
                   ),
-                ],
+                ),
                 if (post.phoneNumber.trim().isNotEmpty) ...[
                   SizedBox(height: 12.h),
                   BookingDetailsSectionCard(

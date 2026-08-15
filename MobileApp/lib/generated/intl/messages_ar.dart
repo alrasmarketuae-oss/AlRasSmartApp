@@ -1575,7 +1575,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "معلومات الشحن",
     ),
     "shippingOffersSection": MessageLookupByLibrary.simpleMessage("عروض الشحن"),
-    "shippingPrice": MessageLookupByLibrary.simpleMessage("اسعار \nالشحن "),
+    "shippingPrice": MessageLookupByLibrary.simpleMessage("الشحن"),
     "shippingProfileReviewNote": MessageLookupByLibrary.simpleMessage(
       "يرجى التأكد من صحة البيانات المدخلة. سيتم مراجعة أي تغييرات على بيانات شركة الشحن قبل اعتمادها.",
     ),

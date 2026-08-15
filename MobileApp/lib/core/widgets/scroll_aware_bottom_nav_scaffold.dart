@@ -1,6 +1,7 @@
+import 'dart:async';
+
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 /// Hides [bottomNavigationBar] when scrolling down and shows it when scrolling up.
@@ -27,44 +28,50 @@ class ScrollAwareBottomNavScaffold extends StatefulWidget {
 class _ScrollAwareBottomNavScaffoldState
     extends State<ScrollAwareBottomNavScaffold> {
   bool _isBottomNavVisible = true;
+  bool _ignoreLayoutScroll = false;
+  Timer? _ignoreTimer;
+
+  @override
+  void dispose() {
+    _ignoreTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   void didUpdateWidget(covariant ScrollAwareBottomNavScaffold oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.tabIndex != widget.tabIndex && !_isBottomNavVisible) {
-      setState(() => _isBottomNavVisible = true);
+      _setVisible(true);
     }
+  }
+
+  void _setVisible(bool visible) {
+    if (_isBottomNavVisible == visible) return;
+    setState(() => _isBottomNavVisible = visible);
+    _ignoreLayoutScroll = true;
+    _ignoreTimer?.cancel();
+    _ignoreTimer = Timer(const Duration(milliseconds: 320), () {
+      _ignoreLayoutScroll = false;
+    });
   }
 
   bool _onScrollNotification(ScrollNotification notification) {
     if (notification.metrics.axis != Axis.vertical) return false;
+    if (_ignoreLayoutScroll) return false;
+    if (notification is! ScrollUpdateNotification) return false;
 
-    if (notification.metrics.pixels <= 0 && !_isBottomNavVisible) {
-      setState(() => _isBottomNavVisible = true);
+    final delta = notification.scrollDelta;
+    if (delta == null || delta.abs() < 2) return false;
+
+    if (notification.metrics.pixels <= 8) {
+      _setVisible(true);
       return false;
     }
 
-    if (notification is UserScrollNotification) {
-      if (notification.direction == ScrollDirection.forward &&
-          notification.metrics.pixels > 48 &&
-          _isBottomNavVisible) {
-        setState(() => _isBottomNavVisible = false);
-      } else if (notification.direction == ScrollDirection.reverse &&
-          !_isBottomNavVisible) {
-        setState(() => _isBottomNavVisible = true);
-      }
-      return false;
-    }
-
-    if (notification is ScrollUpdateNotification) {
-      final delta = notification.scrollDelta;
-      if (delta == null || delta == 0) return false;
-
-      if (delta > 0 && notification.metrics.pixels > 48 && _isBottomNavVisible) {
-        setState(() => _isBottomNavVisible = false);
-      } else if (delta < 0 && !_isBottomNavVisible) {
-        setState(() => _isBottomNavVisible = true);
-      }
+    if (delta > 2) {
+      _setVisible(false);
+    } else if (delta < -2) {
+      _setVisible(true);
     }
 
     return false;
@@ -90,6 +97,7 @@ class _ScrollAwareBottomNavScaffoldState
       ),
       child: Scaffold(
         backgroundColor: background,
+        extendBody: true,
         body: SafeArea(
           bottom: false,
           child: NotificationListener<ScrollNotification>(

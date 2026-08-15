@@ -182,26 +182,29 @@ class _HomeViewState extends State<HomeView> {
                               // Guests browse like company home (services + categories),
                               // but protected actions still redirect to login.
                               if (!isPersonalCustomer) ...[
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    for (
-                                      var i = 0;
-                                      i < servicesIcons.length;
-                                      i++
-                                    ) ...[
-                                      if (i > 0) SizedBox(width: 8.w),
-                                      Expanded(
-                                        child: _ServiceIconItem(
-                                          iconPath: servicesIcons[i].iconPath,
-                                          name: servicesIcons[i].name,
-                                          onTap: () => context.push(
-                                            servicesIcons[i].screen,
+                                IntrinsicHeight(
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      for (
+                                        var i = 0;
+                                        i < servicesIcons.length;
+                                        i++
+                                      ) ...[
+                                        if (i > 0) SizedBox(width: 8.w),
+                                        Expanded(
+                                          child: _ServiceIconItem(
+                                            iconPath: servicesIcons[i].iconPath,
+                                            name: servicesIcons[i].name,
+                                            onTap: () => context.push(
+                                              servicesIcons[i].screen,
+                                            ),
                                           ),
                                         ),
-                                      ),
+                                      ],
                                     ],
-                                  ],
+                                  ),
                                 ),
                                 SizedBox(height: 20.h),
                               ],
@@ -687,36 +690,32 @@ class _ServiceIconItem extends StatelessWidget {
             ],
           ),
           child: Padding(
-            padding: EdgeInsets.fromLTRB(4.w, 12.h, 4.w, 10.h),
+            padding: EdgeInsets.fromLTRB(4.w, 10.h, 4.w, 8.h),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 SizedBox(
-                  width: 32.w,
-                  height: 32.w,
-                  child: Center(
-                    child: Transform.scale(
-                      scale: iconPath.endsWith('ship.svg') ? 1.18 : 1,
-                      child: SvgPicture.asset(
-                        iconPath,
-                        width: 32.w,
-                        height: 32.w,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
+                  width: 28.w,
+                  height: 28.w,
+                  child: SvgPicture.asset(
+                    iconPath,
+                    fit: BoxFit.contain,
                   ),
                 ),
-                SizedBox(height: 8.h),
-                Text(
-                  name,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 10.sp,
-                    height: 1.15,
-                    color: AppColors.title(context),
-                    fontWeight: FontWeight.w600,
+                SizedBox(height: 6.h),
+                SizedBox(
+                  height: 14.h,
+                  child: Text(
+                    name.replaceAll('\n', ' ').trim(),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      height: 1.2,
+                      color: AppColors.title(context),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],

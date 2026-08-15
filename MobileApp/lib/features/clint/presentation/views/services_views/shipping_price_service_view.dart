@@ -163,6 +163,7 @@ class _ShippingPriceServiceViewState extends State<ShippingPriceServiceView> {
           ? post.publisherName
           : S.of(context).todayShipping,
       details: post.details,
+      carrierImageUrl: post.publisherImgPath,
       routeCountryFrom: post.fromCountry,
       routeCountryTo: post.toCountry,
       routePortFrom: post.fromPort,
