@@ -242,7 +242,17 @@ export default function OrderPrintSheet({
         {options.statusHistory && statusHistory.length > 0 ? (
           <div className="order-print-section order-print-history">
             <h3 className="order-print-section-title">{t('orders.tabHistory')}</h3>
-           
+            <ul className="order-print-history-list">
+              {statusHistory.map((entry) => (
+                <li key={entry.id} className="order-print-history-item">
+                  <span className="order-print-history-status">
+                    {locale === 'ar'
+                      ? entry.statusNameAr?.trim() || entry.statusNameEn
+                      : entry.statusNameEn?.trim() || entry.statusNameAr}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
         ) : null}
       </section>

@@ -5,6 +5,7 @@ import 'package:alrasmarket/core/services/app_push_notification_service.dart';
 import 'package:alrasmarket/core/services/fcm_token_service.dart';
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
 import 'package:alrasmarket/core/theme/light_theme.dart';
+import 'package:alrasmarket/core/widgets/dismiss_keyboard.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_cubit.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_states.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
@@ -114,17 +115,19 @@ class _AlRasMarketState extends State<AlRasMarket> with WidgetsBindingObserver {
                     AppPushNotificationService.instance
                         .handlePendingNavigation();
                   });
-                  return AnnotatedRegion<SystemUiOverlayStyle>(
-                    value: const SystemUiOverlayStyle(
-                      statusBarColor: Color(0xffF2F7FF),
-                      statusBarBrightness: Brightness.light,
-                      statusBarIconBrightness: Brightness.dark,
-                      systemNavigationBarColor: Colors.white,
-                      systemNavigationBarIconBrightness: Brightness.dark,
-                    ),
-                    child: ColoredBox(
-                      color: const Color(0xffF2F7FF),
-                      child: child ?? const SizedBox.shrink(),
+                  return DismissKeyboard(
+                    child: AnnotatedRegion<SystemUiOverlayStyle>(
+                      value: const SystemUiOverlayStyle(
+                        statusBarColor: Color(0xffF2F7FF),
+                        statusBarBrightness: Brightness.light,
+                        statusBarIconBrightness: Brightness.dark,
+                        systemNavigationBarColor: Colors.white,
+                        systemNavigationBarIconBrightness: Brightness.dark,
+                      ),
+                      child: ColoredBox(
+                        color: const Color(0xffF2F7FF),
+                        child: child ?? const SizedBox.shrink(),
+                      ),
                     ),
                   );
                 },

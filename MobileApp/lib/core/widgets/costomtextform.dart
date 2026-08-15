@@ -103,6 +103,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
       onChanged: widget.onChanged,
       onFieldSubmitted: widget.onSubmitted,
       onTap: widget.onTap,
+      onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
       enabled: widget.enabled,
       maxLines: widget.maxLines,
       textAlign: isArabic ? TextAlign.right : TextAlign.left,
