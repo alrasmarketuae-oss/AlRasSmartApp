@@ -1,3 +1,4 @@
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/features/company/presentation/models/create_ad_currency.dart';
 import 'package:flutter/material.dart';
@@ -27,6 +28,7 @@ class CurrencyIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final glyph = AppColors.title(context);
     final normalized = CreateAdCurrency.normalize(currency);
     if (normalized == CreateAdCurrency.aed) {
       final dimension = matchTextSize ? size : size.w;
@@ -39,7 +41,7 @@ class CurrencyIcon extends StatelessWidget {
             AppAssets.dirhamSvg,
             width: dimension,
             height: height,
-            colorFilter: const ColorFilter.mode(glyphColor, BlendMode.srcIn),
+            colorFilter: ColorFilter.mode(glyph, BlendMode.srcIn),
           ),
         ),
       );
@@ -53,7 +55,7 @@ class CurrencyIcon extends StatelessWidget {
         child: Text(
           '\$',
           style: TextStyle(
-            color: glyphColor,
+            color: glyph,
             fontSize: dollarSize,
             fontWeight: FontWeight.w700,
             height: 1,

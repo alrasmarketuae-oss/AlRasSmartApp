@@ -70,14 +70,18 @@ class _ShippingAdFormViewState extends State<ShippingAdFormView> {
       _toPort = post.toPort.trim().isNotEmpty ? post.toPort.trim() : null;
       _minDays.text = post.minDurationDays?.toString() ?? '';
       _maxDays.text = post.maxDurationDays?.toString() ?? '';
-      _price20.text = ThousandsNumberInput.format(
-        post.container20ftPriceUsd,
-        allowDecimal: true,
-      );
-      _price40.text = ThousandsNumberInput.format(
-        post.container40ftPriceUsd,
-        allowDecimal: true,
-      );
+      if (post.container20ftPriceUsd != null) {
+        _price20.text = ThousandsNumberInput.format(
+          post.container20ftPriceUsd!,
+          allowDecimal: true,
+        );
+      }
+      if (post.container40ftPriceUsd != null) {
+        _price40.text = ThousandsNumberInput.format(
+          post.container40ftPriceUsd!,
+          allowDecimal: true,
+        );
+      }
       _details.text = post.details;
 
       if (_fromCountry != null) {
@@ -210,9 +214,9 @@ class _ShippingAdFormViewState extends State<ShippingAdFormView> {
       'toPortName': _toPort?.trim() ?? '',
       'phoneNumber': phone,
       'container20ftPriceUsd':
-          ThousandsNumberInput.parseDouble(_price20.text.trim()) ?? 0,
+          ThousandsNumberInput.parseDouble(_price20.text.trim()),
       'container40ftPriceUsd':
-          ThousandsNumberInput.parseDouble(_price40.text.trim()) ?? 0,
+          ThousandsNumberInput.parseDouble(_price40.text.trim()),
       'minDurationDays': int.tryParse(_minDays.text.trim()),
       'maxDurationDays': int.tryParse(_maxDays.text.trim()),
       'details': _details.text.trim(),
@@ -222,6 +226,14 @@ class _ShippingAdFormViewState extends State<ShippingAdFormView> {
   Future<void> _submit() async {
     final s = S.of(context);
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final price20 = ThousandsNumberInput.parseDouble(_price20.text.trim());
+    final price40 = ThousandsNumberInput.parseDouble(_price40.text.trim());
+    if ((price20 != null && price20 <= 0) ||
+        (price40 != null && price40 <= 0)) {
+      AppToast.showError(context, s.enterPrice);
       return;
     }
 
@@ -420,6 +432,15 @@ class _ManageOfferCardState extends State<_ManageOfferCard> {
       carrierName: post.publisherName.isNotEmpty
           ? post.publisherName
           : (context.read<ShippingCompanyCubit>().dashboard?.companyName ?? ''),
+      details: post.details,
+      onTap: () => context.push(
+        AppRoutes.kShippingPostDetailsView,
+        extra: InternationalShippingPostModel.fromShippingCompany(
+          post,
+          publisherName: context.read<ShippingCompanyCubit>().dashboard?.companyName ??
+              post.publisherName,
+        ),
+      ),
       routeCountryFrom: post.fromCountry,
       routeCountryTo: post.toCountry,
       routePortFrom: post.fromPort,
@@ -429,8 +450,8 @@ class _ManageOfferCardState extends State<_ManageOfferCard> {
       phoneMasked: _showPhone
           ? post.phoneNumber
           : _maskPhone(post.phoneNumber),
-      price40f: '\$${post.container40ftPriceUsd.toStringAsFixed(0)}',
-      price20f: '\$${post.container20ftPriceUsd.toStringAsFixed(0)}',
+      price40f: ShippingCardHelpers.formatUsdPrice(post.container40ftPriceUsd),
+      price20f: ShippingCardHelpers.formatUsdPrice(post.container20ftPriceUsd),
       onShowNumber: () => setState(() => _showPhone = true),
     );
 

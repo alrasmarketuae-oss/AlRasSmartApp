@@ -201,7 +201,13 @@ class _AiAssistantHistoryViewState extends State<AiAssistantHistoryView> {
                     controller: _searchController,
                     focusNode: _searchFocus,
                     onChanged: (value) => setState(() => _query = value),
-                    style: TextStyle(color: Colors.white, fontSize: 14.sp),
+                    style: TextStyle(
+                      inherit: false,
+                      fontFamily: Theme.of(context).textTheme.bodyLarge?.fontFamily,
+                      color: Colors.white,
+                      fontSize: 14.sp,
+                      height: 1.35,
+                    ),
                     cursorColor: Colors.white,
                     decoration: InputDecoration(
                       hintText: s.aiAssistantHistorySearchHint,

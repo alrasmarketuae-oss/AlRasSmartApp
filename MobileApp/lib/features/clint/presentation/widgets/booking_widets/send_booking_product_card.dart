@@ -1,5 +1,5 @@
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/utils/product_grid_layout.dart';
-import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/booking_widets/booking_details_mapper.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_media_thumbnail.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
@@ -23,9 +23,9 @@ class SendBookingProductCard extends StatelessWidget {
       width: double.infinity,
       padding: EdgeInsets.all(14.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card(context),
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color(0xFFEAECF0)),
+        border: Border.all(color: AppColors.border(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -61,7 +61,7 @@ class SendBookingProductCard extends StatelessWidget {
           Text(
             BookingDetailsMapper.descriptionText(product),
             style: TextStyle(
-              color: const Color(0xFF333333).withValues(alpha: 0.75),
+              color: AppColors.subtitle(context),
               fontFamily: fontFamily,
               fontSize: 13.sp,
               height: 1.45,
@@ -72,7 +72,7 @@ class SendBookingProductCard extends StatelessWidget {
             width: double.infinity,
             padding: EdgeInsets.all(12.w),
             decoration: BoxDecoration(
-              color: const Color(0xFFF4F7FA),
+              color: AppColors.iconSoftColor,
               borderRadius: BorderRadius.circular(8.r),
             ),
             child: Column(
@@ -81,14 +81,21 @@ class SendBookingProductCard extends StatelessWidget {
                 Text(
                   "${S.of(context).specifications}: ",
                   style: TextStyle(
-                    color: const Color(0xFF333333),
+                    color: AppColors.title(context),
                     fontFamily: fontFamily,
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 SizedBox(height: 8.h),
-                Text(product.description),
+                Text(
+                  product.description,
+                  style: TextStyle(
+                    color: AppColors.subtitle(context),
+                    fontFamily: fontFamily,
+                    fontSize: 13.sp,
+                  ),
+                ),
               ],
             ),
           ),

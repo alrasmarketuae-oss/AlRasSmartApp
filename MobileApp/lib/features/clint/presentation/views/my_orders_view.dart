@@ -219,7 +219,7 @@ class _MyOrdersViewState extends State<MyOrdersView> {
       builder: (context, state) {
         return SafeArea(
           child: Scaffold(
-            backgroundColor: const Color(0xFFF4F7FA),
+            backgroundColor: AppColors.scaffold(context),
             body: Column(
               children: [
                 const SearchHeader(
@@ -237,7 +237,7 @@ class _MyOrdersViewState extends State<MyOrdersView> {
                           fontFamily: fontFamily,
                           fontSize: 26.sp,
                           fontWeight: FontWeight.w800,
-                          color: const Color(0xFF0F172A),
+                          color: AppColors.title(context),
                           height: 1.2,
                         ),
                       ),
@@ -247,7 +247,7 @@ class _MyOrdersViewState extends State<MyOrdersView> {
                         style: TextStyle(
                           fontFamily: fontFamily,
                           fontSize: 13.sp,
-                          color: const Color(0xFF64748B),
+                          color: AppColors.subtitle(context),
                           height: 1.35,
                         ),
                       ),
@@ -510,15 +510,15 @@ class _MyOrdersViewState extends State<MyOrdersView> {
                     fontWeight: FontWeight.w600,
                     color: _filter == chip
                         ? Colors.white
-                        : const Color(0xFF1E293B),
+                        : AppColors.title(context),
                   ),
                 ),
                 selectedColor: LightColor.defaultColor,
-                backgroundColor: Colors.white,
+                backgroundColor: AppColors.card(context),
                 side: BorderSide(
                   color: _filter == chip
                       ? LightColor.defaultColor
-                      : const Color(0xFFE2E8F0),
+                      : AppColors.border(context),
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16.r),
@@ -581,7 +581,7 @@ class _OrdersSectionTabs extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10.r),
-                    color: isSelected ? LightColor.defaultColor : Colors.white,
+                    color: isSelected ? LightColor.defaultColor : AppColors.card(context),
                     border: Border.all(
                       color: LightColor.defaultColor,
                       width: 1.4,

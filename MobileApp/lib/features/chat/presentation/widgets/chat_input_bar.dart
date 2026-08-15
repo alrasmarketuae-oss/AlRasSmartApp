@@ -180,6 +180,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
   void _showAttachmentOptions() {
     showModalBottomSheet<void>(
       context: context,
+      backgroundColor: AppColors.card(context),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
       ),
@@ -188,40 +189,40 @@ class _ChatInputBarState extends State<ChatInputBar> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Gallery'),
+              leading: Icon(Icons.photo_library, color: AppColors.title(context)),
+              title: Text('Gallery', style: TextStyle(color: AppColors.title(context))),
               onTap: () {
                 Navigator.pop(ctx);
                 _pickImage(ImageSource.gallery);
               },
             ),
             ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text('Camera'),
+              leading: Icon(Icons.camera_alt, color: AppColors.title(context)),
+              title: Text('Camera', style: TextStyle(color: AppColors.title(context))),
               onTap: () {
                 Navigator.pop(ctx);
                 _pickImage(ImageSource.camera);
               },
             ),
             ListTile(
-              leading: const Icon(Icons.videocam_outlined),
-              title: const Text('Video'),
+              leading: Icon(Icons.videocam_outlined, color: AppColors.title(context)),
+              title: Text('Video', style: TextStyle(color: AppColors.title(context))),
               onTap: () {
                 Navigator.pop(ctx);
                 _pickVideo();
               },
             ),
             ListTile(
-              leading: const Icon(Icons.location_on_outlined),
-              title: const Text('Location'),
+              leading: Icon(Icons.location_on_outlined, color: AppColors.title(context)),
+              title: Text('Location', style: TextStyle(color: AppColors.title(context))),
               onTap: () {
                 Navigator.pop(ctx);
                 _shareLocation();
               },
             ),
             ListTile(
-              leading: const Icon(Icons.description_outlined),
-              title: const Text('Document'),
+              leading: Icon(Icons.description_outlined, color: AppColors.title(context)),
+              title: Text('Document', style: TextStyle(color: AppColors.title(context))),
               onTap: () {
                 Navigator.pop(ctx);
                 _pickFile();
@@ -236,14 +237,8 @@ class _ChatInputBarState extends State<ChatInputBar> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom + 10.h,
-        left: 10.w,
-        right: 10.w,
-        top: 10.h,
-      ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.navBar(context),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -252,7 +247,16 @@ class _ChatInputBarState extends State<ChatInputBar> {
           ),
         ],
       ),
-      child: Row(
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: 10.h,
+            left: 10.w,
+            right: 10.w,
+            top: 10.h,
+          ),
+          child: Row(
         children: [
           IconButton(
             onPressed: widget.isSending ? null : _showAttachmentOptions,
@@ -262,13 +266,38 @@ class _ChatInputBarState extends State<ChatInputBar> {
             child: TextField(
               controller: _controller,
               enabled: !widget.isSending,
+              keyboardAppearance: AppColors.isDark(context)
+                  ? Brightness.dark
+                  : Brightness.light,
+              style: TextStyle(
+                inherit: false,
+                fontFamily: Theme.of(context).textTheme.bodyLarge?.fontFamily,
+                fontSize: 15.sp,
+                height: 1.35,
+                color: AppColors.title(context),
+              ),
+              cursorColor: LightColor.defaultColor,
               decoration: InputDecoration(
                 hintText: 'Type a message...',
+                hintStyle: TextStyle(
+                  inherit: false,
+                  fontFamily: Theme.of(context).textTheme.bodyLarge?.fontFamily,
+                  fontSize: 15.sp,
+                  color: AppColors.subtitle(context),
+                ),
                 filled: true,
-                fillColor: const Color(0xFFF4F7FA),
+                fillColor: AppColors.inputFill(context),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24.r),
+                  borderSide: BorderSide(color: AppColors.border(context)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24.r),
+                  borderSide: const BorderSide(color: LightColor.defaultColor),
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24.r),
-                  borderSide: BorderSide.none,
+                  borderSide: BorderSide(color: AppColors.border(context)),
                 ),
                 contentPadding:
                     EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
@@ -299,6 +328,8 @@ class _ChatInputBarState extends State<ChatInputBar> {
             icon: Icon(Icons.send, color: LightColor.defaultColor),
           ),
         ],
+          ),
+        ),
       ),
     );
   }

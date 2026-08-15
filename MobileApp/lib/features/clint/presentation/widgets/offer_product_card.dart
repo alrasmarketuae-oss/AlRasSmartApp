@@ -1,3 +1,4 @@
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/utils/product_grid_layout.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_details_opener.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product_card_marketplace_layout.dart';
@@ -43,8 +44,9 @@ class OfferProductCard extends StatelessWidget {
         height: double.infinity,
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.card(context),
           borderRadius: radius,
+          border: Border.all(color: AppColors.border(context)),
           boxShadow: const [
             BoxShadow(
               color: Color.fromRGBO(0, 0, 0, 0.12),

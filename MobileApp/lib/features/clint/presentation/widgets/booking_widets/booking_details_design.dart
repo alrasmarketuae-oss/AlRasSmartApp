@@ -1,3 +1,4 @@
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -7,22 +8,22 @@ class BookingDetailsDesign {
 
   static const Color brand = Color(0xFF2F6AAD);
   static const Color brandSoft = Color(0xFF3A7DC5);
-  static const Color pageBg = Color(0xFFF4F7FA);
-  static const Color cardBg = Colors.white;
-  static const Color border = Color(0xFFE6EBF2);
-  static const Color text = Color(0xFF1F2937);
-  static const Color muted = Color(0xFF6B7280);
+  static Color get pageBg => AppColors.scaffoldColor;
+  static Color get cardBg => AppColors.cardColor;
+  static Color get border => AppColors.borderColor;
+  static Color get text => AppColors.titleColor;
+  static Color get muted => AppColors.subtitleColor;
   static const Color priceGreen = Color(0xFF619D50);
-  static const Color iconBg = Color(0xFFEAF3FB);
+  static Color get iconBg => AppColors.iconSoftColor;
   /// Thin pencil-gray line before Posted Date / Product Code.
-  static const Color metaDivider = Color(0xFFC8CCD4);
+  static Color get metaDivider => AppColors.borderColor;
 
   static double get cardRadius => 14.r;
 
   static Widget metaSectionDivider({double top = 2, double bottom = 10}) {
     return Padding(
       padding: EdgeInsets.only(top: top.h, bottom: bottom.h),
-      child: const Divider(
+      child: Divider(
         height: 1,
         thickness: 0.8,
         color: metaDivider,

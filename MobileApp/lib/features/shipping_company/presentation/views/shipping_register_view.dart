@@ -12,6 +12,7 @@ import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 class ShippingRegisterView extends StatefulWidget {
@@ -110,7 +111,7 @@ class _ShippingRegisterViewState extends State<ShippingRegisterView> {
                     const AuthHeader(),
                     SizedBox(height: 16.h),
                     Center(
-                      child: Image.asset(
+                      child: SvgPicture.asset(
                         AppAssets.servicesIcon5,
                         width: 56.w,
                         height: 56.w,

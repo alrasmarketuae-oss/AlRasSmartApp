@@ -1,6 +1,7 @@
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/features/company/presentation/models/create_ad_type.dart';
+import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_design.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -19,7 +20,7 @@ class CreateAdTypeSelectionField extends StatelessWidget {
   Widget build(BuildContext context) {
     final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
     final fieldTextStyle = TextStyle(
-      color: const Color(0xFF333333).withValues(alpha: 0.8),
+      color: CreateAdDesign.text,
       fontFamily: fontFamily,
       fontSize: 13.sp,
     );
@@ -37,7 +38,7 @@ class CreateAdTypeSelectionField extends StatelessWidget {
         Text(
           S.of(context).selection,
           style: TextStyle(
-            color: const Color(0xFF333333),
+            color: CreateAdDesign.text,
             fontFamily: fontFamily,
             fontSize: 12.sp,
             fontWeight: FontWeight.w600,
@@ -52,12 +53,12 @@ class CreateAdTypeSelectionField extends StatelessWidget {
             color: const Color(0xFF6B7280),
             size: 20.sp,
           ),
-          dropdownColor: Colors.white,
+          dropdownColor: CreateAdDesign.cardBg,
           style: fieldTextStyle,
           isDense: true,
           decoration: InputDecoration(
             filled: true,
-            fillColor: Colors.white,
+            fillColor: CreateAdDesign.cardBg,
             isDense: true,
             contentPadding: EdgeInsets.symmetric(
               horizontal: 12.w,
@@ -65,8 +66,8 @@ class CreateAdTypeSelectionField extends StatelessWidget {
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10.r),
-              borderSide: const BorderSide(
-                color: Color(0xFFEAECF0),
+              borderSide: BorderSide(
+                color: CreateAdDesign.border,
                 width: 1.2,
               ),
             ),

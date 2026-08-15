@@ -63,7 +63,7 @@ class ShippingCard extends StatelessWidget {
     if (compact) {
       return Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.card(context),
           borderRadius: BorderRadius.circular(12.r),
           boxShadow: [
             BoxShadow(
@@ -102,7 +102,7 @@ class ShippingCard extends StatelessWidget {
                 height: isTablet ? 400.h : 340.h,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.card(context),
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(8.r),
                       topRight: Radius.circular(8.r),
@@ -346,7 +346,7 @@ class _PhoneRow extends StatelessWidget {
           vertical: isTablet ? 3.h : 5.h,
         ),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.card(context),
           borderRadius: BorderRadius.circular(8.r),
           border: Border.all(color: LightColor.defaultColor, width: 1.5),
         ),

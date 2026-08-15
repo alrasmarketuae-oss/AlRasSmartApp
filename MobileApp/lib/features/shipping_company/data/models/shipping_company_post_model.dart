@@ -8,11 +8,11 @@ class ShippingCompanyPostModel {
     required this.fromPort,
     required this.toCountry,
     required this.toPort,
-    required this.container20ftPriceUsd,
-    required this.container40ftPriceUsd,
     required this.phoneNumber,
     required this.status,
     required this.isApproved,
+    this.container20ftPriceUsd,
+    this.container40ftPriceUsd,
     this.minDurationDays,
     this.maxDurationDays,
     this.details = '',
@@ -26,8 +26,8 @@ class ShippingCompanyPostModel {
   final String fromPort;
   final String toCountry;
   final String toPort;
-  final double container20ftPriceUsd;
-  final double container40ftPriceUsd;
+  final double? container20ftPriceUsd;
+  final double? container40ftPriceUsd;
   final String phoneNumber;
   final String status;
   final bool isApproved;
@@ -49,8 +49,8 @@ class ShippingCompanyPostModel {
       fromPort: json['fromPort']?.toString() ?? '',
       toCountry: json['toCountry']?.toString() ?? '',
       toPort: json['toPort']?.toString() ?? '',
-      container20ftPriceUsd: _toDouble(json['container20ftPriceUsd']),
-      container40ftPriceUsd: _toDouble(json['container40ftPriceUsd']),
+      container20ftPriceUsd: _toPositiveDouble(json['container20ftPriceUsd']),
+      container40ftPriceUsd: _toPositiveDouble(json['container40ftPriceUsd']),
       phoneNumber: json['phoneNumber']?.toString() ?? '',
       status: json['status']?.toString() ?? '',
       isApproved: json['isApproved'] == true || json['IsApproved'] == true,
@@ -84,8 +84,14 @@ class ShippingCompanyPostModel {
     return ApiConstants.resolveMediaUrl(value);
   }
 
-  static double _toDouble(Object? value) =>
-      ThousandsNumberInput.parseDoubleOrZero(value);
+  static double? _toPositiveDouble(Object? value) {
+    if (value == null) return null;
+    final parsed = value is num
+        ? value.toDouble()
+        : ThousandsNumberInput.parseDouble(value.toString());
+    if (parsed == null || parsed <= 0) return null;
+    return parsed;
+  }
 }
 
 class ShippingCompanyStatsModel {

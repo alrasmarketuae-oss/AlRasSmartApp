@@ -1,3 +1,4 @@
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/features/clint/data/models/international_shipping_post_model.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_states.dart';
@@ -54,7 +55,7 @@ class _ShippingPriceServiceViewState extends State<ShippingPriceServiceView> {
         final cubit = context.read<ClintCubit>();
 
         return Scaffold(
-          backgroundColor: const Color(0xFFF5F7FA),
+          backgroundColor: AppColors.scaffold(context),
           body: SafeArea(
             child: Column(
               children: [

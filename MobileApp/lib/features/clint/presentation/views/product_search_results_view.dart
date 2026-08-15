@@ -111,7 +111,7 @@ class _ProductSearchResultsViewState extends State<ProductSearchResultsView> {
 
     return SafeArea(
       child: Scaffold(
-        backgroundColor: const Color(0xFFF4F7FA),
+        backgroundColor: AppColors.scaffold(context),
         body: BlocBuilder<ClintCubit, ClintStates>(
           buildWhen: (previous, current) =>
               current is ProductSearchLoadingState ||

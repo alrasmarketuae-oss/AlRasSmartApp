@@ -1,3 +1,4 @@
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +23,7 @@ class BookingOfferInputWidget extends StatelessWidget {
             Text(
               s.enterYourOffer,
               style: TextStyle(
-                color: const Color(0xFF333333),
+                color: AppColors.title(context),
                 fontFamily: fontFamily,
                 fontSize: 15.sp,
                 fontWeight: FontWeight.bold,
@@ -31,7 +32,7 @@ class BookingOfferInputWidget extends StatelessWidget {
             Text(
               s.optional,
               style: TextStyle(
-                color: const Color(0xFF333333).withValues(alpha: 0.5),
+                color: AppColors.subtitle(context),
                 fontFamily: fontFamily,
                 fontSize: 13.sp,
               ),
@@ -45,20 +46,20 @@ class BookingOfferInputWidget extends StatelessWidget {
           decoration: InputDecoration(
             hintText: s.enterYourOffer,
             filled: true,
-            fillColor: Colors.white,
+            fillColor: AppColors.inputFill(context),
             contentPadding: EdgeInsets.symmetric(
               horizontal: 16.w,
               vertical: 14.h,
             ),
             hintStyle: TextStyle(
-              color: const Color(0xFF333333).withValues(alpha: 0.4),
+              color: AppColors.subtitle(context),
               fontFamily: fontFamily,
               fontSize: 14.sp,
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8.r),
-              borderSide: const BorderSide(
-                color: Color(0xFFEAECF0),
+              borderSide: BorderSide(
+                color: AppColors.border(context),
                 width: 1.5,
               ),
             ),

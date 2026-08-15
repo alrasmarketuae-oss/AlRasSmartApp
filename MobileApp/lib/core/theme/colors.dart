@@ -1,3 +1,4 @@
+import 'package:alrasmarket/core/theme/theme_controller.dart';
 import 'package:flutter/material.dart';
 
 class LightColor {
@@ -35,24 +36,69 @@ class LightColor {
 }
 
 class AppColors {
+  static const Color _scaffoldDark = Color(0xFF0F1623);
+  static const Color _cardDark = Color(0xFF1B2433);
+  static const Color _navDark = Color(0xFF151C28);
+  static const Color _titleDark = Color(0xFFE8EEF7);
+  static const Color _subtitleDark = Color(0xFF9AA6B8);
+  static const Color _borderDark = Color(0xFF2A3344);
+  static const Color _iconSoftDark = Color(0xFF243044);
+  static const Color _inputBorderDark = Color(0xFF3A4458);
+  static const Color _inputBorderLight = Color(0xFFD5D9D9);
+  static const Color _titleLight = Color(0xFF16233A);
+  static const Color _subtitleLight = Color(0xFF7B8794);
+  static const Color _borderLight = Color(0xFFE4EAF2);
+  static const Color _iconSoftLight = Color(0xFFEAF3FB);
+
+  static bool get dark => ThemeController.instance.isDark;
+
   static bool isDark(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark;
 
+  static Color get scaffoldColor =>
+      dark ? _scaffoldDark : LightColor.background;
+
+  static Color get cardColor => dark ? _cardDark : Colors.white;
+
+  static Color get navBarColor => dark ? _navDark : Colors.white;
+
+  static Color get titleColor => dark ? _titleDark : _titleLight;
+
+  static Color get subtitleColor => dark ? _subtitleDark : _subtitleLight;
+
+  static Color get borderColor => dark ? _borderDark : _borderLight;
+
+  static Color get inputFillColor => dark ? _cardDark : Colors.white;
+
+  static Color get inputBorderColor =>
+      dark ? _inputBorderDark : _inputBorderLight;
+
+  static Color get iconSoftColor => dark ? _iconSoftDark : _iconSoftLight;
+
   static Color scaffold(BuildContext context) =>
-      isDark(context) ? const Color(0xFF0F1623) : LightColor.background;
+      isDark(context) ? _scaffoldDark : LightColor.background;
 
   static Color card(BuildContext context) =>
-      isDark(context) ? const Color(0xFF1B2433) : Colors.white;
+      isDark(context) ? _cardDark : Colors.white;
 
   static Color navBar(BuildContext context) =>
-      isDark(context) ? const Color(0xFF151C28) : Colors.white;
+      isDark(context) ? _navDark : Colors.white;
 
   static Color title(BuildContext context) =>
-      isDark(context) ? const Color(0xFFE8EEF7) : const Color(0xFF16233A);
+      isDark(context) ? _titleDark : _titleLight;
 
   static Color subtitle(BuildContext context) =>
-      isDark(context) ? const Color(0xFF9AA6B8) : const Color(0xFF7B8794);
+      isDark(context) ? _subtitleDark : _subtitleLight;
 
   static Color border(BuildContext context) =>
-      isDark(context) ? const Color(0xFF2A3344) : const Color(0xFFE4EAF2);
+      isDark(context) ? _borderDark : _borderLight;
+
+  static Color inputFill(BuildContext context) =>
+      isDark(context) ? _cardDark : Colors.white;
+
+  static Color inputBorder(BuildContext context) =>
+      isDark(context) ? _inputBorderDark : _inputBorderLight;
+
+  static Color iconSoft(BuildContext context) =>
+      isDark(context) ? _iconSoftDark : _iconSoftLight;
 }

@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/theme/app_fonts.dart';
+import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_design.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
@@ -61,10 +62,10 @@ class DateSelectorWidget extends StatelessWidget {
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: CreateAdDesign.cardBg,
               borderRadius: BorderRadius.circular(8.r),
               border: Border.all(
-                color: const Color(0xFFEAECF0),
+                color: CreateAdDesign.border,
                 width: 1.5,
               ),
             ),
@@ -77,8 +78,8 @@ class DateSelectorWidget extends StatelessWidget {
                       : hintText,
                   style: TextStyle(
                     color: selectedDate != null
-                        ? const Color(0xFF333333)
-                        : const Color(0xFF333333).withOpacity(0.5),
+                        ? CreateAdDesign.text
+                        : CreateAdDesign.muted,
                     fontFamily: fontFamily,
                     fontSize: 14.sp,
                     height: 1.5,
@@ -87,7 +88,7 @@ class DateSelectorWidget extends StatelessWidget {
                 Icon(
                   Icons.calendar_today_outlined,
                   size: 18.sp,
-                  color: const Color(0xFF333333).withOpacity(0.5),
+                  color: CreateAdDesign.muted,
                 ),
               ],
             ),

@@ -1,3 +1,4 @@
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/utils/relative_time_formatter.dart';
 import 'package:alrasmarket/generated/l10n.dart';
@@ -12,14 +13,14 @@ class ProductPostedAtText extends StatelessWidget {
     required this.createdAt,
     this.fontFamily,
     this.fontSize,
-    this.color = const Color(0xFF6B7280),
+    this.color,
     this.showIcon = true,
   });
 
   final String createdAt;
   final String? fontFamily;
   final double? fontSize;
-  final Color color;
+  final Color? color;
   final bool showIcon;
 
   @override
@@ -28,6 +29,7 @@ class ProductPostedAtText extends StatelessWidget {
     if (text.isEmpty) return const SizedBox.shrink();
 
     final size = fontSize ?? 11.sp;
+    final tone = color ?? AppColors.subtitle(context);
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -37,7 +39,7 @@ class ProductPostedAtText extends StatelessWidget {
             AppAssets.clockIcon,
             width: 12.w,
             height: 12.h,
-            colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+            colorFilter: ColorFilter.mode(tone, BlendMode.srcIn),
           ),
           SizedBox(width: 4.w),
         ],
@@ -47,7 +49,7 @@ class ProductPostedAtText extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              color: color,
+              color: tone,
               fontFamily: fontFamily,
               fontSize: size,
               height: 1.3,

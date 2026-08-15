@@ -26,7 +26,7 @@ class ChangePricesBanner extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.fromLTRB(16.w, 2.h, 16.w, 6.h),
       child: Material(
-        color: Colors.white,
+        color: AppColors.card(context),
         borderRadius: BorderRadius.circular(12.r),
         child: InkWell(
           onTap: () {

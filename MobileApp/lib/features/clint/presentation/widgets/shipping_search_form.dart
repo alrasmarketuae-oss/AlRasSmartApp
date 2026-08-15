@@ -1,6 +1,7 @@
 import 'package:alrasmarket/core/constants/country_names.dart';
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
 import 'package:alrasmarket/core/theme/app_fonts.dart';
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/widgets/primary_button.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/shipping_filter_sheet.dart';
 import 'package:alrasmarket/features/company/domain/usecases/get_geo_usecases.dart';
@@ -211,8 +212,9 @@ class _ShippingSearchFormState extends State<ShippingSearchForm> {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card(context),
         borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: AppColors.border(context)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.06),
@@ -456,10 +458,10 @@ class _CountrySearchFieldState extends State<_CountrySearchField> {
           decoration: InputDecoration(
             hintText: widget.hintText,
             hintStyle: fieldTextStyle.copyWith(
-              color: const Color(0xFF333333).withValues(alpha: 0.4),
+              color: AppColors.subtitle(context),
             ),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: AppColors.inputFill(context),
             contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
             suffixIcon: IconButton(
               icon: Icon(Icons.search_rounded, size: 22.sp),
@@ -467,7 +469,7 @@ class _CountrySearchFieldState extends State<_CountrySearchField> {
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8.r),
-              borderSide: const BorderSide(color: Color(0xFFEAECF0), width: 1.5),
+              borderSide: BorderSide(color: AppColors.border(context), width: 1.5),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8.r),
@@ -497,7 +499,7 @@ class _CountrySearchFieldState extends State<_CountrySearchField> {
                       style: TextStyle(
                         fontFamily: widget.fontFamily,
                         fontSize: 14.sp,
-                        color: const Color(0xFF333333),
+                        color: AppColors.title(context),
                       ),
                     ),
                     onTap: () => onSelected(option),

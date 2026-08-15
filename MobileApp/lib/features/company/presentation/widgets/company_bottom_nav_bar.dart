@@ -51,9 +51,9 @@ class CompanyBottomNavBar extends StatelessWidget {
       ),
       if (showMyAds)
         (
-          selectedIcon: AppAssets.blueMyAdsIcon,
-          icon: AppAssets.myAdsIcon,
-          label: S.of(context).myAds,
+          selectedIcon: AppAssets.blueProfileIcon,
+          icon: AppAssets.profileIcon,
+          label: S.of(context).account,
           outlinedCircle: false,
           badgeCount: 0,
         ),

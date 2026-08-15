@@ -1,3 +1,4 @@
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -45,16 +46,16 @@ class RetailQuantitySection extends StatelessWidget {
             alignment: Alignment.center,
             padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.card(context),
               borderRadius: BorderRadius.circular(8.r),
-              border: Border.all(color: const Color(0xFFEAECF0), width: 1.5),
+              border: Border.all(color: AppColors.border(context), width: 1.5),
             ),
             child: Text(
               unitLabel,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: const Color(0xFF333333).withValues(alpha: 0.75),
+                color: AppColors.title(context).withValues(alpha: 0.75),
                 fontFamily: fontFamily,
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w500,
@@ -73,17 +74,17 @@ class RetailQuantitySection extends StatelessWidget {
     return InputDecoration(
       hintText: hint,
       filled: true,
-      fillColor: Colors.white,
+      fillColor: AppColors.inputFillColor,
       isDense: true,
       contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
       hintStyle: TextStyle(
-        color: const Color(0xFF333333).withValues(alpha: 0.4),
+        color: AppColors.subtitleColor.withValues(alpha: 0.9),
         fontFamily: fontFamily,
         fontSize: 14.sp,
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8.r),
-        borderSide: const BorderSide(color: Color(0xFFEAECF0), width: 1.5),
+        borderSide: BorderSide(color: AppColors.borderColor, width: 1.5),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8.r),

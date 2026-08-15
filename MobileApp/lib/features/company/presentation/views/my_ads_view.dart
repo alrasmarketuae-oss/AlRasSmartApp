@@ -147,7 +147,7 @@ class _MyAdsViewState extends State<MyAdsView> {
       value: sl<CompanyCubit>(),
       child: SafeArea(
         child: Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: AppColors.scaffold(context),
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -242,7 +242,7 @@ class _AccountSectionTabs extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10.r),
-                    color: isSelected ? LightColor.defaultColor : Colors.white,
+                    color: isSelected ? LightColor.defaultColor : AppColors.card(context),
                     border: Border.all(
                       color: LightColor.defaultColor,
                       width: 1.4,

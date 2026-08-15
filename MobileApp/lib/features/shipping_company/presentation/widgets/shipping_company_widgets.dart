@@ -4,6 +4,7 @@ import 'package:alrasmarket/core/widgets/language_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 const Color kShippingBg = Color(0xffF2F7FF);
 const Color kShippingPrimary = Color(0xff3A7DC5);
@@ -62,7 +63,7 @@ class ShippingCompanyShell extends StatelessWidget {
                         colors: [Color(0xFF3C80C8), Color(0xFF64A051)],
                       ),
                     ),
-                    child: Image.asset(
+                    child: SvgPicture.asset(
                       AppAssets.servicesIcon5,
                       width: 22.w,
                       height: 22.w,
@@ -170,7 +171,7 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 8.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card(context),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: color.withValues(alpha: 0.35)),
       ),

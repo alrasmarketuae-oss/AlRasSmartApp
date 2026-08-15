@@ -19,8 +19,9 @@ class ChatSessionDivider extends StatelessWidget {
           constraints: BoxConstraints(maxWidth: 0.9.sw),
           padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
           decoration: BoxDecoration(
-            color: const Color(0xFFF0F2F5),
+            color: AppColors.iconSoft(context),
             borderRadius: BorderRadius.circular(20.r),
+            border: Border.all(color: AppColors.border(context)),
           ),
           child: Text(
             label,
@@ -28,7 +29,7 @@ class ChatSessionDivider extends StatelessWidget {
             style: TextStyle(
               fontSize: 11.sp,
               fontWeight: FontWeight.w600,
-              color: LightColor.greyTextColor,
+              color: AppColors.subtitle(context),
             ),
           ),
         ),

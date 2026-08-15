@@ -1,3 +1,4 @@
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/utils/product_grid_layout.dart';
 import 'package:alrasmarket/core/widgets/primary_button.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
@@ -38,7 +39,7 @@ class _CategoryProductsViewState extends State<CategoryProductsView> {
     final s = S.of(context);
     return SafeArea(
       child: Scaffold(
-        backgroundColor: const Color(0xFFF4F7FA),
+        backgroundColor: AppColors.scaffold(context),
         body: Column(
           children: [
             SearchHeader(

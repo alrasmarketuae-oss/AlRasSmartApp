@@ -1,5 +1,6 @@
 import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/widgets/app_country_search_field.dart';
+import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_design.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -137,21 +138,21 @@ class CreateAdLocationDetailsSection extends StatelessWidget {
               color: const Color(0xFF6B7280),
               size: 20.sp,
             ),
-      dropdownColor: Colors.white,
+      dropdownColor: CreateAdDesign.cardBg,
       menuMaxHeight: 320.h,
       style: TextStyle(
-        color: const Color(0xFF333333),
+        color: CreateAdDesign.text,
         fontFamily: fontFamily,
         fontSize: 14.sp,
       ),
       validator: validator,
       decoration: InputDecoration(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: CreateAdDesign.cardBg,
         contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.r),
-          borderSide: const BorderSide(color: Color(0xFFEAECF0), width: 1.5),
+          borderSide: BorderSide(color: CreateAdDesign.border, width: 1.5),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.r),

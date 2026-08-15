@@ -402,7 +402,7 @@ class _QuantityAndTotalRow extends StatelessWidget {
                       child: Container(
                         padding: EdgeInsets.symmetric(horizontal: 8.w),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: BookingDetailsDesign.iconBg,
                           borderRadius: BorderRadius.circular(10.r),
                           border: Border.all(
                             color: BookingDetailsDesign.brandSoft
@@ -466,7 +466,7 @@ class _QuantityAndTotalRow extends StatelessWidget {
                   padding:
                       EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: BookingDetailsDesign.iconBg,
                     borderRadius: BorderRadius.circular(10.r),
                     border: Border.all(color: BookingDetailsDesign.border),
                   ),

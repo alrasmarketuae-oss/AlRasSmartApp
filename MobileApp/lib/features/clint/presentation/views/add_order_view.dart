@@ -310,6 +310,7 @@ class _AddOrderViewState extends State<AddOrderView> {
       child: BlocBuilder<ClintCubit, ClintStates>(
         builder: (context, state) {
           return Scaffold(
+            backgroundColor: AppColors.scaffold(context),
             body: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,

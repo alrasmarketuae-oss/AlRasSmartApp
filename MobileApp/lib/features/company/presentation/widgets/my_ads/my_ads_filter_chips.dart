@@ -30,8 +30,6 @@ class MyAdsFilterChips extends StatelessWidget {
   final ValueChanged<int> onSelected;
 
   static const _selectedBg = LightColor.defaultColor;
-  static const _unselectedBg = Color(0xFFFFFFFF);
-  static const _unselectedBorder = Color(0xFFE2E8F0);
   static const _unselectedText = LightColor.defaultColor;
   static const _unselectedIcon = LightColor.defaultColor;
 
@@ -65,9 +63,11 @@ class MyAdsFilterChips extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(24.r),
-                    color: isSelected ? _selectedBg : _unselectedBg,
+                    color: isSelected ? _selectedBg : AppColors.card(context),
                     border: Border.all(
-                      color: isSelected ? _selectedBg : _unselectedBorder,
+                      color: isSelected
+                          ? _selectedBg
+                          : AppColors.border(context),
                       width: 1,
                     ),
                   ),
@@ -150,10 +150,10 @@ class MyAdsTypeFilterCards extends StatelessWidget {
                       horizontal: 2.w,
                     ),
                     decoration: BoxDecoration(
-                      color: isSelected ? _selectedBg : Colors.white,
+                      color: isSelected ? _selectedBg : AppColors.card(context),
                       borderRadius: BorderRadius.circular(10.r),
                       border: Border.all(
-                        color: isSelected ? _brand : const Color(0xFFE8EDF2),
+                        color: isSelected ? _brand : AppColors.border(context),
                         width: isSelected ? 1.4 : 1,
                       ),
                       boxShadow: [
@@ -227,7 +227,7 @@ class MyAdsStatusFilterChips extends StatelessWidget {
           final item = items[index];
           final isSelected = index == selectedIndex;
           final accent = item.accentColor ?? _brand;
-          final bg = isSelected ? accent : Colors.white;
+          final bg = isSelected ? accent : AppColors.card(context);
           final fg = isSelected ? Colors.white : accent;
 
           return Expanded(

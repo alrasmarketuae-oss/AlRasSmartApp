@@ -1,3 +1,4 @@
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -58,17 +59,17 @@ class CreateAdFormFieldStyles {
   }) {
     return InputDecoration(
       filled: true,
-      fillColor: Colors.white,
+      fillColor: AppColors.inputFillColor,
       hintText: hintText,
       hintStyle: TextStyle(
-        color: const Color(0xFF333333).withOpacity(0.5),
+        color: AppColors.subtitleColor.withOpacity(0.9),
         fontFamily: fontFamily,
         fontSize: 13.sp,
       ),
       contentPadding: rowFieldContentPadding,
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10.r),
-        borderSide: const BorderSide(color: Color(0xFFEAECF0), width: 1.2),
+        borderSide: BorderSide(color: AppColors.borderColor, width: 1.2),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10.r),
@@ -91,11 +92,11 @@ class CreateAdFormFieldStyles {
   }) {
     return InputDecoration(
       filled: true,
-      fillColor: Colors.white,
+      fillColor: AppColors.inputFillColor,
       isDense: true,
       hintText: hintText,
       hintStyle: TextStyle(
-        color: const Color(0xFF333333).withOpacity(0.5),
+        color: AppColors.subtitleColor.withOpacity(0.9),
         fontFamily: fontFamily,
         fontSize: 13.sp,
       ),
@@ -103,7 +104,7 @@ class CreateAdFormFieldStyles {
       contentPadding: rowFieldContentPadding,
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10.r),
-        borderSide: const BorderSide(color: Color(0xFFEAECF0), width: 1.2),
+        borderSide: BorderSide(color: AppColors.borderColor, width: 1.2),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10.r),
@@ -128,7 +129,7 @@ class CreateAdFormFieldStyles {
   static InputDecoration rowDropdownDecoration() {
     return InputDecoration(
       filled: true,
-      fillColor: Colors.white,
+      fillColor: AppColors.inputFillColor,
       isDense: true,
       contentPadding: rowFieldContentPadding,
       constraints: BoxConstraints(
@@ -137,7 +138,7 @@ class CreateAdFormFieldStyles {
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10.r),
-        borderSide: const BorderSide(color: Color(0xFFEAECF0), width: 1.2),
+        borderSide: BorderSide(color: AppColors.borderColor, width: 1.2),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10.r),
@@ -157,13 +158,13 @@ class CreateAdFormFieldStyles {
   static InputDecoration decorator({EdgeInsetsGeometry? contentPadding}) {
     return InputDecoration(
       filled: true,
-      fillColor: Colors.white,
+      fillColor: AppColors.inputFillColor,
       isDense: true,
       contentPadding:
           contentPadding ?? EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10.r),
-        borderSide: const BorderSide(color: Color(0xFFEAECF0), width: 1.2),
+        borderSide: BorderSide(color: AppColors.borderColor, width: 1.2),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10.r),

@@ -220,7 +220,7 @@ class _SpecsRow extends StatelessWidget {
             style: TextStyle(
               fontFamily: fontFamily,
               fontSize: bodySize,
-              color: const Color(0xFF333333),
+              color: AppColors.titleColor,
               height: 1.2,
             ),
           ),

@@ -1,5 +1,6 @@
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/theme/app_fonts.dart';
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/core/utils/product_price_formatter.dart';
 import 'package:alrasmarket/core/widgets/app_country_search_field.dart';
@@ -89,7 +90,7 @@ class _SendBookingOrderPage extends StatelessWidget {
 
           return SafeArea(
             child: Scaffold(
-              backgroundColor: const Color(0xFFF4F7FA),
+              backgroundColor: AppColors.scaffold(context),
               body: Column(
                 children: [
                   SearchHeader(title: s.purchaseOrder, isSearch: false),

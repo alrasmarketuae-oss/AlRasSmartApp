@@ -59,7 +59,7 @@ class _HomeLayoutState extends State<HomeLayout> {
         // Keeps the status bar the same colour as the tab shown behind it.
         final tabBackgrounds = [
           AppColors.scaffold(context),
-          const Color(0xffF2F7FF),
+          AppColors.scaffold(context),
           AppColors.scaffold(context),
           AppColors.scaffold(context),
           AppColors.scaffold(context),

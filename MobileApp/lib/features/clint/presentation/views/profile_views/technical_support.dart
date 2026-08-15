@@ -1,5 +1,6 @@
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/services/sensitive_access_gate.dart';
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_cubit.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_states.dart';
@@ -26,6 +27,7 @@ class TechnicalSupportView extends StatelessWidget {
       buildWhen: (_, current) => current is ChangeLocaleState,
       builder: (context, state) {
         return Scaffold(
+          backgroundColor: AppColors.scaffold(context),
           body: Column(
             children: [
               SearchHeader(
@@ -44,10 +46,10 @@ class TechnicalSupportView extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AppColors.card(context),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: const Color(0xFFE5E7EB),
+                            color: AppColors.border(context),
                             width: 0.8,
                           ),
                         ),
@@ -65,7 +67,7 @@ class TechnicalSupportView extends StatelessWidget {
                                 Text(
                                   S.of(context).workingHours,
                                   style: TextStyle(
-                                    color: Color(0xFF333333),
+                                    color: AppColors.title(context),
                                     fontFamily: 'Inter',
                                     fontSize: 16,
                                     height: 1.5,
@@ -80,7 +82,7 @@ class TechnicalSupportView extends StatelessWidget {
                                 Text(
                                   S.of(context).saturdayThursday,
                                   style: TextStyle(
-                                    color: Color(0xFF6B7280),
+                                    color: AppColors.subtitle(context),
                                     fontFamily: 'Inter',
                                     fontSize: 14,
                                   ),
@@ -88,7 +90,7 @@ class TechnicalSupportView extends StatelessWidget {
                                 Text(
                                   '8:00 AM - 8:00 PM',
                                   style: TextStyle(
-                                    color: Color(0xFF333333),
+                                    color: AppColors.title(context),
                                     fontFamily: 'Inter',
                                     fontSize: 14,
                                   ),
@@ -102,7 +104,7 @@ class TechnicalSupportView extends StatelessWidget {
                                 Text(
                                   S.of(context).friday,
                                   style: TextStyle(
-                                    color: Color(0xFF6B7280),
+                                    color: AppColors.subtitle(context),
                                     fontFamily: 'Inter',
                                     fontSize: 14,
                                   ),
@@ -110,7 +112,7 @@ class TechnicalSupportView extends StatelessWidget {
                                 Text(
                                   S.of(context).closed,
                                   style: TextStyle(
-                                    color: Color(0xFF333333),
+                                    color: AppColors.title(context),
                                     fontFamily: 'Inter',
                                     fontSize: 14,
                                   ),
@@ -277,8 +279,9 @@ Widget _buildFrequentlyAskedQuestionsWidget(BuildContext context) {
     width: double.infinity,
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: AppColors.card(context),
       borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: AppColors.border(context)),
       boxShadow: [
         BoxShadow(
           color: const Color(0xFF323232).withOpacity(0.15),
@@ -294,7 +297,7 @@ Widget _buildFrequentlyAskedQuestionsWidget(BuildContext context) {
         Text(
           s.frequentlyAskedQuestions,
           style: TextStyle(
-            color: Color(0xFF333333),
+            color: AppColors.title(context),
             fontFamily: 'Inter',
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -306,12 +309,12 @@ Widget _buildFrequentlyAskedQuestionsWidget(BuildContext context) {
           question: s.howCanIPlaceAnOrder,
           answer: s.howCanIPlaceAnOrderAnswer,
         ),
-        const Divider(color: Color(0xFFE5E7EB), thickness: 1),
+        Divider(color: AppColors.border(context), thickness: 1),
         _FaqItem(
           question: s.whatPaymentMethodsAreAvailable,
           answer: s.whatPaymentMethodsAreAvailableAnswer,
         ),
-        const Divider(color: Color(0xFFE5E7EB), thickness: 1),
+        Divider(color: AppColors.border(context), thickness: 1),
         _FaqItem(
           question: s.howDoITrackMyOrder,
           answer: s.howDoITrackMyOrderAnswer,
@@ -338,12 +341,12 @@ class _FaqItem extends StatelessWidget {
         tilePadding: EdgeInsets.zero,
         childrenPadding: const EdgeInsets.only(bottom: 12),
         expandedCrossAxisAlignment: CrossAxisAlignment.start,
-        iconColor: const Color(0xFF6B7280),
-        collapsedIconColor: const Color(0xFF6B7280),
+        iconColor: AppColors.subtitle(context),
+        collapsedIconColor: AppColors.subtitle(context),
         title: Text(
           question,
-          style: const TextStyle(
-            color: Color(0xFF6B7280),
+          style: TextStyle(
+            color: AppColors.subtitle(context),
             fontFamily: 'Inter',
             fontSize: 14,
             height: 1.5,
@@ -354,8 +357,8 @@ class _FaqItem extends StatelessWidget {
             alignment: AlignmentDirectional.centerStart,
             child: Text(
               answer,
-              style: const TextStyle(
-                color: Color(0xFF333333),
+              style: TextStyle(
+                color: AppColors.title(context),
                 fontFamily: 'Inter',
                 fontSize: 14,
                 height: 1.5,

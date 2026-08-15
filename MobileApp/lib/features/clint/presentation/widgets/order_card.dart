@@ -113,13 +113,15 @@ class _OrderCardState extends State<OrderCard>
       builder: (context, child) {
         final t = widget.highlighted ? _blink.value : 0.0;
         final borderColor = Color.lerp(
-          const Color(0xFFE8EDF2),
+          AppColors.border(context),
           LightColor.defaultColor,
           t,
         )!;
         final bgColor = Color.lerp(
-          Colors.white,
-          const Color(0xFFE8F4FD),
+          AppColors.card(context),
+          AppColors.isDark(context)
+              ? const Color(0xFF243044)
+              : const Color(0xFFE8F4FD),
           t,
         )!;
         final glow = LightColor.defaultColor.withValues(alpha: 0.08 + 0.22 * t);

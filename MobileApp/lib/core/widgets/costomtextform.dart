@@ -107,24 +107,28 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
       maxLines: widget.maxLines,
       textAlign: isArabic ? TextAlign.right : TextAlign.left,
       cursorColor: LightColor.defaultColor,
+      keyboardAppearance:
+          AppColors.isDark(context) ? Brightness.dark : Brightness.light,
       style: widget.textStyle ??
-          Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-                fontSize: 14.sp,
-                color: const Color(0xFF333333),
-              ) ??
           TextStyle(
+            inherit: false,
+            fontFamily: Theme.of(context).textTheme.bodyLarge?.fontFamily,
             fontWeight: FontWeight.w500,
             fontSize: 14.sp,
-            color: const Color(0xFF333333),
+            height: 1.35,
+            color: AppColors.title(context),
           ),
       decoration: InputDecoration(
         hintText: widget.hintText,
-        hintStyle:
-            widget.hintStyle ??
-            TextStyle(fontSize: 14.sp, color: LightColor.hintColor),
+        hintStyle: widget.hintStyle ??
+            TextStyle(
+              inherit: false,
+              fontFamily: Theme.of(context).textTheme.bodyLarge?.fontFamily,
+              fontSize: 14.sp,
+              color: AppColors.subtitle(context),
+            ),
         filled: true,
-        fillColor: widget.fillColor ?? Colors.white,
+        fillColor: widget.fillColor ?? AppColors.inputFill(context),
         constraints: widget.expandHeight
             ? const BoxConstraints.expand()
             : widget.height != null
@@ -149,7 +153,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                       height: leftIconSize,
                       width: leftIconSize,
                       colorFilter: ColorFilter.mode(
-                        widget.leftIconColor ?? Colors.black,
+                        widget.leftIconColor ?? AppColors.subtitle(context),
                         BlendMode.srcIn,
                       ),
                     ),
@@ -161,7 +165,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                       height: leftIconSize,
                       width: leftIconSize,
                       colorFilter: ColorFilter.mode(
-                        widget.leftIconColor ?? Colors.black,
+                        widget.leftIconColor ?? AppColors.subtitle(context),
                         BlendMode.srcIn,
                       ),
                     ),
@@ -175,7 +179,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
                   size: 20.h,
-                  color: widget.rightIconColor ?? Colors.grey.shade600,
+                  color: widget.rightIconColor ?? AppColors.subtitle(context),
                 ),
                 onPressed: () {
                   setState(() {
@@ -192,7 +196,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                             height: 10.h,
                             width: 10.h,
                             colorFilter: ColorFilter.mode(
-                              widget.rightIconColor ?? Colors.black,
+                              widget.rightIconColor ?? AppColors.subtitle(context),
                               BlendMode.srcIn,
                             ),
                           ),
@@ -281,7 +285,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 14.sp,
-                    color: const Color(0xFF333333),
+                    color: AppColors.title(context),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -291,7 +295,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                 S.of(context).optional,
                 style: TextStyle(
                   fontSize: 14.sp,
-                  color: const Color(0xFF333333).withOpacity(0.5),
+                  color: AppColors.subtitle(context),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -302,7 +306,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
             widget.label!,
             style: TextStyle(
               fontSize: 14.sp,
-              color: const Color(0xFF333333),
+              color: AppColors.title(context),
               fontWeight: FontWeight.w600,
             ),
           ),

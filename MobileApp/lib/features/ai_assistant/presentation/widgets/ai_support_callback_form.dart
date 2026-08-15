@@ -159,12 +159,21 @@ class _AiSupportCallbackFormState extends State<AiSupportCallbackForm> {
 
     InputDecoration deco(String label) => InputDecoration(
           labelText: label,
+          labelStyle: TextStyle(color: AppColors.subtitle(context)),
           isDense: true,
           filled: true,
-          fillColor: Colors.white,
+          fillColor: AppColors.inputFill(context),
           contentPadding:
               EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.r)),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.r),
+            borderSide: BorderSide(color: AppColors.border(context)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.r),
+            borderSide: const BorderSide(color: LightColor.defaultColor),
+          ),
         );
 
     return Container(
@@ -172,7 +181,7 @@ class _AiSupportCallbackFormState extends State<AiSupportCallbackForm> {
       margin: EdgeInsets.only(top: 8.h),
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F8FF),
+        color: AppColors.card(context),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
           color: LightColor.defaultColor.withValues(alpha: 0.35),
@@ -196,13 +205,24 @@ class _AiSupportCallbackFormState extends State<AiSupportCallbackForm> {
             isAr
                 ? 'هيتم الاتصال بيك خلال خمس دقايق بعد الإرسال.'
                 : 'You will be called within five minutes after submitting.',
-            style: TextStyle(fontSize: 11.sp, color: const Color(0xFF667085)),
+            style: TextStyle(fontSize: 11.sp, color: AppColors.subtitle(context)),
           ),
           SizedBox(height: 10.h),
           TextField(
             controller: _name,
             textInputAction: TextInputAction.next,
             textAlign: isAr ? TextAlign.right : TextAlign.left,
+            keyboardAppearance: AppColors.isDark(context)
+                ? Brightness.dark
+                : Brightness.light,
+            style: TextStyle(
+              inherit: false,
+              fontFamily: Theme.of(context).textTheme.bodyLarge?.fontFamily,
+              color: AppColors.title(context),
+              fontSize: 14.sp,
+              height: 1.35,
+            ),
+            cursorColor: LightColor.defaultColor,
             decoration: deco(isAr ? 'الاسم' : 'Name'),
           ),
           SizedBox(height: 8.h),
@@ -214,6 +234,17 @@ class _AiSupportCallbackFormState extends State<AiSupportCallbackForm> {
               keyboardType: TextInputType.phone,
               textInputAction: TextInputAction.next,
               textAlign: TextAlign.left,
+              keyboardAppearance: AppColors.isDark(context)
+                  ? Brightness.dark
+                  : Brightness.light,
+              style: TextStyle(
+                inherit: false,
+                fontFamily: Theme.of(context).textTheme.bodyLarge?.fontFamily,
+                color: AppColors.title(context),
+                fontSize: 14.sp,
+                height: 1.35,
+              ),
+              cursorColor: LightColor.defaultColor,
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'[\d+\s\-()]')),
               ],
@@ -228,6 +259,17 @@ class _AiSupportCallbackFormState extends State<AiSupportCallbackForm> {
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.done,
               textAlign: TextAlign.left,
+              keyboardAppearance: AppColors.isDark(context)
+                  ? Brightness.dark
+                  : Brightness.light,
+              style: TextStyle(
+                inherit: false,
+                fontFamily: Theme.of(context).textTheme.bodyLarge?.fontFamily,
+                color: AppColors.title(context),
+                fontSize: 14.sp,
+                height: 1.35,
+              ),
+              cursorColor: LightColor.defaultColor,
               onSubmitted: (_) => _submit(),
               decoration: deco(isAr ? 'البريد الإلكتروني' : 'Email'),
             ),

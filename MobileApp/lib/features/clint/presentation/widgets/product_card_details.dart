@@ -33,7 +33,7 @@ class ProductCardDetails extends StatelessWidget {
               style: TextStyle(
                 color: lines[i] == s.soldOut
                     ? const Color(0xFFDC2626)
-                    : LightColor.greyTextColor,
+                    : AppColors.subtitle(context),
                 fontFamily: 'Inter',
                 fontSize: 11.sp,
                 fontWeight:

@@ -1,3 +1,4 @@
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/core/utils/product_price_formatter.dart';
 import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
@@ -41,9 +42,9 @@ class SendBookingQuantitySection extends StatelessWidget {
       width: double.infinity,
       padding: EdgeInsets.all(14.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card(context),
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color(0xFFEAECF0)),
+        border: Border.all(color: AppColors.border(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,7 +57,7 @@ class SendBookingQuantitySection extends StatelessWidget {
                 child: Text(
                   '${s.quantity}:',
                   style: TextStyle(
-                    color: const Color(0xFF333333),
+                    color: AppColors.title(context),
                     fontFamily: fontFamily,
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
@@ -147,7 +148,7 @@ class SendBookingQuantitySection extends StatelessWidget {
                   child: Text(
                     s.total,
                     style: TextStyle(
-                      color: const Color(0xFF333333),
+                      color: AppColors.title(context),
                       fontFamily: fontFamily,
                       fontSize: 15.sp,
                       fontWeight: FontWeight.w700,
@@ -180,17 +181,17 @@ class SendBookingQuantitySection extends StatelessWidget {
     return InputDecoration(
       hintText: hint,
       filled: true,
-      fillColor: Colors.white,
+      fillColor: AppColors.inputFillColor,
       isDense: true,
       contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
       hintStyle: TextStyle(
-        color: const Color(0xFF333333).withValues(alpha: 0.4),
+        color: AppColors.subtitleColor.withValues(alpha: 0.9),
         fontFamily: fontFamily,
         fontSize: 14.sp,
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8.r),
-        borderSide: const BorderSide(color: Color(0xFFEAECF0), width: 1.5),
+        borderSide: BorderSide(color: AppColors.borderColor, width: 1.5),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8.r),

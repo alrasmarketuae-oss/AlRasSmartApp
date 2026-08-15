@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/theme/app_fonts.dart';
+import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_design.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_form_field_styles.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_unit_options.dart';
 import 'package:alrasmarket/generated/l10n.dart';
@@ -25,7 +26,7 @@ class CreateAdUnitDropdown extends StatelessWidget {
     final s = S.of(context);
 
     final fieldTextStyle = TextStyle(
-      color: const Color(0xFF333333),
+      color: CreateAdDesign.text,
       fontFamily: fontFamily,
       fontSize: 14.sp,
       fontWeight: FontWeight.w600,
@@ -169,7 +170,7 @@ class _AnchoredUnitMenuState extends State<_AnchoredUnitMenu> {
               followerAnchor: AlignmentDirectional.topEnd.resolve(direction),
               offset: const Offset(0, 4),
               child: Material(
-                color: Colors.white,
+                color: CreateAdDesign.cardBg,
                 elevation: 10,
                 shadowColor: const Color(0xFF16233A).withValues(alpha: 0.18),
                 borderRadius: BorderRadius.circular(10.r),
@@ -210,7 +211,7 @@ class _AnchoredUnitMenuState extends State<_AnchoredUnitMenu> {
                             style: widget.fieldTextStyle.copyWith(
                               color: selected
                                   ? const Color(0xFF1B5FB8)
-                                  : const Color(0xFF333333),
+                                  : CreateAdDesign.text,
                               fontWeight:
                                   selected ? FontWeight.w700 : FontWeight.w500,
                             ),

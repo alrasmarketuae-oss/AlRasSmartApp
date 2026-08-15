@@ -100,9 +100,11 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
     final crossAlign = widget.isMe
         ? CrossAxisAlignment.end
         : CrossAxisAlignment.start;
-    final bgColor =
-        widget.isMe ? LightColor.defaultColor : const Color(0xFFF1F1F1);
-    final textColor = widget.isMe ? Colors.white : Colors.black87;
+    final bgColor = widget.isMe
+        ? LightColor.defaultColor
+        : AppColors.card(context);
+    final textColor =
+        widget.isMe ? Colors.white : AppColors.title(context);
 
     return Align(
       alignment: alignment,
@@ -111,15 +113,18 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
         children: [
           Container(
             constraints: BoxConstraints(maxWidth: 0.75.sw),
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(15.r),
-                topRight: Radius.circular(15.r),
-                bottomLeft: Radius.circular(widget.isMe ? 15.r : 4.r),
-                bottomRight: Radius.circular(widget.isMe ? 4.r : 15.r),
-              ),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(15.r),
+              topRight: Radius.circular(15.r),
+              bottomLeft: Radius.circular(widget.isMe ? 15.r : 4.r),
+              bottomRight: Radius.circular(widget.isMe ? 4.r : 15.r),
             ),
+            border: widget.isMe
+                ? null
+                : Border.all(color: AppColors.border(context)),
+          ),
             padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
             child: _buildContent(textColor),
           ),
@@ -129,7 +134,10 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
             children: [
               Text(
                 DateFormat('hh:mm a').format(widget.message.sentAtUtc.toLocal()),
-                style: TextStyle(fontSize: 10.sp, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 10.sp,
+                  color: AppColors.subtitle(context),
+                ),
               ),
               if (widget.isMe) ...[
                 SizedBox(width: 6.w),
@@ -158,7 +166,10 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
           if (message.processingLabel != null)
             Text(
               message.processingLabel!,
-              style: TextStyle(fontSize: 10.sp, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 10.sp,
+                color: AppColors.subtitle(context),
+              ),
             ),
           SizedBox(height: 4.h),
           ClipRRect(
@@ -166,7 +177,7 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
             child: LinearProgressIndicator(
               value: progress > 0 ? progress : null,
               minHeight: 6.h,
-              backgroundColor: const Color(0xFFE8EEF5),
+              backgroundColor: AppColors.borderColor,
               valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF3A7DC5)),
             ),
           ),

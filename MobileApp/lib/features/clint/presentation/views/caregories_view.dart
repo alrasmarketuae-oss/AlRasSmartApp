@@ -1,3 +1,4 @@
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/features/clint/data/models/category_model.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/category_label.dart';
@@ -39,6 +40,7 @@ class _CategoriesViewState extends State<CategoriesView> {
 
         return SafeArea(
           child: Scaffold(
+            backgroundColor: AppColors.scaffold(context),
             body: Column(
               children: [
                 SearchHeader(title: S.of(context).categories),
@@ -154,8 +156,9 @@ class _CategoryGridItem extends StatelessWidget {
             child: Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.card(context),
                 borderRadius: BorderRadius.circular(8.r),
+                border: Border.all(color: AppColors.border(context)),
               ),
               clipBehavior: Clip.antiAlias,
               child: CategoryImage(
@@ -171,7 +174,7 @@ class _CategoryGridItem extends StatelessWidget {
             maxLines: 2,
             baseFontSize: 14.sp,
             fontWeight: FontWeight.w400,
-            color: const Color(0xCC333333),
+            color: AppColors.title(context),
           ),
         ],
       ),

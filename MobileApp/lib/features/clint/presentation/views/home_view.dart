@@ -542,8 +542,6 @@ class _HomeSectionHeader extends StatelessWidget {
   final String title;
   final VoidCallback? onViewAll;
 
-  static const _titleColor = Color(0xFF0D2E62);
-
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -554,7 +552,7 @@ class _HomeSectionHeader extends StatelessWidget {
             style: TextStyle(
               fontSize: 16.sp,
               fontWeight: FontWeight.w700,
-              color: _titleColor,
+              color: AppColors.title(context),
             ),
           ),
         ),
@@ -598,8 +596,6 @@ class _CategoryCard extends StatelessWidget {
   final CategoryModel? category;
   final String fallbackLabel;
 
-  static const _labelColor = Color(0xFF0D2E62);
-
   @override
   Widget build(BuildContext context) {
     final categoryId = category?.categoryId;
@@ -617,8 +613,9 @@ class _CategoryCard extends StatelessWidget {
             ),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.card(context),
           borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(color: AppColors.border(context)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.07),
@@ -647,7 +644,7 @@ class _CategoryCard extends StatelessWidget {
                 maxLines: 1,
                 baseFontSize: 12.sp,
                 fontWeight: FontWeight.w600,
-                color: _labelColor,
+                color: AppColors.title(context),
                 maxHeight: 18.h,
               ),
             ),
@@ -669,8 +666,6 @@ class _ServiceIconItem extends StatelessWidget {
   final String name;
   final VoidCallback onTap;
 
-  static const _labelColor = Color(0xFF0D2E62);
-
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -680,8 +675,9 @@ class _ServiceIconItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(12.r),
         child: Ink(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.card(context),
             borderRadius: BorderRadius.circular(12.r),
+            border: Border.all(color: AppColors.border(context)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.08),
@@ -698,11 +694,7 @@ class _ServiceIconItem extends StatelessWidget {
                 SvgPicture.asset(
                   iconPath,
                   width: 26.w,
-                  height: 26.h,
-                  colorFilter: const ColorFilter.mode(
-                    LightColor.defaultColor,
-                    BlendMode.srcIn,
-                  ),
+                  height: 26.w,
                 ),
                 SizedBox(height: 8.h),
                 Text(
@@ -713,7 +705,7 @@ class _ServiceIconItem extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 10.sp,
                     height: 1.15,
-                    color: _labelColor,
+                    color: AppColors.title(context),
                     fontWeight: FontWeight.w600,
                   ),
                 ),

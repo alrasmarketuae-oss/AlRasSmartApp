@@ -57,8 +57,6 @@ class MyAdAnnouncementCard extends StatefulWidget {
 
 class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
     with SingleTickerProviderStateMixin {
-  static const _borderGray = Color(0xFFD0D5DD);
-  static const _textDark = Color(0xFF333333);
   static const _blinkRedSoft = Color(0xFFF97066);
   static const _blinkRedStrong = Color(0xFFD92D20);
   static const _highlightBlinkDuration = Duration(seconds: 5);
@@ -195,7 +193,7 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: _textDark,
+                    color: AppColors.title(context),
                     fontFamily: fontFamily,
                     fontSize: titleSize,
                     fontWeight: FontWeight.w700,
@@ -308,14 +306,14 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
                 _blinkRedStrong,
                 _blink.value,
               )!
-            : _borderGray;
+            : AppColors.border(context);
 
         return Container(
           width: double.infinity,
           height: compact ? double.infinity : null,
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.card(context),
             borderRadius: BorderRadius.circular(9.r),
             border: Border.all(
               color: borderColor,
@@ -423,7 +421,7 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
               fontFamily: fontFamily,
               fontSize: 18.sp,
               fontWeight: FontWeight.w700,
-              color: _textDark,
+              color: AppColors.title(context),
             ),
           ),
           content: Text(

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/serveses/notifications_service.dart';
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/widgets/scroll_aware_bottom_nav_scaffold.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_states.dart';
@@ -56,6 +57,7 @@ class _PersonHomeLayoutState extends State<PersonHomeLayout> {
         ];
         return ScrollAwareBottomNavScaffold(
           tabIndex: cubit.currentIndex,
+          backgroundColor: AppColors.scaffold(context),
           body: IndexedStack(
             index: cubit.currentIndex,
             children: screens,

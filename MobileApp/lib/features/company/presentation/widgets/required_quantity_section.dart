@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:alrasmarket/core/theme/app_fonts.dart';
+import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_design.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 
 class RequiredQuantitySection extends StatelessWidget {
@@ -17,7 +18,7 @@ class RequiredQuantitySection extends StatelessWidget {
   Widget build(BuildContext context) {
     final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
     final fieldTextStyle = TextStyle(
-      color: const Color(0xFF333333),
+      color: CreateAdDesign.text,
       fontFamily: fontFamily,
       fontSize: 14.sp,
       height: 1.5,
@@ -30,7 +31,7 @@ class RequiredQuantitySection extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            color: const Color(0xFF333333),
+            color: CreateAdDesign.text,
             fontFamily: fontFamily,
             fontSize: 14.sp,
             fontWeight: FontWeight.w600,
@@ -44,10 +45,10 @@ class RequiredQuantitySection extends StatelessWidget {
           style: fieldTextStyle,
           decoration: InputDecoration(
             filled: true,
-            fillColor: Colors.white,
+            fillColor: CreateAdDesign.cardBg,
             hintText: S.of(context).quantity,
             hintStyle: TextStyle(
-              color: const Color(0xFF333333).withOpacity(0.5),
+              color: CreateAdDesign.muted,
               fontFamily: fontFamily,
               fontSize: 14.sp,
             ),
@@ -57,7 +58,7 @@ class RequiredQuantitySection extends StatelessWidget {
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8.r),
-              borderSide: const BorderSide(color: Color(0xFFEAECF0), width: 1.5),
+              borderSide: BorderSide(color: CreateAdDesign.border, width: 1.5),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8.r),

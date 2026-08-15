@@ -275,7 +275,7 @@ class _AppSearchFieldState extends State<AppSearchField> {
                       child: Icon(
                         isRtl ? Icons.arrow_forward : Icons.arrow_back,
                         size: backIconSize,
-                        color: const Color(0xFF333333),
+                        color: AppColors.title(context),
                       ),
                     ),
                   ),
@@ -292,19 +292,24 @@ class _AppSearchFieldState extends State<AppSearchField> {
                   hintText: _resolveHint(context),
                   leftIcon: AppAssets.searchIcon,
                   leftIconSize: isTablet ? 16.h : 18.h,
-                  leftIconColor: const Color(0xFF0F1111),
+                  leftIconColor: AppColors.subtitle(context),
                   onLeftIconTap: _isCatalog
                       ? () => _submit(_controller.text.trim())
                       : null,
                   height: fieldHeight,
                   borderRadius: pillRadius,
                   borderWidth: 1,
-                  borderColor: const Color(0xFFD5D9D9),
-                  fillColor: Colors.white,
+                  borderColor: AppColors.inputBorder(context),
+                  fillColor: AppColors.inputFill(context),
+                  textStyle: TextStyle(
+                    fontSize: isTablet ? 12.sp : 14.sp,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.title(context),
+                  ),
                   showShadow: false,
                   hintStyle: TextStyle(
                     fontSize: isTablet ? 12.sp : 14.sp,
-                    color: const Color(0xFF6B7280),
+                    color: AppColors.subtitle(context),
                     fontWeight: FontWeight.w400,
                   ),
                   onSubmitted: _isCatalog ? _submit : null,
@@ -335,9 +340,9 @@ class _AppSearchFieldState extends State<AppSearchField> {
           Container(
             margin: EdgeInsets.only(top: 6.h),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.card(context),
               borderRadius: BorderRadius.circular(12.r),
-              border: Border.all(color: const Color(0xFFD5D9D9)),
+              border: Border.all(color: AppColors.inputBorder(context)),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.08),
@@ -379,7 +384,7 @@ class _AppSearchFieldState extends State<AppSearchField> {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 14.sp,
-                              color: const Color(0xFF333333),
+                              color: AppColors.title(context),
                             ),
                           ),
                         ),

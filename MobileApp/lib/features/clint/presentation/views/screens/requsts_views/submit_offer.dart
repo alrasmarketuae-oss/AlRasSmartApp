@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/router/app_router.dart';
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_states.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/requst_widets/submit_offer_form.dart';
@@ -63,7 +64,7 @@ class _SubmitOfferPage extends StatelessWidget {
       },
       child: SafeArea(
         child: Scaffold(
-          backgroundColor: const Color(0xFFF4F7FA),
+          backgroundColor: AppColors.scaffold(context),
           body: Column(
             children: [
               SearchHeader(title: S.of(context).submitOffer, isSearch: false),

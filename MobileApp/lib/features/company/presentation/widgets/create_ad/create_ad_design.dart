@@ -1,3 +1,4 @@
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -7,12 +8,12 @@ class CreateAdDesign {
 
   static const Color brand = Color(0xFF3A7DC5);
   static const Color brandDark = Color(0xFF2F6AAD);
-  static const Color pageBg = Color(0xFFF4F7FB);
-  static const Color cardBg = Colors.white;
-  static const Color border = Color(0xFFE6EBF2);
-  static const Color iconBg = Color(0xFFEAF3FB);
-  static const Color text = Color(0xFF1F2937);
-  static const Color muted = Color(0xFF6B7280);
+  static Color get pageBg => AppColors.scaffoldColor;
+  static Color get cardBg => AppColors.cardColor;
+  static Color get border => AppColors.borderColor;
+  static Color get iconBg => AppColors.iconSoftColor;
+  static Color get text => AppColors.titleColor;
+  static Color get muted => AppColors.subtitleColor;
   static const Color requiredStar = Color(0xFFE11D48);
 
   static double get cardRadius => 14.r;

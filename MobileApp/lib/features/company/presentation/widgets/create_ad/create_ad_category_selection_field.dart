@@ -1,6 +1,7 @@
 import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/features/clint/data/models/category_model.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/category_image.dart';
+import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_design.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -23,7 +24,7 @@ class CreateAdCategorySelectionField extends StatelessWidget {
   Widget build(BuildContext context) {
     final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
     final fieldTextStyle = TextStyle(
-      color: const Color(0xFF333333).withValues(alpha: 0.8),
+      color: CreateAdDesign.text,
       fontFamily: fontFamily,
       fontSize: 13.sp,
     );
@@ -35,7 +36,7 @@ class CreateAdCategorySelectionField extends StatelessWidget {
         Text(
           S.of(context).category,
           style: TextStyle(
-            color: const Color(0xFF333333),
+            color: CreateAdDesign.text,
             fontFamily: fontFamily,
             fontSize: 12.sp,
             fontWeight: FontWeight.w600,
@@ -55,13 +56,13 @@ class CreateAdCategorySelectionField extends StatelessWidget {
             color: const Color(0xFF6B7280),
             size: 20.sp,
           ),
-          dropdownColor: Colors.white,
+          dropdownColor: CreateAdDesign.cardBg,
           style: fieldTextStyle,
           isDense: true,
           menuMaxHeight: 320.h,
           decoration: InputDecoration(
             filled: true,
-            fillColor: Colors.white,
+            fillColor: CreateAdDesign.cardBg,
             isDense: true,
             contentPadding: EdgeInsets.symmetric(
               horizontal: 12.w,
@@ -69,8 +70,8 @@ class CreateAdCategorySelectionField extends StatelessWidget {
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10.r),
-              borderSide: const BorderSide(
-                color: Color(0xFFEAECF0),
+              borderSide: BorderSide(
+                color: CreateAdDesign.border,
                 width: 1.2,
               ),
             ),

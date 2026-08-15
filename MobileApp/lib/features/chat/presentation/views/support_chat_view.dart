@@ -101,6 +101,7 @@ class _SupportChatViewState extends State<SupportChatView> {
   Widget build(BuildContext context) {
     if (!AuthService.instance.isAuthenticated) {
       return Scaffold(
+        backgroundColor: AppColors.scaffold(context),
         appBar: AppBar(
           title: Text(S.of(context).liveChat),
           backgroundColor: LightColor.defaultColor,
@@ -115,7 +116,10 @@ class _SupportChatViewState extends State<SupportChatView> {
                 Text(
                   S.of(context).pleaseLoginToChatWithSupport,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16.sp),
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    color: AppColors.title(context),
+                  ),
                 ),
                 SizedBox(height: 16.h),
                 ElevatedButton(
@@ -190,7 +194,7 @@ class _SupportChatViewState extends State<SupportChatView> {
                   S.of(context).chatWithTheSupportTeamNow);
 
           return Scaffold(
-            backgroundColor: Colors.white,
+            backgroundColor: AppColors.scaffold(context),
             appBar: AppBar(
               elevation: 0.5,
               leading: IconButton(
@@ -255,7 +259,13 @@ class _SupportChatViewState extends State<SupportChatView> {
                           ? Center(
                               child: Padding(
                                 padding: EdgeInsets.all(24.w),
-                                child: Text(state.message),
+                                child: Text(
+                                  state.message,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: AppColors.subtitle(context),
+                                  ),
+                                ),
                               ),
                             )
                           : NotificationListener<ScrollNotification>(

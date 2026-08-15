@@ -1,3 +1,4 @@
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/utils/product_quantity_formatter.dart';
 import 'package:alrasmarket/core/utils/relative_time_formatter.dart';
 import 'package:alrasmarket/core/widgets/cached_app_image.dart';
@@ -39,8 +40,7 @@ class RequestOfferCard extends StatelessWidget {
   final String? acceptLabel;
   final String? rejectLabel;
 
-  static const _textDark = Color(0xFF333333);
-  static const _borderGray = Color(0xFFD0D5DD);
+  static Color get _textDark => AppColors.titleColor;
   static const _actionBlue = Color(0xFF3A7DC5);
   static const _actionRed = Color(0xFFC83D30);
   static final _amountFormat = NumberFormat('#,##0.##');
@@ -74,9 +74,9 @@ class RequestOfferCard extends StatelessWidget {
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 20.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card(context),
         borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(color: _borderGray),
+        border: Border.all(color: AppColors.border(context)),
         boxShadow: const [
           BoxShadow(
             color: Color.fromRGBO(0, 0, 0, 0.15),

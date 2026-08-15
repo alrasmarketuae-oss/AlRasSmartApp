@@ -53,7 +53,7 @@ class BookingPriceTypeSelectWidget extends StatelessWidget {
               color: CreateAdDesign.muted,
             ),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: CreateAdDesign.cardBg,
             contentPadding:
                 EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
             border: OutlineInputBorder(
@@ -75,6 +75,7 @@ class BookingPriceTypeSelectWidget extends StatelessWidget {
             fontSize: 15.sp,
             fontWeight: FontWeight.w600,
           ),
+          dropdownColor: CreateAdDesign.cardBg,
           items: BookingPriceType.values
               .map(
                 (type) => DropdownMenuItem<BookingPriceType>(

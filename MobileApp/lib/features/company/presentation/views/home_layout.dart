@@ -11,7 +11,6 @@ import 'package:alrasmarket/features/clint/presentation/views/my_orders_view.dar
 import 'package:alrasmarket/features/clint/presentation/views/profile_view.dart';
 import 'package:alrasmarket/features/company/presentation/views/create_ad.dart';
 import 'package:alrasmarket/features/company/presentation/views/my_ads_view.dart';
-import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_design.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/company_bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -60,7 +59,7 @@ class _CompanyHomeLayoutState extends State<CompanyHomeLayout> {
         // Keeps the status bar the same colour as the tab shown behind it.
         final tabBackgrounds = [
           AppColors.scaffold(context),
-          CreateAdDesign.pageBg,
+          AppColors.scaffold(context),
           AppColors.scaffold(context),
           AppColors.scaffold(context),
           AppColors.scaffold(context),

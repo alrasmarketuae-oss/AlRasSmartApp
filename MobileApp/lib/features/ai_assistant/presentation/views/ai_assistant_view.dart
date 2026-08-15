@@ -42,8 +42,9 @@ class _AiChatColors {
   final bool isDark;
   final bool planMode;
 
-  factory _AiChatColors.of(BuildContext context) =>
-      const _AiChatColors(isDark: true);
+  factory _AiChatColors.of(BuildContext context) => _AiChatColors(
+        isDark: Theme.of(context).brightness == Brightness.dark,
+      );
 
   Color get scaffoldBg => planMode
       ? const Color(0xFF2A2208)
@@ -2055,7 +2056,7 @@ class _AiComposerState extends State<_AiComposer> {
                             fontWeight: FontWeight.w600,
                             color: _listening
                                 ? const Color(0xFFE11D48)
-                                : const Color(0xFF64748B),
+                                : widget.colors.mutedText,
                           ),
                         ),
                       ),
@@ -2111,7 +2112,9 @@ class _AiComposerState extends State<_AiComposer> {
                         decoration: BoxDecoration(
                           color: widget.planMode
                               ? AiAdPlanColors.accent.withValues(alpha: 0.18)
-                              : const Color(0xFFE8F1FC),
+                              : (widget.colors.isDark
+                                  ? const Color(0xFF243044)
+                                  : const Color(0xFFE8F1FC)),
                           shape: BoxShape.circle,
                           border: widget.planMode
                               ? Border.all(color: AiAdPlanColors.border)
@@ -2141,6 +2144,9 @@ class _AiComposerState extends State<_AiComposer> {
                       minLines: 1,
                       maxLines: 4,
                       enabled: !_listening && !_correcting,
+                      keyboardAppearance: widget.colors.isDark
+                          ? Brightness.dark
+                          : Brightness.light,
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) {
                         if (_awaitingConfirm) {
@@ -2149,12 +2155,21 @@ class _AiComposerState extends State<_AiComposer> {
                           widget.onSend();
                         }
                       },
-                      style: TextStyle(fontSize: 15.sp),
+                      style: TextStyle(
+                        inherit: false,
+                        fontFamily: Theme.of(context).textTheme.bodyLarge?.fontFamily,
+                        fontSize: 15.sp,
+                        height: 1.35,
+                        color: widget.colors.primaryText,
+                      ),
+                      cursorColor: LightColor.defaultColor,
                       decoration: InputDecoration(
                         hintText: s.aiAssistantHint,
                         hintStyle: TextStyle(
+                          inherit: false,
+                          fontFamily: Theme.of(context).textTheme.bodyLarge?.fontFamily,
                           fontSize: 13.sp,
-                          color: const Color(0xFF9AA3B2),
+                          color: widget.colors.mutedText,
                         ),
                         prefixIcon: Icon(
                           Icons.auto_awesome_rounded,
@@ -2164,22 +2179,26 @@ class _AiComposerState extends State<_AiComposer> {
                         prefixIconConstraints: BoxConstraints(minWidth: 38.w),
                         filled: true,
                         fillColor: _listening
-                            ? const Color(0xFFFFF1F2)
-                            : const Color(0xFFF3F6FB),
+                            ? (widget.colors.isDark
+                                ? const Color(0xFF3B1520)
+                                : const Color(0xFFFFF1F2))
+                            : (widget.colors.isDark
+                                ? const Color(0xFF1B2433)
+                                : const Color(0xFFF3F6FB)),
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: 14.w,
                           vertical: 12.h,
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(24.r),
-                          borderSide: const BorderSide(color: Color(0xFFE6EAF2)),
+                          borderSide: BorderSide(color: widget.colors.composerBorder),
                         ),
                         disabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(24.r),
                           borderSide: BorderSide(
                             color: _listening
                                 ? const Color(0xFFFECACA)
-                                : const Color(0xFFE6EAF2),
+                                : widget.colors.composerBorder,
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
@@ -2202,7 +2221,9 @@ class _AiComposerState extends State<_AiComposer> {
                       decoration: BoxDecoration(
                         color: _listening
                             ? const Color(0xFFE11D48)
-                            : const Color(0xFFE8F1FC),
+                            : (widget.colors.isDark
+                                ? const Color(0xFF243044)
+                                : const Color(0xFFE8F1FC)),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(

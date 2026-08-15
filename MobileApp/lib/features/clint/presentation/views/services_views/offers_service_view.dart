@@ -1,3 +1,4 @@
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_states.dart';
 import 'package:alrasmarket/features/clint/presentation/models/service_product_type.dart';
@@ -104,7 +105,7 @@ class _OffersServiceViewState extends State<OffersServiceView> {
         final offerProducts = _sorted(cubit.offersProducts);
 
         return Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: AppColors.scaffold(context),
           body: Column(
             children: [
               SearchHeader(title: s.offers),

@@ -1,3 +1,4 @@
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -11,10 +12,10 @@ class BookingDetailsCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card(context),
         borderRadius: BorderRadius.circular(8.r),
         border: Border.all(
-          color: const Color(0xFFD0D5DD).withValues(alpha: 0.6),
+          color: AppColors.border(context),
         ),
         boxShadow: const [
           BoxShadow(

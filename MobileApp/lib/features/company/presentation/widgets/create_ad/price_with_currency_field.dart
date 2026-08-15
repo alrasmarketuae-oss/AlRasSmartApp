@@ -1,4 +1,5 @@
 import 'package:alrasmarket/features/company/presentation/models/create_ad_currency.dart';
+import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_design.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_currency_label.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_form_field_styles.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_unit_dropdown.dart';
@@ -61,17 +62,17 @@ class _PriceWithCurrencyFieldState extends State<PriceWithCurrencyField> {
   }) {
     return InputDecoration(
       filled: true,
-      fillColor: Colors.white,
+      fillColor: CreateAdDesign.cardBg,
       hintText: hintText,
       hintStyle: TextStyle(
-        color: const Color(0xFF333333).withOpacity(0.5),
+        color: CreateAdDesign.muted,
         fontFamily: fontFamily,
         fontSize: 14.sp,
       ),
       contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8.r),
-        borderSide: const BorderSide(color: Color(0xFFEAECF0), width: 1.5),
+        borderSide: BorderSide(color: CreateAdDesign.border, width: 1.5),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8.r),

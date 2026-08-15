@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:alrasmarket/core/theme/app_fonts.dart';
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/utils/product_grid_layout.dart';
 import 'package:alrasmarket/core/utils/product_price_formatter.dart';
 import 'package:alrasmarket/core/utils/product_stock.dart';
@@ -189,7 +190,7 @@ class _OfferProductCardMarketplaceLayoutState
               fontWeight: soldOut ? FontWeight.w700 : FontWeight.w400,
               color: soldOut
                   ? const Color(0xFFDC2626)
-                  : const Color(0xFF6B7280),
+                  : AppColors.subtitle(context),
               height: 1.35,
             ),
           ),

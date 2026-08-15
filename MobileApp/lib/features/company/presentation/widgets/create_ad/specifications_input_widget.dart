@@ -74,11 +74,11 @@ class SpecificationsInputWidget extends StatelessWidget {
                       vertical: 12.h,
                     ),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: CreateAdDesign.cardBg,
                     border: OutlineInputBorder(
                       borderRadius:
                           BorderRadius.circular(CreateAdDesign.fieldRadius),
-                      borderSide: const BorderSide(
+                      borderSide: BorderSide(
                         color: CreateAdDesign.border,
                         width: 1.5,
                       ),
@@ -86,7 +86,7 @@ class SpecificationsInputWidget extends StatelessWidget {
                     enabledBorder: OutlineInputBorder(
                       borderRadius:
                           BorderRadius.circular(CreateAdDesign.fieldRadius),
-                      borderSide: const BorderSide(
+                      borderSide: BorderSide(
                         color: CreateAdDesign.border,
                         width: 1.5,
                       ),

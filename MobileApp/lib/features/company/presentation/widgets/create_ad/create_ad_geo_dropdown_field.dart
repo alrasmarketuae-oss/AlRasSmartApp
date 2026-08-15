@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/theme/app_fonts.dart';
+import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_design.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -30,7 +31,7 @@ class CreateAdGeoDropdownField extends StatelessWidget {
   Widget build(BuildContext context) {
     final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
     final fieldTextStyle = TextStyle(
-      color: const Color(0xFF333333).withValues(alpha: 0.8),
+      color: CreateAdDesign.text,
       fontFamily: fontFamily,
       fontSize: 13.sp,
     );
@@ -70,7 +71,7 @@ class CreateAdGeoDropdownField extends StatelessWidget {
               color: const Color(0xFF6B7280),
               size: 20.sp,
             ),
-      dropdownColor: Colors.white,
+      dropdownColor: CreateAdDesign.cardBg,
       isExpanded: true,
       isDense: true,
       style: fieldTextStyle,
@@ -78,12 +79,12 @@ class CreateAdGeoDropdownField extends StatelessWidget {
       validator: validator,
       decoration: InputDecoration(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: CreateAdDesign.cardBg,
         isDense: true,
         contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.r),
-          borderSide: const BorderSide(color: Color(0xFFEAECF0), width: 1.2),
+          borderSide: BorderSide(color: CreateAdDesign.border, width: 1.2),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.r),

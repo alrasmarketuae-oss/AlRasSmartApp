@@ -28,9 +28,9 @@ class OrderDetailsCardWidget extends StatelessWidget {
       width: double.infinity,
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card(context),
         borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(color: const Color(0xFFEAECF0), width: 1.5),
+        border: Border.all(color: AppColors.border(context), width: 1.5),
       ),
       child: Column(
         children: [
