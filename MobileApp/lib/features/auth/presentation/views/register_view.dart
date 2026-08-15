@@ -3,19 +3,18 @@ import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/core/widgets/auth_header.dart';
+import 'package:alrasmarket/features/auth/data/pending_registration_address.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_cubit.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_states.dart';
 import 'package:alrasmarket/features/auth/presentation/views/widgets/contry_code.dart';
 import 'package:alrasmarket/features/auth/presentation/views/widgets/auth_profile_photo_picker.dart';
+import 'package:alrasmarket/features/clint/data/models/client_address_model.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/add_address_dialog.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:geocoding/geocoding.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:alrasmarket/features/clint/presentation/widgets/location_picker_map_view.dart';
-import 'package:latlong2/latlong.dart';
 
 const Color _kBg = Color(0xFFF7FAFF);
 const Color _kTitle = Color(0xFF1B3B5F);
@@ -49,7 +48,7 @@ class _RegisterViewState extends State<RegisterView> {
   String _selectedCountryCode = '+971';
   String _selectedOtherCountryCode = '+971';
   bool _acceptedTermsAndPrivacy = false;
-  bool _resolvingAddress = false;
+  CreateAddressRequest? _pendingAddress;
   String? _profileImagePath;
 
   @override
@@ -66,266 +65,30 @@ class _RegisterViewState extends State<RegisterView> {
     super.dispose();
   }
 
-  Future<void> _chooseAddressSource() async {
-    if (_resolvingAddress) return;
-    final isAr = Localizations.localeOf(context).languageCode == 'ar';
-    final choice = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 20.h),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40.w,
-                    height: 4.h,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE6ECF5),
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 16.h),
-                Text(
-                  isAr ? 'كيف تريد تحديد العنوان؟' : 'How would you like to set the address?',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w700,
-                    color: _kTitle,
-                  ),
-                ),
-                SizedBox(height: 16.h),
-                _addressChoiceTile(
-                  icon: Icons.my_location_rounded,
-                  title: isAr ? 'استخدم موقعي الحالي' : 'Use my current location',
-                  subtitle: isAr
-                      ? 'سيتم تعبئة العنوان من GPS'
-                      : 'Fill the address from GPS',
-                  onTap: () => Navigator.of(sheetContext).pop('current'),
-                ),
-                SizedBox(height: 10.h),
-                _addressChoiceTile(
-                  icon: Icons.map_outlined,
-                  title: isAr ? 'اختيار من الخريطة' : 'Select on the map',
-                  subtitle: isAr
-                      ? 'حدد النقطة ثم أكّد الموقع'
-                      : 'Pin a point and confirm the location',
-                  onTap: () => Navigator.of(sheetContext).pop('map'),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-
-    if (!mounted || choice == null) return;
-    if (choice == 'current') {
-      await _fillAddressFromLocation();
-    } else if (choice == 'map') {
-      await _fillAddressFromMap();
-    }
-  }
-
-  Widget _addressChoiceTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: const Color(0xFFF7FAFF),
-      borderRadius: BorderRadius.circular(14.r),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14.r),
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-          child: Row(
-            children: [
-              Container(
-                width: 40.w,
-                height: 40.w,
-                decoration: BoxDecoration(
-                  color: _kPrimary.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: _kPrimary, size: 22.sp),
-              ),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w700,
-                        color: _kPrimary,
-                      ),
-                    ),
-                    SizedBox(height: 2.h),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: _kSubtitle,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: const Color(0xFF98A2B3),
-                size: 22.sp,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _fillAddressFromMap() async {
-    final isAr = Localizations.localeOf(context).languageCode == 'ar';
-    LatLng initial = const LatLng(25.2048, 55.2708);
-    try {
-      final last = await Geolocator.getLastKnownPosition();
-      if (last != null) {
-        initial = LatLng(last.latitude, last.longitude);
-      }
-    } catch (_) {}
-
-    final picked = await LocationPickerMapView.pick(
-      context,
-      initialPosition: initial,
-      title: isAr ? 'اختيار الموقع' : 'Select on the map',
-      confirmLabel: isAr ? 'تأكيد الموقع' : 'Confirm location',
-    );
-    if (picked == null || !mounted) return;
-    await _fillAddressFromCoordinates(picked.latitude, picked.longitude);
-  }
-
-  Future<void> _fillAddressFromLocation() async {
-    if (_resolvingAddress) return;
-    final isAr = Localizations.localeOf(context).languageCode == 'ar';
-    setState(() => _resolvingAddress = true);
-    try {
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        throw Exception(
-          isAr
-              ? 'من فضلك فعّل خدمة الموقع أولاً.'
-              : 'Please enable location services.',
-        );
-      }
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        throw Exception(
-          isAr
-              ? 'صلاحية الموقع مطلوبة لتحديد العنوان.'
-              : 'Location permission is required.',
-        );
-      }
-
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
-      );
-      if (!mounted) return;
-      await _applyResolvedAddress(
-        position.latitude,
-        position.longitude,
-        filledFromCurrentLocation: true,
-      );
-    } catch (e) {
-      if (!mounted) return;
-      AppToast.showError(context, e.toString().replaceFirst('Exception: ', ''));
-    } finally {
-      if (mounted) setState(() => _resolvingAddress = false);
-    }
-  }
-
-  Future<void> _fillAddressFromCoordinates(double lat, double lng) async {
-    if (_resolvingAddress) return;
-    setState(() => _resolvingAddress = true);
-    try {
-      await _applyResolvedAddress(lat, lng, filledFromCurrentLocation: false);
-    } catch (e) {
-      if (!mounted) return;
-      AppToast.showError(context, e.toString().replaceFirst('Exception: ', ''));
-    } finally {
-      if (mounted) setState(() => _resolvingAddress = false);
-    }
-  }
-
-  Future<void> _applyResolvedAddress(
-    double lat,
-    double lng, {
-    required bool filledFromCurrentLocation,
-  }) async {
-    final isAr = Localizations.localeOf(context).languageCode == 'ar';
-    final places = await placemarkFromCoordinates(lat, lng);
-    final place = places.isNotEmpty ? places.first : null;
-    if (place == null) {
-      throw Exception(
-        isAr
-            ? 'تعذر قراءة العنوان من هذا الموقع.'
-            : 'Could not resolve address from this location.',
-      );
-    }
-    final line = <String>[
-      if ((place.street ?? '').trim().isNotEmpty) place.street!.trim(),
-      if ((place.subLocality ?? '').trim().isNotEmpty) place.subLocality!.trim(),
-      if ((place.locality ?? '').trim().isNotEmpty) place.locality!.trim(),
-      if ((place.administrativeArea ?? '').trim().isNotEmpty)
-        place.administrativeArea!.trim(),
-      if ((place.country ?? '').trim().isNotEmpty) place.country!.trim(),
-    ].join(', ');
-    if (line.isEmpty) {
-      throw Exception(
-        isAr
-            ? 'تعذر قراءة العنوان من هذا الموقع.'
-            : 'Could not resolve address from this location.',
-      );
-    }
-    if (!mounted) return;
+  Future<void> _collectStructuredAddress() async {
+    final collected = await AddAddressDialog.collect(context);
+    if (!mounted || collected == null) return;
+    final summary = [
+      collected.addressLine1.trim(),
+      collected.cityName?.trim() ?? '',
+    ].where((part) => part.isNotEmpty).join(', ');
     setState(() {
-      _addressController.text = line;
+      _pendingAddress = collected;
+      _addressController.text = summary;
     });
-    AppToast.showSuccess(
-      context,
-      filledFromCurrentLocation
-          ? (isAr
-              ? 'تم تعبئة العنوان من موقعك الحالي.'
-              : 'Address filled from your current location.')
-          : (isAr
-              ? 'تم تعبئة العنوان من الخريطة.'
-              : 'Address filled from the map.'),
-    );
+    PendingRegistrationAddress.store(collected);
   }
 
-  Widget _buildCompanyLocationAndTaxSection({required bool isArabic}) {
+  Widget _buildCompanyLocationAndTaxSection({
+    required bool isArabic,
+    required bool includeCompanyDocs,
+  }) {
     final s = S.of(context);
     final addressLabel = isArabic ? 'الموقع / العنوان' : 'Location / Address';
     final pickLabel = isArabic ? 'تحديد العنوان' : 'Set address';
     final hint = isArabic
-        ? 'اضغط ثم اختر: موقعي الحالي أو التحديد على الخريطة'
-        : 'Tap, then choose: current location or select on the map';
+        ? 'اضغط لتعبئة العنوان بنفس نموذج الملف الشخصي (نوع العنوان، الشارع، الخريطة)'
+        : 'Tap to fill the same address form used in your profile (type, street, map)';
 
     final locationPicker = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -343,7 +106,7 @@ class _RegisterViewState extends State<RegisterView> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(14.r),
           child: InkWell(
-            onTap: _resolvingAddress ? null : _chooseAddressSource,
+            onTap: _collectStructuredAddress,
             borderRadius: BorderRadius.circular(14.r),
             child: Container(
               width: double.infinity,
@@ -368,12 +131,7 @@ class _RegisterViewState extends State<RegisterView> {
                       color: _kPrimary.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
-                    child: _resolvingAddress
-                        ? Padding(
-                            padding: EdgeInsets.all(10.w),
-                            child: const CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Icon(
+                    child: Icon(
                             Icons.add_location_alt_outlined,
                             color: _kPrimary,
                             size: 22.sp,
@@ -492,19 +250,22 @@ class _RegisterViewState extends State<RegisterView> {
 
     return Column(
       children: [
-        if (isArabic) ...[
+        if (includeCompanyDocs && isArabic) ...[
           licenseField,
           SizedBox(height: 14.h),
           locationPicker,
-        ] else ...[
+        ] else if (includeCompanyDocs) ...[
           locationPicker,
           SizedBox(height: 14.h),
           licenseField,
+        ] else
+          locationPicker,
+        if (includeCompanyDocs) ...[
+          SizedBox(height: 14.h),
+          taxField,
+          SizedBox(height: 14.h),
+          websiteField,
         ],
-        SizedBox(height: 14.h),
-        taxField,
-        SizedBox(height: 14.h),
-        websiteField,
       ],
     );
   }
@@ -531,6 +292,16 @@ class _RegisterViewState extends State<RegisterView> {
 
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
+    if (_pendingAddress == null) {
+      final isAr = Localizations.localeOf(context).languageCode == 'ar';
+      AppToast.showError(
+        context,
+        isAr ? 'من فضلك حدد العنوان أولاً.' : 'Please set your address first.',
+      );
+      return;
+    }
+    PendingRegistrationAddress.store(_pendingAddress!);
+
     final fullPhone = '$_selectedCountryCode ${_phoneController.text.trim()}';
     if (widget.isSupplierCompany || _isCustomerCompany) {
       context.push(
@@ -545,7 +316,7 @@ class _RegisterViewState extends State<RegisterView> {
           'landNumber':
               '$_selectedOtherCountryCode ${_landlinePhoneController.text.trim()}',
           'licenseNumber': _licenseNumberController.text.trim(),
-          'commercialRegister': _addressController.text.trim(),
+          'commercialRegister': '',
           'taxNumber': _taxNumberController.text.trim(),
           'website': _websiteController.text.trim(),
           'isCustomerCompany': _isCustomerCompany,
@@ -1037,10 +808,12 @@ class _RegisterViewState extends State<RegisterView> {
                         return null;
                       },
                     ),
-                    if (widget.isSupplierCompany || _isCustomerCompany) ...[
-                      SizedBox(height: 14.h),
-                      _buildCompanyLocationAndTaxSection(isArabic: isAr),
-                    ],
+                    SizedBox(height: 14.h),
+                    _buildCompanyLocationAndTaxSection(
+                      isArabic: isAr,
+                      includeCompanyDocs:
+                          widget.isSupplierCompany || _isCustomerCompany,
+                    ),
                     SizedBox(height: 14.h),
                     _phoneRow(),
                     if (widget.isSupplierCompany || _isCustomerCompany) ...[

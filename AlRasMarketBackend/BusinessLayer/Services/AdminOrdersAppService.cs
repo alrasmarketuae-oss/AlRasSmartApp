@@ -54,6 +54,7 @@ public class AdminOrdersAppService(
             usdToAedRate);
         AdminOrderPricingHelper.ApplyChargedCheckoutAmounts(dto, order);
         await EnrichLegacyPendingPaymentIdsAsync(dto, order.Id, cancellationToken);
+        await AdminOrderRelatedOrders.AttachAsync(orderData, [dto], cancellationToken);
         return dto;
     }
 
@@ -153,6 +154,7 @@ public class AdminOrdersAppService(
             return dto;
         }).ToList();
 
+        await AdminOrderRelatedOrders.AttachAsync(orderData, items, cancellationToken);
         await ApplyProductTranslationsAsync(items, orders, cancellationToken);
         await ApplyUserTranslationsAsync(items, cancellationToken);
 

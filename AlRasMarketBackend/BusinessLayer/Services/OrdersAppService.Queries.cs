@@ -54,6 +54,7 @@ public partial class OrdersAppService
             return dto;
         }).ToList();
 
+        await AdminOrderRelatedOrders.AttachAsync(orderData, items, cancellationToken);
         await ApplyOrderProductTranslationsAsync(items, cancellationToken);
 
         return new AdminPagedResult<AdminOrderListItemDto>
@@ -159,6 +160,7 @@ public partial class OrdersAppService
         }
 
         await ApplyOrderProductTranslationsAsync([dto], cancellationToken);
+        await AdminOrderRelatedOrders.AttachAsync(orderData, [dto], cancellationToken);
         return dto;
     }
 

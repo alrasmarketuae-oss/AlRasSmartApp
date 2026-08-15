@@ -1,3 +1,5 @@
+import { parseApiUtcDate } from './formatTimeAgo'
+
 export function getShipmentStatusStyle(statusId: number) {
   switch (statusId) {
     case 3:
@@ -26,9 +28,10 @@ export function getShipmentStatusStyle(statusId: number) {
 
 export function formatShipmentDate(value: string, locale: 'ar' | 'en') {
   if (!value) return '—'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
+  const date = parseApiUtcDate(value)
+  if (!date) return value
   return date.toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US', {
+    timeZone: 'UTC',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -37,9 +40,10 @@ export function formatShipmentDate(value: string, locale: 'ar' | 'en') {
 
 export function formatRegistrationDate(value: string, locale: 'ar' | 'en') {
   if (!value) return '—'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
+  const date = parseApiUtcDate(value)
+  if (!date) return value
   return date.toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US', {
+    timeZone: 'UTC',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',

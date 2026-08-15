@@ -28,6 +28,7 @@ import OrderStatusActionButtons from './OrderStatusActionButtons'
 import OrderStatusHistoryStrip from './OrderStatusHistoryStrip'
 import OrderPrintOptionsDialog from './OrderPrintOptionsDialog'
 import OrderPrintSheet from './OrderPrintSheet'
+import RelatedOrdersBanner from './RelatedOrdersBanner'
 import { DEFAULT_ORDER_PRINT_OPTIONS, type OrderPrintOptions } from '../../utils/orderPrintOptions'
 import { triggerOrderPrintAfterRender } from '../../utils/fitOrderPrintToA4'
 import { formatAdAmount, amountsLookEqual, productTypeFieldAccent, resolveOrderChannelTypeKey, resolveOrderChannelTypeName } from '../../utils/adsDisplay'
@@ -39,6 +40,7 @@ import {
 } from '../../utils/ordersDisplay'
 import { getOrderStatusLabel, getOrderStatusStyle } from '../../utils/orderStatus'
 import { formatRelativeTime } from '../../utils/timeAgo'
+import { formatUtcDateTime } from '../../utils/formatTimeAgo'
 import {
   canMarkOrderReceived,
   canSetCustomTextStatus,
@@ -347,15 +349,7 @@ function SummaryStat({ label, value }: { label: string; value: ReactNode }) {
 
 function formatDetailDate(value: string, locale: 'ar' | 'en') {
   if (!value) return '—'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString(locale === 'ar' ? 'ar-AE' : 'en-US', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  return formatUtcDateTime(value, locale)
 }
 
 function paymentLabel(name: string, t: (key: string) => string) {
@@ -743,6 +737,11 @@ export default function OffersOrderDetailView({
               {formatRelativeTime(order.createdAt, locale)}
             </span>
           </p>
+          {(order.relatedOrders?.length ?? 0) > 0 ? (
+            <div className="mt-3 print:hidden">
+              <RelatedOrdersBanner relatedOrders={order.relatedOrders} />
+            </div>
+          ) : null}
           {statusHistory.length > 0 ? (
             <div className="admin-card mt-3 rounded-2xl border border-slate-200/80 px-3 py-3 shadow-sm dark:border-slate-700">
               <OrderStatusHistoryStrip entries={statusHistory} locale={locale} />

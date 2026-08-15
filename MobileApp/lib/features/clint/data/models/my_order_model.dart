@@ -59,6 +59,7 @@ class MyOrderModel {
     this.returnAdminResponse,
     this.returnRespondedAtUtc,
     this.statusHistory = const [],
+    this.relatedOrders = const [],
   });
 
   final int id;
@@ -125,6 +126,7 @@ class MyOrderModel {
   final String? returnAdminResponse;
   final String? returnRespondedAtUtc;
   final List<MyOrderStatusHistoryModel> statusHistory;
+  final List<RelatedOrderSummary> relatedOrders;
 
   bool get isRetail {
     final type = productTypeNameEn.trim().isNotEmpty
@@ -220,6 +222,10 @@ class MyOrderModel {
     final rawHistory =
         json['statusHistory'] as List<dynamic>? ??
         json['StatusHistory'] as List<dynamic>? ??
+        const [];
+    final rawRelated =
+        json['relatedOrders'] as List<dynamic>? ??
+        json['RelatedOrders'] as List<dynamic>? ??
         const [];
 
     final nameEn = LocalizedProductText.pickEn(
@@ -403,6 +409,10 @@ class MyOrderModel {
           .whereType<Map<String, dynamic>>()
           .map(MyOrderStatusHistoryModel.fromJson)
           .toList(),
+      relatedOrders: rawRelated
+          .whereType<Map<String, dynamic>>()
+          .map(RelatedOrderSummary.fromJson)
+          .toList(),
     );
   }
 
@@ -533,4 +543,32 @@ class MyOrderStatusHistoryModel {
       isArabic && statusNameAr.trim().isNotEmpty
           ? statusNameAr.trim()
           : statusNameEn.trim();
+}
+
+class RelatedOrderSummary {
+  const RelatedOrderSummary({
+    required this.id,
+    required this.productId,
+    required this.productName,
+    this.primaryImagePath,
+  });
+
+  final int id;
+  final String productId;
+  final String productName;
+  final String? primaryImagePath;
+
+  factory RelatedOrderSummary.fromJson(Map<String, dynamic> json) {
+    return RelatedOrderSummary(
+      id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
+      productId: json['productId']?.toString() ??
+          json['ProductId']?.toString() ??
+          '',
+      productName: json['productName']?.toString() ??
+          json['ProductName']?.toString() ??
+          '',
+      primaryImagePath: json['primaryImagePath']?.toString() ??
+          json['PrimaryImagePath']?.toString(),
+    );
+  }
 }

@@ -1,3 +1,5 @@
+import { formatUtcDate } from './formatTimeAgo'
+
 export function getTypeBadgeClass(typeLabel: string): string {
   switch (typeLabel) {
     case 'مورد':
@@ -31,13 +33,5 @@ export function getStatusBadgeClass(statusLabel: string): string {
 }
 
 export function formatJoinDate(value: string): string {
-  try {
-    const d = new Date(value)
-    const y = d.getFullYear()
-    const m = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    return `${y}-${m}-${day}`
-  } catch {
-    return value
-  }
+  return formatUtcDate(value)
 }

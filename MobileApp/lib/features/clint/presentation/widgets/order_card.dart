@@ -303,6 +303,58 @@ class _OrderCardState extends State<OrderCard>
               ],
             ),
             SizedBox(height: 12.h),
+            if (order.relatedOrders.isNotEmpty) ...[
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF7ED),
+                  borderRadius: BorderRadius.circular(10.r),
+                  border: Border.all(color: const Color(0xFFFED7AA)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isArabic
+                          ? 'هذا الطلب فيه ${order.relatedOrders.length} منتج ${order.relatedOrders.length == 1 ? 'آخر' : 'أخرى'} في نفس الشراء'
+                          : 'This checkout includes ${order.relatedOrders.length} other product(s)',
+                      style: TextStyle(
+                        fontFamily: fontFamily,
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF9A3412),
+                      ),
+                    ),
+                    ...order.relatedOrders.map(
+                      (item) => TextButton(
+                        onPressed: () => context.push(
+                          AppRoutes.kTrackOrderView,
+                          extra: {'orderId': item.id},
+                        ),
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: Text(
+                          isArabic
+                              ? 'عرض المنتج: ${item.productName}'
+                              : 'View product: ${item.productName}',
+                          style: TextStyle(
+                            fontFamily: fontFamily,
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w700,
+                            color: LightColor.defaultColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 12.h),
+            ],
             PrimaryButton(
               text: s.trackOrder,
               onPressed: widget.onTrackTap ??

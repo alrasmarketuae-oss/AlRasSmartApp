@@ -42,3 +42,16 @@ public sealed class AdminOrdersPageFilter
     public string? OfferReview { get; init; }
     public string? OrderChannel { get; init; }
 }
+
+public sealed class OrderGroupSiblingRow
+{
+    public long Id { get; init; }
+    public Guid OrderGroupId { get; init; }
+    public Guid ProductId { get; init; }
+    public string ProductName { get; init; } = string.Empty;
+    public string? ProductNameAr { get; init; }
+    public string? PrimaryImagePath { get; init; }
+    public decimal Quantity { get; init; }
+    public byte StatusId { get; init; }
+    public string? SupplierName { get; init; }
+}

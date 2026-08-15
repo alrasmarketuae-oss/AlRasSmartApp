@@ -626,6 +626,27 @@ export function normalizeCategoriesResponse(
 
 type RawOrderImage = { id?: number; Id?: number; path?: string; Path?: string }
 
+type RawRelatedOrder = {
+  id?: number
+  Id?: number
+  productId?: string
+  ProductId?: string
+  productName?: string
+  ProductName?: string
+  productNameEn?: string | null
+  ProductNameEn?: string | null
+  productNameAr?: string | null
+  ProductNameAr?: string | null
+  primaryImagePath?: string | null
+  PrimaryImagePath?: string | null
+  quantity?: number
+  Quantity?: number
+  statusId?: number
+  StatusId?: number
+  supplierName?: string | null
+  SupplierName?: string | null
+}
+
 type RawOrder = AdminOrder & {
   ProductId?: string
   CustomerName?: string
@@ -720,11 +741,15 @@ type RawOrder = AdminOrder & {
   shippingDuration?: string
   ProductAddress?: string | null
   productAddress?: string | null
+  ProductLatitude?: number | null
+  ProductLongitude?: number | null
   VatAed?: number
   ShippingCostAed?: number
   IsSelfPickup?: boolean
   DeliveryAddressLine?: string | null
   DeliveryCityName?: string | null
+  DeliveryLatitude?: number | null
+  DeliveryLongitude?: number | null
   ChargedShippingAed?: number
   ChargedGrandTotalAed?: number
   ChargedGrandTotalFormatted?: string
@@ -733,6 +758,10 @@ type RawOrder = AdminOrder & {
   PaymentIntentId?: string | null
   paymentIntentId?: string | null
   OrderGroupId?: string | null
+  orderGroupItemCount?: number
+  OrderGroupItemCount?: number
+  relatedOrders?: RawRelatedOrder[]
+  RelatedOrders?: RawRelatedOrder[]
   orderGroupId?: string | null
   PendingOrderId?: string | null
   pendingOrderId?: string | null
@@ -981,6 +1010,18 @@ export function normalizeOrder(raw: RawOrder): AdminOrder {
         : raw.OrderGroupId != null
           ? String(raw.OrderGroupId)
           : null,
+    orderGroupItemCount: Number(raw.orderGroupItemCount ?? raw.OrderGroupItemCount ?? 1),
+    relatedOrders: (raw.relatedOrders ?? raw.RelatedOrders ?? []).map((item) => ({
+      id: Number(item.id ?? item.Id ?? 0),
+      productId: String(item.productId ?? item.ProductId ?? ''),
+      productName: String(item.productName ?? item.ProductName ?? '—'),
+      productNameEn: (item.productNameEn ?? item.ProductNameEn ?? null) as string | null,
+      productNameAr: (item.productNameAr ?? item.ProductNameAr ?? null) as string | null,
+      primaryImagePath: (item.primaryImagePath ?? item.PrimaryImagePath ?? null) as string | null,
+      quantity: Number(item.quantity ?? item.Quantity ?? 0),
+      statusId: Number(item.statusId ?? item.StatusId ?? 0),
+      supplierName: (item.supplierName ?? item.SupplierName ?? null) as string | null,
+    })),
     pendingOrderId:
       raw.pendingOrderId != null
         ? String(raw.pendingOrderId)
@@ -1284,6 +1325,7 @@ type RawUserDetail = AdminUserDetail & {
     PhoneNumber?: string | null
   } | null
   CompanyImages?: RawUserCompanyImage[]
+  Addresses?: Record<string, unknown>[]
   OrdersCount?: number
   CanApprove?: boolean
   IsCustomer?: boolean

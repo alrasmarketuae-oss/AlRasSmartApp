@@ -113,4 +113,7 @@ public interface IOrderDataAccess
     Task<(List<Order> Orders, int TotalCount)> GetAdminOrdersPageAsync(
         AdminOrdersPageFilter filter,
         CancellationToken cancellationToken = default);
+    Task<List<OrderGroupSiblingRow>> GetOrderGroupSiblingsAsync(
+        IReadOnlyList<Guid> groupIds,
+        CancellationToken cancellationToken = default);
 }

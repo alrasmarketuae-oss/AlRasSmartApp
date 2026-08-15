@@ -683,4 +683,37 @@ public sealed class OrderDataAccess(IRasAlSouqDbContext dbContext) : IOrderDataA
 
         return (orders, totalCount);
     }
+
+    public async Task<List<OrderGroupSiblingRow>> GetOrderGroupSiblingsAsync(
+        IReadOnlyList<Guid> groupIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (groupIds.Count == 0)
+        {
+            return [];
+        }
+
+        return await dbContext.Orders
+            .AsNoTracking()
+            .Where(x => x.OrderGroupId != null && groupIds.Contains(x.OrderGroupId.Value))
+            .Select(x => new OrderGroupSiblingRow
+            {
+                Id = x.Id,
+                OrderGroupId = x.OrderGroupId!.Value,
+                ProductId = x.ProductId,
+                ProductName = x.Product != null ? (x.Product.NameEn ?? string.Empty) : string.Empty,
+                PrimaryImagePath = x.Product != null
+                    ? x.Product.ProductImages
+                        .OrderBy(i => i.Id)
+                        .Select(i => i.ImagePath)
+                        .FirstOrDefault()
+                    : null,
+                Quantity = x.Quantity,
+                StatusId = x.StatusId,
+                SupplierName = x.ToUser != null
+                    ? (x.ToUser.CompanyName ?? x.ToUser.FullName)
+                    : null,
+            })
+            .ToListAsync(cancellationToken);
+    }
 }

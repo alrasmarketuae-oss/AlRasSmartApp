@@ -1,10 +1,11 @@
 import type { Locale } from '../i18n/messages'
+import { parseApiUtcDate } from './formatTimeAgo'
 
 export function formatChatRelativeTime(sentAtUtc: string, locale: Locale): string {
   if (!sentAtUtc) return ''
 
-  const sentAt = new Date(sentAtUtc)
-  if (Number.isNaN(sentAt.getTime())) return ''
+  const sentAt = parseApiUtcDate(sentAtUtc)
+  if (!sentAt) return ''
 
   const diffMs = Date.now() - sentAt.getTime()
   const seconds = Math.floor(diffMs / 1000)

@@ -7,18 +7,12 @@ import {
   resolveOrderDeliveryPrint,
 } from '../../utils/ordersDisplay'
 import type { OrderPrintOptions } from '../../utils/orderPrintOptions'
+import { formatUtcDateTime } from '../../utils/formatTimeAgo'
 import BilingualNameLines from '../ui/BilingualNameLines'
 
 function formatDetailDate(value: string, locale: Locale) {
   if (!value?.trim()) return '—'
-  try {
-    return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-AE' : 'en-GB', {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    }).format(new Date(value))
-  } catch {
-    return value
-  }
+  return formatUtcDateTime(value, locale)
 }
 
 function paymentLabel(name: string, t: (key: string) => string) {

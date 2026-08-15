@@ -27,7 +27,12 @@ class _GeoOption {
 }
 
 class AddAddressDialog extends StatefulWidget {
-  const AddAddressDialog({super.key, this.retailMode = false, this.existing});
+  const AddAddressDialog({
+    super.key,
+    this.retailMode = false,
+    this.existing,
+    this.collectOnly = false,
+  });
 
   /// When true, only UAE and the seven domestic shipping emirates are shown,
   /// because retail shipping is priced per emirate.
@@ -35,6 +40,9 @@ class AddAddressDialog extends StatefulWidget {
 
   /// When set, the dialog edits this address instead of creating a new one.
   final ClientAddressModel? existing;
+
+  /// Collect the form payload without calling the API (no auth token yet).
+  final bool collectOnly;
 
   static Future<bool?> show(
     BuildContext context, {
@@ -44,6 +52,13 @@ class AddAddressDialog extends StatefulWidget {
     return showDialog<bool>(
       context: context,
       builder: (_) => AddAddressDialog(retailMode: retailMode, existing: existing),
+    );
+  }
+
+  static Future<CreateAddressRequest?> collect(BuildContext context) {
+    return showDialog<CreateAddressRequest>(
+      context: context,
+      builder: (_) => const AddAddressDialog(collectOnly: true),
     );
   }
 
@@ -335,7 +350,7 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
     }
 
     final token = AuthService.instance.currentToken;
-    if (token == null || token.isEmpty) {
+    if (!widget.collectOnly && (token == null || token.isEmpty)) {
       AppToast.showError(context, S.of(context).pleaseLoginToPublish);
       return;
     }
@@ -381,12 +396,18 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
       longitude: _pickedCoordinates?.longitude,
     );
 
+    if (widget.collectOnly) {
+      if (mounted) Navigator.of(context).pop(request);
+      return;
+    }
+
+    final authToken = token!;
     final existing = widget.existing;
     final result = existing == null
-        ? await _createAddressUseCase(token: token, request: request)
+        ? await _createAddressUseCase(token: authToken, request: request)
         : await _updateAddressUseCase(
             addressId: existing.addressId,
-            token: token,
+            token: authToken,
             request: request,
           );
 

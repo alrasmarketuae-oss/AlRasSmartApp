@@ -348,6 +348,8 @@ public sealed class AdminOrderListItemDto
     public string? PaymentIntentId { get; set; }
     /// <summary>Checkout group id linking split retail orders from one payment.</summary>
     public Guid? OrderGroupId { get; set; }
+    public int OrderGroupItemCount { get; set; } = 1;
+    public List<AdminRelatedOrderDto> RelatedOrders { get; set; } = [];
     /// <summary>Pending checkout row id that created this order after Stripe payment.</summary>
     public Guid? PendingOrderId { get; set; }
     public string? StripeRefundId { get; set; }
@@ -363,6 +365,19 @@ public sealed class AdminOrderListItemDto
     /// <summary>True when admin can mark the order as Received (final).</summary>
     public bool CanMarkReceived { get; set; }
     public List<AdminOrderStatusHistoryDto> StatusHistory { get; set; } = [];
+}
+
+public sealed class AdminRelatedOrderDto
+{
+    public long Id { get; set; }
+    public Guid ProductId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public string? ProductNameEn { get; set; }
+    public string? ProductNameAr { get; set; }
+    public string? PrimaryImagePath { get; set; }
+    public decimal Quantity { get; set; }
+    public byte StatusId { get; set; }
+    public string? SupplierName { get; set; }
 }
 
 public sealed class ApproveRequestOfferRequest

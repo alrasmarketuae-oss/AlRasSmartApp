@@ -16,6 +16,18 @@ export type AdminOrderStatusHistory = {
   createdAtUtc: string
 }
 
+export type AdminRelatedOrder = {
+  id: number
+  productId: string
+  productName: string
+  productNameEn?: string | null
+  productNameAr?: string | null
+  primaryImagePath: string | null
+  quantity: number
+  statusId: number
+  supplierName?: string | null
+}
+
 export type AdminOrder = {
   id: number
   productId: string
@@ -119,6 +131,8 @@ export type AdminOrder = {
   stripeSessionId: string | null
   paymentIntentId: string | null
   orderGroupId: string | null
+  orderGroupItemCount?: number
+  relatedOrders?: AdminRelatedOrder[]
   pendingOrderId: string | null
   stripeRefundId: string | null
   refundedAtUtc: string | null

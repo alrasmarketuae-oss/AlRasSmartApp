@@ -1,5 +1,6 @@
 import type { AdminOrderStatusHistory } from '../../types/adminOrder'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
+import { formatUtcDateTime } from '../../utils/formatTimeAgo'
 
 type OrderStatusHistoryStripProps = {
   entries: AdminOrderStatusHistory[]
@@ -8,14 +9,7 @@ type OrderStatusHistoryStripProps = {
 
 function formatStripDate(value: string, locale: 'ar' | 'en') {
   if (!value) return '—'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString(locale === 'ar' ? 'ar-AE' : 'en-US', {
-    day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  return formatUtcDateTime(value, locale)
 }
 
 export default function OrderStatusHistoryStrip({

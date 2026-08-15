@@ -8,6 +8,7 @@ import 'package:alrasmarket/core/services_locator/services_locator.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/features/clint/domain/usecases/address_usecases.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/add_address_dialog.dart';
+import 'package:alrasmarket/features/auth/data/pending_registration_address.dart';
 import 'package:alrasmarket/features/company/presentation/controller/cubit/company_cubit.dart';
 import 'package:alrasmarket/features/person/presentation/controller/cubit/person_cubit.dart';
 import 'package:alrasmarket/features/shipping_company/presentation/controller/cubit/shipping_company_cubit.dart';
@@ -698,6 +699,12 @@ class AuthCubit extends Cubit<AuthStates> {
   static Future<void> _ensureInitialAddressIfMissing() async {
     final token = AuthService.instance.currentToken;
     if (token == null || token.isEmpty) return;
+
+    final pending = PendingRegistrationAddress.take();
+    if (pending != null) {
+      await sl<CreateClientAddressUseCase>()(token: token, request: pending);
+      return;
+    }
 
     final addressesResult = await sl<GetClientAddressesUseCase>()(token: token);
     final hasNoAddress = addressesResult.fold((_) => false, (items) => items.isEmpty);

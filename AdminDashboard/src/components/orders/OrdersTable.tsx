@@ -219,6 +219,11 @@ export default function OrdersTable({
                         >
                           {typeName}
                         </span>
+                        {(order.relatedOrders?.length ?? 0) > 0 ? (
+                          <span className="mt-1 ms-1 inline-flex rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 ring-1 ring-amber-200">
+                            {t('orders.groupedOrderBadge', { count: order.relatedOrders!.length })}
+                          </span>
+                        ) : null}
                       </div>
                     </div>
                   </td>

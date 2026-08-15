@@ -949,6 +949,11 @@ export const enMessages = {
       stripeSessionId: 'Checkout Session ID',
       paymentIntentId: 'Payment Intent ID',
       orderGroupId: 'Order group ID',
+      groupedOrderNotice:
+        'This checkout includes {count} other product(s). Open the other order to see it.',
+      groupedOrderBadge: '+{count} more',
+      otherProductsInCheckout: 'Other products in this checkout',
+      viewRelatedOrder: 'View order',
       pendingOrderId: 'Pending checkout ID',
       customerUserId: 'Customer user ID',
       copyId: 'Copy',

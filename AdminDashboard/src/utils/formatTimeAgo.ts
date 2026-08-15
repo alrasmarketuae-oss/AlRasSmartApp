@@ -36,3 +36,26 @@ export function formatTimeAgo(createdAt: string, locale: Locale): string {
   if (hours < 24) return `${hours} hr ago`
   return `${days} day${days === 1 ? '' : 's'} ago`
 }
+
+export function formatUtcDate(value: string): string {
+  const date = parseApiUtcDate(value)
+  if (!date) return value || '—'
+  const y = date.getUTCFullYear()
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(date.getUTCDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+export function formatUtcDateTime(value: string, locale: 'ar' | 'en' | Locale): string {
+  const date = parseApiUtcDate(value)
+  if (!date) return value || '—'
+  return `${date.toLocaleString(locale === 'ar' ? 'ar-AE' : 'en-GB', {
+    timeZone: 'UTC',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })} UTC`
+}

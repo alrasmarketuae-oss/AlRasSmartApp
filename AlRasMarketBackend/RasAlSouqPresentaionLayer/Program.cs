@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.StaticFiles;
 using BusinessLayer.Constants;
+using BusinessLayer.Helpers;
 using RasAlSouqPresentaionLayer.Authorization;
 using RasAlSouqPresentaionLayer.Middleware;
 using RasAlSouqPresentaionLayer.Hubs;
@@ -434,6 +435,8 @@ builder.Services.AddControllers(options =>
     {
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+        options.JsonSerializerOptions.Converters.Add(new UtcDateTimeJsonConverter());
+        options.JsonSerializerOptions.Converters.Add(new UtcNullableDateTimeJsonConverter());
     });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>

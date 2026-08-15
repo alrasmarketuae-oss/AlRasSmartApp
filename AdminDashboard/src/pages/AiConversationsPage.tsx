@@ -19,11 +19,11 @@ import type {
 } from '../types/aiConversation'
 import type { ChatCompanyReport } from '../types/chatCompanyReport'
 import { getRtkErrorMessage } from '../utils/rtkError'
+import { formatUtcDateTime } from '../utils/formatTimeAgo'
 
 function formatWhen(value: string): string {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString()
+  if (!value) return '—'
+  return formatUtcDateTime(value, 'en')
 }
 
 function resolveConversationAvatar(item: AiConversationListItem): string | null {

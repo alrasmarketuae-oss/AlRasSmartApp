@@ -39,6 +39,7 @@ import {
   resolveRequiredQuantity,
 } from '../../utils/ordersDisplay'
 import { getOrderStatusLabel, getOrderStatusStyle } from '../../utils/orderStatus'
+import { formatUtcDateTime } from '../../utils/formatTimeAgo'
 import {
   canMarkOrderReceived,
   canSetCustomTextStatus,
@@ -338,15 +339,7 @@ function InfoLine({
 
 function formatDetailDate(value: string, locale: 'ar' | 'en') {
   if (!value) return '—'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString(locale === 'ar' ? 'ar-AE' : 'en-US', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  return formatUtcDateTime(value, locale)
 }
 
 function paymentLabel(name: string, t: (key: string) => string) {

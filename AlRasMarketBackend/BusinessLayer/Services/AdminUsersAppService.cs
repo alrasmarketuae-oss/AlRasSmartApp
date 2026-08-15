@@ -116,7 +116,7 @@ public class AdminUsersAppService(
                 IsActive = x.IsActive,
                 IsVerified = x.IsVerified,
                 IsRejected = x.IsRejected,
-                CreatedAt = x.CreatedAt,
+                CreatedAt = UtcDateTimeHelper.AsUtc(x.CreatedAt),
                 ImgPath = x.ImgPath,
                 CompanyName = x.CompanyName,
                 OrdersCount = dbContext.Orders.Count(o => o.FromUserId == x.Id || o.ToUserId == x.Id)
@@ -190,7 +190,7 @@ public class AdminUsersAppService(
             IsVerified = user.IsVerified,
             IsRejected = user.IsRejected,
             RejectionReason = user.RejectionReason,
-            CreatedAt = user.CreatedAt,
+            CreatedAt = UtcDateTimeHelper.AsUtc(user.CreatedAt),
             ImgPath = user.ImgPath,
             CompanyName = user.CompanyName,
             LicenseNumber = user.LicenseNumber,

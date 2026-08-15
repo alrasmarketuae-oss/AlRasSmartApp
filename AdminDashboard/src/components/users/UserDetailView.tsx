@@ -15,6 +15,7 @@ import {
 import type { AdminUserAddress, AdminUserDetail } from '../../types/adminUserDetail'
 import BilingualNameLines from '../ui/BilingualNameLines'
 import WhatsAppPhoneLink from '../shared/WhatsAppPhoneLink'
+import ImageGallery from '../ui/ImageGallery'
 import {
   FieldIcon,
   IconInfoSectionTitle,
@@ -72,25 +73,35 @@ function DocumentFileRow({
   href,
   icon,
   emptyLabel,
+  onPreview,
 }: {
   label: string
   href?: string | null
   icon: ReactNode
   emptyLabel: string
+  onPreview?: () => void
 }) {
+  const triggerClass =
+    'flex h-10 w-10 items-center justify-center rounded-xl bg-[#eff6ff] text-[#3B7FC7] transition hover:bg-[#dbeafe]'
   return (
     <div className="flex items-center justify-between gap-4 border-b border-slate-100 py-3 last:border-b-0 dark:border-slate-800">
       <span className="admin-text-subtle text-sm font-medium">{label}</span>
       {href ? (
-        <a
-          href={href}
-          target="_blank"
-          rel="noreferrer"
-          className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#eff6ff] text-[#3B7FC7] transition hover:bg-[#dbeafe]"
-          aria-label={label}
-        >
-          {icon}
-        </a>
+        onPreview ? (
+          <button type="button" onClick={onPreview} className={triggerClass} aria-label={label}>
+            {icon}
+          </button>
+        ) : (
+          <a
+            href={href}
+            target="_blank"
+            rel="noreferrer"
+            className={triggerClass}
+            aria-label={label}
+          >
+            {icon}
+          </a>
+        )
       ) : (
         <span className="admin-text-subtle text-sm">{emptyLabel}</span>
       )}
@@ -193,6 +204,7 @@ export default function UserDetailView({
 }: UserDetailViewProps) {
   const { t, locale } = useAppPreferences()
   const [rejectReason, setRejectReason] = useState('')
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null)
   const isBusy = isApproving || isRejecting || isDeactivating || isDeleting
   const isSupplier = user.roleId === 2
   const isShippingCompany = user.roleId === 5
@@ -243,6 +255,17 @@ export default function UserDetailView({
   const licenceHref = user.licencePath ? resolveAssetUrl(user.licencePath) : null
   const licenceIsImage = Boolean(user.licencePath && isImagePath(user.licencePath))
   const documentNumber = user.commercialRegister?.trim() || user.licenseNumber?.trim() || ''
+  const previewImages = [
+    licenceIsImage && licenceHref ? licenceHref : null,
+    ...user.companyImages.map((image) => resolveAssetUrl(image.imagePath)),
+    user.companyImages.length === 0 && logoHref ? logoHref : null,
+  ].filter((url, index, list): url is string => Boolean(url) && list.indexOf(url) === index)
+
+  function openPreview(url: string | null | undefined) {
+    if (!url) return
+    const index = previewImages.indexOf(url)
+    setPreviewIndex(index >= 0 ? index : 0)
+  }
 
   const outlineBtn =
     'inline-flex items-center gap-2 rounded-xl border-2 bg-white px-5 py-2.5 text-sm font-bold transition disabled:opacity-60 dark:bg-slate-900'
@@ -534,12 +557,14 @@ export default function UserDetailView({
                   href={licenceHref}
                   icon={<PdfFileIcon />}
                   emptyLabel={t('users.noLicence')}
+                  onPreview={licenceIsImage ? () => openPreview(licenceHref) : undefined}
                 />
                 <DocumentFileRow
                   label={t('users.licenseImage')}
                   href={licenceIsImage ? licenceHref : null}
                   icon={InfoFieldIcons.photo}
                   emptyLabel={t('users.noLicence')}
+                  onPreview={licenceIsImage ? () => openPreview(licenceHref) : undefined}
                 />
               </>
             ) : null}
@@ -548,29 +573,32 @@ export default function UserDetailView({
               href={logoHref}
               icon={InfoFieldIcons.photo}
               emptyLabel={t('users.noCompanyPhotos')}
+              onPreview={logoHref ? () => openPreview(logoHref) : undefined}
             />
-            {user.companyImages.length > 1 ? (
+            {user.companyImages.length > 0 ? (
               <div className="mt-4 grid grid-cols-3 gap-2">
-                {user.companyImages.map((image) => (
-                  <a
-                    key={image.id}
-                    href={resolveAssetUrl(image.imagePath)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-600"
-                  >
-                    <img
-                      src={resolveAssetUrl(image.imagePath)}
-                      alt=""
-                      className="aspect-[4/3] w-full object-cover transition group-hover:scale-105"
-                    />
-                    {image.isPrimary ? (
-                      <span className="absolute bottom-1.5 start-1.5 rounded-full bg-[#3B7FC7] px-2 py-0.5 text-[10px] font-bold text-white">
-                        {t('users.primaryPhoto')}
-                      </span>
-                    ) : null}
-                  </a>
-                ))}
+                {user.companyImages.map((image) => {
+                  const url = resolveAssetUrl(image.imagePath)
+                  return (
+                    <button
+                      key={image.id}
+                      type="button"
+                      onClick={() => openPreview(url)}
+                      className="group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-600"
+                    >
+                      <img
+                        src={url}
+                        alt=""
+                        className="aspect-[4/3] w-full object-cover transition group-hover:scale-105"
+                      />
+                      {image.isPrimary ? (
+                        <span className="absolute bottom-1.5 start-1.5 rounded-full bg-[#3B7FC7] px-2 py-0.5 text-[10px] font-bold text-white">
+                          {t('users.primaryPhoto')}
+                        </span>
+                      ) : null}
+                    </button>
+                  )
+                })}
               </div>
             ) : null}
           </section>
@@ -757,6 +785,13 @@ export default function UserDetailView({
           />
         </section>
       ) : null}
+
+      <ImageGallery
+        images={previewImages}
+        initialIndex={previewIndex ?? 0}
+        open={previewIndex != null}
+        onClose={() => setPreviewIndex(null)}
+      />
     </div>
   )
 }

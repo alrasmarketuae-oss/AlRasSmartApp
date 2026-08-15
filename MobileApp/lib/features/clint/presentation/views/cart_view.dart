@@ -255,7 +255,6 @@ class _CartViewState extends State<CartView> {
                         onAddAddress: () async {
                           final added = await AddAddressDialog.show(
                             context,
-                            retailMode: true,
                           );
                           if (added == true && context.mounted) {
                             await cubit.reloadCartSavedAddresses();

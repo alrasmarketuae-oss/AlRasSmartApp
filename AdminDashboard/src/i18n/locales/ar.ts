@@ -947,6 +947,11 @@ export const arMessages = {
       stripeSessionId: 'معرّف جلسة الدفع (Checkout Session)',
       paymentIntentId: 'معرّف نية الدفع (Payment Intent)',
       orderGroupId: 'معرّف مجموعة الطلب',
+      groupedOrderNotice:
+        'هذا الطلب مرتبط بـ {count} منتج في نفس عملية الشراء. يمكنك فتح المنتج الآخر من هنا.',
+      groupedOrderBadge: '+{count} منتجات',
+      otherProductsInCheckout: 'منتجات أخرى في نفس الطلب',
+      viewRelatedOrder: 'عرض الطلب',
       pendingOrderId: 'معرّف الدفع المعلّق',
       customerUserId: 'معرّف المستخدم (العميل)',
       copyId: 'نسخ',

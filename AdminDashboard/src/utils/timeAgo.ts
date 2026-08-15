@@ -1,3 +1,5 @@
+import { parseApiUtcDate } from './formatTimeAgo'
+
 type Locale = 'ar' | 'en'
 
 type RelativeUnit = {
@@ -35,11 +37,10 @@ function formatEnglish(count: number, unit: RelativeUnit): string {
  */
 export function formatRelativeTime(value: string | null | undefined, locale: Locale): string {
   if (!value) return '—'
-  const date = new Date(value)
-  const time = date.getTime()
-  if (Number.isNaN(time)) return value
+  const date = parseApiUtcDate(value)
+  if (!date) return value
 
-  return formatRelativeFromSeconds(Math.floor((Date.now() - time) / 1000), locale)
+  return formatRelativeFromSeconds(Math.floor((Date.now() - date.getTime()) / 1000), locale)
 }
 
 /**
