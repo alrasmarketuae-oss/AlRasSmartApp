@@ -1199,6 +1199,8 @@ export default function RequestOfferDetailView({
                   shippingRouteSummary: order.shippingRouteSummary,
                   shippingDuration: order.shippingDuration,
                   productAddress: order.productAddress,
+                  productLatitude: order.productLatitude,
+                  productLongitude: order.productLongitude,
                   orderPortName: order.portName,
                 }}
                 showOrderPort

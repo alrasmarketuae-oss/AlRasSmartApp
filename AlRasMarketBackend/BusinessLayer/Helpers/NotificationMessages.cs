@@ -261,9 +261,9 @@ public static class NotificationMessages
         return Pick(
             language,
             "New Order available",
-            $"You have a new order for \"{safeName}\". Open My Ads to review it.",
+            $"You have a new order for \"{safeName}\". Open My Orders to review it.",
             "طلب جديد متاح",
-            $"لديك طلب جديد على منتج \"{safeName}\". افتح إعلاناتي لمراجعته.");
+            $"لديك طلب جديد على منتج \"{safeName}\". افتح طلباتي لمراجعته.");
     }
 
     public static (string Title, string Body) NewProductOrderSeller(
@@ -280,9 +280,9 @@ public static class NotificationMessages
         return Pick(
             language,
             "New Order available",
-            $"You have {pendingCount} pending orders on \"{safeName}\". Open My Ads to review them.",
+            $"You have {pendingCount} pending orders on \"{safeName}\". Open My Orders to review them.",
             "طلب جديد متاح",
-            $"لديك {pendingCount} طلبات معلقة على \"{safeName}\". افتح إعلاناتي لمراجعتها.");
+            $"لديك {pendingCount} طلبات معلقة على \"{safeName}\". افتح طلباتي لمراجعتها.");
     }
 
     public static (string Title, string Body) NewOfferOnRequest(string? language, string productName)
@@ -291,9 +291,9 @@ public static class NotificationMessages
         return Pick(
             language,
             "New offer on your request",
-            $"You received a new offer on \"{safeName}\". Open My Ads to review it.",
+            $"You received a new offer on \"{safeName}\". Open My Orders to review it.",
             "عرض جديد على طلبك",
-            $"وصلك عرض جديد على طلب \"{safeName}\". افتح إعلاناتي لمراجعته.");
+            $"وصلك عرض جديد على طلب \"{safeName}\". افتح طلباتي لمراجعته.");
     }
 
     public static (string Title, string Body) NewOfferOnRequest(
@@ -310,9 +310,9 @@ public static class NotificationMessages
         return Pick(
             language,
             "New offer on your request",
-            $"You have {offerCount} offers on \"{safeName}\". Open My Ads to review them.",
+            $"You have {offerCount} offers on \"{safeName}\". Open My Orders to review them.",
             "عرض جديد على طلبك",
-            $"لديك {offerCount} عروض على \"{safeName}\". افتح إعلاناتي لمراجعتها.");
+            $"لديك {offerCount} عروض على \"{safeName}\". افتح طلباتي لمراجعتها.");
     }
 
     public static (string EmailSubject, string EmailHtml, string FcmTitle, string FcmBody) AdApproved(

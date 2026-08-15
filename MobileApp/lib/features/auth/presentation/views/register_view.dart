@@ -14,6 +14,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/location_picker_map_view.dart';
+import 'package:latlong2/latlong.dart';
 
 const Color _kBg = Color(0xFFF7FAFF);
 const Color _kTitle = Color(0xFF1B3B5F);
@@ -64,6 +66,157 @@ class _RegisterViewState extends State<RegisterView> {
     super.dispose();
   }
 
+  Future<void> _chooseAddressSource() async {
+    if (_resolvingAddress) return;
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 20.h),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40.w,
+                    height: 4.h,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE6ECF5),
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                Text(
+                  isAr ? 'كيف تريد تحديد العنوان؟' : 'How would you like to set the address?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w700,
+                    color: _kTitle,
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                _addressChoiceTile(
+                  icon: Icons.my_location_rounded,
+                  title: isAr ? 'استخدم موقعي الحالي' : 'Use my current location',
+                  subtitle: isAr
+                      ? 'سيتم تعبئة العنوان من GPS'
+                      : 'Fill the address from GPS',
+                  onTap: () => Navigator.of(sheetContext).pop('current'),
+                ),
+                SizedBox(height: 10.h),
+                _addressChoiceTile(
+                  icon: Icons.map_outlined,
+                  title: isAr ? 'اختيار من الخريطة' : 'Select on the map',
+                  subtitle: isAr
+                      ? 'حدد النقطة ثم أكّد الموقع'
+                      : 'Pin a point and confirm the location',
+                  onTap: () => Navigator.of(sheetContext).pop('map'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (!mounted || choice == null) return;
+    if (choice == 'current') {
+      await _fillAddressFromLocation();
+    } else if (choice == 'map') {
+      await _fillAddressFromMap();
+    }
+  }
+
+  Widget _addressChoiceTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: const Color(0xFFF7FAFF),
+      borderRadius: BorderRadius.circular(14.r),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14.r),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+          child: Row(
+            children: [
+              Container(
+                width: 40.w,
+                height: 40.w,
+                decoration: BoxDecoration(
+                  color: _kPrimary.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: _kPrimary, size: 22.sp),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w700,
+                        color: _kPrimary,
+                      ),
+                    ),
+                    SizedBox(height: 2.h),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: _kSubtitle,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: const Color(0xFF98A2B3),
+                size: 22.sp,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _fillAddressFromMap() async {
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    LatLng initial = const LatLng(25.2048, 55.2708);
+    try {
+      final last = await Geolocator.getLastKnownPosition();
+      if (last != null) {
+        initial = LatLng(last.latitude, last.longitude);
+      }
+    } catch (_) {}
+
+    final picked = await LocationPickerMapView.pick(
+      context,
+      initialPosition: initial,
+      title: isAr ? 'اختيار الموقع' : 'Select on the map',
+      confirmLabel: isAr ? 'تأكيد الموقع' : 'Confirm location',
+    );
+    if (picked == null || !mounted) return;
+    await _fillAddressFromCoordinates(picked.latitude, picked.longitude);
+  }
+
   Future<void> _fillAddressFromLocation() async {
     if (_resolvingAddress) return;
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
@@ -93,42 +246,11 @@ class _RegisterViewState extends State<RegisterView> {
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
       );
-      final places = await placemarkFromCoordinates(
+      if (!mounted) return;
+      await _applyResolvedAddress(
         position.latitude,
         position.longitude,
-      );
-      final place = places.isNotEmpty ? places.first : null;
-      if (place == null) {
-        throw Exception(
-          isAr
-              ? 'تعذر قراءة العنوان من موقعك الحالي.'
-              : 'Could not resolve address from your location.',
-        );
-      }
-      final line = <String>[
-        if ((place.street ?? '').trim().isNotEmpty) place.street!.trim(),
-        if ((place.subLocality ?? '').trim().isNotEmpty) place.subLocality!.trim(),
-        if ((place.locality ?? '').trim().isNotEmpty) place.locality!.trim(),
-        if ((place.administrativeArea ?? '').trim().isNotEmpty)
-          place.administrativeArea!.trim(),
-        if ((place.country ?? '').trim().isNotEmpty) place.country!.trim(),
-      ].join(', ');
-      if (line.isEmpty) {
-        throw Exception(
-          isAr
-              ? 'تعذر قراءة العنوان من موقعك الحالي.'
-              : 'Could not resolve address from your location.',
-        );
-      }
-      if (!mounted) return;
-      setState(() {
-        _addressController.text = line;
-      });
-      AppToast.showSuccess(
-        context,
-        isAr
-            ? 'تم تعبئة العنوان من موقعك الحالي.'
-            : 'Address filled from your current location.',
+        filledFromCurrentLocation: true,
       );
     } catch (e) {
       if (!mounted) return;
@@ -138,14 +260,72 @@ class _RegisterViewState extends State<RegisterView> {
     }
   }
 
+  Future<void> _fillAddressFromCoordinates(double lat, double lng) async {
+    if (_resolvingAddress) return;
+    setState(() => _resolvingAddress = true);
+    try {
+      await _applyResolvedAddress(lat, lng, filledFromCurrentLocation: false);
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.showError(context, e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _resolvingAddress = false);
+    }
+  }
+
+  Future<void> _applyResolvedAddress(
+    double lat,
+    double lng, {
+    required bool filledFromCurrentLocation,
+  }) async {
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    final places = await placemarkFromCoordinates(lat, lng);
+    final place = places.isNotEmpty ? places.first : null;
+    if (place == null) {
+      throw Exception(
+        isAr
+            ? 'تعذر قراءة العنوان من هذا الموقع.'
+            : 'Could not resolve address from this location.',
+      );
+    }
+    final line = <String>[
+      if ((place.street ?? '').trim().isNotEmpty) place.street!.trim(),
+      if ((place.subLocality ?? '').trim().isNotEmpty) place.subLocality!.trim(),
+      if ((place.locality ?? '').trim().isNotEmpty) place.locality!.trim(),
+      if ((place.administrativeArea ?? '').trim().isNotEmpty)
+        place.administrativeArea!.trim(),
+      if ((place.country ?? '').trim().isNotEmpty) place.country!.trim(),
+    ].join(', ');
+    if (line.isEmpty) {
+      throw Exception(
+        isAr
+            ? 'تعذر قراءة العنوان من هذا الموقع.'
+            : 'Could not resolve address from this location.',
+      );
+    }
+    if (!mounted) return;
+    setState(() {
+      _addressController.text = line;
+    });
+    AppToast.showSuccess(
+      context,
+      filledFromCurrentLocation
+          ? (isAr
+              ? 'تم تعبئة العنوان من موقعك الحالي.'
+              : 'Address filled from your current location.')
+          : (isAr
+              ? 'تم تعبئة العنوان من الخريطة.'
+              : 'Address filled from the map.'),
+    );
+  }
+
   Widget _buildCompanyLocationAndTaxSection({required bool isArabic}) {
     final s = S.of(context);
     final addressLabel = isArabic ? 'الموقع / العنوان' : 'Location / Address';
-    final pickLabel =
-        isArabic ? 'تحديد موقعي الحالي' : 'Use my current location';
+    final pickLabel = isArabic ? 'تحديد العنوان' : 'Set address';
     final hint = isArabic
-        ? 'اضغط لتحديد موقعك، وسيُملأ العنوان تلقائيًا'
-        : 'Tap to detect your location and auto-fill address';
+        ? 'اضغط ثم اختر: موقعي الحالي أو التحديد على الخريطة'
+        : 'Tap, then choose: current location or select on the map';
 
     final locationPicker = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -163,7 +343,7 @@ class _RegisterViewState extends State<RegisterView> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(14.r),
           child: InkWell(
-            onTap: _resolvingAddress ? null : _fillAddressFromLocation,
+            onTap: _resolvingAddress ? null : _chooseAddressSource,
             borderRadius: BorderRadius.circular(14.r),
             child: Container(
               width: double.infinity,
@@ -194,7 +374,7 @@ class _RegisterViewState extends State<RegisterView> {
                             child: const CircularProgressIndicator(strokeWidth: 2),
                           )
                         : Icon(
-                            Icons.my_location_rounded,
+                            Icons.add_location_alt_outlined,
                             color: _kPrimary,
                             size: 22.sp,
                           ),
@@ -261,8 +441,8 @@ class _RegisterViewState extends State<RegisterView> {
               padding: EdgeInsets.only(top: 6.h),
               child: Text(
                 isArabic
-                    ? 'الموقع مطلوب — اضغط لتحديده'
-                    : 'Location is required — tap to detect it',
+                    ?                 'الموقع مطلوب — اضغط لتحديده (موقعي الحالي أو الخريطة)'
+              : 'Location is required — tap to choose current location or map',
                 style: TextStyle(
                   fontSize: 12.sp,
                   color: const Color(0xFFD92D20),

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/serveses/app_order_listener_service.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
+import 'package:alrasmarket/core/services/app_push_notification_service.dart';
 import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
@@ -51,6 +52,54 @@ class _MyOrdersViewState extends State<MyOrdersView> {
   bool get _isPurchasesSection =>
       !_showIncomingTab || _sectionIndex != 0;
 
+  Future<void> _onOrdersRealtimeUpdate() async {
+    if (!mounted) return;
+    final cubit = context.read<ClintCubit>();
+    final previousIncomingIds =
+        cubit.incomingOrders.map((order) => order.orderId).toSet();
+
+    if (_isPurchasesSection) {
+      await cubit.fetchMyOrders(silent: true);
+      if (_showIncomingTab) {
+        await cubit.fetchIncomingOrders(silent: true);
+      }
+    } else if (_isCompanyCustomerAccount) {
+      await cubit.fetchIncomingOrders(silent: true);
+    } else {
+      await cubit.fetchIncomingOrders(silent: true);
+    }
+
+    if (!mounted) return;
+    final newcomers = cubit.incomingOrders
+        .where((order) => !previousIncomingIds.contains(order.orderId))
+        .toList();
+    if (newcomers.isEmpty) return;
+
+    if (_showIncomingTab && _sectionIndex != 0) {
+      setState(() => _sectionIndex = 0);
+    }
+
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    final productName = newcomers.first.productName.trim();
+    unawaited(
+      AppPushNotificationService.instance.showForegroundAlert(
+        title: isAr ? 'طلب جديد متاح' : 'New Order available',
+        body: productName.isEmpty
+            ? (isAr
+                ? 'وصلك طلب جديد على أحد إعلاناتك.'
+                : 'You received a new order on one of your listings.')
+            : (isAr
+                ? 'لديك طلب جديد على منتج "$productName".'
+                : 'You have a new order for "$productName".'),
+        data: {
+          'type': 'new_order',
+          'orderId': '${newcomers.first.orderId}',
+          'referenceId': '${newcomers.first.orderId}',
+        },
+      ),
+    );
+  }
+
   void _loadCompanyRequestsData() {
     unawaited(context.read<ClintCubit>().fetchIncomingOrders());
   }
@@ -62,15 +111,7 @@ class _MyOrdersViewState extends State<MyOrdersView> {
         .addListener(_onPendingHighlight);
     _ordersRealtimeSub =
         AppOrderListenerService.instance.userOrdersUpdatedStream.listen((_) {
-      if (!mounted) return;
-      final cubit = context.read<ClintCubit>();
-      if (_isPurchasesSection) {
-        unawaited(cubit.fetchMyOrders());
-      } else if (_isCompanyCustomerAccount) {
-        _loadCompanyRequestsData();
-      } else {
-        unawaited(cubit.fetchIncomingOrders());
-      }
+      unawaited(_onOrdersRealtimeUpdate());
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -120,21 +161,32 @@ class _MyOrdersViewState extends State<MyOrdersView> {
 
   void _consumePendingHighlight() {
     final id = NotificationNavigationHelper.pendingHighlightOrderId.value;
-    if (id == null || id <= 0) return;
+    final openIncoming = NotificationNavigationHelper.pendingOpenIncomingTab;
+    if ((id == null || id <= 0) && !openIncoming) return;
     NotificationNavigationHelper.pendingHighlightOrderId.value = null;
+    NotificationNavigationHelper.pendingOpenIncomingTab = false;
+    final cubit = context.read<ClintCubit>();
+    final isIncoming = openIncoming ||
+        cubit.incomingOrders.any((order) => order.orderId == id);
     setState(() {
-      if (_showIncomingTab) {
+      if (_showIncomingTab && isIncoming) {
+        _sectionIndex = 0;
+      } else if (_showIncomingTab && id != null && id > 0) {
         _sectionIndex = 1;
       }
       _filter = MyOrdersChipFilter.all;
-      _highlightOrderId = id;
+      _highlightOrderId = isIncoming ? null : id;
       _scrolledForOrderId = null;
     });
-    context.read<ClintCubit>().fetchMyOrders();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _scrollToHighlightIfNeeded(context.read<ClintCubit>().myOrders);
-    });
+    if (isIncoming) {
+      cubit.fetchIncomingOrders(silent: cubit.incomingOrders.isNotEmpty);
+    } else {
+      cubit.fetchMyOrders();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _scrollToHighlightIfNeeded(context.read<ClintCubit>().myOrders);
+      });
+    }
   }
 
   GlobalKey _keyFor(int orderId) =>

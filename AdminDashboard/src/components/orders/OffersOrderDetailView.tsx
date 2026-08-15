@@ -1242,6 +1242,26 @@ export default function OffersOrderDetailView({
                     iconClass="bg-indigo-50 text-indigo-600"
                     value={order.deliveryAddressLine?.trim() || '—'}
                   />
+                  {order.deliveryLatitude != null && order.deliveryLongitude != null ? (
+                    <IconInfoField
+                      label={t('orders.coordinates')}
+                      icon={InfoFieldIcons.pin}
+                      iconClass="bg-indigo-50 text-indigo-600"
+                      value={
+                        <span dir="ltr">
+                          {`${order.deliveryLatitude}, ${order.deliveryLongitude} `}
+                          <a
+                            href={`https://www.google.com/maps?q=${order.deliveryLatitude},${order.deliveryLongitude}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-semibold text-[#3B7FC7] hover:underline"
+                          >
+                            {t('orders.openMap')}
+                          </a>
+                        </span>
+                      }
+                    />
+                  ) : null}
                 </div>
               ) : null}
               </section>
@@ -1265,6 +1285,8 @@ export default function OffersOrderDetailView({
                   shippingRouteSummary: order.shippingRouteSummary,
                   shippingDuration: order.shippingDuration,
                   productAddress: order.productAddress,
+                  productLatitude: order.productLatitude,
+                  productLongitude: order.productLongitude,
                   orderPortName: order.portName,
                 }}
                 showOrderPort

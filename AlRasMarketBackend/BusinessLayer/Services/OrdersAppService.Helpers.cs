@@ -577,7 +577,9 @@ public partial class OrdersAppService
         decimal ShippingCostAed,
         bool IsSelfPickup,
         string? DeliveryAddressLine,
-        string? DeliveryCityName);
+        string? DeliveryCityName,
+        decimal? DeliveryLatitude = null,
+        decimal? DeliveryLongitude = null);
 
     private async Task<(Guid? AddressId, CheckoutFulfillmentSnapshot? Fulfillment)> ResolveCheckoutAddressAsync(
         PlaceOrderInput input,
@@ -598,9 +600,8 @@ public partial class OrdersAppService
                 ?? throw new KeyNotFoundException("Address not found.");
 
             var city = staticReferenceCache.FindCityById(address.CityId);
-            var addressLine = string.IsNullOrWhiteSpace(address.AddressLine2)
-                ? address.AddressLine1.Trim()
-                : $"{address.AddressLine1.Trim()}, {address.AddressLine2.Trim()}";
+            var country = city is null ? null : staticReferenceCache.FindCountryById(city.CountryId);
+            var addressLine = FormatCheckoutAddress(address, city?.CityName, country?.CountryNameEn);
 
             var shippingCostAed = decimal.Round(
                 Math.Max(0, input.ShippingCostAed ?? 0),
@@ -613,7 +614,9 @@ public partial class OrdersAppService
                     shippingCostAed,
                     false,
                     addressLine,
-                    city?.CityName));
+                    city?.CityName,
+                    address.Latitude,
+                    address.Longitude));
         }
 
         if (!string.IsNullOrWhiteSpace(input.AddressLine) && !string.IsNullOrWhiteSpace(input.CityName))
@@ -629,13 +632,12 @@ public partial class OrdersAppService
 
                 if (address is not null)
                 {
+                    var country = staticReferenceCache.FindCountryById(city.CountryId);
                     var shippingCostAed = decimal.Round(
                         Math.Max(0, input.ShippingCostAed ?? 0),
                         2,
                         MidpointRounding.AwayFromZero);
-                    var addressLine = string.IsNullOrWhiteSpace(address.AddressLine2)
-                        ? address.AddressLine1.Trim()
-                        : $"{address.AddressLine1.Trim()}, {address.AddressLine2.Trim()}";
+                    var addressLine = FormatCheckoutAddress(address, city.CityName, country?.CountryNameEn);
 
                     return (
                         address.Id,
@@ -643,7 +645,9 @@ public partial class OrdersAppService
                             shippingCostAed,
                             false,
                             addressLine,
-                            city.CityName));
+                            city.CityName,
+                            address.Latitude,
+                            address.Longitude));
                 }
             }
         }
@@ -669,6 +673,24 @@ public partial class OrdersAppService
             false,
             addressLine,
             cityName);
+    }
+
+    private static string? FormatCheckoutAddress(Address address, string? cityName, string? countryName)
+    {
+        var formatted = AddressTextFormatter.ToDisplayText(address, cityName, countryName);
+        if (string.IsNullOrWhiteSpace(formatted))
+        {
+            formatted = string.IsNullOrWhiteSpace(address.AddressLine2)
+                ? address.AddressLine1?.Trim()
+                : $"{address.AddressLine1.Trim()}, {address.AddressLine2.Trim()}";
+        }
+
+        if (string.IsNullOrWhiteSpace(formatted))
+        {
+            return null;
+        }
+
+        return formatted.Length <= 1000 ? formatted : formatted[..1000];
     }
 
     private static string? NormalizeCheckoutText(string? value)

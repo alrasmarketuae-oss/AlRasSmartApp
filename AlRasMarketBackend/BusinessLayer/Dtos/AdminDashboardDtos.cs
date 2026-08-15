@@ -176,11 +176,26 @@ public sealed class AdminUserDetailDto
     public string? Website { get; set; }
     public PendingCompanyProfileChangeDto? PendingProfileChanges { get; set; }
     public IReadOnlyList<AdminUserCompanyImageDto> CompanyImages { get; set; } = [];
+    public IReadOnlyList<AdminUserAddressDto> Addresses { get; set; } = [];
     public int OrdersCount { get; set; }
     public bool IsCustomer { get; set; }
     public bool CanApprove { get; set; }
     public bool CanDeactivate { get; set; }
     public bool CanDelete { get; set; }
+}
+
+public sealed class AdminUserAddressDto
+{
+    public Guid AddressId { get; set; }
+    public byte AddressTypeId { get; set; }
+    public string AddressTypeNameEn { get; set; } = string.Empty;
+    public string AddressTypeNameAr { get; set; } = string.Empty;
+    public string FormattedAddress { get; set; } = string.Empty;
+    public string? PostalCode { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
+    public string? Coordinates { get; set; }
+    public string? MapsUrl { get; set; }
 }
 
 public sealed class PendingCompanyProfileChangeDto
@@ -315,11 +330,15 @@ public sealed class AdminOrderListItemDto
     public string ShippingRouteSummary { get; set; } = string.Empty;
     public string ShippingDuration { get; set; } = string.Empty;
     public string? ProductAddress { get; set; }
+    public decimal? ProductLatitude { get; set; }
+    public decimal? ProductLongitude { get; set; }
     public decimal VatAed { get; set; }
     public decimal ShippingCostAed { get; set; }
     public bool IsSelfPickup { get; set; }
     public string? DeliveryAddressLine { get; set; }
     public string? DeliveryCityName { get; set; }
+    public decimal? DeliveryLatitude { get; set; }
+    public decimal? DeliveryLongitude { get; set; }
     public decimal ChargedShippingAed { get; set; }
     public decimal ChargedGrandTotalAed { get; set; }
     public string ChargedGrandTotalFormatted { get; set; } = string.Empty;

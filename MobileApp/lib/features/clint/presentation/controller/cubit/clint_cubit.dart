@@ -256,8 +256,8 @@ class ClintCubit extends Cubit<ClintStates> {
 
   Future<void> refreshOrdersFromRealtime() async {
     await Future.wait([
-      fetchIncomingOrders(),
-      fetchMyOrders(),
+      fetchIncomingOrders(silent: true),
+      fetchMyOrders(silent: true),
     ]);
   }
 
@@ -1675,7 +1675,11 @@ class ClintCubit extends Cubit<ClintStates> {
   }
 
   /// GET /api/Orders/myOrders?page=&pageSize=
-  Future<void> fetchMyOrders({int page = 1, int pageSize = 20}) async {
+  Future<void> fetchMyOrders({
+    int page = 1,
+    int pageSize = 20,
+    bool silent = false,
+  }) async {
     final token = AuthService.instance.currentToken;
     if (token == null || token.isEmpty) {
       myOrdersError = S.current.pleaseLoginToViewYourOrders;
@@ -1685,9 +1689,12 @@ class ClintCubit extends Cubit<ClintStates> {
       return;
     }
 
-    isLoadingMyOrders = true;
+    final showLoading = !silent || myOrders.isEmpty;
+    isLoadingMyOrders = showLoading;
     myOrdersError = null;
-    emit(FetchMyOrdersLoadingState());
+    if (showLoading) {
+      emit(FetchMyOrdersLoadingState());
+    }
 
     final result = await _getMyOrdersUseCase(
       GetMyOrdersParams(page: page, pageSize: pageSize, token: token),
@@ -1753,7 +1760,11 @@ class ClintCubit extends Cubit<ClintStates> {
   }
 
   /// GET /api/Orders/getMyOffersOnMyRequests — seller/incoming orders on my ads.
-  Future<void> fetchIncomingOrders({int page = 1, int pageSize = 20}) async {
+  Future<void> fetchIncomingOrders({
+    int page = 1,
+    int pageSize = 20,
+    bool silent = false,
+  }) async {
     final token = AuthService.instance.currentToken;
     if (token == null || token.isEmpty) {
       incomingOrdersError = S.current.pleaseLoginToViewYourOrders;
@@ -1764,9 +1775,12 @@ class ClintCubit extends Cubit<ClintStates> {
       return;
     }
 
-    isLoadingIncomingOrders = true;
+    final showLoading = !silent || incomingOrders.isEmpty;
+    isLoadingIncomingOrders = showLoading;
     incomingOrdersError = null;
-    emit(FetchIncomingOrdersLoadingState());
+    if (showLoading) {
+      emit(FetchIncomingOrdersLoadingState());
+    }
 
     final result = await _getMyOffersOnMyRequestsUseCase(
       GetMyOffersOnMyRequestsParams(

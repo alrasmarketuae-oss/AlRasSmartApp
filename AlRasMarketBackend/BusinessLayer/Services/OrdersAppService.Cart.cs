@@ -154,6 +154,8 @@ public partial class OrdersAppService
                 IsSelfPickup = fulfillment.IsSelfPickup,
                 DeliveryAddressLine = fulfillment.DeliveryAddressLine,
                 DeliveryCityName = fulfillment.DeliveryCityName,
+                DeliveryLatitude = fulfillment.DeliveryLatitude,
+                DeliveryLongitude = fulfillment.DeliveryLongitude,
             };
 
             foreach (var line in itemSnapshots)
@@ -261,7 +263,9 @@ public partial class OrdersAppService
             pendingOrder.ShippingCostAed,
             pendingOrder.IsSelfPickup,
             pendingOrder.DeliveryAddressLine,
-            pendingOrder.DeliveryCityName);
+            pendingOrder.DeliveryCityName,
+            pendingOrder.DeliveryLatitude,
+            pendingOrder.DeliveryLongitude);
 
         var orderGroupId = Guid.NewGuid();
         var createdOrders = await CreateOrderRowsAsync(
@@ -343,6 +347,8 @@ public partial class OrdersAppService
                 IsSelfPickup = fulfillment?.IsSelfPickup ?? false,
                 DeliveryAddressLine = fulfillment?.DeliveryAddressLine,
                 DeliveryCityName = fulfillment?.DeliveryCityName,
+                DeliveryLatitude = fulfillment?.DeliveryLatitude,
+                DeliveryLongitude = fulfillment?.DeliveryLongitude,
                 CreatedAt = DateTime.SpecifyKind(UtcDateTimeHelper.UtcNow, DateTimeKind.Utc),
             };
 

@@ -9,6 +9,8 @@ export type ProductShippingInfo = {
   /** When set, panel shows "Offer duration" instead of shipping duration. */
   offerDuration?: string
   productAddress?: string | null
+  productLatitude?: number | null
+  productLongitude?: number | null
   orderPortName?: string | null
 }
 

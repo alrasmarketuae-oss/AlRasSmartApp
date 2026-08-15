@@ -11,5 +11,6 @@ public interface IOrderRealtimeNotificationService
         string? statusNameEn = null,
         string? statusNameAr = null,
         IEnumerable<Guid>? participantUserIds = null,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        string eventType = "order_updated");
 }

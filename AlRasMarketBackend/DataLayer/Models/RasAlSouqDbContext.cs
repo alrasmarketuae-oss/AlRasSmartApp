@@ -14,6 +14,7 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
     public DbSet<ProductType> ProductTypes => Set<ProductType>();
     public DbSet<RequestType> RequestTypes => Set<RequestType>();
     public DbSet<BookingPriceType> BookingPriceTypes => Set<BookingPriceType>();
+    public DbSet<AddressType> AddressTypes => Set<AddressType>();
     public DbSet<Unit> Units => Set<Unit>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderAdminOfferPrice> OrderAdminOfferPrices => Set<OrderAdminOfferPrice>();
@@ -357,6 +358,21 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             );
         });
 
+        modelBuilder.Entity<AddressType>(entity =>
+        {
+            entity.ToTable("AddressTypes");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.NameEn).HasMaxLength(50).IsUnicode(false).IsRequired();
+            entity.Property(x => x.NameAr).HasMaxLength(50).IsRequired();
+            entity.HasData(
+                new AddressType { Id = 1, NameEn = "Company", NameAr = "شركة" },
+                new AddressType { Id = 2, NameEn = "Warehouse", NameAr = "مستودع" },
+                new AddressType { Id = 3, NameEn = "Shop", NameAr = "محل" },
+                new AddressType { Id = 4, NameEn = "Home", NameAr = "منزل" }
+            );
+        });
+
         modelBuilder.Entity<BookingPriceType>(entity =>
         {
             entity.ToTable("BookingPriceTypes");
@@ -621,8 +637,10 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.Property(x => x.VatAed).HasColumnType("decimal(12,2)");
             entity.Property(x => x.ShippingCostAed).HasColumnType("decimal(12,2)");
             entity.Property(x => x.IsSelfPickup).HasDefaultValue(false);
-            entity.Property(x => x.DeliveryAddressLine).HasMaxLength(500);
+            entity.Property(x => x.DeliveryAddressLine).HasMaxLength(1000);
             entity.Property(x => x.DeliveryCityName).HasMaxLength(200);
+            entity.Property(x => x.DeliveryLatitude).HasColumnType("decimal(10,7)");
+            entity.Property(x => x.DeliveryLongitude).HasColumnType("decimal(10,7)");
             entity.Property(x => x.ReturnReason).HasMaxLength(2000);
             entity.Property(x => x.ReturnMediaPathsJson).HasMaxLength(4000);
             entity.Property(x => x.ReturnAdminResponse).HasMaxLength(2000);
@@ -700,8 +718,10 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.Property(x => x.StripeRefundId).HasMaxLength(255);
             entity.Property(x => x.Notes).HasMaxLength(2000);
             entity.Property(x => x.IsSelfPickup).HasDefaultValue(false);
-            entity.Property(x => x.DeliveryAddressLine).HasMaxLength(500);
+            entity.Property(x => x.DeliveryAddressLine).HasMaxLength(1000);
             entity.Property(x => x.DeliveryCityName).HasMaxLength(200);
+            entity.Property(x => x.DeliveryLatitude).HasColumnType("decimal(10,7)");
+            entity.Property(x => x.DeliveryLongitude).HasColumnType("decimal(10,7)");
             entity.Property(x => x.CreatedAt).HasColumnType("datetime").HasDefaultValueSql("(getutcdate())");
             entity.HasIndex(x => x.StripeSessionId)
                 .IsUnique()
@@ -778,8 +798,21 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.HasKey(x => x.Id);
             entity.Property(x => x.AddressLine1).HasMaxLength(255).IsRequired();
             entity.Property(x => x.AddressLine2).HasMaxLength(255);
+            entity.Property(x => x.Area).HasMaxLength(150);
+            entity.Property(x => x.Street).HasMaxLength(200);
+            entity.Property(x => x.Building).HasMaxLength(200);
+            entity.Property(x => x.FloorNo).HasMaxLength(20);
+            entity.Property(x => x.UnitNo).HasMaxLength(50);
+            entity.Property(x => x.Landmark).HasMaxLength(255);
+            entity.Property(x => x.PostalCode).HasMaxLength(30);
+            entity.Property(x => x.ContactPerson).HasMaxLength(150);
+            entity.Property(x => x.MobileNumber).HasMaxLength(30);
+            entity.Property(x => x.DeliveryInstructions).HasMaxLength(500);
+            entity.Property(x => x.Latitude).HasColumnType("decimal(10,7)");
+            entity.Property(x => x.Longitude).HasColumnType("decimal(10,7)");
             entity.HasOne(x => x.User).WithMany(x => x.Addresses).HasForeignKey(x => x.UserId);
             entity.HasOne(x => x.City).WithMany(x => x.Addresses).HasForeignKey(x => x.CityId);
+            entity.HasOne(x => x.AddressType).WithMany(x => x.Addresses).HasForeignKey(x => x.AddressTypeId);
             entity.HasIndex(x => new { x.UserId, x.CityId });
         });
 

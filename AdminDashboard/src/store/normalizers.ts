@@ -960,11 +960,15 @@ export function normalizeOrder(raw: RawOrder): AdminOrder {
     shippingDuration:
       raw.shippingDuration ?? raw.ShippingDuration ?? '',
     productAddress: raw.productAddress ?? raw.ProductAddress ?? null,
+    productLatitude: raw.productLatitude ?? raw.ProductLatitude ?? null,
+    productLongitude: raw.productLongitude ?? raw.ProductLongitude ?? null,
     vatAed: raw.vatAed ?? raw.VatAed ?? 0,
     shippingCostAed: raw.shippingCostAed ?? raw.ShippingCostAed ?? 0,
     isSelfPickup: raw.isSelfPickup ?? raw.IsSelfPickup ?? false,
     deliveryAddressLine: raw.deliveryAddressLine ?? raw.DeliveryAddressLine ?? null,
     deliveryCityName: raw.deliveryCityName ?? raw.DeliveryCityName ?? null,
+    deliveryLatitude: raw.deliveryLatitude ?? raw.DeliveryLatitude ?? null,
+    deliveryLongitude: raw.deliveryLongitude ?? raw.DeliveryLongitude ?? null,
     chargedShippingAed: raw.chargedShippingAed ?? raw.ChargedShippingAed ?? 0,
     chargedGrandTotalAed: raw.chargedGrandTotalAed ?? raw.ChargedGrandTotalAed ?? 0,
     chargedGrandTotalFormatted:
@@ -1380,6 +1384,24 @@ export function normalizeUserDetail(raw: RawUserDetail): AdminUserDetail {
       id: image.id ?? image.Id ?? 0,
       imagePath: image.imagePath ?? image.ImagePath ?? '',
       isPrimary: image.isPrimary ?? image.IsPrimary ?? false,
+    })),
+    addresses: (raw.addresses ?? raw.Addresses ?? []).map((item: Record<string, unknown>) => ({
+      addressId: String(item.addressId ?? item.AddressId ?? ''),
+      addressTypeId: Number(item.addressTypeId ?? item.AddressTypeId ?? 4),
+      addressTypeNameEn: String(item.addressTypeNameEn ?? item.AddressTypeNameEn ?? ''),
+      addressTypeNameAr: String(item.addressTypeNameAr ?? item.AddressTypeNameAr ?? ''),
+      formattedAddress: String(item.formattedAddress ?? item.FormattedAddress ?? ''),
+      postalCode: (item.postalCode ?? item.PostalCode ?? null) as string | null,
+      latitude:
+        item.latitude != null || item.Latitude != null
+          ? Number(item.latitude ?? item.Latitude)
+          : null,
+      longitude:
+        item.longitude != null || item.Longitude != null
+          ? Number(item.longitude ?? item.Longitude)
+          : null,
+      coordinates: (item.coordinates ?? item.Coordinates ?? null) as string | null,
+      mapsUrl: (item.mapsUrl ?? item.MapsUrl ?? null) as string | null,
     })),
     ordersCount: raw.ordersCount ?? raw.OrdersCount ?? 0,
     canApprove:

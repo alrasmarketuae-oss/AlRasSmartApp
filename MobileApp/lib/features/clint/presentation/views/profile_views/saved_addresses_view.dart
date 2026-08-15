@@ -243,6 +243,17 @@ class _SavedAddressesViewState extends State<SavedAddressesView> {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
+                    if (address.typeDisplayName(isArabic).isNotEmpty) ...[
+                      SizedBox(height: 4.h),
+                      Text(
+                        address.typeDisplayName(isArabic),
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w600,
+                          color: LightColor.defaultColor,
+                        ),
+                      ),
+                    ],
                     SizedBox(height: 4.h),
                     Text(
                       address.formattedAddressLine,

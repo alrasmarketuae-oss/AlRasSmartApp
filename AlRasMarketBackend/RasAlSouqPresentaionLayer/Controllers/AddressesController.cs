@@ -15,6 +15,17 @@ namespace RasAlSouqPresentaionLayer.Controllers;
 public class AddressesController(IAddressesAppService addressesAppService) : ControllerBase
 {
     /// <summary>
+    /// Lookup values for AddressTypes (Company / Warehouse / Shop / Home).
+    /// </summary>
+    [HttpGet("types")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetTypes(CancellationToken cancellationToken)
+    {
+        var result = await addressesAppService.GetTypesAsync(cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Returns the authenticated user's saved addresses (cached).
     /// </summary>
     [HttpGet]
@@ -64,7 +75,20 @@ public class AddressesController(IAddressesAppService addressesAppService) : Con
                 CountryId = request.CountryId,
                 CityName = request.CityName,
                 AddressLine1 = request.AddressLine1,
-                AddressLine2 = request.AddressLine2
+                AddressLine2 = request.AddressLine2,
+                AddressTypeId = request.AddressTypeId,
+                Area = request.Area,
+                Street = request.Street,
+                Building = request.Building,
+                FloorNo = request.FloorNo,
+                UnitNo = request.UnitNo,
+                Landmark = request.Landmark,
+                PostalCode = request.PostalCode,
+                ContactPerson = request.ContactPerson,
+                MobileNumber = request.MobileNumber,
+                DeliveryInstructions = request.DeliveryInstructions,
+                Latitude = request.Latitude,
+                Longitude = request.Longitude
             }, cancellationToken);
 
             return Ok(result);
@@ -108,7 +132,20 @@ public class AddressesController(IAddressesAppService addressesAppService) : Con
                 CountryId = request.CountryId,
                 CityName = request.CityName,
                 AddressLine1 = request.AddressLine1,
-                AddressLine2 = request.AddressLine2
+                AddressLine2 = request.AddressLine2,
+                AddressTypeId = request.AddressTypeId,
+                Area = request.Area,
+                Street = request.Street,
+                Building = request.Building,
+                FloorNo = request.FloorNo,
+                UnitNo = request.UnitNo,
+                Landmark = request.Landmark,
+                PostalCode = request.PostalCode,
+                ContactPerson = request.ContactPerson,
+                MobileNumber = request.MobileNumber,
+                DeliveryInstructions = request.DeliveryInstructions,
+                Latitude = request.Latitude,
+                Longitude = request.Longitude
             }, cancellationToken);
 
             return Ok(result);
@@ -187,4 +224,18 @@ public sealed class AddAddressRequest
     /// Secondary address line.
     /// </summary>
     public string? AddressLine2 { get; set; }
+
+    public byte? AddressTypeId { get; set; }
+    public string? Area { get; set; }
+    public string? Street { get; set; }
+    public string? Building { get; set; }
+    public string? FloorNo { get; set; }
+    public string? UnitNo { get; set; }
+    public string? Landmark { get; set; }
+    public string? PostalCode { get; set; }
+    public string? ContactPerson { get; set; }
+    public string? MobileNumber { get; set; }
+    public string? DeliveryInstructions { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
 }

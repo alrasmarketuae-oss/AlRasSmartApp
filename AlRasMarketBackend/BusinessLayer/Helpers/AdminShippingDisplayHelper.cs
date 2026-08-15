@@ -28,10 +28,8 @@ public static class AdminShippingDisplayHelper
             return null;
         }
 
-        return FormatAddressParts(
-            address.AddressLine1,
-            address.AddressLine2,
-            address.City?.CityName);
+        return AddressTextFormatter.ToDisplayText(address, address.City?.CityName, address.City?.Country?.CountryNameEn)
+            ?? FormatAddressParts(address.AddressLine1, address.AddressLine2, address.City?.CityName);
     }
 
     public static string? FormatAddressParts(string? line1, string? line2, string? cityName)

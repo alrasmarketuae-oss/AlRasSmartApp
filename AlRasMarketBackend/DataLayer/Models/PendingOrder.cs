@@ -24,6 +24,8 @@ public class PendingOrder
     public bool IsSelfPickup { get; set; }
     public string? DeliveryAddressLine { get; set; }
     public string? DeliveryCityName { get; set; }
+    public decimal? DeliveryLatitude { get; set; }
+    public decimal? DeliveryLongitude { get; set; }
 
     public User? FromUser { get; set; }
     public Address? Address { get; set; }

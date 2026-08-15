@@ -155,6 +155,11 @@ public class AdminUsersAppService(
             .AsNoTracking()
             .Include(x => x.Role)
             .Include(x => x.CompanyImages)
+            .Include(x => x.Addresses)
+                .ThenInclude(a => a.AddressType)
+            .Include(x => x.Addresses)
+                .ThenInclude(a => a.City!)
+                    .ThenInclude(c => c.Country)
             .FirstOrDefaultAsync(x => x.Id == parsedUserId, cancellationToken)
             ?? throw new KeyNotFoundException("User not found.");
 
@@ -202,6 +207,30 @@ public class AdminUsersAppService(
                     Id = x.Id,
                     ImagePath = WebRootFileHelper.NormalizeStoredPath(x.ImagePath),
                     IsPrimary = x.IsPrimary
+                })
+                .ToList(),
+            Addresses = user.Addresses
+                .OrderByDescending(x => x.Id)
+                .Select(a =>
+                {
+                    var typeId = a.AddressTypeId == 0 ? AddressTypeCodes.Home : a.AddressTypeId;
+                    var cityName = a.City?.CityName;
+                    var countryName = a.City?.Country?.CountryNameEn;
+                    return new AdminUserAddressDto
+                    {
+                        AddressId = a.Id,
+                        AddressTypeId = typeId,
+                        AddressTypeNameEn = a.AddressType?.NameEn ?? AddressTypeCodes.NameEn(typeId),
+                        AddressTypeNameAr = a.AddressType?.NameAr ?? AddressTypeCodes.NameAr(typeId),
+                        FormattedAddress = AddressTextFormatter.ToDisplayText(a, cityName, countryName)
+                            ?? AdminShippingDisplayHelper.FormatAddressParts(a.AddressLine1, a.AddressLine2, cityName)
+                            ?? string.Empty,
+                        PostalCode = a.PostalCode,
+                        Latitude = a.Latitude,
+                        Longitude = a.Longitude,
+                        Coordinates = AddressTextFormatter.FormatCoordinates(a.Latitude, a.Longitude),
+                        MapsUrl = AddressTextFormatter.MapsUrl(a.Latitude, a.Longitude)
+                    };
                 })
                 .ToList(),
             OrdersCount = ordersCount,

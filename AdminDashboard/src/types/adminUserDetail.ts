@@ -4,6 +4,19 @@ export type AdminUserCompanyImage = {
   isPrimary: boolean
 }
 
+export type AdminUserAddress = {
+  addressId: string
+  addressTypeId: number
+  addressTypeNameEn: string
+  addressTypeNameAr: string
+  formattedAddress: string
+  postalCode: string | null
+  latitude: number | null
+  longitude: number | null
+  coordinates: string | null
+  mapsUrl: string | null
+}
+
 export type PendingCompanyProfileChanges = {
   companyName: string | null
   commercialRegister: string | null
@@ -42,6 +55,7 @@ export type AdminUserDetail = {
   taxNumber: string | null
   pendingProfileChanges: PendingCompanyProfileChanges | null
   companyImages: AdminUserCompanyImage[]
+  addresses: AdminUserAddress[]
   ordersCount: number
   canApprove: boolean
   canDeactivate: boolean

@@ -12,6 +12,7 @@ public interface IRasAlSouqDbContext
     DbSet<ProductType> ProductTypes { get; }
     DbSet<RequestType> RequestTypes { get; }
     DbSet<BookingPriceType> BookingPriceTypes { get; }
+    DbSet<AddressType> AddressTypes { get; }
     DbSet<Unit> Units { get; }
     DbSet<Order> Orders { get; }
     DbSet<OrderAdminOfferPrice> OrderAdminOfferPrices { get; }

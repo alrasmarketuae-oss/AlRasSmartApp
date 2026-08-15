@@ -370,6 +370,7 @@ public interface IProductsAppService
 
 public interface IAddressesAppService
 {
+    Task<object> GetTypesAsync(CancellationToken cancellationToken = default);
     Task<object> GetByUserAsync(string userId, CancellationToken cancellationToken = default);
     Task<object> AddAsync(AddAddressInput input, CancellationToken cancellationToken = default);
     Task<object> UpdateAsync(UpdateAddressInput input, CancellationToken cancellationToken = default);

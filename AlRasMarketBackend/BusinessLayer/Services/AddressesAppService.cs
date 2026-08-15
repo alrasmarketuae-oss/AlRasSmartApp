@@ -1,5 +1,6 @@
 using BusinessLayer.Caching;
 using BusinessLayer.Dtos;
+using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using DataLayer.Interfaces;
 using DataLayer.Models;
@@ -15,6 +16,21 @@ public class AddressesAppService(
 {
     private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(30);
     private const int CityNameMaxLength = 255;
+
+    public Task<object> GetTypesAsync(CancellationToken cancellationToken = default)
+    {
+        object result = new
+        {
+            items = new[]
+            {
+                new AddressTypeItemDto { Id = AddressTypeCodes.Company, NameEn = AddressTypeCodes.NameEn(AddressTypeCodes.Company), NameAr = AddressTypeCodes.NameAr(AddressTypeCodes.Company) },
+                new AddressTypeItemDto { Id = AddressTypeCodes.Warehouse, NameEn = AddressTypeCodes.NameEn(AddressTypeCodes.Warehouse), NameAr = AddressTypeCodes.NameAr(AddressTypeCodes.Warehouse) },
+                new AddressTypeItemDto { Id = AddressTypeCodes.Shop, NameEn = AddressTypeCodes.NameEn(AddressTypeCodes.Shop), NameAr = AddressTypeCodes.NameAr(AddressTypeCodes.Shop) },
+                new AddressTypeItemDto { Id = AddressTypeCodes.Home, NameEn = AddressTypeCodes.NameEn(AddressTypeCodes.Home), NameAr = AddressTypeCodes.NameAr(AddressTypeCodes.Home) },
+            }
+        };
+        return Task.FromResult(result);
+    }
 
     public async Task<object> GetByUserAsync(string userId, CancellationToken cancellationToken = default)
     {
@@ -33,6 +49,7 @@ public class AddressesAppService(
 
         var addresses = await dbContext.Addresses
             .AsNoTracking()
+            .Include(x => x.AddressType)
             .Where(x => x.UserId == parsedUserId)
             .OrderByDescending(x => x.Id)
             .ToListAsync(cancellationToken);
@@ -50,24 +67,33 @@ public class AddressesAppService(
             throw new ArgumentException("Invalid user id.");
         }
 
-        if (string.IsNullOrWhiteSpace(input.AddressLine1))
-        {
-            throw new ArgumentException("AddressLine1 is required.");
-        }
-
         var user = await dbContext.Users.FindAsync([userId], cancellationToken)
             ?? throw new KeyNotFoundException("User not found.");
 
         var city = await ResolveCityAsync(input.CityId, input.CountryId, input.CityName, cancellationToken);
+        var typeId = ResolveAddressTypeId(input.AddressTypeId);
+        var line1 = AddressTextFormatter.ComposeLine1(new AddAddressParts(
+            input.AddressLine1,
+            input.Street,
+            input.Building,
+            input.FloorNo,
+            input.UnitNo,
+            input.Area));
+        if (string.IsNullOrWhiteSpace(line1))
+        {
+            throw new ArgumentException("AddressLine1 is required.");
+        }
 
         var address = new Address
         {
             Id = Guid.NewGuid(),
             UserId = user.Id,
             CityId = city.CityId,
-            AddressLine1 = input.AddressLine1.Trim(),
-            AddressLine2 = string.IsNullOrWhiteSpace(input.AddressLine2) ? null : input.AddressLine2.Trim()
+            AddressTypeId = typeId,
+            AddressLine1 = line1,
+            AddressLine2 = TrimToNull(input.AddressLine2)
         };
+        ApplyDetails(address, input);
 
         await dbContext.Addresses.AddAsync(address, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -84,20 +110,29 @@ public class AddressesAppService(
             throw new ArgumentException("Invalid user id.");
         }
 
-        if (string.IsNullOrWhiteSpace(input.AddressLine1))
-        {
-            throw new ArgumentException("AddressLine1 is required.");
-        }
-
         var address = await dbContext.Addresses
             .FirstOrDefaultAsync(x => x.Id == input.AddressId && x.UserId == userId, cancellationToken)
             ?? throw new KeyNotFoundException("Address not found.");
 
         var city = await ResolveCityAsync(input.CityId, input.CountryId, input.CityName, cancellationToken);
+        var typeId = ResolveAddressTypeId(input.AddressTypeId);
+        var line1 = AddressTextFormatter.ComposeLine1(new AddAddressParts(
+            input.AddressLine1,
+            input.Street,
+            input.Building,
+            input.FloorNo,
+            input.UnitNo,
+            input.Area));
+        if (string.IsNullOrWhiteSpace(line1))
+        {
+            throw new ArgumentException("AddressLine1 is required.");
+        }
 
         address.CityId = city.CityId;
-        address.AddressLine1 = input.AddressLine1.Trim();
-        address.AddressLine2 = string.IsNullOrWhiteSpace(input.AddressLine2) ? null : input.AddressLine2.Trim();
+        address.AddressTypeId = typeId;
+        address.AddressLine1 = line1;
+        address.AddressLine2 = TrimToNull(input.AddressLine2);
+        ApplyDetails(address, input);
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -203,19 +238,42 @@ public class AddressesAppService(
         return new ResolvedCity(cityId, cityName, countryId, country?.CountryNameEn, country?.CountryNameAr);
     }
 
-    private static object BuildAddressResponse(Address address, ResolvedCity city) => new
+    private static object BuildAddressResponse(Address address, ResolvedCity city) =>
+        MapPayload(address, city);
+
+    private static object MapPayload(Address address, ResolvedCity city)
     {
-        addressId = address.Id,
-        id = address.Id,
-        userId = address.UserId,
-        cityId = address.CityId,
-        cityName = city.CityName,
-        countryId = city.CountryId,
-        countryNameEn = city.CountryNameEn,
-        countryNameAr = city.CountryNameAr,
-        addressLine1 = address.AddressLine1,
-        addressLine2 = address.AddressLine2
-    };
+        var typeId = address.AddressTypeId == 0 ? AddressTypeCodes.Home : address.AddressTypeId;
+        return new
+        {
+            addressId = address.Id,
+            id = address.Id,
+            userId = address.UserId,
+            cityId = address.CityId,
+            cityName = city.CityName,
+            countryId = city.CountryId,
+            countryNameEn = city.CountryNameEn,
+            countryNameAr = city.CountryNameAr,
+            addressLine1 = address.AddressLine1,
+            addressLine2 = address.AddressLine2,
+            addressTypeId = typeId,
+            addressTypeNameEn = AddressTypeCodes.NameEn(typeId),
+            addressTypeNameAr = AddressTypeCodes.NameAr(typeId),
+            area = address.Area,
+            street = address.Street,
+            building = address.Building,
+            floorNo = address.FloorNo,
+            unitNo = address.UnitNo,
+            landmark = address.Landmark,
+            postalCode = address.PostalCode,
+            contactPerson = address.ContactPerson,
+            mobileNumber = address.MobileNumber,
+            deliveryInstructions = address.DeliveryInstructions,
+            latitude = address.Latitude,
+            longitude = address.Longitude,
+            formattedAddress = AddressTextFormatter.ToDisplayText(address, city.CityName, city.CountryNameEn)
+        };
+    }
 
     private sealed record ResolvedCity(
         Guid CityId,
@@ -228,6 +286,7 @@ public class AddressesAppService(
     {
         var city = staticReferenceCache.FindCityById(address.CityId);
         var country = city is null ? null : staticReferenceCache.FindCountryById(city.CountryId);
+        var typeId = address.AddressTypeId == 0 ? AddressTypeCodes.Home : address.AddressTypeId;
 
         return new AddressListItemDto
         {
@@ -240,10 +299,116 @@ public class AddressesAppService(
             CountryNameEn = country?.CountryNameEn,
             CountryNameAr = country?.CountryNameAr,
             AddressLine1 = address.AddressLine1,
-            AddressLine2 = address.AddressLine2
+            AddressLine2 = address.AddressLine2,
+            AddressTypeId = typeId,
+            AddressTypeNameEn = address.AddressType?.NameEn ?? AddressTypeCodes.NameEn(typeId),
+            AddressTypeNameAr = address.AddressType?.NameAr ?? AddressTypeCodes.NameAr(typeId),
+            Area = address.Area,
+            Street = address.Street,
+            Building = address.Building,
+            FloorNo = address.FloorNo,
+            UnitNo = address.UnitNo,
+            Landmark = address.Landmark,
+            PostalCode = address.PostalCode,
+            ContactPerson = address.ContactPerson,
+            MobileNumber = address.MobileNumber,
+            DeliveryInstructions = address.DeliveryInstructions,
+            Latitude = address.Latitude,
+            Longitude = address.Longitude,
+            FormattedAddress = AddressTextFormatter.ToDisplayText(
+                address,
+                city?.CityName,
+                country?.CountryNameEn)
         };
     }
 
+    private static void ApplyDetails(Address address, AddAddressInput input) =>
+        ApplyDetails(
+            address,
+            input.Area,
+            input.Street,
+            input.Building,
+            input.FloorNo,
+            input.UnitNo,
+            input.Landmark,
+            input.PostalCode,
+            input.ContactPerson,
+            input.MobileNumber,
+            input.DeliveryInstructions,
+            input.Latitude,
+            input.Longitude);
+
+    private static void ApplyDetails(Address address, UpdateAddressInput input) =>
+        ApplyDetails(
+            address,
+            input.Area,
+            input.Street,
+            input.Building,
+            input.FloorNo,
+            input.UnitNo,
+            input.Landmark,
+            input.PostalCode,
+            input.ContactPerson,
+            input.MobileNumber,
+            input.DeliveryInstructions,
+            input.Latitude,
+            input.Longitude);
+
+    private static void ApplyDetails(
+        Address address,
+        string? area,
+        string? street,
+        string? building,
+        string? floorNo,
+        string? unitNo,
+        string? landmark,
+        string? postalCode,
+        string? contactPerson,
+        string? mobileNumber,
+        string? deliveryInstructions,
+        decimal? latitude,
+        decimal? longitude)
+    {
+        address.Area = TrimToNull(area);
+        address.Street = TrimToNull(street);
+        address.Building = TrimToNull(building);
+        address.FloorNo = TrimToNull(floorNo);
+        address.UnitNo = TrimToNull(unitNo);
+        address.Landmark = TrimToNull(landmark);
+        address.PostalCode = TrimToNull(postalCode);
+        address.ContactPerson = TrimToNull(contactPerson);
+        address.MobileNumber = TrimToNull(mobileNumber);
+        address.DeliveryInstructions = TrimToNull(deliveryInstructions);
+        address.Latitude = NormalizeCoordinate(latitude);
+        address.Longitude = NormalizeCoordinate(longitude);
+    }
+
+    private static byte ResolveAddressTypeId(byte? typeId)
+    {
+        if (typeId is byte id && AddressTypeCodes.IsValid(id))
+        {
+            return id;
+        }
+
+        return AddressTypeCodes.Home;
+    }
+
+    private static decimal? NormalizeCoordinate(decimal? value)
+    {
+        if (value is null)
+        {
+            return null;
+        }
+
+        return decimal.Round(value.Value, 7, MidpointRounding.AwayFromZero);
+    }
+
+    private static string? TrimToNull(string? value)
+    {
+        var trimmed = value?.Trim();
+        return string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
+    }
+
     private static string BuildListCacheKey(Guid userId) =>
-        $"addresses:user:{userId:D}:v{UserAddressesCache.GetVersion(userId)}";
+        $"addresses:user:{userId:D}:v2:{UserAddressesCache.GetVersion(userId)}";
 }

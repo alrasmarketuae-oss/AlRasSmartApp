@@ -14,7 +14,8 @@ public sealed class OrderRealtimeNotificationService(
         string? statusNameEn = null,
         string? statusNameAr = null,
         IEnumerable<Guid>? participantUserIds = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        string eventType = "order_updated")
     {
         if (orderId <= 0)
         {
@@ -27,6 +28,7 @@ public sealed class OrderRealtimeNotificationService(
             statusId,
             statusNameEn,
             statusNameAr,
+            eventType = string.IsNullOrWhiteSpace(eventType) ? "order_updated" : eventType,
             updatedAtUtc = DateTime.UtcNow
         };
 

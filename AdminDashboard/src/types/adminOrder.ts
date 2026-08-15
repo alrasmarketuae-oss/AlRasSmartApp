@@ -104,11 +104,15 @@ export type AdminOrder = {
   shippingRouteSummary: string
   shippingDuration: string
   productAddress: string | null
+  productLatitude: number | null
+  productLongitude: number | null
   vatAed: number
   shippingCostAed: number
   isSelfPickup: boolean
   deliveryAddressLine: string | null
   deliveryCityName: string | null
+  deliveryLatitude: number | null
+  deliveryLongitude: number | null
   chargedShippingAed: number
   chargedGrandTotalAed: number
   chargedGrandTotalFormatted: string

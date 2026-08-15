@@ -344,6 +344,15 @@ class AppPushNotificationService {
     final routeId =
         (data['routeId'] ?? data['RouteId'] ?? '').toString().toLowerCase();
 
+    if (_isIncomingOrderNotification(type)) {
+      final cubit = sl<ClintCubit>();
+      unawaited(Future.wait([
+        cubit.fetchIncomingOrders(silent: true),
+        cubit.fetchMyOrders(silent: true),
+      ]));
+      return;
+    }
+
     if (_isProductCatalogNotification(type, routeId)) {
       unawaited(CatalogSyncService.instance.onProductNotification());
       return;
@@ -353,13 +362,14 @@ class AppPushNotificationService {
     final cubit = sl<ClintCubit>();
     if (orderId != null) {
       unawaited(cubit.refreshOrderById(orderId));
+      unawaited(cubit.fetchIncomingOrders(silent: true));
       return;
     }
     // Chat / non-order pushes should not force a full orders refresh.
     if (type.contains('chat')) return;
     unawaited(Future.wait([
-      cubit.fetchIncomingOrders(),
-      cubit.fetchMyOrders(),
+      cubit.fetchIncomingOrders(silent: true),
+      cubit.fetchMyOrders(silent: true),
     ]));
   }
 
@@ -387,6 +397,16 @@ class AppPushNotificationService {
     } catch (e) {
       debugPrint('Failed to refresh profile after approval push: $e');
     }
+  }
+
+  bool _isIncomingOrderNotification(String type) {
+    return type == 'new_order' ||
+        type == 'request_offer' ||
+        type == 'order' ||
+        type == 'product_order' ||
+        type == 'order_placed' ||
+        type == 'order_created' ||
+        type.contains('order_status');
   }
 
   bool _isProductCatalogNotification(String type, String routeId) {

@@ -515,6 +515,7 @@ await using (var scope = app.Services.CreateAsyncScope())
     await ProductVideoSchemaMigrator.EnsureAsync(db);
     await RequestTypeSchemaMigrator.EnsureAsync(db);
     await BookingPriceTypeSchemaMigrator.EnsureAsync(db);
+    await AddressTypeSchemaMigrator.EnsureAsync(db);
     await AdminEmployeeSchemaMigrator.EnsureAsync(db);
     await AdminAuditLogSchemaMigrator.EnsureAsync(db);
     await MissedProductSearchSchemaMigrator.EnsureAsync(db);

@@ -155,6 +155,19 @@ export default function ProductDetailsDialog({ open, order, onClose }: ProductDe
               <DetailRow label={t('orders.deliveryAddress')} value={productAddress} />
             </div>
           ) : null}
+
+          {order.productLatitude != null && order.productLongitude != null ? (
+            <div className="mt-3">
+              <DetailRow
+                label={t('orders.productCoordinates')}
+                value={(
+                  <span dir="ltr">
+                    {`${order.productLatitude}, ${order.productLongitude}`}
+                  </span>
+                )}
+              />
+            </div>
+          ) : null}
         </div>
 
         <div className="admin-border flex justify-end border-t px-5 py-3">

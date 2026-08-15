@@ -438,6 +438,19 @@ public sealed class AddAddressInput
 
     public string AddressLine1 { get; set; } = string.Empty;
     public string? AddressLine2 { get; set; }
+    public byte? AddressTypeId { get; set; }
+    public string? Area { get; set; }
+    public string? Street { get; set; }
+    public string? Building { get; set; }
+    public string? FloorNo { get; set; }
+    public string? UnitNo { get; set; }
+    public string? Landmark { get; set; }
+    public string? PostalCode { get; set; }
+    public string? ContactPerson { get; set; }
+    public string? MobileNumber { get; set; }
+    public string? DeliveryInstructions { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
 }
 
 public sealed class UpdateAddressInput
@@ -449,6 +462,26 @@ public sealed class UpdateAddressInput
     public string? CityName { get; set; }
     public string AddressLine1 { get; set; } = string.Empty;
     public string? AddressLine2 { get; set; }
+    public byte? AddressTypeId { get; set; }
+    public string? Area { get; set; }
+    public string? Street { get; set; }
+    public string? Building { get; set; }
+    public string? FloorNo { get; set; }
+    public string? UnitNo { get; set; }
+    public string? Landmark { get; set; }
+    public string? PostalCode { get; set; }
+    public string? ContactPerson { get; set; }
+    public string? MobileNumber { get; set; }
+    public string? DeliveryInstructions { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
+}
+
+public sealed class AddressTypeItemDto
+{
+    public byte Id { get; set; }
+    public string NameEn { get; set; } = string.Empty;
+    public string NameAr { get; set; } = string.Empty;
 }
 
 public sealed class AddressListItemDto
@@ -463,6 +496,22 @@ public sealed class AddressListItemDto
     public string? CountryNameAr { get; set; }
     public string AddressLine1 { get; set; } = string.Empty;
     public string? AddressLine2 { get; set; }
+    public byte AddressTypeId { get; set; }
+    public string AddressTypeNameEn { get; set; } = string.Empty;
+    public string AddressTypeNameAr { get; set; } = string.Empty;
+    public string? Area { get; set; }
+    public string? Street { get; set; }
+    public string? Building { get; set; }
+    public string? FloorNo { get; set; }
+    public string? UnitNo { get; set; }
+    public string? Landmark { get; set; }
+    public string? PostalCode { get; set; }
+    public string? ContactPerson { get; set; }
+    public string? MobileNumber { get; set; }
+    public string? DeliveryInstructions { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
+    public string? FormattedAddress { get; set; }
 }
 
 public sealed class CreateInternationalShippingPostInput

@@ -173,8 +173,8 @@ public partial class OrdersAppService
                         : NotificationMessages.NewProductOrderSeller(lang, productName, pendingCount),
                     preferredLanguage: seller.PreferredLanguage,
                     type: isRequestOffer ? "request_offer" : "new_order",
-                    routeName: "my_ads",
-                    referenceId: order.ProductId.ToString(),
+                    routeName: "orders",
+                    referenceId: order.Id.ToString(),
                     notificationTypeName: isRequestOffer ? "request_offer" : "order",
                     fcmData: new Dictionary<string, string>
                     {
@@ -183,7 +183,8 @@ public partial class OrdersAppService
                         ["orderId"] = order.Id.ToString(),
                         ["highlightProductId"] = order.ProductId.ToString(),
                     },
-                    cancellationToken: cancellationToken);
+                    cancellationToken: cancellationToken,
+                    emailHtml: BuildSellerNewOrderEmailHtml(seller.PreferredLanguage, order, productName));
             }
             catch
             {
@@ -201,10 +202,15 @@ public partial class OrdersAppService
             {
                 // Realtime notification failure must not roll back orders.
             }
+
+            await PublishOrderRealtimeAsync(order, cancellationToken, isNew: true);
         }
     }
 
-    private async Task PublishOrderRealtimeAsync(Order order, CancellationToken cancellationToken)
+    private async Task PublishOrderRealtimeAsync(
+        Order order,
+        CancellationToken cancellationToken,
+        bool isNew = false)
     {
         try
         {
@@ -214,7 +220,8 @@ public partial class OrdersAppService
                 RequestOfferStatusLabels.ResolveNameEn(order),
                 RequestOfferStatusLabels.ResolveNameAr(order),
                 ResolveOrderParticipantUserIds(order),
-                cancellationToken);
+                cancellationToken,
+                isNew ? "new_order" : "order_updated");
         }
         catch (Exception ex)
         {
@@ -489,8 +496,8 @@ public partial class OrdersAppService
                     : NotificationMessages.NewProductOrderSeller(lang, productName, pendingCount),
                 preferredLanguage: advertiser.PreferredLanguage,
                 type: isRequestOffer ? "request_offer" : "new_order",
-                routeName: "my_ads",
-                referenceId: order.ProductId.ToString(),
+                routeName: "orders",
+                referenceId: order.Id.ToString(),
                 notificationTypeName: isRequestOffer ? "request_offer" : "order",
                 fcmData: new Dictionary<string, string>
                 {
@@ -499,12 +506,15 @@ public partial class OrdersAppService
                     ["orderId"] = order.Id.ToString(),
                     ["highlightProductId"] = order.ProductId.ToString(),
                 },
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken,
+                emailHtml: BuildSellerNewOrderEmailHtml(advertiser.PreferredLanguage, order, productName));
         }
         catch
         {
             // Notification failure must not roll back admin approval.
         }
+
+        await PublishOrderRealtimeAsync(order, cancellationToken, isNew: true);
     }
 
     private async Task NotifyAdminSellerApprovedOrderAsync(Order order, CancellationToken cancellationToken)
@@ -685,7 +695,8 @@ public partial class OrdersAppService
         string referenceId,
         CancellationToken cancellationToken,
         string notificationTypeName = "order",
-        Dictionary<string, string>? fcmData = null)
+        Dictionary<string, string>? fcmData = null,
+        string? emailHtml = null)
     {
         var (titleEn, bodyEn) = messageFactory("en");
         var (titleAr, bodyAr) = messageFactory("ar");
@@ -732,7 +743,9 @@ public partial class OrdersAppService
                 await emailService.SendAsync(
                     email,
                     title,
-                    BrandEmailLayout.Headline(title) + BrandEmailLayout.Paragraph(body));
+                    string.IsNullOrWhiteSpace(emailHtml)
+                        ? BrandEmailLayout.Headline(title) + BrandEmailLayout.Paragraph(body)
+                        : emailHtml);
             }
             catch
             {
@@ -789,4 +802,31 @@ public partial class OrdersAppService
         return await orderData.GetOrCreateNotificationTypeIdAsync(name, cancellationToken);
     }
 
+    private static string BuildSellerNewOrderEmailHtml(string? language, Order order, string productName)
+    {
+        var arabic = NotificationMessages.IsArabic(language);
+        var title = arabic ? "طلب جديد على إعلانك" : "New order on your listing";
+        var intro = arabic
+            ? "وصلك طلب جديد. راجع التفاصيل بالأسفل ثم افتح طلباتي في التطبيق للقبول أو الرفض."
+            : "You received a new order. Review the details below, then open My Orders in the app to accept or reject it.";
+        var qty = order.Quantity == decimal.Truncate(order.Quantity)
+            ? ((long)order.Quantity).ToString()
+            : order.Quantity.ToString("0.##");
+        var total = order.TotalPrice.ToString("0.00");
+        var delivery = string.IsNullOrWhiteSpace(order.DeliveryAddressLine)
+            ? (arabic ? "غير محدد" : "Not provided")
+            : order.DeliveryAddressLine.Trim();
+        var coords = AddressTextFormatter.FormatCoordinates(order.DeliveryLatitude, order.DeliveryLongitude);
+
+        return BrandEmailLayout.Headline(title)
+            + BrandEmailLayout.Paragraph(intro)
+            + BrandEmailLayout.InfoCard(arabic ? "رقم الطلب" : "Order no.", $"#{order.Id}")
+            + BrandEmailLayout.InfoCard(arabic ? "المنتج" : "Product", string.IsNullOrWhiteSpace(productName) ? "—" : productName)
+            + BrandEmailLayout.InfoCard(arabic ? "الكمية" : "Quantity", qty)
+            + BrandEmailLayout.InfoCard(arabic ? "الإجمالي (د.إ)" : "Total (AED)", total)
+            + BrandEmailLayout.InfoCard(arabic ? "عنوان التوصيل" : "Delivery address", delivery)
+            + (string.IsNullOrWhiteSpace(coords)
+                ? string.Empty
+                : BrandEmailLayout.InfoCard(arabic ? "الإحداثيات" : "Coordinates", coords));
+    }
 }

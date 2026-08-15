@@ -177,6 +177,25 @@ export default function ProductShippingPanel({
           <DetailField label={t('sharedShipping.productAddress')} value={shipping.productAddress} />
         ) : null}
 
+        {shipping.productLatitude != null && shipping.productLongitude != null ? (
+          <DetailField
+            label={t('orders.productCoordinates')}
+            value={
+              <span dir="ltr">
+                {`${shipping.productLatitude}, ${shipping.productLongitude} `}
+                <a
+                  href={`https://www.google.com/maps?q=${shipping.productLatitude},${shipping.productLongitude}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-semibold text-[#3B7FC7] hover:underline"
+                >
+                  {t('orders.openMap')}
+                </a>
+              </span>
+            }
+          />
+        ) : null}
+
         {showOrderPort ? (
           <DetailField
             label={t('sharedShipping.orderPort')}

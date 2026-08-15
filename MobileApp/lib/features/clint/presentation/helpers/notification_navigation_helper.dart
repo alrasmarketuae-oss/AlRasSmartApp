@@ -17,6 +17,9 @@ class NotificationNavigationHelper {
   static final ValueNotifier<int?> pendingHighlightOrderId =
       ValueNotifier<int?>(null);
 
+  /// Seller new-order taps should open Incoming, not Purchases.
+  static bool pendingOpenIncomingTab = false;
+
   static Future<void> open(
     BuildContext context,
     AppNotificationModel item,
@@ -53,6 +56,9 @@ class NotificationNavigationHelper {
       openMyOrdersTab(
         context,
         highlightOrderId: int.tryParse(referenceId),
+        openIncoming: typeName == 'new_order' ||
+            typeName == 'request_offer' ||
+            typeName == 'order',
       );
       return;
     }
@@ -86,21 +92,12 @@ class NotificationNavigationHelper {
     }
 
     if (looksLikeOrder) {
-      // Seller new-order rows usually carry productId as referenceId.
-      if (typeName == 'new_order' ||
-          typeName == 'product_order' ||
-          typeName == 'order') {
-        context.push(
-          AppRoutes.kMyAdsView,
-          extra: referenceId.isEmpty
-              ? null
-              : <String, dynamic>{'highlightProductId': referenceId},
-        );
-        return;
-      }
       openMyOrdersTab(
         context,
         highlightOrderId: int.tryParse(referenceId),
+        openIncoming: typeName == 'new_order' ||
+            typeName == 'request_offer' ||
+            typeName == 'order',
       );
       return;
     }
@@ -145,7 +142,9 @@ class NotificationNavigationHelper {
   static void openMyOrdersTab(
     BuildContext context, {
     int? highlightOrderId,
+    bool openIncoming = false,
   }) {
+    pendingOpenIncomingTab = openIncoming;
     if (highlightOrderId != null && highlightOrderId > 0) {
       pendingHighlightOrderId.value = highlightOrderId;
     }

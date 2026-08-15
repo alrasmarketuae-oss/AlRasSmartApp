@@ -43,6 +43,8 @@ public class Order
     public string? DeliveryAddressLine { get; set; }
     /// <summary>Snapshot of buyer delivery city/emirate at checkout.</summary>
     public string? DeliveryCityName { get; set; }
+    public decimal? DeliveryLatitude { get; set; }
+    public decimal? DeliveryLongitude { get; set; }
     /// <summary>Selected port for booking orders.</summary>
     public int? PortId { get; set; }
     public string? StripeRefundId { get; set; }

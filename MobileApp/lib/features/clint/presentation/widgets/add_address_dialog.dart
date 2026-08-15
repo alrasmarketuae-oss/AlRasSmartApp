@@ -59,6 +59,16 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
   final _buildingNameController = TextEditingController();
   final _countryController = TextEditingController();
   final _cityController = TextEditingController();
+  final _areaController = TextEditingController();
+  final _streetController = TextEditingController();
+  final _buildingController = TextEditingController();
+  final _floorController = TextEditingController();
+  final _unitController = TextEditingController();
+  final _landmarkController = TextEditingController();
+  final _postalController = TextEditingController();
+  final _contactController = TextEditingController();
+  final _mobileController = TextEditingController();
+  final _instructionsController = TextEditingController();
   final _countryFocusNode = FocusNode();
   final _cityFocusNode = FocusNode();
 
@@ -77,8 +87,11 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
   bool _isResolvingLocation = false;
   bool _isSubmitting = false;
   LatLng? _pickedCoordinates;
+  int _addressTypeId = 4;
 
   bool get _isEditing => widget.existing != null;
+
+  bool get _isDetailed => !widget.retailMode;
 
   bool get _isArabic => Localizations.localeOf(context).languageCode == 'ar';
 
@@ -88,6 +101,20 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
     final existing = widget.existing;
     if (existing != null) {
       _addressLine1Controller.text = existing.addressLine1;
+      _addressTypeId = existing.addressTypeId == 0 ? 4 : existing.addressTypeId;
+      _areaController.text = existing.area;
+      _streetController.text = existing.street;
+      _buildingController.text = existing.building;
+      _floorController.text = existing.floorNo;
+      _unitController.text = existing.unitNo;
+      _landmarkController.text = existing.landmark;
+      _postalController.text = existing.postalCode;
+      _contactController.text = existing.contactPerson;
+      _mobileController.text = existing.mobileNumber;
+      _instructionsController.text = existing.deliveryInstructions;
+      if (existing.latitude != null && existing.longitude != null) {
+        _pickedCoordinates = LatLng(existing.latitude!, existing.longitude!);
+      }
       if (widget.retailMode) {
         final parsed = _parseRetailAddressLine2(existing.addressLine2 ?? '');
         _roomOrUnitController.text = parsed.$1;
@@ -112,6 +139,16 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
     _buildingNameController.dispose();
     _countryController.dispose();
     _cityController.dispose();
+    _areaController.dispose();
+    _streetController.dispose();
+    _buildingController.dispose();
+    _floorController.dispose();
+    _unitController.dispose();
+    _landmarkController.dispose();
+    _postalController.dispose();
+    _contactController.dispose();
+    _mobileController.dispose();
+    _instructionsController.dispose();
     _countryFocusNode.dispose();
     _cityFocusNode.dispose();
     super.dispose();
@@ -283,6 +320,14 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
       return;
     }
 
+    if (_isDetailed && _pickedCoordinates == null) {
+      AppToast.showError(
+        context,
+        _isArabic ? 'حدد الموقع على الخريطة' : 'Pin the location on the map',
+      );
+      return;
+    }
+
     final matchedCity = _matchTypedCity();
     if (widget.retailMode && matchedCity == null) {
       AppToast.showError(context, S.of(context).selectDeliveryEmirate);
@@ -297,11 +342,21 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
 
     setState(() => _isSubmitting = true);
 
+    final composedLine1 = _isDetailed
+        ? [
+            _streetController.text.trim(),
+            _buildingController.text.trim(),
+            _areaController.text.trim(),
+          ].where((part) => part.isNotEmpty).join(', ')
+        : _addressLine1Controller.text.trim();
+
     final request = CreateAddressRequest(
       cityId: matchedCity?.id,
       countryId: country.countryId,
       cityName: cityName,
-      addressLine1: _addressLine1Controller.text.trim(),
+      addressLine1: composedLine1.isNotEmpty
+          ? composedLine1
+          : _addressLine1Controller.text.trim(),
       addressLine2: widget.retailMode
           ? _composeRetailAddressLine2(
               room: _roomOrUnitController.text,
@@ -309,6 +364,21 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
               isArabic: _isArabic,
             )
           : _addressLine2Controller.text.trim(),
+      addressTypeId: _isDetailed ? _addressTypeId : 4,
+      area: _areaController.text,
+      street: _streetController.text,
+      building: _isDetailed
+          ? _buildingController.text
+          : _buildingNameController.text,
+      floorNo: _floorController.text,
+      unitNo: _isDetailed ? _unitController.text : _roomOrUnitController.text,
+      landmark: _landmarkController.text,
+      postalCode: _postalController.text,
+      contactPerson: _contactController.text,
+      mobileNumber: _mobileController.text,
+      deliveryInstructions: _instructionsController.text,
+      latitude: _pickedCoordinates?.latitude,
+      longitude: _pickedCoordinates?.longitude,
     );
 
     final existing = widget.existing;
@@ -419,6 +489,23 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
     ].join(', ');
     if (line1.isNotEmpty) {
       _addressLine1Controller.text = line1;
+    }
+    if ((place.street ?? '').trim().isNotEmpty) {
+      _streetController.text = place.street!.trim();
+    }
+    if ((place.subLocality ?? '').trim().isNotEmpty) {
+      _areaController.text = place.subLocality!.trim();
+    } else if ((place.subAdministrativeArea ?? '').trim().isNotEmpty &&
+        _areaController.text.trim().isEmpty) {
+      _areaController.text = place.subAdministrativeArea!.trim();
+    }
+    if ((place.postalCode ?? '').trim().isNotEmpty) {
+      _postalController.text = place.postalCode!.trim();
+    }
+    if ((place.name ?? '').trim().isNotEmpty &&
+        _buildingController.text.trim().isEmpty &&
+        place.name!.trim() != (place.street ?? '').trim()) {
+      _buildingController.text = place.name!.trim();
     }
 
     setState(() {});
@@ -595,7 +682,7 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
                   fontFamily: fontFamily,
                   controller: _cityController,
                   focusNode: _cityFocusNode,
-                  hint: widget.retailMode ? s.deliveryEmirate : s.searchOrTypeCity,
+                  hint: widget.retailMode ? s.deliveryEmirate : (_isArabic ? 'الإمارة / الولاية / المدينة' : 'Emirate / State / City'),
                   options: _cityOptions,
                   isLoading: _isCitiesLoading,
                   enabled: _selectedCountry != null || widget.retailMode,
@@ -609,18 +696,132 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
                     return null;
                   },
                 ),
-                SizedBox(height: 12.h),
-                CustomTextFormField(
-                  controller: _addressLine1Controller,
-                  label: s.addressLine1,
-                  hintText: s.enterAddressLine1,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return s.thisFieldIsRequired;
-                    }
-                    return null;
-                  },
-                ),
+                if (_isDetailed) ...[
+                  SizedBox(height: 14.h),
+                  Text(
+                    _isArabic ? 'نوع العنوان' : 'Address type',
+                    style: TextStyle(
+                      fontFamily: fontFamily,
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  Wrap(
+                    spacing: 8.w,
+                    runSpacing: 8.h,
+                    children: [
+                      for (final type in AddressTypeOption.values)
+                        ChoiceChip(
+                          label: Text(type.label(_isArabic)),
+                          selected: _addressTypeId == type.id,
+                          onSelected: (_) => setState(() => _addressTypeId = type.id),
+                        ),
+                    ],
+                  ),
+                  SizedBox(height: 12.h),
+                  CustomTextFormField(
+                    controller: _areaController,
+                    label: _isArabic ? 'المنطقة' : 'Area / District',
+                    hintText: _isArabic ? 'اسم المنطقة' : 'Area or district',
+                  ),
+                  SizedBox(height: 12.h),
+                  CustomTextFormField(
+                    controller: _streetController,
+                    label: _isArabic ? 'اسم أو رقم الشارع' : 'Street name / number',
+                    hintText: _isArabic ? 'الشارع' : 'Street',
+                    validator: (value) {
+                      if ((value ?? '').trim().isEmpty) return s.thisFieldIsRequired;
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 12.h),
+                  CustomTextFormField(
+                    controller: _buildingController,
+                    label: _isArabic
+                        ? 'اسم ورقم المبنى أو الفيلا'
+                        : 'Building / villa name & no.',
+                    hintText: _isArabic ? 'المبنى / الفيلا' : 'Building or villa',
+                    validator: (value) {
+                      if ((value ?? '').trim().isEmpty) return s.thisFieldIsRequired;
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 12.h),
+                  CustomTextFormField(
+                    controller: _floorController,
+                    label: _isArabic ? 'رقم الطابق' : 'Floor no.',
+                    hintText: _isArabic ? 'الطابق' : 'Floor',
+                    keyboardType: TextInputType.number,
+                  ),
+                  SizedBox(height: 12.h),
+                  CustomTextFormField(
+                    controller: _unitController,
+                    label: _isArabic
+                        ? 'رقم المكتب / المحل / الشقة'
+                        : 'Office / shop / apartment no.',
+                    hintText: _isArabic ? 'رقم الوحدة' : 'Unit number',
+                  ),
+                  SizedBox(height: 12.h),
+                  CustomTextFormField(
+                    controller: _landmarkController,
+                    label: _isArabic
+                        ? 'أقرب معلم معروف (اختياري)'
+                        : 'Nearest landmark (optional)',
+                    hintText: _isArabic ? 'معلم قريب' : 'Nearest landmark',
+                  ),
+                  SizedBox(height: 12.h),
+                  CustomTextFormField(
+                    controller: _postalController,
+                    label: _isArabic
+                        ? 'الرمز البريدي / صندوق البريد (اختياري)'
+                        : 'Postal code / P.O. Box (optional)',
+                    hintText: _isArabic ? 'ص.ب / الرمز' : 'P.O. Box / postal code',
+                  ),
+                  SizedBox(height: 12.h),
+                  CustomTextFormField(
+                    controller: _contactController,
+                    label: _isArabic ? 'اسم المسؤول عن الاستلام' : 'Contact person',
+                    hintText: _isArabic ? 'اسم المستلم' : 'Receiver name',
+                    validator: (value) {
+                      if ((value ?? '').trim().isEmpty) return s.thisFieldIsRequired;
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 12.h),
+                  CustomTextFormField(
+                    controller: _mobileController,
+                    label: _isArabic ? 'رقم الهاتف' : 'Mobile number',
+                    hintText: _isArabic ? '05xxxxxxxx' : '05xxxxxxxx',
+                    keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if ((value ?? '').trim().isEmpty) return s.thisFieldIsRequired;
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 12.h),
+                  CustomTextFormField(
+                    controller: _instructionsController,
+                    label: _isArabic
+                        ? 'تعليمات إضافية للسائق (اختياري)'
+                        : 'Delivery instructions (optional)',
+                    hintText: _isArabic ? 'ملاحظات للسائق' : 'Notes for the driver',
+                    maxLines: 3,
+                  ),
+                ] else ...[
+                  SizedBox(height: 12.h),
+                  CustomTextFormField(
+                    controller: _addressLine1Controller,
+                    label: s.addressLine1,
+                    hintText: s.enterAddressLine1,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return s.thisFieldIsRequired;
+                      }
+                      return null;
+                    },
+                  ),
+                ],
                 if (widget.retailMode) ...[
                   SizedBox(height: 12.h),
                   CustomTextFormField(
