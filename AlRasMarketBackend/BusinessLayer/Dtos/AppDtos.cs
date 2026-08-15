@@ -475,8 +475,8 @@ public sealed class CreateInternationalShippingPostInput
     public decimal PriceUsd { get; set; }
     public decimal ShippingCostUsd { get; set; }
     public string PhoneNumber { get; set; } = string.Empty;
-    public decimal Container20ftPriceUsd { get; set; }
-    public decimal Container40ftPriceUsd { get; set; }
+    public decimal? Container20ftPriceUsd { get; set; }
+    public decimal? Container40ftPriceUsd { get; set; }
     public int? MinDurationDays { get; set; }
     public int? MaxDurationDays { get; set; }
     public string? Details { get; set; }
@@ -490,8 +490,8 @@ public sealed class UpdateInternationalShippingPostInput
     public string FromPortName { get; set; } = string.Empty;
     public string ToCountryName { get; set; } = string.Empty;
     public string ToPortName { get; set; } = string.Empty;
-    public decimal Container20ftPriceUsd { get; set; }
-    public decimal Container40ftPriceUsd { get; set; }
+    public decimal? Container20ftPriceUsd { get; set; }
+    public decimal? Container40ftPriceUsd { get; set; }
     public int? MinDurationDays { get; set; }
     public int? MaxDurationDays { get; set; }
     public string? Details { get; set; }

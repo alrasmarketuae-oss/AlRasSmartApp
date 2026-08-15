@@ -54,6 +54,8 @@ import '../../features/clint/presentation/views/services_views/offers_service_vi
 import '../../features/clint/presentation/views/screens/retail_views/product_details.dart';
 import '../../features/clint/presentation/views/services_views/retail_service_view.dart';
 import '../../features/clint/presentation/views/services_views/shipping_price_service_view.dart';
+import '../../features/clint/presentation/views/services_views/shipping_post_details_view.dart';
+import 'package:alrasmarket/features/clint/data/models/international_shipping_post_model.dart';
 import '../../features/person/presentation/views/person_home_layout.dart';
 
 abstract class AppRoutes {
@@ -88,6 +90,7 @@ abstract class AppRoutes {
 
   static const String kRetailServiceView = '/RetailServiceView';
   static const String kShippingPriceServiceView = '/ShippingPriceServiceView';
+  static const String kShippingPostDetailsView = '/ShippingPostDetailsView';
   static const String kRequestsServiceView = '/RequestsServiceView';
 
   static const String kConfirmCircalView = '/ConfirmCircalView';
@@ -291,6 +294,17 @@ abstract class AppRoutes {
       GoRoute(
         path: kShippingPriceServiceView,
         builder: (context, state) => const ShippingPriceServiceView(),
+      ),
+      GoRoute(
+        path: kShippingPostDetailsView,
+        builder: (context, state) {
+          final extra = state.extra;
+          return ShippingPostDetailsView(
+            post: extra is InternationalShippingPostModel
+                ? extra
+                : InternationalShippingPostModel.fromJson(const {}),
+          );
+        },
       ),
       GoRoute(
         path: kCategoriesView,

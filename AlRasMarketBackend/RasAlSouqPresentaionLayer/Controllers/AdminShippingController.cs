@@ -261,8 +261,8 @@ public sealed class CreateShippingProviderRequest
     public string FromPortName { get; set; } = string.Empty;
     public string ToCountryName { get; set; } = string.Empty;
     public string ToPortName { get; set; } = string.Empty;
-    public decimal Container20ftPriceUsd { get; set; }
-    public decimal Container40ftPriceUsd { get; set; }
+    public decimal? Container20ftPriceUsd { get; set; }
+    public decimal? Container40ftPriceUsd { get; set; }
 }
 
 public sealed class UpdateShippingProviderRequest
@@ -275,8 +275,8 @@ public sealed class UpdateShippingProviderRequest
     public string FromPortName { get; set; } = string.Empty;
     public string ToCountryName { get; set; } = string.Empty;
     public string ToPortName { get; set; } = string.Empty;
-    public decimal Container20ftPriceUsd { get; set; }
-    public decimal Container40ftPriceUsd { get; set; }
+    public decimal? Container20ftPriceUsd { get; set; }
+    public decimal? Container40ftPriceUsd { get; set; }
 }
 
 public sealed class UploadShippingProviderImageRequest

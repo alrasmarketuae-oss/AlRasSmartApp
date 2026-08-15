@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using BusinessLayer.Dtos;
+using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -101,8 +102,8 @@ public class ShippingCompanyController(IShippingCompanyAppService shippingCompan
                 FromPortName = request.FromPortName,
                 ToCountryName = request.ToCountryName,
                 ToPortName = request.ToPortName,
-                Container20ftPriceUsd = request.Container20ftPriceUsd??0,
-                Container40ftPriceUsd = request.Container40ftPriceUsd??0,
+                Container20ftPriceUsd = request.Container20ftPriceUsd,
+                Container40ftPriceUsd = request.Container40ftPriceUsd,
                 MinDurationDays = request.MinDurationDays,
                 MaxDurationDays = request.MaxDurationDays,
                 Details = request.Details,
@@ -158,12 +159,14 @@ public class ShippingCompanyController(IShippingCompanyAppService shippingCompan
             ToCountryName = request.ToCountryName,
             ToPortName = request.ToPortName,
             PhoneNumber = request.PhoneNumber,
-            Container20ftPriceUsd = request.Container20ftPriceUsd??0,
-            Container40ftPriceUsd = request.Container40ftPriceUsd??0,
+            Container20ftPriceUsd = request.Container20ftPriceUsd,
+            Container40ftPriceUsd = request.Container40ftPriceUsd,
             MinDurationDays = request.MinDurationDays,
             MaxDurationDays = request.MaxDurationDays,
             Details = request.Details,
-            PriceUsd = request.Container20ftPriceUsd??0,
+            PriceUsd = CustomerPriceCalculator.ResolveShippingListPrice(
+                request.Container20ftPriceUsd,
+                request.Container40ftPriceUsd),
             ShippingCostUsd = 0
         };
 }

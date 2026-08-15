@@ -606,8 +606,8 @@ public sealed partial class AiAssistantMcpToolsService(
         },
         CreateAdToolDefinition(
             "create_shipping_ad",
-            "Create ONE shipping company ad (shipping audience only). Collect: from/to country + port, min/max shipping duration days, container 20ft/40ft USD prices, specifications/details. Uses profile phone if phone_number omitted.",
-            ["from_country_name", "from_port_name", "to_country_name", "to_port_name", "container_20ft_price_usd", "container_40ft_price_usd", "min_duration_days", "max_duration_days", "specifications"]),
+            "Create ONE shipping company ad (shipping audience only). Collect: from/to country + port, min/max shipping duration days, optional container 20ft and/or 40ft USD prices, specifications/details. Uses profile phone if phone_number omitted.",
+            ["from_country_name", "from_port_name", "to_country_name", "to_port_name", "min_duration_days", "max_duration_days", "specifications"]),
         SubmitFeedbackToolDefinition
     ];
 

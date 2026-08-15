@@ -268,8 +268,8 @@ public partial class ProductsAppService
             ToPortName = x.ToPort?.PortNameEn ?? string.Empty,
             PriceUsd = x.PriceUsd.ToString("0.##"),
             ShippingCostUsd = x.ShippingCostUsd.ToString("0.##"),
-            Container20ftPriceUsd = x.Container20ftPriceUsd.ToString("0.##"),
-            Container40ftPriceUsd = x.Container40ftPriceUsd.ToString("0.##"),
+            Container20ftPriceUsd = x.Container20ftPriceUsd?.ToString("0.##") ?? string.Empty,
+            Container40ftPriceUsd = x.Container40ftPriceUsd?.ToString("0.##") ?? string.Empty,
             PhoneNumber = x.PhoneNumber,
             CreatedAt = FormatDateTimeText(x.CreatedAt)
         }).ToList();

@@ -100,8 +100,8 @@ public sealed class CreateInternationalShippingPostRequest
     public decimal PriceUsd { get; set; }
     public decimal ShippingCostUsd { get; set; }
     public string PhoneNumber { get; set; } = string.Empty;
-    public decimal Container20ftPriceUsd { get; set; }
-    public decimal Container40ftPriceUsd { get; set; }
+    public decimal? Container20ftPriceUsd { get; set; }
+    public decimal? Container40ftPriceUsd { get; set; }
     public int? MinDurationDays { get; set; }
     public int? MaxDurationDays { get; set; }
     public string? Details { get; set; }

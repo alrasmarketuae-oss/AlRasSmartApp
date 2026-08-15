@@ -272,17 +272,15 @@ export default function ShippingProviderForm({
             label={t('shippingPage.price20ft')}
             value={form.container20ftPriceUsd}
             onChange={(v) => updateField('container20ftPriceUsd', v)}
-            min={0.01}
+            min={0}
             step={0.01}
-            required
           />
           <NumberField
             label={t('shippingPage.price40ft')}
             value={form.container40ftPriceUsd}
             onChange={(v) => updateField('container40ftPriceUsd', v)}
-            min={0.01}
+            min={0}
             step={0.01}
-            required
           />
         </div>
       </div>

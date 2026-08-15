@@ -528,8 +528,8 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.Property(x => x.Id).ValueGeneratedOnAdd();
             entity.Property(x => x.PriceUsd).HasColumnType("decimal(12,2)");
             entity.Property(x => x.ShippingCostUsd).HasColumnType("decimal(12,2)");
-            entity.Property(x => x.Container20ftPriceUsd).HasColumnType("decimal(12,2)");
-            entity.Property(x => x.Container40ftPriceUsd).HasColumnType("decimal(12,2)");
+            entity.Property(x => x.Container20ftPriceUsd).HasColumnType("decimal(12,2)").IsRequired(false);
+            entity.Property(x => x.Container40ftPriceUsd).HasColumnType("decimal(12,2)").IsRequired(false);
             entity.Property(x => x.PhoneNumber).HasMaxLength(50).IsUnicode(false).IsRequired();
             entity.Property(x => x.Details).HasMaxLength(2000);
             entity.Property(x => x.Status).HasDefaultValue((byte)1);

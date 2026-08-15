@@ -1,5 +1,7 @@
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
+import 'package:alrasmarket/features/clint/data/models/international_shipping_post_model.dart';
+import 'package:alrasmarket/features/clint/presentation/views/services_views/shipping_price_service_view.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/shipping_card.dart';
 import 'package:alrasmarket/features/shipping_company/presentation/controller/cubit/shipping_company_cubit.dart';
 import 'package:alrasmarket/features/shipping_company/presentation/controller/cubit/shipping_company_states.dart';
@@ -149,6 +151,7 @@ class _ShippingHomeViewState extends State<ShippingHomeView> {
                     child: ShippingCard(
                       data: ShippingCardData(
                         carrierName: dashboard.companyName,
+                        details: post.details,
                         routeCountryFrom: post.fromCountry,
                         routeCountryTo: post.toCountry,
                         routePortFrom: post.fromPort,
@@ -156,10 +159,19 @@ class _ShippingHomeViewState extends State<ShippingHomeView> {
                         daysMin: post.minDurationDays?.toString() ?? '—',
                         daysMax: post.maxDurationDays?.toString() ?? '—',
                         phoneMasked: _maskPhone(post.phoneNumber),
-                        price40f:
-                            '\$${post.container40ftPriceUsd.toStringAsFixed(0)}',
-                        price20f:
-                            '\$${post.container20ftPriceUsd.toStringAsFixed(0)}',
+                        price40f: ShippingCardHelpers.formatUsdPrice(
+                          post.container40ftPriceUsd,
+                        ),
+                        price20f: ShippingCardHelpers.formatUsdPrice(
+                          post.container20ftPriceUsd,
+                        ),
+                        onTap: () => context.push(
+                          AppRoutes.kShippingPostDetailsView,
+                          extra: InternationalShippingPostModel.fromShippingCompany(
+                            post,
+                            publisherName: dashboard.companyName,
+                          ),
+                        ),
                       ),
                       compact: true,
                     ),

@@ -576,8 +576,8 @@ public sealed class AdminShippingProviderDetailDto
     public string? CommercialRegister { get; set; }
     public string? TaxNumber { get; set; }
     public string? CityName { get; set; }
-    public decimal Container20ftPriceUsd { get; set; }
-    public decimal Container40ftPriceUsd { get; set; }
+    public decimal? Container20ftPriceUsd { get; set; }
+    public decimal? Container40ftPriceUsd { get; set; }
     public string Container20ftPriceFormatted { get; set; } = string.Empty;
     public string Container40ftPriceFormatted { get; set; } = string.Empty;
     public bool IsActive { get; set; }
@@ -639,8 +639,8 @@ public sealed class AdminCreateShippingProviderInput
     public string FromPortName { get; set; } = string.Empty;
     public string ToCountryName { get; set; } = string.Empty;
     public string ToPortName { get; set; } = string.Empty;
-    public decimal Container20ftPriceUsd { get; set; }
-    public decimal Container40ftPriceUsd { get; set; }
+    public decimal? Container20ftPriceUsd { get; set; }
+    public decimal? Container40ftPriceUsd { get; set; }
 }
 
 public sealed class AdminUpdateShippingProviderInput
@@ -655,8 +655,8 @@ public sealed class AdminUpdateShippingProviderInput
     public string FromPortName { get; set; } = string.Empty;
     public string ToCountryName { get; set; } = string.Empty;
     public string ToPortName { get; set; } = string.Empty;
-    public decimal Container20ftPriceUsd { get; set; }
-    public decimal Container40ftPriceUsd { get; set; }
+    public decimal? Container20ftPriceUsd { get; set; }
+    public decimal? Container40ftPriceUsd { get; set; }
 }
 
 public sealed class AdminUploadShippingProviderImageInput

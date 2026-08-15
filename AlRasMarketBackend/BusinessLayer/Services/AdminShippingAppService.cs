@@ -313,7 +313,9 @@ public class AdminShippingAppService(
             FromPortId = fromPort.Id,
             ToCountryId = toCountry.Id,
             ToPortId = toPort.Id,
-            PriceUsd = input.Container20ftPriceUsd,
+            PriceUsd = CustomerPriceCalculator.ResolveShippingListPrice(
+                input.Container20ftPriceUsd,
+                input.Container40ftPriceUsd),
             ShippingCostUsd = 0,
             PhoneNumber = input.PhoneNumber.Trim(),
             Container20ftPriceUsd = input.Container20ftPriceUsd,
@@ -386,10 +388,10 @@ public class AdminShippingAppService(
             throw new ArgumentException("From/To country and port names are required.");
         }
 
-        if (input.Container20ftPriceUsd <= 0 || input.Container40ftPriceUsd <= 0)
-        {
-            throw new ArgumentException("Container prices must be greater than zero.");
-        }
+        input.Container20ftPriceUsd =
+            CustomerPriceCalculator.NormalizeOptionalContainerPrice(input.Container20ftPriceUsd);
+        input.Container40ftPriceUsd =
+            CustomerPriceCalculator.NormalizeOptionalContainerPrice(input.Container40ftPriceUsd);
     }
 
     public async Task<object> UpdateProviderAsync(
@@ -445,11 +447,15 @@ public class AdminShippingAppService(
         latestPost.FromPortId = fromPort.Id;
         latestPost.ToCountryId = toCountry.Id;
         latestPost.ToPortId = toPort.Id;
-        latestPost.PriceUsd = input.Container20ftPriceUsd;
+        latestPost.PriceUsd = CustomerPriceCalculator.ResolveShippingListPrice(
+            input.Container20ftPriceUsd,
+            input.Container40ftPriceUsd);
         latestPost.ShippingCostUsd = 0;
         latestPost.PhoneNumber = input.PhoneNumber.Trim();
-        latestPost.Container20ftPriceUsd = input.Container20ftPriceUsd;
-        latestPost.Container40ftPriceUsd = input.Container40ftPriceUsd;
+        latestPost.Container20ftPriceUsd =
+            CustomerPriceCalculator.NormalizeOptionalContainerPrice(input.Container20ftPriceUsd);
+        latestPost.Container40ftPriceUsd =
+            CustomerPriceCalculator.NormalizeOptionalContainerPrice(input.Container40ftPriceUsd);
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -556,10 +562,10 @@ public class AdminShippingAppService(
             throw new ArgumentException("From/To country and port names are required.");
         }
 
-        if (input.Container20ftPriceUsd <= 0 || input.Container40ftPriceUsd <= 0)
-        {
-            throw new ArgumentException("Container prices must be greater than zero.");
-        }
+        input.Container20ftPriceUsd =
+            CustomerPriceCalculator.NormalizeOptionalContainerPrice(input.Container20ftPriceUsd);
+        input.Container40ftPriceUsd =
+            CustomerPriceCalculator.NormalizeOptionalContainerPrice(input.Container40ftPriceUsd);
     }
 
     public async Task<object> DeleteProviderAsync(
@@ -749,5 +755,6 @@ public class AdminShippingAppService(
             .ToDictionary(g => g.Key, g => g.First().CityName);
     }
 
-    private static string FormatUsd(decimal value) => $"${value:N0}";
+    private static string FormatUsd(decimal? value) =>
+        value is > 0 ? $"${value.Value:N0}" : "—";
 }

@@ -50,11 +50,15 @@ public class ShippingCompanyAppService(
         var user = await RequireShippingCompanyAsync(userId, cancellationToken);
         EnsureApproved(user);
 
-        input.PublisherUserId = user.Id.ToString();
         ValidatePostInput(input);
 
         await geoReferenceCache.EnsureLoadedAsync(cancellationToken);
         var route = ResolveRoute(input);
+
+        input.Container20ftPriceUsd =
+            CustomerPriceCalculator.NormalizeOptionalContainerPrice(input.Container20ftPriceUsd);
+        input.Container40ftPriceUsd =
+            CustomerPriceCalculator.NormalizeOptionalContainerPrice(input.Container40ftPriceUsd);
 
         var entity = new InternationalShippingPost
         {
@@ -63,7 +67,9 @@ public class ShippingCompanyAppService(
             FromPortId = route.FromPortId,
             ToCountryId = route.ToCountryId,
             ToPortId = route.ToPortId,
-            PriceUsd = input.Container20ftPriceUsd,
+            PriceUsd = CustomerPriceCalculator.ResolveShippingListPrice(
+                input.Container20ftPriceUsd,
+                input.Container40ftPriceUsd),
             ShippingCostUsd = 0,
             PhoneNumber = input.PhoneNumber.Trim(),
             Container20ftPriceUsd = input.Container20ftPriceUsd,
@@ -125,9 +131,13 @@ public class ShippingCompanyAppService(
         post.ToCountryId = route.ToCountryId;
         post.ToPortId = route.ToPortId;
         post.PhoneNumber = input.PhoneNumber.Trim();
-        post.Container20ftPriceUsd = input.Container20ftPriceUsd;
-        post.Container40ftPriceUsd = input.Container40ftPriceUsd;
-        post.PriceUsd = input.Container20ftPriceUsd;
+        post.Container20ftPriceUsd =
+            CustomerPriceCalculator.NormalizeOptionalContainerPrice(input.Container20ftPriceUsd);
+        post.Container40ftPriceUsd =
+            CustomerPriceCalculator.NormalizeOptionalContainerPrice(input.Container40ftPriceUsd);
+        post.PriceUsd = CustomerPriceCalculator.ResolveShippingListPrice(
+            post.Container20ftPriceUsd,
+            post.Container40ftPriceUsd);
         post.MinDurationDays = input.MinDurationDays;
         post.MaxDurationDays = input.MaxDurationDays;
         post.Details = string.IsNullOrWhiteSpace(input.Details) ? null : input.Details.Trim();
@@ -230,10 +240,10 @@ public class ShippingCompanyAppService(
             throw new ArgumentException("From/To country, from/to port and phone number are required.");
         }
 
-        if (input.Container20ftPriceUsd <= 0 || input.Container40ftPriceUsd <= 0)
-        {
-            throw new ArgumentException("Container prices must be greater than zero.");
-        }
+        input.Container20ftPriceUsd =
+            CustomerPriceCalculator.NormalizeOptionalContainerPrice(input.Container20ftPriceUsd);
+        input.Container40ftPriceUsd =
+            CustomerPriceCalculator.NormalizeOptionalContainerPrice(input.Container40ftPriceUsd);
 
         if (input.MinDurationDays is <= 0)
         {

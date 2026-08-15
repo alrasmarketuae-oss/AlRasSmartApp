@@ -1,5 +1,6 @@
 using System.Text.Json;
 using BusinessLayer.Dtos;
+using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -590,10 +591,14 @@ public sealed partial class AiAssistantMcpToolsService
                     toCountry = item.TryGetProperty("toCountry", out var tc) ? tc.GetString() : null,
                     toPort = item.TryGetProperty("toPort", out var tp) ? tp.GetString() : null,
                     container20ftPriceUsd = item.TryGetProperty("container20ftPriceUsd", out var p20)
-                        ? p20.GetDecimal()
+                        && p20.ValueKind == JsonValueKind.Number
+                        && p20.TryGetDecimal(out var d20)
+                        ? d20
                         : (decimal?)null,
                     container40ftPriceUsd = item.TryGetProperty("container40ftPriceUsd", out var p40)
-                        ? p40.GetDecimal()
+                        && p40.ValueKind == JsonValueKind.Number
+                        && p40.TryGetDecimal(out var d40)
+                        ? d40
                         : (decimal?)null,
                     minDurationDays = item.TryGetProperty("minDurationDays", out var minD)
                         ? minD.ValueKind == JsonValueKind.Null ? null : minD.GetInt32()
@@ -651,9 +656,14 @@ public sealed partial class AiAssistantMcpToolsService
                       ?? GetDecimal(root, "price_20ft");
         var price40 = GetDecimal(root, "container_40ft_price_usd")
                       ?? GetDecimal(root, "price_40ft");
-        if (price20 is null or <= 0 || price40 is null or <= 0)
+        try
         {
-            return Json(new { ok = false, error = "container_20ft_price_usd and container_40ft_price_usd are required." });
+            price20 = CustomerPriceCalculator.NormalizeOptionalContainerPrice(price20);
+            price40 = CustomerPriceCalculator.NormalizeOptionalContainerPrice(price40);
+        }
+        catch (ArgumentException ex)
+        {
+            return Json(new { ok = false, error = ex.Message });
         }
 
         var minDays = GetLong(root, "min_duration_days") ?? GetLong(root, "shipping_duration_min_days");
@@ -696,8 +706,8 @@ public sealed partial class AiAssistantMcpToolsService
             ToCountryName = toCountry.Trim(),
             ToPortName = toPort.Trim(),
             PhoneNumber = phone.Trim(),
-            Container20ftPriceUsd = price20.Value,
-            Container40ftPriceUsd = price40.Value,
+            Container20ftPriceUsd = price20,
+            Container40ftPriceUsd = price40,
             MinDurationDays = (int)minDays.Value,
             MaxDurationDays = (int)maxDays.Value,
             Details = details

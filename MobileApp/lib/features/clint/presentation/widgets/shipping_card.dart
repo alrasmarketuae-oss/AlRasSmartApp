@@ -19,8 +19,10 @@ class ShippingCardData {
     required this.phoneMasked,
     required this.price40f,
     required this.price20f,
+    this.details = '',
     this.carrierImageUrl,
     this.onShowNumber,
+    this.onTap,
     this.showPrices = true,
   });
 
@@ -34,8 +36,10 @@ class ShippingCardData {
   final String phoneMasked;
   final String price40f;
   final String price20f;
+  final String details;
   final String? carrierImageUrl;
   final VoidCallback? onShowNumber;
+  final VoidCallback? onTap;
   final bool showPrices;
 }
 
@@ -50,10 +54,7 @@ class ShippingCard extends StatelessWidget {
   final ShippingCardData data;
   final bool compact;
 
-  static const Color _titleColor = Color(0xFF333333);
-  static Color _muted = LightColor.greyTextColor;
   static const Color _priceBlue = Color(0xFF0066CC);
-  static const Color _pillBg = Color(0xFFF2F7FF);
 
   @override
   Widget build(BuildContext context) {
@@ -61,28 +62,33 @@ class ShippingCard extends StatelessWidget {
     final isTablet = MediaQuery.sizeOf(context).shortestSide >= 600;
 
     if (compact) {
-      return Container(
-        decoration: BoxDecoration(
-          color: AppColors.card(context),
-          borderRadius: BorderRadius.circular(12.r),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: data.onTap,
+          borderRadius: BorderRadius.circular(14.r),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.card(context),
+              borderRadius: BorderRadius.circular(14.r),
+              border: Border.all(color: AppColors.border(context)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
-          ],
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildHeaderImage(height: isTablet ? 160.h : 120.h),
-            Padding(
-              padding: EdgeInsets.fromLTRB(12.w, 16.h, 12.w, 16.h),
-              child: _buildCardContent(context, s, isTablet),
+            padding: EdgeInsets.fromLTRB(12.w, 14.h, 12.w, 14.h),
+            child: _buildCardContent(
+              context,
+              s,
+              isTablet,
+              showPhone: false,
+              detailsMaxLines: 3,
             ),
-          ],
+          ),
         ),
       );
     }
@@ -157,7 +163,14 @@ class ShippingCard extends StatelessWidget {
     S s,
     bool isTablet, {
     bool showHeader = true,
+    bool showPhone = true,
+    int detailsMaxLines = 3,
   }) {
+    final hasPrice20 = data.price20f.trim().isNotEmpty;
+    final hasPrice40 = data.price40f.trim().isNotEmpty;
+    final showPrices = data.showPrices && (hasPrice20 || hasPrice40);
+    final details = data.details.trim();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -165,20 +178,20 @@ class ShippingCard extends StatelessWidget {
           Text(
             data.carrierName,
             style: TextStyle(
-              color: _titleColor,
+              color: AppColors.title(context),
               fontSize: 16.sp,
               height: 1.5,
               fontWeight: FontWeight.bold,
             ),
           ),
-          SizedBox(height: 16.h),
+          SizedBox(height: 12.h),
         ],
         _RoutePill(
           countryFrom: data.routeCountryFrom,
           portFrom: data.routePortFrom,
           countryTo: data.routeCountryTo,
           portTo: data.routePortTo,
-          backgroundColor: _pillBg,
+          backgroundColor: AppColors.iconSoft(context),
         ),
         if (data.daysMin != '—' || data.daysMax != '—') ...[
           SizedBox(height: 10.h),
@@ -186,38 +199,56 @@ class ShippingCard extends StatelessWidget {
             s.shippingTimeRange(data.daysMin, data.daysMax),
             textAlign: TextAlign.center,
             style: TextStyle(
+              color: AppColors.title(context),
               fontWeight: FontWeight.bold,
               fontSize: 14.sp,
             ),
           ),
         ],
-        SizedBox(height: 10.h),
-        SizedBox(
-          height: 50.h,
-          child: _PhoneRow(
-            phoneMasked: data.phoneMasked,
-            onShowNumber: data.onShowNumber,
-            isTablet: isTablet,
+        if (details.isNotEmpty) ...[
+          SizedBox(height: 10.h),
+          Text(
+            details,
+            maxLines: detailsMaxLines,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: AppColors.subtitle(context),
+              fontSize: 13.sp,
+              height: 1.4,
+            ),
           ),
-        ),
-        if (data.showPrices) ...[
-          SizedBox(height: 20.h),
+        ],
+        if (showPhone) ...[
+          SizedBox(height: 10.h),
+          SizedBox(
+            height: 50.h,
+            child: _PhoneRow(
+              phoneMasked: data.phoneMasked,
+              onShowNumber: data.onShowNumber,
+              isTablet: isTablet,
+            ),
+          ),
+        ],
+        if (showPrices) ...[
+          SizedBox(height: 14.h),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: _PriceBlock(
-                  label: s.container20f,
-                  price: data.price20f,
+              if (hasPrice20)
+                Expanded(
+                  child: _PriceBlock(
+                    label: s.container20f,
+                    price: data.price20f,
+                  ),
                 ),
-              ),
-              SizedBox(width: 16.w),
-              Expanded(
-                child: _PriceBlock(
-                  label: s.container40f,
-                  price: data.price40f,
+              if (hasPrice20 && hasPrice40) SizedBox(width: 16.w),
+              if (hasPrice40)
+                Expanded(
+                  child: _PriceBlock(
+                    label: s.container40f,
+                    price: data.price40f,
+                  ),
                 ),
-              ),
             ],
           ),
         ],
@@ -261,7 +292,7 @@ class _RoutePill extends StatelessWidget {
                 Text(
                   countryFrom,
                   style: TextStyle(
-                    color: ShippingCard._titleColor,
+                    color: AppColors.title(context),
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w700,
                     height: 1.35,
@@ -271,7 +302,7 @@ class _RoutePill extends StatelessWidget {
                 Text(
                   portFrom,
                   style: TextStyle(
-                    color: ShippingCard._muted,
+                    color: AppColors.subtitle(context),
                     fontSize: 12.sp,
                     height: 1.35,
                   ),
@@ -299,7 +330,7 @@ class _RoutePill extends StatelessWidget {
                   countryTo,
                   textAlign: TextAlign.end,
                   style: TextStyle(
-                    color: ShippingCard._titleColor,
+                    color: AppColors.title(context),
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w700,
                     height: 1.35,
@@ -310,7 +341,7 @@ class _RoutePill extends StatelessWidget {
                   portTo,
                   textAlign: TextAlign.end,
                   style: TextStyle(
-                    color: ShippingCard._muted,
+                    color: AppColors.subtitle(context),
                     fontSize: 12.sp,
                     height: 1.35,
                   ),
@@ -407,7 +438,7 @@ class _PriceBlock extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
       decoration: BoxDecoration(
-        color: ShippingCard._pillBg,
+        color: AppColors.iconSoft(context),
         borderRadius: BorderRadius.circular(8.r),
       ),
       child: Column(
@@ -416,7 +447,7 @@ class _PriceBlock extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              color: Colors.black,
+              color: AppColors.title(context),
               fontSize: 14.sp,
               fontWeight: FontWeight.bold,
               height: 1.5,

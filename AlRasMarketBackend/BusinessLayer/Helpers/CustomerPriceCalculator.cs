@@ -37,6 +37,25 @@ public static class CustomerPriceCalculator
     public static decimal ApplyShippingMarkup(decimal baseUsdPrice, CommissionSettingsSnapshot settings) =>
         ApplyPercentMarkup(baseUsdPrice, settings.ShippingCommissionPercent);
 
+    public static decimal? ApplyShippingMarkup(decimal? baseUsdPrice, CommissionSettingsSnapshot settings) =>
+        baseUsdPrice is > 0
+            ? ApplyShippingMarkup(baseUsdPrice.Value, settings)
+            : null;
+
+    public static decimal? NormalizeOptionalContainerPrice(decimal? value)
+    {
+        if (value is null or 0) return null;
+        if (value < 0)
+        {
+            throw new ArgumentException("Container prices cannot be negative.");
+        }
+
+        return value;
+    }
+
+    public static decimal ResolveShippingListPrice(decimal? container20ft, decimal? container40ft) =>
+        container20ft ?? container40ft ?? 0;
+
     public static decimal ApplyPercentMarkup(decimal basePrice, decimal percent)
     {
         if (basePrice <= 0 || percent <= 0)

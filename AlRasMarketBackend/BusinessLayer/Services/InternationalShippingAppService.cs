@@ -33,9 +33,21 @@ public class InternationalShippingAppService(
             throw new ArgumentException("From/To country, from/to port and phone number are required.");
         }
 
-        if (input.PriceUsd <= 0 || input.ShippingCostUsd < 0 || input.Container20ftPriceUsd <= 0 || input.Container40ftPriceUsd <= 0)
+        input.Container20ftPriceUsd =
+            CustomerPriceCalculator.NormalizeOptionalContainerPrice(input.Container20ftPriceUsd);
+        input.Container40ftPriceUsd =
+            CustomerPriceCalculator.NormalizeOptionalContainerPrice(input.Container40ftPriceUsd);
+
+        if (input.ShippingCostUsd < 0)
         {
-            throw new ArgumentException("All prices must be valid positive values.");
+            throw new ArgumentException("Shipping cost cannot be negative.");
+        }
+
+        if (input.PriceUsd <= 0)
+        {
+            input.PriceUsd = CustomerPriceCalculator.ResolveShippingListPrice(
+                input.Container20ftPriceUsd,
+                input.Container40ftPriceUsd);
         }
 
         var publisher = await dbContext.Users.FindAsync([publisherUserId], cancellationToken)

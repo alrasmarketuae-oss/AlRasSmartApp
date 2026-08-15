@@ -1,3 +1,4 @@
+import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/features/clint/data/models/international_shipping_post_model.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
@@ -10,6 +11,7 @@ import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -160,7 +162,7 @@ class _ShippingPriceServiceViewState extends State<ShippingPriceServiceView> {
       carrierName: post.publisherName.isNotEmpty
           ? post.publisherName
           : S.of(context).todayShipping,
-      carrierImageUrl: post.publisherImgPath,
+      details: post.details,
       routeCountryFrom: post.fromCountry,
       routeCountryTo: post.toCountry,
       routePortFrom: post.fromPort,
@@ -170,6 +172,10 @@ class _ShippingPriceServiceViewState extends State<ShippingPriceServiceView> {
       phoneMasked: phoneDisplay,
       price40f: ShippingCardHelpers.formatUsdPrice(post.container40ftPriceUsd),
       price20f: ShippingCardHelpers.formatUsdPrice(post.container20ftPriceUsd),
+      onTap: () => context.push(
+        AppRoutes.kShippingPostDetailsView,
+        extra: post,
+      ),
       onShowNumber: post.phoneNumber.isEmpty
           ? null
           : () async {
@@ -223,8 +229,8 @@ class ShippingCardHelpers {
   static final _usdFormatter =
       NumberFormat.currency(symbol: r'$', decimalDigits: 0);
 
-  static String formatUsdPrice(double value) {
-    if (value <= 0) return r'$—';
+  static String formatUsdPrice(double? value) {
+    if (value == null || value <= 0) return '';
     return _usdFormatter.format(value);
   }
 

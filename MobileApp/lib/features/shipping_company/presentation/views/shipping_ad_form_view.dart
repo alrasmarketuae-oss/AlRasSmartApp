@@ -2,6 +2,8 @@ import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
+import 'package:alrasmarket/features/clint/data/models/international_shipping_post_model.dart';
+import 'package:alrasmarket/features/clint/presentation/views/services_views/shipping_price_service_view.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/shipping_card.dart';
 import 'package:alrasmarket/features/company/domain/usecases/get_geo_usecases.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_location_details_section.dart';
@@ -422,8 +424,6 @@ class _ManageOfferCard extends StatefulWidget {
 }
 
 class _ManageOfferCardState extends State<_ManageOfferCard> {
-  bool _showPhone = false;
-
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
@@ -447,47 +447,19 @@ class _ManageOfferCardState extends State<_ManageOfferCard> {
       routePortTo: post.toPort,
       daysMin: post.minDurationDays?.toString() ?? '—',
       daysMax: post.maxDurationDays?.toString() ?? '—',
-      phoneMasked: _showPhone
-          ? post.phoneNumber
-          : _maskPhone(post.phoneNumber),
+      phoneMasked: post.phoneNumber,
       price40f: ShippingCardHelpers.formatUsdPrice(post.container40ftPriceUsd),
       price20f: ShippingCardHelpers.formatUsdPrice(post.container20ftPriceUsd),
-      onShowNumber: () => setState(() => _showPhone = true),
     );
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(12.w, 12.h, 12.w, 0),
-            child: ShippingCard(data: cardData, compact: true),
-          ),
-          if (post.details.isNotEmpty)
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-              child: Text('${s.details}: ${post.details}'),
-            )
-          else
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-              child: Text('${s.details}: ${s.noDetailsAvailable}'),
-            ),
-          Padding(
-            padding: EdgeInsets.fromLTRB(12.w, 0, 12.w, 12.h),
-            child: Row(
-              children: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ShippingCard(data: cardData, compact: true),
+        Padding(
+          padding: EdgeInsets.fromLTRB(4.w, 10.h, 4.w, 0),
+          child: Row(
+            children: [
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () async {
@@ -549,12 +521,7 @@ class _ManageOfferCardState extends State<_ManageOfferCard> {
             ),
           ),
         ],
-      ),
-    );
+      );
   }
 
-  String _maskPhone(String phone) {
-    if (phone.length <= 6) return phone;
-    return '${phone.substring(0, phone.length - 6)}*** ***';
-  }
 }
