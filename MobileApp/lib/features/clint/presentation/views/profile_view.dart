@@ -880,9 +880,8 @@ class _Chevron extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isRtl = Directionality.of(context) == TextDirection.rtl;
     return Icon(
-      isRtl ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
+      Icons.chevron_right_rounded,
       size: size,
       color: _kBlue,
     );

@@ -101,8 +101,8 @@ public class ShippingCompanyController(IShippingCompanyAppService shippingCompan
                 FromPortName = request.FromPortName,
                 ToCountryName = request.ToCountryName,
                 ToPortName = request.ToPortName,
-                Container20ftPriceUsd = request.Container20ftPriceUsd,
-                Container40ftPriceUsd = request.Container40ftPriceUsd,
+                Container20ftPriceUsd = request.Container20ftPriceUsd??0,
+                Container40ftPriceUsd = request.Container40ftPriceUsd??0,
                 MinDurationDays = request.MinDurationDays,
                 MaxDurationDays = request.MaxDurationDays,
                 Details = request.Details,
@@ -158,12 +158,12 @@ public class ShippingCompanyController(IShippingCompanyAppService shippingCompan
             ToCountryName = request.ToCountryName,
             ToPortName = request.ToPortName,
             PhoneNumber = request.PhoneNumber,
-            Container20ftPriceUsd = request.Container20ftPriceUsd,
-            Container40ftPriceUsd = request.Container40ftPriceUsd,
+            Container20ftPriceUsd = request.Container20ftPriceUsd??0,
+            Container40ftPriceUsd = request.Container40ftPriceUsd??0,
             MinDurationDays = request.MinDurationDays,
             MaxDurationDays = request.MaxDurationDays,
             Details = request.Details,
-            PriceUsd = request.Container20ftPriceUsd,
+            PriceUsd = request.Container20ftPriceUsd??0,
             ShippingCostUsd = 0
         };
 }
@@ -175,8 +175,8 @@ public sealed class ShippingCompanyPostRequest
     public string ToCountryName { get; set; } = string.Empty;
     public string ToPortName { get; set; } = string.Empty;
     public string PhoneNumber { get; set; } = string.Empty;
-    public decimal Container20ftPriceUsd { get; set; }
-    public decimal Container40ftPriceUsd { get; set; }
+    public decimal? Container20ftPriceUsd { get; set; }
+    public decimal? Container40ftPriceUsd { get; set; }
     public int? MinDurationDays { get; set; }
     public int? MaxDurationDays { get; set; }
     public string? Details { get; set; }

@@ -19,7 +19,7 @@ public class EmailService(IConfiguration configuration, ILogger<EmailService> lo
         var smtpServer = section["SmtpServer"];
         var senderEmail = section["SenderEmail"];
         var senderPassword = section["SenderPassword"];
-        var senderName = section["SenderName"] ?? "Al Ras App";
+        var senderName = section["SenderName"] ?? "Al Ras Smart";
         var smtpPortRaw = section["SmtpPort"];
         var enableSslRaw = section["EnableSsl"];
 
