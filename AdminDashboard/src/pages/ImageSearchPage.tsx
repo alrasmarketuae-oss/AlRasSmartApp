@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAppPreferences } from '../context/AppPreferencesProvider'
 import { resolveAssetUrl } from '../lib/assets'
@@ -27,6 +27,12 @@ type TestRun = {
   status: 'pending' | 'loading' | 'done' | 'error'
   result?: ImageSearchTestResult
   error?: string
+}
+
+type StagedTrainingImage = {
+  id: string
+  file: File
+  previewUrl: string
 }
 
 function StatusPill({ label, up }: { label: string; up: boolean }) {
@@ -244,6 +250,8 @@ export default function ImageSearchPage() {
   const [refSearch, setRefSearch] = useState('')
   const [appliedRefSearch, setAppliedRefSearch] = useState('')
   const [refPage, setRefPage] = useState(1)
+  const [stagedTrainingImages, setStagedTrainingImages] = useState<StagedTrainingImage[]>([])
+  const [showTrainedLibrary, setShowTrainedLibrary] = useState(false)
   const canManage = hasPermission(PERMISSIONS.productsManage)
 
   const { data, error, isLoading, isFetching, refetch } = useGetAdminImageSearchStatusQuery(undefined, {
@@ -254,11 +262,14 @@ export default function ImageSearchPage() {
   const [uploadReferences, uploadReferencesState] = useUploadClipReferenceImagesMutation()
   const [deleteReference] = useDeleteClipReferenceImageMutation()
   const [reindexReferences, reindexReferencesState] = useReindexClipReferenceImagesMutation()
-  const { data: referencePage, refetch: refetchReferences } = useGetClipReferenceImagesQuery({
-    page: refPage,
-    pageSize: 12,
-    search: appliedRefSearch || undefined,
-  })
+  const { data: referencePage, refetch: refetchReferences } = useGetClipReferenceImagesQuery(
+    {
+      page: refPage,
+      pageSize: 12,
+      search: appliedRefSearch || undefined,
+    },
+    { skip: !showTrainedLibrary },
+  )
   const { showInitialLoader } = queryViewState({ isLoading, isFetching })
 
   const completedCount = useMemo(
@@ -330,22 +341,58 @@ export default function ImageSearchPage() {
     setTestRuns([])
   }
 
-  async function handleReferenceUpload(files: FileList | null) {
+  const stagedTrainingRef = useRef(stagedTrainingImages)
+  stagedTrainingRef.current = stagedTrainingImages
+
+  useEffect(() => {
+    return () => {
+      stagedTrainingRef.current.forEach((item) => URL.revokeObjectURL(item.previewUrl))
+    }
+  }, [])
+
+  function clearStagedTrainingImages() {
+    stagedTrainingImages.forEach((item) => URL.revokeObjectURL(item.previewUrl))
+    setStagedTrainingImages([])
+  }
+
+  function stageReferenceFiles(files: FileList | null) {
     if (!canManage || !files?.length) return
     const selected = Array.from(files).filter((file) => file.type.startsWith('image/'))
-    if (selected.length === 0 || !productName.trim()) return
+    if (selected.length === 0) return
+
+    setStagedTrainingImages((prev) => [
+      ...prev,
+      ...selected.map((file) => ({
+        id: `${file.name}-${file.lastModified}-${crypto.randomUUID()}`,
+        file,
+        previewUrl: URL.createObjectURL(file),
+      })),
+    ])
+  }
+
+  function removeStagedTrainingImage(id: string) {
+    setStagedTrainingImages((prev) => {
+      const item = prev.find((row) => row.id === id)
+      if (item) URL.revokeObjectURL(item.previewUrl)
+      return prev.filter((row) => row.id !== id)
+    })
+  }
+
+  async function handleReferenceUpload() {
+    if (!canManage || stagedTrainingImages.length === 0 || !productName.trim()) return
 
     try {
       await uploadReferences({
         productName: productName.trim(),
         productNameAr: productNameAr.trim() || undefined,
         productCode: productCode.trim() || undefined,
-        files: selected,
+        files: stagedTrainingImages.map((item) => item.file),
       }).unwrap()
+      clearStagedTrainingImages()
+      setShowTrainedLibrary(false)
       refetch()
-      refetchReferences()
     } catch {
-      // RTK error state
+      // RTK error state — keep staged images so the admin can retry
     }
   }
 
@@ -506,20 +553,42 @@ export default function ImageSearchPage() {
               accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
               className="hidden"
               onChange={(e) => {
-                void handleReferenceUpload(e.target.files)
+                stageReferenceFiles(e.target.files)
                 e.target.value = ''
               }}
             />
             <button
               type="button"
-              className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-              disabled={uploadReferencesState.isLoading || !productName.trim()}
+              className="rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700"
+              disabled={uploadReferencesState.isLoading}
               onClick={() => referenceInputRef.current?.click()}
+            >
+              {t('imageSearch.selectTrainingImages')}
+            </button>
+            <button
+              type="button"
+              className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              disabled={
+                uploadReferencesState.isLoading ||
+                !productName.trim() ||
+                stagedTrainingImages.length === 0
+              }
+              onClick={() => void handleReferenceUpload()}
             >
               {uploadReferencesState.isLoading
                 ? t('imageSearch.uploadingReferences')
-                : t('imageSearch.uploadReferences')}
+                : t('imageSearch.trainNow')}
             </button>
+            {stagedTrainingImages.length > 0 ? (
+              <button
+                type="button"
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700"
+                disabled={uploadReferencesState.isLoading}
+                onClick={clearStagedTrainingImages}
+              >
+                {t('imageSearch.clearStaged')}
+              </button>
+            ) : null}
             <button
               type="button"
               className="rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700"
@@ -531,6 +600,35 @@ export default function ImageSearchPage() {
                 : t('imageSearch.reindexReferences')}
             </button>
           </div>
+
+          {stagedTrainingImages.length > 0 ? (
+            <div className="space-y-2">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {t('imageSearch.stagedImagesHint', { count: stagedTrainingImages.length })}
+              </p>
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8">
+                {stagedTrainingImages.map((item) => (
+                  <div key={item.id} className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+                    <img
+                      src={item.previewUrl}
+                      alt={item.file.name}
+                      className="aspect-square w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      className="absolute end-1 top-1 rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-semibold text-white"
+                      disabled={uploadReferencesState.isLoading}
+                      onClick={() => removeStagedTrainingImage(item.id)}
+                    >
+                      {t('imageSearch.removeStaged')}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-slate-500 dark:text-slate-400">{t('imageSearch.noStagedImages')}</p>
+          )}
 
           {uploadReferencesState.error ? (
             <p className="text-sm text-red-600">
@@ -546,77 +644,93 @@ export default function ImageSearchPage() {
             </p>
           ) : null}
 
-          <div className="flex flex-wrap gap-2">
-            <input
-              className="admin-input min-w-[200px] flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700"
-              placeholder={t('imageSearch.searchReferences')}
-              value={refSearch}
-              onChange={(e) => setRefSearch(e.target.value)}
-            />
-            <button
-              type="button"
-              className="rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700"
-              onClick={() => {
-                setAppliedRefSearch(refSearch.trim())
-                setRefPage(1)
-              }}
-            >
-              {t('imageSearch.search')}
-            </button>
-          </div>
+          <button
+            type="button"
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700"
+            onClick={() => setShowTrainedLibrary((open) => !open)}
+          >
+            {showTrainedLibrary
+              ? t('imageSearch.hideTrainedLibrary')
+              : t('imageSearch.showTrainedLibrary', {
+                  count: referencePage?.totalCount ?? data?.referenceImageCount ?? 0,
+                })}
+          </button>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {(referencePage?.items ?? []).map((item) => (
-              <div
-                key={item.id}
-                className="admin-card overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-700"
-              >
-                <div className="aspect-square bg-slate-50 dark:bg-slate-900">
-                  <img
-                    src={resolveAssetUrl(item.imagePath)}
-                    alt={item.productName}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                <div className="space-y-1 p-3">
-                  <p className="admin-text line-clamp-2 text-sm font-semibold">{item.productName}</p>
-                  {item.productNameAr ? (
-                    <p className="text-xs text-slate-500">{item.productNameAr}</p>
-                  ) : null}
+          {showTrainedLibrary ? (
+            <>
+              <div className="flex flex-wrap gap-2">
+                <input
+                  className="admin-input min-w-[200px] flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700"
+                  placeholder={t('imageSearch.searchReferences')}
+                  value={refSearch}
+                  onChange={(e) => setRefSearch(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700"
+                  onClick={() => {
+                    setAppliedRefSearch(refSearch.trim())
+                    setRefPage(1)
+                  }}
+                >
+                  {t('imageSearch.search')}
+                </button>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {(referencePage?.items ?? []).map((item) => (
+                  <div
+                    key={item.id}
+                    className="admin-card overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-700"
+                  >
+                    <div className="aspect-square bg-slate-50 dark:bg-slate-900">
+                      <img
+                        src={resolveAssetUrl(item.imagePath)}
+                        alt={item.productName}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <div className="space-y-1 p-3">
+                      <p className="admin-text line-clamp-2 text-sm font-semibold">{item.productName}</p>
+                      {item.productNameAr ? (
+                        <p className="text-xs text-slate-500">{item.productNameAr}</p>
+                      ) : null}
+                      <button
+                        type="button"
+                        className="text-xs font-semibold text-red-600 dark:text-red-400"
+                        onClick={() => void handleDeleteReference(item.id)}
+                      >
+                        {t('imageSearch.deleteReference')}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {(referencePage?.totalPages ?? 1) > 1 ? (
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    className="text-xs font-semibold text-red-600 dark:text-red-400"
-                    onClick={() => void handleDeleteReference(item.id)}
+                    className="rounded-lg border px-3 py-1 text-sm disabled:opacity-50"
+                    disabled={refPage <= 1}
+                    onClick={() => setRefPage((p) => Math.max(1, p - 1))}
                   >
-                    {t('imageSearch.deleteReference')}
+                    {t('imageSearch.prev')}
+                  </button>
+                  <span className="text-sm text-slate-500">
+                    {refPage} / {referencePage?.totalPages ?? 1}
+                  </span>
+                  <button
+                    type="button"
+                    className="rounded-lg border px-3 py-1 text-sm disabled:opacity-50"
+                    disabled={refPage >= (referencePage?.totalPages ?? 1)}
+                    onClick={() => setRefPage((p) => p + 1)}
+                  >
+                    {t('imageSearch.next')}
                   </button>
                 </div>
-              </div>
-            ))}
-          </div>
-
-          {(referencePage?.totalPages ?? 1) > 1 ? (
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                className="rounded-lg border px-3 py-1 text-sm disabled:opacity-50"
-                disabled={refPage <= 1}
-                onClick={() => setRefPage((p) => Math.max(1, p - 1))}
-              >
-                {t('imageSearch.prev')}
-              </button>
-              <span className="text-sm text-slate-500">
-                {refPage} / {referencePage?.totalPages ?? 1}
-              </span>
-              <button
-                type="button"
-                className="rounded-lg border px-3 py-1 text-sm disabled:opacity-50"
-                disabled={refPage >= (referencePage?.totalPages ?? 1)}
-                onClick={() => setRefPage((p) => p + 1)}
-              >
-                {t('imageSearch.next')}
-              </button>
-            </div>
+              ) : null}
+            </>
           ) : null}
         </section>
       ) : null}

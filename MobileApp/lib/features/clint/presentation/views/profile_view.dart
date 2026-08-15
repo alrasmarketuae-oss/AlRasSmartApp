@@ -5,7 +5,6 @@ import 'package:alrasmarket/core/services/biometric_auth_service.dart';
 import 'package:alrasmarket/core/services/sensitive_access_gate.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
-import 'package:alrasmarket/core/theme/theme_controller.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/widgets/profile_avatar.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_cubit.dart';
@@ -325,22 +324,6 @@ class _ProfileViewState extends State<ProfileView> {
                               subtitle: s.changeLanguageSubtitle,
                               assetIcon: AppAssets.profileLanguageIcon,
                               onTap: () => context.push(AppRoutes.kLanguageView),
-                            ),
-                            ListenableBuilder(
-                              listenable: ThemeController.instance,
-                              builder: (context, _) {
-                                return _SettingsTile(
-                                  title: s.darkMode,
-                                  subtitle: s.darkModeSubtitle,
-                                  icon: Icons.dark_mode_outlined,
-                                  trailing: Switch.adaptive(
-                                    value: ThemeController.instance.isDark,
-                                    onChanged: ThemeController.instance.setDark,
-                                    activeThumbColor: Colors.white,
-                                    activeTrackColor: _kBlue,
-                                  ),
-                                );
-                              },
                             ),
                             if (_biometricSupported)
                               _SettingsTile(

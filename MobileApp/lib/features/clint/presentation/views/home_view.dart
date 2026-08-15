@@ -691,10 +691,20 @@ class _ServiceIconItem extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SvgPicture.asset(
-                  iconPath,
-                  width: 26.w,
-                  height: 26.w,
+                SizedBox(
+                  width: 32.w,
+                  height: 32.w,
+                  child: Center(
+                    child: Transform.scale(
+                      scale: iconPath.endsWith('ship.svg') ? 1.18 : 1,
+                      child: SvgPicture.asset(
+                        iconPath,
+                        width: 32.w,
+                        height: 32.w,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
                 ),
                 SizedBox(height: 8.h),
                 Text(

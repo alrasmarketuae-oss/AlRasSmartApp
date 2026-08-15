@@ -2,7 +2,6 @@ import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/services/sensitive_access_gate.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
-import 'package:alrasmarket/core/theme/theme_controller.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/features/shipping_company/presentation/controller/cubit/shipping_company_cubit.dart';
 import 'package:alrasmarket/features/shipping_company/presentation/controller/cubit/shipping_company_states.dart';
@@ -190,22 +189,6 @@ class _ShippingProfileViewState extends State<ShippingProfileView> {
                 icon: Icons.language_outlined,
                 label: s.language,
                 onTap: () => context.push(AppRoutes.kLanguageView),
-              ),
-              SizedBox(height: 10.h),
-              ListenableBuilder(
-                listenable: ThemeController.instance,
-                builder: (context, _) {
-                  return ShippingSettingsTile(
-                    icon: Icons.dark_mode_outlined,
-                    label: s.darkMode,
-                    trailing: Switch.adaptive(
-                      value: ThemeController.instance.isDark,
-                      onChanged: ThemeController.instance.setDark,
-                      activeThumbColor: Colors.white,
-                      activeTrackColor: kShippingPrimary,
-                    ),
-                  );
-                },
               ),
               SizedBox(height: 10.h),
               ShippingSettingsTile(
