@@ -10,8 +10,8 @@ class AppPrivacyPolicy {
       isAr ? 'آخر تحديث: 14 أغسطس 2026' : 'Last updated: 14 August 2026';
 
   static String intro(bool isAr) => isAr
-      ? 'تشرح هذه السياسة ما البيانات التي يجمعها التطبيق وكيف نستخدمها ونحفظها ونشاركها ونحذفها. المشغّل: شركة ميرج سبايس لتجارة المواد الغذائية — دبي، الإمارات. البريد: support@alrasmarket.com'
-      : 'This Policy explains what data the app collects, why, how it is stored, shared, and deleted. Operator: Merge Spice Foodstuff Trading LLC — Dubai, UAE. Email: support@alrasmarket.com';
+      ? 'تشرح هذه السياسة ما البيانات التي يجمعها التطبيق وكيف نستخدمها ونحفظها ونشاركها ونحذفها. المشغّل: شركة ميرج سبايس لتجارة المواد الغذائية — دبي، الإمارات. البريد: support@alrasmarketapp.com'
+      : 'This Policy explains what data the app collects, why, how it is stored, shared, and deleted. Operator: Merge Spice Foodstuff Trading LLC — Dubai, UAE. Email: support@alrasmarketapp.com';
 
   static List<({String title, List<String> items})> sections(bool isAr) =>
       isAr ? _ar : _en;
@@ -71,7 +71,7 @@ class AppPrivacyPolicy {
       title: '6) الحذف وحقوقك',
       items: [
         'يمكنك تعديل بيانات ملفك من التطبيق.',
-        'اطلب حذف الحساب عبر التطبيق أو الصفحة العامة لحذف الحساب أو البريد support@alrasmarket.com بعد التحقق وتسوية الطلبات المفتوحة.',
+        'اطلب حذف الحساب عبر التطبيق أو الصفحة العامة لحذف الحساب أو البريد support@alrasmarketapp.com بعد التحقق وتسوية الطلبات المفتوحة.',
         'قد يُحذف الحساب تلقائياً إذا لم يُسجّل أي تفاعل ذي معنى — مثل إتمام عملية شراء أو إضافة/نشر إعلانات — لمدة ثلاثة (3) أشهر متتالية.',
         'يمكنك سحب أذونات الجهاز من إعدادات الهاتف.',
       ],
@@ -79,7 +79,7 @@ class AppPrivacyPolicy {
     (
       title: '7) التواصل',
       items: [
-        'support@alrasmarket.com — Merge Spice Foodstuff Trading LLC، دبي، الإمارات.',
+        'support@alrasmarketapp.com — Merge Spice Foodstuff Trading LLC، دبي، الإمارات.',
         'سياسة الخصوصية الكاملة على الموقع: /privacy',
       ],
     ),
@@ -140,7 +140,7 @@ class AppPrivacyPolicy {
       title: '6) Deletion and your rights',
       items: [
         'You can update profile data in the app.',
-        'Request account deletion via the app, the public delete-account page, or support@alrasmarket.com after verification and settling open orders.',
+        'Request account deletion via the app, the public delete-account page, or support@alrasmarketapp.com after verification and settling open orders.',
         'Your account may be automatically deleted if there is no meaningful activity — such as completing a purchase or adding/publishing ads — for three (3) consecutive months.',
         'You may revoke device permissions in system settings.',
       ],
@@ -148,7 +148,7 @@ class AppPrivacyPolicy {
     (
       title: '7) Contact',
       items: [
-        'support@alrasmarket.com — Merge Spice Foodstuff Trading LLC, Dubai, UAE.',
+        'support@alrasmarketapp.com — Merge Spice Foodstuff Trading LLC, Dubai, UAE.',
         'Full Privacy Policy on the website: /privacy',
       ],
     ),

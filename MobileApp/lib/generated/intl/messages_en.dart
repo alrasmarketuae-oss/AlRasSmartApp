@@ -562,6 +562,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "currentAds": MessageLookupByLibrary.simpleMessage("Current ads"),
     "currentPassword": MessageLookupByLibrary.simpleMessage("Current Password"),
     "customerService": MessageLookupByLibrary.simpleMessage("Customer Service"),
+    "darkMode": MessageLookupByLibrary.simpleMessage("Dark mode"),
+    "darkModeSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Use a darker background that\'s easier on the eyes",
+    ),
     "dataSafeSubtitle": MessageLookupByLibrary.simpleMessage(
       "We use advanced security to protect your information.",
     ),

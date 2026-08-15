@@ -1,3 +1,4 @@
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/widgets/language_button.dart';
 import 'package:flutter/material.dart';
@@ -27,7 +28,7 @@ class ShippingCompanyShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: kShippingBg,
+      backgroundColor: AppColors.scaffold(context),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -540,21 +541,25 @@ class ShippingSettingsTile extends StatelessWidget {
     super.key,
     required this.icon,
     required this.label,
-    required this.onTap,
+    this.onTap,
+    this.trailing,
     this.isDestructive = false,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback? onTap;
+  final Widget? trailing;
   final bool isDestructive;
 
   @override
   Widget build(BuildContext context) {
     final color = isDestructive ? const Color(0xffE53935) : kShippingPrimary;
+    final titleColor =
+        isDestructive ? color : AppColors.title(context);
 
     return Material(
-      color: Colors.white,
+      color: AppColors.card(context),
       borderRadius: BorderRadius.circular(10.r),
       child: InkWell(
         onTap: onTap,
@@ -563,7 +568,7 @@ class ShippingSettingsTile extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10.r),
-            border: Border.all(color: const Color(0xffE4EAF2)),
+            border: Border.all(color: AppColors.border(context)),
           ),
           child: Row(
             children: [
@@ -583,15 +588,17 @@ class ShippingSettingsTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
-                    color: isDestructive ? color : const Color(0xff333333),
+                    color: titleColor,
                   ),
                 ),
               ),
-              if (onTap != null)
+              if (trailing != null)
+                trailing!
+              else if (onTap != null)
                 Icon(
-                  Icons.arrow_forward_ios,
-                  size: 14.sp,
-                  color: Colors.grey.shade400,
+                  Icons.chevron_right_rounded,
+                  size: 22.sp,
+                  color: AppColors.subtitle(context),
                 ),
             ],
           ),

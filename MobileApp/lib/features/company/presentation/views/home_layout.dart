@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/serveses/notifications_service.dart';
 import 'package:alrasmarket/core/widgets/scroll_aware_bottom_nav_scaffold.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
@@ -58,11 +59,11 @@ class _CompanyHomeLayoutState extends State<CompanyHomeLayout> {
         ];
         // Keeps the status bar the same colour as the tab shown behind it.
         final tabBackgrounds = [
-          Colors.white,
+          AppColors.scaffold(context),
           CreateAdDesign.pageBg,
-          const Color(0xFFF4F7FA),
-          Colors.white,
-          const Color(0xffF2F7FF),
+          AppColors.scaffold(context),
+          AppColors.scaffold(context),
+          AppColors.scaffold(context),
         ];
         final currentIndex = cubit.currentIndex >= screens.length
             ? screens.length - 1

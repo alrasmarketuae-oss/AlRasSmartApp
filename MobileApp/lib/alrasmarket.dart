@@ -5,6 +5,7 @@ import 'package:alrasmarket/core/services/app_push_notification_service.dart';
 import 'package:alrasmarket/core/services/fcm_token_service.dart';
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
 import 'package:alrasmarket/core/theme/light_theme.dart';
+import 'package:alrasmarket/core/theme/theme_controller.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_cubit.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_states.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
@@ -94,38 +95,59 @@ class _AlRasMarketState extends State<AlRasMarket> with WidgetsBindingObserver {
             buildWhen: (_, current) => current is ChangeLocaleState,
             builder: (context, state) {
               final cubit = AuthCubit.get(context);
-              return MaterialApp.router(
-                title: 'Al Ras Smart App',
-                theme: lightTheme(cubit.locale),
-                color: const Color(0xffF2F7FF),
-                locale: cubit.locale,
-                localizationsDelegates: const [
-                  S.delegate,
-                  GlobalMaterialLocalizations.delegate,
-                  GlobalWidgetsLocalizations.delegate,
-                  GlobalCupertinoLocalizations.delegate,
-                ],
-                supportedLocales: const [Locale('ar', ''), Locale('en', '')],
-                debugShowCheckedModeBanner: false,
-                routerConfig: AppRoutes.router,
-                builder: (context, child) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    AppPushNotificationService.instance.handlePendingNavigation();
-                  });
-                  return AnnotatedRegion<SystemUiOverlayStyle>(
-                    value: const SystemUiOverlayStyle(
-                      statusBarColor: Color(0xffF2F7FF),
-                      statusBarBrightness: Brightness.light,
-                      statusBarIconBrightness: Brightness.dark,
-                      systemNavigationBarColor: Colors.white,
-                      systemNavigationBarIconBrightness: Brightness.dark,
-                    ),
-                    // Pages inset by SafeArea leave the status bar strip
-                    // unpainted, which renders black without this fill.
-                    child: ColoredBox(
-                      color: const Color(0xffF2F7FF),
-                      child: child ?? const SizedBox.shrink(),
-                    ),
+              return ListenableBuilder(
+                listenable: ThemeController.instance,
+                builder: (context, _) {
+                  final dark = ThemeController.instance.isDark;
+                  return MaterialApp.router(
+                    title: 'Al Ras Smart App',
+                    theme: lightTheme(cubit.locale),
+                    darkTheme: darkTheme(cubit.locale),
+                    themeMode: ThemeController.instance.mode,
+                    color: dark
+                        ? const Color(0xFF0F1623)
+                        : const Color(0xffF2F7FF),
+                    locale: cubit.locale,
+                    localizationsDelegates: const [
+                      S.delegate,
+                      GlobalMaterialLocalizations.delegate,
+                      GlobalWidgetsLocalizations.delegate,
+                      GlobalCupertinoLocalizations.delegate,
+                    ],
+                    supportedLocales: const [Locale('ar', ''), Locale('en', '')],
+                    debugShowCheckedModeBanner: false,
+                    routerConfig: AppRoutes.router,
+                    builder: (context, child) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        AppPushNotificationService.instance
+                            .handlePendingNavigation();
+                      });
+                      return AnnotatedRegion<SystemUiOverlayStyle>(
+                        value: dark
+                            ? const SystemUiOverlayStyle(
+                                statusBarColor: Colors.transparent,
+                                statusBarBrightness: Brightness.dark,
+                                statusBarIconBrightness: Brightness.light,
+                                systemNavigationBarColor: Color(0xFF151C28),
+                                systemNavigationBarIconBrightness:
+                                    Brightness.light,
+                              )
+                            : const SystemUiOverlayStyle(
+                                statusBarColor: Color(0xffF2F7FF),
+                                statusBarBrightness: Brightness.light,
+                                statusBarIconBrightness: Brightness.dark,
+                                systemNavigationBarColor: Colors.white,
+                                systemNavigationBarIconBrightness:
+                                    Brightness.dark,
+                              ),
+                        child: ColoredBox(
+                          color: dark
+                              ? const Color(0xFF0F1623)
+                              : const Color(0xffF2F7FF),
+                          child: child ?? const SizedBox.shrink(),
+                        ),
+                      );
+                    },
                   );
                 },
               );

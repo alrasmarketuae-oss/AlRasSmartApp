@@ -4,6 +4,8 @@ import 'package:alrasmarket/core/serveses/profile_service.dart';
 import 'package:alrasmarket/core/services/biometric_auth_service.dart';
 import 'package:alrasmarket/core/services/sensitive_access_gate.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
+import 'package:alrasmarket/core/theme/colors.dart';
+import 'package:alrasmarket/core/theme/theme_controller.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/widgets/profile_avatar.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_cubit.dart';
@@ -20,8 +22,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 
-const Color _kScreenBg = Color(0xFFF6F9FE);
-const Color _kTitleColor = Color(0xFF16233A);
 const Color _kSubtitleColor = Color(0xFF7B8794);
 const Color _kBlue = Color(0xFF2E77CC);
 const Color _kBlueDark = Color(0xFF1B5FB8);
@@ -216,7 +216,7 @@ class _ProfileViewState extends State<ProfileView> {
           return Stack(
             children: [
               Scaffold(
-                backgroundColor: _kScreenBg,
+                backgroundColor: AppColors.scaffold(context),
                 body: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -326,6 +326,22 @@ class _ProfileViewState extends State<ProfileView> {
                               assetIcon: AppAssets.profileLanguageIcon,
                               onTap: () => context.push(AppRoutes.kLanguageView),
                             ),
+                            ListenableBuilder(
+                              listenable: ThemeController.instance,
+                              builder: (context, _) {
+                                return _SettingsTile(
+                                  title: s.darkMode,
+                                  subtitle: s.darkModeSubtitle,
+                                  icon: Icons.dark_mode_outlined,
+                                  trailing: Switch.adaptive(
+                                    value: ThemeController.instance.isDark,
+                                    onChanged: ThemeController.instance.setDark,
+                                    activeThumbColor: Colors.white,
+                                    activeTrackColor: _kBlue,
+                                  ),
+                                );
+                              },
+                            ),
                             if (_biometricSupported)
                               _SettingsTile(
                                 title: s.enableBiometricUnlock,
@@ -409,7 +425,7 @@ class _ProfileViewState extends State<ProfileView> {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card(context),
         borderRadius: BorderRadius.circular(18.r),
         boxShadow: [
           BoxShadow(
@@ -436,7 +452,7 @@ class _ProfileViewState extends State<ProfileView> {
                       style: TextStyle(
                         fontSize: 17.sp,
                         fontWeight: FontWeight.w700,
-                        color: _kTitleColor,
+                        color: AppColors.title(context),
                         height: 1.3,
                       ),
                     ),
@@ -593,7 +609,7 @@ class _SectionTitle extends StatelessWidget {
           style: TextStyle(
             fontSize: 17.sp,
             fontWeight: FontWeight.w700,
-            color: _kTitleColor,
+            color: AppColors.title(context),
           ),
         ),
       ],
@@ -640,7 +656,7 @@ class _ShortcutCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w700,
-                      color: _kTitleColor,
+                      color: AppColors.title(context),
                     ),
                   ),
                 ),
@@ -704,7 +720,7 @@ class _SettingsTile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14.5.sp,
                       fontWeight: FontWeight.w700,
-                      color: _kTitleColor,
+                      color: AppColors.title(context),
                       height: 1.3,
                     ),
                   ),
@@ -714,7 +730,7 @@ class _SettingsTile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 11.5.sp,
                       height: 1.35,
-                      color: _kSubtitleColor,
+                      color: AppColors.subtitle(context),
                     ),
                   ),
                 ],
@@ -798,7 +814,7 @@ class _CardShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(14.r);
     return Material(
-      color: Colors.white,
+      color: AppColors.card(context),
       borderRadius: radius,
       child: InkWell(
         onTap: onTap,

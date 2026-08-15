@@ -33,3 +33,26 @@ class LightColor {
   static const Color successDark = Color(0xFF389E0F); // Darker green text/icon
   static const Color iconColor2 = Color(0xFF5A5A5A);
 }
+
+class AppColors {
+  static bool isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  static Color scaffold(BuildContext context) =>
+      isDark(context) ? const Color(0xFF0F1623) : LightColor.background;
+
+  static Color card(BuildContext context) =>
+      isDark(context) ? const Color(0xFF1B2433) : Colors.white;
+
+  static Color navBar(BuildContext context) =>
+      isDark(context) ? const Color(0xFF151C28) : Colors.white;
+
+  static Color title(BuildContext context) =>
+      isDark(context) ? const Color(0xFFE8EEF7) : const Color(0xFF16233A);
+
+  static Color subtitle(BuildContext context) =>
+      isDark(context) ? const Color(0xFF9AA6B8) : const Color(0xFF7B8794);
+
+  static Color border(BuildContext context) =>
+      isDark(context) ? const Color(0xFF2A3344) : const Color(0xFFE4EAF2);
+}

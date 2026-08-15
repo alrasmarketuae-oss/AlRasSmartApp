@@ -569,6 +569,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "كلمة المرور الحالية",
     ),
     "customerService": MessageLookupByLibrary.simpleMessage("خدمة العملاء"),
+    "darkMode": MessageLookupByLibrary.simpleMessage("الوضع الليلي"),
+    "darkModeSubtitle": MessageLookupByLibrary.simpleMessage(
+      "خلفية داكنة لراحة العين",
+    ),
     "dataSafeSubtitle": MessageLookupByLibrary.simpleMessage(
       "نستخدم حماية متقدمة للحفاظ على معلوماتك.",
     ),

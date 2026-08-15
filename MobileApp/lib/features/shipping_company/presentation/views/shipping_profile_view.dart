@@ -1,5 +1,8 @@
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
+import 'package:alrasmarket/core/services/sensitive_access_gate.dart';
+import 'package:alrasmarket/core/theme/colors.dart';
+import 'package:alrasmarket/core/theme/theme_controller.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/features/shipping_company/presentation/controller/cubit/shipping_company_cubit.dart';
 import 'package:alrasmarket/features/shipping_company/presentation/controller/cubit/shipping_company_states.dart';
@@ -155,15 +158,54 @@ class _ShippingProfileViewState extends State<ShippingProfileView> {
                   style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: AppColors.title(context),
                   ),
                 ),
               ),
               SizedBox(height: 12.h),
               ShippingSettingsTile(
+                icon: Icons.auto_awesome_rounded,
+                label: s.aiAssistantTitle,
+                onTap: () {
+                  SensitiveAccessGate.openProtectedRoute(
+                    context,
+                    route: AppRoutes.kAiAssistantView,
+                  );
+                },
+              ),
+              SizedBox(height: 10.h),
+              ShippingSettingsTile(
+                icon: Icons.forum_outlined,
+                label: s.liveChat,
+                onTap: () => context.push(AppRoutes.kSupportChatView),
+              ),
+              SizedBox(height: 10.h),
+              ShippingSettingsTile(
+                icon: Icons.privacy_tip_outlined,
+                label: s.policyAndPrivacy,
+                onTap: () => context.push(AppRoutes.kTermsAndConditions),
+              ),
+              SizedBox(height: 10.h),
+              ShippingSettingsTile(
                 icon: Icons.language_outlined,
                 label: s.language,
                 onTap: () => context.push(AppRoutes.kLanguageView),
+              ),
+              SizedBox(height: 10.h),
+              ListenableBuilder(
+                listenable: ThemeController.instance,
+                builder: (context, _) {
+                  return ShippingSettingsTile(
+                    icon: Icons.dark_mode_outlined,
+                    label: s.darkMode,
+                    trailing: Switch.adaptive(
+                      value: ThemeController.instance.isDark,
+                      onChanged: ThemeController.instance.setDark,
+                      activeThumbColor: Colors.white,
+                      activeTrackColor: kShippingPrimary,
+                    ),
+                  );
+                },
               ),
               SizedBox(height: 10.h),
               ShippingSettingsTile(

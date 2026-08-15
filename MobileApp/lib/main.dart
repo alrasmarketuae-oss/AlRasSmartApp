@@ -12,6 +12,7 @@ import 'package:alrasmarket/features/company/presentation/services/create_ad_pub
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_cubit.dart';
 import 'package:alrasmarket/core/media/image_picker_config.dart';
 import 'package:alrasmarket/core/utils/media_http_overrides.dart';
+import 'package:alrasmarket/core/theme/theme_controller.dart';
 import 'package:alrasmarket/core/utils/status_bar_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -22,6 +23,7 @@ void main() async {
   configureMediaHttpOverrides();
   await ScreenUtil.ensureScreenSize();
   await CachHelper.init();
+  await ThemeController.instance.load();
   await ApiCacheStore.instance.init();
   DioHelper.init();
 

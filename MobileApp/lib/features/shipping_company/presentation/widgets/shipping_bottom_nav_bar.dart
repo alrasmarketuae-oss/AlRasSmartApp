@@ -34,7 +34,7 @@ class ShippingBottomNavBar extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: LightColor.surface,
+        color: AppColors.navBar(context),
         boxShadow: [
           BoxShadow(
             color: LightColor.black.withOpacity(0.1),

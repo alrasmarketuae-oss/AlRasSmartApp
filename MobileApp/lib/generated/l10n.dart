@@ -2589,6 +2589,21 @@ class S {
     );
   }
 
+  /// `Dark mode`
+  String get darkMode {
+    return Intl.message('Dark mode', name: 'darkMode', desc: '', args: []);
+  }
+
+  /// `Use a darker background that's easier on the eyes`
+  String get darkModeSubtitle {
+    return Intl.message(
+      'Use a darker background that\'s easier on the eyes',
+      name: 'darkModeSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Policy and Privacy`
   String get PolicyandPrivacy {
     return Intl.message(

@@ -1,3 +1,4 @@
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -26,8 +27,6 @@ class ScrollAwareBottomNavScaffold extends StatefulWidget {
 class _ScrollAwareBottomNavScaffoldState
     extends State<ScrollAwareBottomNavScaffold> {
   bool _isBottomNavVisible = true;
-
-  static const _scaffoldBg = Color(0xffF2F7FF);
 
   @override
   void didUpdateWidget(covariant ScrollAwareBottomNavScaffold oldWidget) {
@@ -73,20 +72,21 @@ class _ScrollAwareBottomNavScaffoldState
 
   @override
   Widget build(BuildContext context) {
-    final background = widget.backgroundColor ?? _scaffoldBg;
+    final background = widget.backgroundColor ?? AppColors.scaffold(context);
     final useLightIcons =
         ThemeData.estimateBrightnessForColor(background) == Brightness.dark;
+    final navColor = AppColors.navBar(context);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: background,
-        // iOS reads the inverse: light background → dark (black) status icons.
         statusBarBrightness:
             useLightIcons ? Brightness.dark : Brightness.light,
         statusBarIconBrightness:
             useLightIcons ? Brightness.light : Brightness.dark,
-        systemNavigationBarColor: Colors.white,
-        systemNavigationBarIconBrightness: Brightness.dark,
+        systemNavigationBarColor: navColor,
+        systemNavigationBarIconBrightness:
+            useLightIcons ? Brightness.light : Brightness.dark,
       ),
       child: Scaffold(
         backgroundColor: background,
@@ -98,7 +98,7 @@ class _ScrollAwareBottomNavScaffoldState
           ),
         ),
         bottomNavigationBar: ColoredBox(
-          color: Colors.white,
+          color: navColor,
           child: SafeArea(
             top: false,
             child: ClipRect(

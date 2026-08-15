@@ -54,9 +54,9 @@ class UserBottomNavBar extends StatelessWidget {
       ),
       if (showMyAds)
         (
-          selectedIcon: AppAssets.blueProfileIcon,
-          icon: AppAssets.profileIcon,
-          label: S.of(context).account,
+          selectedIcon: AppAssets.blueMyAdsIcon,
+          icon: AppAssets.myAdsIcon,
+          label: S.of(context).myAds,
           outlinedCircle: false,
           badgeCount: 0,
         ),
@@ -73,7 +73,7 @@ class UserBottomNavBar extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.navBar(context),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.08),

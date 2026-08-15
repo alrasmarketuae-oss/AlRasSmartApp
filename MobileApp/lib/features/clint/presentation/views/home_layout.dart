@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/serveses/notifications_service.dart';
 import 'package:alrasmarket/core/widgets/scroll_aware_bottom_nav_scaffold.dart';
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/features/clint/presentation/views/home_view.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/user_bottom_nav_bar.dart';
 import 'package:alrasmarket/features/company/presentation/views/my_ads_view.dart';
@@ -56,12 +57,12 @@ class _HomeLayoutState extends State<HomeLayout> {
           ProfileView(),
         ];
         // Keeps the status bar the same colour as the tab shown behind it.
-        const tabBackgrounds = [
-          Colors.white,
-          Color(0xffF2F7FF),
-          Color(0xFFF4F7FA),
-          Colors.white,
-          Color(0xffF2F7FF),
+        final tabBackgrounds = [
+          AppColors.scaffold(context),
+          const Color(0xffF2F7FF),
+          AppColors.scaffold(context),
+          AppColors.scaffold(context),
+          AppColors.scaffold(context),
         ];
         final currentIndex = cubit.currentIndex >= screens.length
             ? screens.length - 1

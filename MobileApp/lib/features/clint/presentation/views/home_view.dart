@@ -137,7 +137,7 @@ class _HomeViewState extends State<HomeView> {
         ];
 
         return Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: AppColors.scaffold(context),
           body: Column(
             children: [
               SearchHeader(isBackButton: false),
