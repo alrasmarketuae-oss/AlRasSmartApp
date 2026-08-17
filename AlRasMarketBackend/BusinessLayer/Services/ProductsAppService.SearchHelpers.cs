@@ -95,6 +95,8 @@ public partial class ProductsAppService
             yield return "Cardamom";
             yield return "هيل";
             yield return "الهيل";
+            yield return "حبهان";
+            yield return "حب الهان";
         }
 
         if (IsCoffeeToken(t))
@@ -120,8 +122,11 @@ public partial class ProductsAppService
 
     private static bool IsCardamomToken(string t) =>
         t.Equals("cardamom", StringComparison.OrdinalIgnoreCase)
+        || t.Equals("cardamoms", StringComparison.OrdinalIgnoreCase)
         || t.Equals("cardamon", StringComparison.OrdinalIgnoreCase)
-        || t is "هيل" or "الهيل" or "حب الهان";
+        || t.Equals("cardamum", StringComparison.OrdinalIgnoreCase)
+        || t.Equals("elaichi", StringComparison.OrdinalIgnoreCase)
+        || t is "هيل" or "الهيل" or "حب الهان" or "حبهان" or "حب الهيل";
 
     private static bool IsCoffeeToken(string t) =>
         t.Equals("coffee", StringComparison.OrdinalIgnoreCase)
@@ -130,6 +135,85 @@ public partial class ProductsAppService
     private static bool IsTeaToken(string t) =>
         t.Equals("tea", StringComparison.OrdinalIgnoreCase)
         || t is "شاي" or "الشاي";
+
+    /// <summary>
+    /// CLIP reference labels are category names (Cardamom / الهيل). Resolve the live
+    /// category row by name so brand-only listings in that category still appear.
+    /// </summary>
+    private async Task<Category?> ResolveCategoryFromDetectedNamesAsync(
+        IReadOnlyList<string> names,
+        CancellationToken cancellationToken)
+    {
+        var probes = new List<string>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        void Add(string? value)
+        {
+            var trimmed = value?.Trim();
+            if (string.IsNullOrWhiteSpace(trimmed) || trimmed.Length < 2)
+            {
+                return;
+            }
+
+            if (seen.Add(trimmed))
+            {
+                probes.Add(trimmed);
+            }
+        }
+
+        foreach (var name in names)
+        {
+            Add(name);
+            foreach (var synonym in ResolveSearchSynonyms(name))
+            {
+                Add(synonym);
+            }
+        }
+
+        foreach (var probe in probes)
+        {
+            var category = await productData.GetCategoryByNameAsync(probe, cancellationToken)
+                .ConfigureAwait(false);
+            if (category is not null)
+            {
+                return category;
+            }
+        }
+
+        foreach (var seed in CanonicalCategories.Seed)
+        {
+            var matchesSeed = probes.Any(p =>
+                p.Equals(seed.NameEn, StringComparison.OrdinalIgnoreCase)
+                || (!string.IsNullOrWhiteSpace(seed.NameAr)
+                    && p.Equals(seed.NameAr, StringComparison.OrdinalIgnoreCase)));
+            if (!matchesSeed)
+            {
+                continue;
+            }
+
+            if (!string.IsNullOrWhiteSpace(seed.NameEn))
+            {
+                var byEn = await productData.GetCategoryByNameAsync(seed.NameEn, cancellationToken)
+                    .ConfigureAwait(false);
+                if (byEn is not null)
+                {
+                    return byEn;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(seed.NameAr))
+            {
+                var byAr = await productData.GetCategoryByNameAsync(seed.NameAr, cancellationToken)
+                    .ConfigureAwait(false);
+                if (byAr is not null)
+                {
+                    return byAr;
+                }
+            }
+        }
+
+        return null;
+    }
 
     /// <summary>
     /// True when <paramref name="corrected"/> looks like a typo fix of <paramref name="original"/>,

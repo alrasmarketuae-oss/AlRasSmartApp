@@ -17,7 +17,7 @@ services:
       Qdrant__VectorSize: "512"
       Qdrant__MinScore: "0.75"
       Qdrant__ScoreClusterWindow: "0.03"
-      Qdrant__MaxResults: "12"
+      Qdrant__MaxResults: "24"
       AiAssistant__Enabled: "true"
       AiAssistant__QdrantUrl: "http://qdrant:6333"
       AiAssistant__Collection: "alras_knowledge_v3"

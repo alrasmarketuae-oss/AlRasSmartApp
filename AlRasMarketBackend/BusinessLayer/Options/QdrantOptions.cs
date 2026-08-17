@@ -23,10 +23,13 @@ public sealed class QdrantOptions
     /// <summary>Minimum cosine similarity to keep a hit (CLIP scale is lower than OpenAI text embeds).</summary>
     public float MinScore { get; set; } = 0.75f;
 
-    /// <summary>Keep hits within this distance of the best score (cluster of near matches).</summary>
+    /// <summary>
+    /// Keep hits within this distance of the best score in the same pool
+    /// (catalog listings and training photos are clustered separately).
+    /// </summary>
     public float ScoreClusterWindow { get; set; } = 0.03f;
 
-    public int MaxResults { get; set; } = 12;
+    public int MaxResults { get; set; } = 24;
 }
 
 public sealed class ImageEmbeddingOptions

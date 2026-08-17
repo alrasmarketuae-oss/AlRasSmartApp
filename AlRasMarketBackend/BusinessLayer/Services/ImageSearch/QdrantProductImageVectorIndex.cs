@@ -234,13 +234,47 @@ public sealed class QdrantProductImageVectorIndex(
         }
 
         await EnsureCollectionAsync(cancellationToken).ConfigureAwait(false);
+
+        var limit = Math.Clamp(Math.Max(_options.MaxResults, 24), 1, 100);
+
+        // Training photos and listings live in the same collection. Search them
+        // separately so a high-scoring reference (e.g. "cardamom") cannot wipe
+        // catalog photos that sit a few points lower.
+        var catalogRaw = await SearchRawAsync(queryVector, isReference: false, limit, cancellationToken)
+            .ConfigureAwait(false);
+        var referenceRaw = await SearchRawAsync(queryVector, isReference: true, limit, cancellationToken)
+            .ConfigureAwait(false);
+
+        var catalogHits = ClusterHits(catalogRaw);
+        var referenceHits = ClusterHits(referenceRaw);
+
+        if (catalogHits.Count == 0 && referenceHits.Count == 0)
+        {
+            var mixed = await SearchRawAsync(queryVector, isReference: null, limit, cancellationToken)
+                .ConfigureAwait(false);
+            catalogHits = ClusterHits(mixed.Where(h => !h.IsReference).ToList());
+            referenceHits = ClusterHits(mixed.Where(h => h.IsReference).ToList());
+        }
+
+        return catalogHits
+            .Concat(referenceHits)
+            .OrderByDescending(h => h.Score)
+            .ToList();
+    }
+
+    private async Task<List<ProductImageVectorHit>> SearchRawAsync(
+        float[] queryVector,
+        bool? isReference,
+        int limit,
+        CancellationToken cancellationToken)
+    {
         ApplyAuth();
         var collection = Uri.EscapeDataString(_options.Collection);
 
         var payload = new Dictionary<string, object?>
         {
             ["vector"] = queryVector,
-            ["limit"] = Math.Clamp(_options.MaxResults, 1, 100),
+            ["limit"] = limit,
             ["with_payload"] = true,
             ["score_threshold"] = _options.MinScore,
             ["params"] = new Dictionary<string, object>
@@ -248,6 +282,28 @@ public sealed class QdrantProductImageVectorIndex(
                 ["hnsw_ef"] = _options.SearchEf
             }
         };
+
+        if (isReference == true)
+        {
+            payload["filter"] = new
+            {
+                must = new object[]
+                {
+                    new { key = "isReference", match = new { value = true } }
+                }
+            };
+        }
+        else if (isReference == false)
+        {
+            // Points without the flag (older listing vectors) stay in the catalog pool.
+            payload["filter"] = new
+            {
+                must_not = new object[]
+                {
+                    new { key = "isReference", match = new { value = true } }
+                }
+            };
+        }
 
         using var request = new HttpRequestMessage(HttpMethod.Post, $"/collections/{collection}/points/search")
         {
@@ -261,14 +317,17 @@ public sealed class QdrantProductImageVectorIndex(
             return [];
         }
 
-        var hits = ParseHits(body);
+        return ParseHits(body);
+    }
+
+    private List<ProductImageVectorHit> ClusterHits(IReadOnlyList<ProductImageVectorHit> hits)
+    {
         if (hits.Count == 0)
         {
-            return hits;
+            return [];
         }
 
-        // Keep only a tight cluster around the best match (very similar results).
-        var best = hits[0].Score;
+        var best = hits.Max(h => h.Score);
         if (best < _options.MinScore)
         {
             return [];

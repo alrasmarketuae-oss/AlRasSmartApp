@@ -141,6 +141,15 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
     controller?.dispose();
   }
 
+  bool get _shouldShowVideoSeekBar {
+    if (_isVideoInitializing || _videoFailed) return false;
+    final item = widget.items[_currentIndex];
+    final controller = _videoController;
+    return item.isVideo &&
+        controller != null &&
+        controller.value.isInitialized;
+  }
+
   void _onPageChanged(int index) {
     setState(() {
       _currentIndex = index;
@@ -330,10 +339,121 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
                         ),
                       ),
                     ],
+                    if (_shouldShowVideoSeekBar)
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: _VideoSeekBar(controller: _videoController!),
+                      ),
                   ],
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VideoSeekBar extends StatelessWidget {
+  const _VideoSeekBar({required this.controller});
+
+  final VideoPlayerController controller;
+
+  static String _formatDuration(Duration duration) {
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+    if (hours > 0) {
+      return '$hours:$minutes:$seconds';
+    }
+    return '$minutes:$seconds';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {},
+      onVerticalDragStart: (_) {},
+      onVerticalDragUpdate: (_) {},
+      onVerticalDragEnd: (_) {},
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.transparent,
+              Colors.black.withValues(alpha: 0.72),
+            ],
+          ),
+        ),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(12.w, 18.h, 12.w, 8.h),
+          child: ValueListenableBuilder<VideoPlayerValue>(
+            valueListenable: controller,
+            builder: (context, value, _) {
+              final maxMs = value.duration.inMilliseconds;
+              final posMs = value.position.inMilliseconds
+                  .clamp(0, maxMs < 1 ? 0 : maxMs);
+              final canSeek = maxMs > 0;
+
+              return Directionality(
+                textDirection: TextDirection.ltr,
+                child: Row(
+                  children: [
+                    Text(
+                      _formatDuration(value.position),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                    Expanded(
+                      child: SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          trackHeight: 3.h,
+                          thumbShape: RoundSliderThumbShape(
+                            enabledThumbRadius: 7.r,
+                          ),
+                          overlayShape: RoundSliderOverlayShape(
+                            overlayRadius: 14.r,
+                          ),
+                          activeTrackColor: Colors.white,
+                          inactiveTrackColor: Colors.white.withValues(alpha: 0.28),
+                          thumbColor: Colors.white,
+                          overlayColor: Colors.white.withValues(alpha: 0.18),
+                        ),
+                        child: Slider(
+                          min: 0,
+                          max: canSeek ? maxMs.toDouble() : 1,
+                          value: canSeek ? posMs.toDouble() : 0,
+                          onChanged: canSeek
+                              ? (v) => controller.seekTo(
+                                    Duration(milliseconds: v.round()),
+                                  )
+                              : null,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      _formatDuration(value.duration),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         ),
       ),

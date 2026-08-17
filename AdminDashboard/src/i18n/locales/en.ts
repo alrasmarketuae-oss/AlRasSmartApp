@@ -753,7 +753,7 @@ export const enMessages = {
       trimVideo: 'Trim video',
       trimVideoTitle: 'Trim video',
       trimVideoHint:
-        'Choose where the clip starts and how long it should be, then save. Trimmed clips are converted to MP4 for mobile playback.',
+        'Drag the yellow handles at the start and end of the timeline, then save. Trimmed clips are converted to MP4 for mobile playback.',
       trimVideoStart: 'Start at',
       trimVideoEnd: 'End',
       trimVideoLength: 'Clip length',

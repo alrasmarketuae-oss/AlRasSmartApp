@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import { fetchAdminAssetBlob } from '../../utils/downloadAsset'
 import { getRtkErrorMessage } from '../../utils/rtkError'
@@ -13,10 +13,26 @@ type AdminVideoTrimModalProps = {
   onSave: (file: File, durationSeconds: number) => Promise<void>
 }
 
+const MIN_CLIP_SEC = 0.5
+const MAX_CLIP_SEC = 180
+const HANDLE_PX = 28
+const FILMSTRIP_FRAMES = 12
+
 function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60)
-  const s = Math.floor(seconds % 60)
+  const total = Math.max(0, seconds)
+  const m = Math.floor(total / 60)
+  const s = Math.floor(total % 60)
   return `${m}:${String(s).padStart(2, '0')}`
+}
+
+function waitForSeek(video: HTMLVideoElement): Promise<void> {
+  return new Promise((resolve) => {
+    const done = () => {
+      video.removeEventListener('seeked', done)
+      resolve()
+    }
+    video.addEventListener('seeked', done)
+  })
 }
 
 async function probeVideoDuration(
@@ -78,6 +94,56 @@ async function probeVideoDuration(
   })
 }
 
+async function captureFilmstripFrames(
+  src: string,
+  durationSec: number,
+  isCancelled: () => boolean,
+): Promise<string[]> {
+  const video = document.createElement('video')
+  video.muted = true
+  video.playsInline = true
+  video.preload = 'auto'
+  video.src = src
+
+  await new Promise<void>((resolve, reject) => {
+    const timeout = window.setTimeout(() => reject(new Error('filmstrip')), 12000)
+    video.onloadeddata = () => {
+      window.clearTimeout(timeout)
+      resolve()
+    }
+    video.onerror = () => {
+      window.clearTimeout(timeout)
+      reject(new Error('filmstrip'))
+    }
+  })
+
+  if (isCancelled()) return []
+
+  const w = 72
+  const h = 56
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return []
+
+  const frames: string[] = []
+  for (let i = 0; i < FILMSTRIP_FRAMES; i += 1) {
+    if (isCancelled()) return []
+    const t = (i / Math.max(1, FILMSTRIP_FRAMES - 1)) * Math.max(0, durationSec - 0.08)
+    video.currentTime = t
+    await waitForSeek(video)
+    ctx.drawImage(video, 0, 0, w, h)
+    frames.push(canvas.toDataURL('image/jpeg', 0.55))
+  }
+
+  video.src = ''
+  video.load()
+  return frames
+}
+
+type DragKind = 'start' | 'end' | 'window'
+
 export default function AdminVideoTrimModal({
   open,
   videoPath,
@@ -88,20 +154,27 @@ export default function AdminVideoTrimModal({
 }: AdminVideoTrimModalProps) {
   const { t } = useAppPreferences()
   const videoRef = useRef<HTMLVideoElement>(null)
+  const trackRef = useRef<HTMLDivElement>(null)
   const sourceBlobRef = useRef<Blob | null>(null)
   const previewUrlRef = useRef<string | null>(null)
   const loadTokenRef = useRef(0)
+  const rangeRef = useRef({ start: 0, end: 30 })
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isLoadingSource, setIsLoadingSource] = useState(false)
   const [duration, setDuration] = useState(0)
   const [startSec, setStartSec] = useState(0)
-  const [clipLength, setClipLength] = useState(30)
+  const [endSec, setEndSec] = useState(30)
+  const [playhead, setPlayhead] = useState(0)
+  const [frames, setFrames] = useState<string[]>([])
   const [ready, setReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isExporting, setIsExporting] = useState(false)
 
-  const endSec = Math.min(duration || clipLength, startSec + clipLength)
   const trimDuration = Math.max(0, endSec - startSec)
+
+  useEffect(() => {
+    rangeRef.current = { start: startSec, end: endSec }
+  }, [startSec, endSec])
 
   useEffect(() => {
     if (!open || !videoPath.trim()) return
@@ -119,7 +192,9 @@ export default function AdminVideoTrimModal({
     async function loadSource() {
       setDuration(0)
       setStartSec(0)
-      setClipLength(30)
+      setEndSec(30)
+      setPlayhead(0)
+      setFrames([])
       setReady(false)
       setError(null)
       setIsExporting(false)
@@ -157,7 +232,103 @@ export default function AdminVideoTrimModal({
     }
   }, [open, videoPath, t])
 
+  useEffect(() => {
+    if (!open || !ready || !previewUrl || duration <= 0) return
+    let cancelled = false
+
+    void captureFilmstripFrames(previewUrl, duration, () => cancelled)
+      .then((next) => {
+        if (!cancelled) setFrames(next)
+      })
+      .catch(() => {
+        if (!cancelled) setFrames([])
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [open, ready, previewUrl, duration])
+
   if (!open) return null
+
+  const busy = isSaving || isExporting || isLoadingSource
+
+  function applyRange(nextStart: number, nextEnd: number, seekTo?: 'start' | 'end' | number) {
+    let start = nextStart
+    let end = nextEnd
+    if (end - start < MIN_CLIP_SEC) {
+      end = start + MIN_CLIP_SEC
+    }
+    if (end - start > MAX_CLIP_SEC) {
+      end = start + MAX_CLIP_SEC
+    }
+    start = Math.max(0, start)
+    end = Math.min(duration, end)
+    if (end - start < MIN_CLIP_SEC) {
+      start = Math.max(0, end - MIN_CLIP_SEC)
+    }
+    setStartSec(start)
+    setEndSec(end)
+
+    const video = videoRef.current
+    if (!video || seekTo == null) return
+    const time = seekTo === 'start' ? start : seekTo === 'end' ? end : seekTo
+    video.currentTime = Math.min(Math.max(time, start), end)
+    setPlayhead(video.currentTime)
+  }
+
+  function timeAtClientX(clientX: number): number {
+    const el = trackRef.current
+    if (!el || duration <= 0) return 0
+    const rect = el.getBoundingClientRect()
+    const ratio = (clientX - rect.left) / Math.max(1, rect.width)
+    return Math.max(0, Math.min(duration, ratio * duration))
+  }
+
+  function beginDrag(kind: DragKind, event: ReactPointerEvent<HTMLElement>) {
+    if (busy || !ready) return
+    event.preventDefault()
+    event.stopPropagation()
+
+    const originX = event.clientX
+    const origin = { ...rangeRef.current }
+    const video = videoRef.current
+    video?.pause()
+
+    const onMove = (ev: PointerEvent) => {
+      const { start: origStart, end: origEnd } = origin
+      if (kind === 'start') {
+        const maxStart = origEnd - MIN_CLIP_SEC
+        let start = Math.min(maxStart, timeAtClientX(ev.clientX))
+        start = Math.max(0, start)
+        if (origEnd - start > MAX_CLIP_SEC) start = origEnd - MAX_CLIP_SEC
+        applyRange(start, origEnd, 'start')
+        return
+      }
+      if (kind === 'end') {
+        let end = Math.max(origStart + MIN_CLIP_SEC, timeAtClientX(ev.clientX))
+        end = Math.min(duration, end)
+        if (end - origStart > MAX_CLIP_SEC) end = origStart + MAX_CLIP_SEC
+        applyRange(origStart, end, 'end')
+        return
+      }
+      const span = origEnd - origStart
+      const delta = timeAtClientX(ev.clientX) - timeAtClientX(originX)
+      let start = origStart + delta
+      start = Math.max(0, Math.min(duration - span, start))
+      applyRange(start, start + span, start)
+    }
+
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+    }
+
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
+  }
 
   async function handleVideoReady() {
     const video = videoRef.current
@@ -171,9 +342,11 @@ export default function AdminVideoTrimModal({
         return
       }
 
+      const nextEnd = Math.min(MAX_CLIP_SEC, Math.min(30, Math.max(MIN_CLIP_SEC, d)))
       setDuration(d)
       setStartSec(0)
-      setClipLength(Math.min(30, Math.max(1, Math.floor(d))))
+      setEndSec(nextEnd)
+      setPlayhead(0)
       setReady(true)
       setError(null)
     } catch {
@@ -182,24 +355,9 @@ export default function AdminVideoTrimModal({
     }
   }
 
-  function handleStartChange(value: number) {
-    const maxStart = Math.max(0, duration - 0.5)
-    const next = Math.max(0, Math.min(value, maxStart))
-    setStartSec(next)
-    const maxLen = Math.min(180, duration - next)
-    if (clipLength > maxLen) setClipLength(Math.max(0.5, maxLen))
-    const video = videoRef.current
-    if (video) video.currentTime = next
-  }
-
-  function handleLengthChange(value: number) {
-    const maxLen = Math.min(180, Math.max(0.5, duration - startSec))
-    setClipLength(Math.max(0.5, Math.min(value, maxLen)))
-  }
-
   async function handleSave() {
     const blob = sourceBlobRef.current
-    if (!ready || !blob || trimDuration < 0.5) return
+    if (!ready || !blob || trimDuration < MIN_CLIP_SEC) return
     setIsExporting(true)
     setError(null)
     try {
@@ -212,11 +370,13 @@ export default function AdminVideoTrimModal({
     }
   }
 
-  const busy = isSaving || isExporting || isLoadingSource
+  const startPct = duration > 0 ? (startSec / duration) * 100 : 0
+  const endPct = duration > 0 ? (endSec / duration) * 100 : 100
+  const playPct = duration > 0 ? (playhead / duration) * 100 : 0
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="admin-card flex max-h-[95vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl shadow-xl">
+      <div className="admin-card flex max-h-[95vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl shadow-xl">
         <div className="admin-border flex items-center justify-between border-b px-4 py-3">
           <h3 className="admin-text text-sm font-bold">{t('ads.trimVideoTitle')}</h3>
           <button
@@ -244,52 +404,124 @@ export default function AdminVideoTrimModal({
               controls
               preload="auto"
               className="mx-auto block max-h-[42vh] w-full rounded-lg bg-black"
-              onLoadedMetadata={() => void handleVideoReady()}
+              onLoadedMetadata={() => {
+                if (!ready) void handleVideoReady()
+              }}
               onDurationChange={() => {
                 if (!ready) void handleVideoReady()
+              }}
+              onTimeUpdate={() => {
+                const video = videoRef.current
+                if (!video) return
+                if (!video.paused && video.currentTime >= endSec - 0.05) {
+                  video.currentTime = startSec
+                }
+                setPlayhead(video.currentTime)
               }}
             />
           ) : null}
 
-          {ready ? (
-            <div className="mt-4 space-y-4">
-              <div>
-                <div className="mb-1 flex justify-between text-xs font-semibold">
-                  <span className="admin-text-muted">{t('ads.trimVideoStart')}</span>
-                  <span className="admin-text">{formatTime(startSec)}</span>
-                </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={Math.max(0.5, duration - 0.5)}
-                  step={0.1}
-                  value={startSec}
-                  disabled={busy}
-                  onChange={(e) => handleStartChange(Number(e.target.value))}
-                  className="w-full accent-[#3B7FC7]"
-                />
+          {ready && duration > 0 ? (
+            <div className="mt-4 space-y-2 px-7">
+              <div className="flex justify-between text-[11px] font-semibold">
+                <span className="admin-text">{formatTime(startSec)}</span>
+                <span className="admin-text-muted">
+                  {t('ads.trimVideoDuration', { seconds: trimDuration.toFixed(1) })}
+                </span>
+                <span className="admin-text">{formatTime(endSec)}</span>
               </div>
 
-              <div>
-                <div className="mb-1 flex justify-between text-xs font-semibold">
-                  <span className="admin-text-muted">{t('ads.trimVideoLength')}</span>
-                  <span className="admin-text">{trimDuration.toFixed(1)}s</span>
+              <div
+                ref={trackRef}
+                dir="ltr"
+                className="relative h-14 select-none overflow-visible rounded-lg bg-zinc-900"
+                style={{ touchAction: 'none' }}
+              >
+                <div className="absolute inset-0 flex overflow-hidden rounded-lg">
+                  {frames.length > 0
+                    ? frames.map((src, index) => (
+                        <img
+                          key={`${src.slice(-24)}-${index}`}
+                          src={src}
+                          alt=""
+                          draggable={false}
+                          className="h-full flex-1 object-cover"
+                        />
+                      ))
+                    : (
+                      <div className="h-full w-full bg-[linear-gradient(90deg,#3f3f46_12px,transparent_12px)] bg-[length:24px_100%] opacity-40" />
+                    )}
                 </div>
-                <input
-                  type="range"
-                  min={0.5}
-                  max={Math.min(180, Math.max(0.5, duration - startSec))}
-                  step={0.5}
-                  value={clipLength}
-                  disabled={busy}
-                  onChange={(e) => handleLengthChange(Number(e.target.value))}
-                  className="w-full accent-[#3B7FC7]"
-                />
-              </div>
 
-              <p className="admin-text text-center text-sm font-bold">
-                {formatTime(startSec)} → {formatTime(endSec)}
-              </p>
+                <div
+                  className="pointer-events-none absolute inset-y-0 left-0 bg-black/65"
+                  style={{ width: `${startPct}%` }}
+                />
+                <div
+                  className="pointer-events-none absolute inset-y-0 right-0 bg-black/65"
+                  style={{ width: `${Math.max(0, 100 - endPct)}%` }}
+                />
+
+                <div
+                  className="absolute inset-y-0 cursor-grab active:cursor-grabbing"
+                  style={{
+                    left: `${startPct}%`,
+                    width: `${Math.max(2, endPct - startPct)}%`,
+                  }}
+                  onPointerDown={(event) => beginDrag('window', event)}
+                />
+
+                <div
+                  className="pointer-events-none absolute inset-y-0 rounded-sm border-[3px] border-[#F5C400]"
+                  style={{
+                    left: `${startPct}%`,
+                    width: `${Math.max(2, endPct - startPct)}%`,
+                  }}
+                />
+
+                <div
+                  className="pointer-events-none absolute top-0 z-10 h-full w-0.5 bg-white shadow"
+                  style={{ left: `${playPct}%` }}
+                />
+
+                <button
+                  type="button"
+                  aria-label={t('ads.trimVideoStart')}
+                  disabled={busy}
+                  className="absolute top-[-4px] z-20 flex h-[calc(100%+8px)] items-center justify-center rounded-l-md bg-[#F5C400] disabled:opacity-50"
+                  style={{
+                    left: `${startPct}%`,
+                    width: HANDLE_PX,
+                    transform: 'translateX(-100%)',
+                    touchAction: 'none',
+                  }}
+                  onPointerDown={(event) => beginDrag('start', event)}
+                >
+                  <span className="flex gap-[3px]">
+                    <span className="h-6 w-[2px] rounded-full bg-black/70" />
+                    <span className="h-6 w-[2px] rounded-full bg-black/70" />
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  aria-label={t('ads.trimVideoEnd')}
+                  disabled={busy}
+                  className="absolute top-[-4px] z-20 flex h-[calc(100%+8px)] items-center justify-center rounded-r-md bg-[#F5C400] disabled:opacity-50"
+                  style={{
+                    left: `${endPct}%`,
+                    width: HANDLE_PX,
+                    transform: 'translateX(0)',
+                    touchAction: 'none',
+                  }}
+                  onPointerDown={(event) => beginDrag('end', event)}
+                >
+                  <span className="flex gap-[3px]">
+                    <span className="h-6 w-[2px] rounded-full bg-black/70" />
+                    <span className="h-6 w-[2px] rounded-full bg-black/70" />
+                  </span>
+                </button>
+              </div>
             </div>
           ) : null}
 
@@ -307,7 +539,7 @@ export default function AdminVideoTrimModal({
           </button>
           <button
             type="button"
-            disabled={busy || !ready || trimDuration < 0.5}
+            disabled={busy || !ready || trimDuration < MIN_CLIP_SEC}
             onClick={() => void handleSave()}
             className="keep-white rounded-lg bg-[#3B7FC7] px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
           >

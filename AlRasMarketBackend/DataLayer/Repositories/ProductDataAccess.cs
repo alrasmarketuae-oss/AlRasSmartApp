@@ -537,7 +537,7 @@ public sealed class ProductDataAccess(
             .Select(w => w.Trim())
             .Where(w => !string.IsNullOrWhiteSpace(w))
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Take(16)
+            .Take(24)
             .ToList();
         if (uniqueWords.Count == 0)
         {
