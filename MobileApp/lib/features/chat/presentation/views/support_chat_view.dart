@@ -318,17 +318,6 @@ class _SupportChatViewState extends State<SupportChatView> {
                                       message: message,
                                       isMe: message.fromUserId == cubit.userId,
                                       onReply: () => cubit.setReplyTo(message),
-                                      onForward: () =>
-                                          cubit.forwardMessage(message),
-                                      onDeleteForMe: () => cubit.deleteMessage(
-                                        message,
-                                        scope: 'me',
-                                      ),
-                                      onDeleteForEveryone: () =>
-                                          cubit.deleteMessage(
-                                        message,
-                                        scope: 'everyone',
-                                      ),
                                     ),
                                   _SessionStartItem(:final session) =>
                                     ChatSessionDivider(
@@ -355,11 +344,11 @@ class _SupportChatViewState extends State<SupportChatView> {
                 ),
                 ChatInputBar(
                   isSending: _isSending,
-                  replyPreview: cubit.replyTo == null
+                  replyToMessageId: cubit.replyTo?.messageId,
+                  replyLabel: cubit.replyTo == null
                       ? null
-                      : (cubit.replyTo!.replyToPreview?.trim().isNotEmpty == true
-                          ? cubit.replyTo!.replyToPreview
-                          : cubit.replyTo!.content),
+                      : S.of(context).chatReply,
+                  replyPreview: cubit.replyTo?.composeReplyPreview(),
                   onCancelReply: cubit.clearReply,
                   onSendText: cubit.sendTextMessage,
                   onSendImage: (path) => cubit.sendMediaMessage(

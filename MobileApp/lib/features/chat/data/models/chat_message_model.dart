@@ -173,6 +173,25 @@ class ChatMessageModel {
     return resolveAttachmentUrl(normalized);
   }
 
+  /// Preview of this message when the user replies to it.
+  String composeReplyPreview() {
+    switch (messageType) {
+      case ChatMessageType.text:
+        return content.trim();
+      case ChatMessageType.voice:
+        return 'رسالة صوتية';
+      case ChatMessageType.image:
+        return 'صورة';
+      case ChatMessageType.location:
+        return 'موقع';
+      case ChatMessageType.video:
+        return 'فيديو';
+      case ChatMessageType.file:
+        final name = fileContent?.name.trim() ?? '';
+        return name.isNotEmpty ? name : 'ملف';
+    }
+  }
+
   String get _normalizedStoragePath {
     final trimmed = content.trim().replaceAll('\\', '/');
     if (trimmed.isEmpty ||

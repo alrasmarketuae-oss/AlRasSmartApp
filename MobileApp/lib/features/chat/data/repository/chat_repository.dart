@@ -121,16 +121,6 @@ class ChatRepository {
             'replyToMessageId': replyToMessageId,
         },
       );
-    try {
-      final response = await DioHelper.postData(
-        url: ApiConstants.chatMessagesEndPoint,
-        token: token,
-        data: {
-          'toUserId': toUserId,
-          'messageType': messageType.apiValue,
-          'content': content,
-        },
-      );
 
       if (response == null) {
         return const Left(ServerFailure('No response from server'));

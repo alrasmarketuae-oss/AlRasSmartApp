@@ -22,17 +22,11 @@ class ChatMessageBubble extends StatefulWidget {
     required this.message,
     required this.isMe,
     this.onReply,
-    this.onForward,
-    this.onDeleteForMe,
-    this.onDeleteForEveryone,
   });
 
   final ChatMessageModel message;
   final bool isMe;
   final VoidCallback? onReply;
-  final VoidCallback? onForward;
-  final VoidCallback? onDeleteForMe;
-  final VoidCallback? onDeleteForEveryone;
 
   @override
   State<ChatMessageBubble> createState() => _ChatMessageBubbleState();
@@ -42,6 +36,7 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
   final AudioPlayer _player = AudioPlayer();
   bool _isPlaying = false;
   double _dragDx = 0;
+  bool _replyTriggered = false;
 
   @override
   void dispose() {
@@ -116,34 +111,55 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
     final textColor =
         widget.isMe ? Colors.white : AppColors.title(context);
 
+    final canReply = !widget.message.isDeleted &&
+        widget.message.deliveryStatus != MessageDeliveryStatus.sending;
+
     return GestureDetector(
-      onHorizontalDragUpdate: widget.message.isDeleted
-          ? null
-          : (details) {
+      behavior: HitTestBehavior.opaque,
+      onHorizontalDragStart: canReply ? (_) {} : null,
+      onHorizontalDragUpdate: canReply
+          ? (details) {
               setState(() {
-                final directed = widget.isMe
-                    ? -details.delta.dx
-                    : details.delta.dx;
-                _dragDx = (_dragDx + directed).clamp(0, 72);
+                _dragDx = (_dragDx + details.delta.dx).clamp(0, 80);
               });
-            },
-      onHorizontalDragEnd: widget.message.isDeleted
-          ? null
-          : (_) {
-              if (_dragDx >= 48) {
+              if (!_replyTriggered && _dragDx >= 36) {
+                _replyTriggered = true;
                 widget.onReply?.call();
               }
-              setState(() => _dragDx = 0);
-            },
-      onLongPress: widget.message.isDeleted ||
-              widget.message.deliveryStatus == MessageDeliveryStatus.sending
-          ? null
-          : _showActions,
-      child: Transform.translate(
-        offset: Offset(widget.isMe ? -_dragDx : _dragDx, 0),
-        child: Align(
-          alignment: alignment,
-          child: Column(
+            }
+          : null,
+      onHorizontalDragEnd: canReply
+          ? (_) {
+              setState(() {
+                _dragDx = 0;
+                _replyTriggered = false;
+              });
+            }
+          : null,
+      onHorizontalDragCancel: canReply
+          ? () => setState(() {
+                _dragDx = 0;
+                _replyTriggered = false;
+              })
+          : null,
+      onLongPress: canReply ? _showActions : null,
+      child: Stack(
+        alignment: AlignmentDirectional.centerStart,
+        children: [
+          if (_dragDx > 12)
+            Padding(
+              padding: EdgeInsetsDirectional.only(start: 8.w),
+              child: Icon(
+                Icons.reply,
+                color: LightColor.defaultColor,
+                size: 22.sp,
+              ),
+            ),
+          Transform.translate(
+            offset: Offset(_dragDx, 0),
+            child: Align(
+              alignment: alignment,
+              child: Column(
             crossAxisAlignment: crossAlign,
             children: [
               Container(
@@ -251,7 +267,9 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
                 ),
             ],
           ),
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -273,31 +291,6 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
                   widget.onReply?.call();
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.forward),
-                title: Text(s.chatForward),
-                onTap: () {
-                  Navigator.pop(context);
-                  widget.onForward?.call();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.delete_outline),
-                title: Text(s.chatDeleteForMe),
-                onTap: () {
-                  Navigator.pop(context);
-                  widget.onDeleteForMe?.call();
-                },
-              ),
-              if (widget.isMe)
-                ListTile(
-                  leading: const Icon(Icons.delete_forever, color: Colors.red),
-                  title: Text(s.chatDeleteForEveryone),
-                  onTap: () {
-                    Navigator.pop(context);
-                    widget.onDeleteForEveryone?.call();
-                  },
-                ),
             ],
           ),
         );

@@ -20,7 +20,9 @@ class ChatInputBar extends StatefulWidget {
     required this.onSendVideo,
     required this.onSendLocation,
     this.isSending = false,
+    this.replyToMessageId,
     this.replyPreview,
+    this.replyLabel,
     this.onCancelReply,
   });
 
@@ -31,7 +33,9 @@ class ChatInputBar extends StatefulWidget {
   final ValueChanged<String> onSendVideo;
   final ValueChanged<String> onSendLocation;
   final bool isSending;
+  final String? replyToMessageId;
   final String? replyPreview;
+  final String? replyLabel;
   final VoidCallback? onCancelReply;
 
   @override
@@ -40,12 +44,25 @@ class ChatInputBar extends StatefulWidget {
 
 class _ChatInputBarState extends State<ChatInputBar> {
   final TextEditingController _controller = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
   final AudioRecorder _recorder = AudioRecorder();
   bool _isRecording = false;
 
   @override
+  void didUpdateWidget(ChatInputBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.replyToMessageId != null &&
+        widget.replyToMessageId != oldWidget.replyToMessageId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _focusNode.requestFocus();
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
+    _focusNode.dispose();
     _recorder.dispose();
     super.dispose();
   }
@@ -256,11 +273,11 @@ class _ChatInputBarState extends State<ChatInputBar> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (widget.replyPreview != null &&
-                widget.replyPreview!.trim().isNotEmpty)
+            if (widget.replyToMessageId != null)
               Container(
+                width: double.infinity,
                 margin: EdgeInsets.fromLTRB(12.w, 8.h, 12.w, 0),
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                padding: EdgeInsets.fromLTRB(12.w, 8.h, 4.w, 8.h),
                 decoration: BoxDecoration(
                   color: AppColors.card(context),
                   borderRadius: BorderRadius.circular(12.r),
@@ -271,14 +288,28 @@ class _ChatInputBarState extends State<ChatInputBar> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: Text(
-                        widget.replyPreview!,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: AppColors.subtitle(context),
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.replyLabel ?? '',
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w700,
+                              color: LightColor.defaultColor,
+                            ),
+                          ),
+                          if ((widget.replyPreview ?? '').trim().isNotEmpty)
+                            Text(
+                              widget.replyPreview!.trim(),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: AppColors.subtitle(context),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                     IconButton(
@@ -308,6 +339,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
           Expanded(
             child: TextField(
               controller: _controller,
+              focusNode: _focusNode,
               enabled: !widget.isSending,
               keyboardAppearance: AppColors.isDark(context)
                   ? Brightness.dark

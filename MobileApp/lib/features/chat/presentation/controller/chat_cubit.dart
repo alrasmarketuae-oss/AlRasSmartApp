@@ -374,7 +374,7 @@ class ChatCubit extends Cubit<ChatState> {
       processingLabel:
           messageType == ChatMessageType.file ? 'Uploading...' : 'Compressing...',
       replyToMessageId: replyTo?.messageId,
-      replyToPreview: replyTo?.replyToPreview ?? replyTo?.content,
+      replyToPreview: replyTo?.composeReplyPreview(),
       replyToMessageType: replyTo?.messageType,
     );
     messages.add(localMessage);
@@ -593,7 +593,7 @@ class ChatCubit extends Cubit<ChatState> {
       sentAtUtc: DateTime.now().toUtc(),
       deliveryStatus: MessageDeliveryStatus.sending,
       replyToMessageId: replyTo?.messageId,
-      replyToPreview: replyTo?.replyToPreview ?? replyTo?.content,
+      replyToPreview: replyTo?.composeReplyPreview(),
       replyToMessageType: replyTo?.messageType,
     );
       messages.add(localMessage);
@@ -651,50 +651,13 @@ class ChatCubit extends Cubit<ChatState> {
       return;
     }
     replyTo = message;
-    emit(ChatMessagesLoaded(List.from(messages)));
+    emit(ChatReplyUpdated(message.messageId));
   }
 
   void clearReply() {
     if (replyTo == null) return;
     replyTo = null;
-    emit(ChatMessagesLoaded(List.from(messages)));
-  }
-
-  Future<void> forwardMessage(ChatMessageModel message) async {
-    final token = AuthService.instance.currentToken;
-    final oid = otherUserId;
-    if (token == null || oid == null || message.isDeleted) return;
-
-    final result = await _repository.forwardMessage(
-      token: token,
-      messageId: message.messageId,
-      toUserId: oid,
-    );
-    result.fold(
-      (failure) => emit(ChatMessageSendError(failure.message)),
-      (serverMessage) {
-        if (messages.every((m) => m.messageId != serverMessage.messageId)) {
-          messages.add(serverMessage.copyWith(isForwarded: true));
-        }
-        emit(ChatMessageSent());
-        emit(ChatMessagesLoaded(List.from(messages)));
-      },
-    );
-  }
-
-  Future<void> deleteMessage(ChatMessageModel message, {required String scope}) async {
-    final token = AuthService.instance.currentToken;
-    if (token == null) return;
-
-    final result = await _repository.deleteMessage(
-      token: token,
-      messageId: message.messageId,
-      scope: scope,
-    );
-    result.fold(
-      (failure) => emit(ChatMessageSendError(failure.message)),
-      _applyDeletedEvent,
-    );
+    emit(const ChatReplyUpdated(null));
   }
 
   void _applyDeletedEvent(ChatMessageDeletedEvent event) {
@@ -714,10 +677,14 @@ class ChatCubit extends Cubit<ChatState> {
         return event.message!.copyWith(isDeleted: true, content: '');
       }).toList();
     }
-    if (replyTo?.messageId == event.messageId) {
+    final clearedReply = replyTo?.messageId == event.messageId;
+    if (clearedReply) {
       replyTo = null;
     }
     emit(ChatMessagesLoaded(List.from(messages)));
+    if (clearedReply) {
+      emit(const ChatReplyUpdated(null));
+    }
   }
 
   String? presenceLabel() {

@@ -79,3 +79,11 @@ class ChatSessionsUpdated extends ChatState {
   @override
   List<Object?> get props => [sessions];
 }
+
+class ChatReplyUpdated extends ChatState {
+  const ChatReplyUpdated(this.replyToMessageId);
+  final String? replyToMessageId;
+
+  @override
+  List<Object?> get props => [replyToMessageId];
+}
