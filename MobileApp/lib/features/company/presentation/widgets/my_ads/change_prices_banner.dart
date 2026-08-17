@@ -25,10 +25,11 @@ class ChangePricesBanner extends StatelessWidget {
         : s.changePricesSubtitle;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(16.w, 2.h, 16.w, 6.h),
+      padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 8.h),
       child: Material(
         color: AppColors.card(context),
-        borderRadius: BorderRadius.circular(12.r),
+        elevation: 0,
+        borderRadius: BorderRadius.circular(16.r),
         child: InkWell(
           onTap: () {
             final id = highlightProductId?.trim();
@@ -39,37 +40,37 @@ class ChangePricesBanner extends StatelessWidget {
                   : {'highlightProductId': id},
             );
           },
-          borderRadius: BorderRadius.circular(12.r),
+          borderRadius: BorderRadius.circular(16.r),
           child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12.r),
-              border: Border.all(color: const Color(0xFFE6EEF8)),
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(color: const Color(0xFFE7EEF6)),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF16233A).withValues(alpha: 0.05),
-                  blurRadius: 8.r,
-                  offset: Offset(0, 2.h),
+                  color: const Color(0xFF16233A).withValues(alpha: 0.06),
+                  blurRadius: 10.r,
+                  offset: Offset(0, 3.h),
                 ),
               ],
             ),
             child: Row(
               children: [
                 Container(
-                  width: 34.w,
-                  height: 34.w,
+                  width: 42.w,
+                  height: 42.w,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: LightColor.defaultColor,
-                    borderRadius: BorderRadius.circular(10.r),
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Icon(
                     Icons.sell_rounded,
                     color: Colors.white,
-                    size: 18.sp,
+                    size: 22.sp,
                   ),
                 ),
-                SizedBox(width: 10.w),
+                SizedBox(width: 12.w),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,13 +79,13 @@ class ChangePricesBanner extends StatelessWidget {
                         title,
                         style: TextStyle(
                           fontFamily: fontFamily,
-                          fontSize: 13.5.sp,
+                          fontSize: 14.sp,
                           fontWeight: FontWeight.w800,
-                          color: LightColor.defaultColor,
+                          color: const Color(0xFF16233A),
                           height: 1.15,
                         ),
                       ),
-                      SizedBox(height: 1.h),
+                      SizedBox(height: 2.h),
                       Text(
                         subtitle,
                         maxLines: 1,
@@ -99,14 +100,20 @@ class ChangePricesBanner extends StatelessWidget {
                     ],
                   ),
                 ),
-                Directionality(
-                  textDirection: TextDirection.ltr,
+                Container(
+                  width: 28.w,
+                  height: 28.w,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: LightColor.defaultColor,
+                    shape: BoxShape.circle,
+                  ),
                   child: Icon(
                     isRtl
                         ? Icons.chevron_left_rounded
                         : Icons.chevron_right_rounded,
-                    color: LightColor.defaultColor,
-                    size: 22.sp,
+                    color: Colors.white,
+                    size: 18.sp,
                   ),
                 ),
               ],

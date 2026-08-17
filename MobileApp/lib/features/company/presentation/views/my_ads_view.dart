@@ -8,6 +8,7 @@ import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_s
 import 'package:alrasmarket/features/clint/presentation/widgets/order_card.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/features/company/presentation/controller/cubit/company_cubit.dart';
+import 'package:alrasmarket/features/company/presentation/controller/cubit/company_states.dart';
 import 'package:alrasmarket/features/company/presentation/models/my_ads_filter.dart';
 import 'package:alrasmarket/features/company/presentation/models/my_ads_listing_status_filter.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/my_ads/change_prices_banner.dart';
@@ -165,10 +166,26 @@ class _MyAdsViewState extends State<MyAdsView> {
                     selectedIndex: _selectedTypeFilterIndex,
                     onSelected: _onTypeFilterSelected,
                   ),
-                MyAdsStatusFilterChips(
-                  items: statusItems,
-                  selectedIndex: _selectedStatusFilterIndex,
-                  onSelected: _onStatusFilterSelected,
+                BlocBuilder<CompanyCubit, CompanyStates>(
+                  buildWhen: (previous, current) =>
+                      current is CompanyMyListingsState,
+                  builder: (context, state) {
+                    final products = state is CompanyMyListingsState
+                        ? state.typeFilteredProducts
+                        : const <MyListingProductModel>[];
+                    final counts = MyAdsListingStatusFilter.values
+                        .map(
+                          (filter) =>
+                              products.where(filter.matches).length,
+                        )
+                        .toList();
+                    return MyAdsStatusFilterChips(
+                      items: statusItems,
+                      selectedIndex: _selectedStatusFilterIndex,
+                      onSelected: _onStatusFilterSelected,
+                      counts: counts,
+                    );
+                  },
                 ),
                 _RecentListingsHeader(
                   onViewAll: () {
@@ -220,7 +237,7 @@ class _AccountSectionTabs extends StatelessWidget {
     ];
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 4.h),
+      padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 6.h),
       child: Row(
         children: List.generate(items.length, (index) {
           final isSelected = selectedIndex == index;
@@ -229,24 +246,33 @@ class _AccountSectionTabs extends StatelessWidget {
           return Expanded(
             child: Padding(
               padding: EdgeInsets.only(
-                right: index == 0 ? 6.w : 0,
-                left: index == 1 ? 6.w : 0,
+                right: index == 0 ? 8.w : 0,
+                left: index == 1 ? 8.w : 0,
               ),
               child: GestureDetector(
                 onTap: () => onSelected(index),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
                   padding: EdgeInsets.symmetric(
-                    horizontal: 10.w,
-                    vertical: 9.h,
+                    horizontal: 12.w,
+                    vertical: 12.h,
                   ),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10.r),
-                    color: isSelected ? LightColor.defaultColor : AppColors.card(context),
+                    borderRadius: BorderRadius.circular(16.r),
+                    color: isSelected
+                        ? LightColor.defaultColor
+                        : AppColors.card(context),
                     border: Border.all(
                       color: LightColor.defaultColor,
                       width: 1.4,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: Row(
                     children: [

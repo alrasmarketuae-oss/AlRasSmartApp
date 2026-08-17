@@ -42,11 +42,11 @@ function applyBlurRegion(
   const y = Math.max(0, Math.min(Math.round(rect.y), canvasH - 1))
   const width = Math.max(1, Math.min(Math.round(rect.width), canvasW - x))
   const height = Math.max(1, Math.min(Math.round(rect.height), canvasH - y))
-  const radius = Math.max(8, Math.round(blurPx))
+  const radius = Math.max(12, Math.round(blurPx))
 
-  // Pad so Gaussian blur samples real pixels instead of fading to transparent
-  // (transparent edges let the sharp original show through and look "light").
-  const pad = Math.ceil(radius * 2)
+  // CSS blur() kernel reaches ~3x radius and fades toward transparent at the
+  // canvas edge. Pad that far so the visible inner rect stays fully opaque.
+  const pad = Math.ceil(radius * 3)
   const sx = Math.max(0, x - pad)
   const sy = Math.max(0, y - pad)
   const ex = Math.min(canvasW, x + width + pad)
@@ -63,19 +63,20 @@ function applyBlurRegion(
   if (!patchCtx) return
   patchCtx.drawImage(source, sx, sy, sw, sh, 0, 0, sw, sh)
 
-  // Pixelate first so numbers/text stay unreadable at any resolution.
-  const block = Math.max(10, Math.round(Math.min(width, height) / 7))
-  const tinyW = Math.max(1, Math.round(width / block))
-  const tinyH = Math.max(1, Math.round(height / block))
+  // Pixelate the whole padded patch so the gaussian at the selection edge
+  // samples mosaic pixels, not the sharp original (that leak looks "weak").
+  const block = Math.max(14, Math.round(Math.min(width, height) / 6))
+  const tinyW = Math.max(1, Math.round(sw / block))
+  const tinyH = Math.max(1, Math.round(sh / block))
   const tiny = document.createElement('canvas')
   tiny.width = tinyW
   tiny.height = tinyH
   const tinyCtx = tiny.getContext('2d')
   if (!tinyCtx) return
   tinyCtx.imageSmoothingEnabled = true
-  tinyCtx.drawImage(patch, innerX, innerY, width, height, 0, 0, tinyW, tinyH)
+  tinyCtx.drawImage(patch, 0, 0, sw, sh, 0, 0, tinyW, tinyH)
   patchCtx.imageSmoothingEnabled = false
-  patchCtx.drawImage(tiny, 0, 0, tinyW, tinyH, innerX, innerY, width, height)
+  patchCtx.drawImage(tiny, 0, 0, tinyW, tinyH, 0, 0, sw, sh)
 
   const blurred = document.createElement('canvas')
   blurred.width = sw
@@ -85,7 +86,14 @@ function applyBlurRegion(
   blurredCtx.filter = `blur(${radius}px)`
   blurredCtx.drawImage(patch, 0, 0)
 
+  // Opaque mosaic first: even if the blur pass has a faint alpha fringe,
+  // the original pixels underneath cannot show through.
+  ctx.imageSmoothingEnabled = false
+  ctx.drawImage(patch, innerX, innerY, width, height, x, y, width, height)
+  ctx.imageSmoothingEnabled = true
   ctx.drawImage(blurred, innerX, innerY, width, height, x, y, width, height)
+  ctx.fillStyle = 'rgba(175, 175, 175, 0.28)'
+  ctx.fillRect(x, y, width, height)
 }
 
 /**
@@ -198,7 +206,7 @@ export default function AdminImageBlurModal({
       const scaleX = bitmap.width / displayW
       const scaleY = bitmap.height / displayH
       const scale = Math.max(scaleX, scaleY)
-      const exportBlurPx = Math.max(blurPx * scale, 24)
+      const exportBlurPx = Math.max(blurPx * scale, 36)
 
       for (const rect of regions) {
         applyBlurRegion(

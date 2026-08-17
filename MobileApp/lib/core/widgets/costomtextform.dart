@@ -22,6 +22,7 @@ class CustomTextFormField extends StatefulWidget {
     this.onChanged,
     this.onSubmitted,
     this.onTap,
+    this.unfocusOnTapOutside = true,
     this.enabled = true,
     this.maxLines = 1,
     this.fillColor,
@@ -57,6 +58,9 @@ class CustomTextFormField extends StatefulWidget {
   final Function(String)? onChanged;
   final ValueChanged<String>? onSubmitted;
   final VoidCallback? onTap;
+
+  /// When false, tapping widgets below the field (e.g. suggestions) keeps focus.
+  final bool unfocusOnTapOutside;
   final bool enabled;
   final bool addOptionalLabel;
   final int maxLines;
@@ -103,7 +107,9 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
       onChanged: widget.onChanged,
       onFieldSubmitted: widget.onSubmitted,
       onTap: widget.onTap,
-      onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+      onTapOutside: widget.unfocusOnTapOutside
+          ? (_) => FocusManager.instance.primaryFocus?.unfocus()
+          : (_) {},
       enabled: widget.enabled,
       maxLines: widget.maxLines,
       textAlign: isArabic ? TextAlign.right : TextAlign.left,

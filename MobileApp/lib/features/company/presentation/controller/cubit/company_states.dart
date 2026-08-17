@@ -47,7 +47,7 @@ class CompanyMyListingsState extends CompanyStates {
   final String? typeFilter;
   final String? statusFilter;
 
-  List<MyListingProductModel> get filteredProducts {
+  List<MyListingProductModel> get typeFilteredProducts {
     var list = products;
     if (typeFilter != null && typeFilter!.isNotEmpty) {
       if (typeFilter == MyAdsFilter.categoriesFilterKey) {
@@ -75,6 +75,11 @@ class CompanyMyListingsState extends CompanyStates {
         }).toList();
       }
     }
+    return list;
+  }
+
+  List<MyListingProductModel> get filteredProducts {
+    var list = typeFilteredProducts;
     if (statusFilter != null && statusFilter!.isNotEmpty) {
       list = list.where(_matchesStatusFilter).toList();
     }

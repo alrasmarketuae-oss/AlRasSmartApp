@@ -10,12 +10,14 @@ class ProductViewsBadge extends StatefulWidget {
     required this.initialViewsCount,
     required this.fontFamily,
     this.trackOnOpen = true,
+    this.compact = false,
   });
 
   final String productId;
   final int initialViewsCount;
   final String fontFamily;
   final bool trackOnOpen;
+  final bool compact;
 
   @override
   State<ProductViewsBadge> createState() => _ProductViewsBadgeState();
@@ -54,16 +56,16 @@ class _ProductViewsBadgeState extends State<ProductViewsBadge> {
       children: [
         Icon(
           Icons.visibility_outlined,
-          size: 18.sp,
+          size: widget.compact ? 13.sp : 18.sp,
           color: const Color(0xFF6B7280),
         ),
-        SizedBox(width: 6.w),
+        SizedBox(width: widget.compact ? 3.w : 6.w),
         Text(
           S.of(context).adViewsCount(_viewsCount),
           style: TextStyle(
             color: const Color(0xFF6B7280),
             fontFamily: widget.fontFamily,
-            fontSize: 13.sp,
+            fontSize: widget.compact ? 11.sp : 13.sp,
             fontWeight: FontWeight.w600,
           ),
         ),

@@ -1,6 +1,5 @@
 import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
-import 'package:alrasmarket/core/utils/product_grid_layout.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/features/company/presentation/controller/cubit/company_cubit.dart';
 import 'package:alrasmarket/features/company/presentation/controller/cubit/company_states.dart';
@@ -22,10 +21,6 @@ class MyAdsListPlaceholderWidget extends StatefulWidget {
 
   /// Called once when the highlighted listing is found (e.g. to light its type filter).
   final ValueChanged<MyListingProductModel>? onHighlightedProductFound;
-
-  /// Account My Ads: phone = 2 columns, tablet = 3.
-  static int _crossAxisCount(BuildContext context) =>
-      ProductGridLayout.isTablet(context) ? 3 : 2;
 
   @override
   State<MyAdsListPlaceholderWidget> createState() =>
@@ -147,35 +142,29 @@ class _MyAdsListPlaceholderWidgetState
         final showBothPricing = state.typeFilter == null ||
             state.typeFilter!.isEmpty;
 
-        final horizontalPadding = 24.w;
-        final crossSpacing = 12.w;
-        final mainSpacing = 12.h;
-        final columns = MyAdsListPlaceholderWidget._crossAxisCount(context);
-        final isTablet = ProductGridLayout.isTablet(context);
-        final cellHeight = isTablet ? 380.h : 330.h;
+        final horizontalPadding = 16.w;
+        final mainSpacing = 10.h;
+        final rowHeight = 132.h;
         final highlightId = widget.highlightProductId?.trim() ?? '';
 
         _scrollToHighlightIfNeeded(
           products: products,
-          columns: columns,
-          cellHeight: cellHeight,
+          columns: 1,
+          cellHeight: rowHeight,
           mainSpacing: mainSpacing,
         );
 
-        return GridView.builder(
+        return ListView.separated(
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.symmetric(
-            horizontal: horizontalPadding,
-            vertical: 8.h,
-          ),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: columns,
-            crossAxisSpacing: crossSpacing,
-            mainAxisSpacing: mainSpacing,
-            mainAxisExtent: cellHeight,
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            4.h,
+            horizontalPadding,
+            16.h,
           ),
           itemCount: products.length,
+          separatorBuilder: (_, __) => SizedBox(height: mainSpacing),
           itemBuilder: (context, index) {
             final product = products[index];
             final highlighted = highlightId.isNotEmpty &&

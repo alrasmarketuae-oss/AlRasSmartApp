@@ -4,7 +4,10 @@ import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
+import 'package:alrasmarket/core/utils/product_quantity_formatter.dart';
 import 'package:alrasmarket/core/utils/product_stock.dart';
+import 'package:alrasmarket/core/widgets/product_price_text.dart';
+import 'package:alrasmarket/features/clint/presentation/helpers/product_price_type_label.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/my_ads/my_ad_product_facts.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_media_thumbnail.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product_views_badge.dart';
@@ -177,6 +180,17 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
     final publishLabel = S.of(context).publish;
     final canToggleStatus =
         !product.statusCanonical.toLowerCase().contains('review');
+
+    if (compact) {
+      return _buildAccountListCard(
+        s: s,
+        fontFamily: fontFamily,
+        listingBadge: listingBadge,
+        listingIcon: listingIcon,
+        preferRetail: preferRetail,
+        canToggleStatus: canToggleStatus,
+      );
+    }
 
     final content = Padding(
       padding: EdgeInsets.fromLTRB(padH, padV, padH, padV),
@@ -362,6 +376,261 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
               child: content,
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAccountListCard({
+    required S s,
+    required String fontFamily,
+    required _BadgeStyle listingBadge,
+    required String listingIcon,
+    required bool preferRetail,
+    required bool canToggleStatus,
+  }) {
+    final isAr =
+        Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
+    final priceTypeLabel =
+        ProductPriceTypeLabel.fromProduct(product, isAr: isAr);
+    final quantityText = ProductQuantityFormatter.quantityWithUnit(
+      quantityText: product.quantity,
+      unitName: product.unitName,
+      s: s,
+    );
+    final categoryName = product.categoryName.trim();
+    final thumbSize = 96.w;
+
+    final details = Expanded(
+      child: InkWell(
+        onTap: product.productId.isNotEmpty ? _onOpenAdDetails : null,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(10.w, 8.h, 8.w, 8.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      product.productName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: AppColors.title(context),
+                        fontFamily: fontFamily,
+                        fontSize: 13.5.sp,
+                        fontWeight: FontWeight.w800,
+                        height: 1.2,
+                      ),
+                    ),
+                  ),
+                  _AdActionsMenu(
+                    fontFamily: fontFamily,
+                    editLabel: s.edit,
+                    deleteLabel: s.delete,
+                    pauseOrPublishLabel:
+                        _isListingActive ? (isAr ? 'إيقاف' : 'Pause') : s.publish,
+                    soldOutLabel: s.soldOut,
+                    showPauseOrPublish: canToggleStatus,
+                    showSoldOut: !product.isRequestProduct &&
+                        !ProductStock.isSoldOut(
+                          product,
+                          preferRetail: preferRetail,
+                        ),
+                    isTogglingStatus: _isTogglingStatus,
+                    isDeleting: _isDeleting,
+                    isMarkingSoldOut: _isMarkingSoldOut,
+                    onEdit: _onEdit,
+                    onDelete: _onDelete,
+                    onToggleStatus: _onToggleListingStatus,
+                    onSoldOut: _onMarkSoldOut,
+                  ),
+                ],
+              ),
+              SizedBox(height: 4.h),
+              Row(
+                children: [
+                  _Badge(
+                    label: listingBadge.label,
+                    background: listingBadge.background,
+                    foreground: listingBadge.foreground,
+                    icon: listingIcon,
+                    compact: true,
+                  ),
+                  if (canToggleStatus) ...[
+                    SizedBox(width: 6.w),
+                    GestureDetector(
+                      onTap: _isTogglingStatus ? null : _onToggleListingStatus,
+                      child: Container(
+                        width: 22.w,
+                        height: 22.w,
+                        alignment: Alignment.center,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFE8F2FC),
+                          shape: BoxShape.circle,
+                        ),
+                        child: _isTogglingStatus
+                            ? SizedBox(
+                                width: 10.w,
+                                height: 10.w,
+                                child: const CircularProgressIndicator(
+                                  strokeWidth: 1.6,
+                                ),
+                              )
+                            : Icon(
+                                _isListingActive ? Icons.remove : Icons.add,
+                                size: 14.sp,
+                                color: LightColor.defaultColor,
+                              ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              SizedBox(height: 4.h),
+              Row(
+                children: [
+                  if (categoryName.isNotEmpty)
+                    Expanded(
+                      child: Text(
+                        categoryName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: fontFamily,
+                          fontSize: 11.sp,
+                          color: LightColor.greyTextColor,
+                        ),
+                      ),
+                    )
+                  else
+                    const Spacer(),
+                  if (product.productId.isNotEmpty)
+                    ProductViewsBadge(
+                      productId: product.productId,
+                      initialViewsCount: product.viewsCountValue,
+                      fontFamily: fontFamily,
+                      trackOnOpen: false,
+                      compact: true,
+                    ),
+                ],
+              ),
+              SizedBox(height: 4.h),
+              ProductPriceText.unitPrice(
+                product,
+                preferRetail: preferRetail,
+                amountStyle: TextStyle(
+                  color: LightColor.defaultColor,
+                  fontFamily: AppFonts.cairo,
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w800,
+                  height: 1.15,
+                ),
+                matchCurrencyToAmount: true,
+                scaleToFit: true,
+              ),
+              SizedBox(height: 4.h),
+              Row(
+                children: [
+                  if (priceTypeLabel.isNotEmpty)
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 6.w,
+                        vertical: 2.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8F2FC),
+                        borderRadius: BorderRadius.circular(6.r),
+                      ),
+                      child: Text(
+                        priceTypeLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: fontFamily,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w700,
+                          color: LightColor.defaultColor,
+                        ),
+                      ),
+                    ),
+                  if (priceTypeLabel.isNotEmpty) SizedBox(width: 8.w),
+                  if (quantityText.isNotEmpty)
+                    Expanded(
+                      child: Text(
+                        quantityText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: fontFamily,
+                          fontSize: 11.sp,
+                          color: const Color(0xFF6B7280),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    return AnimatedBuilder(
+      animation: _blink,
+      builder: (context, child) {
+        final borderColor = _borderBlinkActive
+            ? Color.lerp(
+                _blinkRedSoft,
+                _blinkRedStrong,
+                _blink.value,
+              )!
+            : const Color(0xFFE7EEF6);
+
+        return Container(
+          width: double.infinity,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: AppColors.card(context),
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(
+              color: borderColor,
+              width: _borderBlinkActive ? 2 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 8.r,
+                offset: Offset(0, 2.h),
+              ),
+            ],
+          ),
+          child: child,
+        );
+      },
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            InkWell(
+              onTap: product.productId.isNotEmpty ? _onOpenAdDetails : null,
+              child: Padding(
+                padding: EdgeInsets.all(8.w),
+                child: ProductMediaThumbnail(
+                  product: product,
+                  width: thumbSize,
+                  height: thumbSize,
+                  openPreviewOnTap: false,
+                  showDefaultPlaceholderImage: false,
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+              ),
+            ),
+            details,
+          ],
+        ),
       ),
     );
   }

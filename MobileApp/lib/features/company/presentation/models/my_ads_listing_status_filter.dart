@@ -50,7 +50,7 @@ enum MyAdsListingStatusFilter {
   IconData get icon {
     switch (this) {
       case MyAdsListingStatusFilter.all:
-        return Icons.format_list_bulleted_rounded;
+        return Icons.apps_rounded;
       case MyAdsListingStatusFilter.active:
         return Icons.check_circle_outline_rounded;
       case MyAdsListingStatusFilter.paused:

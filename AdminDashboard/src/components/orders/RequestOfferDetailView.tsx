@@ -1537,7 +1537,7 @@ export default function RequestOfferDetailView({
         open={blurTarget != null}
         imageUrl={blurTarget?.url ?? ''}
         isSaving={isReplacingImage}
-        blurPx={30}
+        blurPx={32}
         onClose={() => setBlurTarget(null)}
         onSave={handleBlurSave}
       />

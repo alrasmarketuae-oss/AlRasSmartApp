@@ -68,6 +68,7 @@ class _AppSearchFieldState extends State<AppSearchField> {
   late final bool _ownsController;
   List<String> _suggestions = [];
   bool _showSuggestions = false;
+  bool _pickingSuggestion = false;
 
   bool get _isCatalog => widget.mode == AppSearchMode.catalog;
 
@@ -113,18 +114,44 @@ class _AppSearchFieldState extends State<AppSearchField> {
   void _onQueryChanged() {
     widget.onChanged?.call(_controller.text);
     if (_isCatalog && widget.enableSuggestions) {
+      _applyPreviewSuggestions();
       unawaited(_refreshSuggestions());
     }
   }
 
   void _onFocusChanged() {
     if (!_focusNode.hasFocus) {
-      setState(() => _showSuggestions = false);
+      Future<void>.delayed(const Duration(milliseconds: 160), () {
+        if (!mounted || _pickingSuggestion || _focusNode.hasFocus) return;
+        setState(() => _showSuggestions = false);
+      });
       return;
     }
     if (_isCatalog && widget.enableSuggestions) {
       unawaited(_refreshSuggestions());
     }
+  }
+
+  void _applyPreviewSuggestions() {
+    final query = _controller.text.trim();
+    if (query.isEmpty) {
+      if (_showSuggestions || _suggestions.isNotEmpty) {
+        setState(() {
+          _suggestions = const [];
+          _showSuggestions = false;
+        });
+      }
+      return;
+    }
+
+    final items =
+        ProductSearchIndexService.instance.preview(query).toList();
+    if (!mounted) return;
+    if (items.isEmpty) return;
+    setState(() {
+      _suggestions = items;
+      _showSuggestions = _focusNode.hasFocus;
+    });
   }
 
   Future<void> _refreshSuggestions() async {
@@ -207,9 +234,11 @@ class _AppSearchFieldState extends State<AppSearchField> {
   }
 
   void _pickSuggestion(String value) {
+    _pickingSuggestion = true;
     _controller.text = value;
     _controller.selection = TextSelection.collapsed(offset: value.length);
     _submit(value);
+    _pickingSuggestion = false;
   }
 
   static String marketTld() {
@@ -301,6 +330,7 @@ class _AppSearchFieldState extends State<AppSearchField> {
                   borderWidth: 1,
                   borderColor: AppColors.inputBorder(context),
                   fillColor: AppColors.inputFill(context),
+                  unfocusOnTapOutside: false,
                   textStyle: TextStyle(
                     fontSize: isTablet ? 12.sp : 14.sp,
                     fontWeight: FontWeight.w500,
@@ -362,8 +392,12 @@ class _AppSearchFieldState extends State<AppSearchField> {
               ),
               itemBuilder: (context, index) {
                 final option = _suggestions[index];
-                return InkWell(
-                  onTap: () => _pickSuggestion(option),
+                return Listener(
+                  behavior: HitTestBehavior.opaque,
+                  onPointerDown: (_) {
+                    _pickingSuggestion = true;
+                    _pickSuggestion(option);
+                  },
                   child: Padding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 12.w,
