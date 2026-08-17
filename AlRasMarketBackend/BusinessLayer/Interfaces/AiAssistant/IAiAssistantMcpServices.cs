@@ -4,6 +4,10 @@ public sealed record AiToolCall(string Id, string Name, string ArgumentsJson);
 
 public sealed record AiToolResult(string CallId, string Name, string Content);
 
+public sealed record AiMcpLoopResult(
+    string Answer,
+    IReadOnlyList<AiProductListingDto> Listings);
+
 /// <summary>
 /// MCP-style tools the in-app AI assistant can call (price/qty, cheapest product, sales).
 /// </summary>
@@ -29,7 +33,7 @@ public interface IAiAssistantToolsService
 /// </summary>
 public interface IAiAssistantMcpToolLoop
 {
-    Task<string> CompleteWithToolsAsync(
+    Task<AiMcpLoopResult> CompleteWithToolsAsync(
         HttpClient httpClient,
         string apiKey,
         string chatModel,

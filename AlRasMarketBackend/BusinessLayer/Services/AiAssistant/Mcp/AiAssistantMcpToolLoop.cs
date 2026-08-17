@@ -46,7 +46,7 @@ public sealed class AiAssistantMcpToolLoop(
         "create_shipping_ad"
     };
 
-    public async Task<string> CompleteWithToolsAsync(
+    public async Task<AiMcpLoopResult> CompleteWithToolsAsync(
         HttpClient httpClient,
         string apiKey,
         string chatModel,
@@ -60,6 +60,10 @@ public sealed class AiAssistantMcpToolLoop(
         var tools = toolsService.GetToolDefinitions();
         var successfulMutations = 0;
         string? successfulAdCreationPayload = null;
+        var listings = new List<AiProductListingDto>();
+
+        AiMcpLoopResult Complete(string answer) =>
+            new(answer, DeduplicateListings(listings));
 
         for (var round = 0; round < MaxToolRounds; round++)
         {
@@ -160,6 +164,8 @@ public sealed class AiAssistantMcpToolLoop(
                             cancellationToken)
                         .ConfigureAwait(false);
 
+                    listings.AddRange(ParseListingCards(name, result.Content));
+
                     if (MutatingToolNames.Contains(name)
                         && IsSuccessfulToolPayload(result.Content))
                     {
@@ -190,7 +196,7 @@ public sealed class AiAssistantMcpToolLoop(
 
                 if (successfulAdCreationPayload is not null)
                 {
-                    return FormatAdCreationSuccessMessage(successfulAdCreationPayload, isArabic);
+                    return Complete(FormatAdCreationSuccessMessage(successfulAdCreationPayload, isArabic));
                 }
 
                 continue;
@@ -202,12 +208,12 @@ public sealed class AiAssistantMcpToolLoop(
 
             if (!string.IsNullOrWhiteSpace(answer))
             {
-                return answer;
+                return Complete(answer);
             }
 
             if (successfulAdCreationPayload is not null)
             {
-                return FormatAdCreationSuccessMessage(successfulAdCreationPayload, isArabic);
+                return Complete(FormatAdCreationSuccessMessage(successfulAdCreationPayload, isArabic));
             }
 
             throw new InvalidOperationException("OpenAI returned an empty assistant answer.");
@@ -218,11 +224,65 @@ public sealed class AiAssistantMcpToolLoop(
             logger.LogWarning(
                 "AI assistant hit the MCP tool-call limit ({MaxRounds}) after a successful ad create; returning success text.",
                 MaxToolRounds);
-            return FormatAdCreationSuccessMessage(successfulAdCreationPayload, isArabic);
+            return Complete(FormatAdCreationSuccessMessage(successfulAdCreationPayload, isArabic));
         }
 
         logger.LogWarning("AI assistant exceeded the MCP tool-call limit ({MaxRounds}).", MaxToolRounds);
         throw new InvalidOperationException("AI assistant exceeded the tool-call limit.");
+    }
+
+    private static readonly HashSet<string> ListingToolNames = new(StringComparer.Ordinal)
+    {
+        "find_cheapest_product",
+        "find_most_expensive_product",
+        "search_products"
+    };
+
+    private static IReadOnlyList<AiProductListingDto> ParseListingCards(string toolName, string content)
+    {
+        if (!ListingToolNames.Contains(toolName) || string.IsNullOrWhiteSpace(content))
+        {
+            return [];
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(content);
+            if (!doc.RootElement.TryGetProperty("listings", out var listingsEl)
+                || listingsEl.ValueKind != JsonValueKind.Array)
+            {
+                return [];
+            }
+
+            var parsed = JsonSerializer.Deserialize<List<AiProductListingDto>>(
+                listingsEl.GetRawText(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            return parsed?
+                .Where(x => x.ProductId != Guid.Empty)
+                .ToList()
+                ?? [];
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    private static IReadOnlyList<AiProductListingDto> DeduplicateListings(
+        IReadOnlyList<AiProductListingDto> listings)
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var result = new List<AiProductListingDto>();
+        foreach (var listing in listings)
+        {
+            var key = $"{listing.ProductId:D}:{listing.SearchListingChannel}";
+            if (!seen.Add(key))
+            {
+                continue;
+            }
+            result.Add(listing);
+        }
+        return result;
     }
 
     private static string DescribeToolCall(string toolName, bool isArabic) =>
@@ -241,6 +301,7 @@ public sealed class AiAssistantMcpToolLoop(
             "explain_order_delay_on_my_ads" => "بستدعي أداة: تأخير طلب على الإعلان…",
             "find_cheapest_product" => "بستدعي أداة: أرخص منتج…",
             "find_most_expensive_product" => "بستدعي أداة: أغلى منتج…",
+            "search_products" => "بستدعي أداة: إعلانات المنتج…",
             "list_my_ads" => "بستدعي أداة: قائمة إعلاناتي…",
             "get_my_last_ad" => "بستدعي أداة: آخر إعلان نزلته…",
             "get_my_first_ad" => "بستدعي أداة: أول إعلان نزلته…",
@@ -271,6 +332,7 @@ public sealed class AiAssistantMcpToolLoop(
             "explain_order_delay_on_my_ads" => "Calling tool: delay on an ad order…",
             "find_cheapest_product" => "Calling tool: cheapest product match…",
             "find_most_expensive_product" => "Calling tool: most expensive product match…",
+            "search_products" => "Calling tool: matching product ads…",
             "list_my_ads" => "Calling tool: your ad catalog…",
             "get_my_last_ad" => "Calling tool: your most recent ad…",
             "get_my_first_ad" => "Calling tool: your earliest ad…",

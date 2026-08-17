@@ -10,6 +10,8 @@ type AdminVideoTrimModalProps = {
   knownDurationSeconds?: number | null
   isSaving?: boolean
   onClose: () => void
+  onQueued?: () => void
+  onFailed?: (message: string) => void
   onSave: (file: File, durationSeconds: number) => Promise<void>
 }
 
@@ -150,6 +152,8 @@ export default function AdminVideoTrimModal({
   knownDurationSeconds = null,
   isSaving = false,
   onClose,
+  onQueued,
+  onFailed,
   onSave,
 }: AdminVideoTrimModalProps) {
   const { t } = useAppPreferences()
@@ -158,6 +162,7 @@ export default function AdminVideoTrimModal({
   const sourceBlobRef = useRef<Blob | null>(null)
   const previewUrlRef = useRef<string | null>(null)
   const loadTokenRef = useRef(0)
+  const exportStartedRef = useRef(false)
   const rangeRef = useRef({ start: 0, end: 30 })
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isLoadingSource, setIsLoadingSource] = useState(false)
@@ -198,6 +203,7 @@ export default function AdminVideoTrimModal({
       setReady(false)
       setError(null)
       setIsExporting(false)
+      exportStartedRef.current = false
       setIsLoadingSource(true)
       revokePreviewUrl()
       sourceBlobRef.current = null
@@ -357,17 +363,32 @@ export default function AdminVideoTrimModal({
 
   async function handleSave() {
     const blob = sourceBlobRef.current
-    if (!ready || !blob || trimDuration < MIN_CLIP_SEC) return
-    setIsExporting(true)
+    if (!ready || !blob || trimDuration < MIN_CLIP_SEC || exportStartedRef.current) return
+
+    exportStartedRef.current = true
     setError(null)
-    try {
-      const { file, durationSeconds } = await trimVideoToFile(blob, startSec, endSec)
-      await onSave(file, durationSeconds)
-    } catch (err) {
-      setError(getRtkErrorMessage(err as never, t('ads.trimVideoSaveError')))
-    } finally {
-      setIsExporting(false)
-    }
+
+    const workBlob = blob.slice(0, blob.size, blob.type)
+    const start = startSec
+    const end = endSec
+    const save = onSave
+    const failed = onFailed
+
+    onQueued?.()
+    onClose()
+
+    void (async () => {
+      try {
+        const { file, durationSeconds } = await trimVideoToFile(workBlob, start, end)
+        try {
+          await save(file, durationSeconds)
+        } catch {
+          // Upload errors are reported by the parent page.
+        }
+      } catch (err) {
+        failed?.(getRtkErrorMessage(err as never, t('ads.trimVideoSaveError')))
+      }
+    })()
   }
 
   const startPct = duration > 0 ? (startSec / duration) * 100 : 0

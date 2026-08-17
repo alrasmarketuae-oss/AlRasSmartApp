@@ -64,6 +64,9 @@ export function resolveAssetUrl(path: string | null | undefined): string {
   if (!path?.trim()) return ''
 
   const trimmed = path.trim()
+  if (trimmed.startsWith('blob:') || trimmed.startsWith('data:')) {
+    return trimmed
+  }
   const slashNormalized = trimmed.replace(/\\/g, '/')
   const unwrappedAbsolute = slashNormalized.replace(/^\/+(https?:\/\/)/i, '$1')
 

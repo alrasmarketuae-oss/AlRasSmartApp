@@ -3,8 +3,9 @@ import { createVoiceFile, pickVoiceRecorderMimeType } from '../../lib/voiceRecor
 import ChatComposer from './ChatComposer'
 import ChatForwardPicker from './ChatForwardPicker'
 import ChatMessageActions from './ChatMessageActions'
-import ChatMessageBubble from './ChatMessageBubble'
+import ChatMessageBubble, { getChatGalleryItems } from './ChatMessageBubble'
 import ChatSessionDivider from './ChatSessionDivider'
+import ImageGallery, { type GalleryMediaItem } from '../ui/ImageGallery'
 import { PROJECT_IMAGES } from '../../constants/projectImages'
 import { IconArrowLeft, IconChat } from '../icons'
 import { resolveProfileAssetUrl } from '../../lib/assets'
@@ -119,6 +120,21 @@ export default function ChatThreadPanel({
   const imageInputRef = useRef<HTMLInputElement | null>(null)
   const videoInputRef = useRef<HTMLInputElement | null>(null)
   const documentInputRef = useRef<HTMLInputElement | null>(null)
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null)
+
+  const galleryMedia = useMemo(
+    () => messages.flatMap((message) => getChatGalleryItems(message)),
+    [messages],
+  )
+
+  useEffect(() => {
+    setPreviewIndex(null)
+  }, [contact?.contactUserId])
+
+  function openMedia(item: GalleryMediaItem) {
+    const index = galleryMedia.findIndex((media) => media.path === item.path)
+    setPreviewIndex(index >= 0 ? index : 0)
+  }
 
   const sortedMessages = useMemo(
     () => [...messages].sort((a, b) => a.sentAtUtc.localeCompare(b.sentAtUtc)),
@@ -493,6 +509,7 @@ export default function ChatThreadPanel({
                 <ChatMessageBubble
                   message={item.message}
                   isMine={item.message.toUserId === contact.contactUserId}
+                  onOpenMedia={openMedia}
                 />
               </ChatMessageActions>
             )
@@ -569,6 +586,15 @@ export default function ChatThreadPanel({
           t={t}
         />
       ) : null}
+
+      <ImageGallery
+        media={galleryMedia}
+        initialIndex={previewIndex ?? 0}
+        open={previewIndex != null}
+        onClose={() => setPreviewIndex(null)}
+        muteLabel="Mute"
+        unmuteLabel="Unmute"
+      />
     </section>
   )
 }

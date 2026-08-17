@@ -20,6 +20,15 @@ export type AiConversationMessage = {
   usedKnowledge: boolean | null
   sources: string[] | null
   createdAtUtc: string
+  listings?: Array<{
+    productId: string
+    productCode?: string | null
+    nameEn?: string | null
+    nameAr?: string | null
+    price: number
+    currency?: string | null
+  }> | null
+  thinkingSteps?: string[] | null
 }
 
 export type AiConversationMessagesPage = {

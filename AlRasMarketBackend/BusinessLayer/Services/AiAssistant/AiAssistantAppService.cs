@@ -218,9 +218,33 @@ public sealed class AiAssistantAppService(
         var language = ResolveAskLanguage(message, request.Language, history);
         var account = await ResolveAccountContextAsync(userId, cancellationToken)
             .ConfigureAwait(false);
+        var thinkingSteps = new List<string>();
+        async Task ThinkAsync(string step, CancellationToken ct = default)
+        {
+            var trimmed = (step ?? string.Empty).Trim();
+            if (trimmed.Length == 0) return;
+            if (thinkingSteps.Count > 0
+                && string.Equals(thinkingSteps[^1], trimmed, StringComparison.Ordinal))
+            {
+                return;
+            }
 
-        // Thinking steps (large/random phrases) are emitted when MCP tools run
-        // inside CompleteWithToolsAsync — never for plain Q&A / RAG / greetings.
+            thinkingSteps.Add(trimmed);
+            if (onThinkingStep is not null)
+            {
+                await onThinkingStep(trimmed, ct.CanBeCanceled ? ct : cancellationToken)
+                    .ConfigureAwait(false);
+            }
+        }
+
+        AiAssistantAnswer Finish(AiAssistantAnswer answer) =>
+            answer with
+            {
+                ThinkingSteps = thinkingSteps.Count > 0 ? thinkingSteps : answer.ThinkingSteps
+            };
+
+        await ThinkAsync(language == "ar" ? "بقرأ السؤال…" : "Reading the question…")
+            .ConfigureAwait(false);
 
         // Unauthorized create-ad: refuse immediately — never collect fields or enter plan flow.
         if (LooksLikeCreateAdIntent(message)
@@ -233,29 +257,35 @@ public sealed class AiAssistantAppService(
                 account.DisplayName);
             if (denial is not null)
             {
-                return denial;
+                return Finish(denial);
             }
         }
 
         if (IsGreeting(message) || IsCapabilitiesQuestion(message))
         {
-            return BuildCapabilitiesAnswer(language, account);
+            await ThinkAsync(language == "ar" ? "براجع قدرات الحساب…" : "Checking what this account can do…")
+                .ConfigureAwait(false);
+            return Finish(BuildCapabilitiesAnswer(language, account));
         }
 
         if (IsHumanSupportIntent(message))
         {
-            return BuildSupportCallbackOfferAnswer(language, account.DisplayName, message);
+            await ThinkAsync(language == "ar" ? "بجهّز تحويل للدعم…" : "Preparing a support handoff…")
+                .ConfigureAwait(false);
+            return Finish(BuildSupportCallbackOfferAnswer(language, account.DisplayName, message));
         }
 
         if (IsClearlyOutOfScope(message))
         {
-            return new AiAssistantAnswer(
+            await ThinkAsync(language == "ar" ? "بتأكد إن السؤال ضمن سوق الراس…" : "Checking the question is in scope…")
+                .ConfigureAwait(false);
+            return Finish(new AiAssistantAnswer(
                 language == "ar"
                     ? $"{(string.IsNullOrWhiteSpace(account.DisplayName) ? "" : account.DisplayName + "، ")}أقدر أساعدك في أمور الراس الذكي بس، زي الإعلانات والأسعار والطلبات والبحث وأسعار الشحن."
                     : $"{(string.IsNullOrWhiteSpace(account.DisplayName) ? "" : account.DisplayName + ", ")}I can only help with Al Ras Smart topics such as ads, prices, orders, search, and shipping rates.",
                 language,
                 false,
-                []);
+                []));
         }
 
         var audience = account.Audience;
@@ -264,6 +294,8 @@ public sealed class AiAssistantAppService(
             // Follow-ups like "and after that?" are meaningless alone, so retrieval
             // is done on the recent turns plus the new message.
             var retrievalQuery = BuildRetrievalQuery(message, history);
+            await ThinkAsync(language == "ar" ? "بدور في معرفة المنصة…" : "Searching platform knowledge…")
+                .ConfigureAwait(false);
             var vector = await embeddingService.EmbedAsync(retrievalQuery, cancellationToken)
                 .ConfigureAwait(false);
             var hits = await knowledgeIndex.SearchAsync(
@@ -289,8 +321,11 @@ public sealed class AiAssistantAppService(
             // Still generate when knowledge is empty: tools (price/qty/sales/cheapest)
             // can answer live marketplace questions without RAG hits.
             var isAdCreation = IsAdCreationContext(message, history);
+            await ThinkAsync(
+                    language == "ar" ? "بجهّز الرد…" : "Drafting the reply…")
+                .ConfigureAwait(false);
 
-            var answer = await GenerateGroundedAnswerAsync(
+            var generated = await GenerateGroundedAnswerAsync(
                     message,
                     language,
                     account,
@@ -298,29 +333,30 @@ public sealed class AiAssistantAppService(
                     history,
                     userId,
                     isAdCreation,
-                    onThinkingStep,
+                    ThinkAsync,
                     cancellationToken)
                 .ConfigureAwait(false);
 
             var usedKnowledge = hits.Count > 0;
 
-            return new AiAssistantAnswer(
-                answer,
+            return Finish(new AiAssistantAnswer(
+                generated.Answer,
                 language,
                 usedKnowledge,
                 hits.Select(x => x.Source).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
-                OfferSupportCallback: false);
+                OfferSupportCallback: false,
+                Listings: generated.Listings));
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             logger.LogError(ex, "AI Assistant failed for audience {Audience}.", audience);
             // A technical failure must not be reported as an out-of-scope question,
             // otherwise an outage looks like the assistant refusing valid questions.
-            return TemporaryFailure(language, account.DisplayName);
+            return Finish(TemporaryFailure(language, account.DisplayName));
         }
     }
 
-    private async Task<string> GenerateGroundedAnswerAsync(
+    private async Task<AiMcpLoopResult> GenerateGroundedAnswerAsync(
         string message,
         string language,
         AccountContext account,
@@ -382,8 +418,9 @@ public sealed class AiAssistantAppService(
             - set_ad_listing_status: pause or activate EXACTLY ONE owned ad (action=pause|active). Same name-clarification rules as update.
             - mark_ad_sold_out: set quantity to zero on ONE channel of ONE owned ad. For hybrid ads ask جملة/تجزئة first (channel=wholesale|retail). Same one-action-per-turn rule.
             - delete_ad: permanently delete ONE owned ad. First call without confirm (or confirm=false) so you can ask the user; only after they clearly agree, call again with confirm=true. Only one mutating account action (update/pause/sold-out/delete) per user message.
-            - find_cheapest_product: find the cheapest approved public listing by product name (Arabic/English synonyms like هيل/cardamom). Hybrid ads expose wholesale and retail as separate candidates — use the tool's productCode for that channel (RetailCode when channel=retail). Report customerPrice AFTER commission with currency, channel, and quantity with unitName (never invent grams/kg).
+            - find_cheapest_product: find the cheapest approved public listing by product name (Arabic/English synonyms like هيل/cardamom). Hybrid ads expose wholesale and retail as separate candidates — use the tool's productCode for that channel (RetailCode when channel=retail). Report customerPrice AFTER commission with currency, channel, and quantity with unitName (never invent grams/kg). The app shows Product cards under your reply — keep text short and tell the user they can tap a card for ad details.
             - find_most_expensive_product: same rules as find_cheapest_product but for the highest buyer-facing price.
+            - search_products: search public ads by product name/type (هيل, cardamom, type of product, "show me ads"). Use this when the user is browsing listings rather than asking cheap/expensive. Cards appear in chat; summarize, do not paste a long catalog.
             - get_my_sales_count: SELLER role — orders customers placed on THIS USER's ads (الطلبات على إعلاناتي / مبيعاتي). Never confuse with My Orders.
             - get_last_order_on_my_ads: SELLER role — latest incoming order on their ads (آخر طلب على إعلاناتي).
             - explain_order_delay_on_my_ads: SELLER role — why an incoming ad order may be delayed.

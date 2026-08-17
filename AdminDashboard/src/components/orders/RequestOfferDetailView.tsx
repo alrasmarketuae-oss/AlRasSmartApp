@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { resolveAssetUrl } from '../../lib/assets'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
@@ -201,6 +201,13 @@ export default function RequestOfferDetailView({
     source: 'order' | 'product'
     durationSeconds?: number | null
   } | null>(null)
+  const queuedTrimRef = useRef<{
+    path: string
+    orderVideoId?: number
+    source: 'order' | 'product'
+    durationSeconds?: number | null
+  } | null>(null)
+  const [backgroundTrimPath, setBackgroundTrimPath] = useState<string | null>(null)
   const [selectedVideoIndex, setSelectedVideoIndex] = useState(0)
   const [showProductDetails, setShowProductDetails] = useState(false)
   const [advertiserUnitPrice, setAdvertiserUnitPrice] = useState(() =>
@@ -242,8 +249,7 @@ export default function RequestOfferDetailView({
   const isReplacingImage = isUploadingBlur || isDeletingBlur
   const isTrimmingVideo = isUploadingOrderVideo || isUploadingProductVideo
   const isDeletingVideo = isDeletingOrderVideo || isDeletingProductVideo
-  const trimmingVideoPath =
-    isTrimmingVideo && trimTarget ? trimTarget.path : null
+  const trimmingVideoPath = backgroundTrimPath
   const isBusy =
     isUpdating ||
     isApprovingOffer ||
@@ -394,6 +400,7 @@ export default function RequestOfferDetailView({
   }
 
   function openTrimVideo(path: string) {
+    if (backgroundTrimPath) return
     const item = videoItems.find((video) => video.path === path)
     if (!item) return
     setBlurError(null)
@@ -405,31 +412,47 @@ export default function RequestOfferDetailView({
     })
   }
 
-  async function handleTrimSave(file: File, durationSeconds: number) {
-    if (!trimTarget) return
+  function handleTrimQueued() {
+    queuedTrimRef.current = trimTarget
+    setBackgroundTrimPath(trimTarget?.path ?? null)
     setBlurError(null)
+    setBlurSuccess(t('ads.trimVideoProcessing'))
+  }
+
+  function handleTrimFailed(message: string) {
+    queuedTrimRef.current = null
+    setBackgroundTrimPath(null)
     setBlurSuccess(null)
+    setBlurError(message)
+  }
+
+  async function handleTrimSave(file: File, durationSeconds: number) {
+    const target = queuedTrimRef.current
+    if (!target) return
+    setBlurError(null)
     try {
-      if (trimTarget.source === 'order' && trimTarget.orderVideoId) {
+      if (target.source === 'order' && target.orderVideoId) {
         await uploadOrderVideo({ orderId: order.id, file }).unwrap()
         await deleteOrderVideo({
           orderId: order.id,
-          videoId: trimTarget.orderVideoId,
+          videoId: target.orderVideoId,
         }).unwrap()
       } else {
         await uploadProductVideo({
           productId: order.productId,
           file,
           videoDurationSeconds: durationSeconds,
-          replaceVideoPath: trimTarget.path,
+          replaceVideoPath: target.path,
         }).unwrap()
         invalidateOrderDetail()
       }
-      setTrimTarget(null)
       setBlurSuccess(t('ads.trimVideoSaveSuccess'))
     } catch (err) {
+      setBlurSuccess(null)
       setBlurError(getRtkErrorMessage(err as never, t('ads.trimVideoSaveError')))
-      throw err
+    } finally {
+      queuedTrimRef.current = null
+      setBackgroundTrimPath(null)
     }
   }
 
@@ -1525,6 +1548,8 @@ export default function RequestOfferDetailView({
         knownDurationSeconds={trimTarget?.durationSeconds}
         isSaving={isTrimmingVideo}
         onClose={() => setTrimTarget(null)}
+        onQueued={handleTrimQueued}
+        onFailed={handleTrimFailed}
         onSave={handleTrimSave}
       />
     </div>

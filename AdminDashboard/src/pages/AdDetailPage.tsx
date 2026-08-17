@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import AdDetailView from '../components/ads/AdDetailView'
 import AdEditDialog from '../components/ads/AdEditDialog'
@@ -36,6 +36,11 @@ export default function AdDetailPage() {
     path: string
     durationSeconds?: number | null
   } | null>(null)
+  const queuedTrimRef = useRef<{
+    path: string
+    durationSeconds?: number | null
+  } | null>(null)
+  const [backgroundTrimPath, setBackgroundTrimPath] = useState<string | null>(null)
   const [isReplacingImage, setIsReplacingImage] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false)
@@ -177,24 +182,40 @@ export default function AdDetailPage() {
     }
   }
 
+  function handleTrimQueued() {
+    queuedTrimRef.current = trimTarget
+    setBackgroundTrimPath(trimTarget?.path ?? null)
+    setActionError(null)
+    setSuccessMessage(t('ads.trimVideoProcessing'))
+  }
+
+  function handleTrimFailed(message: string) {
+    queuedTrimRef.current = null
+    setBackgroundTrimPath(null)
+    setSuccessMessage(null)
+    setActionError(message)
+  }
+
   async function handleTrimSave(file: File, durationSeconds: number) {
-    if (!trimTarget) return
+    const target = queuedTrimRef.current
+    if (!target) return
 
     setActionError(null)
-    setSuccessMessage(null)
 
     try {
       await uploadProductVideo({
         productId,
         file,
         videoDurationSeconds: durationSeconds,
-        replaceVideoPath: trimTarget.path,
+        replaceVideoPath: target.path,
       }).unwrap()
-      setTrimTarget(null)
       setSuccessMessage(t('ads.trimVideoSaveSuccess'))
     } catch (err) {
+      setSuccessMessage(null)
       setActionError(getRtkErrorMessage(err as never, t('ads.trimVideoSaveError')))
-      throw err
+    } finally {
+      queuedTrimRef.current = null
+      setBackgroundTrimPath(null)
     }
   }
 
@@ -294,6 +315,7 @@ export default function AdDetailPage() {
           onDeleteImage={(imageId) => void handleDeleteImage(imageId)}
           onDeleteVideo={(path) => void handleDeleteVideo(path)}
           onTrimVideo={(path) => {
+            if (backgroundTrimPath) return
             const match = product?.videos.find((video) => video.path === path)
             setTrimTarget({
               path,
@@ -301,7 +323,7 @@ export default function AdDetailPage() {
                 match?.durationSeconds ?? product?.videoDurationSeconds ?? null,
             })
           }}
-          trimmingVideoPath={isTrimmingVideo ? trimTarget?.path ?? null : null}
+          trimmingVideoPath={backgroundTrimPath}
           onReplaceImage={(imageId, file) => handleReplaceImage(imageId, file)}
         />
         <AdEditDialog
@@ -330,6 +352,8 @@ export default function AdDetailPage() {
         knownDurationSeconds={trimTarget?.durationSeconds}
         isSaving={isTrimmingVideo}
         onClose={() => setTrimTarget(null)}
+        onQueued={handleTrimQueued}
+        onFailed={handleTrimFailed}
         onSave={handleTrimSave}
       />
     </div>

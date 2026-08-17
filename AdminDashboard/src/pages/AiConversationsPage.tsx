@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import type { FetchBaseQueryError } from '@reduxjs/toolkit/query'
 import type { SerializedError } from '@reduxjs/toolkit'
 import ChatCompanyReportDialog from '../components/chat/ChatCompanyReportDialog'
@@ -346,6 +347,19 @@ export default function AiConversationsPage() {
                             {isUser ? t('aiConversations.user') : t('aiConversations.assistant')}
                           </p>
                           <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                          {!isUser && message.listings && message.listings.length > 0 ? (
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {message.listings.map((listing, index) => (
+                                <Link
+                                  key={`${listing.productId}-${listing.productCode ?? index}`}
+                                  to={`/ads/${listing.productId}`}
+                                  className="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300"
+                                >
+                                  {listing.nameAr || listing.nameEn || listing.productCode || listing.productId}
+                                </Link>
+                              ))}
+                            </div>
+                          ) : null}
                           <p className="mt-2 text-[11px] opacity-60">
                             {formatWhen(message.createdAtUtc)}
                           </p>

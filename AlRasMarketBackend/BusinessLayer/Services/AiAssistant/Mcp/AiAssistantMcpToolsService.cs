@@ -197,6 +197,34 @@ public sealed partial class AiAssistantMcpToolsService(
             type = "function",
             function = new
             {
+                name = "search_products",
+                description =
+                    "Search publicly active approved marketplace ads by product name or type " +
+                    "(Arabic or English; synonyms like هيل/cardamom). " +
+                    "Use when the user wants ads, listings, product cards, or examples of a product — " +
+                    "not specifically the cheapest/most expensive. " +
+                    "Returns listing cards the app shows in chat. Compare BOTH wholesale/category and retail channels.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        product_name = new
+                        {
+                            type = "string",
+                            description = "Product name or type to search for (Arabic or English)."
+                        }
+                    },
+                    required = new[] { "product_name" },
+                    additionalProperties = false
+                }
+            }
+        },
+        new
+        {
+            type = "function",
+            function = new
+            {
                 name = "get_my_sales_count",
                 description =
                     "SELLER ONLY — summary of customer orders ON THIS USER'S ADS (الطلبات على إعلاناتي / مبيعاتي): " +
@@ -628,6 +656,8 @@ public sealed partial class AiAssistantMcpToolsService(
                 "find_cheapest_product" => await FindCheapestProductAsync(
                     call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
                 "find_most_expensive_product" => await FindMostExpensiveProductAsync(
+                    call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
+                "search_products" => await SearchProductsAsync(
                     call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
                 "get_my_sales_count" => await GetMySalesCountAsync(
                     userId, cancellationToken).ConfigureAwait(false),
@@ -1063,16 +1093,29 @@ public sealed partial class AiAssistantMcpToolsService(
     private Task<string> FindCheapestProductAsync(
         string argumentsJson,
         CancellationToken cancellationToken) =>
-        FindPricedProductAsync(argumentsJson, ascending: true, cancellationToken);
+        FindPricedProductAsync(argumentsJson, ProductMatchSort.Cheapest, 5, cancellationToken);
 
     private Task<string> FindMostExpensiveProductAsync(
         string argumentsJson,
         CancellationToken cancellationToken) =>
-        FindPricedProductAsync(argumentsJson, ascending: false, cancellationToken);
+        FindPricedProductAsync(argumentsJson, ProductMatchSort.MostExpensive, 5, cancellationToken);
+
+    private Task<string> SearchProductsAsync(
+        string argumentsJson,
+        CancellationToken cancellationToken) =>
+        FindPricedProductAsync(argumentsJson, ProductMatchSort.BestMatch, 8, cancellationToken);
+
+    private enum ProductMatchSort
+    {
+        Cheapest,
+        MostExpensive,
+        BestMatch
+    }
 
     private async Task<string> FindPricedProductAsync(
         string argumentsJson,
-        bool ascending,
+        ProductMatchSort sort,
+        int take,
         CancellationToken cancellationToken)
     {
         using var args = JsonDocument.Parse(string.IsNullOrWhiteSpace(argumentsJson) ? "{}" : argumentsJson);
@@ -1216,16 +1259,24 @@ public sealed partial class AiAssistantMcpToolsService(
         var rankedQuery = RankByName(productName, publicRows)
             .Where(x => x.Score >= 50);
 
-        var ranked = (ascending
-                ? rankedQuery
-                    .OrderBy(x => x.CustomerPrice)
-                    .ThenByDescending(x => x.Score)
-                    .ThenBy(x => x.NameEn)
-                : rankedQuery
-                    .OrderByDescending(x => x.CustomerPrice)
-                    .ThenByDescending(x => x.Score)
-                    .ThenBy(x => x.NameEn))
-            .ToList();
+        var ranked = sort switch
+        {
+            ProductMatchSort.MostExpensive => rankedQuery
+                .OrderByDescending(x => x.CustomerPrice)
+                .ThenByDescending(x => x.Score)
+                .ThenBy(x => x.NameEn)
+                .ToList(),
+            ProductMatchSort.Cheapest => rankedQuery
+                .OrderBy(x => x.CustomerPrice)
+                .ThenByDescending(x => x.Score)
+                .ThenBy(x => x.NameEn)
+                .ToList(),
+            _ => rankedQuery
+                .OrderByDescending(x => x.Score)
+                .ThenBy(x => x.CustomerPrice)
+                .ThenBy(x => x.NameEn)
+                .ToList()
+        };
 
         if (ranked.Count == 0)
         {
@@ -1236,15 +1287,22 @@ public sealed partial class AiAssistantMcpToolsService(
             });
         }
 
-        var top5 = ranked.Take(5).ToList();
-        var winner = top5[0];
-        var winnerKey = ascending ? "cheapest" : "mostExpensive";
+        var topMatches = ranked.Take(Math.Clamp(take, 1, 12)).ToList();
+        var listings = await BuildListingCardsAsync(topMatches, cancellationToken).ConfigureAwait(false);
+        var winner = topMatches[0];
+        var winnerKey = sort switch
+        {
+            ProductMatchSort.MostExpensive => "mostExpensive",
+            ProductMatchSort.Cheapest => "cheapest",
+            _ => "bestMatch"
+        };
 
         return Json(new Dictionary<string, object?>
         {
             ["ok"] = true,
             [winnerKey] = new
             {
+                productId = winner.ProductId,
                 productCode = winner.ProductCode,
                 channel = winner.Channel,
                 nameEn = winner.NameEn,
@@ -1262,8 +1320,9 @@ public sealed partial class AiAssistantMcpToolsService(
                 seller = winner.SellerCompany,
                 matchScore = winner.Score
             },
-            ["alternatives"] = top5.Skip(1).Select(m => new
+            ["alternatives"] = topMatches.Skip(1).Select(m => new
             {
+                productId = m.ProductId,
                 productCode = m.ProductCode,
                 channel = m.Channel,
                 nameEn = m.NameEn,
@@ -1277,11 +1336,66 @@ public sealed partial class AiAssistantMcpToolsService(
                 unitName = m.UnitName,
                 quantityDisplay = FormatQuantity(m.Quantity, m.UnitName)
             }).ToList(),
+            ["listings"] = listings,
             ["instruction"] =
-                "Report customerPrice (buyer-facing, after commission) with currency and channel. " +
-                "Use the productCode from the winning channel (RetailCode for retail, ProductCode for wholesale). " +
-                "Never invent prices. Never say grams unless unitName is Gram."
+                "The mobile app shows listing cards under your reply. Keep the spoken answer short: name, customerPrice with currency, channel, quantity with unitName. " +
+                "Tell the user they can tap a card to open the ad details. Never invent prices. Never dump every field. Never say grams unless unitName is Gram."
         });
+    }
+
+    private async Task<List<object>> BuildListingCardsAsync(
+        IReadOnlyList<NameCandidate> matches,
+        CancellationToken cancellationToken)
+    {
+        var ids = matches.Select(m => m.ProductId).Distinct().ToList();
+        var imagesByProduct = new Dictionary<Guid, IReadOnlyList<string>>();
+        if (ids.Count > 0)
+        {
+            var imageRows = await dbContext.ProductImages.AsNoTracking()
+                .Where(i => ids.Contains(i.ProductId))
+                .OrderBy(i => i.Id)
+                .Select(i => new { i.ProductId, i.ImagePath })
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            imagesByProduct = imageRows
+                .GroupBy(i => i.ProductId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => (IReadOnlyList<string>)g
+                        .Select(x => x.ImagePath)
+                        .Where(path => !string.IsNullOrWhiteSpace(path))
+                        .Take(5)
+                        .ToList());
+        }
+
+        return matches.Select(m =>
+        {
+            var isRetail = string.Equals(m.Channel, "retail", StringComparison.OrdinalIgnoreCase);
+            var searchChannel = isRetail
+                ? "retail"
+                : (m.CategoryId is > 0 ? "category" : (string?)null);
+            imagesByProduct.TryGetValue(m.ProductId, out var images);
+            return (object)new
+            {
+                productId = m.ProductId,
+                productCode = m.ProductCode,
+                nameEn = m.NameEn,
+                nameAr = m.NameAr,
+                price = m.CustomerPrice,
+                currency = m.CustomerCurrency,
+                usdPrice = m.CustomerPriceUsd,
+                priceAed = m.CustomerPriceAed,
+                quantity = m.Quantity,
+                unitName = m.UnitName,
+                categoryId = m.CategoryId,
+                productTypeId = m.ProductTypeId,
+                productTypeName = isRetail ? "Retail" : (string?)null,
+                searchListingChannel = searchChannel,
+                hasRetailPricing = isRetail,
+                images = images ?? Array.Empty<string>()
+            };
+        }).ToList();
     }
 
     private async Task<string> GetMySalesCountAsync(

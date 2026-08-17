@@ -31,6 +31,8 @@ public class AiConversationMessage
     public string Language { get; set; } = "en";
     public bool? UsedKnowledge { get; set; }
     public string? SourcesJson { get; set; }
+    public string? ListingsJson { get; set; }
+    public string? ThinkingJson { get; set; }
     public DateTime CreatedAtUtc { get; set; }
 
     public AiConversation? Conversation { get; set; }

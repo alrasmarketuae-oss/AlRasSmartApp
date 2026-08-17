@@ -35,8 +35,12 @@ class AiAssistantRealtimeService {
     required void Function(String step) onThinkingStep,
     required void Function() onResponseStarted,
     required void Function(String value) onDelta,
-    required void Function(String answer, {required bool offerSupportCallback})
-        onCompleted,
+    required void Function(
+      String answer, {
+      required bool offerSupportCallback,
+      List<dynamic>? listings,
+      List<String>? thinkingSteps,
+    }) onCompleted,
     required void Function(String message) onError,
   }) async {
     if (_closed) return;
@@ -89,7 +93,14 @@ class AiAssistantRealtimeService {
       final answer = data?['answer']?.toString() ?? '';
       final offer = _asBool(data?['offerSupportCallback']) ||
           _asBool(data?['OfferSupportCallback']);
-      onCompleted(answer, offerSupportCallback: offer);
+      final listings = data?['listings'] ?? data?['Listings'];
+      final thinkingRaw = data?['thinkingSteps'] ?? data?['ThinkingSteps'];
+      onCompleted(
+        answer,
+        offerSupportCallback: offer,
+        listings: listings is List ? listings : null,
+        thinkingSteps: _stringList(thinkingRaw),
+      );
     });
     hub.on('aiError', (args) {
       if (_closed || generation != _connectGeneration) return;
@@ -151,6 +162,15 @@ class AiAssistantRealtimeService {
   Map<String, dynamic>? _map(List<Object?>? args) {
     if (args == null || args.isEmpty || args.first is! Map) return null;
     return Map<String, dynamic>.from(args.first! as Map);
+  }
+
+  static List<String>? _stringList(dynamic raw) {
+    if (raw is! List) return null;
+    final items = raw
+        .map((e) => e?.toString().trim() ?? '')
+        .where((e) => e.isNotEmpty)
+        .toList();
+    return items.isEmpty ? null : items;
   }
 
   static bool _asBool(dynamic value) {

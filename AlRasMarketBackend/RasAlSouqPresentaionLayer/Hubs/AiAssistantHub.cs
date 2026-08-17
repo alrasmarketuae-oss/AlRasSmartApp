@@ -125,6 +125,8 @@ public sealed class AiAssistantHub(
                         result.Language,
                         result.UsedKnowledge,
                         result.Sources,
+                        result.Listings,
+                        result.ThinkingSteps,
                         Context.ConnectionAborted);
                 }
                 catch
@@ -155,7 +157,9 @@ public sealed class AiAssistantHub(
                     result.Language,
                     result.UsedKnowledge,
                     result.Sources,
-                    offerSupportCallback = result.OfferSupportCallback
+                    offerSupportCallback = result.OfferSupportCallback,
+                    listings = result.Listings,
+                    thinkingSteps = result.ThinkingSteps
                 },
                 Context.ConnectionAborted);
         }

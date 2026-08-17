@@ -12,18 +12,19 @@ public static class AiConversationSchemaMigrator
         var connection = context.Database.GetDbConnection();
         await SqlSchemaHelper.OpenIfNeededAsync(connection, cancellationToken).ConfigureAwait(false);
 
-        if (await SqlSchemaHelper.TableExistsAsync(connection, "AiConversations", cancellationToken)
+        if (!await SqlSchemaHelper.TableExistsAsync(connection, "AiConversations", cancellationToken)
                 .ConfigureAwait(false))
         {
-            return;
+            var userIdType = await SqlSchemaHelper.GetColumnSqlTypeAsync(connection, "Users", "Id", cancellationToken)
+                .ConfigureAwait(false)
+                ?? throw new InvalidOperationException("Cannot create AiConversations: dbo.Users.Id was not found.");
+
+            var createSql = string.Format(CreateTablesTemplate, userIdType);
+            await SqlSchemaHelper.ExecuteBatchAsync(connection, createSql, cancellationToken).ConfigureAwait(false);
         }
 
-        var userIdType = await SqlSchemaHelper.GetColumnSqlTypeAsync(connection, "Users", "Id", cancellationToken)
-            .ConfigureAwait(false)
-            ?? throw new InvalidOperationException("Cannot create AiConversations: dbo.Users.Id was not found.");
-
-        var createSql = string.Format(CreateTablesTemplate, userIdType);
-        await SqlSchemaHelper.ExecuteBatchAsync(connection, createSql, cancellationToken).ConfigureAwait(false);
+        await EnsureListingsJsonColumnAsync(connection, cancellationToken).ConfigureAwait(false);
+        await EnsureThinkingJsonColumnAsync(connection, cancellationToken).ConfigureAwait(false);
     }
 
     private const string CreateTablesTemplate = """
@@ -51,6 +52,8 @@ public static class AiConversationSchemaMigrator
             Language NVARCHAR(8) NOT NULL CONSTRAINT DF_AiConversationMessages_Language DEFAULT 'en',
             UsedKnowledge BIT NULL,
             SourcesJson NVARCHAR(MAX) NULL,
+            ListingsJson NVARCHAR(MAX) NULL,
+            ThinkingJson NVARCHAR(MAX) NULL,
             CreatedAtUtc DATETIME NOT NULL CONSTRAINT DF_AiConversationMessages_CreatedAtUtc DEFAULT GETUTCDATE(),
             CONSTRAINT FK_AiConversationMessages_Conversations
                 FOREIGN KEY (ConversationId) REFERENCES dbo.AiConversations(Id) ON DELETE CASCADE
@@ -59,4 +62,38 @@ public static class AiConversationSchemaMigrator
         CREATE INDEX IX_AiConversationMessages_Conversation_Created
             ON dbo.AiConversationMessages (ConversationId, CreatedAtUtc DESC);
         """;
+
+    private static async Task EnsureListingsJsonColumnAsync(
+        System.Data.Common.DbConnection connection,
+        CancellationToken cancellationToken)
+    {
+        if (await SqlSchemaHelper.ColumnExistsAsync(
+                connection, "AiConversationMessages", "ListingsJson", cancellationToken)
+            .ConfigureAwait(false))
+        {
+            return;
+        }
+
+        await SqlSchemaHelper.ExecuteBatchAsync(
+            connection,
+            "ALTER TABLE dbo.AiConversationMessages ADD ListingsJson NVARCHAR(MAX) NULL;",
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async Task EnsureThinkingJsonColumnAsync(
+        System.Data.Common.DbConnection connection,
+        CancellationToken cancellationToken)
+    {
+        if (await SqlSchemaHelper.ColumnExistsAsync(
+                connection, "AiConversationMessages", "ThinkingJson", cancellationToken)
+            .ConfigureAwait(false))
+        {
+            return;
+        }
+
+        await SqlSchemaHelper.ExecuteBatchAsync(
+            connection,
+            "ALTER TABLE dbo.AiConversationMessages ADD ThinkingJson NVARCHAR(MAX) NULL;",
+            cancellationToken).ConfigureAwait(false);
+    }
 }

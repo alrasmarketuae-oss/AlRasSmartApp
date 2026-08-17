@@ -84,6 +84,8 @@ public sealed class AiConversationAppService(IRasAlSouqDbContext dbContext) : IA
         string language,
         bool usedKnowledge,
         IReadOnlyList<string>? sources,
+        IReadOnlyList<AiProductListingDto>? listings = null,
+        IReadOnlyList<string>? thinkingSteps = null,
         CancellationToken cancellationToken = default)
     {
         var conversation = await dbContext.AiConversations
@@ -101,6 +103,8 @@ public sealed class AiConversationAppService(IRasAlSouqDbContext dbContext) : IA
             Language = NormalizeLanguage(language),
             UsedKnowledge = usedKnowledge,
             SourcesJson = sources is { Count: > 0 } ? JsonSerializer.Serialize(sources, JsonOptions) : null,
+            ListingsJson = listings is { Count: > 0 } ? JsonSerializer.Serialize(listings, JsonOptions) : null,
+            ThinkingJson = thinkingSteps is { Count: > 0 } ? JsonSerializer.Serialize(thinkingSteps, JsonOptions) : null,
             CreatedAtUtc = utcNow
         }, cancellationToken);
 
@@ -291,6 +295,34 @@ public sealed class AiConversationAppService(IRasAlSouqDbContext dbContext) : IA
             }
         }
 
+        IReadOnlyList<AiProductListingDto>? listings = null;
+        if (!string.IsNullOrWhiteSpace(message.ListingsJson))
+        {
+            try
+            {
+                listings = JsonSerializer.Deserialize<List<AiProductListingDto>>(
+                    message.ListingsJson, JsonOptions);
+            }
+            catch
+            {
+                listings = null;
+            }
+        }
+
+        IReadOnlyList<string>? thinkingSteps = null;
+        if (!string.IsNullOrWhiteSpace(message.ThinkingJson))
+        {
+            try
+            {
+                thinkingSteps = JsonSerializer.Deserialize<List<string>>(
+                    message.ThinkingJson, JsonOptions);
+            }
+            catch
+            {
+                thinkingSteps = null;
+            }
+        }
+
         return new AiConversationMessageDto(
             message.Id,
             message.Role == AiConversationMessageRole.User ? "user" : "assistant",
@@ -298,7 +330,9 @@ public sealed class AiConversationAppService(IRasAlSouqDbContext dbContext) : IA
             message.Language,
             message.UsedKnowledge,
             sources,
-            UtcDateTimeHelper.FormatApiDateTime(message.CreatedAtUtc)!);
+            UtcDateTimeHelper.FormatApiDateTime(message.CreatedAtUtc)!,
+            listings,
+            thinkingSteps);
     }
 
     private static string NormalizeSessionId(string clientSessionId)

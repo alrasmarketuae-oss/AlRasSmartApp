@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import { formatChatRelativeTime } from '../../utils/formatChatRelativeTime'
 import { resolveAssetUrl } from '../../lib/assets'
+import type { GalleryMediaItem } from '../ui/ImageGallery'
 import VoiceAudioPlayer from './VoiceAudioPlayer'
 import {
   formatFileSize,
@@ -15,9 +16,14 @@ import { IconDocument, IconMapPin, IconMic } from '../icons'
 type ChatMessageBubbleProps = {
   message: ChatMessage
   isMine: boolean
+  onOpenMedia?: (item: GalleryMediaItem) => void
 }
 
-export default function ChatMessageBubble({ message, isMine }: ChatMessageBubbleProps) {
+export default function ChatMessageBubble({
+  message,
+  isMine,
+  onOpenMedia,
+}: ChatMessageBubbleProps) {
   const { t, locale } = useAppPreferences()
   const timeLabel =
     formatChatRelativeTime(message.sentAtUtc, locale) || message.relativeTime
@@ -55,7 +61,11 @@ export default function ChatMessageBubble({ message, isMine }: ChatMessageBubble
                 </p>
               </div>
             ) : null}
-            <MessageBody message={message} isMine={isMine} />
+            <MessageBody
+              message={message}
+              isMine={isMine}
+              onOpenMedia={onOpenMedia}
+            />
           </>
         )}
         <div
@@ -96,14 +106,14 @@ function DeliveryIndicator({ message }: { message: ChatMessage }) {
   return <span className="font-semibold text-white/75">✓</span>
 }
 
-function MessageBody({ message, isMine }: ChatMessageBubbleProps) {
+function MessageBody({ message, isMine, onOpenMedia }: ChatMessageBubbleProps) {
   switch (message.messageType) {
     case 3:
-      return <ChatImageMessage message={message} />
+      return <ChatImageMessage message={message} onOpenMedia={onOpenMedia} />
     case 2:
       return <ChatVoiceMessage message={message} isMine={isMine} />
     case 5:
-      return <ChatVideoMessage message={message} />
+      return <ChatVideoMessage message={message} onOpenMedia={onOpenMedia} />
     case 6:
       return <ChatFileMessage message={message} isMine={isMine} />
     case 4: {
@@ -153,29 +163,76 @@ function mediaSource(path: string, message: ChatMessage): string {
   return resolveAssetUrl(path)
 }
 
-function ChatImageMessage({ message }: { message: ChatMessage }) {
-  const imagePaths = parseImageContent(message.content)
-  const displayPaths = imagePaths.length > 0 ? imagePaths : [message.content]
+export function getChatGalleryItems(message: ChatMessage): GalleryMediaItem[] {
+  if (message.isDeleted) return []
+  if (message.messageType === 3) {
+    const imagePaths = parseImageContent(message.content)
+    const displayPaths = imagePaths.length > 0 ? imagePaths : [message.content]
+    return displayPaths.map((path, index) => ({
+      src: mediaSource(path, message),
+      kind: 'image' as const,
+      path: `${message.messageId}:${index}`,
+    }))
+  }
+  if (message.messageType === 5) {
+    return [
+      {
+        src: mediaSource(message.content, message),
+        kind: 'video',
+        path: `${message.messageId}:0`,
+      },
+    ]
+  }
+  return []
+}
 
-  if (displayPaths.length === 1) {
-    return <ChatSingleImage url={mediaSource(displayPaths[0], message)} />
+function ChatImageMessage({
+  message,
+  onOpenMedia,
+}: {
+  message: ChatMessage
+  onOpenMedia?: (item: GalleryMediaItem) => void
+}) {
+  const items = getChatGalleryItems(message)
+
+  if (items.length === 1) {
+    return <ChatSingleImage item={items[0]} onOpenMedia={onOpenMedia} />
   }
 
   return (
-    <div className={`grid gap-1 ${displayPaths.length > 2 ? 'grid-cols-2' : 'grid-cols-2'}`}>
-      {displayPaths.map((path, index) => (
-        <ChatSingleImage key={`${path}-${index}`} url={mediaSource(path, message)} compact />
+    <div className="grid grid-cols-2 gap-1">
+      {items.map((item) => (
+        <ChatSingleImage
+          key={item.path}
+          item={item}
+          compact
+          onOpenMedia={onOpenMedia}
+        />
       ))}
     </div>
   )
 }
 
-function ChatSingleImage({ url, compact = false }: { url: string; compact?: boolean }) {
+function ChatSingleImage({
+  item,
+  compact = false,
+  onOpenMedia,
+}: {
+  item: GalleryMediaItem
+  compact?: boolean
+  onOpenMedia?: (item: GalleryMediaItem) => void
+}) {
   const [loaded, setLoaded] = useState(false)
   const [failed, setFailed] = useState(false)
+  const url = item.src
 
   return (
-    <a href={url} target="_blank" rel="noreferrer" className="relative block overflow-hidden rounded-xl">
+    <button
+      type="button"
+      title="Preview"
+      onClick={() => onOpenMedia?.(item)}
+      className="relative block overflow-hidden rounded-xl cursor-zoom-in"
+    >
       {!loaded && !failed ? (
         <div className={`flex items-center justify-center bg-black/10 text-xs opacity-70 ${compact ? 'h-28 min-w-[120px]' : 'h-40 min-w-[180px]'}`}>
           ...
@@ -194,7 +251,7 @@ function ChatSingleImage({ url, compact = false }: { url: string; compact?: bool
           onError={() => setFailed(true)}
         />
       )}
-    </a>
+    </button>
   )
 }
 
@@ -263,14 +320,32 @@ function ChatFileMessage({ message, isMine }: { message: ChatMessage; isMine: bo
   )
 }
 
-function ChatVideoMessage({ message }: { message: ChatMessage }) {
-  const src = mediaSource(message.content, message)
+function ChatVideoMessage({
+  message,
+  onOpenMedia,
+}: {
+  message: ChatMessage
+  onOpenMedia?: (item: GalleryMediaItem) => void
+}) {
+  const item = getChatGalleryItems(message)[0]
+  if (!item) return null
   return (
-    <video
-      src={src}
-      controls
-      playsInline
-      className="max-h-64 w-full max-w-xs rounded-xl bg-black"
-    />
+    <button
+      type="button"
+      title="Preview"
+      onClick={() => onOpenMedia?.(item)}
+      className="relative block w-full max-w-xs overflow-hidden rounded-xl bg-black cursor-zoom-in"
+    >
+      <video
+        src={item.src}
+        muted
+        playsInline
+        preload="metadata"
+        className="pointer-events-none max-h-64 w-full object-contain"
+      />
+      <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/30 text-3xl text-white">
+        ▶
+      </span>
+    </button>
   )
 }

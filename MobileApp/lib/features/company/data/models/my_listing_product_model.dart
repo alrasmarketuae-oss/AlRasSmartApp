@@ -575,7 +575,9 @@ class MyListingProductModel {
       currency: (json['currency'] ?? json['Currency'] ?? 'AED')
           .toString()
           .toUpperCase(),
-      quantity: json['quantity']?.toString() ?? '',
+      quantity: json['quantity']?.toString() ??
+          json['Quantity']?.toString() ??
+          '',
       unitName: () {
         final localized = LocalizedProductText.pickForLanguage(
           json: json,

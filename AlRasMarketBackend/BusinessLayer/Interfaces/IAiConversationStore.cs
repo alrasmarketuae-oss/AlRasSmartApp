@@ -22,7 +22,9 @@ public sealed record AiConversationMessageDto(
     string Language,
     bool? UsedKnowledge,
     IReadOnlyList<string>? Sources,
-    string CreatedAtUtc);
+    string CreatedAtUtc,
+    IReadOnlyList<AiProductListingDto>? Listings = null,
+    IReadOnlyList<string>? ThinkingSteps = null);
 
 public sealed record AiConversationMessagesPageDto(
     IReadOnlyList<AiConversationMessageDto> Messages,
@@ -55,6 +57,8 @@ public interface IAiConversationStore
         string language,
         bool usedKnowledge,
         IReadOnlyList<string>? sources,
+        IReadOnlyList<AiProductListingDto>? listings = null,
+        IReadOnlyList<string>? thinkingSteps = null,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<AiAssistantHistoryMessage>> GetRecentHistoryAsync(

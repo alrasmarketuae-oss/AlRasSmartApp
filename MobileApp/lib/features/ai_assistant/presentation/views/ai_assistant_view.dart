@@ -9,7 +9,9 @@ import 'package:alrasmarket/core/serveses/cached_constants.dart' as cache;
 import 'package:alrasmarket/features/ai_assistant/data/ai_assistant_realtime_service.dart';
 import 'package:alrasmarket/features/ai_assistant/data/ai_assistant_repository.dart';
 import 'package:alrasmarket/features/ai_assistant/presentation/widgets/ai_ad_plan_form.dart';
+import 'package:alrasmarket/features/ai_assistant/presentation/widgets/ai_product_listings.dart';
 import 'package:alrasmarket/features/ai_assistant/presentation/widgets/ai_support_callback_form.dart';
+import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/features/ai_assistant/presentation/views/ai_assistant_history_view.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
@@ -533,7 +535,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
         });
         _scrollToEnd();
       },
-      onCompleted: (answer, {required offerSupportCallback}) {
+      onCompleted: (answer, {required offerSupportCallback, listings, thinkingSteps}) {
         if (!mounted) return;
         final isAr = Localizations.localeOf(context).languageCode == 'ar';
         var finalAnswer = answer;
@@ -547,6 +549,12 @@ class _AiAssistantViewState extends State<AiAssistantView> {
         final supportQuestion = responseId == null
             ? null
             : _questionForResponse[responseId];
+        final parsedListings = AiProductListings.parse(listings);
+        final parsedThinking = thinkingSteps
+                ?.map((e) => e.trim())
+                .where((e) => e.isNotEmpty)
+                .toList() ??
+            <String>[];
         setState(() {
           _isThinking = false;
           _inFlightResponseId = null;
@@ -562,10 +570,24 @@ class _AiAssistantViewState extends State<AiAssistantView> {
                   looksLikeTemporaryAssistantFailure(target.text)) {
                 target.text = finalAnswer;
               }
-              if (target.thinkingSteps.isEmpty && _thinkingSteps.isNotEmpty) {
+              if (parsedThinking.isNotEmpty) {
+                final merged = <String>[
+                  ...target.thinkingSteps,
+                  ...parsedThinking.where(
+                    (step) => !target.thinkingSteps.contains(step),
+                  ),
+                ];
+                target.thinkingSteps
+                  ..clear()
+                  ..addAll(merged);
+              } else if (target.thinkingSteps.isEmpty &&
+                  _thinkingSteps.isNotEmpty) {
                 target.thinkingSteps
                   ..clear()
                   ..addAll(_thinkingSteps);
+              }
+              if (parsedListings.isNotEmpty) {
+                target.listings = parsedListings;
               }
               target.showSupportCallbackForm = offerSupportCallback;
               target.supportQuestion = supportQuestion;
@@ -574,10 +596,13 @@ class _AiAssistantViewState extends State<AiAssistantView> {
                 _ChatMessage(
                   text: finalAnswer,
                   isUser: false,
-                  thinkingSteps: List<String>.from(_thinkingSteps),
+                  thinkingSteps: parsedThinking.isNotEmpty
+                      ? parsedThinking
+                      : List<String>.from(_thinkingSteps),
                   showSupportCallbackForm: offerSupportCallback,
                   supportQuestion: supportQuestion,
                   responseId: responseId,
+                  listings: parsedListings,
                 ),
               );
             }
@@ -729,6 +754,8 @@ class _AiAssistantViewState extends State<AiAssistantView> {
                 (message) => _ChatMessage(
                   text: message.content,
                   isUser: message.role.toLowerCase() == 'user',
+                  listings: AiProductListings.parse(message.listings),
+                  thinkingSteps: List<String>.from(message.thinkingSteps),
                 ),
               ),
             );
@@ -1031,7 +1058,9 @@ class _ChatMessage {
     this.showSupportCallbackForm = false,
     this.supportQuestion,
     this.responseId,
-  }) : thinkingSteps = thinkingSteps ?? <String>[];
+    List<MyListingProductModel>? listings,
+  })  : thinkingSteps = thinkingSteps ?? <String>[],
+        listings = listings ?? <MyListingProductModel>[];
 
   String text;
   final bool isUser;
@@ -1041,6 +1070,7 @@ class _ChatMessage {
   bool showSupportCallbackForm;
   String? supportQuestion;
   final int? responseId;
+  List<MyListingProductModel> listings;
 }
 
 class _MessageBubble extends StatelessWidget {
@@ -1094,7 +1124,7 @@ class _MessageBubble extends StatelessWidget {
               _ThinkingTrace(
                 steps: message.thinkingSteps,
                 title: isAr ? 'التفكير' : 'Thinking',
-                initiallyExpanded: false,
+                initiallyExpanded: true,
                 durationMs: message.thinkingDurationMs,
                 colors: colors,
               ),
@@ -1151,27 +1181,36 @@ class _MessageBubble extends StatelessWidget {
         mainAxisAlignment: isUser
             ? MainAxisAlignment.end
             : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isUser) ...[
             const _AiAvatar(size: 26),
             SizedBox(width: 8.w),
           ],
           Flexible(
-            child: GestureDetector(
-              onLongPress: () async {
-                await Clipboard.setData(ClipboardData(text: message.text));
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      isAr ? 'تم نسخ الرسالة' : 'Message copied',
-                    ),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-              },
-              child: bubble,
+            child: Column(
+              crossAxisAlignment: isUser
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
+              children: [
+                GestureDetector(
+                  onLongPress: () async {
+                    await Clipboard.setData(ClipboardData(text: message.text));
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          isAr ? 'تم نسخ الرسالة' : 'Message copied',
+                        ),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  child: bubble,
+                ),
+                if (!isUser && message.listings.isNotEmpty)
+                  AiProductListings(products: message.listings),
+              ],
             ),
           ),
         ],

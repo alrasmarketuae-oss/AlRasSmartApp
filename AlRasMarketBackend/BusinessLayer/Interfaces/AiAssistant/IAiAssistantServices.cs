@@ -28,12 +28,32 @@ public sealed class AiAssistantCorrectDictationRequest
 
 public sealed record AiAssistantCorrectDictationResult(string Text);
 
+public sealed record AiProductListingDto(
+    Guid ProductId,
+    string? ProductCode,
+    string? NameEn,
+    string? NameAr,
+    decimal Price,
+    string? Currency,
+    decimal? UsdPrice,
+    decimal? PriceAed,
+    long Quantity,
+    string? UnitName,
+    byte? CategoryId,
+    byte? ProductTypeId,
+    string? ProductTypeName,
+    string? SearchListingChannel,
+    bool HasRetailPricing = false,
+    IReadOnlyList<string>? Images = null);
+
 public sealed record AiAssistantAnswer(
     string Answer,
     string Language,
     bool UsedKnowledge,
     IReadOnlyList<string> Sources,
-    bool OfferSupportCallback = false);
+    bool OfferSupportCallback = false,
+    IReadOnlyList<AiProductListingDto>? Listings = null,
+    IReadOnlyList<string>? ThinkingSteps = null);
 
 public sealed record AiAssistantHistoryMessage(string Role, string Content);
 

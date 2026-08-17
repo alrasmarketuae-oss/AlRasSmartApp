@@ -43,14 +43,20 @@ class AiConversationMessageModel {
     required this.role,
     required this.content,
     required this.createdAtUtc,
+    this.listings = const [],
+    this.thinkingSteps = const [],
   });
 
   final int id;
   final String role;
   final String content;
   final String createdAtUtc;
+  final List<dynamic> listings;
+  final List<String> thinkingSteps;
 
   factory AiConversationMessageModel.fromJson(Map<String, dynamic> json) {
+    final rawListings = json['listings'] ?? json['Listings'];
+    final rawThinking = json['thinkingSteps'] ?? json['ThinkingSteps'];
     return AiConversationMessageModel(
       id: json['id'] as int? ?? json['Id'] as int? ?? 0,
       role: (json['role'] ?? json['Role'] ?? 'user').toString(),
@@ -58,6 +64,13 @@ class AiConversationMessageModel {
       createdAtUtc: json['createdAtUtc']?.toString() ??
           json['CreatedAtUtc']?.toString() ??
           '',
+      listings: rawListings is List ? List<dynamic>.from(rawListings) : const [],
+      thinkingSteps: rawThinking is List
+          ? rawThinking
+              .map((e) => e?.toString().trim() ?? '')
+              .where((e) => e.isNotEmpty)
+              .toList()
+          : const [],
     );
   }
 }
