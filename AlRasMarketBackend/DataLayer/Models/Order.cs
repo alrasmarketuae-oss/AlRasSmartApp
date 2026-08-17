@@ -59,11 +59,18 @@ public class Order
     public string? ReturnAdminResponse { get; set; }
     public DateTime? ReturnRespondedAtUtc { get; set; }
 
+    public byte? CancellationReasonId { get; set; }
+    public DateTime? CancelledAt { get; set; }
+    public Guid? CancelledByUserId { get; set; }
+    public string? CancellationNote { get; set; }
+
     public User? FromUser { get; set; }
     public User? ToUser { get; set; }
     public Product? Product { get; set; }
     public OrderStatus? Status { get; set; }
     public Port? Port { get; set; }
+    public OrderCancellationReason? CancellationReason { get; set; }
+    public User? CancelledByUser { get; set; }
     public ICollection<OrderVideo> Videos { get; set; } = [];
     public ICollection<OrderImage> Images { get; set; } = [];
     public ICollection<OrderStatusHistory> StatusHistories { get; set; } = [];

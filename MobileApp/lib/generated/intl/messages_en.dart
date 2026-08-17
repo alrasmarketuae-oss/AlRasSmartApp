@@ -1183,6 +1183,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "pleaseLoginToChatWithSupport": MessageLookupByLibrary.simpleMessage(
       "Please login to chat with support.",
     ),
+    "chatReply": MessageLookupByLibrary.simpleMessage("Reply"),
+    "chatForward": MessageLookupByLibrary.simpleMessage("Forward"),
+    "chatDeleteForMe": MessageLookupByLibrary.simpleMessage("Delete for me"),
+    "chatDeleteForEveryone":
+        MessageLookupByLibrary.simpleMessage("Delete for everyone"),
+    "chatDeletedMessage":
+        MessageLookupByLibrary.simpleMessage("This message was deleted"),
+    "chatForwarded": MessageLookupByLibrary.simpleMessage("Forwarded"),
+    "chatReplyTo": MessageLookupByLibrary.simpleMessage("Reply to"),
     "pleaseLoginToConfirmYourOrder": MessageLookupByLibrary.simpleMessage(
       "Please login to confirm your order.",
     ),

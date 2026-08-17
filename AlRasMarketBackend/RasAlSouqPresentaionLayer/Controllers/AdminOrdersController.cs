@@ -25,6 +25,13 @@ public class AdminOrdersController(
         return Ok(result);
     }
 
+    [HttpGet("cancellation-reasons")]
+    public async Task<IActionResult> GetCancellationReasons(CancellationToken cancellationToken = default)
+    {
+        var result = await ordersAppService.GetCancellationReasonsAsync(cancellationToken);
+        return Ok(result);
+    }
+
     [HttpGet("{orderId:long}")]
     public async Task<IActionResult> GetOrderById(
         [FromRoute] long orderId,
@@ -90,6 +97,8 @@ public class AdminOrdersController(
                 userId,
                 orderId,
                 request.StatusId,
+                request.CancellationReasonId,
+                request.CancellationNote,
                 cancellationToken);
 
             return Ok(result);

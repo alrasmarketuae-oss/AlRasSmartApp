@@ -22,6 +22,7 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
     public DbSet<OrderVideo> OrderVideos => Set<OrderVideo>();
     public DbSet<OrderImage> OrderImages => Set<OrderImage>();
     public DbSet<OrderStatusHistory> OrderStatusHistories => Set<OrderStatusHistory>();
+    public DbSet<OrderCancellationReason> OrderCancellationReasons => Set<OrderCancellationReason>();
     public DbSet<InternationalShippingPost> InternationalShippingPosts => Set<InternationalShippingPost>();
     public DbSet<ShipmentStatus> ShipmentStatuses => Set<ShipmentStatus>();
     public DbSet<InternationalShipment> InternationalShipments => Set<InternationalShipment>();
@@ -282,6 +283,14 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.Property(x => x.SeenAtUtc).HasColumnType("datetime");
             entity.Property(x => x.IsDelivered).HasDefaultValue(false);
             entity.Property(x => x.DeliveredAtUtc).HasColumnType("datetime");
+            entity.Property(x => x.ReplyToMessageId).HasMaxLength(32).IsUnicode(false);
+            entity.Property(x => x.ReplyToPreview).HasMaxLength(280);
+            entity.Property(x => x.ReplyToMessageType).HasColumnType("tinyint");
+            entity.Property(x => x.IsForwarded).HasDefaultValue(false);
+            entity.Property(x => x.IsDeleted).HasDefaultValue(false);
+            entity.Property(x => x.DeletedAtUtc).HasColumnType("datetime");
+            entity.Property(x => x.DeletedForFromUser).HasDefaultValue(false);
+            entity.Property(x => x.DeletedForToUser).HasDefaultValue(false);
             entity.HasOne(x => x.FromUser).WithMany().HasForeignKey(x => x.FromUserId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(x => x.ToUser).WithMany().HasForeignKey(x => x.ToUserId).OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(x => x.FromUserId);
@@ -613,6 +622,66 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.HasIndex(x => new { x.CartId, x.ProductId, x.UnitId }).IsUnique();
         });
 
+        modelBuilder.Entity<OrderCancellationReason>(entity =>
+        {
+            entity.ToTable("OrderCancellationReasons");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.NameEn).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.NameAr).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.IsActive).HasDefaultValue(true);
+            entity.Property(x => x.CreatedAt).HasColumnType("datetime2").HasDefaultValueSql("(sysutcdatetime())");
+            entity.HasData(
+                new OrderCancellationReason
+                {
+                    Id = 1,
+                    NameEn = "Buyer requested cancellation",
+                    NameAr = "طلب المشتري إلغاء الصفقة",
+                    IsActive = true,
+                    CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new OrderCancellationReason
+                {
+                    Id = 2,
+                    NameEn = "Supplier unavailable",
+                    NameAr = "المورد غير متاح",
+                    IsActive = true,
+                    CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new OrderCancellationReason
+                {
+                    Id = 3,
+                    NameEn = "Product unavailable",
+                    NameAr = "المنتج غير متوفر",
+                    IsActive = true,
+                    CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new OrderCancellationReason
+                {
+                    Id = 4,
+                    NameEn = "Payment issue",
+                    NameAr = "مشكلة في الدفع",
+                    IsActive = true,
+                    CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new OrderCancellationReason
+                {
+                    Id = 5,
+                    NameEn = "Admin cancelled",
+                    NameAr = "ألغاه المسؤول",
+                    IsActive = true,
+                    CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new OrderCancellationReason
+                {
+                    Id = 6,
+                    NameEn = "Other",
+                    NameAr = "سبب آخر",
+                    IsActive = true,
+                    CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                });
+        });
+
         modelBuilder.Entity<Order>(entity =>
         {
             entity.ToTable("Orders");
@@ -644,6 +713,15 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.Property(x => x.ReturnReason).HasMaxLength(2000);
             entity.Property(x => x.ReturnMediaPathsJson).HasMaxLength(4000);
             entity.Property(x => x.ReturnAdminResponse).HasMaxLength(2000);
+            entity.Property(x => x.CancellationNote).HasMaxLength(2000);
+            entity.HasOne(x => x.CancellationReason)
+                .WithMany(x => x.Orders)
+                .HasForeignKey(x => x.CancellationReasonId)
+                .OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(x => x.CancelledByUser)
+                .WithMany()
+                .HasForeignKey(x => x.CancelledByUserId)
+                .OnDelete(DeleteBehavior.NoAction);
             entity.HasOne(x => x.PendingOrder).WithMany().HasForeignKey(x => x.PendingOrderId).OnDelete(DeleteBehavior.NoAction);
             entity.HasOne(x => x.Port).WithMany().HasForeignKey(x => x.PortId).OnDelete(DeleteBehavior.NoAction);
             entity.HasIndex(x => x.CreatedAt);

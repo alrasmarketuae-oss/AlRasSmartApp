@@ -1184,6 +1184,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "pleaseLoginToChatWithSupport": MessageLookupByLibrary.simpleMessage(
       "يرجى تسجيل الدخول للمحادثة مع فريق الدعم.",
     ),
+    "chatReply": MessageLookupByLibrary.simpleMessage("رد"),
+    "chatForward": MessageLookupByLibrary.simpleMessage("تحويل"),
+    "chatDeleteForMe": MessageLookupByLibrary.simpleMessage("حذف لدي"),
+    "chatDeleteForEveryone":
+        MessageLookupByLibrary.simpleMessage("حذف لدى الجميع"),
+    "chatDeletedMessage":
+        MessageLookupByLibrary.simpleMessage("تم حذف هذه الرسالة"),
+    "chatForwarded": MessageLookupByLibrary.simpleMessage("محوّلة"),
+    "chatReplyTo": MessageLookupByLibrary.simpleMessage("الرد على"),
     "pleaseLoginToConfirmYourOrder": MessageLookupByLibrary.simpleMessage(
       "يرجى تسجيل الدخول لتأكيد الطلب.",
     ),

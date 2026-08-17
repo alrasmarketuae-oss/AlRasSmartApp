@@ -415,6 +415,77 @@ public class ChatController(
         }
     }
 
+    [HttpPost("messages/forward")]
+    public async Task<ActionResult<ChatMessageDto>> ForwardMessage(
+        [FromBody] ForwardChatMessageRequest request,
+        CancellationToken ct)
+    {
+        var userId = GetCurrentUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var result = await chatAppService.ForwardMessageAsync(userId, request, ct);
+            await PublishMessageCreatedAsync(result, ct);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Forbid(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(StatusCodes.Status409Conflict, new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("messages/{messageId}/delete")]
+    public async Task<ActionResult<ChatMessageDeletedDto>> DeleteMessage(
+        [FromRoute] string messageId,
+        [FromBody] DeleteChatMessageRequest request,
+        CancellationToken ct)
+    {
+        var userId = GetCurrentUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var result = await chatAppService.DeleteMessageAsync(userId, messageId, request.Scope, ct);
+            await PushMessageDeletedAsync(result, ct);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Forbid(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpPost("seen")]
     public async Task<IActionResult> MarkConversationSeen(
         [FromBody] MarkConversationSeenRequest request,
@@ -894,6 +965,43 @@ public class ChatController(
             if (!string.Equals(senderGroup, receiverGroup, StringComparison.Ordinal))
             {
                 await chatHub.Clients.Group(receiverGroup).SendAsync("messageUpdated", result, ct);
+            }
+        }
+        catch
+        {
+            // ignore realtime failures
+        }
+    }
+
+    private async Task PushMessageDeletedAsync(ChatMessageDeletedDto result, CancellationToken ct)
+    {
+        if (string.Equals(result.Scope, "everyone", StringComparison.OrdinalIgnoreCase)
+            && result.Message is not null)
+        {
+            await PushMessageUpdatedAsync(result.Message, ct);
+        }
+
+        var senderGroup = ChatHub.GetGroupName(result.FromUserId);
+        var receiverGroup = ChatHub.GetGroupName(result.ToUserId);
+        var deleterGroup = ChatHub.GetGroupName(result.DeletedByUserId);
+
+        try
+        {
+            if (string.Equals(result.Scope, "me", StringComparison.OrdinalIgnoreCase))
+            {
+                await chatHub.Clients.Group(deleterGroup).SendAsync("messageDeleted", result, ct);
+                if (!string.Equals(deleterGroup, senderGroup, StringComparison.Ordinal))
+                {
+                    await chatHub.Clients.Group(senderGroup).SendAsync("messageDeleted", result, ct);
+                }
+            }
+            else
+            {
+                await chatHub.Clients.Group(senderGroup).SendAsync("messageDeleted", result, ct);
+                if (!string.Equals(senderGroup, receiverGroup, StringComparison.Ordinal))
+                {
+                    await chatHub.Clients.Group(receiverGroup).SendAsync("messageDeleted", result, ct);
+                }
             }
         }
         catch

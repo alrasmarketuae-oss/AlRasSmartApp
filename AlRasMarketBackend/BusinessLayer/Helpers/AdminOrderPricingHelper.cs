@@ -227,7 +227,18 @@ public static class AdminOrderPricingHelper
             PortId = detail.PortId,
             PortName = detail.PortName,
             ImagePaths = detail.ImagePaths,
-            VideoPaths = detail.VideoPaths
+            VideoPaths = detail.VideoPaths,
+            StripeRefundId = detail.StripeRefundId,
+            RefundedAtUtc = detail.RefundedAtUtc,
+            IsRefunded = detail.IsRefunded,
+            CancellationReasonId = detail.CancellationReasonId,
+            CancellationReasonNameEn = detail.CancellationReasonNameEn,
+            CancellationReasonNameAr = detail.CancellationReasonNameAr,
+            CancellationNote = detail.CancellationNote,
+            CancelledAt = detail.CancelledAt,
+            CancelledByUserId = detail.CancelledByUserId,
+            CancelledByName = detail.CancelledByName,
+            CancelledByRole = detail.CancelledByRole
         };
     }
 

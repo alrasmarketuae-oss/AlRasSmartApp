@@ -85,7 +85,7 @@ public sealed partial class ChatAppService(
 
         var query = dbContext.ChatMessages
             .AsNoTracking()
-            .Where(m => m.ToUserId == inboxOwnerId && !m.IsSeen);
+            .Where(m => m.ToUserId == inboxOwnerId && !m.IsSeen && !m.IsDeleted && !m.DeletedForToUser);
 
         int count;
         if (isSharedSupportInbox && !await IsSuperAdminUserAsync(viewerId, ct))
@@ -200,8 +200,10 @@ public sealed partial class ChatAppService(
         var query = dbContext.ChatMessages
             .AsNoTracking()
             .Where(m =>
-                (m.FromUserId == viewerId && m.ToUserId == partnerId) ||
-                (m.FromUserId == partnerId && m.ToUserId == viewerId));
+                ((m.FromUserId == viewerId && m.ToUserId == partnerId) ||
+                 (m.FromUserId == partnerId && m.ToUserId == viewerId))
+                && !((m.FromUserId == viewerId && m.DeletedForFromUser)
+                     || (m.ToUserId == viewerId && m.DeletedForToUser)));
 
         if (!string.IsNullOrWhiteSpace(beforeMessageId))
         {
@@ -270,6 +272,8 @@ public sealed partial class ChatAppService(
             IsDelivered = false
         };
 
+        await ApplyReplySnapshotAsync(message, fromId, toId, request.ReplyToMessageId, ct);
+
         await dbContext.ChatMessages.AddAsync(message, ct);
         await dbContext.SaveChangesAsync(ct);
         InvalidateConversationCache(fromId, toId);
@@ -291,6 +295,11 @@ public sealed partial class ChatAppService(
         if (message.FromUserId != ownerId)
         {
             throw new UnauthorizedAccessException("Only the sender can edit this message.");
+        }
+
+        if (message.IsDeleted)
+        {
+            throw new InvalidOperationException("Deleted messages cannot be edited.");
         }
 
         if (message.MessageType != ChatMessageType.Text)
@@ -691,6 +700,8 @@ public sealed partial class ChatAppService(
             .Where(m => m.FromUserId == inboxOwnerId || m.ToUserId == inboxOwnerId)
             .ToListAsync(ct);
 
+        messages = messages.Where(m => !IsHiddenForParty(m, inboxOwnerId)).ToList();
+
         if (messages.Count == 0)
         {
             return [];
@@ -710,7 +721,8 @@ public sealed partial class ChatAppService(
                 var unread = g.Count(x =>
                     x.Message.FromUserId != inboxOwnerId &&
                     x.Message.ToUserId == inboxOwnerId &&
-                    !x.Message.IsSeen);
+                    !x.Message.IsSeen &&
+                    !x.Message.IsDeleted);
 
                 return new
                 {
@@ -821,6 +833,11 @@ public sealed partial class ChatAppService(
 
     private static string BuildPreview(ChatMessage message)
     {
+        if (message.IsDeleted)
+        {
+            return "تم حذف هذه الرسالة";
+        }
+
         if (ChatE2eContentHelper.IsEncryptedEnvelope(message.Content))
         {
             return "🔒 رسالة مشفرة";
@@ -977,7 +994,7 @@ public sealed partial class ChatAppService(
             FromUserId: message.FromUserId.ToString("D"),
             ToUserId: message.ToUserId.ToString("D"),
             MessageType: MapApiMessageType(message.MessageType),
-            Content: message.Content,
+            Content: message.IsDeleted ? string.Empty : message.Content,
             SentAtUtc: FormatUtc(message.SentAtUtc)!,
             RelativeTime: FormatRelativeTime(utcNow, message.SentAtUtc),
             IsEdited: message.IsEdited,
@@ -985,13 +1002,22 @@ public sealed partial class ChatAppService(
             SeenAtUtc: FormatUtc(message.SeenAtUtc),
             IsDelivered: message.IsDelivered,
             DeliveredAtUtc: FormatUtc(message.DeliveredAtUtc),
-            MediaMimeType: message.MessageType switch
-            {
-                ChatMessageType.Voice => VoiceFileHelper.GetContentType(message.Content),
-                ChatMessageType.Video => GetVideoContentType(message.Content),
-                ChatMessageType.File => GetFileContentType(message.Content),
-                _ => null
-            });
+            MediaMimeType: message.IsDeleted
+                ? null
+                : message.MessageType switch
+                {
+                    ChatMessageType.Voice => VoiceFileHelper.GetContentType(message.Content),
+                    ChatMessageType.Video => GetVideoContentType(message.Content),
+                    ChatMessageType.File => GetFileContentType(message.Content),
+                    _ => null
+                },
+            ReplyToMessageId: message.ReplyToMessageId,
+            ReplyToPreview: message.ReplyToPreview,
+            ReplyToMessageType: message.ReplyToMessageType is null
+                ? null
+                : MapApiMessageType(message.ReplyToMessageType.Value),
+            IsForwarded: message.IsForwarded,
+            IsDeleted: message.IsDeleted);
 
     private static string? FormatUtc(DateTime? value) =>
         value.HasValue ? UtcDateTimeHelper.FormatApiDateTime(value.Value) : null;

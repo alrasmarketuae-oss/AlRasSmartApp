@@ -15,6 +15,7 @@ import { useAppDispatch } from '../store/hooks'
 import type {
   ChatMessage,
   ChatMessagesDeliveredPayload,
+  ChatMessageDeletedPayload,
   ConversationSeenPayload,
 } from '../types/chat'
 
@@ -30,6 +31,7 @@ type ChatContextValue = {
   subscribeMessageUpdated: (handler: (message: ChatMessage) => void) => () => void
   subscribeConversationSeen: (handler: (payload: ConversationSeenPayload) => void) => () => void
   subscribeMessagesDelivered: (handler: (payload: ChatMessagesDeliveredPayload) => void) => () => void
+  subscribeMessageDeleted: (handler: (payload: ChatMessageDeletedPayload) => void) => () => void
 }
 
 const ChatContext = createContext<ChatContextValue | null>(null)
@@ -44,6 +46,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const updatedListenersRef = useRef(new Set<(message: ChatMessage) => void>())
   const seenListenersRef = useRef(new Set<(payload: ConversationSeenPayload) => void>())
   const deliveredListenersRef = useRef(new Set<(payload: ChatMessagesDeliveredPayload) => void>())
+  const deletedListenersRef = useRef(new Set<(payload: ChatMessageDeletedPayload) => void>())
 
   const chatPollingInterval = isHubConnected ? 0 : CHAT_POLL_WHEN_DISCONNECTED_MS
 
@@ -91,6 +94,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     onMessagesDelivered: (payload) => {
       deliveredListenersRef.current.forEach((handler) => handler(payload))
     },
+    onMessageDeleted: (payload) => {
+      deletedListenersRef.current.forEach((handler) => handler(payload))
+      invalidateChat()
+      invalidateThread(payload.fromUserId)
+      invalidateThread(payload.toUserId)
+    },
     onUserLastSeen: () => {
       dispatch(adminApi.util.invalidateTags([{ type: 'Chat', id: 'INBOX' }]))
     },
@@ -131,6 +140,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     [],
   )
 
+  const subscribeMessageDeleted = useCallback(
+    (handler: (payload: ChatMessageDeletedPayload) => void) => {
+      deletedListenersRef.current.add(handler)
+      return () => {
+        deletedListenersRef.current.delete(handler)
+      }
+    },
+    [],
+  )
+
   const value = useMemo(
     (): ChatContextValue => ({
       totalUnread: unreadData?.totalUnread ?? 0,
@@ -140,6 +159,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       subscribeMessageUpdated,
       subscribeConversationSeen,
       subscribeMessagesDelivered,
+      subscribeMessageDeleted,
     }),
     [
       unreadData?.totalUnread,
@@ -149,6 +169,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       subscribeMessageUpdated,
       subscribeConversationSeen,
       subscribeMessagesDelivered,
+      subscribeMessageDeleted,
     ],
   )
 

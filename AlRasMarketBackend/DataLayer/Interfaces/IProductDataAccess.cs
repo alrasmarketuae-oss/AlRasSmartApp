@@ -97,6 +97,18 @@ public interface IProductDataAccess
         int take,
         CancellationToken cancellationToken = default);
 
+    Task<(List<ProductPublicRow> Rows, int TotalCount)> SearchPublicProductsByNameAnyPageAsync(
+        IReadOnlyList<string> matchWords,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default);
+
+    Task<(List<ProductPublicRow> Rows, int TotalCount)> GetPublicProductsByCategoryPageAsync(
+        byte categoryId,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default);
+
     Task<List<ProductNameTranslationRow>> GetProductNameTranslationsByProductIdsAsync(
         IReadOnlyList<Guid> productIds,
         CancellationToken cancellationToken = default);

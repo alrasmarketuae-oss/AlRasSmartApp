@@ -84,6 +84,11 @@ export type ChatMessage = {
   localPreviewMime?: string
   supportAgentId?: string | null
   supportAgentName?: string | null
+  replyToMessageId?: string | null
+  replyToPreview?: string | null
+  replyToMessageType?: ChatMessageTypeCode | null
+  isForwarded?: boolean
+  isDeleted?: boolean
 }
 
 export type ChatInbox = {
@@ -120,6 +125,27 @@ export type SendChatMessagePayload = {
   toUserId: string
   messageType: ChatMessageTypeCode
   content: string
+  replyToMessageId?: string | null
+}
+
+export type ForwardChatMessagePayload = {
+  messageId: string
+  toUserId: string
+}
+
+export type DeleteChatMessagePayload = {
+  messageId: string
+  scope: 'me' | 'everyone'
+}
+
+export type ChatMessageDeletedPayload = {
+  messageId: string
+  fromUserId: string
+  toUserId: string
+  scope: 'me' | 'everyone'
+  deletedByUserId: string
+  isDeleted: boolean
+  message?: ChatMessage | null
 }
 
 export type ChatUploadResult = {
@@ -311,6 +337,13 @@ export function normalizeChatMessage(raw: Partial<ChatMessage> & Record<string, 
     mediaMimeType: raw.mediaMimeType ? String(raw.mediaMimeType) : null,
     supportAgentId: (raw.supportAgentId ?? raw.SupportAgentId ?? null) as string | null,
     supportAgentName: (raw.supportAgentName ?? raw.SupportAgentName ?? null) as string | null,
+    replyToMessageId: (raw.replyToMessageId ?? raw.ReplyToMessageId ?? null) as string | null,
+    replyToPreview: (raw.replyToPreview ?? raw.ReplyToPreview ?? null) as string | null,
+    replyToMessageType: raw.replyToMessageType ?? raw.ReplyToMessageType
+      ? (Number(raw.replyToMessageType ?? raw.ReplyToMessageType) as ChatMessageTypeCode)
+      : null,
+    isForwarded: Boolean(raw.isForwarded ?? raw.IsForwarded),
+    isDeleted: Boolean(raw.isDeleted ?? raw.IsDeleted),
   }
 }
 

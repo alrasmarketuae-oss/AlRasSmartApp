@@ -125,7 +125,13 @@ public interface IAdminOrdersAppService
     Task<AdminOrderStatsDto> GetOrderStatsAsync(CancellationToken cancellationToken = default);
 
     Task<AdminOrderListItemDto> GetOrderByIdAsync(long orderId, CancellationToken cancellationToken = default);
-    Task<object> UpdateOrderStatusAsync(string adminUserId, long orderId, byte statusId, CancellationToken cancellationToken = default);
+    Task<object> UpdateOrderStatusAsync(
+        string adminUserId,
+        long orderId,
+        byte statusId,
+        byte? cancellationReasonId = null,
+        string? cancellationNote = null,
+        CancellationToken cancellationToken = default);
     Task<object> ApproveRequestOfferAsync(
         string adminUserId,
         long orderId,
@@ -364,7 +370,12 @@ public interface IProductsAppService
     Task<object> IncreaseViewsAsync(string productId, CancellationToken cancellationToken = default);
     Task<object> SearchByThreeNamesAsync(string firstName, string secondName, string thirdName, CancellationToken cancellationToken = default);
     Task<object> SearchBySuggestedNamesAsync(IReadOnlyList<string> suggestedNames, CancellationToken cancellationToken = default);
-    Task<object> DetectProductsFromImageAsync(Stream imageStream, string fileName, CancellationToken cancellationToken = default);
+    Task<object> DetectProductsFromImageAsync(
+        Stream imageStream,
+        string fileName,
+        CancellationToken cancellationToken = default,
+        int page = 1,
+        int pageSize = 20);
     Task<MyListingsResponse> GetMyListingsAsync(string ownerId, CancellationToken cancellationToken = default);
 }
 

@@ -275,8 +275,17 @@ class ClintCubit extends Cubit<ClintStates> {
   List<String> searchSuggestedNames = [];
   Map<String, dynamic>? searchAiAssist;
   bool isLoadingSearch = false;
+  bool isLoadingMoreSearch = false;
   String? searchError;
   bool isImageSearch = false;
+  int searchPage = 1;
+  int searchPageSize = 20;
+  int searchTotalPages = 1;
+  int searchTotalCount = 0;
+  int? searchCategoryId;
+
+  bool get hasMoreSearchResults =>
+      searchPage < searchTotalPages && productSearchResults.isNotEmpty;
 
   List<DomesticEmirateModel> domesticEmirates = [];
   int excessKgRateAed = 0;
@@ -304,6 +313,48 @@ class ClintCubit extends Cubit<ClintStates> {
         ),
       );
     }
+  }
+
+  int _readPagedInt(Map<String, dynamic> data, String key, [int fallback = 0]) {
+    final value = data[key];
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? fallback;
+  }
+
+  void _applySearchPaging(Map<String, dynamic>? data, {required int fallbackPage}) {
+    if (data == null) {
+      searchPage = fallbackPage;
+      searchTotalPages = fallbackPage;
+      searchTotalCount = productSearchResults.length;
+      return;
+    }
+    searchPage = _readPagedInt(data, 'page', fallbackPage);
+    if (searchPage < 1) searchPage = fallbackPage;
+    searchPageSize = _readPagedInt(data, 'pageSize', searchPageSize);
+    if (searchPageSize < 1) searchPageSize = 20;
+    searchTotalCount = _readPagedInt(data, 'totalCount', productSearchResults.length);
+    searchTotalPages = _readPagedInt(data, 'totalPages', 0);
+    if (searchTotalPages < 1) {
+      searchTotalPages = searchPageSize <= 0
+          ? 1
+          : ((searchTotalCount + searchPageSize - 1) ~/ searchPageSize);
+      if (searchTotalPages < 1) searchTotalPages = 1;
+    }
+  }
+
+  List<MyListingProductModel> _mergeSearchProducts(
+    List<MyListingProductModel> incoming, {
+    required bool append,
+  }) {
+    if (!append) return incoming;
+    final seen = productSearchResults.map((item) => item.productId).toSet();
+    final merged = [...productSearchResults];
+    for (final item in incoming) {
+      if (seen.add(item.productId)) {
+        merged.add(item);
+      }
+    }
+    return merged;
   }
 
   List<MyListingProductModel> _parseHomeProductsResponse(dynamic data) {
@@ -504,6 +555,11 @@ class ClintCubit extends Cubit<ClintStates> {
     isImageSearch = false;
     searchSuggestedNames = [];
     searchAiAssist = null;
+    searchPage = 1;
+    searchTotalPages = 1;
+    searchTotalCount = 0;
+    searchCategoryId = null;
+    isLoadingMoreSearch = false;
     emit(ProductSearchLoadingState(query: trimmed));
 
     try {
@@ -531,6 +587,10 @@ class ClintCubit extends Cubit<ClintStates> {
       final products = _parseHomeProductsResponse(data);
       searchAiAssist = _parseSearchAiAssist(data);
       productSearchResults = products;
+      _applySearchPaging(
+        data is Map<String, dynamic> ? data : null,
+        fallbackPage: page,
+      );
       isLoadingSearch = false;
       emit(
         ProductSearchSuccessState(
@@ -559,6 +619,11 @@ class ClintCubit extends Cubit<ClintStates> {
     isImageSearch = true;
     searchSuggestedNames = [];
     searchAiAssist = null;
+    searchPage = 1;
+    searchTotalPages = 1;
+    searchTotalCount = 0;
+    searchCategoryId = null;
+    isLoadingMoreSearch = false;
     emit(const ProductSearchLoadingState(fromImage: true));
 
     try {
@@ -647,6 +712,17 @@ class ClintCubit extends Cubit<ClintStates> {
               .toList();
 
       productSearchResults = products;
+      if (data is Map<String, dynamic>) {
+        _applySearchPaging(data, fallbackPage: 1);
+        final categoryId = _readPagedInt(data, 'detectedCategoryId');
+        searchCategoryId = categoryId > 0 ? categoryId : null;
+        final detectedName = data['detectedProductName']?.toString().trim();
+        if (detectedName != null && detectedName.isNotEmpty) {
+          searchQuery = detectedName;
+        } else if (searchSuggestedNames.isNotEmpty) {
+          searchQuery = searchSuggestedNames.first;
+        }
+      }
       isLoadingSearch = false;
       emit(
         ProductSearchSuccessState(
@@ -668,6 +744,98 @@ class ClintCubit extends Cubit<ClintStates> {
       searchError = 'Network error while searching by image. ($e)';
       isLoadingSearch = false;
       emit(ProductSearchErrorState(searchError!));
+    }
+  }
+
+  Future<void> loadMoreProductSearch() async {
+    if (isLoadingSearch || isLoadingMoreSearch || !hasMoreSearchResults) {
+      return;
+    }
+
+    final nextPage = searchPage + 1;
+    final categoryId = searchCategoryId;
+    final query = (searchQuery ?? '').trim();
+    if (categoryId == null && query.isEmpty) {
+      return;
+    }
+
+    isLoadingMoreSearch = true;
+    emit(
+      ProductSearchSuccessState(
+        products: productSearchResults,
+        query: query.isEmpty ? null : query,
+        suggestedNames: searchSuggestedNames,
+        fromImage: isImageSearch,
+        aiAssist: searchAiAssist,
+      ),
+    );
+
+    try {
+      final response = categoryId != null
+          ? await DioHelper.getData(
+              url: ApiConstants.productsByCategoryEndPoint(categoryId),
+              query: {
+                'page': nextPage,
+                'pageSize': searchPageSize,
+                'publicCatalog': true,
+              },
+            )
+          : await DioHelper.getData(
+              url: ApiConstants.productsSearchEndPoint,
+              query: {
+                'q': query,
+                'page': nextPage,
+                'pageSize': searchPageSize,
+              },
+            );
+
+      final status = response?.statusCode ?? 0;
+      if (status < 200 || status >= 300) {
+        isLoadingMoreSearch = false;
+        emit(
+          ProductSearchSuccessState(
+            products: productSearchResults,
+            query: query.isEmpty ? null : query,
+            suggestedNames: searchSuggestedNames,
+            fromImage: isImageSearch,
+            aiAssist: searchAiAssist,
+          ),
+        );
+        return;
+      }
+
+      final data = response?.data;
+      final incoming = _parseHomeProductsResponse(data);
+      productSearchResults = _mergeSearchProducts(incoming, append: true);
+      _applySearchPaging(
+        data is Map<String, dynamic> ? data : null,
+        fallbackPage: nextPage,
+      );
+      searchPage = nextPage;
+      if (incoming.isEmpty) {
+        searchTotalPages = searchPage;
+      }
+      isLoadingMoreSearch = false;
+      emit(
+        ProductSearchSuccessState(
+          products: productSearchResults,
+          query: query.isEmpty ? null : query,
+          suggestedNames: searchSuggestedNames,
+          fromImage: isImageSearch,
+          aiAssist: searchAiAssist,
+        ),
+      );
+    } catch (_) {
+      isLoadingMoreSearch = false;
+      emit(
+        ProductSearchSuccessState(
+          products: productSearchResults,
+          query: query.isEmpty ? null : query,
+          suggestedNames: searchSuggestedNames,
+          fromImage: isImageSearch,
+          aiAssist: searchAiAssist,
+        ),
+      );
     }
   }
 

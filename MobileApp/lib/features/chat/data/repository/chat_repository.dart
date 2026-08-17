@@ -5,6 +5,7 @@ import 'package:alrasmarket/core/error/failure.dart';
 import 'package:alrasmarket/core/serveses/app_chat_listener_service.dart';
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/services/dio_helper.dart';
+import 'package:alrasmarket/features/chat/data/models/chat_message_deleted_event.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_message_model.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_message_type.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_presence_model.dart';
@@ -38,6 +39,7 @@ class ChatRepository {
   final AppChatListenerService _hub = AppChatListenerService.instance;
 
   Stream<ChatMessageModel> get messageStream => _hub.messageStream;
+  Stream<ChatMessageDeletedEvent> get deletedStream => _hub.deletedStream;
   Stream<ConversationSeenEvent> get seenStream => _hub.seenStream;
   Stream<MessagesDeliveredEvent> get deliveredStream => _hub.deliveredStream;
   Stream<ChatPresenceModel> get presenceStream => _hub.presenceStream;
@@ -105,7 +107,20 @@ class ChatRepository {
     required String toUserId,
     required ChatMessageType messageType,
     required String content,
+    String? replyToMessageId,
   }) async {
+    try {
+      final response = await DioHelper.postData(
+        url: ApiConstants.chatMessagesEndPoint,
+        token: token,
+        data: {
+          'toUserId': toUserId,
+          'messageType': messageType.apiValue,
+          'content': content,
+          if (replyToMessageId != null && replyToMessageId.isNotEmpty)
+            'replyToMessageId': replyToMessageId,
+        },
+      );
     try {
       final response = await DioHelper.postData(
         url: ApiConstants.chatMessagesEndPoint,
@@ -139,6 +154,83 @@ class ChatRepository {
       return const Left(ServerFailure('Invalid response body'));
     } catch (e) {
       return Left(ServerFailure('Failed to send message: $e'));
+    }
+  }
+
+  Future<Either<Failure, ChatMessageModel>> forwardMessage({
+    required String token,
+    required String messageId,
+    required String toUserId,
+  }) async {
+    try {
+      final response = await DioHelper.postData(
+        url: ApiConstants.chatForwardMessageEndPoint,
+        token: token,
+        data: {
+          'messageId': messageId,
+          'toUserId': toUserId,
+        },
+      );
+
+      if (response == null) {
+        return const Left(ServerFailure('No response from server'));
+      }
+
+      if (response.statusCode != 200) {
+        return Left(
+          ServerFailure(
+            _extractMessage(response.data) ??
+                'Failed to forward message (${response.statusCode})',
+          ),
+        );
+      }
+
+      final body = response.data;
+      if (body is Map) {
+        return Right(
+          ChatMessageModel.fromJson(Map<String, dynamic>.from(body)),
+        );
+      }
+      return const Left(ServerFailure('Invalid response body'));
+    } catch (e) {
+      return Left(ServerFailure('Failed to forward message: $e'));
+    }
+  }
+
+  Future<Either<Failure, ChatMessageDeletedEvent>> deleteMessage({
+    required String token,
+    required String messageId,
+    required String scope,
+  }) async {
+    try {
+      final response = await DioHelper.postData(
+        url: ApiConstants.chatDeleteMessageEndPoint(messageId),
+        token: token,
+        data: {'scope': scope},
+      );
+
+      if (response == null) {
+        return const Left(ServerFailure('No response from server'));
+      }
+
+      if (response.statusCode != 200) {
+        return Left(
+          ServerFailure(
+            _extractMessage(response.data) ??
+                'Failed to delete message (${response.statusCode})',
+          ),
+        );
+      }
+
+      final body = response.data;
+      if (body is Map) {
+        return Right(
+          ChatMessageDeletedEvent.fromJson(Map<String, dynamic>.from(body)),
+        );
+      }
+      return const Left(ServerFailure('Invalid response body'));
+    } catch (e) {
+      return Left(ServerFailure('Failed to delete message: $e'));
     }
   }
 

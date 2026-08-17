@@ -500,6 +500,7 @@ await using (var scope = app.Services.CreateAsyncScope())
     await ProductCodeSchemaMigrator.EnsureAsync(db);
     await ProductStoredProceduresSchemaMigrator.EnsureAsync(db);
     await OrderSchemaMigrator.EnsureAsync(db);
+    await OrderCancellationSchemaMigrator.EnsureAsync(db);
     await CartSchemaMigrator.EnsureAsync(db);
     await UserSchemaMigrator.EnsureAsync(db);
     await RoleSchemaMigrator.EnsureAsync(db);

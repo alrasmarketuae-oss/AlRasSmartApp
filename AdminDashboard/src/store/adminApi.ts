@@ -1,7 +1,7 @@
 import { createApi } from '@reduxjs/toolkit/query/react'
 import { apiUrl } from '../config/api.js'
 import { getAuthToken } from '../lib/authStorage'
-import type { AdminOrder, AdminOrdersFilters, AdminOrderStats } from '../types/adminOrder'
+import type { AdminOrder, AdminOrdersFilters, AdminOrderStats, OrderCancellationReason } from '../types/adminOrder'
 import type {
   AdminProductLookups,
   AdminProductsFilters,
@@ -34,6 +34,9 @@ import type {
   ChatUploadResult,
   ChatUploadImagesResult,
   SendChatMessagePayload,
+  ForwardChatMessagePayload,
+  DeleteChatMessagePayload,
+  ChatMessageDeletedPayload,
 } from '../types/chat'
 import { normalizeChatContact, normalizeChatConversationDetails, normalizeChatInbox, normalizeChatMessage, CHAT_MESSAGES_PAGE_SIZE } from '../types/chat'
 import type {
@@ -582,6 +585,28 @@ export const adminApi = createApi({
       providesTags: (_result, _error, orderId) => [{ type: 'Orders', id: String(orderId) }],
     }),
 
+    getCancellationReasons: builder.query<OrderCancellationReason[], void>({
+      query: () => '/api/admin/orders/cancellation-reasons',
+      transformResponse: (
+        response: Array<{
+          id?: number
+          Id?: number
+          nameEn?: string
+          NameEn?: string
+          nameAr?: string
+          NameAr?: string
+          requiresNote?: boolean
+          RequiresNote?: boolean
+        }>,
+      ): OrderCancellationReason[] =>
+        (response ?? []).map((item) => ({
+          id: Number(item.id ?? item.Id ?? 0),
+          nameEn: String(item.nameEn ?? item.NameEn ?? ''),
+          nameAr: String(item.nameAr ?? item.NameAr ?? ''),
+          requiresNote: Boolean(item.requiresNote ?? item.RequiresNote),
+        })),
+    }),
+
     getAdminOrders: builder.query<
       ReturnType<typeof normalizeOrdersResponse>,
       AdminOrdersFilters
@@ -699,12 +724,12 @@ export const adminApi = createApi({
 
     updateOrderStatus: builder.mutation<
       { orderId: number; statusId: number; status: string; statusAr: string; isApproved: boolean },
-      { orderId: number; statusId: number }
+      { orderId: number; statusId: number; cancellationReasonId?: number; cancellationNote?: string }
     >({
-      query: ({ orderId, statusId }) => ({
+      query: ({ orderId, statusId, cancellationReasonId, cancellationNote }) => ({
         url: `/api/admin/orders/${orderId}/status`,
         method: 'PATCH',
-        body: { statusId },
+        body: { statusId, cancellationReasonId, cancellationNote },
       }),
       async onQueryStarted({ orderId, statusId }, { dispatch, queryFulfilled, getState }) {
         const cachedArgs = adminApi.util.selectCachedArgsForQuery(
@@ -1634,6 +1659,25 @@ export const adminApi = createApi({
       invalidatesTags: [{ type: 'Chat', id: 'INBOX' }, { type: 'Chat', id: 'UNREAD' }],
     }),
 
+    forwardChatMessage: builder.mutation<ChatMessage, ForwardChatMessagePayload>({
+      query: (body) => ({
+        url: '/api/Chat/messages/forward',
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (response: ChatMessage) => normalizeChatMessage(response),
+      invalidatesTags: [{ type: 'Chat', id: 'INBOX' }, { type: 'Chat', id: 'UNREAD' }],
+    }),
+
+    deleteChatMessage: builder.mutation<ChatMessageDeletedPayload, DeleteChatMessagePayload>({
+      query: ({ messageId, scope }) => ({
+        url: `/api/Chat/messages/${messageId}/delete`,
+        method: 'POST',
+        body: { scope },
+      }),
+      invalidatesTags: [{ type: 'Chat', id: 'INBOX' }, { type: 'Chat', id: 'UNREAD' }],
+    }),
+
     getChatPublicKey: builder.query<
       { userId: string; publicKeySpkiBase64: string },
       string
@@ -2170,6 +2214,7 @@ export const {
   useDeleteProductMutation,
   useGetAdminOrderStatsQuery,
   useGetAdminOrderDetailQuery,
+  useGetCancellationReasonsQuery,
   useGetAdminOrdersQuery,
   useLazyGetAdminOrdersQuery,
   useRespondToOrderReturnMutation,
@@ -2221,6 +2266,8 @@ export const {
   useGetChatConversationDetailsQuery,
   useLazyGetChatConversationDetailsQuery,
   useSendChatMessageMutation,
+  useForwardChatMessageMutation,
+  useDeleteChatMessageMutation,
   useGetChatPublicKeyQuery,
   useLazyGetChatPublicKeyQuery,
   useUpsertMyChatPublicKeyMutation,

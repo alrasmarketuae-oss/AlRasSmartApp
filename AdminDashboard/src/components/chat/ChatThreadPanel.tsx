@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createVoiceFile, pickVoiceRecorderMimeType } from '../../lib/voiceRecording'
 import ChatComposer from './ChatComposer'
+import ChatForwardPicker from './ChatForwardPicker'
+import ChatMessageActions from './ChatMessageActions'
 import ChatMessageBubble from './ChatMessageBubble'
 import ChatSessionDivider from './ChatSessionDivider'
 import { PROJECT_IMAGES } from '../../constants/projectImages'
@@ -8,6 +10,17 @@ import { IconArrowLeft, IconChat } from '../icons'
 import { resolveProfileAssetUrl } from '../../lib/assets'
 import { resolveContactAvatarUrl, type ChatCompanyDisplay } from '../../lib/chatCompanyReport'
 import type { ChatContact, ChatMessage, ChatSupportSession } from '../../types/chat'
+import { messageTypeLabel } from '../../types/chat'
+
+function replyPreviewFor(
+  message: ChatMessage | null,
+  t: (key: string) => string,
+): string | null {
+  if (!message) return null
+  if (message.isDeleted) return t('chat.deletedMessage')
+  if (message.messageType === 1) return message.content.slice(0, 80)
+  return messageTypeLabel(message.messageType)
+}
 
 export type VoiceDraft = {
   file: File
@@ -37,6 +50,15 @@ type ChatThreadPanelProps = {
   onSendVideo: (file: File) => Promise<void>
   onSendDocument: (file: File) => Promise<void>
   onSendLocation: () => Promise<void>
+  onReply?: (message: ChatMessage) => void
+  onForward?: (message: ChatMessage) => void
+  onDeleteMessage?: (message: ChatMessage, scope: 'me' | 'everyone') => Promise<void>
+  replyTo?: ChatMessage | null
+  onCancelReply?: () => void
+  forwardingMessage?: ChatMessage | null
+  forwardContacts?: ChatContact[]
+  onForwardTo?: (toUserId: string) => Promise<void>
+  onCloseForward?: () => void
   onBack?: () => void
   companyDisplay?: ChatCompanyDisplay | null
   onCompanyClick?: () => void
@@ -66,6 +88,15 @@ export default function ChatThreadPanel({
   onSendVideo,
   onSendDocument,
   onSendLocation,
+  onReply,
+  onForward,
+  onDeleteMessage,
+  replyTo = null,
+  onCancelReply,
+  forwardingMessage = null,
+  forwardContacts = [],
+  onForwardTo,
+  onCloseForward,
   onBack,
   companyDisplay = null,
   onCompanyClick,
@@ -446,11 +477,24 @@ export default function ChatThreadPanel({
               )
             }
             return (
-              <ChatMessageBubble
+              <ChatMessageActions
                 key={item.message.messageId}
-                message={item.message}
                 isMine={item.message.toUserId === contact.contactUserId}
-              />
+                disabled={item.message.deliveryStatus === 'sending' || item.message.isDeleted}
+                canDeleteEveryone={
+                  item.message.toUserId === contact.contactUserId && !item.message.isDeleted
+                }
+                onReply={() => onReply?.(item.message)}
+                onForward={() => onForward?.(item.message)}
+                onDeleteForMe={() => void onDeleteMessage?.(item.message, 'me')}
+                onDeleteForEveryone={() => void onDeleteMessage?.(item.message, 'everyone')}
+                t={t}
+              >
+                <ChatMessageBubble
+                  message={item.message}
+                  isMine={item.message.toUserId === contact.contactUserId}
+                />
+              </ChatMessageActions>
             )
           })
         )}
@@ -510,8 +554,20 @@ export default function ChatThreadPanel({
         onStopRecording={stopRecording}
         onCancelRecording={cancelRecording}
         onSendVoiceDraft={() => void sendVoiceDraft()}
+        replyPreview={replyPreviewFor(replyTo, t)}
+        onCancelReply={onCancelReply}
         t={t}
       />
+      ) : null}
+
+      {forwardingMessage && onForwardTo && onCloseForward ? (
+        <ChatForwardPicker
+          contacts={forwardContacts}
+          currentUserId={contact.contactUserId}
+          onSelect={(toUserId) => void onForwardTo(toUserId)}
+          onClose={onCloseForward}
+          t={t}
+        />
       ) : null}
     </section>
   )

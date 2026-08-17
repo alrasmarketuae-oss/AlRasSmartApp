@@ -57,7 +57,14 @@ public static class RequestOfferMapper
                 .OrderBy(x => x.Id)
                 .Select(x => x.ImagePath)
                 .Where(IsDocumentPath)
-                .ToList() ?? []
+                .ToList() ?? [],
+            CancellationReasonId = order.CancellationReasonId,
+            CancellationReasonNameEn = order.CancellationReason?.NameEn,
+            CancellationReasonNameAr = order.CancellationReason?.NameAr,
+            CancellationNote = order.CancellationNote,
+            CancelledAt = order.CancelledAt.HasValue
+                ? UtcDateTimeHelper.AsUtc(order.CancelledAt.Value)
+                : null
         };
     }
 

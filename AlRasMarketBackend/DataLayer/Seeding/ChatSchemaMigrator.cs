@@ -31,6 +31,7 @@ public static class ChatSchemaMigrator
             }
 
             await EnsureChatMessageIndexesAsync(connection, cancellationToken).ConfigureAwait(false);
+            await EnsureReplyForwardDeleteColumnsAsync(connection, cancellationToken).ConfigureAwait(false);
         }
         else
         {
@@ -82,6 +83,14 @@ public static class ChatSchemaMigrator
             SeenAtUtc DATETIME NULL,
             IsDelivered BIT NOT NULL CONSTRAINT DF_ChatMessages_IsDelivered DEFAULT 0,
             DeliveredAtUtc DATETIME NULL,
+            ReplyToMessageId CHAR(32) NULL,
+            ReplyToPreview NVARCHAR(280) NULL,
+            ReplyToMessageType TINYINT NULL,
+            IsForwarded BIT NOT NULL CONSTRAINT DF_ChatMessages_IsForwarded DEFAULT 0,
+            IsDeleted BIT NOT NULL CONSTRAINT DF_ChatMessages_IsDeleted DEFAULT 0,
+            DeletedAtUtc DATETIME NULL,
+            DeletedForFromUser BIT NOT NULL CONSTRAINT DF_ChatMessages_DeletedForFromUser DEFAULT 0,
+            DeletedForToUser BIT NOT NULL CONSTRAINT DF_ChatMessages_DeletedForToUser DEFAULT 0,
             CONSTRAINT FK_ChatMessages_FromUser FOREIGN KEY (FromUserId) REFERENCES dbo.Users(Id),
             CONSTRAINT FK_ChatMessages_ToUser FOREIGN KEY (ToUserId) REFERENCES dbo.Users(Id)
         );
@@ -91,6 +100,67 @@ public static class ChatSchemaMigrator
         CREATE INDEX IX_ChatMessages_SentAtUtc ON dbo.ChatMessages (SentAtUtc DESC);
         CREATE INDEX IX_ChatMessages_Pair ON dbo.ChatMessages (FromUserId, ToUserId, SentAtUtc DESC);
         """;
+
+    private static async Task EnsureReplyForwardDeleteColumnsAsync(
+        System.Data.Common.DbConnection connection,
+        CancellationToken cancellationToken)
+    {
+        await AddColumnIfMissingAsync(
+            connection,
+            "ReplyToMessageId",
+            "ALTER TABLE dbo.ChatMessages ADD ReplyToMessageId CHAR(32) NULL;",
+            cancellationToken).ConfigureAwait(false);
+        await AddColumnIfMissingAsync(
+            connection,
+            "ReplyToPreview",
+            "ALTER TABLE dbo.ChatMessages ADD ReplyToPreview NVARCHAR(280) NULL;",
+            cancellationToken).ConfigureAwait(false);
+        await AddColumnIfMissingAsync(
+            connection,
+            "ReplyToMessageType",
+            "ALTER TABLE dbo.ChatMessages ADD ReplyToMessageType TINYINT NULL;",
+            cancellationToken).ConfigureAwait(false);
+        await AddColumnIfMissingAsync(
+            connection,
+            "IsForwarded",
+            "ALTER TABLE dbo.ChatMessages ADD IsForwarded BIT NOT NULL CONSTRAINT DF_ChatMessages_IsForwarded DEFAULT 0;",
+            cancellationToken).ConfigureAwait(false);
+        await AddColumnIfMissingAsync(
+            connection,
+            "IsDeleted",
+            "ALTER TABLE dbo.ChatMessages ADD IsDeleted BIT NOT NULL CONSTRAINT DF_ChatMessages_IsDeleted DEFAULT 0;",
+            cancellationToken).ConfigureAwait(false);
+        await AddColumnIfMissingAsync(
+            connection,
+            "DeletedAtUtc",
+            "ALTER TABLE dbo.ChatMessages ADD DeletedAtUtc DATETIME NULL;",
+            cancellationToken).ConfigureAwait(false);
+        await AddColumnIfMissingAsync(
+            connection,
+            "DeletedForFromUser",
+            "ALTER TABLE dbo.ChatMessages ADD DeletedForFromUser BIT NOT NULL CONSTRAINT DF_ChatMessages_DeletedForFromUser DEFAULT 0;",
+            cancellationToken).ConfigureAwait(false);
+        await AddColumnIfMissingAsync(
+            connection,
+            "DeletedForToUser",
+            "ALTER TABLE dbo.ChatMessages ADD DeletedForToUser BIT NOT NULL CONSTRAINT DF_ChatMessages_DeletedForToUser DEFAULT 0;",
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async Task AddColumnIfMissingAsync(
+        System.Data.Common.DbConnection connection,
+        string columnName,
+        string alterSql,
+        CancellationToken cancellationToken)
+    {
+        if (await SqlSchemaHelper.ColumnExistsAsync(connection, "ChatMessages", columnName, cancellationToken)
+                .ConfigureAwait(false))
+        {
+            return;
+        }
+
+        await SqlSchemaHelper.ExecuteBatchAsync(connection, alterSql, cancellationToken).ConfigureAwait(false);
+    }
 
     private static async Task EnsureChatMessageIndexesAsync(
         System.Data.Common.DbConnection connection,

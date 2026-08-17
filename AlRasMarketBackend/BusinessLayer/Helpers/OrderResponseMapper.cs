@@ -47,8 +47,45 @@ public static class OrderResponseMapper
                 ? UtcDateTimeHelper.AsUtc(order.RefundedAtUtc.Value)
                 : null,
             IsRefunded = order.RefundedAtUtc.HasValue
-                || !string.IsNullOrWhiteSpace(order.StripeRefundId)
+                || !string.IsNullOrWhiteSpace(order.StripeRefundId),
+            CancellationReasonId = order.CancellationReasonId,
+            CancellationReasonNameEn = order.CancellationReason?.NameEn,
+            CancellationReasonNameAr = order.CancellationReason?.NameAr,
+            CancellationNote = order.CancellationNote,
+            CancelledAt = order.CancelledAt.HasValue
+                ? UtcDateTimeHelper.AsUtc(order.CancelledAt.Value)
+                : null,
+            CancelledByUserId = order.CancelledByUserId,
+            CancelledByName = order.CancelledByUser is null
+                ? null
+                : (order.CancelledByUser.CompanyName ?? order.CancelledByUser.FullName),
+            CancelledByRole = ResolveCancelledByRole(order)
         };
+    }
+
+    private static string? ResolveCancelledByRole(Order order)
+    {
+        if (order.CancelledByUserId is null)
+        {
+            return null;
+        }
+
+        if (order.CancelledByUser?.RoleId == 1)
+        {
+            return "Admin";
+        }
+
+        if (order.CancelledByUserId == order.FromUserId)
+        {
+            return "Buyer";
+        }
+
+        if (order.CancelledByUserId == order.ToUserId)
+        {
+            return "Supplier";
+        }
+
+        return "Admin";
     }
 
     public static string GetPaymentMethodName(byte paymentMethod) =>

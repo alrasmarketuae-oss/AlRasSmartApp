@@ -8,6 +8,7 @@ import type {
   ChatMessage,
   ChatPresence,
   ChatMessagesDeliveredPayload,
+  ChatMessageDeletedPayload,
   ConversationSeenPayload,
 } from '../types/chat'
 import { normalizeChatMessage } from '../types/chat'
@@ -17,6 +18,7 @@ type ChatHubHandlers = {
   onMessageUpdated?: (message: ChatMessage) => void
   onConversationSeen?: (payload: ConversationSeenPayload) => void
   onMessagesDelivered?: (payload: ChatMessagesDeliveredPayload) => void
+  onMessageDeleted?: (payload: ChatMessageDeletedPayload) => void
   onUserLastSeen?: (presence: ChatPresence) => void
   onSupportSessionChanged?: () => void
   onConnectionChanged?: (connected: boolean) => void
@@ -67,6 +69,10 @@ export function useChatHub(userId: string | null, handlers: ChatHubHandlers) {
 
     connection.on('messagesDelivered', (payload: ChatMessagesDeliveredPayload) => {
       handlersRef.current.onMessagesDelivered?.(payload)
+    })
+
+    connection.on('messageDeleted', (payload: ChatMessageDeletedPayload) => {
+      handlersRef.current.onMessageDeleted?.(payload)
     })
 
     connection.on('userLastSeen', (presence: ChatPresence) => {

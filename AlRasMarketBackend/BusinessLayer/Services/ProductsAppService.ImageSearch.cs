@@ -133,8 +133,16 @@ public partial class ProductsAppService
     /// Visual product search: Image → CLIP embed → Qdrant HNSW → catalog products.
     /// When listing photos are missing, search by CLIP/reference labels (not OpenAI guessing).
     /// </summary>
-    public async Task<object> DetectProductsFromImageAsync(Stream imageStream, string fileName, CancellationToken cancellationToken = default)
+    public async Task<object> DetectProductsFromImageAsync(
+        Stream imageStream,
+        string fileName,
+        CancellationToken cancellationToken = default,
+        int page = 1,
+        int pageSize = 20)
     {
+        var (normalizedPage, normalizedPageSize) = NormalizePaging(page, pageSize);
+        var skip = (normalizedPage - 1) * normalizedPageSize;
+
         await using var buffered = new MemoryStream();
         await imageStream.CopyToAsync(buffered, cancellationToken).ConfigureAwait(false);
         if (buffered.Length == 0)
@@ -207,6 +215,8 @@ public partial class ProductsAppService
                         expandHybridSearchChannels: true)
                     .ConfigureAwait(false)
                 : [];
+            var totalCount = ranked.Count;
+            byte? detectedCategoryId = null;
 
             var topName = hits
                 .Select(h => h.ProductName)
@@ -246,12 +256,20 @@ public partial class ProductsAppService
             IReadOnlyList<string> fallbackSearchNames = Array.Empty<string>();
             IReadOnlyList<string> fallbackSearchTokens = Array.Empty<string>();
 
-            if (items.Count == 0 && suggestedNames.Count > 0)
+            // CLIP/Qdrant catalog photos are a similarity sample (capped at ~100).
+            // When labels exist (e.g. Cardamom / الهيل), load the full matching catalog
+            // and paginate it — not only when visual hits were empty.
+            if (suggestedNames.Count > 0)
             {
-                var (fallbackRows, fallbackMode, fallbackNames, fallbackTokens) =
-                    await ResolveCatalogFromClipLabelsAsync(suggestedNames, fileName, cancellationToken)
+                var (fallbackRows, fallbackTotal, fallbackMode, fallbackNames, fallbackTokens, categoryId) =
+                    await ResolveCatalogFromClipLabelsAsync(
+                            suggestedNames,
+                            fileName,
+                            skip,
+                            normalizedPageSize,
+                            cancellationToken)
                         .ConfigureAwait(false);
-                if (fallbackRows.Count > 0)
+                if (fallbackTotal > 0)
                 {
                     ranked = fallbackRows;
                     items = await BuildPublicProductListItemsAsync(
@@ -259,18 +277,40 @@ public partial class ProductsAppService
                             cancellationToken,
                             expandHybridSearchChannels: true)
                         .ConfigureAwait(false);
+                    totalCount = fallbackTotal;
                     searchMode = fallbackMode;
                     fallbackSearchNames = fallbackNames;
                     fallbackSearchTokens = fallbackTokens;
+                    detectedCategoryId = categoryId;
                 }
+            }
+
+            if (searchMode == "clip-qdrant")
+            {
+                totalCount = ranked.Count;
+                ranked = ranked.Skip(skip).Take(normalizedPageSize).ToList();
+                items = ranked.Count > 0
+                    ? await BuildPublicProductListItemsAsync(
+                            ranked,
+                            cancellationToken,
+                            expandHybridSearchChannels: true)
+                        .ConfigureAwait(false)
+                    : [];
             }
 
             return new
             {
                 detectedProductName = topName,
                 detectedBrand = string.Empty,
+                detectedCategoryId,
                 suggestedNames,
                 count = items.Count,
+                totalCount,
+                page = normalizedPage,
+                pageSize = normalizedPageSize,
+                totalPages = totalCount == 0
+                    ? 0
+                    : (int)Math.Ceiling(totalCount / (double)normalizedPageSize),
                 items,
                 referenceMatches,
                 referenceCount = referenceMatches.Count,
@@ -297,6 +337,9 @@ public partial class ProductsAppService
                     searchNames = fallbackSearchNames,
                     searchTokens = fallbackSearchTokens,
                     count = items.Count,
+                    totalCount,
+                    page = normalizedPage,
+                    pageSize = normalizedPageSize,
                     items
                 }
             };
@@ -355,7 +398,6 @@ public partial class ProductsAppService
             .Where(x => x.Score > 0)
             .OrderByDescending(x => x.Score)
             .ThenByDescending(x => x.Product.CreatedAt)
-            .Take(100)
             .Select(x => x.Product)
             .ToList();
     }
@@ -367,11 +409,15 @@ public partial class ProductsAppService
     /// </summary>
     private async Task<(
         List<ProductPublicRow> Rows,
+        int TotalCount,
         string SearchMode,
         IReadOnlyList<string> SearchNames,
-        IReadOnlyList<string> SearchTokens)> ResolveCatalogFromClipLabelsAsync(
+        IReadOnlyList<string> SearchTokens,
+        byte? CategoryId)> ResolveCatalogFromClipLabelsAsync(
         IReadOnlyList<string> suggestedNames,
         string fileName,
+        int skip,
+        int take,
         CancellationToken cancellationToken)
     {
         var names = suggestedNames
@@ -383,55 +429,66 @@ public partial class ProductsAppService
 
         var tokens = BuildImageSearchTokens(names);
         logger.LogInformation(
-            "CLIP labeled {Names} from {FileName} with no catalog photo hits; searching listings by name.",
+            "CLIP labeled {Names} from {FileName}; loading the full matching catalog (skip {Skip}, take {Take}).",
             string.Join(", ", names),
-            fileName);
+            fileName,
+            skip,
+            take);
 
-        if (tokens.Count > 0)
+        var page = take <= 0 ? 1 : (skip / take) + 1;
+        var category = await ResolveCategoryFromDetectedNamesAsync(
+            names.Concat(tokens).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
+            cancellationToken)
+            .ConfigureAwait(false);
+        if (category is not null)
         {
-            var nameHits = await SearchCatalogByProductNameAnyAsync(tokens, take: 100, cancellationToken)
+            var (categoryRows, categoryTotal) = await productData
+                .GetPublicProductsByCategoryPageAsync(category.CategoryId, skip, take, cancellationToken)
                 .ConfigureAwait(false);
-            if (nameHits.Count > 0)
+            if (categoryTotal > 0)
             {
-                var ranked = await RankCatalogProductsByDetectedNamesAsync(
-                    nameHits,
-                    names,
-                    tokens,
-                    cancellationToken).ConfigureAwait(false);
-                if (ranked.Count > 0)
-                {
-                    return (ranked, "clip-name", names, tokens);
-                }
+                logger.LogInformation(
+                    "Image search catalog: category {CategoryId} {CategoryName} has {Total} public listings.",
+                    category.CategoryId,
+                    category.NameEn,
+                    categoryTotal);
+                return (categoryRows, categoryTotal, "clip-category", names, tokens, category.CategoryId);
             }
         }
 
-        var category = await ResolveCategoryFromDetectedNamesAsync(names, cancellationToken)
+        var searchQuery = names[0];
+        var meili = await SearchCatalogPreferMeiliAsync(searchQuery, page, take, cancellationToken)
             .ConfigureAwait(false);
-        if (category is null)
+        if (meili.TotalCount > 0 || meili.Products.Count > 0)
         {
-            return ([], "clip-qdrant", names, tokens);
+            return (meili.Products, meili.TotalCount, "clip-name", names, tokens, category?.CategoryId);
         }
 
-        logger.LogInformation(
-            "Name search empty for {Names}; loading public listings in category {CategoryId} {CategoryName}.",
-            string.Join(", ", names),
-            category.CategoryId,
-            category.NameEn);
+        if (tokens.Count > 0)
+        {
+            var (nameRows, nameTotal) = await productData
+                .SearchPublicProductsByNameAnyPageAsync(tokens, skip, take, cancellationToken)
+                .ConfigureAwait(false);
+            if (nameTotal > 0)
+            {
+                return (nameRows, nameTotal, "clip-name", names, tokens, category?.CategoryId);
+            }
+        }
 
-        var (rows, _) = await productData
-            .GetProductsByCategoryPageAsync(category.CategoryId, skip: 0, take: 100, cancellationToken)
-            .ConfigureAwait(false);
-        return rows.Count > 0
-            ? (rows, "clip-category", names, tokens)
-            : ([], "clip-qdrant", names, tokens);
+        return ([], 0, "clip-qdrant", names, tokens, category?.CategoryId);
     }
 
     private static object EmptyImageSearchResult() => new
     {
         detectedProductName = string.Empty,
         detectedBrand = string.Empty,
+        detectedCategoryId = (byte?)null,
         suggestedNames = Array.Empty<string>(),
         count = 0,
+        totalCount = 0,
+        page = 1,
+        pageSize = 20,
+        totalPages = 0,
         items = Array.Empty<object>(),
         referenceMatches = Array.Empty<object>(),
         referenceCount = 0,

@@ -57,7 +57,12 @@ public sealed record ChatMessageDto(
     string? DeliveredAtUtc,
     string? MediaMimeType,
     string? SupportAgentId = null,
-    string? SupportAgentName = null);
+    string? SupportAgentName = null,
+    string? ReplyToMessageId = null,
+    string? ReplyToPreview = null,
+    ChatApiMessageType? ReplyToMessageType = null,
+    bool IsForwarded = false,
+    bool IsDeleted = false);
 
 public sealed record ChatSupportSessionDto(
     string AgentUserId,
@@ -91,7 +96,24 @@ public sealed record ChatUnreadSummaryDto(
 public sealed record CreateChatMessageRequest(
     string ToUserId,
     ChatApiMessageType MessageType,
-    string Content);
+    string Content,
+    string? ReplyToMessageId = null);
+
+public sealed record ForwardChatMessageRequest(
+    string MessageId,
+    string ToUserId);
+
+public sealed record DeleteChatMessageRequest(
+    string Scope);
+
+public sealed record ChatMessageDeletedDto(
+    string MessageId,
+    string FromUserId,
+    string ToUserId,
+    string Scope,
+    string DeletedByUserId,
+    bool IsDeleted,
+    ChatMessageDto? Message);
 
 public sealed record UpdateChatMessageRequest(
     string Content);
@@ -179,6 +201,17 @@ public interface IChatAppService
     Task<ChatMessageDto> CreateMessageAsync(
         string fromUserId,
         CreateChatMessageRequest request,
+        CancellationToken ct = default);
+
+    Task<ChatMessageDto> ForwardMessageAsync(
+        string fromUserId,
+        ForwardChatMessageRequest request,
+        CancellationToken ct = default);
+
+    Task<ChatMessageDeletedDto> DeleteMessageAsync(
+        string userId,
+        string messageId,
+        string scope,
         CancellationToken ct = default);
 
     Task<ChatMessageDto> UpdateMessageAsync(

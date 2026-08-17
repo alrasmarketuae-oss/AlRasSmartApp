@@ -54,7 +54,7 @@ public static class OrderStatusNotificationHelper
                 $"تم إتمام الدفع للمورد من Merge Spice بخصوص طلبك رقم #{orderId}.",
                 $"تم الدفع للمورد من Merge Spice — طلب #{orderId}"),
             OrderStatusCodes.Cancelled => (
-                "تم إلغاء الطلب",
+                "تم إلغاء الصفقة",
                 $"تم إلغاء طلبك رقم #{orderId} — «{productName}». للاستفسار تواصل معنا.",
                 $"تم إلغاء طلب #{orderId}"),
             _ => (

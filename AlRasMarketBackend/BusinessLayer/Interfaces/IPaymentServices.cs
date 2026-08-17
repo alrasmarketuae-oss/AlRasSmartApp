@@ -8,6 +8,8 @@ public interface IOrdersAppService
     Task<object> PlaceOrderFromCartAsync(PlaceOrderInput input, CancellationToken cancellationToken = default);
     Task<object> PlaceBookingOrderAsync(CreateDirectOrderInput input, CancellationToken cancellationToken = default);
     Task<object> UpdateOrderStatusAsync(UpdateOrderStatusInput input, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<OrderCancellationReasonDto>> GetCancellationReasonsAsync(
+        CancellationToken cancellationToken = default);
     Task<Guid> CreateOrdersFromPendingOrderAsync(Guid pendingOrderId, CancellationToken cancellationToken = default);
     Task<object> GetMyOrdersAsync(
         string userId,

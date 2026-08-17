@@ -131,6 +131,46 @@ public static class NotificationMessages
             "تم رفض العرض",
             $"تم رفض عرضك رقم {orderId} من قبل المعلن.");
 
+    public static (string Title, string Body) OrderCancelledBuyer(
+        string? language,
+        long orderId,
+        string? reasonEn,
+        string? reasonAr,
+        string? note)
+    {
+        var extra = string.IsNullOrWhiteSpace(note) ? string.Empty : $" {note.Trim()}";
+        var reasonEnLine = string.IsNullOrWhiteSpace(reasonEn) ? null : reasonEn.Trim();
+        var reasonArLine = string.IsNullOrWhiteSpace(reasonAr) ? null : reasonAr.Trim();
+        return Pick(
+            language,
+            "Order cancelled",
+            reasonEnLine is null
+                ? $"Your order #{orderId} was cancelled.{extra}"
+                : $"Your order #{orderId} was cancelled. Reason: {reasonEnLine}.{extra}",
+            "تم إلغاء الصفقة",
+            reasonArLine is null
+                ? $"تم إلغاء طلبك رقم {orderId}.{extra}"
+                : $"تم إلغاء طلبك رقم {orderId}. السبب: {reasonArLine}.{extra}");
+    }
+
+    public static (string Title, string Body) OrderCancelledSeller(
+        string? language,
+        long orderId,
+        string? reasonEn,
+        string? reasonAr,
+        string? note)
+    {
+        var extra = string.IsNullOrWhiteSpace(note) ? string.Empty : $" {note.Trim()}";
+        var reasonEnLine = string.IsNullOrWhiteSpace(reasonEn) ? "Cancelled" : reasonEn.Trim();
+        var reasonArLine = string.IsNullOrWhiteSpace(reasonAr) ? "تم إلغاء الصفقة" : reasonAr.Trim();
+        return Pick(
+            language,
+            "Order cancelled",
+            $"Order #{orderId} was cancelled. Reason: {reasonEnLine}.{extra}",
+            "تم إلغاء الصفقة",
+            $"تم إلغاء الطلب رقم {orderId}. السبب: {reasonArLine}.{extra}");
+    }
+
     public static (string Title, string Body) OfferRejectedByAdmin(
         string? language,
         long orderId,

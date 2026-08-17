@@ -247,6 +247,9 @@ public partial class OrdersAppService
         var statusAr = RequestOfferStatusLabels.ResolveNameAr(order);
         var isRequestOffer = order.Product?.ProductTypeId == ProductTypeCodes.Requests;
         var isRetail = ProductTypeCodes.IsRetailOrder(order);
+        var cancellationReasonEn = order.CancellationReason?.NameEn;
+        var cancellationReasonAr = order.CancellationReason?.NameAr;
+        var cancellationNote = order.CancellationNote;
 
         if (buyer is not null)
         {
@@ -262,7 +265,19 @@ public partial class OrdersAppService
                         true when order.StatusId == OrderStatusCodes.Approved =>
                             NotificationMessages.OrderAcceptedBySellerBuyer(lang, order.Id),
                         true when order.StatusId == OrderStatusCodes.Cancelled =>
-                            NotificationMessages.OrderRejectedBySellerBuyer(lang, order.Id),
+                            NotificationMessages.OrderCancelledBuyer(
+                                lang,
+                                order.Id,
+                                cancellationReasonEn,
+                                cancellationReasonAr,
+                                cancellationNote),
+                        _ when order.StatusId == OrderStatusCodes.Cancelled =>
+                            NotificationMessages.OrderCancelledBuyer(
+                                lang,
+                                order.Id,
+                                cancellationReasonEn,
+                                cancellationReasonAr,
+                                cancellationNote),
                         _ => NotificationMessages.OrderStatusUpdatedBuyer(lang, order.Id, statusEn, statusAr)
                     },
                     preferredLanguage: buyer.PreferredLanguage,
@@ -293,11 +308,18 @@ public partial class OrdersAppService
                             fromUserId: fromUserId,
                             email: seller.Email,
                             fcmToken: seller.FcmToken,
-                            messageFactory: lang => NotificationMessages.OrderStatusUpdatedSeller(
-                                lang,
-                                order.Id,
-                                statusEn,
-                                statusAr),
+                            messageFactory: lang => order.StatusId == OrderStatusCodes.Cancelled
+                                ? NotificationMessages.OrderCancelledSeller(
+                                    lang,
+                                    order.Id,
+                                    cancellationReasonEn,
+                                    cancellationReasonAr,
+                                    cancellationNote)
+                                : NotificationMessages.OrderStatusUpdatedSeller(
+                                    lang,
+                                    order.Id,
+                                    statusEn,
+                                    statusAr),
                             preferredLanguage: seller.PreferredLanguage,
                             type: "order_status_updated",
                             routeName: isRequestOffer ? "my_ads" : "orders",

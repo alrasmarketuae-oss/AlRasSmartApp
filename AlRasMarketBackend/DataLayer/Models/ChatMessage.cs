@@ -25,6 +25,15 @@ public class ChatMessage
     public bool IsDelivered { get; set; }
     public DateTime? DeliveredAtUtc { get; set; }
 
+    public string? ReplyToMessageId { get; set; }
+    public string? ReplyToPreview { get; set; }
+    public ChatMessageType? ReplyToMessageType { get; set; }
+    public bool IsForwarded { get; set; }
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAtUtc { get; set; }
+    public bool DeletedForFromUser { get; set; }
+    public bool DeletedForToUser { get; set; }
+
     public User? FromUser { get; set; }
     public User? ToUser { get; set; }
 }

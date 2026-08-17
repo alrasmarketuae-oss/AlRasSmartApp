@@ -46,7 +46,9 @@ public static class AdminOrderMapper
             .Include(x => x.PendingOrder!)
                 .ThenInclude(p => p!.Address!)
                     .ThenInclude(a => a!.City)
-            .Include(x => x.AdminOfferPrice);
+            .Include(x => x.AdminOfferPrice)
+            .Include(x => x.CancellationReason)
+            .Include(x => x.CancelledByUser);
 
     /// <summary>Same as list includes, plus full status timeline for order detail.</summary>
     public static IQueryable<Order> WithAdminDetailDetails(IQueryable<Order> query) =>
@@ -218,6 +220,18 @@ public static class AdminOrderMapper
                 || x.PendingOrder?.RefundedAtUtc.HasValue == true
                 || !string.IsNullOrWhiteSpace(x.StripeRefundId)
                 || !string.IsNullOrWhiteSpace(x.PendingOrder?.StripeRefundId),
+            CancellationReasonId = x.CancellationReasonId,
+            CancellationReasonNameEn = x.CancellationReason?.NameEn,
+            CancellationReasonNameAr = x.CancellationReason?.NameAr,
+            CancellationNote = x.CancellationNote,
+            CancelledAt = x.CancelledAt.HasValue
+                ? UtcDateTimeHelper.AsUtc(x.CancelledAt.Value)
+                : null,
+            CancelledByUserId = x.CancelledByUserId,
+            CancelledByName = x.CancelledByUser is null
+                ? null
+                : (x.CancelledByUser.CompanyName ?? x.CancelledByUser.FullName),
+            CancelledByRole = ResolveCancelledByRole(x),
             ReturnReason = x.ReturnReason,
             ReturnMediaPaths = ParseReturnMediaPaths(x.ReturnMediaPathsJson),
             ReturnRequestedAtUtc = x.ReturnRequestedAtUtc.HasValue
@@ -242,6 +256,32 @@ public static class AdminOrderMapper
                 })
                 .ToList(),
         };
+    }
+
+    private static string? ResolveCancelledByRole(Order order)
+    {
+        if (order.CancelledByUserId is null)
+        {
+            return null;
+        }
+
+        if (order.CancelledByUser?.RoleId == 1)
+        {
+            return "Admin";
+        }
+
+        if (order.CancelledByUserId == order.FromUserId)
+        {
+            return "Buyer";
+        }
+
+        if (order.CancelledByUserId == order.ToUserId
+            || order.CancelledByUserId == order.Product?.OwnerId)
+        {
+            return "Supplier";
+        }
+
+        return "Admin";
     }
 
     private static bool CanMarkReceived(Order x) =>

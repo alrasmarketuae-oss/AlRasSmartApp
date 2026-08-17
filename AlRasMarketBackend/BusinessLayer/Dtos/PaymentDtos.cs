@@ -31,6 +31,14 @@ public sealed class OrderDetailDto
     public string? StripeRefundId { get; init; }
     public DateTime? RefundedAtUtc { get; init; }
     public bool IsRefunded { get; init; }
+    public byte? CancellationReasonId { get; init; }
+    public string? CancellationReasonNameEn { get; init; }
+    public string? CancellationReasonNameAr { get; init; }
+    public string? CancellationNote { get; init; }
+    public DateTime? CancelledAt { get; init; }
+    public Guid? CancelledByUserId { get; init; }
+    public string? CancelledByName { get; init; }
+    public string? CancelledByRole { get; init; }
 }
 
 public sealed class CreateDirectOrderInput
@@ -68,6 +76,8 @@ public sealed class UpdateOrderStatusInput
     public string UserId { get; set; } = string.Empty;
     public long OrderId { get; set; }
     public byte StatusId { get; set; }
+    public byte? CancellationReasonId { get; set; }
+    public string? CancellationNote { get; set; }
 }
 
 public sealed class CreateStripeCheckoutInput
@@ -143,6 +153,19 @@ public sealed class MyRequestOfferDto
     public string? Notes { get; set; }
     public List<string> ImagePaths { get; set; } = [];
     public List<string> DocumentPaths { get; set; } = [];
+    public byte? CancellationReasonId { get; set; }
+    public string? CancellationReasonNameEn { get; set; }
+    public string? CancellationReasonNameAr { get; set; }
+    public string? CancellationNote { get; set; }
+    public DateTime? CancelledAt { get; set; }
+}
+
+public sealed class OrderCancellationReasonDto
+{
+    public byte Id { get; init; }
+    public string NameEn { get; init; } = string.Empty;
+    public string NameAr { get; init; } = string.Empty;
+    public bool RequiresNote { get; init; }
 }
 
 public sealed class RequestOrderReturnInput

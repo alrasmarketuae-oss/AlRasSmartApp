@@ -47,6 +47,26 @@ export default function OrderDetailPage() {
     }
   }
 
+  async function handleCancel(payload: {
+    cancellationReasonId: number
+    cancellationNote?: string
+  }) {
+    setActionError(null)
+    setSuccessMessage(null)
+
+    try {
+      await updateOrderStatus({
+        orderId: parsedId,
+        statusId: 6,
+        cancellationReasonId: payload.cancellationReasonId,
+        cancellationNote: payload.cancellationNote,
+      }).unwrap()
+      setSuccessMessage(t('orders.statusUpdateSuccess'))
+    } catch (err) {
+      setActionError(getRtkErrorMessage(err as never, t('orders.statusUpdateError')))
+    }
+  }
+
   const isRequestOffer =
     order != null && order.productTypeName.trim().toLowerCase().includes('request')
 
@@ -75,6 +95,7 @@ export default function OrderDetailPage() {
         <RequestOfferDetailView
           order={order}
           isUpdating={isUpdating}
+          onCancelOrder={(payload) => void handleCancel(payload)}
           backToListPath={backToListPath}
         />
       ) : (
@@ -84,6 +105,7 @@ export default function OrderDetailPage() {
           backToListPath={backToListPath}
           listTitleKey={listTitleKey}
           onStatusChange={(nextStatusId) => void handleStatus(nextStatusId)}
+          onCancelOrder={(payload) => void handleCancel(payload)}
         />
       )}
     </div>

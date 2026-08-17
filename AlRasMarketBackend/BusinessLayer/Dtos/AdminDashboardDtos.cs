@@ -355,6 +355,14 @@ public sealed class AdminOrderListItemDto
     public string? StripeRefundId { get; set; }
     public DateTime? RefundedAtUtc { get; set; }
     public bool IsRefunded { get; set; }
+    public byte? CancellationReasonId { get; set; }
+    public string? CancellationReasonNameEn { get; set; }
+    public string? CancellationReasonNameAr { get; set; }
+    public string? CancellationNote { get; set; }
+    public DateTime? CancelledAt { get; set; }
+    public Guid? CancelledByUserId { get; set; }
+    public string? CancelledByName { get; set; }
+    public string? CancelledByRole { get; set; }
     public string? ReturnReason { get; set; }
     public List<string> ReturnMediaPaths { get; set; } = [];
     public DateTime? ReturnRequestedAtUtc { get; set; }

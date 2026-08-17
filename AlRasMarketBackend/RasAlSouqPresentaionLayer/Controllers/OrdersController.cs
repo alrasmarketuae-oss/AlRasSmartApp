@@ -112,6 +112,18 @@ public class OrdersController(
     }
 
     /// <summary>
+    /// Active order-cancellation reasons (bilingual) for the cancel-order flow.
+    /// </summary>
+    [HttpGet("cancellation-reasons")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetCancellationReasons(CancellationToken cancellationToken)
+    {
+        var result = await ordersAppService.GetCancellationReasonsAsync(cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Lists orders for the authenticated user (buyer or supplier) — same shape as admin dashboard orders.
     /// </summary>
     [HttpGet("myOrders")]
@@ -380,7 +392,9 @@ public class OrdersController(
             {
                 UserId = userId,
                 OrderId = orderId,
-                StatusId = request.StatusId
+                StatusId = request.StatusId,
+                CancellationReasonId = request.CancellationReasonId,
+                CancellationNote = request.CancellationNote
             }, cancellationToken);
 
             return Ok(result);
@@ -704,4 +718,6 @@ public sealed class CreateOrderRequest
 public sealed class UpdateOrderStatusRequest
 {
     public byte StatusId { get; set; }
+    public byte? CancellationReasonId { get; set; }
+    public string? CancellationNote { get; set; }
 }

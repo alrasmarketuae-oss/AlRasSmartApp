@@ -172,13 +172,17 @@ public class AdminOrdersAppService(
         string adminUserId,
         long orderId,
         byte statusId,
+        byte? cancellationReasonId = null,
+        string? cancellationNote = null,
         CancellationToken cancellationToken = default)
     {
         var result = await _ordersAppService.UpdateOrderStatusAsync(new UpdateOrderStatusInput
         {
             UserId = adminUserId,
             OrderId = orderId,
-            StatusId = statusId
+            StatusId = statusId,
+            CancellationReasonId = cancellationReasonId,
+            CancellationNote = cancellationNote
         }, cancellationToken);
 
         await adminRealtimeNotificationService.BroadcastCountsAsync(cancellationToken);
@@ -186,7 +190,13 @@ public class AdminOrdersAppService(
             AdminAuditActions.OrderStatusUpdate,
             orderId,
             $"Updated order #{orderId} status to {OrderStatusCodes.GetNameEn(statusId)}",
-            new { statusId, statusName = OrderStatusCodes.GetNameEn(statusId) },
+            new
+            {
+                statusId,
+                statusName = OrderStatusCodes.GetNameEn(statusId),
+                cancellationReasonId,
+                cancellationNote
+            },
             cancellationToken);
         return result;
     }

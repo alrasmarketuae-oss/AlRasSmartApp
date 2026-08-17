@@ -20,6 +20,7 @@ public interface IRasAlSouqDbContext
     DbSet<OrderVideo> OrderVideos { get; }
     DbSet<OrderImage> OrderImages { get; }
     DbSet<OrderStatusHistory> OrderStatusHistories { get; }
+    DbSet<OrderCancellationReason> OrderCancellationReasons { get; }
     DbSet<InternationalShippingPost> InternationalShippingPosts { get; }
     DbSet<ShipmentStatus> ShipmentStatuses { get; }
     DbSet<InternationalShipment> InternationalShipments { get; }

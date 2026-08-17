@@ -41,7 +41,7 @@ public static class OrderStatusCodes
         Paid => "تم الدفع لـ Merge Spice",
         Shipping => "تم الشحن من المورد",
         Delivered => "تم التسليم",
-        Cancelled => "ملغي",
+        Cancelled => "تم إلغاء الصفقة",
         // Legacy status: same meaning as Delivered (no longer used in workflow).
         Received => "تم التسليم",
         PaidToSupplier => "تم الدفع للمورد من Merge Spice",

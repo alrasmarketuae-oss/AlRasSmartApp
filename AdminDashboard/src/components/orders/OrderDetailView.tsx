@@ -27,6 +27,8 @@ import OrderStatusActionButtons from './OrderStatusActionButtons'
 import OrderStatusHistoryStrip from './OrderStatusHistoryStrip'
 import OrderPrintOptionsDialog from './OrderPrintOptionsDialog'
 import OrderPrintSheet from './OrderPrintSheet'
+import CancelOrderDialog from './CancelOrderDialog'
+import OrderCancellationDetails from './OrderCancellationDetails'
 import { DEFAULT_ORDER_PRINT_OPTIONS, type OrderPrintOptions } from '../../utils/orderPrintOptions'
 import { triggerOrderPrintAfterRender } from '../../utils/fitOrderPrintToA4'
 import { formatAdAmount, amountsLookEqual, formatPackagingLabel, formatPriceTypeLabel, productTypeBadgeClass, resolveOrderChannelTypeKey, resolveOrderChannelTypeName } from '../../utils/adsDisplay'
@@ -44,6 +46,7 @@ import {
   canMarkOrderReceived,
   canSetCustomTextStatus,
   canUpdateOrderStatus,
+  canCancelOrder,
   needsAdminOrderModeration,
 } from '../../utils/orderWorkflow'
 
@@ -51,6 +54,10 @@ type OrderDetailViewProps = {
   order: AdminOrder
   isUpdating: boolean
   onStatusChange: (statusId: number) => void
+  onCancelOrder: (payload: {
+    cancellationReasonId: number
+    cancellationNote?: string
+  }) => void
   backToListPath?: string
   listTitleKey?: string
 }
@@ -358,6 +365,7 @@ export default function OrderDetailView({
   order,
   isUpdating,
   onStatusChange,
+  onCancelOrder,
   backToListPath = '/orders/retail',
   listTitleKey = 'nav.orderRetail',
 }: OrderDetailViewProps) {
@@ -393,6 +401,7 @@ export default function OrderDetailView({
   const [customStatusSuccess, setCustomStatusSuccess] = useState<string | null>(null)
   const [confirmMarkReceived, setConfirmMarkReceived] = useState(false)
   const [printDialogOpen, setPrintDialogOpen] = useState(false)
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const [printOptions, setPrintOptions] = useState<OrderPrintOptions>(
     DEFAULT_ORDER_PRINT_OPTIONS,
   )
@@ -431,6 +440,7 @@ export default function OrderDetailView({
   const canMarkReceived = canMarkOrderReceived(order)
   const statusHistory = order.statusHistory ?? []
   const needsAdminModeration = needsAdminOrderModeration(order)
+  const canCancel = canCancelOrder(order) && !needsAdminModeration
   const isReviewingAdminModeration = isApprovingOffer || isRejectingOffer || isUpdating
 
   const orderedQuantity = resolveOrderedQuantity(order)
@@ -698,8 +708,20 @@ export default function OrderDetailView({
               productTypeName={order.productTypeName}
             />
           ) : null}
+          {canCancel && (
+            <button
+              type="button"
+              disabled={isUpdating}
+              onClick={() => setCancelDialogOpen(true)}
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-red-600 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 disabled:opacity-60"
+            >
+              {t('orders.actionCancel')}
+            </button>
+          )}
         </div>
       </div>
+
+      <OrderCancellationDetails order={order} />
 
       {/* Metrics */}
       <div
@@ -1753,6 +1775,18 @@ export default function OrderDetailView({
             if (!isMarkingReceived) setConfirmMarkReceived(false)
           }}
           onConfirm={submitMarkReceived}
+        />
+
+        <CancelOrderDialog
+          open={cancelDialogOpen}
+          busy={isUpdating}
+          onClose={() => {
+            if (!isUpdating) setCancelDialogOpen(false)
+          }}
+          onConfirm={(payload) => {
+            setCancelDialogOpen(false)
+            onCancelOrder(payload)
+          }}
         />
       </div>
     </div>

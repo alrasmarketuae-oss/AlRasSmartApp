@@ -50,6 +50,11 @@ class ChatMessageModel {
     this.supportAgentName,
     this.processingProgress,
     this.processingLabel,
+    this.replyToMessageId,
+    this.replyToPreview,
+    this.replyToMessageType,
+    this.isForwarded = false,
+    this.isDeleted = false,
   });
 
   final String messageId;
@@ -67,6 +72,11 @@ class ChatMessageModel {
   final String? supportAgentName;
   final double? processingProgress;
   final String? processingLabel;
+  final String? replyToMessageId;
+  final String? replyToPreview;
+  final ChatMessageType? replyToMessageType;
+  final bool isForwarded;
+  final bool isDeleted;
 
   /// Chat attachments are stored on the CDN. Relative DB paths resolve to cdn.alrasmarketapp.com.
   String get contentUrl => resolveAttachmentUrl(content);
@@ -191,6 +201,11 @@ class ChatMessageModel {
     String? processingLabel,
     bool clearProcessingProgress = false,
     bool clearProcessingLabel = false,
+    String? replyToMessageId,
+    String? replyToPreview,
+    ChatMessageType? replyToMessageType,
+    bool? isForwarded,
+    bool? isDeleted,
   }) {
     return ChatMessageModel(
       messageId: messageId ?? this.messageId,
@@ -212,6 +227,11 @@ class ChatMessageModel {
       processingLabel: clearProcessingLabel
           ? null
           : (processingLabel ?? this.processingLabel),
+      replyToMessageId: replyToMessageId ?? this.replyToMessageId,
+      replyToPreview: replyToPreview ?? this.replyToPreview,
+      replyToMessageType: replyToMessageType ?? this.replyToMessageType,
+      isForwarded: isForwarded ?? this.isForwarded,
+      isDeleted: isDeleted ?? this.isDeleted,
     );
   }
 
@@ -237,6 +257,20 @@ class ChatMessageModel {
           (json['supportAgentId'] ?? json['SupportAgentId'])?.toString(),
       supportAgentName:
           (json['supportAgentName'] ?? json['SupportAgentName'])?.toString(),
+      replyToMessageId:
+          (json['replyToMessageId'] ?? json['ReplyToMessageId'])?.toString(),
+      replyToPreview:
+          (json['replyToPreview'] ?? json['ReplyToPreview'])?.toString(),
+      replyToMessageType: (json['replyToMessageType'] ??
+                  json['ReplyToMessageType']) !=
+              null
+          ? ChatMessageType.fromApi(
+              json['replyToMessageType'] ?? json['ReplyToMessageType'],
+            )
+          : null,
+      isForwarded:
+          json['isForwarded'] as bool? ?? json['IsForwarded'] as bool? ?? false,
+      isDeleted: json['isDeleted'] as bool? ?? json['IsDeleted'] as bool? ?? false,
     );
   }
 }

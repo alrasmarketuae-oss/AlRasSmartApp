@@ -31,6 +31,8 @@ import {
   useMarkChatDeliveredMutation,
   useSearchChatConversationsQuery,
   useSendChatMessageMutation,
+  useForwardChatMessageMutation,
+  useDeleteChatMessageMutation,
   useUploadChatMediaMutation,
   useUploadChatImagesMutation,
   useClaimSupportConversationMutation,
@@ -59,7 +61,7 @@ export default function ChatPage() {
   const dispatch = useAppDispatch()
   const location = useLocation()
   const navigate = useNavigate()
-  const { subscribeReceiveMessage, subscribeMessageUpdated, subscribeConversationSeen, subscribeMessagesDelivered, chatPollingInterval } = useChat()
+  const { subscribeReceiveMessage, subscribeMessageUpdated, subscribeConversationSeen, subscribeMessagesDelivered, subscribeMessageDeleted, chatPollingInterval } = useChat()
   const authUser = getAuthUser()
   const myUserId = authUser?.id ?? null
   const viewerIsSuperAdmin = isSuperAdmin(authUser?.roleName)
@@ -74,6 +76,8 @@ export default function ChatPage() {
   const [isConversationLocked, setIsConversationLocked] = useState(false)
   const [lockAgentName, setLockAgentName] = useState<string | null>(null)
   const [supervisingAgentName, setSupervisingAgentName] = useState<string | null>(null)
+  const [replyTo, setReplyTo] = useState<ChatMessage | null>(null)
+  const [forwardingMessage, setForwardingMessage] = useState<ChatMessage | null>(null)
 
   const [claimSupportConversation] = useClaimSupportConversationMutation()
   const [releaseSupportConversation, { isLoading: isReleasingConversation }] =
@@ -145,6 +149,8 @@ export default function ChatPage() {
   const supportSessions = threadDetails?.supportSessions ?? []
 
   const [sendMessage] = useSendChatMessageMutation()
+  const [forwardMessage] = useForwardChatMessageMutation()
+  const [deleteMessage] = useDeleteChatMessageMutation()
   const [uploadMedia] = useUploadChatMediaMutation()
   const [uploadImages] = useUploadChatImagesMutation()
   const [markSeen] = useMarkChatSeenMutation()
@@ -433,6 +439,29 @@ export default function ChatPage() {
     })
   }, [subscribeMessageUpdated, mergeMessage])
 
+  useEffect(() => {
+    return subscribeMessageDeleted((payload) => {
+      const currentOther = selectedUserIdRef.current
+      if (
+        !currentOther ||
+        (payload.fromUserId !== currentOther && payload.toUserId !== currentOther)
+      ) {
+        return
+      }
+
+      setLocalMessages((prev) => {
+        if (payload.scope === 'me' || !payload.message) {
+          return prev.filter((message) => message.messageId !== payload.messageId)
+        }
+        return prev.map((message) =>
+          message.messageId === payload.messageId
+            ? { ...message, ...payload.message, isDeleted: true, content: '' }
+            : message,
+        )
+      })
+    })
+  }, [subscribeMessageDeleted])
+
   const contacts = inbox?.contacts ?? []
 
   const displayedContacts = useMemo(() => {
@@ -487,6 +516,13 @@ export default function ChatPage() {
       deliveryStatus: 'sending',
       localPreviewUrl,
       localPreviewMime,
+      replyToMessageId: replyTo?.messageId ?? null,
+      replyToPreview: replyTo
+        ? replyTo.messageType === 1
+          ? replyTo.content.slice(0, 80)
+          : replyTo.replyToPreview ?? null
+        : null,
+      replyToMessageType: replyTo?.messageType ?? null,
     }
 
     mergeMessage(optimistic)
@@ -503,8 +539,10 @@ export default function ChatPage() {
         toUserId: selectedUserId,
         messageType,
         content,
+        replyToMessageId: replyTo?.messageId ?? undefined,
       }).unwrap()
       replaceOptimisticMessage(optimisticId, { ...result, content })
+      setReplyTo(null)
       await invalidateChatCaches(selectedUserId)
     } catch (err) {
       markOptimisticFailed(optimisticId)
@@ -622,8 +660,53 @@ export default function ChatPage() {
     })
   }
 
+  async function handleDeleteMessage(message: ChatMessage, scope: 'me' | 'everyone') {
+    setActionError(null)
+    try {
+      const result = await deleteMessage({ messageId: message.messageId, scope }).unwrap()
+      setLocalMessages((prev) => {
+        if (scope === 'me' || !result.message) {
+          return prev.filter((item) => item.messageId !== message.messageId)
+        }
+        return prev.map((item) =>
+          item.messageId === message.messageId
+            ? { ...item, ...result.message, isDeleted: true, content: '' }
+            : item,
+        )
+      })
+      if (replyTo?.messageId === message.messageId) setReplyTo(null)
+      if (forwardingMessage?.messageId === message.messageId) setForwardingMessage(null)
+      if (selectedUserId) await invalidateChatCaches(selectedUserId)
+    } catch (err) {
+      setActionError(getRtkErrorMessage(err as never, t('chat.deleteError')))
+    }
+  }
+
+  async function handleForwardTo(toUserId: string) {
+    if (!forwardingMessage) return
+    setActionError(null)
+    try {
+      const result = await forwardMessage({
+        messageId: forwardingMessage.messageId,
+        toUserId,
+      }).unwrap()
+      setForwardingMessage(null)
+      if (selectedUserId === toUserId) {
+        mergeMessage(result)
+      }
+      await invalidateChatCaches(toUserId)
+      if (selectedUserId && selectedUserId !== toUserId) {
+        await invalidateChatCaches(selectedUserId)
+      }
+    } catch (err) {
+      setActionError(getRtkErrorMessage(err as never, t('chat.forwardError')))
+    }
+  }
+
   async function handleSelectContact(contact: ChatContact) {
     setActionError(null)
+    setReplyTo(null)
+    setForwardingMessage(null)
 
     if (hasPermission(PERMISSIONS.chatAccess)) {
       try {
@@ -809,6 +892,21 @@ export default function ChatPage() {
           onSendVideo={handleSendVideo}
           onSendDocument={handleSendDocument}
           onSendLocation={handleSendLocation}
+          onReply={(message) => {
+            if (message.isDeleted || message.deliveryStatus === 'sending') return
+            setReplyTo(message)
+          }}
+          onForward={(message) => {
+            if (message.isDeleted || message.deliveryStatus === 'sending') return
+            setForwardingMessage(message)
+          }}
+          onDeleteMessage={handleDeleteMessage}
+          replyTo={replyTo}
+          onCancelReply={() => setReplyTo(null)}
+          forwardingMessage={forwardingMessage}
+          forwardContacts={contacts}
+          onForwardTo={handleForwardTo}
+          onCloseForward={() => setForwardingMessage(null)}
           onBack={() => setSelectedContact(null)}
           companyDisplay={companyDisplay}
           className={showMobileThread ? 'flex' : 'hidden lg:flex'}

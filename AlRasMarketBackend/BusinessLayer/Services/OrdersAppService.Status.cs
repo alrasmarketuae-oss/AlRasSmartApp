@@ -61,6 +61,11 @@ public partial class OrdersAppService
 
         EnsureUserCanUpdateStatus(user, order, input.StatusId);
 
+        if (input.StatusId == OrderStatusCodes.Cancelled)
+        {
+            await ApplyCancellationMetadataAsync(order, user, input, cancellationToken);
+        }
+
         var previousStatus = order.StatusId;
         var isAdmin = user.RoleId == 1;
         var product = order.Product;
@@ -180,11 +185,15 @@ public partial class OrdersAppService
         {
             if (ProductTypeCodes.IsRequests(productTypeId) && !isAdmin)
             {
-                RequestOfferStatusLabels.ApplyRejectedByAdvertiser(order);
+                RequestOfferStatusLabels.ApplyRejectedByAdvertiser(order, userId);
             }
             else if ((sellerFirst || ProductTypeCodes.IsOffers(productTypeId)) && !isAdmin)
             {
-                RequestOfferStatusLabels.ApplyRejectedOrder(order);
+                RequestOfferStatusLabels.ApplyRejectedOrder(order, userId);
+            }
+            else
+            {
+                RequestOfferStatusLabels.ApplyCancelled(order, userId);
             }
 
             if (order.StockQuantityDeducted
@@ -256,9 +265,10 @@ public partial class OrdersAppService
         var commissionSettings = await commissionSettingsProvider.GetAsync(cancellationToken);
         var categoryCommissions = await categoryCommissionProvider.GetAsync(cancellationToken);
 
+        var mappedOrder = orderForNotification.Product is not null ? orderForNotification : order;
         var detail = AdminOrderPricingHelper.ToCustomerFacingDetail(
-            order,
-            order.Product ?? throw new InvalidOperationException("Order product is missing."),
+            mappedOrder,
+            mappedOrder.Product ?? throw new InvalidOperationException("Order product is missing."),
             commissionSettings,
             categoryCommissions);
 
@@ -273,6 +283,82 @@ public partial class OrdersAppService
         }
 
         return detail;
+    }
+
+    public async Task<IReadOnlyList<OrderCancellationReasonDto>> GetCancellationReasonsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var reasons = await orderData.GetActiveCancellationReasonsAsync(cancellationToken);
+        return reasons
+            .Select(x => new OrderCancellationReasonDto
+            {
+                Id = x.Id,
+                NameEn = x.NameEn,
+                NameAr = x.NameAr,
+                RequiresNote = OrderCancellationReasonCodes.RequiresNote(x.Id)
+            })
+            .ToList();
+    }
+
+    private async Task ApplyCancellationMetadataAsync(
+        Order order,
+        User user,
+        UpdateOrderStatusInput input,
+        CancellationToken cancellationToken)
+    {
+        var reasonId = await ResolveCancellationReasonIdAsync(order, user, input.CancellationReasonId, cancellationToken);
+        var note = string.IsNullOrWhiteSpace(input.CancellationNote)
+            ? null
+            : input.CancellationNote.Trim();
+
+        if (note is { Length: > 2000 })
+        {
+            throw new ArgumentException("Cancellation note cannot exceed 2000 characters.");
+        }
+
+        if (OrderCancellationReasonCodes.RequiresNote(reasonId) && string.IsNullOrWhiteSpace(note))
+        {
+            throw new ArgumentException("Cancellation note is required when the reason is Other.");
+        }
+
+        order.CancellationReasonId = reasonId;
+        order.CancellationNote = note;
+        order.CancelledAt = DateTime.UtcNow;
+        order.CancelledByUserId = user.Id;
+    }
+
+    private async Task<byte> ResolveCancellationReasonIdAsync(
+        Order order,
+        User user,
+        byte? requestedReasonId,
+        CancellationToken cancellationToken)
+    {
+        if (requestedReasonId.HasValue)
+        {
+            var reason = await orderData.GetCancellationReasonByIdAsync(requestedReasonId.Value, cancellationToken)
+                ?? throw new ArgumentException("Invalid cancellation reason.");
+            if (!reason.IsActive)
+            {
+                throw new ArgumentException("The selected cancellation reason is not available.");
+            }
+
+            return reason.Id;
+        }
+
+        var isBuyer = order.FromUserId == user.Id;
+        var isSeller = order.ToUserId == user.Id || order.Product?.OwnerId == user.Id;
+
+        if (isBuyer)
+        {
+            return OrderCancellationReasonCodes.BuyerRequested;
+        }
+
+        if (isSeller)
+        {
+            return OrderCancellationReasonCodes.SupplierUnavailable;
+        }
+
+        throw new ArgumentException("CancellationReasonId is required to cancel an order.");
     }
 
     private async Task<string> TryRefundCancelledOnlineOrderAsync(long orderId, CancellationToken cancellationToken)

@@ -532,6 +532,20 @@ public sealed class ProductDataAccess(
         int take,
         CancellationToken cancellationToken = default)
     {
+        var (rows, _) = await SearchPublicProductsByNameAnyPageAsync(
+            matchWords,
+            skip: 0,
+            take,
+            cancellationToken).ConfigureAwait(false);
+        return rows;
+    }
+
+    public async Task<(List<ProductPublicRow> Rows, int TotalCount)> SearchPublicProductsByNameAnyPageAsync(
+        IReadOnlyList<string> matchWords,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
         var productsQuery = ProductQueryHelpers.ApplyPublicProductFilter(dbContext.Products.AsNoTracking());
         var uniqueWords = matchWords
             .Select(w => w.Trim())
@@ -541,7 +555,7 @@ public sealed class ProductDataAccess(
             .ToList();
         if (uniqueWords.Count == 0)
         {
-            return [];
+            return ([], 0);
         }
 
         // One round-trip per source (products / translations) instead of 2×N word loops.
@@ -591,7 +605,7 @@ public sealed class ProductDataAccess(
 
         if (candidateIds.Count == 0)
         {
-            return [];
+            return ([], 0);
         }
 
         var candidateRows = await productsQuery
@@ -631,14 +645,33 @@ public sealed class ProductDataAccess(
 
         if (wholeWordIds.Count == 0)
         {
-            return [];
+            return ([], 0);
         }
 
-        return await ProductQueryHelpers.SelectPublicProductRows(
+        var rows = await ProductQueryHelpers.SelectPublicProductRows(
                 productsQuery.Where(x => wholeWordIds.Contains(x.ProductId)))
             .OrderByDescending(x => x.CreatedAt)
+            .Skip(skip)
             .Take(take)
             .ToListAsync(cancellationToken);
+        return (rows, wholeWordIds.Count);
+    }
+
+    public async Task<(List<ProductPublicRow> Rows, int TotalCount)> GetPublicProductsByCategoryPageAsync(
+        byte categoryId,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        var productsQuery = ProductQueryHelpers.ApplyPublicProductFilter(dbContext.Products.AsNoTracking())
+            .Where(x => x.CategoryId == categoryId);
+        var totalCount = await productsQuery.CountAsync(cancellationToken);
+        var rows = await ProductQueryHelpers.SelectPublicProductRows(productsQuery)
+            .OrderByDescending(x => x.CreatedAt)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+        return (rows, totalCount);
     }
 
     public Task<List<ProductNameTranslationRow>> GetProductNameTranslationsByProductIdsAsync(

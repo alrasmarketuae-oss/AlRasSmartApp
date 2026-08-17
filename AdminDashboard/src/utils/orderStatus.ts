@@ -35,7 +35,7 @@ export function getOrderStatusLabel(statusId: number, locale: 'ar' | 'en' = 'ar'
       // 7 = legacy Received — same as Delivered.
       return ar ? 'تم التسليم' : 'Delivered'
     case 6:
-      return ar ? 'ملغي' : 'Cancelled'
+      return ar ? 'تم إلغاء الصفقة' : 'Cancelled'
     case 8:
       return ar ? 'تم الدفع للمورد من Merge Spice' : 'Paid to supplier from Merge Spice'
     case 9:

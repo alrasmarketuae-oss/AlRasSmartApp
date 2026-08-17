@@ -120,6 +120,7 @@ public class ProductsController(
         [FromRoute] int categoryId,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
+        [FromQuery] bool publicCatalog = false,
         CancellationToken cancellationToken = default)
     {
         if (categoryId < byte.MinValue || categoryId > byte.MaxValue)
@@ -133,7 +134,8 @@ public class ProductsController(
             {
                 CategoryId = (byte)categoryId,
                 Page = page,
-                PageSize = pageSize
+                PageSize = pageSize,
+                PublicCatalog = publicCatalog
             }, cancellationToken);
             return Ok(result);
         }
@@ -319,14 +321,19 @@ public class ProductsController(
     }
 
     /// <summary>
-    /// Visual search: Image → CLIP → Qdrant → matching catalog products.
+    /// Visual search: Image → CLIP → Qdrant. When labeled (e.g. cardamom),
+    /// expands to the full matching catalog, paginated.
     /// </summary>
     [HttpPost("detect-by-image")]
     [AllowAnonymous]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> DetectByImage([FromForm] DetectProductsByImageRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> DetectByImage(
+        [FromForm] DetectProductsByImageRequest request,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
     {
         if (request.File is null || request.File.Length == 0)
         {
@@ -343,7 +350,12 @@ public class ProductsController(
         try
         {
             await using var stream = request.File.OpenReadStream();
-            var result = await _productsAppService.DetectProductsFromImageAsync(stream, request.File.FileName, cancellationToken);
+            var result = await _productsAppService.DetectProductsFromImageAsync(
+                stream,
+                request.File.FileName,
+                cancellationToken,
+                page,
+                pageSize);
             return Ok(result);
         }
         catch (ArgumentException ex)

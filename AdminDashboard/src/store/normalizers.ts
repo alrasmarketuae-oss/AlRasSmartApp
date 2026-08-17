@@ -771,6 +771,22 @@ type RawOrder = AdminOrder & {
   refundedAtUtc?: string | null
   IsRefunded?: boolean
   isRefunded?: boolean
+  cancellationReasonId?: number | null
+  CancellationReasonId?: number | null
+  cancellationReasonNameEn?: string | null
+  CancellationReasonNameEn?: string | null
+  cancellationReasonNameAr?: string | null
+  CancellationReasonNameAr?: string | null
+  cancellationNote?: string | null
+  CancellationNote?: string | null
+  cancelledAt?: string | null
+  CancelledAt?: string | null
+  cancelledByUserId?: string | null
+  CancelledByUserId?: string | null
+  cancelledByName?: string | null
+  CancelledByName?: string | null
+  cancelledByRole?: string | null
+  CancelledByRole?: string | null
 }
 
 function normalizeOrderImage(raw: RawOrderImage) {
@@ -1031,6 +1047,26 @@ export function normalizeOrder(raw: RawOrder): AdminOrder {
     stripeRefundId: raw.stripeRefundId ?? raw.StripeRefundId ?? null,
     refundedAtUtc: raw.refundedAtUtc ?? raw.RefundedAtUtc ?? null,
     isRefunded: raw.isRefunded ?? raw.IsRefunded ?? false,
+    cancellationReasonId: (() => {
+      const value = raw.cancellationReasonId ?? raw.CancellationReasonId
+      if (value == null || value === ('' as never)) return null
+      const n = Number(value)
+      return Number.isFinite(n) && n > 0 ? n : null
+    })(),
+    cancellationReasonNameEn:
+      raw.cancellationReasonNameEn ?? raw.CancellationReasonNameEn ?? null,
+    cancellationReasonNameAr:
+      raw.cancellationReasonNameAr ?? raw.CancellationReasonNameAr ?? null,
+    cancellationNote: raw.cancellationNote ?? raw.CancellationNote ?? null,
+    cancelledAt: raw.cancelledAt ?? raw.CancelledAt ?? null,
+    cancelledByUserId: (() => {
+      const value = raw.cancelledByUserId ?? raw.CancelledByUserId
+      if (value == null) return null
+      const text = String(value).trim()
+      return text.length > 0 ? text : null
+    })(),
+    cancelledByName: raw.cancelledByName ?? raw.CancelledByName ?? null,
+    cancelledByRole: raw.cancelledByRole ?? raw.CancelledByRole ?? null,
     returnReason: raw.returnReason ?? (raw as { ReturnReason?: string | null }).ReturnReason ?? null,
     returnMediaPaths:
       (raw.returnMediaPaths ??

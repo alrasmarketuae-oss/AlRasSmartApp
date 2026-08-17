@@ -198,6 +198,11 @@ export function canUpdateOrderStatus(
   return false
 }
 
+/** Admin can cancel from Ordered / Approved / Paid / Delivered / Awaiting seller (matches backend CanTransition). */
+export function canCancelOrder(order: { statusId: number }): boolean {
+  return [1, 2, 3, 5, 11].includes(order.statusId)
+}
+
 function isModeratedProductType(productTypeName?: string): boolean {
   const type = (productTypeName ?? '').trim().toLowerCase()
   return (

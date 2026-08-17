@@ -137,6 +137,14 @@ export type AdminOrder = {
   stripeRefundId: string | null
   refundedAtUtc: string | null
   isRefunded: boolean
+  cancellationReasonId?: number | null
+  cancellationReasonNameEn?: string | null
+  cancellationReasonNameAr?: string | null
+  cancellationNote?: string | null
+  cancelledAt?: string | null
+  cancelledByUserId?: string | null
+  cancelledByName?: string | null
+  cancelledByRole?: string | null
   returnReason?: string | null
   returnMediaPaths?: string[]
   returnRequestedAtUtc?: string | null
@@ -176,4 +184,11 @@ export type AdminOrderStats = {
   orderedCount: number
   shippingCount: number
   deliveredCount: number
+}
+
+export type OrderCancellationReason = {
+  id: number
+  nameEn: string
+  nameAr: string
+  requiresNote: boolean
 }

@@ -30,6 +30,8 @@ import ConfirmDialog from '../ui/ConfirmDialog'
 import { getRtkErrorMessage } from '../../utils/rtkError'
 import OrderStatusHistoryStrip from './OrderStatusHistoryStrip'
 import RelatedOrdersBanner from './RelatedOrdersBanner'
+import CancelOrderDialog from './CancelOrderDialog'
+import OrderCancellationDetails from './OrderCancellationDetails'
 import ProductDetailsDialog from './ProductDetailsDialog'
 import {
   displayAdProductTypeName,
@@ -51,12 +53,17 @@ import { formatUtcDateTime } from '../../utils/formatTimeAgo'
 import {
   canMarkOrderReceived,
   canSetCustomTextStatus,
+  canCancelOrder,
   needsAdminOrderModeration,
 } from '../../utils/orderWorkflow'
 
 type RequestOfferDetailViewProps = {
   order: AdminOrder
   isUpdating: boolean
+  onCancelOrder: (payload: {
+    cancellationReasonId: number
+    cancellationNote?: string
+  }) => void
   backToListPath?: string
 }
 
@@ -160,6 +167,7 @@ function parseAdvertiserUnitPrice(value: string): number | null {
 export default function RequestOfferDetailView({
   order,
   isUpdating,
+  onCancelOrder,
   backToListPath,
 }: RequestOfferDetailViewProps) {
   const { t, locale } = useAppPreferences()
@@ -180,6 +188,7 @@ export default function RequestOfferDetailView({
   const [customStatusError, setCustomStatusError] = useState<string | null>(null)
   const [customStatusSuccess, setCustomStatusSuccess] = useState<string | null>(null)
   const [confirmMarkReceived, setConfirmMarkReceived] = useState(false)
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const [contactTarget, setContactTarget] = useState<ContactTarget | null>(null)
   const [blurTarget, setBlurTarget] = useState<{ id: number; url: string } | null>(null)
   const [blurError, setBlurError] = useState<string | null>(null)
@@ -226,6 +235,7 @@ export default function RequestOfferDetailView({
       : order.statusName?.trim() || getOrderStatusLabel(order.statusId, locale)
 
   const needsAdminModeration = needsAdminOrderModeration(order)
+  const canCancel = canCancelOrder(order) && !needsAdminModeration
   const canSetCustomRequestStatus = canSetCustomTextStatus(order)
   const canMarkReceived = canMarkOrderReceived(order)
   const statusHistory = order.statusHistory ?? []
@@ -653,8 +663,20 @@ export default function RequestOfferDetailView({
           >
             {t('reqsOffers.downloadPdf')}
           </button>
+          {canCancel ? (
+            <button
+              type="button"
+              disabled={isUpdating}
+              onClick={() => setCancelDialogOpen(true)}
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-red-600 px-3 text-xs font-bold text-white transition hover:bg-red-700 disabled:opacity-60"
+            >
+              {t('orders.actionCancel')}
+            </button>
+          ) : null}
         </div>
       </div>
+
+      <OrderCancellationDetails order={order} />
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(260px,300px)]">
         <div className="space-y-5">
@@ -1461,6 +1483,18 @@ export default function RequestOfferDetailView({
         onConfirm={submitMarkReceived}
         onCancel={() => {
           if (!isMarkingReceived) setConfirmMarkReceived(false)
+        }}
+      />
+
+      <CancelOrderDialog
+        open={cancelDialogOpen}
+        busy={isUpdating}
+        onClose={() => {
+          if (!isUpdating) setCancelDialogOpen(false)
+        }}
+        onConfirm={(payload) => {
+          setCancelDialogOpen(false)
+          onCancelOrder(payload)
         }}
       />
 

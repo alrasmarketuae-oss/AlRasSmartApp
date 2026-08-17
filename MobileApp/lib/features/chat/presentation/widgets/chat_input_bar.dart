@@ -20,6 +20,8 @@ class ChatInputBar extends StatefulWidget {
     required this.onSendVideo,
     required this.onSendLocation,
     this.isSending = false,
+    this.replyPreview,
+    this.onCancelReply,
   });
 
   final ValueChanged<String> onSendText;
@@ -29,6 +31,8 @@ class ChatInputBar extends StatefulWidget {
   final ValueChanged<String> onSendVideo;
   final ValueChanged<String> onSendLocation;
   final bool isSending;
+  final String? replyPreview;
+  final VoidCallback? onCancelReply;
 
   @override
   State<ChatInputBar> createState() => _ChatInputBarState();
@@ -249,7 +253,46 @@ class _ChatInputBarState extends State<ChatInputBar> {
       ),
       child: SafeArea(
         top: false,
-        child: Padding(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (widget.replyPreview != null &&
+                widget.replyPreview!.trim().isNotEmpty)
+              Container(
+                margin: EdgeInsets.fromLTRB(12.w, 8.h, 12.w, 0),
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                decoration: BoxDecoration(
+                  color: AppColors.card(context),
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: const Border(
+                    left: BorderSide(color: LightColor.defaultColor, width: 3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        widget.replyPreview!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: AppColors.subtitle(context),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: widget.onCancelReply,
+                      icon: Icon(
+                        Icons.close,
+                        size: 18.sp,
+                        color: AppColors.subtitle(context),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            Padding(
           padding: EdgeInsets.only(
             bottom: 10.h,
             left: 10.w,
@@ -329,6 +372,8 @@ class _ChatInputBarState extends State<ChatInputBar> {
           ),
         ],
           ),
+        ),
+          ],
         ),
       ),
     );

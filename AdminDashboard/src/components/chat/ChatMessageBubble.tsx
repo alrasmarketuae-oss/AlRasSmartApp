@@ -25,7 +25,6 @@ export default function ChatMessageBubble({ message, isMine }: ChatMessageBubble
   return (
     <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
       <div
-        // Keep message bodies as written — browsers must not auto-translate chat text.
         translate="no"
         className={`notranslate max-w-[88%] rounded-2xl px-3 py-2 shadow-sm sm:max-w-[85%] sm:px-3.5 sm:py-2.5 ${
           isMine
@@ -33,14 +32,39 @@ export default function ChatMessageBubble({ message, isMine }: ChatMessageBubble
             : 'chat-bubble-theirs rounded-es-md'
         } ${message.deliveryStatus === 'failed' ? 'ring-2 ring-red-300/80' : ''}`}
       >
-        <MessageBody message={message} isMine={isMine} />
+        {message.isDeleted ? (
+          <p className="text-sm italic opacity-80">{t('chat.deletedMessage')}</p>
+        ) : (
+          <>
+            {message.isForwarded ? (
+              <p className={`mb-1 text-[11px] font-semibold ${isMine ? 'text-white/80' : 'text-slate-500'}`}>
+                {t('chat.forwarded')}
+              </p>
+            ) : null}
+            {message.replyToMessageId ? (
+              <div
+                className={`mb-1.5 rounded-lg border-s-2 px-2 py-1 text-xs ${
+                  isMine
+                    ? 'border-white/70 bg-white/15 text-white/90'
+                    : 'border-[#3B7FC7] bg-[#3B7FC7]/10 text-slate-600 dark:text-slate-300'
+                }`}
+              >
+                <p className="font-semibold">{t('chat.replyTo')}</p>
+                <p className="notranslate line-clamp-2" translate="no">
+                  {message.replyToPreview || t('chat.deletedMessage')}
+                </p>
+              </div>
+            ) : null}
+            <MessageBody message={message} isMine={isMine} />
+          </>
+        )}
         <div
           className={`mt-1.5 flex items-center justify-end gap-2 text-[10px] ${
             isMine ? 'opacity-80' : 'text-slate-500 dark:text-slate-400'
           }`}
         >
           <span>{timeLabel}</span>
-          {message.isEdited ? <span>· {t('chat.edited')}</span> : null}
+          {message.isEdited && !message.isDeleted ? <span>· {t('chat.edited')}</span> : null}
           {isMine ? <DeliveryIndicator message={message} /> : null}
         </div>
       </div>

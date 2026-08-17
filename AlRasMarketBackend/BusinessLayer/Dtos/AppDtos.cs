@@ -365,6 +365,8 @@ public sealed class GetProductsByCategoryInput
     public byte CategoryId { get; set; }
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 20;
+    /// <summary>When true, include every public listing in the category (image-search follow-up pages).</summary>
+    public bool PublicCatalog { get; set; }
 }
 
 public sealed class GetProductsInput

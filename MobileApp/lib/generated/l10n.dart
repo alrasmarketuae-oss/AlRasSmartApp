@@ -5801,6 +5801,61 @@ class S {
     );
   }
 
+  /// `Reply`
+  String get chatReply {
+    return Intl.message('Reply', name: 'chatReply', desc: '', args: []);
+  }
+
+  /// `Forward`
+  String get chatForward {
+    return Intl.message('Forward', name: 'chatForward', desc: '', args: []);
+  }
+
+  /// `Delete for me`
+  String get chatDeleteForMe {
+    return Intl.message(
+      'Delete for me',
+      name: 'chatDeleteForMe',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Delete for everyone`
+  String get chatDeleteForEveryone {
+    return Intl.message(
+      'Delete for everyone',
+      name: 'chatDeleteForEveryone',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This message was deleted`
+  String get chatDeletedMessage {
+    return Intl.message(
+      'This message was deleted',
+      name: 'chatDeletedMessage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Forwarded`
+  String get chatForwarded {
+    return Intl.message(
+      'Forwarded',
+      name: 'chatForwarded',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Reply to`
+  String get chatReplyTo {
+    return Intl.message('Reply to', name: 'chatReplyTo', desc: '', args: []);
+  }
+
   /// `Messages are end-to-end encrypted`
   String get chatE2eNoticeTitle {
     return Intl.message(

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:alrasmarket/core/media/media_compression_service.dart';
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
+import 'package:alrasmarket/features/chat/data/models/chat_message_deleted_event.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_message_model.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_message_type.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_presence_model.dart';
@@ -31,6 +32,7 @@ class ChatCubit extends Cubit<ChatState> {
   StreamSubscription<ChatMessageModel>? _messageSubscription;
   StreamSubscription<dynamic>? _seenSubscription;
   StreamSubscription<dynamic>? _deliveredSubscription;
+  StreamSubscription<dynamic>? _deletedSubscription;
   StreamSubscription<ChatPresenceModel>? _presenceSubscription;
   StreamSubscription<ChatSupportSessionModel>? _sessionSubscription;
   Timer? _presenceTimer;
@@ -45,6 +47,7 @@ class ChatCubit extends Cubit<ChatState> {
   String? otherUserId;
   ChatPresenceModel? otherUserPresence;
   bool _isConversationActive = false;
+  ChatMessageModel? replyTo;
 
   void _initialize() {
     _messageSubscription = _repository.messageStream.listen((message) {
@@ -101,6 +104,8 @@ class ChatCubit extends Cubit<ChatState> {
         emit(ChatPresenceUpdated(presence));
       }
     });
+
+    _deletedSubscription = _repository.deletedStream.listen(_applyDeletedEvent);
 
     _sessionSubscription =
         _repository.supportSessionStream.listen(_applySupportSession);
@@ -368,6 +373,9 @@ class ChatCubit extends Cubit<ChatState> {
       processingProgress: 0,
       processingLabel:
           messageType == ChatMessageType.file ? 'Uploading...' : 'Compressing...',
+      replyToMessageId: replyTo?.messageId,
+      replyToPreview: replyTo?.replyToPreview ?? replyTo?.content,
+      replyToMessageType: replyTo?.messageType,
     );
     messages.add(localMessage);
     emit(ChatMessagesLoaded(List.from(messages)));
@@ -576,15 +584,18 @@ class ChatCubit extends Cubit<ChatState> {
     final tempId =
         replaceTempId ?? 'local_${DateTime.now().microsecondsSinceEpoch}';
     if (replaceTempId == null) {
-      final localMessage = ChatMessageModel(
-        messageId: tempId,
-        fromUserId: uid,
-        toUserId: oid,
-        messageType: type,
-        content: content.trim(),
-        sentAtUtc: DateTime.now().toUtc(),
-        deliveryStatus: MessageDeliveryStatus.sending,
-      );
+    final localMessage = ChatMessageModel(
+      messageId: tempId,
+      fromUserId: uid,
+      toUserId: oid,
+      messageType: type,
+      content: content.trim(),
+      sentAtUtc: DateTime.now().toUtc(),
+      deliveryStatus: MessageDeliveryStatus.sending,
+      replyToMessageId: replyTo?.messageId,
+      replyToPreview: replyTo?.replyToPreview ?? replyTo?.content,
+      replyToMessageType: replyTo?.messageType,
+    );
       messages.add(localMessage);
       emit(ChatMessagesLoaded(List.from(messages)));
     }
@@ -599,6 +610,7 @@ class ChatCubit extends Cubit<ChatState> {
       toUserId: oid,
       messageType: type,
       content: wireContent,
+      replyToMessageId: replyTo?.messageId,
     );
 
     result.fold(
@@ -627,9 +639,85 @@ class ChatCubit extends Cubit<ChatState> {
           messages.add(updated);
         }
         emit(ChatMessagesLoaded(List.from(messages)));
+        clearReply();
         unawaited(_updatePresence());
       },
     );
+  }
+
+  void setReplyTo(ChatMessageModel message) {
+    if (message.isDeleted ||
+        message.deliveryStatus == MessageDeliveryStatus.sending) {
+      return;
+    }
+    replyTo = message;
+    emit(ChatMessagesLoaded(List.from(messages)));
+  }
+
+  void clearReply() {
+    if (replyTo == null) return;
+    replyTo = null;
+    emit(ChatMessagesLoaded(List.from(messages)));
+  }
+
+  Future<void> forwardMessage(ChatMessageModel message) async {
+    final token = AuthService.instance.currentToken;
+    final oid = otherUserId;
+    if (token == null || oid == null || message.isDeleted) return;
+
+    final result = await _repository.forwardMessage(
+      token: token,
+      messageId: message.messageId,
+      toUserId: oid,
+    );
+    result.fold(
+      (failure) => emit(ChatMessageSendError(failure.message)),
+      (serverMessage) {
+        if (messages.every((m) => m.messageId != serverMessage.messageId)) {
+          messages.add(serverMessage.copyWith(isForwarded: true));
+        }
+        emit(ChatMessageSent());
+        emit(ChatMessagesLoaded(List.from(messages)));
+      },
+    );
+  }
+
+  Future<void> deleteMessage(ChatMessageModel message, {required String scope}) async {
+    final token = AuthService.instance.currentToken;
+    if (token == null) return;
+
+    final result = await _repository.deleteMessage(
+      token: token,
+      messageId: message.messageId,
+      scope: scope,
+    );
+    result.fold(
+      (failure) => emit(ChatMessageSendError(failure.message)),
+      _applyDeletedEvent,
+    );
+  }
+
+  void _applyDeletedEvent(ChatMessageDeletedEvent event) {
+    if (!_isConversationActive) return;
+    final oid = otherUserId;
+    if (oid == null) return;
+    final inConversation =
+        event.fromUserId.toLowerCase() == oid.toLowerCase() ||
+        event.toUserId.toLowerCase() == oid.toLowerCase();
+    if (!inConversation) return;
+
+    if (event.scope == 'me' || event.message == null) {
+      messages = messages.where((m) => m.messageId != event.messageId).toList();
+    } else {
+      messages = messages.map((m) {
+        if (m.messageId != event.messageId) return m;
+        return event.message!.copyWith(isDeleted: true, content: '');
+      }).toList();
+    }
+    if (replyTo?.messageId == event.messageId) {
+      replyTo = null;
+    }
+    emit(ChatMessagesLoaded(List.from(messages)));
   }
 
   String? presenceLabel() {
@@ -665,6 +753,7 @@ class ChatCubit extends Cubit<ChatState> {
     await _messageSubscription?.cancel();
     await _seenSubscription?.cancel();
     await _deliveredSubscription?.cancel();
+    await _deletedSubscription?.cancel();
     await _presenceSubscription?.cancel();
     await _sessionSubscription?.cancel();
     await _repository.dispose();

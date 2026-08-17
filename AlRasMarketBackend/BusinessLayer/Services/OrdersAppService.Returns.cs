@@ -333,7 +333,10 @@ public partial class OrdersAppService
         EnsurePendingAdminModerationReview(order);
 
         order.StatusId = OrderStatusCodes.Cancelled;
-        RequestOfferStatusLabels.ApplyRejectedByAdmin(order);
+        RequestOfferStatusLabels.ApplyRejectedByAdmin(order, adminId);
+        order.CancellationReasonId = OrderCancellationReasonCodes.AdminCancelled;
+        order.CancelledAt = DateTime.UtcNow;
+        order.CancelledByUserId = adminId;
 
         var trimmedEn = reasonEn?.Trim();
         var trimmedAr = reasonAr?.Trim();
@@ -345,9 +348,12 @@ public partial class OrdersAppService
             order.Notes = string.IsNullOrWhiteSpace(order.Notes)
                 ? reasonBlock
                 : $"{order.Notes}\n---\n{reasonBlock}";
+            order.CancellationNote = reasonBlock;
         }
 
         await orderData.SaveChangesAsync(cancellationToken);
+
+        order = await orderData.GetOrderWithListDetailsAsync(orderId, cancellationToken) ?? order;
 
         // Notify buyer for all moderated order types (Requests offers + Booking/Category/Offers).
         await NotifyOfferRejectedByAdminAsync(

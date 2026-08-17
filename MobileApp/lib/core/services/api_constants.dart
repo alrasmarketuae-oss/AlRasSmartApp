@@ -240,6 +240,9 @@ class ApiConstants {
       'BD469D54-8B82-47F3-A1F0-E1C5D91DDEB0';
   static String chatPresenceEndPoint = '/Chat/presence';
   static String chatMessagesEndPoint = '/Chat/messages';
+  static String chatForwardMessageEndPoint = '/Chat/messages/forward';
+  static String chatDeleteMessageEndPoint(String messageId) =>
+      '/Chat/messages/$messageId/delete';
   static String chatUploadEndPoint = '/Chat/upload';
   static const String chatPresignImageEndPoint = '/Chat/presign/image';
   static const String chatPresignVideoEndPoint = '/Chat/presign/video';

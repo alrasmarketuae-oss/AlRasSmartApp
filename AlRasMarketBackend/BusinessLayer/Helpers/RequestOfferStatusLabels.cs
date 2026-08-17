@@ -98,12 +98,20 @@ public static class RequestOfferStatusLabels
             OrderStatusCodes.GetNameAr(OrderStatusCodes.Delivered),
             createdByUserId);
 
+    public static void ApplyCancelled(Order order, Guid? createdByUserId = null) =>
+        Apply(
+            order,
+            OrderStatusCodes.GetNameEn(OrderStatusCodes.Cancelled),
+            OrderStatusCodes.GetNameAr(OrderStatusCodes.Cancelled),
+            createdByUserId);
+
     public static string ResolveNameEn(Order order)
     {
-        // Return workflow labels must always follow StatusId (custom "Received"
-        // must not stick after the buyer requests a return).
+        // Return / cancelled labels must always follow StatusId so custom
+        // "Rejected by admin" history text does not hide the workflow status.
         if (order.StatusId is OrderStatusCodes.ReturnRequested
-            or OrderStatusCodes.ReturnApproved)
+            or OrderStatusCodes.ReturnApproved
+            or OrderStatusCodes.Cancelled)
         {
             return OrderStatusCodes.GetNameEn(order.StatusId);
         }
@@ -117,7 +125,8 @@ public static class RequestOfferStatusLabels
     public static string ResolveNameAr(Order order)
     {
         if (order.StatusId is OrderStatusCodes.ReturnRequested
-            or OrderStatusCodes.ReturnApproved)
+            or OrderStatusCodes.ReturnApproved
+            or OrderStatusCodes.Cancelled)
         {
             return OrderStatusCodes.GetNameAr(order.StatusId);
         }

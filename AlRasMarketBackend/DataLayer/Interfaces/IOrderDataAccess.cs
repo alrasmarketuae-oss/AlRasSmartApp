@@ -116,4 +116,11 @@ public interface IOrderDataAccess
     Task<List<OrderGroupSiblingRow>> GetOrderGroupSiblingsAsync(
         IReadOnlyList<Guid> groupIds,
         CancellationToken cancellationToken = default);
+
+    Task<List<OrderCancellationReason>> GetActiveCancellationReasonsAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<OrderCancellationReason?> GetCancellationReasonByIdAsync(
+        byte id,
+        CancellationToken cancellationToken = default);
 }

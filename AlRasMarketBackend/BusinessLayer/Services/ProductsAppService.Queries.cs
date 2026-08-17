@@ -662,7 +662,7 @@ public partial class ProductsAppService
 
         var (page, pageSize) = NormalizePaging(input.Page, input.PageSize);
         var cacheKey =
-            $"{ProductsByCategoryCachePrefix}{input.CategoryId}:v{ByCategoryProductsCacheVersion}:p{page}:s{pageSize}";
+            $"{ProductsByCategoryCachePrefix}{input.CategoryId}:v{ByCategoryProductsCacheVersion}:p{page}:s{pageSize}:pub{input.PublicCatalog}";
         var cached = await TryGetProductCacheAsync(cacheKey, cancellationToken);
         if (cached is not null)
         {
@@ -672,16 +672,23 @@ public partial class ProductsAppService
         var category = await productData.GetCategoryByIdAsync(input.CategoryId, cancellationToken)
             ?? throw new KeyNotFoundException($"Category '{input.CategoryId}' was not found.");
 
-        var (products, totalCount) = await productData.GetProductsByCategoryPageAsync(
-            category.CategoryId,
-            (page - 1) * pageSize,
-            pageSize,
-            cancellationToken);
+        var (products, totalCount) = input.PublicCatalog
+            ? await productData.GetPublicProductsByCategoryPageAsync(
+                category.CategoryId,
+                (page - 1) * pageSize,
+                pageSize,
+                cancellationToken)
+            : await productData.GetProductsByCategoryPageAsync(
+                category.CategoryId,
+                (page - 1) * pageSize,
+                pageSize,
+                cancellationToken);
 
         var items = await BuildPublicProductListItemsAsync(
             products,
             cancellationToken,
-            includeRetailFields: false);
+            includeRetailFields: input.PublicCatalog,
+            expandHybridSearchChannels: input.PublicCatalog);
 
         var result = new
         {

@@ -716,4 +716,19 @@ public sealed class OrderDataAccess(IRasAlSouqDbContext dbContext) : IOrderDataA
             })
             .ToListAsync(cancellationToken);
     }
+
+    public Task<List<OrderCancellationReason>> GetActiveCancellationReasonsAsync(
+        CancellationToken cancellationToken = default) =>
+        dbContext.OrderCancellationReasons
+            .AsNoTracking()
+            .Where(x => x.IsActive)
+            .OrderBy(x => x.Id)
+            .ToListAsync(cancellationToken);
+
+    public Task<OrderCancellationReason?> GetCancellationReasonByIdAsync(
+        byte id,
+        CancellationToken cancellationToken = default) =>
+        dbContext.OrderCancellationReasons
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 }

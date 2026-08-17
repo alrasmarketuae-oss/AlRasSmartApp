@@ -4,6 +4,7 @@ import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/services/app_push_notification_service.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
+import 'package:alrasmarket/features/chat/data/models/chat_message_deleted_event.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_message_model.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_message_type.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_presence_model.dart';
@@ -31,6 +32,8 @@ class AppChatListenerService {
 
   final StreamController<ChatMessageModel> _messageController =
       StreamController<ChatMessageModel>.broadcast();
+  final StreamController<ChatMessageDeletedEvent> _deletedController =
+      StreamController<ChatMessageDeletedEvent>.broadcast();
   final StreamController<ConversationSeenEvent> _seenController =
       StreamController<ConversationSeenEvent>.broadcast();
   final StreamController<MessagesDeliveredEvent> _deliveredController =
@@ -41,6 +44,8 @@ class AppChatListenerService {
       StreamController<ChatSupportSessionModel>.broadcast();
 
   Stream<ChatMessageModel> get messageStream => _messageController.stream;
+  Stream<ChatMessageDeletedEvent> get deletedStream =>
+      _deletedController.stream;
   Stream<ConversationSeenEvent> get seenStream => _seenController.stream;
   Stream<MessagesDeliveredEvent> get deliveredStream =>
       _deliveredController.stream;
@@ -82,6 +87,7 @@ class AppChatListenerService {
 
       _hubConnection!.on('receiveMessage', _onReceiveMessage);
       _hubConnection!.on('messageUpdated', _onReceiveMessage);
+      _hubConnection!.on('messageDeleted', _onMessageDeleted);
       _hubConnection!.on('conversationSeen', _onConversationSeen);
       _hubConnection!.on('messagesDelivered', _onMessagesDelivered);
       _hubConnection!.on('userLastSeen', _onUserLastSeen);
@@ -209,6 +215,19 @@ class AppChatListenerService {
       _handleIncomingNotification(message);
     } catch (e) {
       debugPrint('AppChatListenerService parse error: $e');
+    }
+  }
+
+  void _onMessageDeleted(List<Object?>? arguments) {
+    if (arguments == null || arguments.isEmpty) return;
+    try {
+      final raw = arguments[0];
+      if (raw is! Map) return;
+      _deletedController.add(
+        ChatMessageDeletedEvent.fromJson(Map<String, dynamic>.from(raw)),
+      );
+    } catch (e) {
+      debugPrint('AppChatListenerService parse delete error: $e');
     }
   }
 

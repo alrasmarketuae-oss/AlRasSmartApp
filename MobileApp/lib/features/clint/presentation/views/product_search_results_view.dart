@@ -201,7 +201,24 @@ class _ProductSearchResultsViewState extends State<ProductSearchResultsView> {
                       if (showTextAiBanner)
                         _AiCorrectionBanner(correctedName: correctedName!),
                       Expanded(
-                        child: GridView.builder(
+                        child: NotificationListener<ScrollNotification>(
+                          onNotification: (notification) {
+                            if (notification is! ScrollUpdateNotification &&
+                                notification is! ScrollEndNotification) {
+                              return false;
+                            }
+                            final metrics = notification.metrics;
+                            if (!metrics.hasPixels ||
+                                !metrics.hasContentDimensions) {
+                              return false;
+                            }
+                            if (metrics.maxScrollExtent - metrics.pixels <=
+                                480) {
+                              cubit.loadMoreProductSearch();
+                            }
+                            return false;
+                          },
+                          child: GridView.builder(
                           padding: EdgeInsets.fromLTRB(24.w, 8.h, 24.w, 24.h),
                           gridDelegate: ProductGridLayout.delegate(
                             context,
@@ -220,6 +237,7 @@ class _ProductSearchResultsViewState extends State<ProductSearchResultsView> {
                                   product.preferRetailFromSearchListing,
                             );
                           },
+                        ),
                         ),
                       ),
                     ],
