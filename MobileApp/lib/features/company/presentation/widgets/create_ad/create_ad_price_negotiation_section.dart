@@ -51,12 +51,7 @@ class CreateAdPriceNegotiationSection extends StatelessWidget {
         final isRequest = state.selectedType == CreateAdType.requests.label;
         final resolvedQuantityLabel = quantityLabel ??
             (isRequest ? s.requiredQuantity : s.availableQuantity);
-        final resolvedPriceLabel = isRequest
-            ? CreateAdPriceLabels.targetPricePerUnitLabel(
-                s,
-                state.selectedUnit,
-              )
-            : null;
+        final resolvedPriceLabel = isRequest ? s.targetPrice : null;
         final resolvedPerUnitHint = isRequest
             ? (hintText?.trim().isNotEmpty == true
                 ? hintText!.trim()
@@ -88,6 +83,7 @@ class CreateAdPriceNegotiationSection extends StatelessWidget {
               onUnitChanged: cubit.setSelectedUnit,
               isCurrencyLocked: isBooking || isRetail,
               showQuantityField: !fromBuyer,
+              fieldsOptional: isRequest,
             ),
             if (showNegotiation) ...[
               SizedBox(height: 10.h),

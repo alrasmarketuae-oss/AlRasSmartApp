@@ -124,7 +124,7 @@ public partial class ProductsAppService
         public ProductType? ProductType { get; init; }
         public RequestType? RequestType { get; init; }
         public BookingPriceType? BookingPriceType { get; init; }
-        public required UnitSnapshot Unit { get; init; }
+        public UnitSnapshot? Unit { get; init; }
         public UnitSnapshot? RetailUnit { get; init; }
         public GeoCountrySnapshot? OriginCountry { get; init; }
         public GeoCountrySnapshot? DestinationCountry { get; init; }

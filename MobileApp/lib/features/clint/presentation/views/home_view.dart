@@ -212,8 +212,6 @@ class _HomeViewState extends State<HomeView> {
                               if (!isPersonalCustomer) ...[
                                 _HomeSectionHeader(
                                   title: S.of(context).categories,
-                                  onViewAll: () =>
-                                      context.push(AppRoutes.kCategoriesView),
                                 ),
                                 SizedBox(height: 12.h),
                                 const _CategoriesStrip(),
@@ -221,104 +219,99 @@ class _HomeViewState extends State<HomeView> {
                             ],
                           ),
                         ),
-                        BlocBuilder<ClintCubit, ClintStates>(
-                          buildWhen: (previous, current) =>
-                              current is FetchHomeProductsLoadingState ||
-                              current is FetchHomeProductsLoadingMoreState ||
-                              current is FetchHomeProductsSuccessState ||
-                              current is FetchHomeProductsErrorState,
-                          builder: (context, state) {
-                            final homeCubit = context.read<ClintCubit>();
-                            final products = displayProducts;
-                            final isLoading = homeCubit.isLoadingHomeProducts;
-                            final isLoadingMore =
-                                homeCubit.isLoadingMoreHomeProducts;
-                            final error = homeCubit.homeProductsError;
+                        if (isPersonalCustomer)
+                          BlocBuilder<ClintCubit, ClintStates>(
+                            buildWhen: (previous, current) =>
+                                current is FetchHomeProductsLoadingState ||
+                                current is FetchHomeProductsLoadingMoreState ||
+                                current is FetchHomeProductsSuccessState ||
+                                current is FetchHomeProductsErrorState,
+                            builder: (context, state) {
+                              final homeCubit = context.read<ClintCubit>();
+                              final products = displayProducts;
+                              final isLoading = homeCubit.isLoadingHomeProducts;
+                              final isLoadingMore =
+                                  homeCubit.isLoadingMoreHomeProducts;
+                              final error = homeCubit.homeProductsError;
 
-                            return Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 16.w),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _HomeSectionHeader(
-                                    title: isPersonalCustomer
-                                        ? S.of(context).retail
-                                        : S.of(context).featured,
-                                    onViewAll: isPersonalCustomer
-                                        ? null
-                                        : () => context.push(
-                                            AppRoutes.kOffersServiceView,
-                                          ),
-                                  ),
-                                  SizedBox(height: 12.h),
-                                  if (isLoading && products.isEmpty)
-                                    const _HomeProductsGridShimmer()
-                                  else if (error != null && products.isEmpty)
-                                    _HomeProductsSectionError(
-                                      message: error,
-                                      onRetry: () => homeCubit.refreshHomeFeed(
-                                        isPerson: isPersonalCustomer,
-                                        resetCached: true,
-                                      ),
-                                    )
-                                  else if (products.isEmpty)
-                                    Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: 8.h,
-                                      ),
-                                      child: Text(
-                                        S.of(context).noSearchResults,
-                                        style: TextStyle(
-                                          fontSize: 13.sp,
-                                          color: const Color(0xFF6B7280),
-                                        ),
-                                      ),
-                                    )
-                                  else ...[
-                                    GridView.builder(
-                                      shrinkWrap: true,
-                                      physics:
-                                          const NeverScrollableScrollPhysics(),
-                                      gridDelegate: ProductGridLayout.delegate(
-                                        context,
-                                        horizontalPadding:
-                                            ProductGridLayout.homeHorizontalPadding(
-                                              context,
-                                            ),
-                                        crossAxisSpacing: 12.w,
-                                        mainAxisSpacing: 12.h,
-                                      ),
-                                      itemCount: products.length,
-                                      itemBuilder: (context, index) {
-                                        final product = products[index];
-                                        return ProductCard(
-                                          title: product.productName.isEmpty
-                                              ? S.of(context).premiumSaffron
-                                              : product.productName,
-                                          product: product,
-                                          preferRetailChannel:
-                                              isPersonalCustomer,
-                                        );
-                                      },
+                              return Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _HomeSectionHeader(
+                                      title: S.of(context).retail,
                                     ),
-                                    if (isLoadingMore)
+                                    SizedBox(height: 12.h),
+                                    if (isLoading && products.isEmpty)
+                                      const _HomeProductsGridShimmer()
+                                    else if (error != null && products.isEmpty)
+                                      _HomeProductsSectionError(
+                                        message: error,
+                                        onRetry: () => homeCubit.refreshHomeFeed(
+                                          isPerson: isPersonalCustomer,
+                                          resetCached: true,
+                                        ),
+                                      )
+                                    else if (products.isEmpty)
                                       Padding(
                                         padding: EdgeInsets.symmetric(
-                                          vertical: 16.h,
+                                          vertical: 8.h,
                                         ),
-                                        child: const Center(
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2.5,
-                                            color: Color(0xFF3A7DC5),
+                                        child: Text(
+                                          S.of(context).noSearchResults,
+                                          style: TextStyle(
+                                            fontSize: 13.sp,
+                                            color: const Color(0xFF6B7280),
                                           ),
                                         ),
+                                      )
+                                    else ...[
+                                      GridView.builder(
+                                        shrinkWrap: true,
+                                        physics:
+                                            const NeverScrollableScrollPhysics(),
+                                        gridDelegate:
+                                            ProductGridLayout.delegate(
+                                          context,
+                                          horizontalPadding:
+                                              ProductGridLayout
+                                                  .homeHorizontalPadding(
+                                            context,
+                                          ),
+                                          crossAxisSpacing: 12.w,
+                                          mainAxisSpacing: 12.h,
+                                        ),
+                                        itemCount: products.length,
+                                        itemBuilder: (context, index) {
+                                          final product = products[index];
+                                          return ProductCard(
+                                            title: product.productName.isEmpty
+                                                ? S.of(context).premiumSaffron
+                                                : product.productName,
+                                            product: product,
+                                            preferRetailChannel: true,
+                                          );
+                                        },
                                       ),
+                                      if (isLoadingMore)
+                                        Padding(
+                                          padding: EdgeInsets.symmetric(
+                                            vertical: 16.h,
+                                          ),
+                                          child: const Center(
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2.5,
+                                              color: Color(0xFF3A7DC5),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
                                   ],
-                                ],
-                              ),
-                            );
-                          },
-                        ),
+                                ),
+                              );
+                            },
+                          ),
                         SizedBox(height: 50.h),
                       ],
                     ),
@@ -540,55 +533,19 @@ class _CategoriesStripError extends StatelessWidget {
 }
 
 class _HomeSectionHeader extends StatelessWidget {
-  const _HomeSectionHeader({required this.title, this.onViewAll});
+  const _HomeSectionHeader({required this.title});
 
   final String title;
-  final VoidCallback? onViewAll;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            title,
-            style: TextStyle(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w700,
-              color: AppColors.title(context),
-            ),
-          ),
-        ),
-        if (onViewAll != null)
-          InkWell(
-            onTap: onViewAll,
-            borderRadius: BorderRadius.circular(8.r),
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 2.w),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    S.of(context).viewAll,
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w500,
-                      color: LightColor.defaultColor,
-                    ),
-                  ),
-                  SizedBox(width: 2.w),
-                  Icon(
-                    Directionality.of(context) == TextDirection.rtl
-                        ? Icons.chevron_left
-                        : Icons.chevron_right,
-                    size: 18.sp,
-                    color: LightColor.defaultColor,
-                  ),
-                ],
-              ),
-            ),
-          ),
-      ],
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: 16.sp,
+        fontWeight: FontWeight.w700,
+        color: AppColors.title(context),
+      ),
     );
   }
 }

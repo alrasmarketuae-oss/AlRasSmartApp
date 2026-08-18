@@ -5,7 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:alrasmarket/core/platform/app_paths.dart';
 
 import 'package:alrasmarket/core/error/failure.dart';
 import 'package:alrasmarket/core/media/media_compression_service.dart';
@@ -1187,26 +1187,40 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
         return;
       }
 
-      if ((request.usdPrice ?? 0) <= 0) {
-        emit(
-          state.copyWith(
-            isSubmitting: false,
-            submitErrorMessage: S.current.enterValidPrice,
-            clearSubmitSuccessMessage: true,
-          ),
-        );
-        return;
-      }
+      if (selectedType != CreateAdType.requests.label) {
+        if ((request.usdPrice ?? 0) <= 0) {
+          emit(
+            state.copyWith(
+              isSubmitting: false,
+              submitErrorMessage: S.current.enterValidPrice,
+              clearSubmitSuccessMessage: true,
+            ),
+          );
+          return;
+        }
 
-      if ((request.currency ?? '').isEmpty) {
-        emit(
-          state.copyWith(
-            isSubmitting: false,
-            submitErrorMessage: S.current.selectCurrency,
-            clearSubmitSuccessMessage: true,
-          ),
-        );
-        return;
+        if ((request.currency ?? '').isEmpty) {
+          emit(
+            state.copyWith(
+              isSubmitting: false,
+              submitErrorMessage: S.current.selectCurrency,
+              clearSubmitSuccessMessage: true,
+            ),
+          );
+          return;
+        }
+      } else {
+        final hasPrice = (request.usdPrice ?? 0) > 0;
+        if (hasPrice && (request.currency ?? '').isEmpty) {
+          emit(
+            state.copyWith(
+              isSubmitting: false,
+              submitErrorMessage: S.current.selectCurrency,
+              clearSubmitSuccessMessage: true,
+            ),
+          );
+          return;
+        }
       }
 
       final hasImages = imagePaths.isNotEmpty;
@@ -1839,8 +1853,9 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
         return sourcePath;
       }
 
-      final docsDir = await getApplicationDocumentsDirectory();
-      final assetsDir = Directory('${docsDir.path}/create_ad_assets');
+      final docsPath = await appDocumentsPath();
+      if (docsPath == null) return sourcePath;
+      final assetsDir = Directory('$docsPath/create_ad_assets');
       if (!await assetsDir.exists()) {
         await assetsDir.create(recursive: true);
       }

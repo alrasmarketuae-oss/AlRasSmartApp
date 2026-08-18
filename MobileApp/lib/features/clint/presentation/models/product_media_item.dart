@@ -4,12 +4,12 @@ class ProductMediaItem {
   const ProductMediaItem({
     required this.url,
     required this.kind,
-    this.isMuted = true,
+    this.isMuted = false,
   });
 
   final String url;
   final ProductMediaKind kind;
-  /// Only used for videos; videos without an API value stay muted.
+  /// Only used for videos; defaults to audible playback unless API marks muted.
   final bool isMuted;
 
   bool get isVideo => kind == ProductMediaKind.video;

@@ -926,7 +926,7 @@ public class ProductAssetsAppService(
             ProductId = productId,
             VideoPath = videoPath,
             VideoDurationSeconds = videoDurationSeconds,
-            IsMuted = true
+            IsMuted = false
         };
         await dbContext.ProductVideos.AddAsync(entity, cancellationToken);
 
@@ -1032,7 +1032,7 @@ public class ProductAssetsAppService(
                         ProductId = productId,
                         VideoPath = videoPath,
                         VideoDurationSeconds = input.VideoDurationSeconds!.Value,
-                        IsMuted = true
+                        IsMuted = false
                     },
                     cancellationToken);
 

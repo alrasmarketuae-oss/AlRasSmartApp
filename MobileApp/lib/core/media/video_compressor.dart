@@ -5,8 +5,8 @@ import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_new/ffmpeg_session.dart';
 import 'package:ffmpeg_kit_flutter_new/ffprobe_kit.dart';
 import 'package:ffmpeg_kit_flutter_new/return_code.dart';
+import 'package:alrasmarket/core/platform/app_paths.dart';
 import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 
 typedef CompressionProgressCallback = void Function(double progress);
@@ -411,8 +411,11 @@ class VideoCompressor {
   }
 
   static Future<String> _buildOutputPath() async {
-    final docsDir = await getApplicationDocumentsDirectory();
-    final assetsDir = Directory('${docsDir.path}/compressed_media');
+    final docsPath = await appDocumentsPath();
+    if (docsPath == null) {
+      throw UnsupportedError('Video compression requires a local filesystem.');
+    }
+    final assetsDir = Directory('$docsPath/compressed_media');
     if (!await assetsDir.exists()) {
       await assetsDir.create(recursive: true);
     }

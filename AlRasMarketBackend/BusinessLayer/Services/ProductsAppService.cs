@@ -149,7 +149,7 @@ public partial class ProductsAppService(
             DescriptionEn = input.DescriptionEn,
             CategoryId = categoryId,
             ProductTypeId = productTypeId,
-            UnitId = refs.Unit.Id,
+            UnitId = refs.Unit?.Id,
             OriginCountryId = refs.OriginCountry?.Id,
             DestinationCountryId = refs.DestinationCountry?.Id,
             LoadingPortId = refs.LoadingPort?.Id,
@@ -192,7 +192,7 @@ public partial class ProductsAppService(
                     ProductId = product.ProductId,
                     VideoPath = videoPath,
                     VideoDurationSeconds = product.VideoDurationSeconds,
-                    IsMuted = true
+                    IsMuted = false
                 },
                 cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
@@ -419,7 +419,7 @@ public partial class ProductsAppService(
             product.ProductTypeId = refs.ProductType?.Id;
         }
 
-        product.UnitId = refs.Unit.Id;
+        product.UnitId = refs.Unit?.Id;
 
         // Owner FormData often omits geo (Requests/Offers/Categories). Do not wipe existing route.
         var geoProvided = refs.OriginCountry is not null
@@ -522,7 +522,7 @@ public partial class ProductsAppService(
                         ProductId = product.ProductId,
                         VideoPath = videoPath,
                         VideoDurationSeconds = input.VideoDurationSeconds,
-                        IsMuted = true
+                        IsMuted = false
                     },
                     cancellationToken);
             }

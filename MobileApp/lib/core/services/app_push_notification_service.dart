@@ -46,6 +46,10 @@ class AppPushNotificationService {
 
   Future<void> initialize() async {
     if (_initialized) return;
+    if (kIsWeb) {
+      debugPrint('AppPushNotificationService skipped on web.');
+      return;
+    }
 
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosInit = DarwinInitializationSettings();

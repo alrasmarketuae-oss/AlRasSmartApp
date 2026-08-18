@@ -17,7 +17,7 @@ import 'package:ffmpeg_kit_flutter_new/ffmpeg_session.dart';
 import 'package:ffmpeg_kit_flutter_new/ffprobe_kit.dart';
 import 'package:ffmpeg_kit_flutter_new/return_code.dart';
 import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:alrasmarket/core/platform/app_paths.dart';
 
 import 'create_ad_form_mapper.dart';
 
@@ -246,8 +246,11 @@ class ProductVideoCompressor {
   }
 
   static Future<String> _buildOutputPath() async {
-    final docsDir = await getApplicationDocumentsDirectory();
-    final assetsDir = Directory('${docsDir.path}/create_ad_assets');
+    final docsPath = await appDocumentsPath();
+    if (docsPath == null) {
+      throw UnsupportedError('Video compression requires a local filesystem.');
+    }
+    final assetsDir = Directory('$docsPath/create_ad_assets');
     if (!await assetsDir.exists()) {
       await assetsDir.create(recursive: true);
     }

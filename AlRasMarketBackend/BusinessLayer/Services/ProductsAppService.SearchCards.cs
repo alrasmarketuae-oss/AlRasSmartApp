@@ -283,7 +283,7 @@ public partial class ProductsAppService
                         path = videoPath,
                         videoPath,
                         durationSeconds = x.VideoDurationSeconds,
-                        isMuted = true
+                        isMuted = false
                     }
                 },
             videoDurationSeconds = x.VideoDurationSeconds,

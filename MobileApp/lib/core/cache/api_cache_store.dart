@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:alrasmarket/core/platform/app_paths.dart';
 import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
 
 import 'api_cache_keys.dart';
 
@@ -35,11 +35,16 @@ class ApiCacheStore {
   Directory? _cacheDir;
 
   Future<void> init() async {
-    if (_cacheDir != null) return;
-    final docs = await getApplicationDocumentsDirectory();
-    _cacheDir = Directory('${docs.path}/$_dirName');
-    if (!await _cacheDir!.exists()) {
-      await _cacheDir!.create(recursive: true);
+    if (_cacheDir != null || kIsWeb) return;
+    try {
+      final docsPath = await appDocumentsPath();
+      if (docsPath == null) return;
+      _cacheDir = Directory('$docsPath/$_dirName');
+      if (!await _cacheDir!.exists()) {
+        await _cacheDir!.create(recursive: true);
+      }
+    } catch (e) {
+      debugPrint('ApiCacheStore init skipped: $e');
     }
   }
 
@@ -47,7 +52,9 @@ class ApiCacheStore {
     String key, {
     bool allowStale = false,
   }) async {
+    if (kIsWeb) return null;
     await init();
+    if (_cacheDir == null) return null;
     final file = _fileForKey(key);
     if (!await file.exists()) return null;
 
@@ -83,7 +90,9 @@ class ApiCacheStore {
     dynamic data,
     Duration ttl,
   ) async {
+    if (kIsWeb) return;
     await init();
+    if (_cacheDir == null) return;
     final payload = jsonEncode({
       'fetchedAt': DateTime.now().toUtc().toIso8601String(),
       'ttlSeconds': ttl.inSeconds,
@@ -93,7 +102,9 @@ class ApiCacheStore {
   }
 
   Future<void> remove(String key) async {
+    if (kIsWeb) return;
     await init();
+    if (_cacheDir == null) return;
     final file = _fileForKey(key);
     if (await file.exists()) {
       await file.delete();
@@ -101,6 +112,7 @@ class ApiCacheStore {
   }
 
   Future<void> removeByPrefix(String prefix) async {
+    if (kIsWeb) return;
     await init();
     if (_cacheDir == null) return;
 
@@ -114,6 +126,7 @@ class ApiCacheStore {
   }
 
   Future<void> clearAll() async {
+    if (kIsWeb) return;
     await init();
     if (_cacheDir == null) return;
     if (await _cacheDir!.exists()) {

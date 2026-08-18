@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:alrasmarket/core/platform/app_paths.dart';
 import 'package:alrasmarket/features/company/presentation/services/create_ad_publish_job.dart';
 import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
 
 /// Disk-backed array of pending create-ad publish jobs.
 ///
@@ -20,15 +20,22 @@ class CreateAdPublishStore {
   /// the FG isolate needs to steal it quickly.
   static const _lockStaleAfter = Duration(seconds: 25);
 
-  Future<Directory> _docsDir() => getApplicationDocumentsDirectory();
+  Future<Directory?> _docsDir() async {
+    if (kIsWeb) return null;
+    final path = await appDocumentsPath();
+    if (path == null) return null;
+    return Directory(path);
+  }
 
-  Future<File> _file() async {
+  Future<File?> _file() async {
     final docs = await _docsDir();
+    if (docs == null) return null;
     return File('${docs.path}/$_fileName');
   }
 
-  Future<File> _lockFile() async {
+  Future<File?> _lockFile() async {
     final docs = await _docsDir();
+    if (docs == null) return null;
     return File('${docs.path}/$_lockFileName');
   }
 
@@ -36,6 +43,7 @@ class CreateAdPublishStore {
   Future<bool> tryAcquireProcessingLock() async {
     try {
       final lock = await _lockFile();
+      if (lock == null) return false;
       if (await lock.exists()) {
         final age = DateTime.now().difference(await lock.lastModified());
         if (age < _lockStaleAfter) {
@@ -60,7 +68,7 @@ class CreateAdPublishStore {
   Future<void> heartbeatProcessingLock() async {
     try {
       final lock = await _lockFile();
-      if (!await lock.exists()) return;
+      if (lock == null || !await lock.exists()) return;
       await lock.writeAsString(
         DateTime.now().toIso8601String(),
         flush: true,
@@ -71,6 +79,7 @@ class CreateAdPublishStore {
   Future<void> releaseProcessingLock() async {
     try {
       final lock = await _lockFile();
+      if (lock == null) return;
       if (await lock.exists()) {
         await lock.delete();
       }
@@ -82,7 +91,7 @@ class CreateAdPublishStore {
   Future<List<CreateAdPublishJob>> load() async {
     try {
       final file = await _file();
-      if (!await file.exists()) return [];
+      if (file == null || !await file.exists()) return [];
       final raw = await file.readAsString();
       if (raw.trim().isEmpty) return [];
       final decoded = jsonDecode(raw);
@@ -100,6 +109,7 @@ class CreateAdPublishStore {
   Future<void> save(List<CreateAdPublishJob> jobs) async {
     try {
       final file = await _file();
+      if (file == null) return;
       final payload = jsonEncode(jobs.map((j) => j.toJson()).toList());
       await file.writeAsString(payload, flush: true);
     } catch (e) {

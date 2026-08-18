@@ -488,8 +488,9 @@ public sealed partial class AiAssistantMcpToolsService(
                 description =
                     "Create ONE Request ad (طلب / Request) using the same backend API as mobile Create Ad / Create Order. " +
                     "Allowed audiences: supplier OR company_customer only. " +
-                    "Collect ALL required fields first: name, images optional (draft_image_paths), " +
-                    "target price, quantity, unit_name or unit_id, currency (USD/AED), negotiable, " +
+                    "Collect required fields first: name, specifications, negotiable, request_type Local/Reexport, packaging (ALWAYS ask). " +
+                    "OPTIONAL: target price, quantity, unit_name, currency — omit any the user did not provide. " +
+                    "If target price is provided, also collect currency (USD/AED) and unit_name. " +
                     "request_type_name Local or Reexport (محلي / إعادة تصدير) — ALWAYS ask, " +
                     "address_id from list_my_addresses (REQUIRED for company_customer; recommended for supplier), " +
                     "specifications, packaging kg (ALWAYS ask; user may say none), " +

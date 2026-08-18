@@ -51,8 +51,12 @@ public partial class ProductsAppService
             productType = new ProductType { Id = typeSnap.Id, TypeNameEn = typeSnap.TypeNameEn };
         }
 
-        var unit = staticReferenceCache.FindUnitByName(input.UnitName)
-            ?? throw new KeyNotFoundException($"Unit '{input.UnitName}' was not found.");
+        UnitSnapshot? unit = null;
+        if (!string.IsNullOrWhiteSpace(input.UnitName))
+        {
+            unit = staticReferenceCache.FindUnitByName(input.UnitName)
+                ?? throw new KeyNotFoundException($"Unit '{input.UnitName}' was not found.");
+        }
 
         UnitSnapshot? retailUnit = null;
         if (!string.IsNullOrWhiteSpace(input.RetailUnitName))
@@ -280,7 +284,7 @@ public partial class ProductsAppService
                 ? "Product saved successfully and is pending admin approval."
                 : "Product saved successfully.",
             productType = refs.ProductType?.TypeNameEn,
-            unit = refs.Unit.UnitNameEn,
+            unit = refs.Unit?.UnitNameEn,
             categoryId = product.CategoryId,
             originCountry = refs.OriginCountry?.CountryNameEn,
             destinationCountry = refs.DestinationCountry?.CountryNameEn,

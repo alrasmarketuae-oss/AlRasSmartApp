@@ -6,7 +6,7 @@ public sealed class ProductMediaPathRow
     public Guid ProductId { get; set; }
     public string Path { get; set; } = string.Empty;
     public byte? VideoDurationSeconds { get; set; }
-    public bool IsMuted { get; set; } = true;
+    public bool IsMuted { get; set; } = false;
 }
 
 public sealed class ProductMediaSnapshot

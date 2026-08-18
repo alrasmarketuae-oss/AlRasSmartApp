@@ -16,6 +16,7 @@ import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_sta
 import 'package:alrasmarket/core/services/fcm_token_service.dart';
 import 'package:alrasmarket/core/services/biometric_auth_service.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -64,7 +65,9 @@ class AuthCubit extends Cubit<AuthStates> {
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
     serverClientId: _kGoogleServerClientId,
-    clientId: Platform.isIOS ? _kGoogleIosClientId : null,
+    clientId: !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS
+        ? _kGoogleIosClientId
+        : null,
   );
 
   static AuthCubit get(context) => BlocProvider.of(context);
@@ -368,7 +371,7 @@ class AuthCubit extends Cubit<AuthStates> {
   Future<void> loginWithApple() async {
     try {
       emit(LoginLoadingState());
-      if (!Platform.isIOS) {
+      if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) {
         emit(LoginErrorState('Apple Sign-In is only available on iOS devices'));
         return;
       }

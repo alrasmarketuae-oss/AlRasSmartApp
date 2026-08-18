@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:alrasmarket/core/platform/app_paths.dart';
 import 'package:alrasmarket/core/search/search_history_entry.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Per-user product search history (text, product code, image + cached AI results).
 class UserSearchHistoryService {
@@ -18,14 +19,42 @@ class UserSearchHistoryService {
 
   Directory? _rootDir;
 
-  Future<Directory> _ensureRootDir() async {
-    if (_rootDir != null) return _rootDir!;
-    final docs = await getApplicationDocumentsDirectory();
-    _rootDir = Directory(p.join(docs.path, _dirName));
+  Future<Directory?> _ensureRootDir() async {
+    if (kIsWeb) return null;
+    if (_rootDir != null) return _rootDir;
+    final docsPath = await appDocumentsPath();
+    if (docsPath == null) return null;
+    _rootDir = Directory(p.join(docsPath, _dirName));
     if (!await _rootDir!.exists()) {
       await _rootDir!.create(recursive: true);
     }
-    return _rootDir!;
+    return _rootDir;
+  }
+
+  String _prefsKey() => 'search_history_${_userKey()}';
+
+  Future<List<SearchHistoryEntry>> _loadEntriesFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_prefsKey());
+      if (raw == null || raw.isEmpty) return const [];
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return const [];
+      return decoded
+          .whereType<Map>()
+          .map((item) => SearchHistoryEntry.fromJson(Map<String, dynamic>.from(item)))
+          .where((entry) => entry.id.isNotEmpty)
+          .toList(growable: false);
+    } catch (e) {
+      debugPrint('UserSearchHistoryService prefs load failed: $e');
+      return const [];
+    }
+  }
+
+  Future<void> _writeEntriesToPrefs(List<SearchHistoryEntry> entries) async {
+    final prefs = await SharedPreferences.getInstance();
+    final payload = jsonEncode(entries.map((item) => item.toJson()).toList());
+    await prefs.setString(_prefsKey(), payload);
   }
 
   String _userKey() {
@@ -34,14 +63,17 @@ class UserSearchHistoryService {
     return 'guest';
   }
 
-  Future<File> _historyFile() async {
+  Future<File?> _historyFile() async {
     final root = await _ensureRootDir();
+    if (root == null) return null;
     return File(p.join(root.path, '${_userKey()}.json'));
   }
 
   Future<List<SearchHistoryEntry>> loadEntries() async {
+    if (kIsWeb) return _loadEntriesFromPrefs();
+
     final file = await _historyFile();
-    if (!await file.exists()) return const [];
+    if (file == null || !await file.exists()) return const [];
 
     try {
       final decoded = jsonDecode(await file.readAsString());
@@ -137,9 +169,16 @@ class UserSearchHistoryService {
 
   Future<void> clearAll() async {
     final entries = await loadEntries();
-    await _deleteImagesForEntries(entries);
+    if (!kIsWeb) {
+      await _deleteImagesForEntries(entries);
+    }
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_prefsKey());
+      return;
+    }
     final file = await _historyFile();
-    if (await file.exists()) {
+    if (file != null && await file.exists()) {
       await file.delete();
     }
   }
@@ -160,7 +199,12 @@ class UserSearchHistoryService {
   }
 
   Future<void> _writeEntries(List<SearchHistoryEntry> entries) async {
+    if (kIsWeb) {
+      await _writeEntriesToPrefs(entries);
+      return;
+    }
     final file = await _historyFile();
+    if (file == null) return;
     final payload = jsonEncode(entries.map((item) => item.toJson()).toList());
     await file.writeAsString(payload);
   }
@@ -169,11 +213,13 @@ class UserSearchHistoryService {
     String sourcePath, {
     required String entryId,
   }) async {
+    if (kIsWeb) return sourcePath;
     try {
       final source = File(sourcePath);
       if (!await source.exists()) return null;
 
       final root = await _ensureRootDir();
+      if (root == null) return sourcePath;
       final imagesDir = Directory(p.join(root.path, _userKey(), 'images'));
       if (!await imagesDir.exists()) {
         await imagesDir.create(recursive: true);
@@ -203,6 +249,7 @@ class UserSearchHistoryService {
   }
 
   List<SearchHistoryEntry> _pruneMissingImages(List<SearchHistoryEntry> entries) {
+    if (kIsWeb) return entries;
     return entries
         .map((entry) {
           if (entry.type != SearchHistoryType.image) return entry;

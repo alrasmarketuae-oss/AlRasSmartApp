@@ -158,19 +158,42 @@ public partial class ProductsAppService
 
     private static void ValidateProductForm(CreateProductInput input)
     {
-        if (input.USDPrice <= 0)
-        {
-            throw new ArgumentException("USDPrice must be greater than zero.");
-        }
+        var isRequest = !string.IsNullOrWhiteSpace(input.ProductTypeName)
+            && input.ProductTypeName.Trim().Equals("Requests", StringComparison.OrdinalIgnoreCase);
 
-        if (input.Quantity <= 0)
+        if (!isRequest)
         {
-            throw new ArgumentException("Quantity must be greater than zero.");
-        }
+            if (input.USDPrice <= 0)
+            {
+                throw new ArgumentException("USDPrice must be greater than zero.");
+            }
 
-        if (string.IsNullOrWhiteSpace(input.UnitName))
+            if (input.Quantity <= 0)
+            {
+                throw new ArgumentException("Quantity must be greater than zero.");
+            }
+
+            if (string.IsNullOrWhiteSpace(input.UnitName))
+            {
+                throw new ArgumentException("UnitName is required.");
+            }
+        }
+        else
         {
-            throw new ArgumentException("UnitName is required.");
+            if (input.USDPrice < 0)
+            {
+                throw new ArgumentException("USDPrice cannot be negative.");
+            }
+
+            if (input.Quantity < 0)
+            {
+                throw new ArgumentException("Quantity cannot be negative.");
+            }
+
+            if (input.USDPrice > 0 && string.IsNullOrWhiteSpace(input.Currency))
+            {
+                throw new ArgumentException("Currency is required when a target price is provided.");
+            }
         }
 
         var isBooking = !string.IsNullOrWhiteSpace(input.ProductTypeName)
@@ -396,7 +419,7 @@ public partial class ProductsAppService
             && TextEquals(existing.Currency, newCurrency)
             && existing.CategoryId == nextCategoryId
             && existing.ProductTypeId == nextProductTypeId
-            && existing.UnitId == refs.Unit.Id
+            && existing.UnitId == refs.Unit?.Id
             && existing.OriginCountryId == nextOriginCountryId
             && existing.DestinationCountryId == nextDestinationCountryId
             && existing.LoadingPortId == nextLoadingPortId

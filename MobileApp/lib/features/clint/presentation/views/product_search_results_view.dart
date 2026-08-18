@@ -130,6 +130,8 @@ class _ProductSearchResultsViewState extends State<ProductSearchResultsView> {
             (state is ProductSearchSuccessState && state.fromImage);
         final isLoading = state is ProductSearchLoadingState ||
             cubit.isLoadingSearch;
+        final resultsReady = state is ProductSearchSuccessState ||
+            state is ProductSearchErrorState;
         final headerTitle = fromImage && isLoading
             ? s.analyzingImage
             : s.searchResults;
@@ -141,6 +143,7 @@ class _ProductSearchResultsViewState extends State<ProductSearchResultsView> {
               imagePath: widget.imagePath!,
               products: cubit.productSearchResults,
               isLoading: isLoading,
+              resultsReady: resultsReady,
               onClose: () {
                 if (context.canPop()) context.pop();
               },

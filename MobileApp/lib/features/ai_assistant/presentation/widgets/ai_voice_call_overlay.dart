@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-enum AiCallPhase { listening, thinking, speaking }
+enum AiCallPhase { waiting, listening, thinking, speaking, muted }
 
 class AiVoiceCallOverlay extends StatefulWidget {
   const AiVoiceCallOverlay({
@@ -14,12 +14,20 @@ class AiVoiceCallOverlay extends StatefulWidget {
     required this.phase,
     required this.onEndCall,
     required this.thinkingSteps,
+    required this.micMuted,
+    required this.micActive,
+    required this.onToggleMicMute,
+    required this.onToggleMic,
     this.voiceGenderLabel,
   });
 
   final AiCallPhase phase;
   final VoidCallback onEndCall;
   final List<String> thinkingSteps;
+  final bool micMuted;
+  final bool micActive;
+  final VoidCallback onToggleMicMute;
+  final VoidCallback onToggleMic;
   final String? voiceGenderLabel;
 
   @override
@@ -76,19 +84,32 @@ class _AiVoiceCallOverlayState extends State<AiVoiceCallOverlay>
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
+  Color get _phaseColor => switch (widget.phase) {
+        AiCallPhase.listening => const Color(0xFFE11D48),
+        AiCallPhase.thinking => const Color(0xFFF59E0B),
+        AiCallPhase.speaking => const Color(0xFF10B981),
+        AiCallPhase.muted => const Color(0xFF94A3B8),
+        AiCallPhase.waiting => const Color(0xFF3B82F6),
+      };
+
+  String _statusText(bool isAr) => switch (widget.phase) {
+        AiCallPhase.listening =>
+          isAr ? 'بيسمعك… تكلم الآن' : 'Listening… speak now',
+        AiCallPhase.thinking =>
+          isAr ? 'بيفكر…' : 'Thinking…',
+        AiCallPhase.speaking => isAr ? 'بيتكلم…' : 'Speaking…',
+        AiCallPhase.muted =>
+          isAr ? 'المايك مكتوم' : 'Microphone muted',
+        AiCallPhase.waiting =>
+          isAr ? 'جاهز — اضغط المايك' : 'Ready — tap mic',
+      };
+
   @override
   Widget build(BuildContext context) {
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
-    final statusText = switch (widget.phase) {
-      AiCallPhase.listening => isAr ? 'بيسمعك…' : 'Listening…',
-      AiCallPhase.thinking => isAr ? 'بيفكر…' : 'Thinking…',
-      AiCallPhase.speaking => isAr ? 'بيتكلم…' : 'Speaking…',
-    };
-    final statusColor = switch (widget.phase) {
-      AiCallPhase.listening => const Color(0xFFE11D48),
-      AiCallPhase.thinking => const Color(0xFFF59E0B),
-      AiCallPhase.speaking => const Color(0xFF10B981),
-    };
+    final statusColor = _phaseColor;
+    final showWaves = widget.phase == AiCallPhase.listening ||
+        widget.phase == AiCallPhase.speaking;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
@@ -109,9 +130,9 @@ class _AiVoiceCallOverlayState extends State<AiVoiceCallOverlay>
                     1,
                   ),
                   colors: const [
-                    Color(0xFF0A0E1A),
-                    Color(0xFF0D1B2A),
-                    Color(0xFF0A0E1A),
+                    Color(0xFF070B14),
+                    Color(0xFF0F172A),
+                    Color(0xFF111827),
                   ],
                 ),
               ),
@@ -123,64 +144,81 @@ class _AiVoiceCallOverlayState extends State<AiVoiceCallOverlay>
               children: [
                 _buildTopBar(isAr),
                 const Spacer(flex: 2),
-                _buildCentralOrb(statusColor),
-                SizedBox(height: 28.h),
+                GestureDetector(
+                  onTap: widget.micMuted ? null : widget.onToggleMic,
+                  child: _buildCentralOrb(statusColor),
+                ),
+                SizedBox(height: 24.h),
                 Text(
                   'allras AI',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 22.sp,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
+                    fontSize: 24.sp,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.4,
                   ),
                 ),
-                SizedBox(height: 8.h),
+                if (widget.voiceGenderLabel != null) ...[
+                  SizedBox(height: 4.h),
+                  Text(
+                    widget.voiceGenderLabel!,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.45),
+                      fontSize: 12.sp,
+                    ),
+                  ),
+                ],
+                SizedBox(height: 10.h),
                 AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
+                  duration: const Duration(milliseconds: 280),
                   child: Row(
-                    key: ValueKey(widget.phase),
+                    key: ValueKey('${widget.phase}_${widget.micMuted}'),
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _StatusDot(color: statusColor),
-                      SizedBox(width: 6.w),
-                      Text(
-                        statusText,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w600,
+                      SizedBox(width: 8.w),
+                      Flexible(
+                        child: Text(
+                          _statusText(isAr),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: statusColor,
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                SizedBox(height: 6.h),
+                SizedBox(height: 8.h),
                 Text(
                   _formattedDuration,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
+                    color: Colors.white.withValues(alpha: 0.35),
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w500,
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),
-                SizedBox(height: 24.h),
-                if (widget.phase == AiCallPhase.listening ||
-                    widget.phase == AiCallPhase.speaking)
+                SizedBox(height: 28.h),
+                if (showWaves)
                   _SoundWaveVisualizer(
                     controller: _waveController,
                     color: statusColor,
-                    barCount: 40,
+                    barCount: 44,
                     isActive: true,
-                  ),
-                if (widget.phase == AiCallPhase.thinking)
+                  )
+                else if (widget.phase == AiCallPhase.thinking)
                   _ThinkingDotsVisualizer(
                     steps: widget.thinkingSteps,
                     color: statusColor,
-                  ),
+                  )
+                else
+                  SizedBox(height: 60.h),
                 const Spacer(flex: 3),
                 _buildBottomControls(isAr),
-                SizedBox(height: 20.h),
+                SizedBox(height: 24.h),
               ],
             ),
           ),
@@ -195,20 +233,20 @@ class _AiVoiceCallOverlayState extends State<AiVoiceCallOverlay>
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
             decoration: BoxDecoration(
-              color: const Color(0xFF10B981).withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(20.r),
+              color: const Color(0xFF10B981).withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(24.r),
               border: Border.all(
-                color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                color: const Color(0xFF10B981).withValues(alpha: 0.35),
               ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 6.w,
-                  height: 6.w,
+                  width: 7.w,
+                  height: 7.w,
                   decoration: const BoxDecoration(
                     color: Color(0xFF10B981),
                     shape: BoxShape.circle,
@@ -219,8 +257,8 @@ class _AiVoiceCallOverlayState extends State<AiVoiceCallOverlay>
                   isAr ? 'محادثة صوتية' : 'Voice Chat',
                   style: TextStyle(
                     color: const Color(0xFF10B981),
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
@@ -230,7 +268,7 @@ class _AiVoiceCallOverlayState extends State<AiVoiceCallOverlay>
           Text(
             _formattedDuration,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
+              color: Colors.white.withValues(alpha: 0.45),
               fontSize: 13.sp,
               fontWeight: FontWeight.w600,
               fontFeatures: const [FontFeature.tabularFigures()],
@@ -243,90 +281,104 @@ class _AiVoiceCallOverlayState extends State<AiVoiceCallOverlay>
 
   Widget _buildCentralOrb(Color phaseColor) {
     return SizedBox(
-      width: 200.w,
-      height: 200.w,
+      width: 210.w,
+      height: 210.w,
       child: AnimatedBuilder(
         animation: Listenable.merge([_pulseController, _glowController]),
         builder: (context, child) {
-          final pulse = 1.0 + math.sin(_pulseController.value * 2 * math.pi) * 0.08;
-          final glowOpacity = 0.15 + _glowController.value * 0.2;
+          final pulse =
+              1.0 + math.sin(_pulseController.value * 2 * math.pi) * 0.07;
+          final glowOpacity = 0.18 + _glowController.value * 0.22;
           return Stack(
             alignment: Alignment.center,
             children: [
-              // Outer glow ring 3
               Container(
                 width: 200.w * pulse,
                 height: 200.w * pulse,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: phaseColor.withValues(alpha: glowOpacity * 0.2),
-                    width: 1,
-                  ),
-                ),
-              ),
-              // Outer glow ring 2
-              Container(
-                width: 170.w * pulse,
-                height: 170.w * pulse,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: phaseColor.withValues(alpha: glowOpacity * 0.35),
+                    color: phaseColor.withValues(alpha: glowOpacity * 0.25),
                     width: 1.5,
                   ),
                 ),
               ),
-              // Outer glow ring 1
               Container(
-                width: 145.w * pulse,
-                height: 145.w * pulse,
+                width: 160.w * pulse,
+                height: 160.w * pulse,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      phaseColor.withValues(alpha: glowOpacity * 0.25),
+                      phaseColor.withValues(alpha: glowOpacity * 0.35),
                       Colors.transparent,
                     ],
-                    stops: const [0.6, 1.0],
+                    stops: const [0.55, 1.0],
                   ),
                 ),
               ),
-              // Main orb
               Container(
-                width: 120.w,
-                height: 120.w,
+                width: 128.w,
+                height: 128.w,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
-                    center: const Alignment(-0.2, -0.3),
+                    center: const Alignment(-0.25, -0.35),
                     colors: [
-                      phaseColor.withValues(alpha: 0.3),
-                      const Color(0xFF1A1F35),
-                      const Color(0xFF0D1220),
+                      phaseColor.withValues(alpha: 0.35),
+                      const Color(0xFF1E293B),
+                      const Color(0xFF0F172A),
                     ],
-                    stops: const [0.0, 0.6, 1.0],
+                    stops: const [0.0, 0.55, 1.0],
                   ),
                   boxShadow: [
                     BoxShadow(
                       color: phaseColor.withValues(alpha: glowOpacity),
-                      blurRadius: 40,
-                      spreadRadius: 10,
+                      blurRadius: 36,
+                      spreadRadius: 6,
                     ),
                   ],
                 ),
                 child: ClipOval(
                   child: Padding(
-                    padding: EdgeInsets.all(20.w),
+                    padding: EdgeInsets.all(22.w),
                     child: Image.asset(
                       AppAssets.aiAgentIcon,
                       fit: BoxFit.contain,
-                      color: Colors.white.withValues(alpha: 0.85),
+                      color: Colors.white.withValues(alpha: 0.9),
                       colorBlendMode: BlendMode.srcATop,
                     ),
                   ),
                 ),
               ),
+              if (widget.micActive)
+                Positioned(
+                  bottom: 8.h,
+                  child: Container(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE11D48),
+                      borderRadius: BorderRadius.circular(20.r),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.fiber_manual_record,
+                            color: Colors.white, size: 10.sp),
+                        SizedBox(width: 4.w),
+                        Text(
+                          'REC',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
             ],
           );
         },
@@ -335,38 +387,55 @@ class _AiVoiceCallOverlayState extends State<AiVoiceCallOverlay>
   }
 
   Widget _buildBottomControls(bool isAr) {
+    final micDisabled = widget.micMuted;
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 40.w),
+      padding: EdgeInsets.symmetric(horizontal: 28.w),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          // Mute placeholder (disabled for now)
           _CircleButton(
-            icon: Icons.mic_off_rounded,
+            icon: widget.micMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
             label: isAr ? 'كتم' : 'Mute',
-            color: Colors.white.withValues(alpha: 0.08),
-            iconColor: Colors.white.withValues(alpha: 0.3),
-            onTap: null,
+            color: widget.micMuted
+                ? const Color(0xFFE11D48).withValues(alpha: 0.25)
+                : Colors.white.withValues(alpha: 0.1),
+            iconColor:
+                widget.micMuted ? const Color(0xFFE11D48) : Colors.white,
+            borderColor: widget.micMuted ? const Color(0xFFE11D48) : null,
+            onTap: () {
+              HapticFeedback.lightImpact();
+              widget.onToggleMicMute();
+            },
           ),
-          // End call
           _CircleButton(
             icon: Icons.call_end_rounded,
             label: isAr ? 'إنهاء' : 'End',
             color: const Color(0xFFE11D48),
             iconColor: Colors.white,
-            size: 64,
+            size: 68,
             onTap: () {
               HapticFeedback.mediumImpact();
               widget.onEndCall();
             },
           ),
-          // Speaker placeholder
           _CircleButton(
-            icon: Icons.volume_up_rounded,
-            label: isAr ? 'سماعة' : 'Speaker',
-            color: Colors.white.withValues(alpha: 0.08),
-            iconColor: Colors.white.withValues(alpha: 0.3),
-            onTap: null,
+            icon: widget.micActive
+                ? Icons.stop_rounded
+                : Icons.mic_none_rounded,
+            label: isAr ? 'مايك' : 'Mic',
+            color: widget.micActive
+                ? const Color(0xFF3B82F6)
+                : Colors.white.withValues(alpha: 0.1),
+            iconColor: micDisabled
+                ? Colors.white.withValues(alpha: 0.25)
+                : (widget.micActive ? Colors.white : Colors.white),
+            borderColor: widget.micActive ? const Color(0xFF3B82F6) : null,
+            onTap: micDisabled
+                ? null
+                : () {
+                    HapticFeedback.lightImpact();
+                    widget.onToggleMic();
+                  },
           ),
         ],
       ),
@@ -380,7 +449,8 @@ class _CircleButton extends StatelessWidget {
     required this.label,
     required this.color,
     required this.iconColor,
-    this.size = 52,
+    this.size = 56,
+    this.borderColor,
     this.onTap,
   });
 
@@ -389,6 +459,7 @@ class _CircleButton extends StatelessWidget {
   final Color color;
   final Color iconColor;
   final double size;
+  final Color? borderColor;
   final VoidCallback? onTap;
 
   @override
@@ -396,25 +467,41 @@ class _CircleButton extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        GestureDetector(
-          onTap: onTap,
-          child: Container(
-            width: size.w,
-            height: size.w,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            customBorder: const CircleBorder(),
+            child: Ink(
+              width: size.w,
+              height: size.w,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+                border: borderColor != null
+                    ? Border.all(color: borderColor!, width: 2)
+                    : null,
+                boxShadow: onTap == null
+                    ? null
+                    : [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.25),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+              ),
+              child: Icon(icon, color: iconColor, size: (size * 0.4).sp),
             ),
-            child: Icon(icon, color: iconColor, size: (size * 0.42).sp),
           ),
         ),
-        SizedBox(height: 8.h),
+        SizedBox(height: 10.h),
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.5),
-            fontSize: 11.sp,
-            fontWeight: FontWeight.w500,
+            color: Colors.white.withValues(alpha: onTap == null ? 0.25 : 0.65),
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
@@ -454,15 +541,15 @@ class _StatusDotState extends State<_StatusDot>
     return AnimatedBuilder(
       animation: _c,
       builder: (_, _) => Container(
-        width: 8.w,
-        height: 8.w,
+        width: 9.w,
+        height: 9.w,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: widget.color.withValues(alpha: 0.5 + _c.value * 0.5),
           boxShadow: [
             BoxShadow(
-              color: widget.color.withValues(alpha: _c.value * 0.5),
-              blurRadius: 6,
+              color: widget.color.withValues(alpha: _c.value * 0.55),
+              blurRadius: 8,
             ),
           ],
         ),
@@ -487,10 +574,10 @@ class _SoundWaveVisualizer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 60.h,
+      height: 64.h,
       width: double.infinity,
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 30.w),
+        padding: EdgeInsets.symmetric(horizontal: 24.w),
         child: AnimatedBuilder(
           animation: controller,
           builder: (context, _) {
@@ -533,14 +620,16 @@ class _WavePainter extends CustomPainter {
 
     for (int i = 0; i < barCount; i++) {
       final seed = _seeds[i % _seeds.length];
-      final wave = math.sin((progress * 2 * math.pi) + (i * 0.35)) * 0.5 + 0.5;
+      final wave =
+          math.sin((progress * 2 * math.pi) + (i * 0.35)) * 0.5 + 0.5;
       final h = isActive
           ? maxHeight * (0.1 + seed * 0.3 + wave * 0.6)
           : maxHeight * 0.08;
 
       final x = (i * 2 + 0.5) * barWidth;
       final rect = RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(x, centerY), width: barWidth * 0.7, height: h),
+        Rect.fromCenter(
+            center: Offset(x, centerY), width: barWidth * 0.7, height: h),
         Radius.circular(barWidth),
       );
 
@@ -592,7 +681,7 @@ class _ThinkingDotsVisualizerState extends State<_ThinkingDotsVisualizer>
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 60.h,
+      height: 64.h,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -611,8 +700,8 @@ class _ThinkingDotsVisualizerState extends State<_ThinkingDotsVisualizer>
                     child: Transform.scale(
                       scale: scale,
                       child: Container(
-                        width: 8.w,
-                        height: 8.w,
+                        width: 9.w,
+                        height: 9.w,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: widget.color
@@ -634,13 +723,18 @@ class _ThinkingDotsVisualizerState extends State<_ThinkingDotsVisualizer>
           ),
           if (widget.steps.isNotEmpty) ...[
             SizedBox(height: 12.h),
-            Text(
-              widget.steps.last,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.45),
-                fontSize: 11.sp,
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 32.w),
+              child: Text(
+                widget.steps.last,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.5),
+                  fontSize: 12.sp,
+                  height: 1.3,
+                ),
               ),
             ),
           ],

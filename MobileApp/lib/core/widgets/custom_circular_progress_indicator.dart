@@ -1,6 +1,6 @@
-import 'dart:io';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -21,7 +21,7 @@ class CustomCircleLoader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isIOS = Platform.isIOS;
+    final bool isIOS = defaultTargetPlatform == TargetPlatform.iOS;
     final double defaultSize = isIOS ? 26.w : 24.w;
     final double defaultStrokeWidth = isIOS ? 3.5 : 3.0;
 

@@ -10,7 +10,7 @@ class ProductVideoMetadata {
     this.id = '',
     required this.path,
     this.durationSeconds,
-    this.isMuted = true,
+    this.isMuted = false,
   });
 
   final String id;
@@ -984,7 +984,7 @@ class MyListingProductModel {
           durationSeconds: duration,
           isMuted: _parseBoolOrDefault(
             item['isMuted'] ?? item['IsMuted'],
-            defaultValue: true,
+            defaultValue: false,
           ),
         ),
       );

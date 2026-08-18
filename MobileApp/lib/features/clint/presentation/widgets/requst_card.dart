@@ -67,6 +67,7 @@ class RequstCard extends StatelessWidget {
                 child: ProductCardMarketplaceLayout(
                   product: product,
                   theme: theme,
+                  showSubjectToReconfirm: false,
                 ),
               ),
             ),

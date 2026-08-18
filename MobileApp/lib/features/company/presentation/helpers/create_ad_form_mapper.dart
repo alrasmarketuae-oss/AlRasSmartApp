@@ -337,6 +337,7 @@ class CreateAdFormMapper {
         ? canonicalDescriptionEn.trim()
         : typedSpecs;
     final qtyText = quantityController.text.trim();
+    final priceText = priceController.text.trim();
     final shippingDurationText = shippingDurationController.text.trim();
     final isOffers = state.selectedType == CreateAdType.offers.label;
     final isCategories =
@@ -357,22 +358,32 @@ class CreateAdFormMapper {
         ? null
         : int.tryParse(offerDurationDaysText);
 
+    final isRequest = state.selectedType == CreateAdType.requests.label;
+
     final quantity = isEditMode
         ? (qtyText.isEmpty ? null : ThousandsNumberInput.parseInt(qtyText))
-        : (ThousandsNumberInput.parseInt(qtyText) ?? 0);
-    final usdPrice = isEditMode
+        : isRequest
+            ? (qtyText.isEmpty
+                ? 0
+                : ThousandsNumberInput.parseInt(qtyText) ?? 0)
+            : (ThousandsNumberInput.parseInt(qtyText) ?? 0);
+    final double? usdPrice = isEditMode
         ? _resolveUsdPriceNullable(
             state: state,
             beforeDiscountController: beforeDiscountController,
             afterDiscountController: afterDiscountController,
             priceController: priceController,
           )
-        : _resolveUsdPrice(
-            state: state,
-            beforeDiscountController: beforeDiscountController,
-            afterDiscountController: afterDiscountController,
-            priceController: priceController,
-          );
+        : isRequest
+            ? (priceText.isEmpty
+                ? 0.0
+                : ThousandsNumberInput.parseDouble(priceText) ?? 0.0)
+            : _resolveUsdPrice(
+                state: state,
+                beforeDiscountController: beforeDiscountController,
+                afterDiscountController: afterDiscountController,
+                priceController: priceController,
+              );
 
     final discount = _resolveDiscount(
       state: state,
@@ -385,12 +396,18 @@ class CreateAdFormMapper {
         ? CreateAdCurrency.usd
         : state.selectedType == CreateAdType.retail.label
             ? CreateAdCurrency.aed
-            : CreateAdCurrency.normalize(
-                state.selectedCurrency.trim().isEmpty
-                    ? CreateAdCurrency.aed
-                    : state.selectedCurrency,
-              );
-    final unitValue = mapUnitName(state.selectedUnit);
+            : isRequest && (usdPrice == null || usdPrice <= 0)
+                ? ''
+                : CreateAdCurrency.normalize(
+                    state.selectedCurrency.trim().isEmpty
+                        ? CreateAdCurrency.aed
+                        : state.selectedCurrency,
+                  );
+    final unitValue = isRequest &&
+            qtyText.isEmpty &&
+            priceText.isEmpty
+        ? ''
+        : mapUnitName(state.selectedUnit);
     final catalogFields = resolveCatalogFields(
       selectedType: state.selectedType,
       categoryId: selectedCategoryId,
@@ -408,7 +425,7 @@ class CreateAdFormMapper {
         final retailPriceText = retailPriceController?.text.trim() ?? '';
         final retailQtyText = retailQuantityController?.text.trim() ?? '';
         retailPrice = retailPriceText.isEmpty
-            ? (isEditMode ? null : 0)
+            ? (isEditMode ? null : 0.0)
             : ThousandsNumberInput.parseDouble(retailPriceText);
         retailQuantity = retailQtyText.isEmpty
             ? (isEditMode ? null : 0)
@@ -436,7 +453,9 @@ class CreateAdFormMapper {
           : nameTrim,
       createdLanguage: isEditMode ? null : currentAppLanguage(),
       usdPrice: usdPrice,
-      currency: isEditMode && currencyValue.isEmpty ? null : currencyValue,
+      currency: isEditMode && currencyValue.isEmpty
+          ? null
+          : (isRequest && currencyValue.isEmpty ? null : currencyValue),
       quantity: quantity,
       descriptionEn: isEditMode
           ? (specsTrim.isEmpty ? null : specsTrim)
@@ -444,7 +463,7 @@ class CreateAdFormMapper {
       productTypeName: catalogFields.productTypeName,
       unitName: isEditMode
           ? (state.selectedUnit.isEmpty ? null : unitValue)
-          : unitValue,
+          : (isRequest && unitValue.isEmpty ? '' : unitValue),
       // Offers / Retail do not collect ports — never send placeholder Egypt/Hurghada.
       originCountryName: skipsGeo
           ? null
@@ -625,10 +644,10 @@ class CreateAdFormMapper {
       final before =
           ThousandsNumberInput.parseDouble(beforeDiscountController.text.trim());
       if (before != null && before > 0) return before;
-      return 0;
+      return 0.0;
     }
 
-    return ThousandsNumberInput.parseDouble(priceController.text.trim()) ?? 0;
+    return ThousandsNumberInput.parseDouble(priceController.text.trim()) ?? 0.0;
   }
 
   static ({int percentage, int days})? _resolveDiscount({

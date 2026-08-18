@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:alrasmarket/core/platform/app_paths.dart';
 import 'package:record/record.dart';
 
 class ChatInputBar extends StatefulWidget {
@@ -187,9 +187,13 @@ class _ChatInputBarState extends State<ChatInputBar> {
       return;
     }
 
-    final dir = await getTemporaryDirectory();
+    final dirPath = await appTemporaryPath();
+    if (dirPath == null) {
+      _notify('Voice recording is not supported in this browser.');
+      return;
+    }
     final filePath =
-        '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+        '$dirPath/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
 
     await _recorder.start(
       const RecordConfig(encoder: AudioEncoder.aacLc),

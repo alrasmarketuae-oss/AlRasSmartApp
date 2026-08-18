@@ -14,17 +14,24 @@ import 'package:alrasmarket/core/media/image_picker_config.dart';
 import 'package:alrasmarket/core/utils/media_http_overrides.dart';
 import 'package:alrasmarket/core/theme/theme_controller.dart';
 import 'package:alrasmarket/core/utils/status_bar_helper.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   configureImagePicker();
-  configureMediaHttpOverrides();
+  if (!kIsWeb) {
+    configureMediaHttpOverrides();
+  }
   await ScreenUtil.ensureScreenSize();
   await CachHelper.init();
   await ThemeController.instance.load();
-  await ApiCacheStore.instance.init();
+  try {
+    await ApiCacheStore.instance.init();
+  } catch (e) {
+    debugPrint('ApiCacheStore init skipped: $e');
+  }
   DioHelper.init();
 
   // Initialize Services Locator
@@ -52,6 +59,7 @@ void main() async {
 }
 
 Future<void> _resumePendingAdUploadsAfterUiReady() async {
+  if (kIsWeb) return;
   // Wait for first frames + a short settle; FFmpeg is heavy on cold start.
   await Future<void>.delayed(const Duration(seconds: 3));
   try {

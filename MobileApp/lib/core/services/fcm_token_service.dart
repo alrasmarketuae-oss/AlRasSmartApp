@@ -24,6 +24,10 @@ class FcmTokenService {
   /// (especially on iOS when a session is restored) until [runApp].
   Future<void> initialize() async {
     if (_initialized) return;
+    if (kIsWeb) {
+      debugPrint('FcmTokenService skipped on web.');
+      return;
+    }
 
     try {
       if (Firebase.apps.isEmpty) {

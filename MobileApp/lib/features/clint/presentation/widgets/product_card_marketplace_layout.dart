@@ -28,6 +28,7 @@ class ProductCardMarketplaceLayout extends StatefulWidget {
     this.fillHeight = false,
     this.theme,
     this.showOfferExtras = false,
+    this.showSubjectToReconfirm = true,
   });
 
   final MyListingProductModel product;
@@ -35,6 +36,7 @@ class ProductCardMarketplaceLayout extends StatefulWidget {
   final bool fillHeight;
   final ProductCardTheme? theme;
   final bool showOfferExtras;
+  final bool showSubjectToReconfirm;
 
   @override
   State<ProductCardMarketplaceLayout> createState() =>
@@ -314,6 +316,12 @@ class _ProductCardMarketplaceLayoutState
           )
         : const SizedBox.shrink();
 
+    final showPriceOnCard = ProductPriceFormatter.canShowPrices &&
+        (!widget.product.isRequestProduct ||
+            ProductPriceFormatter.amountValue(widget.product) > 0);
+    final showReconfirm =
+        widget.showSubjectToReconfirm && !widget.product.isRequestProduct;
+
     final footer = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -322,18 +330,19 @@ class _ProductCardMarketplaceLayoutState
         SizedBox(height: 8.h),
         const Divider(height: 1, thickness: 1, color: Color(0xFFEEF0F3)),
         SizedBox(height: 8.h),
-        _priceBlock(
-          fontFamily: fontFamily,
-          priceFontSize: priceFontSize,
-          detailsFontSize: detailsFontSize,
-          showDeal: showDeal,
-          currency: currency,
-          sale: sale,
-          original: original,
-          unit: unit,
-        ),
+        if (showPriceOnCard)
+          _priceBlock(
+            fontFamily: fontFamily,
+            priceFontSize: priceFontSize,
+            detailsFontSize: detailsFontSize,
+            showDeal: showDeal,
+            currency: currency,
+            sale: sale,
+            original: original,
+            unit: unit,
+          ),
         if (quantityWithUnit.isNotEmpty) ...[
-          SizedBox(height: 6.h),
+          SizedBox(height: showPriceOnCard ? 6.h : 8.h),
           Text(
             quantityWithUnit,
             maxLines: 1,
@@ -347,19 +356,21 @@ class _ProductCardMarketplaceLayoutState
             ),
           ),
         ],
-        SizedBox(height: quantityWithUnit.isNotEmpty ? 4.h : 6.h),
-        Text(
-          S.of(context).subjectToReconfirm,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontFamily: fontFamily,
-            fontSize: detailsFontSize,
-            fontWeight: FontWeight.w600,
-            color: const Color.fromRGBO(220, 38, 38, 1),
-            height: 1.2,
+        if (showReconfirm) ...[
+          SizedBox(height: quantityWithUnit.isNotEmpty ? 4.h : 6.h),
+          Text(
+            S.of(context).subjectToReconfirm,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: fontFamily,
+              fontSize: detailsFontSize,
+              fontWeight: FontWeight.w600,
+              color: const Color.fromRGBO(220, 38, 38, 1),
+              height: 1.2,
+            ),
           ),
-        ),
+        ],
         if (showPriceType) ...[
           SizedBox(height: 4.h),
           Text(

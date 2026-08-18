@@ -9,8 +9,8 @@ import 'package:alrasmarket/features/company/data/models/my_listing_product_mode
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:alrasmarket/core/platform/app_paths.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
 /// Amazon-style visual search: identifying dots first, then crop box + product peek.
 class ImageSearchLensView extends StatefulWidget {
@@ -19,6 +19,7 @@ class ImageSearchLensView extends StatefulWidget {
     required this.imagePath,
     required this.products,
     required this.isLoading,
+    required this.resultsReady,
     required this.onClose,
     required this.onOpenResults,
     required this.onCropSearch,
@@ -27,6 +28,8 @@ class ImageSearchLensView extends StatefulWidget {
   final String imagePath;
   final List<MyListingProductModel> products;
   final bool isLoading;
+  /// True after the first image-search API call finishes (success or error).
+  final bool resultsReady;
   final VoidCallback onClose;
   final VoidCallback onOpenResults;
   final ValueChanged<String> onCropSearch;
@@ -46,7 +49,6 @@ class _ImageSearchLensViewState extends State<ImageSearchLensView>
   Offset? _lastLocal;
   Rect? _fittedRect;
   bool _cropping = false;
-  bool _initialSearchDone = false;
 
   late final AnimationController _identifyController;
   late final AnimationController _cropRevealController;
@@ -66,8 +68,7 @@ class _ImageSearchLensViewState extends State<ImageSearchLensView>
     _dots = _buildScanDots(widget.imagePath);
     _resolveImageSize(widget.imagePath);
 
-    if (!widget.isLoading) {
-      _initialSearchDone = true;
+    if (widget.resultsReady) {
       _cropRevealController.value = 1;
     }
   }
@@ -85,16 +86,15 @@ class _ImageSearchLensViewState extends State<ImageSearchLensView>
     if (oldWidget.imagePath != widget.imagePath) {
       _resolveImageSize(widget.imagePath);
       _dots = _buildScanDots(widget.imagePath);
-      _initialSearchDone = false;
       _cropRevealController.reset();
-      if (!widget.isLoading) {
-        _initialSearchDone = true;
+      if (widget.resultsReady) {
         _cropRevealController.value = 1;
       }
     }
-    if (oldWidget.isLoading && !widget.isLoading && !_initialSearchDone) {
-      setState(() => _initialSearchDone = true);
+    if (!oldWidget.resultsReady && widget.resultsReady) {
       _cropRevealController.forward(from: 0);
+    } else if (oldWidget.resultsReady && !widget.resultsReady) {
+      _cropRevealController.reset();
     }
   }
 
@@ -181,7 +181,7 @@ class _ImageSearchLensViewState extends State<ImageSearchLensView>
 
   void _onPointerDown(Offset local) {
     final fitted = _fittedRect;
-    if (fitted == null || !_initialSearchDone || widget.isLoading || _cropping) return;
+    if (fitted == null || !_showCropOverlay || _cropping) return;
     final box = _cropToLocal(fitted, _crop);
     final kind = _hitTest(local, box);
     if (kind == _DragKind.none) return;
@@ -285,8 +285,8 @@ class _ImageSearchLensViewState extends State<ImageSearchLensView>
     );
   }
 
-  bool get _showIdentifying => !_initialSearchDone && widget.isLoading;
-  bool get _showCropOverlay => _initialSearchDone;
+  bool get _showIdentifying => !widget.resultsReady;
+  bool get _showCropOverlay => widget.resultsReady && !widget.isLoading;
   bool get _busy => widget.isLoading || _cropping;
 
   @override
@@ -450,7 +450,7 @@ class _ImageSearchLensViewState extends State<ImageSearchLensView>
                   ),
                 ),
               ),
-              if (_busy && _initialSearchDone)
+              if (_busy && widget.resultsReady)
                 const ColoredBox(
                   color: Color(0x33000000),
                   child: Center(
@@ -732,9 +732,10 @@ Future<String?> cropImageToNormalizedRect({
     picture.dispose();
     if (png == null) return null;
 
-    final dir = await getTemporaryDirectory();
+    final dirPath = await appTemporaryPath();
+    if (dirPath == null) return null;
     final target = File(
-      p.join(dir.path, 'image_search_crop_${DateTime.now().microsecondsSinceEpoch}.png'),
+      p.join(dirPath, 'image_search_crop_${DateTime.now().microsecondsSinceEpoch}.png'),
     );
     await target.writeAsBytes(png.buffer.asUint8List(), flush: true);
     return await ImageCompressor.compressToMaxBytes(target.path) ?? target.path;

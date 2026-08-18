@@ -473,7 +473,7 @@ internal static class AiAssistantKnowledgeSource
             Overseas supplier with a non-UAE phone: Booking only — say so and do not offer the other types, but Booking is allowed via create_booking_ad in chat.
 
             Company customer: Request ads only (not Booking, Retail, Category, or discounted Offer).
-            Tell them that and list what a Request needs: product name, quantity and unit, target price and currency, negotiable, Local or Reexport, delivery address from saved addresses, optional delivery date and images, then publish from Create Order or Alras Smart chat.
+            Tell them that and list what a Request needs: product name, specifications, negotiable, Local or Reexport, delivery address from saved addresses (required for company_customer). Target price, quantity, unit, and currency are OPTIONAL unless the user provides a target price (then also collect currency USD/AED and unit). Optional delivery date and images. Publish from Create Order or Alras Smart chat.
 
             Shipping company: shipping ads only from Home (port-to-port with 20ft and 40ft prices).
 
@@ -1840,8 +1840,9 @@ internal static class AiAssistantKnowledgeSource
             """
             من البار السفلي اختر إنشاء طلب (Create Order)، أو انشر من شات الراس الذكي عبر create_request_ad.
             الحقول المطلوبة:
-            اسم المنتج، المواصفات، الكمية والوحدة، السعر المستهدف والعملة (USD أو AED)، هل السعر قابل للتفاوض،
-            نوع التلبية: محلي أو إعادة تصدير (إلزامي)، عنوان التسليم من العناوين المحفوظة (إلزامي — إن لم يوجد عنوان أضفه من الملف الشخصي أولاً)،
+            اسم المنتج، المواصفات، هل السعر قابل للتفاوض،
+            نوع التلبية: محلي أو إعادة تصدير (إلزامي)، عنوان التسليم من العناوين المحفوظة (إلزامي — إن لم يوجد عنوان أضفه من الملف الشخصي أولاً).
+            اختياري: الكمية والوحدة، السعر المستهدف والعملة (USD أو AED) — إذا أدخل المستخدم سعراً مستهدفاً يُطلب أيضاً العملة والوحدة.
             تاريخ التسليم المطلوب (اختياري)، صور توضيحية (اختياري).
             بعد اكتمال الحقول انشر الطلب؛ وبعد المراجعة يظهر في قسم Requests ليتقدم الموردون بعروضهم.
             تابع العروض من صفحة الحساب واقبل العرض المناسب أو ارفضه.
@@ -1851,9 +1852,10 @@ internal static class AiAssistantKnowledgeSource
             """
             From the bottom bar choose Create Order, or publish in Alras Smart chat via create_request_ad.
             Required fields:
-            product name, specifications, quantity and unit, target price and currency (USD or AED), negotiable yes/no,
-            fulfillment type: Local or Reexport (required), delivery address from saved addresses (required — add one in Profile first if empty),
-            required delivery date (optional), reference images (optional).
+            product name, specifications, negotiable yes/no,
+            fulfillment type: Local or Reexport (required), delivery address from saved addresses (required — add one in Profile first if empty).
+            Optional: quantity and unit, target price and currency (USD or AED) — if the user provides a target price, also collect currency and unit.
+            Required delivery date (optional), reference images (optional).
             When complete, publish; after review it appears in Requests so suppliers can offer.
             Follow offers from the Account page and accept or reject.
             Your account can create Requests only — not Booking, Retail, Category, or discounted Offer.
@@ -1863,8 +1865,8 @@ internal static class AiAssistantKnowledgeSource
             """
             يستطيع المورد أيضاً نشر إعلان Request عندما يحتاج بضاعة غير متوفرة لديه.
             افتح إنشاء إعلان واختر نوع Request، أو انشر من الشات عبر create_request_ad.
-            الحقول المطلوبة: اسم المنتج، المواصفات، الكمية والوحدة، السعر المستهدف والعملة، قابل للتفاوض،
-            محلي أو إعادة تصدير (إلزامي)، عنوان التسليم إن وُجد من العناوين المحفوظة (مستحسن)، تاريخ التسليم (اختياري)، صور (اختياري).
+            الحقول المطلوبة: اسم المنتج، المواصفات، قابل للتفاوض، محلي أو إعادة تصدير (إلزامي).
+            اختياري: الكمية والوحدة، السعر المستهدف والعملة (إذا أُدخل سعر مستهدف يُطلب العملة والوحدة)، عنوان التسليم من العناوين المحفوظة، تاريخ التسليم، صور.
             بعد المراجعة يظهر الطلب في قسم Requests ويتقدم الآخرون بعروضهم عليه.
             تابع العروض من صفحة الحساب واقبل الأنسب.
             """);
@@ -1872,8 +1874,8 @@ internal static class AiAssistantKnowledgeSource
             """
             A supplier can also publish a Request ad when they need goods they do not stock.
             Open Create Ad and choose Request, or publish in chat via create_request_ad.
-            Required fields: product name, specifications, quantity and unit, target price and currency, negotiable,
-            Local or Reexport (required), delivery address from saved addresses when available (recommended), delivery date (optional), images (optional).
+            Required fields: product name, specifications, negotiable, Local or Reexport (required).
+            Optional: quantity and unit, target price and currency (if target price is provided, also collect currency and unit), delivery address from saved addresses, delivery date, images.
             After review the request appears in Requests and others submit offers.
             Follow offers from the Account page and accept the most suitable one.
             """);

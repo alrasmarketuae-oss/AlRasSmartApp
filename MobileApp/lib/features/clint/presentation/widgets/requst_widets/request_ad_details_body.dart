@@ -10,7 +10,6 @@ import 'package:alrasmarket/features/clint/presentation/widgets/booking_widets/b
 import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_media_thumbnail.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/requst_widets/request_details_mapper.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
-import 'package:alrasmarket/features/company/presentation/helpers/create_ad_price_labels.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -319,7 +318,7 @@ class _RequestFactsCard extends StatelessWidget {
       addRow(
         icon: Icons.sell_outlined,
         iconColor: BookingDetailsDesign.priceGreen,
-        label: CreateAdPriceLabels.targetPricePerUnitLabel(s, unit),
+        label: s.targetPrice,
         valueWidget: ProductPriceText.fromProduct(
           product,
           amountStyle: TextStyle(

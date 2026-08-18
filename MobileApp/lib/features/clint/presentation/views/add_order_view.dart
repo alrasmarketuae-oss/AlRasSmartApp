@@ -612,11 +612,8 @@ class _AddOrderViewState extends State<AddOrderView> {
                                     ThousandsSeparatorInputFormatter.quantity(),
                                   ],
                                   validator: (value) {
-                                    if (value == null ||
-                                        value.trim().isEmpty) {
-                                      return S
-                                          .of(context)
-                                          .thisFieldIsRequired;
+                                    if (value == null || value.trim().isEmpty) {
+                                      return null;
                                     }
                                     if (ThousandsNumberInput.parseInt(value) ==
                                         null) {

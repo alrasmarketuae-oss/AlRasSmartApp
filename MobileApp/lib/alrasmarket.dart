@@ -1,5 +1,6 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/services/app_push_notification_service.dart';
 import 'package:alrasmarket/core/services/fcm_token_service.dart';
@@ -14,8 +15,6 @@ import 'package:alrasmarket/features/company/presentation/controller/cubit/creat
 import 'package:alrasmarket/features/person/presentation/controller/cubit/person_cubit.dart';
 import 'package:alrasmarket/features/shipping_company/presentation/controller/cubit/shipping_company_cubit.dart';
 import 'generated/l10n.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -54,7 +53,11 @@ class _AlRasMarketState extends State<AlRasMarket> with WidgetsBindingObserver {
   }
 
   Future<void> _promptNotificationPermission({required String reason}) async {
-    if (!Platform.isAndroid && !Platform.isIOS) return;
+    if (kIsWeb) return;
+    final platform = defaultTargetPlatform;
+    if (platform != TargetPlatform.android && platform != TargetPlatform.iOS) {
+      return;
+    }
     if (_permissionFlowStarted && reason == 'first-frame') return;
     _permissionFlowStarted = true;
 

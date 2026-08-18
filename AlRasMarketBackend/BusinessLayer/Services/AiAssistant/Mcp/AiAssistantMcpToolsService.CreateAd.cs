@@ -348,9 +348,9 @@ public sealed partial class AiAssistantMcpToolsService
         if (name.Error is not null) return name.Error;
 
         var price = GetDecimal(root, "price") ?? GetDecimal(root, "target_price");
-        if (price is null or <= 0)
+        if (price is < 0)
         {
-            return Json(new { ok = false, error = "price (target price) must be greater than zero." });
+            return Json(new { ok = false, error = "price (target price) cannot be negative." });
         }
 
         var quantityUnit = ResolveQuantityAndUnit(root);
@@ -359,19 +359,27 @@ public sealed partial class AiAssistantMcpToolsService
             return quantityUnit.Error;
         }
 
-        if (quantityUnit.Quantity is null or <= 0)
+        if (quantityUnit.Quantity is < 0)
         {
-            return Json(new { ok = false, error = "quantity must be greater than zero." });
+            return Json(new { ok = false, error = "quantity cannot be negative." });
         }
 
-        if (string.IsNullOrWhiteSpace(quantityUnit.UnitName))
+        if (quantityUnit.Quantity is > 0 && string.IsNullOrWhiteSpace(quantityUnit.UnitName))
         {
             return Json(new
             {
                 ok = false,
                 error =
-                    "unit_name or unit_id is required (Ton, Kilogram, Carton, …). " +
-                    "For '5 tons' use quantity=5 and unit_name=Ton — not unit_id=5."
+                    "When quantity is provided, unit_name or unit_id is required (Ton, Kilogram, Carton, …)."
+            });
+        }
+
+        if (price is > 0 && string.IsNullOrWhiteSpace(quantityUnit.UnitName))
+        {
+            return Json(new
+            {
+                ok = false,
+                error = "When target price is provided, unit_name or unit_id is required."
             });
         }
 
@@ -388,9 +396,9 @@ public sealed partial class AiAssistantMcpToolsService
         }
 
         var currency = NormalizeCurrency(GetString(root, "currency"));
-        if (currency is null)
+        if (price is > 0 && currency is null)
         {
-            return Json(new { ok = false, error = "currency must be USD or AED." });
+            return Json(new { ok = false, error = "currency must be USD or AED when target price is provided." });
         }
 
         var deliveryDate = NormalizeDeliveryDate(
@@ -438,10 +446,10 @@ public sealed partial class AiAssistantMcpToolsService
             NameEn = name.Value!,
             CreatedLanguage = createdLanguage,
             ProductTypeName = "Requests",
-            USDPrice = price.Value,
-            Currency = currency,
-            Quantity = quantityUnit.Quantity.Value,
-            UnitName = quantityUnit.UnitName,
+            USDPrice = price ?? 0,
+            Currency = price is > 0 ? currency : null,
+            Quantity = quantityUnit.Quantity ?? 0,
+            UnitName = quantityUnit.UnitName ?? string.Empty,
             DescriptionEn = specifications,
             Negotiable = negotiable,
             RequestTypeName = requestTypeName,

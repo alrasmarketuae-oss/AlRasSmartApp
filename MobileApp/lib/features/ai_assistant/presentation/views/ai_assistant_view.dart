@@ -27,7 +27,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+import 'package:alrasmarket/core/platform/app_paths.dart';
 import 'package:record/record.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -110,6 +110,9 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   bool _voiceReady = false;
   bool _voiceConversationMode = false;
   bool _assistantSpeaking = false;
+  bool _micMuted = false;
+  bool _micListening = false;
+  bool _micTranscribing = false;
   _AiVoiceGender _voiceGender = _AiVoiceGender.female;
   Future<void>? _connectFuture;
   bool _isThinking = false;
@@ -174,11 +177,10 @@ class _AiAssistantViewState extends State<AiAssistantView> {
       await _tts.setSpeechRate(0.48);
       await _tts.setPitch(1.05);
       await _tts.setVolume(1.0);
-      await _tts.awaitSpeakCompletion(false);
+      await _tts.awaitSpeakCompletion(true);
       _tts.setCompletionHandler(() {
         _assistantSpeaking = false;
         if (mounted) setState(() {});
-        unawaited(_onAssistantSpeechFinished());
       });
       _tts.setCancelHandler(() {
         _assistantSpeaking = false;
@@ -200,7 +202,14 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   }
 
   Future<void> _setVoiceConversationMode(bool enabled) async {
-    setState(() => _voiceConversationMode = enabled);
+    setState(() {
+      _voiceConversationMode = enabled;
+      if (!enabled) {
+        _micMuted = false;
+        _micListening = false;
+        _micTranscribing = false;
+      }
+    });
     if (!enabled) {
       await _tts.stop();
       _assistantSpeaking = false;
@@ -212,12 +221,43 @@ class _AiAssistantViewState extends State<AiAssistantView> {
     await _beginVoiceConversationLoop();
   }
 
+  Future<void> _toggleMicMute() async {
+    setState(() => _micMuted = !_micMuted);
+    if (_micMuted) {
+      _composerKey.currentState?.cancelVoiceCapture();
+      setState(() => _micListening = false);
+      return;
+    }
+    if (!_isThinking && !_assistantSpeaking) {
+      await _beginVoiceConversationLoop();
+    }
+  }
+
+  Future<void> _toggleOverlayMic() async {
+    if (_micMuted || _isThinking || _assistantSpeaking) return;
+    final composer = _composerKey.currentState;
+    if (composer == null) return;
+    if (composer.isListening) {
+      await composer.finishVoiceTurn();
+    } else {
+      await composer.beginVoiceTurn(autoSend: true);
+    }
+  }
+
   Future<void> _beginVoiceConversationLoop() async {
-    if (!mounted || !_voiceConversationMode || _isThinking || _assistantSpeaking) {
+    if (!mounted ||
+        !_voiceConversationMode ||
+        _micMuted ||
+        _isThinking ||
+        _assistantSpeaking) {
       return;
     }
     await Future<void>.delayed(const Duration(milliseconds: 350));
-    if (!mounted || !_voiceConversationMode || _isThinking || _assistantSpeaking) {
+    if (!mounted ||
+        !_voiceConversationMode ||
+        _micMuted ||
+        _isThinking ||
+        _assistantSpeaking) {
       return;
     }
     await _composerKey.currentState?.beginVoiceTurn(autoSend: true);
@@ -419,7 +459,12 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   Future<void> _speakAssistantReply(String text) async {
     if (!_voiceConversationMode) return;
     final clean = _textForSpeech(text);
-    if (!_voiceReady || clean.isEmpty) {
+    if (clean.isEmpty) {
+      unawaited(_onAssistantSpeechFinished());
+      return;
+    }
+
+    if (!_voiceReady) {
       unawaited(_onAssistantSpeechFinished());
       return;
     }
@@ -430,22 +475,26 @@ class _AiAssistantViewState extends State<AiAssistantView> {
 
     try {
       await _tts.stop();
-      // Re-claim audio session from the recorder plugin on iOS.
-      await _tts.setIosAudioCategory(
-        IosTextToSpeechAudioCategory.playback,
-        [
-          IosTextToSpeechAudioCategoryOptions.allowBluetooth,
-          IosTextToSpeechAudioCategoryOptions.allowBluetoothA2DP,
-          IosTextToSpeechAudioCategoryOptions.defaultToSpeaker,
-          IosTextToSpeechAudioCategoryOptions.mixWithOthers,
-        ],
-      );
+      if (Platform.isIOS) {
+        await _tts.setIosAudioCategory(
+          IosTextToSpeechAudioCategory.playback,
+          [
+            IosTextToSpeechAudioCategoryOptions.allowBluetooth,
+            IosTextToSpeechAudioCategoryOptions.allowBluetoothA2DP,
+            IosTextToSpeechAudioCategoryOptions.defaultToSpeaker,
+            IosTextToSpeechAudioCategoryOptions.mixWithOthers,
+          ],
+        );
+      }
       await _ensureTtsLanguage(langCode);
       await _applyAssistantVoice(langCode);
       await _tts.setVolume(1.0);
       if (!mounted) return;
       setState(() => _assistantSpeaking = true);
       await _tts.speak(clean);
+      if (!mounted) return;
+      setState(() => _assistantSpeaking = false);
+      await _onAssistantSpeechFinished();
     } catch (e) {
       debugPrint('TTS speak error: $e');
       _assistantSpeaking = false;
@@ -1120,9 +1169,18 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   }
 
   AiCallPhase get _callPhase {
+    if (_micMuted) return AiCallPhase.muted;
     if (_assistantSpeaking) return AiCallPhase.speaking;
-    if (_isThinking) return AiCallPhase.thinking;
-    return AiCallPhase.listening;
+    if (_isThinking || _micTranscribing) return AiCallPhase.thinking;
+    if (_micListening) return AiCallPhase.listening;
+    return AiCallPhase.waiting;
+  }
+
+  String? get _voiceGenderLabel {
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    return _voiceGender == _AiVoiceGender.female
+        ? (isAr ? 'صوت بنت' : 'Female voice')
+        : (isAr ? 'صوت راجل' : 'Male voice');
   }
 
   @override
@@ -1194,8 +1252,11 @@ class _AiAssistantViewState extends State<AiAssistantView> {
                 voiceConversationMode: _voiceConversationMode,
                 assistantSpeaking: _assistantSpeaking,
                 onVoiceTurnRetry: _onAssistantSpeechFinished,
-                onListeningChanged: (v) {
-                  if (mounted) setState(() {});
+                onListeningChanged: (listening) {
+                  if (mounted) setState(() => _micListening = listening);
+                },
+                onTranscribingChanged: (transcribing) {
+                  if (mounted) setState(() => _micTranscribing = transcribing);
                 },
               ),
             ],
@@ -1206,6 +1267,11 @@ class _AiAssistantViewState extends State<AiAssistantView> {
                 phase: _callPhase,
                 onEndCall: () => _setVoiceConversationMode(false),
                 thinkingSteps: List<String>.from(_thinkingSteps),
+                micMuted: _micMuted,
+                micActive: _micListening,
+                voiceGenderLabel: _voiceGenderLabel,
+                onToggleMicMute: () => unawaited(_toggleMicMute()),
+                onToggleMic: () => unawaited(_toggleOverlayMic()),
               ),
             ),
         ],
@@ -2307,6 +2373,7 @@ class _AiComposer extends StatefulWidget {
     this.assistantSpeaking = false,
     this.onVoiceTurnRetry,
     this.onListeningChanged,
+    this.onTranscribingChanged,
   });
 
   final TextEditingController controller;
@@ -2324,6 +2391,7 @@ class _AiComposer extends StatefulWidget {
   final bool assistantSpeaking;
   final VoidCallback? onVoiceTurnRetry;
   final ValueChanged<bool>? onListeningChanged;
+  final ValueChanged<bool>? onTranscribingChanged;
 
   @override
   State<_AiComposer> createState() => _AiComposerState();
@@ -2338,6 +2406,11 @@ class _AiComposerState extends State<_AiComposer> {
   bool _autoSendAfterTranscription = false;
   String _baseText = '';
   String? _recordingPath;
+
+  bool get isListening => _listening;
+  bool get isTranscribing => _correcting;
+
+  Future<void> finishVoiceTurn() => _finishListening();
 
   Future<void> beginVoiceTurn({bool autoSend = false}) async {
     if (!mounted || widget.isThinking || widget.assistantSpeaking) return;
@@ -2379,9 +2452,16 @@ class _AiComposerState extends State<_AiComposer> {
     }
 
     _baseText = widget.controller.text.trim();
-    final dir = await getTemporaryDirectory();
+    final dirPath = await appTemporaryPath();
+    if (dirPath == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(s.aiAssistantVoiceUnavailable)),
+      );
+      return;
+    }
     final filePath =
-        p.join(dir.path, 'ai_voice_${DateTime.now().millisecondsSinceEpoch}.m4a');
+        p.join(dirPath, 'ai_voice_${DateTime.now().millisecondsSinceEpoch}.m4a');
 
     try {
       await _recorder.start(
@@ -2430,6 +2510,7 @@ class _AiComposerState extends State<_AiComposer> {
       _awaitingConfirm = false;
     });
     widget.onListeningChanged?.call(false);
+    widget.onTranscribingChanged?.call(true);
 
     var finalSpoken = '';
     final audioPath = path ?? _recordingPath;
@@ -2489,6 +2570,7 @@ class _AiComposerState extends State<_AiComposer> {
           offset: widget.controller.text.length,
         );
       });
+      widget.onTranscribingChanged?.call(false);
       if (retryVoiceLoop) {
         widget.onVoiceTurnRetry?.call();
       } else {
@@ -2515,6 +2597,7 @@ class _AiComposerState extends State<_AiComposer> {
           offset: widget.controller.text.length,
         );
       });
+      widget.onTranscribingChanged?.call(false);
       _finishing = false;
       widget.onSend();
       return;
@@ -2528,6 +2611,7 @@ class _AiComposerState extends State<_AiComposer> {
         offset: widget.controller.text.length,
       );
     });
+    widget.onTranscribingChanged?.call(false);
     _finishing = false;
   }
 
@@ -2555,6 +2639,8 @@ class _AiComposerState extends State<_AiComposer> {
         offset: widget.controller.text.length,
       );
     });
+    widget.onListeningChanged?.call(false);
+    widget.onTranscribingChanged?.call(false);
   }
 
   void _confirmSend() {

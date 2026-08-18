@@ -26,6 +26,7 @@ class CreateAdPricingRowSection extends StatelessWidget {
     this.isUnitLocked = false,
     this.showQuantityField = true,
     this.quantityExtraValidator,
+    this.fieldsOptional = false,
   });
 
   static const priceFlex = 1;
@@ -46,6 +47,7 @@ class CreateAdPricingRowSection extends StatelessWidget {
   final bool isUnitLocked;
   final bool showQuantityField;
   final String? Function(String?)? quantityExtraValidator;
+  final bool fieldsOptional;
 
   @override
   Widget build(BuildContext context) {
@@ -86,6 +88,10 @@ class CreateAdPricingRowSection extends StatelessWidget {
               fontFamily: fontFamily,
             ),
             validator: (value) {
+              if (fieldsOptional &&
+                  (value == null || value.trim().isEmpty)) {
+                return null;
+              }
               if (value == null || value.trim().isEmpty) {
                 return s.thisFieldIsRequired;
               }
@@ -132,6 +138,9 @@ class CreateAdPricingRowSection extends StatelessWidget {
         hintText: priceHint,
         fontFamily: fontFamily,
         validator: (value) {
+          if (fieldsOptional && (value == null || value.trim().isEmpty)) {
+            return null;
+          }
           if (value == null || value.trim().isEmpty) {
             return s.thisFieldIsRequired;
           }

@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:alrasmarket/core/platform/app_paths.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
 import 'video_compressor.dart';
 
@@ -38,8 +38,9 @@ class ImageCompressor {
 
     onProgress?.call(0.05);
 
-    final docsDir = await getApplicationDocumentsDirectory();
-    final outDir = Directory('${docsDir.path}/compressed_media');
+    final docsPath = await appDocumentsPath();
+    if (docsPath == null) return inputPath;
+    final outDir = Directory('$docsPath/compressed_media');
     if (!await outDir.exists()) {
       await outDir.create(recursive: true);
     }
@@ -101,8 +102,9 @@ class ImageCompressor {
 
     onProgress?.call(0.05);
 
-    final docsDir = await getApplicationDocumentsDirectory();
-    final outDir = Directory('${docsDir.path}/compressed_media');
+    final docsPath = await appDocumentsPath();
+    if (docsPath == null) return inputPath;
+    final outDir = Directory('$docsPath/compressed_media');
     if (!await outDir.exists()) {
       await outDir.create(recursive: true);
     }
