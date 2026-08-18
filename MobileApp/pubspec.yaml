@@ -69,6 +69,7 @@ dependencies:
   signalr_netcore: ^1.4.4
   record: ^6.0.0
   speech_to_text: ^7.0.0
+  flutter_tts: ^4.2.3
   audioplayers: ^6.4.0
   path_provider: ^2.1.5
   path: ^1.9.1

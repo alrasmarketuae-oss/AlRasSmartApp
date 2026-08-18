@@ -29,7 +29,9 @@ import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
 /// Assistant accent ramp, used across the header, avatars, and the send button
 /// so the screen reads as an AI surface rather than a normal support chat.
@@ -85,6 +87,8 @@ class _AiChatColors {
       planMode ? const Color(0xFFE6A817) : const Color(0xFF2E77CC);
 }
 
+enum _AiVoiceGender { female, male }
+
 class AiAssistantView extends StatefulWidget {
   const AiAssistantView({super.key});
 
@@ -93,12 +97,16 @@ class AiAssistantView extends StatefulWidget {
 }
 
 class _AiAssistantViewState extends State<AiAssistantView> {
+  static const _voiceGenderPrefKey = 'ai.assistant.voice.gender';
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   final List<_ChatMessage> _messages = [];
   final _realtime = AiAssistantRealtimeService();
   final _historyRepository = AiAssistantRepository();
+  final FlutterTts _tts = FlutterTts();
   bool _historyLoading = false;
+  bool _voiceReady = false;
+  _AiVoiceGender _voiceGender = _AiVoiceGender.female;
   Future<void>? _connectFuture;
   bool _isThinking = false;
   final List<String> _thinkingSteps = [];
@@ -120,6 +128,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   @override
   void initState() {
     super.initState();
+    unawaited(_initVoice());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final s = S.of(context);
@@ -134,9 +143,134 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   void dispose() {
     // Mark closed before awaiting so an in-flight connect cannot revive the hub.
     unawaited(_realtime.close());
+    unawaited(_tts.stop());
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _initVoice() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString(_voiceGenderPrefKey);
+      _voiceGender =
+          saved == 'male' ? _AiVoiceGender.male : _AiVoiceGender.female;
+    } catch (_) {}
+
+    try {
+      await _tts.setSpeechRate(0.47);
+      await _tts.setPitch(1.0);
+      await _tts.setVolume(1.0);
+      _voiceReady = true;
+    } catch (_) {
+      _voiceReady = false;
+    }
+
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _setVoiceGender(_AiVoiceGender gender) async {
+    setState(() => _voiceGender = gender);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _voiceGenderPrefKey,
+        gender == _AiVoiceGender.male ? 'male' : 'female',
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _showVoicePicker() async {
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  isAr ? 'صوت رد المساعد' : 'Assistant reply voice',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                RadioListTile<_AiVoiceGender>(
+                  value: _AiVoiceGender.female,
+                  groupValue: _voiceGender,
+                  onChanged: (value) {
+                    if (value == null) return;
+                    _setVoiceGender(value);
+                    Navigator.of(sheetContext).pop();
+                  },
+                  title: Text(isAr ? 'صوت بنت' : 'Female voice'),
+                ),
+                RadioListTile<_AiVoiceGender>(
+                  value: _AiVoiceGender.male,
+                  groupValue: _voiceGender,
+                  onChanged: (value) {
+                    if (value == null) return;
+                    _setVoiceGender(value);
+                    Navigator.of(sheetContext).pop();
+                  },
+                  title: Text(isAr ? 'صوت راجل' : 'Male voice'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _speakAssistantReply(String text) async {
+    final clean = text.trim();
+    if (!_voiceReady || clean.isEmpty) return;
+
+    final langCode = Localizations.localeOf(context).languageCode;
+    final ttsLanguage = langCode == 'ar' ? 'ar-SA' : 'en-US';
+
+    try {
+      await _tts.stop();
+      await _tts.setLanguage(ttsLanguage);
+      final voices = await _tts.getVoices;
+      if (voices is List && voices.isNotEmpty) {
+        final targetWords = _voiceGender == _AiVoiceGender.female
+            ? <String>['female', 'woman', 'girl', 'feminine', 'أنث']
+            : <String>['male', 'man', 'boy', 'masculine', 'ذكر'];
+
+        dynamic best;
+        var bestScore = -999;
+        for (final v in voices) {
+          if (v is! Map) continue;
+          final locale = (v['locale'] ?? '').toString().toLowerCase();
+          if (langCode == 'ar' && !locale.startsWith('ar')) continue;
+          if (langCode != 'ar' && !locale.startsWith('en')) continue;
+
+          final blob = v.values.join(' ').toString().toLowerCase();
+          var score = 0;
+          for (final word in targetWords) {
+            if (blob.contains(word)) score += 5;
+          }
+          if (blob.contains('enhanced') || blob.contains('neural')) score += 1;
+          if (score > bestScore) {
+            best = v;
+            bestScore = score;
+          }
+        }
+
+        if (best != null) {
+          await _tts.setVoice(Map<String, String>.from(best));
+        }
+      }
+
+      await _tts.speak(clean);
+    } catch (_) {}
   }
 
   String _previewForReply(_ChatMessage? message) {
@@ -663,6 +797,9 @@ class _AiAssistantViewState extends State<AiAssistantView> {
           }
         });
         _scrollToEnd();
+        if (finalAnswer.isNotEmpty) {
+          unawaited(_speakAssistantReply(finalAnswer));
+        }
       },
       onError: (message) {
         if (_shouldIgnoreAssistantError()) return;
@@ -812,6 +949,8 @@ class _AiAssistantViewState extends State<AiAssistantView> {
                 ? (_historyLoading ? null : _openHistorySheet)
                 : null,
             historyLoading: _historyLoading,
+            onOpenVoiceSettings: _showVoicePicker,
+            voiceGender: _voiceGender,
           ),
           Expanded(
             child: ListView.builder(
@@ -869,12 +1008,16 @@ class _AiChatHeader extends StatelessWidget {
     this.onCancelPlan,
     this.onOpenHistory,
     this.historyLoading = false,
+    this.onOpenVoiceSettings,
+    this.voiceGender = _AiVoiceGender.female,
   });
 
   final bool planMode;
   final VoidCallback? onCancelPlan;
   final VoidCallback? onOpenHistory;
   final bool historyLoading;
+  final VoidCallback? onOpenVoiceSettings;
+  final _AiVoiceGender voiceGender;
 
   @override
   Widget build(BuildContext context) {
@@ -997,6 +1140,18 @@ class _AiChatHeader extends StatelessWidget {
                           size: 22.sp,
                         ),
                       ),
+              if (onOpenVoiceSettings != null)
+                IconButton(
+                  onPressed: onOpenVoiceSettings,
+                  tooltip: isAr ? 'صوت الرد' : 'Reply voice',
+                  icon: Icon(
+                    voiceGender == _AiVoiceGender.female
+                        ? Icons.record_voice_over_rounded
+                        : Icons.mic_rounded,
+                    color: Colors.white,
+                    size: 21.sp,
+                  ),
+                ),
               if (onCancelPlan != null)
                 TextButton(
                   onPressed: onCancelPlan,
