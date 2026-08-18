@@ -94,6 +94,9 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
   /// Draft paths that have been confirmed (attached to a product) — not deleted on close.
   final Set<String> _confirmedDraftPaths = {};
 
+  /// When set, create/edit publishes the ad under this company (admin-on-behalf).
+  String? actingOwnerId;
+
   /// In-flight draft uploads — awaited on abandon so late completions still get deleted.
   final Map<String, Future<void>> _draftUploadInFlight = {};
 
@@ -1096,7 +1099,7 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
       }
     }
 
-    final request = CreateAdFormMapper.buildRequest(
+    var request = CreateAdFormMapper.buildRequest(
       state: stateForRequest,
       productNameController: productNameController,
       quantityController: quantityController,
@@ -1123,6 +1126,10 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
       loadedLocalizedName: _loadedLocalizedName,
       loadedLocalizedDescription: _loadedLocalizedDescription,
     );
+    final actingOwner = actingOwnerId?.trim();
+    if (actingOwner != null && actingOwner.isNotEmpty) {
+      request = request.copyWith(ownerId: actingOwner);
+    }
 
     final isCategoriesSubmit =
         stateForRequest.selectedType == CreateAdType.categories.label;
@@ -1563,6 +1570,7 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     final result = await _submitProductForAdminReviewUseCase(
       productId: productId,
       token: token,
+      ownerId: actingOwnerId,
     );
     return result.fold<String?>((failure) => failure.message, (_) => null);
   }

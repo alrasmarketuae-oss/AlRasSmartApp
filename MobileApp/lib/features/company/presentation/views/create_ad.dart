@@ -52,8 +52,9 @@ class _CreateAdPage extends StatelessWidget {
           AppToast.showSuccess(context, state.submitSuccessMessage!);
           final navigateProductId = state.submitNavigateProductId;
           final wasEdit = state.isEditMode;
+          final actingForCompany = cubit.actingOwnerId?.trim().isNotEmpty == true;
           cubit.clearSubmitFeedback();
-          if (wasEdit) {
+          if (wasEdit || actingForCompany) {
             if (Navigator.of(context).canPop()) {
               Navigator.of(context).pop();
             }

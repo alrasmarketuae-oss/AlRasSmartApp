@@ -20,6 +20,7 @@ abstract class BaseProductRemoteDataSource {
 
   Future<Either<Failure, MyListingsResponse>> getMyListings({
     required String token,
+    String? ownerId,
   });
 
   Future<Either<Failure, void>> deleteProduct({
@@ -37,22 +38,26 @@ abstract class BaseProductRemoteDataSource {
     required String productId,
     required UpdateListingStatusRequest request,
     required String token,
+    String? ownerId,
   });
 
   Future<Either<Failure, void>> updateProductPrice({
     required String productId,
     required UpdateProductPriceRequest request,
     required String token,
+    String? ownerId,
   });
 
   Future<Either<Failure, void>> markProductSoldOut({
     required String productId,
     required String token,
+    String? ownerId,
   });
 
   Future<Either<Failure, void>> submitProductForAdminReview({
     required String productId,
     required String token,
+    String? ownerId,
   });
 
   Future<Either<Failure, String>> uploadProductImage({
@@ -125,6 +130,12 @@ abstract class BaseProductRemoteDataSource {
 }
 
 class ProductRemoteDataSource implements BaseProductRemoteDataSource {
+  Map<String, dynamic>? _ownerQuery(String? ownerId) {
+    final id = ownerId?.trim();
+    if (id == null || id.isEmpty) return null;
+    return {'ownerId': id};
+  }
+
   @override
   Future<Either<Failure, CreateProductResponse>> createProduct({
     required CreateAdProductRequest request,
@@ -176,11 +187,13 @@ class ProductRemoteDataSource implements BaseProductRemoteDataSource {
   @override
   Future<Either<Failure, MyListingsResponse>> getMyListings({
     required String token,
+    String? ownerId,
   }) async {
     try {
       final response = await DioHelper.getData(
         url: ApiConstants.productsMyListingsEndPoint,
         token: token,
+        query: _ownerQuery(ownerId),
       );
 
       final status = response?.statusCode ?? 0;
@@ -287,12 +300,14 @@ class ProductRemoteDataSource implements BaseProductRemoteDataSource {
     required String productId,
     required UpdateListingStatusRequest request,
     required String token,
+    String? ownerId,
   }) async {
     try {
       final response = await DioHelper.patchData(
         url: ApiConstants.productListingStatusEndPoint(productId),
         data: request.toJson(),
         token: token,
+        query: _ownerQuery(ownerId),
       );
 
       return _mapVoidResponse(
@@ -317,12 +332,14 @@ class ProductRemoteDataSource implements BaseProductRemoteDataSource {
     required String productId,
     required UpdateProductPriceRequest request,
     required String token,
+    String? ownerId,
   }) async {
     try {
       final response = await DioHelper.patchData(
         url: ApiConstants.productPriceEndPoint(productId),
         data: request.toJson(),
         token: token,
+        query: _ownerQuery(ownerId),
       );
 
       return _mapVoidResponse(
@@ -346,12 +363,14 @@ class ProductRemoteDataSource implements BaseProductRemoteDataSource {
   Future<Either<Failure, void>> markProductSoldOut({
     required String productId,
     required String token,
+    String? ownerId,
   }) async {
     try {
       final response = await DioHelper.patchData(
         url: ApiConstants.productSoldOutEndPoint(productId),
         data: const <String, dynamic>{},
         token: token,
+        query: _ownerQuery(ownerId),
       );
 
       return _mapVoidResponse(
@@ -375,12 +394,14 @@ class ProductRemoteDataSource implements BaseProductRemoteDataSource {
   Future<Either<Failure, void>> submitProductForAdminReview({
     required String productId,
     required String token,
+    String? ownerId,
   }) async {
     try {
       final response = await DioHelper.postData(
         url: ApiConstants.productSubmitForReviewEndPoint(productId),
         data: const <String, dynamic>{},
         token: token,
+        query: _ownerQuery(ownerId),
       );
 
       return _mapVoidResponse(

@@ -20,10 +20,15 @@ class AppHeader extends StatelessWidget {
     return value.capitalizeFirst();
   }
 
-  String? _accountSubtitle(S s) {
+  String? _accountSubtitle(BuildContext context, S s) {
     final auth = AuthService.instance;
     if (auth.isSupplierAccount) return s.supplierAccount;
     if (auth.isCompanyCustomerAccount) return s.companyCustomerAccount;
+    if (auth.isAdminAccount) {
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? 'حساب أدمن'
+          : 'Admin account';
+    }
     if (auth.isPersonalCustomerAccount) return s.personalAccount;
     return null;
   }
@@ -45,7 +50,7 @@ class AppHeader extends StatelessWidget {
       name,
       fallback: s.alRasMarket,
     );
-    final subtitle = _accountSubtitle(s);
+    final subtitle = _accountSubtitle(context, s);
 
     return Row(
       children: [

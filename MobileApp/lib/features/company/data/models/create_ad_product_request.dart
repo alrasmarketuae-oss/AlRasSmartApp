@@ -43,6 +43,7 @@ class CreateAdProductRequest {
     this.draftImagePaths,
     this.draftVideoPath,
     this.draftVideoDurationSeconds,
+    this.ownerId,
   });
 
   final String? nameEn;
@@ -88,6 +89,7 @@ class CreateAdProductRequest {
   final List<String>? draftImagePaths;
   final String? draftVideoPath;
   final int? draftVideoDurationSeconds;
+  final String? ownerId;
 
   Map<String, dynamic> toJson() => {
         'nameEn': nameEn,
@@ -124,6 +126,7 @@ class CreateAdProductRequest {
         'retailPackaging': retailPackaging,
         'retailPackagingDetails': retailPackagingDetails,
         'retailDescriptionEn': retailDescriptionEn,
+        'ownerId': ownerId,
       };
 
   factory CreateAdProductRequest.fromJson(Map<String, dynamic> json) {
@@ -204,6 +207,7 @@ class CreateAdProductRequest {
     List<String>? draftImagePaths,
     String? draftVideoPath,
     int? draftVideoDurationSeconds,
+    String? ownerId,
     bool clearProductVideoFile = false,
   }) {
     return CreateAdProductRequest(
@@ -253,6 +257,7 @@ class CreateAdProductRequest {
       draftVideoPath: draftVideoPath ?? this.draftVideoPath,
       draftVideoDurationSeconds:
           draftVideoDurationSeconds ?? this.draftVideoDurationSeconds,
+      ownerId: ownerId ?? this.ownerId,
     );
   }
 
@@ -329,6 +334,10 @@ class CreateAdProductRequest {
       }
 
       _appendRetailPricingFields(map, forUpdate: true);
+      final actingOwner = ownerId?.trim();
+      if (actingOwner != null && actingOwner.isNotEmpty) {
+        map['OwnerId'] = actingOwner;
+      }
 
       return FormData.fromMap(map);
     }
@@ -437,6 +446,10 @@ class CreateAdProductRequest {
     }
 
     _appendRetailPricingFields(map, forUpdate: false);
+    final actingOwner = ownerId?.trim();
+    if (actingOwner != null && actingOwner.isNotEmpty) {
+      map['OwnerId'] = actingOwner;
+    }
 
     return FormData.fromMap(map);
   }

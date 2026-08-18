@@ -29,6 +29,11 @@ String whereToGo() {
     return '${AppRoutes.kOtpVerificationView}?email=${Uri.encodeComponent(em)}';
   }
 
+  final role = (roleName ?? '').trim().toLowerCase();
+  if (role == 'admin' || roleId == '1') {
+    return AppRoutes.kAdminHomeView;
+  }
+
   if (isShippingCompanyAccount == true) {
     if (isApproved != true) {
       return AppRoutes.kUnderReviewView;

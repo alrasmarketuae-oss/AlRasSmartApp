@@ -1,5 +1,6 @@
 using System.Data;
 using System.Security.Claims;
+using BusinessLayer.Constants;
 using BusinessLayer.Dtos;
 using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
@@ -140,6 +141,23 @@ public partial class ProductsAppService
         }
 
         var principal = httpContextAccessor.HttpContext?.User;
+        if (principal?.Identity?.IsAuthenticated == true && IsAdminPrincipal(principal))
+        {
+            var target = await productData.GetUserByIdAsync(ownerId, tracked: true, cancellationToken)
+                ?? throw new KeyNotFoundException("Owner user not found.");
+            if (target.RoleId is not (RoleIds.Seller or RoleIds.ShippingCompany))
+            {
+                throw new UnauthorizedAccessException("Target account cannot own products.");
+            }
+
+            if (target.IsRejected)
+            {
+                throw new UnauthorizedAccessException("This company account is rejected.");
+            }
+
+            return ownerId;
+        }
+
         if (principal?.Identity?.IsAuthenticated == true
             && TryAuthorizeCompanyOwnerFromToken(principal, ownerId))
         {
@@ -149,7 +167,7 @@ public partial class ProductsAppService
         var owner = await productData.GetUserByIdAsync(ownerId, tracked: true, cancellationToken)
             ?? throw new KeyNotFoundException("Owner user not found.");
 
-        if (owner.RoleId != 2)
+        if (owner.RoleId != RoleIds.Seller && owner.RoleId != RoleIds.ShippingCompany)
         {
             throw new UnauthorizedAccessException("Only company accounts can manage products.");
         }
@@ -164,6 +182,10 @@ public partial class ProductsAppService
 
         return ownerId;
     }
+
+    private static bool IsAdminPrincipal(ClaimsPrincipal principal) =>
+        principal.IsInRole("Admin")
+        || string.Equals(principal.FindFirst("roleId")?.Value, "1", StringComparison.Ordinal);
 
     /// <summary>
     /// Fast path: trust JWT claims issued at login (roleId / approval / phone).

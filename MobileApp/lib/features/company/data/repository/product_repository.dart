@@ -24,8 +24,9 @@ class ProductRepository implements BaseProductRepository {
   @override
   Future<Either<Failure, MyListingsResponse>> getMyListings({
     required String token,
+    String? ownerId,
   }) {
-    return _remote.getMyListings(token: token);
+    return _remote.getMyListings(token: token, ownerId: ownerId);
   }
 
   @override
@@ -54,11 +55,13 @@ class ProductRepository implements BaseProductRepository {
     required String productId,
     required UpdateListingStatusRequest request,
     required String token,
+    String? ownerId,
   }) {
     return _remote.updateProductListingStatus(
       productId: productId,
       request: request,
       token: token,
+      ownerId: ownerId,
     );
   }
 
@@ -67,11 +70,13 @@ class ProductRepository implements BaseProductRepository {
     required String productId,
     required UpdateProductPriceRequest request,
     required String token,
+    String? ownerId,
   }) {
     return _remote.updateProductPrice(
       productId: productId,
       request: request,
       token: token,
+      ownerId: ownerId,
     );
   }
 
@@ -79,18 +84,25 @@ class ProductRepository implements BaseProductRepository {
   Future<Either<Failure, void>> markProductSoldOut({
     required String productId,
     required String token,
+    String? ownerId,
   }) {
-    return _remote.markProductSoldOut(productId: productId, token: token);
+    return _remote.markProductSoldOut(
+      productId: productId,
+      token: token,
+      ownerId: ownerId,
+    );
   }
 
   @override
   Future<Either<Failure, void>> submitProductForAdminReview({
     required String productId,
     required String token,
+    String? ownerId,
   }) {
     return _remote.submitProductForAdminReview(
       productId: productId,
       token: token,
+      ownerId: ownerId,
     );
   }
 

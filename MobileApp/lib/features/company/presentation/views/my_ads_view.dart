@@ -11,6 +11,8 @@ import 'package:alrasmarket/features/company/presentation/controller/cubit/compa
 import 'package:alrasmarket/features/company/presentation/controller/cubit/company_states.dart';
 import 'package:alrasmarket/features/company/presentation/models/my_ads_filter.dart';
 import 'package:alrasmarket/features/company/presentation/models/my_ads_listing_status_filter.dart';
+import 'package:alrasmarket/features/company/presentation/controller/cubit/create_ad_cubit.dart';
+import 'package:alrasmarket/features/company/presentation/views/create_ad.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/my_ads/change_prices_banner.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/my_ads/my_ads_filter_chips.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/my_ads/my_ads_header_widget.dart';
@@ -27,6 +29,8 @@ class MyAdsView extends StatefulWidget {
     super.key,
     this.isTabView = false,
     this.highlightProductId,
+    this.actingOwnerId,
+    this.companyName,
   });
 
   /// When true, hides back button (embedded in bottom navigation).
@@ -34,6 +38,10 @@ class MyAdsView extends StatefulWidget {
 
   /// When set (e.g. from a new-order notification), scroll/highlight that ad.
   final String? highlightProductId;
+
+  /// Admin managing this company's ads.
+  final String? actingOwnerId;
+  final String? companyName;
 
   @override
   State<MyAdsView> createState() => _MyAdsViewState();
@@ -49,6 +57,7 @@ class _MyAdsViewState extends State<MyAdsView> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final cubit = context.read<CompanyCubit>();
+      cubit.listingsOwnerId = widget.actingOwnerId;
       // Clear filters so the highlighted product is visible.
       if (widget.highlightProductId != null &&
           widget.highlightProductId!.trim().isNotEmpty) {
@@ -72,6 +81,26 @@ class _MyAdsViewState extends State<MyAdsView> {
       }
       cubit.loadMyListings(context);
     });
+  }
+
+  @override
+  void dispose() {
+    if (widget.actingOwnerId != null &&
+        widget.actingOwnerId!.trim().isNotEmpty) {
+      sl<CompanyCubit>().listingsOwnerId = null;
+    }
+    super.dispose();
+  }
+
+  Future<void> _openCreateAd() async {
+    final cubit = sl<CreateAdCubit>()..actingOwnerId = widget.actingOwnerId;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => CreateAdView(cubit: cubit),
+      ),
+    );
+    if (!mounted) return;
+    await context.read<CompanyCubit>().reloadMyListings();
   }
 
   void _onAccountSectionSelected(int index) {
@@ -119,13 +148,17 @@ class _MyAdsViewState extends State<MyAdsView> {
     return MyAdsFilter.all;
   }
 
+  bool get _isActingForCompany =>
+      widget.actingOwnerId != null && widget.actingOwnerId!.trim().isNotEmpty;
+
   bool get _isCompanyCustomerAccount =>
-      AuthService.instance.isCompanyCustomerAccount;
+      !_isActingForCompany && AuthService.instance.isCompanyCustomerAccount;
 
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
-    final showMyOffersSection = !_isCompanyCustomerAccount;
+    final showMyOffersSection =
+        !_isCompanyCustomerAccount && !_isActingForCompany;
     final typeItems = MyAdsFilter.values
         .map(
           (filter) => MyAdsFilterChipItem(
@@ -149,10 +182,29 @@ class _MyAdsViewState extends State<MyAdsView> {
       child: SafeArea(
         child: Scaffold(
           backgroundColor: AppColors.scaffold(context),
+          floatingActionButton: _isActingForCompany
+              ? FloatingActionButton.extended(
+                  onPressed: _openCreateAd,
+                  backgroundColor: LightColor.defaultColor,
+                  icon: const Icon(Icons.add_rounded, color: Colors.white),
+                  label: Text(
+                    Localizations.localeOf(context).languageCode == 'ar'
+                        ? 'إضافة إعلان'
+                        : 'Add ad',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                )
+              : null,
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              MyAdsHeaderWidget(showBackButton: !widget.isTabView),
+              MyAdsHeaderWidget(
+                showBackButton: !widget.isTabView,
+                title: widget.companyName,
+              ),
               const ChangePricesBanner(),
               if (showMyOffersSection)
                 _AccountSectionTabs(

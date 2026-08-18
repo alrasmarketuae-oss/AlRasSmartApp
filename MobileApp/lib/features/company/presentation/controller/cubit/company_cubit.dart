@@ -45,6 +45,9 @@ class CompanyCubit extends Cubit<CompanyStates> {
   CompanyMyListingsState? _cachedListingsState;
   static const int _requestOffersPageSize = 20;
 
+  /// Admin viewing another company's ads.
+  String? listingsOwnerId;
+
   void setTab(int index) {
     currentIndex = index;
     emit(CompanyTabState(index));
@@ -95,7 +98,10 @@ class CompanyCubit extends Cubit<CompanyStates> {
       return;
     }
 
-    final result = await _getMyListingsUseCase(token: token);
+    final result = await _getMyListingsUseCase(
+      token: token,
+      ownerId: listingsOwnerId,
+    );
     result.fold(
       (failure) => emit(
         CompanyMyListingsState(
@@ -379,6 +385,7 @@ class CompanyCubit extends Cubit<CompanyStates> {
       usdPrice: usdPrice,
       retailPrice: retailPrice,
       token: token,
+      ownerId: listingsOwnerId,
     );
 
     return result.fold(
@@ -402,6 +409,7 @@ class CompanyCubit extends Cubit<CompanyStates> {
       productId: productId,
       isActive: isActive,
       token: token,
+      ownerId: listingsOwnerId,
     );
 
     return result.fold(
@@ -426,6 +434,7 @@ class CompanyCubit extends Cubit<CompanyStates> {
     final result = await _markProductSoldOutUseCase(
       productId: productId,
       token: token,
+      ownerId: listingsOwnerId,
     );
 
     return result.fold(

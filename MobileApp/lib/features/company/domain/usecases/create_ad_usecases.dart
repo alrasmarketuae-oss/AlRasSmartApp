@@ -25,8 +25,11 @@ class GetMyListingsUseCase {
 
   final BaseProductRepository _repository;
 
-  Future<Either<Failure, MyListingsResponse>> call({required String token}) {
-    return _repository.getMyListings(token: token);
+  Future<Either<Failure, MyListingsResponse>> call({
+    required String token,
+    String? ownerId,
+  }) {
+    return _repository.getMyListings(token: token, ownerId: ownerId);
   }
 }
 
@@ -70,11 +73,13 @@ class UpdateProductListingStatusUseCase {
     required String productId,
     required bool isActive,
     required String token,
+    String? ownerId,
   }) {
     return _repository.updateProductListingStatus(
       productId: productId,
       request: UpdateListingStatusRequest(isActive: isActive),
       token: token,
+      ownerId: ownerId,
     );
   }
 }
@@ -89,6 +94,7 @@ class UpdateProductPriceUseCase {
     double? usdPrice,
     double? retailPrice,
     required String token,
+    String? ownerId,
   }) {
     return _repository.updateProductPrice(
       productId: productId,
@@ -97,6 +103,7 @@ class UpdateProductPriceUseCase {
         retailPrice: retailPrice,
       ),
       token: token,
+      ownerId: ownerId,
     );
   }
 }
@@ -109,10 +116,12 @@ class MarkProductSoldOutUseCase {
   Future<Either<Failure, void>> call({
     required String productId,
     required String token,
+    String? ownerId,
   }) {
     return _repository.markProductSoldOut(
       productId: productId,
       token: token,
+      ownerId: ownerId,
     );
   }
 }
@@ -240,10 +249,12 @@ class SubmitProductForAdminReviewUseCase {
   Future<Either<Failure, void>> call({
     required String productId,
     required String token,
+    String? ownerId,
   }) {
     return _repository.submitProductForAdminReview(
       productId: productId,
       token: token,
+      ownerId: ownerId,
     );
   }
 }

@@ -38,6 +38,7 @@ class LoginResponseModel {
   final String? imgPath;
   final String? companyName;
   final String? roleName;
+  final String? roleId;
   final String? phone;
   final bool? isCompanyAccount;
   final bool? isShippingCompanyAccount;
@@ -57,6 +58,7 @@ class LoginResponseModel {
     this.imgPath,
     this.companyName,
     this.roleName,
+    this.roleId,
     this.phone,
     this.isCompanyAccount,
     this.isShippingCompanyAccount,
@@ -96,6 +98,9 @@ class LoginResponseModel {
     String? roleName = _stringFromJson(
       json['roleName'] ?? json['RoleName'] ?? json['role'] ?? json['Role'],
     );
+    String? jwtRoleId = _stringFromJson(
+      json['roleId'] ?? json['RoleId'],
+    );
     final isCompanyAccount = _boolFromJson(
       json['isCompanyAccount'] ?? json['IsCompanyAccount'],
     );
@@ -113,11 +118,17 @@ class LoginResponseModel {
         id ??= _stringFromJson(payload['sub'] ?? payload['EntityId']);
         email ??= _stringFromJson(payload['email']);
         name ??= _stringFromJson(payload['fullName']);
-        roleName ??= _stringFromJson(payload['role']);
+        roleName ??= _stringFromJson(
+          payload['role'] ??
+              payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'],
+        );
+        jwtRoleId ??= _stringFromJson(payload['roleId']);
       } catch (_) {
         // ignore JWT decoding errors and rely on body fields
       }
     }
+
+    jwtRoleId ??= roleName?.toLowerCase() == 'admin' ? '1' : null;
 
     final isRejected = _boolFromJson(json['isRejected'] ?? json['IsRejected']);
     final rejectionReason = _stringFromJson(
@@ -144,10 +155,8 @@ class LoginResponseModel {
         AuthService.instance.saveAuthData(
           personId: id ?? '',
           authToken: token,
-          userRoleId: '',
-          userEmail: email ?? '',
-          fullName: name ?? '',
           userRole: roleName,
+          userRoleId: jwtRoleId ?? '',
           companyWaiting: (isCompanyAccount == true ||
                   isShippingCompanyAccount == true) &&
               isApproved != true,
@@ -169,6 +178,7 @@ class LoginResponseModel {
       imgPath: _stringFromJson(json['imgPath'] ?? json['ImgPath']),
       companyName: _stringFromJson(json['companyName'] ?? json['CompanyName']),
       roleName: roleName,
+      roleId: jwtRoleId,
       phone: _stringFromJson(json['phone'] ?? json['Phone']),
       isCompanyAccount: isCompanyAccount,
       isShippingCompanyAccount: isShippingCompanyAccount,

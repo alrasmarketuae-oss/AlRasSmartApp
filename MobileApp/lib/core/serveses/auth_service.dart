@@ -72,7 +72,10 @@ class AuthService {
   /// Person account (IsCustomer=false, not a company account).
   /// Guests are not personal customers — they browse category catalog only.
   bool get isPersonalCustomerAccount =>
-      isAuthenticated && isCompanyAccount != true;
+      isAuthenticated &&
+      isCompanyAccount != true &&
+      !isAdminAccount &&
+      isShippingCompanyAccount != true;
 
   /// UAE mobile numbers start with +971 / 971.
   bool get isUaePhoneNumber {
@@ -89,6 +92,14 @@ class AuthService {
   /// Supplier / seller company account (IsCustomer=false, company account).
   bool get isSupplierAccount =>
       isCompanyAccount == true && !currentUserIsCustomer;
+
+  /// Platform admin — manages companies and their ads from the mobile app.
+  bool get isAdminAccount {
+    if (!isAuthenticated) return false;
+    final role = (currentUserRoleName ?? '').trim().toLowerCase();
+    final id = (currentUserRoleId ?? '').trim();
+    return role == 'admin' || id == '1';
+  }
 
   /// Initialize authentication service - loads cached data
   Future<void> initializeAuth() async {

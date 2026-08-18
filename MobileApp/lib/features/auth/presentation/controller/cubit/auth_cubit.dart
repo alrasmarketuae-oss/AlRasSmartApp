@@ -118,7 +118,7 @@ class AuthCubit extends Cubit<AuthStates> {
         userEmail: loginResponse.email ?? emailFallback,
         fullName: loginResponse.fullName,
         userRole: loginResponse.role,
-        userRoleId: '',
+        userRoleId: loginResponse.roleId ?? '',
         companyWaiting: loginResponse.isPendingAdminApproval,
         approved: loginResponse.isApproved,
         isCustomerAcount: loginResponse.isCustomer,

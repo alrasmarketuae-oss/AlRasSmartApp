@@ -31,9 +31,11 @@ public class ProductsController(
     [ProducesResponseType(typeof(MyListingsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetMyListings(CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetMyListings(
+        [FromQuery] string? ownerId = null,
+        CancellationToken cancellationToken = default)
     {
-        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = ResolveActingOwnerId(ownerId);
         if (string.IsNullOrWhiteSpace(userId))
         {
             return Unauthorized(new { message = "Invalid token." });
@@ -377,8 +379,7 @@ public class ProductsController(
     [RequestSizeLimit(50 * 1024 * 1024)]
     public async Task<IActionResult> Create([FromForm] CreateProductRequest request, CancellationToken cancellationToken = default)
     {
-        //get the user id from token
-        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = ResolveActingOwnerId(request.OwnerId);
         if (string.IsNullOrWhiteSpace(userId))
         {
             return Unauthorized(new { message = "Invalid token." });
@@ -438,9 +439,10 @@ public class ProductsController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SubmitForReview(
         [FromRoute] string productId,
+        [FromQuery] string? ownerId = null,
         CancellationToken cancellationToken = default)
     {
-        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = ResolveActingOwnerId(ownerId);
         if (string.IsNullOrWhiteSpace(userId))
         {
             return Unauthorized(new { message = "Invalid token." });
@@ -534,9 +536,10 @@ public class ProductsController(
     public async Task<IActionResult> SetListingStatus(
         [FromRoute] string productId,
         [FromBody] SetProductListingStatusRequest request,
+        [FromQuery] string? ownerId = null,
         CancellationToken cancellationToken = default)
     {
-        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = ResolveActingOwnerId(ownerId);
         if (string.IsNullOrWhiteSpace(userId))
         {
             return Unauthorized(new { message = "Invalid token." });
@@ -585,9 +588,10 @@ public class ProductsController(
     public async Task<IActionResult> UpdatePrice(
         [FromRoute] string productId,
         [FromBody] SetProductPriceRequest request,
+        [FromQuery] string? ownerId = null,
         CancellationToken cancellationToken = default)
     {
-        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = ResolveActingOwnerId(ownerId);
         if (string.IsNullOrWhiteSpace(userId))
         {
             return Unauthorized(new { message = "Invalid token." });
@@ -636,9 +640,10 @@ public class ProductsController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> MarkSoldOut(
         [FromRoute] string productId,
+        [FromQuery] string? ownerId = null,
         CancellationToken cancellationToken = default)
     {
-        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = ResolveActingOwnerId(ownerId);
         if (string.IsNullOrWhiteSpace(userId))
         {
             return Unauthorized(new { message = "Invalid token." });
@@ -674,7 +679,7 @@ public class ProductsController(
         [FromForm] CreateProductRequest request,
         CancellationToken cancellationToken = default)
     {
-        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = ResolveActingOwnerId(request.OwnerId);
         if (string.IsNullOrWhiteSpace(userId))
         {
             return Unauthorized(new { message = "Invalid token." });
@@ -702,6 +707,28 @@ public class ProductsController(
         {
             return Forbid();
         }
+    }
+
+    private string? CurrentActorUserId() =>
+        User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+    private bool IsAdminUser() =>
+        User.IsInRole("Admin")
+        || string.Equals(User.FindFirst("roleId")?.Value, "1", StringComparison.Ordinal);
+
+    /// <summary>
+    /// Admins may act on a selected company by sending <c>ownerId</c>.
+    /// Everyone else is locked to the JWT user.
+    /// </summary>
+    private string? ResolveActingOwnerId(string? requestedOwnerId)
+    {
+        var actorId = CurrentActorUserId();
+        if (IsAdminUser() && !string.IsNullOrWhiteSpace(requestedOwnerId))
+        {
+            return requestedOwnerId.Trim();
+        }
+
+        return actorId;
     }
 
     private CreateProductInput MapProductFormRequest(CreateProductRequest request, string ownerId)
@@ -1156,6 +1183,9 @@ public sealed class CreateProductRequest
 
     public string? DraftVideoPath { get; set; }
     public byte? DraftVideoDurationSeconds { get; set; }
+
+    /// <summary>Admin-only: create/update this ad under the selected company user.</summary>
+    public string? OwnerId { get; set; }
 }
 
 public sealed class DetectProductsByImageRequest

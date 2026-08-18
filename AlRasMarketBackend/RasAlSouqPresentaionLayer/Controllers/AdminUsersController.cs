@@ -21,6 +21,7 @@ public class AdminUsersController(IAdminUsersAppService adminUsersAppService) : 
         [FromQuery] string? status = null,
         [FromQuery] DateTime? joinedFrom = null,
         [FromQuery] DateTime? joinedTo = null,
+        [FromQuery] bool companiesOnly = false,
         CancellationToken cancellationToken = default)
     {
         var result = await adminUsersAppService.GetUsersAsync(
@@ -31,7 +32,8 @@ public class AdminUsersController(IAdminUsersAppService adminUsersAppService) : 
             status,
             joinedFrom,
             joinedTo,
-            cancellationToken);
+            cancellationToken,
+            companiesOnly);
         return Ok(result);
     }
 

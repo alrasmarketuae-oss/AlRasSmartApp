@@ -57,6 +57,7 @@ import '../../features/clint/presentation/views/services_views/shipping_price_se
 import '../../features/clint/presentation/views/services_views/shipping_post_details_view.dart';
 import 'package:alrasmarket/features/clint/data/models/international_shipping_post_model.dart';
 import '../../features/person/presentation/views/person_home_layout.dart';
+import '../../features/admin/presentation/views/admin_home_layout.dart';
 
 abstract class AppRoutes {
   static final GlobalKey<NavigatorState> navigatorKey =
@@ -123,6 +124,7 @@ abstract class AppRoutes {
   static const String kPaymentSuccessView = '/payment-success';
   static const String kPaymentCancelView = '/payment-cancel';
   static const String kPersonHomeView = '/PersonHomeView';
+  static const String kAdminHomeView = '/AdminHomeView';
 
   /// Path of the route that owns [context].
   ///
@@ -280,6 +282,10 @@ abstract class AppRoutes {
         builder: (context, state) => const PersonHomeLayout(),
       ),
       GoRoute(
+        path: kAdminHomeView,
+        builder: (context, state) => const AdminHomeLayout(),
+      ),
+      GoRoute(
         path: kBookingServiceView,
         builder: (context, state) => const BookingServiceView(),
       ),
@@ -426,7 +432,15 @@ abstract class AppRoutes {
                 extra['highlightProductId']?.toString() ??
                 extra['productId']?.toString();
           }
-          return MyAdsView(highlightProductId: highlightProductId);
+          return MyAdsView(
+            highlightProductId: highlightProductId,
+            actingOwnerId: extra is Map
+                ? extra['actingOwnerId']?.toString()
+                : null,
+            companyName: extra is Map
+                ? extra['companyName']?.toString()
+                : null,
+          );
         },
       ),
       GoRoute(

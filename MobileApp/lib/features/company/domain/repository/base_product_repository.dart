@@ -14,6 +14,7 @@ abstract class BaseProductRepository {
 
   Future<Either<Failure, MyListingsResponse>> getMyListings({
     required String token,
+    String? ownerId,
   });
 
   Future<Either<Failure, void>> deleteProduct({
@@ -31,23 +32,27 @@ abstract class BaseProductRepository {
     required String productId,
     required UpdateListingStatusRequest request,
     required String token,
+    String? ownerId,
   });
 
   Future<Either<Failure, void>> updateProductPrice({
     required String productId,
     required UpdateProductPriceRequest request,
     required String token,
+    String? ownerId,
   });
 
   Future<Either<Failure, void>> markProductSoldOut({
     required String productId,
     required String token,
+    String? ownerId,
   });
 
   /// After images/videos finish uploading — shows the ad on the admin dashboard.
   Future<Either<Failure, void>> submitProductForAdminReview({
     required String productId,
     required String token,
+    String? ownerId,
   });
 
   Future<Either<Failure, String>> uploadProductImage({

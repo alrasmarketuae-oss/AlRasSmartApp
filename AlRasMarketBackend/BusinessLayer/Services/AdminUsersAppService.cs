@@ -20,14 +20,20 @@ public class AdminUsersAppService(
         string? status,
         DateTime? joinedFrom,
         DateTime? joinedTo,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool companiesOnly = false)
     {
         page = page < 1 ? 1 : page;
         pageSize = pageSize is < 1 or > 100 ? 20 : pageSize;
 
         var query = dbContext.Users.AsNoTracking().Include(x => x.Role).AsQueryable();
 
-        if (roleId.HasValue)
+        if (companiesOnly)
+        {
+            query = query.Where(x =>
+                x.RoleId == RoleIds.Seller || x.RoleId == RoleIds.ShippingCompany);
+        }
+        else if (roleId.HasValue)
         {
             query = query.Where(x => x.RoleId == roleId.Value);
         }

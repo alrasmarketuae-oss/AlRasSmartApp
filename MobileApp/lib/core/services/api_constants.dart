@@ -146,6 +146,7 @@ class ApiConstants {
 
   static String createProductEndPoint = '/Products';
   static String productsMyListingsEndPoint = '/Products/my-listings';
+  static String adminUsersEndPoint = '/admin/users';
   static String productsFeaturedEndPoint = '/Products/featured';
   static String productsSearchEndPoint = '/Products/search';
   static String productsSearchSuggestEndPoint = '/Products/search-suggest';

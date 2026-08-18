@@ -655,7 +655,9 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
       return;
     }
 
-    final cubit = sl<CreateAdCubit>()..loadProductForEdit(product);
+    final cubit = sl<CreateAdCubit>()
+      ..actingOwnerId = context.read<CompanyCubit>().listingsOwnerId
+      ..loadProductForEdit(product);
     if (!mounted) return;
 
     await Navigator.of(context).push(
