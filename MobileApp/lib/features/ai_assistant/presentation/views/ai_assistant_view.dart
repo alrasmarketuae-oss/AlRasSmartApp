@@ -161,6 +161,16 @@ class _AiAssistantViewState extends State<AiAssistantView> {
     } catch (_) {}
 
     try {
+      // iOS requires explicit audio category for TTS to produce sound.
+      await _tts.setIosAudioCategory(
+        IosTextToSpeechAudioCategory.playback,
+        [
+          IosTextToSpeechAudioCategoryOptions.allowBluetooth,
+          IosTextToSpeechAudioCategoryOptions.allowBluetoothA2DP,
+          IosTextToSpeechAudioCategoryOptions.defaultToSpeaker,
+          IosTextToSpeechAudioCategoryOptions.mixWithOthers,
+        ],
+      );
       await _tts.setSpeechRate(0.48);
       await _tts.setPitch(1.05);
       await _tts.setVolume(1.0);
@@ -420,6 +430,16 @@ class _AiAssistantViewState extends State<AiAssistantView> {
 
     try {
       await _tts.stop();
+      // Re-claim audio session from the recorder plugin on iOS.
+      await _tts.setIosAudioCategory(
+        IosTextToSpeechAudioCategory.playback,
+        [
+          IosTextToSpeechAudioCategoryOptions.allowBluetooth,
+          IosTextToSpeechAudioCategoryOptions.allowBluetoothA2DP,
+          IosTextToSpeechAudioCategoryOptions.defaultToSpeaker,
+          IosTextToSpeechAudioCategoryOptions.mixWithOthers,
+        ],
+      );
       await _ensureTtsLanguage(langCode);
       await _applyAssistantVoice(langCode);
       await _tts.setVolume(1.0);
