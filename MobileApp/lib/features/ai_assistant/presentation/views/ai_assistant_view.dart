@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:alrasmarket/core/theme/colors.dart';
+import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/services/dio_helper.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
@@ -529,6 +530,8 @@ class _AiAssistantViewState extends State<AiAssistantView> {
         setState(() {
           _thinkingSteps.clear();
           _thinkingStartedAt = null;
+          // Steps live on the assistant bubble now — hide the empty live bubble.
+          _isThinking = false;
           _messages.add(
             _ChatMessage(
               text: '',
@@ -1065,17 +1068,23 @@ class _AiAvatar extends StatelessWidget {
       width: size.w,
       height: size.w,
       decoration: BoxDecoration(
-        gradient: onDark ? null : _aiGradient,
-        color: onDark ? Colors.white.withValues(alpha: 0.22) : null,
         shape: BoxShape.circle,
-        border: onDark
-            ? Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1)
-            : null,
-      ),
-      child: Icon(
-        Icons.auto_awesome_rounded,
-        size: (size * 0.5).sp,
         color: Colors.white,
+        border: onDark
+            ? Border.all(color: Colors.white.withValues(alpha: 0.55), width: 1)
+            : Border.all(color: const Color(0xFFE6EAF2)),
+        boxShadow: [
+          BoxShadow(
+            color: LightColor.defaultColor.withValues(alpha: 0.16),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Image.asset(
+        AppAssets.aiAgentIcon,
+        fit: BoxFit.contain,
       ),
     );
   }
@@ -2406,10 +2415,17 @@ class _AiComposerState extends State<_AiComposer> {
                           fontSize: 13.sp,
                           color: widget.colors.mutedText,
                         ),
-                        prefixIcon: Icon(
-                          Icons.auto_awesome_rounded,
-                          size: 16.sp,
-                          color: LightColor.defaultColor,
+                        prefixIcon: Padding(
+                          padding: EdgeInsetsDirectional.only(
+                            start: 10.w,
+                            end: 4.w,
+                          ),
+                          child: Image.asset(
+                            AppAssets.aiAgentIcon,
+                            width: 20.w,
+                            height: 20.w,
+                            fit: BoxFit.contain,
+                          ),
                         ),
                         prefixIconConstraints: BoxConstraints(minWidth: 38.w),
                         filled: true,

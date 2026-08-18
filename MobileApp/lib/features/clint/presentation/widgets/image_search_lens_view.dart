@@ -12,7 +12,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-/// Amazon-style visual search: photo + crop box, with a tiny product peek at the bottom.
+/// Amazon-style visual search: identifying dots first, then crop box + product peek.
 class ImageSearchLensView extends StatefulWidget {
   const ImageSearchLensView({
     super.key,
@@ -35,7 +35,8 @@ class ImageSearchLensView extends StatefulWidget {
   State<ImageSearchLensView> createState() => _ImageSearchLensViewState();
 }
 
-class _ImageSearchLensViewState extends State<ImageSearchLensView> {
+class _ImageSearchLensViewState extends State<ImageSearchLensView>
+    with TickerProviderStateMixin {
   static const _minNormalized = 0.16;
 
   Size? _imageSize;
@@ -45,11 +46,37 @@ class _ImageSearchLensViewState extends State<ImageSearchLensView> {
   Offset? _lastLocal;
   Rect? _fittedRect;
   bool _cropping = false;
+  bool _initialSearchDone = false;
+
+  late final AnimationController _identifyController;
+  late final AnimationController _cropRevealController;
+  late final List<_ScanDot> _dots;
 
   @override
   void initState() {
     super.initState();
+    _identifyController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    )..repeat();
+    _cropRevealController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 650),
+    );
+    _dots = _buildScanDots(widget.imagePath);
     _resolveImageSize(widget.imagePath);
+
+    if (!widget.isLoading) {
+      _initialSearchDone = true;
+      _cropRevealController.value = 1;
+    }
+  }
+
+  @override
+  void dispose() {
+    _identifyController.dispose();
+    _cropRevealController.dispose();
+    super.dispose();
   }
 
   @override
@@ -57,7 +84,36 @@ class _ImageSearchLensViewState extends State<ImageSearchLensView> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.imagePath != widget.imagePath) {
       _resolveImageSize(widget.imagePath);
+      _dots = _buildScanDots(widget.imagePath);
+      _initialSearchDone = false;
+      _cropRevealController.reset();
+      if (!widget.isLoading) {
+        _initialSearchDone = true;
+        _cropRevealController.value = 1;
+      }
     }
+    if (oldWidget.isLoading && !widget.isLoading && !_initialSearchDone) {
+      setState(() => _initialSearchDone = true);
+      _cropRevealController.forward(from: 0);
+    }
+  }
+
+  List<_ScanDot> _buildScanDots(String imagePath) {
+    final seed = (imagePath.hashCode).abs();
+    var x = seed == 0 ? 1 : seed;
+    double next() {
+      x = (1103515245 * x + 12345) & 0x7fffffff;
+      return x / 0x7fffffff;
+    }
+
+    return List.generate(28, (_) {
+      return _ScanDot(
+        dx: 0.08 + next() * 0.84,
+        dy: 0.08 + next() * 0.84,
+        phase: next(),
+        size: 2.2 + next() * 3.2,
+      );
+    });
   }
 
   void _resolveImageSize(String path) {
@@ -125,7 +181,7 @@ class _ImageSearchLensViewState extends State<ImageSearchLensView> {
 
   void _onPointerDown(Offset local) {
     final fitted = _fittedRect;
-    if (fitted == null || widget.isLoading || _cropping) return;
+    if (fitted == null || !_initialSearchDone || widget.isLoading || _cropping) return;
     final box = _cropToLocal(fitted, _crop);
     final kind = _hitTest(local, box);
     if (kind == _DragKind.none) return;
@@ -229,10 +285,13 @@ class _ImageSearchLensViewState extends State<ImageSearchLensView> {
     );
   }
 
+  bool get _showIdentifying => !_initialSearchDone && widget.isLoading;
+  bool get _showCropOverlay => _initialSearchDone;
+  bool get _busy => widget.isLoading || _cropping;
+
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
-    final busy = widget.isLoading || _cropping;
 
     return Column(
       children: [
@@ -255,10 +314,10 @@ class _ImageSearchLensViewState extends State<ImageSearchLensView> {
 
                     return Listener(
                       behavior: HitTestBehavior.opaque,
-                      onPointerDown: busy ? null : (e) => _onPointerDown(e.localPosition),
-                      onPointerMove: busy ? null : (e) => _onPointerMove(e.localPosition),
-                      onPointerUp: busy ? null : (_) => _onPointerUp(),
-                      onPointerCancel: busy ? null : (_) => _onPointerUp(),
+                      onPointerDown: _busy ? null : (e) => _onPointerDown(e.localPosition),
+                      onPointerMove: _busy ? null : (e) => _onPointerMove(e.localPosition),
+                      onPointerUp: _busy ? null : (_) => _onPointerUp(),
+                      onPointerCancel: _busy ? null : (_) => _onPointerUp(),
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
@@ -270,11 +329,41 @@ class _ImageSearchLensViewState extends State<ImageSearchLensView> {
                               child: Icon(Icons.image_outlined, color: Colors.white54, size: 48),
                             ),
                           ),
-                          if (_fittedRect != null)
-                            CustomPaint(
-                              painter: _CropOverlayPainter(
-                                imageRect: _fittedRect!,
-                                crop: _cropToLocal(_fittedRect!, _crop),
+                          if (_showIdentifying) ...[
+                            const ColoredBox(color: Color(0x33000000)),
+                            AnimatedBuilder(
+                              animation: _identifyController,
+                              builder: (context, _) {
+                                return CustomPaint(
+                                  painter: _WhiteScanDotsPainter(
+                                    dots: _dots,
+                                    t: _identifyController.value,
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                          if (_showCropOverlay && _fittedRect != null)
+                            AnimatedBuilder(
+                              animation: _cropRevealController,
+                              builder: (context, child) {
+                                final t = Curves.easeOutCubic.transform(
+                                  _cropRevealController.value,
+                                );
+                                return Opacity(
+                                  opacity: t,
+                                  child: Transform.scale(
+                                    scale: 0.92 + (0.08 * t),
+                                    alignment: Alignment.center,
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: CustomPaint(
+                                painter: _CropOverlayPainter(
+                                  imageRect: _fittedRect!,
+                                  crop: _cropToLocal(_fittedRect!, _crop),
+                                ),
                               ),
                             ),
                         ],
@@ -298,30 +387,70 @@ class _ImageSearchLensViewState extends State<ImageSearchLensView> {
                       ),
                       SizedBox(width: 8.w),
                       Expanded(
-                        child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-                          decoration: BoxDecoration(
-                            color: Colors.black54,
-                            borderRadius: BorderRadius.circular(20.r),
-                          ),
-                          child: Text(
-                            s.imageSearchCropHint,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12.sp,
-                              height: 1.3,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: 'Inter',
-                            ),
-                          ),
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 320),
+                          child: _showIdentifying
+                              ? Container(
+                                  key: const ValueKey('identifying'),
+                                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black54,
+                                    borderRadius: BorderRadius.circular(20.r),
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        s.analyzingImage,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 13.sp,
+                                          height: 1.25,
+                                          fontWeight: FontWeight.w700,
+                                          fontFamily: 'Inter',
+                                        ),
+                                      ),
+                                      SizedBox(height: 2.h),
+                                      Text(
+                                        s.analyzingImageHint,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 11.sp,
+                                          height: 1.25,
+                                          fontFamily: 'Inter',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : Container(
+                                  key: const ValueKey('crop'),
+                                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black54,
+                                    borderRadius: BorderRadius.circular(20.r),
+                                  ),
+                                  child: Text(
+                                    s.imageSearchCropHint,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12.sp,
+                                      height: 1.3,
+                                      fontWeight: FontWeight.w600,
+                                      fontFamily: 'Inter',
+                                    ),
+                                  ),
+                                ),
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-              if (busy)
+              if (_busy && _initialSearchDone)
                 const ColoredBox(
                   color: Color(0x33000000),
                   child: Center(
@@ -333,7 +462,8 @@ class _ImageSearchLensViewState extends State<ImageSearchLensView> {
         ),
         _ResultsPeek(
           products: widget.products,
-          isLoading: busy,
+          isLoading: _busy,
+          identifying: _showIdentifying,
           onOpen: widget.onOpenResults,
         ),
       ],
@@ -345,11 +475,13 @@ class _ResultsPeek extends StatelessWidget {
   const _ResultsPeek({
     required this.products,
     required this.isLoading,
+    required this.identifying,
     required this.onOpen,
   });
 
   final List<MyListingProductModel> products;
   final bool isLoading;
+  final bool identifying;
   final VoidCallback onOpen;
 
   @override
@@ -362,7 +494,7 @@ class _ResultsPeek extends StatelessWidget {
       borderRadius: BorderRadius.vertical(top: Radius.circular(18.r)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: onOpen,
+        onTap: identifying ? null : onOpen,
         child: Padding(
           padding: EdgeInsets.fromLTRB(
             12.w,
@@ -386,7 +518,7 @@ class _ResultsPeek extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      s.imageSearchPeekTitle,
+                      identifying ? s.analyzingImage : s.imageSearchPeekTitle,
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w700,
@@ -395,56 +527,66 @@ class _ResultsPeek extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Text(
-                    s.imageSearchViewResults,
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w600,
-                      color: LightColor.defaultColor,
-                      fontFamily: 'Inter',
+                  if (!identifying) ...[
+                    Text(
+                      s.imageSearchViewResults,
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600,
+                        color: LightColor.defaultColor,
+                        fontFamily: 'Inter',
+                      ),
                     ),
-                  ),
-                  Icon(
-                    Icons.keyboard_arrow_up_rounded,
-                    color: LightColor.defaultColor,
-                    size: 20.sp,
-                  ),
+                    Icon(
+                      Icons.keyboard_arrow_up_rounded,
+                      color: LightColor.defaultColor,
+                      size: 20.sp,
+                    ),
+                  ],
                 ],
               ),
               SizedBox(height: 8.h),
               ClipRect(
                 child: Align(
                   alignment: Alignment.topCenter,
-                  heightFactor: 0.2,
+                  heightFactor: identifying ? 0.12 : 0.2,
                   child: IgnorePointer(
                     child: SizedBox(
-                      height: 230.h,
-                      child: isLoading
-                          ? Row(
-                              children: [
-                                Expanded(child: _PeekPlaceholder()),
-                                SizedBox(width: 12.w),
-                                Expanded(child: _PeekPlaceholder()),
-                              ],
+                      height: identifying ? 56.h : 230.h,
+                      child: identifying
+                          ? Center(
+                              child: SizedBox(
+                                width: 22.w,
+                                height: 22.w,
+                                child: const CircularProgressIndicator(strokeWidth: 2.5),
+                              ),
                             )
-                          : preview.isEmpty
-                              ? const SizedBox.shrink()
-                              : Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                          : isLoading
+                              ? Row(
                                   children: [
-                                    for (var i = 0; i < preview.length; i++) ...[
-                                      if (i > 0) SizedBox(width: 12.w),
-                                      Expanded(
-                                        child: ProductCard(
-                                          title: preview[i].productName,
-                                          product: preview[i],
-                                          preferRetailChannel: preview[i]
-                                              .preferRetailFromSearchListing,
-                                        ),
-                                      ),
-                                    ],
+                                    Expanded(child: _PeekPlaceholder()),
+                                    SizedBox(width: 12.w),
+                                    Expanded(child: _PeekPlaceholder()),
                                   ],
-                                ),
+                                )
+                              : preview.isEmpty
+                                  ? const SizedBox.shrink()
+                                  : Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        for (var i = 0; i < preview.length; i++) ...[
+                                          if (i > 0) SizedBox(width: 12.w),
+                                          Expanded(
+                                            child: ProductCard(
+                                              title: preview[i].productName,
+                                              product: preview[i],
+                                              preferRetailChannel: preview[i]
+                                                  .preferRetailFromSearchListing,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
                     ),
                   ),
                 ),
@@ -467,6 +609,46 @@ class _PeekPlaceholder extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ScanDot {
+  const _ScanDot({
+    required this.dx,
+    required this.dy,
+    required this.phase,
+    required this.size,
+  });
+
+  final double dx;
+  final double dy;
+  final double phase;
+  final double size;
+}
+
+class _WhiteScanDotsPainter extends CustomPainter {
+  _WhiteScanDotsPainter({required this.dots, required this.t});
+
+  final List<_ScanDot> dots;
+  final double t;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..style = PaintingStyle.fill;
+
+    for (final dot in dots) {
+      final local = (t + dot.phase) % 1.0;
+      final opacity = (local < 0.5 ? local * 2 : (1 - local) * 2).clamp(0.15, 1.0);
+      paint.color = Colors.white.withValues(alpha: opacity);
+
+      final cx = dot.dx * size.width;
+      final cy = dot.dy * size.height;
+      canvas.drawCircle(Offset(cx, cy), dot.size, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _WhiteScanDotsPainter oldDelegate) =>
+      oldDelegate.t != t;
 }
 
 class _CropOverlayPainter extends CustomPainter {

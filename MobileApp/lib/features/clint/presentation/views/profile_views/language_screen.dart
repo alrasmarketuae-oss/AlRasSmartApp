@@ -21,7 +21,10 @@ class LanguageScreen extends StatelessWidget {
         return Scaffold(
           body: Column(
             children: [
-              SearchHeader(title: S.of(context).languageTitle),
+              SearchHeader(
+                title: S.of(context).languageTitle,
+                isSearch: false,
+              ),
               SizedBox(height: 12.h),
               Expanded(
                 child: SingleChildScrollView(
