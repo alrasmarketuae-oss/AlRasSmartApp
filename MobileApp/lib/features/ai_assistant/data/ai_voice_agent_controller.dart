@@ -44,6 +44,10 @@ class AiVoiceAgentController with WidgetsBindingObserver {
   bool _backgrounded = false;
   bool _agentSpeaking = false;
   bool _closed = false;
+  bool _recovering = false;
+  bool _sendingAudio = false;
+  int _recoveries = 0;
+  DateTime _lastRecoveryAt = DateTime.fromMillisecondsSinceEpoch(0);
   DateTime? _playbackStartedAt;
   int _loudFramesWhileSpeaking = 0;
   final BytesBuilder _sendBuffer = BytesBuilder(copy: false);
@@ -91,8 +95,12 @@ class AiVoiceAgentController with WidgetsBindingObserver {
           debugPrint('Voice user interrupted agent');
           unawaited(_handleInterrupt(fromServer: true));
         },
-        onError: (message) {
-          debugPrint('Voice agent error: $message');
+        onError: (message, {required recoverable}) {
+          debugPrint('Voice agent error: $message recoverable=$recoverable');
+          if (recoverable) {
+            unawaited(_recoverSession());
+            return;
+          }
           onError(message);
         },
         onMetrics: (metrics) {
@@ -199,7 +207,7 @@ class AiVoiceAgentController with WidgetsBindingObserver {
       echoCancel: true,
       noiseSuppress: true,
       androidConfig: AndroidRecordConfig(
-        audioSource: AndroidAudioSource.voiceCommunication,
+        audioSource: AndroidAudioSource.voiceRecognition,
         speakerphone: true,
         audioManagerMode: AudioManagerMode.modeInCommunication,
       ),
@@ -239,9 +247,57 @@ class AiVoiceAgentController with WidgetsBindingObserver {
   void _onMicBytes(Uint8List bytes) {
     if (_closed || _muted || _backgrounded || bytes.isEmpty) return;
     _sendBuffer.add(bytes);
-    if (_sendBuffer.length >= 4800) {
+    // ~80ms at 24 kHz PCM16 mono. Smaller chunks keep VAD from starving.
+    if (_sendBuffer.length >= 3840) {
       final chunk = Uint8List.fromList(_sendBuffer.takeBytes());
-      unawaited(_hub.sendAudioChunk(chunk));
+      unawaited(_sendAudio(chunk));
+    }
+  }
+
+  Future<void> _sendAudio(Uint8List chunk) async {
+    if (_sendingAudio) {
+      _sendBuffer.add(chunk);
+      return;
+    }
+    _sendingAudio = true;
+    try {
+      await _hub.sendAudioChunk(chunk);
+      while (!_closed && _sendBuffer.length >= 3840) {
+        final next = Uint8List.fromList(_sendBuffer.takeBytes());
+        await _hub.sendAudioChunk(next);
+      }
+    } finally {
+      _sendingAudio = false;
+    }
+  }
+
+  Future<void> _recoverSession() async {
+    if (_closed || _recovering) return;
+    final now = DateTime.now();
+    if (now.difference(_lastRecoveryAt) > const Duration(seconds: 45)) {
+      _recoveries = 0;
+    }
+    if (_recoveries >= 3) {
+      _setPhase(AiVoiceAgentPhase.error);
+      onError('مقدرناش نثبت الاتصال الصوتي. اقفل المكالمة وافتحها تاني.');
+      return;
+    }
+    _recovering = true;
+    _recoveries++;
+    _lastRecoveryAt = now;
+    _setPhase(AiVoiceAgentPhase.connecting);
+    try {
+      await _hub.restartSession();
+      if (!_muted && !_backgrounded) {
+        await _startMic();
+      }
+      _setPhase(_muted ? AiVoiceAgentPhase.muted : AiVoiceAgentPhase.listening);
+    } catch (e) {
+      debugPrint('Voice recover failed: $e');
+      _setPhase(AiVoiceAgentPhase.error);
+      onError('مقدرناش نفتح المحادثة الصوتية. حاول تاني.');
+    } finally {
+      _recovering = false;
     }
   }
 

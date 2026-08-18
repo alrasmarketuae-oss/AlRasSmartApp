@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
@@ -25,7 +26,7 @@ class AiVoiceAgentService {
     required void Function(String role, String text, {required bool isFinal})
         onTranscript,
     required VoidCallback onInterrupted,
-    required void Function(String message) onError,
+    required void Function(String message, {required bool recoverable}) onError,
     required void Function(Map<String, dynamic> metrics) onMetrics,
     required VoidCallback onReconnecting,
     required VoidCallback onReconnected,
@@ -95,9 +96,12 @@ class AiVoiceAgentService {
     });
     hub.on('voiceError', (args) {
       if (_closed || generation != _connectGeneration) return;
+      final data = _map(args);
       onError(
-        _map(args)?['message']?.toString() ??
+        data?['message']?.toString() ??
             'Voice agent is unavailable right now.',
+        recoverable: data?['recoverable'] == true ||
+            data?['Recoverable'] == true,
       );
     });
     hub.on('voiceMetrics', (args) {
@@ -136,8 +140,14 @@ class AiVoiceAgentService {
       return;
     }
     if (pcm.isEmpty) return;
-    await hub.invoke('SendAudioChunk', args: [base64Encode(pcm)]);
+    try {
+      await hub.invoke('SendAudioChunk', args: [base64Encode(pcm)]);
+    } catch (e) {
+      debugPrint('Voice SendAudioChunk failed: $e');
+    }
   }
+
+  Future<void> restartSession() => _restartSession();
 
   Future<void> interruptAgent() async {
     final hub = _hub;

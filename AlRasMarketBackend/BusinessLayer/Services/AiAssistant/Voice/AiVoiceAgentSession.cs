@@ -40,7 +40,12 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
     private DateTime _requestSentUtc;
     private DateTime? _firstAudioUtc;
     private long _lastSpeechStartedMs;
+    private volatile bool _sessionReady;
+    private int _appendedBytesWithoutSpeech;
+    private readonly TaskCompletionSource _sessionCreated = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TaskCompletionSource _sessionUpdated = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly ConcurrentDictionary<string, byte> _handledCallIds = new(StringComparer.Ordinal);
+    private const int MaxBufferedBytesWithoutSpeech = 24_000 * 2 * 8;
 
     public AiVoiceAgentSession(
         IServiceScopeFactory scopeFactory,
@@ -78,12 +83,13 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
 
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _lifetime.Token);
         _socket.Options.SetRequestHeader("Authorization", "Bearer " + apiKey);
-        _socket.Options.SetRequestHeader("OpenAI-Beta", "realtime=v1");
-        _socket.Options.KeepAliveInterval = TimeSpan.FromSeconds(20);
+        _socket.Options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+        var model = ResolveRealtimeModel();
+        if (NeedsRealtimeBetaHeader(model))
+        {
+            _socket.Options.SetRequestHeader("OpenAI-Beta", "realtime=v1");
+        }
 
-        var model = string.IsNullOrWhiteSpace(_options.RealtimeModel)
-            ? "gpt-4o-realtime-preview"
-            : _options.RealtimeModel.Trim();
         var uri = new Uri($"wss://api.openai.com/v1/realtime?model={Uri.EscapeDataString(model)}");
         await _socket.ConnectAsync(uri, linked.Token).ConfigureAwait(false);
 
@@ -95,17 +101,38 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
             _voice,
             _options.TurnDetection);
 
+        _receiveLoop = Task.Run(() => ReceiveLoopAsync(_lifetime.Token), CancellationToken.None);
+        await WaitForSignalAsync(_sessionCreated, TimeSpan.FromSeconds(5), "session.created", linked.Token)
+            .ConfigureAwait(false);
         await SendJsonAsync(await BuildSessionUpdateAsync(linked.Token).ConfigureAwait(false), linked.Token)
             .ConfigureAwait(false);
-        _receiveLoop = Task.Run(() => ReceiveLoopAsync(_lifetime.Token), CancellationToken.None);
+        await WaitForSignalAsync(_sessionUpdated, TimeSpan.FromSeconds(8), "session.updated", linked.Token)
+            .ConfigureAwait(false);
+        _sessionReady = true;
         await NotifyStatusAsync("listening", CancellationToken.None).ConfigureAwait(false);
     }
 
     public async Task SendAudioBase64Async(string pcmBase64, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(pcmBase64) || _socket.State != WebSocketState.Open)
+        if (string.IsNullOrWhiteSpace(pcmBase64)
+            || !_sessionReady
+            || _socket.State != WebSocketState.Open)
         {
             return;
+        }
+
+        var byteCount = (pcmBase64.Length * 3) / 4;
+        var pending = Interlocked.Add(ref _appendedBytesWithoutSpeech, byteCount);
+        if (pending >= MaxBufferedBytesWithoutSpeech)
+        {
+            Interlocked.Exchange(ref _appendedBytesWithoutSpeech, 0);
+            using var clearLinked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _lifetime.Token);
+            await SendJsonAsync(new JsonObject { ["type"] = "input_audio_buffer.clear" }, clearLinked.Token)
+                .ConfigureAwait(false);
+            _logger.LogInformation(
+                "Voice cleared silent input buffer connectionId={ConnectionId} pendingBytes={Bytes}",
+                _connectionId,
+                pending);
         }
 
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _lifetime.Token);
@@ -211,11 +238,15 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
                     if (result.MessageType == WebSocketMessageType.Close)
                     {
                         _logger.LogWarning(
-                            "Voice OpenAI socket closed connectionId={ConnectionId} status={Status}",
+                            "Voice OpenAI socket closed connectionId={ConnectionId} status={Status} description={Description}",
                             _connectionId,
-                            result.CloseStatus);
-                        await NotifyErrorAsync("انقطع الاتصال بالصوت. جاري إعادة المحاولة.", cancellationToken)
-                            .ConfigureAwait(false);
+                            result.CloseStatus,
+                            result.CloseStatusDescription);
+                        _sessionReady = false;
+                        await NotifyErrorAsync(
+                            "انقطع الاتصال بالصوت. جاري إعادة المحاولة.",
+                            cancellationToken,
+                            recoverable: true).ConfigureAwait(false);
                         return;
                     }
 
@@ -234,10 +265,13 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Voice receive loop failed connectionId={ConnectionId}", _connectionId);
+            _sessionReady = false;
             try
             {
-                await NotifyErrorAsync("حصلت مشكلة في الاتصال الصوتي، ممكن نجرب تاني؟", CancellationToken.None)
-                    .ConfigureAwait(false);
+                await NotifyErrorAsync(
+                    "حصلت مشكلة في الاتصال الصوتي، ممكن نجرب تاني؟",
+                    CancellationToken.None,
+                    recoverable: true).ConfigureAwait(false);
             }
             catch
             {
@@ -258,27 +292,65 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
 
         switch (type)
         {
+            case "session.created":
+                _sessionCreated.TrySetResult();
+                break;
+
+            case "session.updated":
+                _sessionReady = true;
+                _sessionUpdated.TrySetResult();
+                _logger.LogInformation("Voice session updated connectionId={ConnectionId}", _connectionId);
+                break;
+
             case "error":
                 var errorMessage = ReadErrorMessage(root);
+                var errorCode = ReadErrorField(root, "code");
+                var errorParam = ReadErrorField(root, "param");
                 _logger.LogWarning(
-                    "Voice OpenAI error connectionId={ConnectionId} message={Message}",
+                    "Voice OpenAI error connectionId={ConnectionId} code={Code} param={Param} message={Message}",
                     _connectionId,
+                    errorCode,
+                    errorParam,
                     errorMessage);
-                if (errorMessage.Contains("turn_detection", StringComparison.OrdinalIgnoreCase)
+                if (IsIgnorableAudioBufferError(errorMessage, errorCode))
+                {
+                    return;
+                }
+
+                if (IsAudioBufferOverflow(errorMessage, errorCode))
+                {
+                    Interlocked.Exchange(ref _appendedBytesWithoutSpeech, 0);
+                    await SendJsonAsync(
+                        new JsonObject { ["type"] = "input_audio_buffer.clear" },
+                        cancellationToken).ConfigureAwait(false);
+                    return;
+                }
+
+                if (IsTurnDetectionConfigError(errorMessage, errorParam)
                     && _options.TurnDetection.Contains("semantic", StringComparison.OrdinalIgnoreCase))
                 {
                     await SendJsonAsync(BuildServerVadSessionPatch(), cancellationToken).ConfigureAwait(false);
                     return;
                 }
 
+                if (IsUnknownSessionFieldError(errorMessage, errorParam))
+                {
+                    _logger.LogWarning(
+                        "Voice session field rejected connectionId={ConnectionId} param={Param}",
+                        _connectionId,
+                        errorParam);
+                    return;
+                }
+
                 await NotifyErrorAsync(
-                    "حصلت مشكلة وأنا بحاول أسمعك، ممكن تقول الطلب مرة تانية؟",
+                    "الصوت مش واضح عندي دلوقتي، ممكن تقول الطلب مرة تانية؟",
                     cancellationToken).ConfigureAwait(false);
                 break;
 
             case "input_audio_buffer.speech_started":
                 _lastSpeechStartedMs = _sessionWatch.ElapsedMilliseconds;
                 _turnSpeechStartedUtc = DateTime.UtcNow;
+                Interlocked.Exchange(ref _appendedBytesWithoutSpeech, 0);
                 _logger.LogInformation(
                     "Voice user speech detected connectionId={ConnectionId} sessionMs={Ms}",
                     _connectionId,
@@ -645,19 +717,38 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
             var instructions = AiVoiceAgentInstructions.Build(_language, audience, displayName, catalog);
             var session = new JsonObject
             {
-                ["modalities"] = new JsonArray("text", "audio"),
+                ["type"] = "realtime",
+                ["model"] = ResolveRealtimeModel(),
+                ["output_modalities"] = new JsonArray("audio"),
                 ["instructions"] = instructions,
-                ["voice"] = _voice,
-                ["input_audio_format"] = "pcm16",
-                ["output_audio_format"] = "pcm16",
-                ["input_audio_transcription"] = new JsonObject
+                ["audio"] = new JsonObject
                 {
-                    ["model"] = "gpt-4o-mini-transcribe"
+                    ["input"] = new JsonObject
+                    {
+                        ["format"] = new JsonObject
+                        {
+                            ["type"] = "audio/pcm",
+                            ["rate"] = _options.SampleRate > 0 ? _options.SampleRate : 24000
+                        },
+                        ["noise_reduction"] = new JsonObject { ["type"] = "near_field" },
+                        ["transcription"] = new JsonObject
+                        {
+                            ["model"] = "gpt-4o-mini-transcribe"
+                        },
+                        ["turn_detection"] = BuildTurnDetectionNode()
+                    },
+                    ["output"] = new JsonObject
+                    {
+                        ["format"] = new JsonObject
+                        {
+                            ["type"] = "audio/pcm",
+                            ["rate"] = _options.SampleRate > 0 ? _options.SampleRate : 24000
+                        },
+                        ["voice"] = _voice
+                    }
                 },
-                ["turn_detection"] = BuildTurnDetectionNode(),
                 ["tools"] = toolsJson,
-                ["tool_choice"] = "auto",
-                ["temperature"] = _options.Temperature
+                ["tool_choice"] = "auto"
             };
             return new JsonObject
             {
@@ -711,7 +802,14 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
             ["type"] = "session.update",
             ["session"] = new JsonObject
             {
-                ["turn_detection"] = BuildServerVadNode()
+                ["type"] = "realtime",
+                ["audio"] = new JsonObject
+                {
+                    ["input"] = new JsonObject
+                    {
+                        ["turn_detection"] = BuildServerVadNode()
+                    }
+                }
             }
         };
 
@@ -767,8 +865,86 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
     private Task NotifyStatusAsync(string phase, CancellationToken cancellationToken) =>
         _sendToClient("voiceStatus", new { phase }, cancellationToken);
 
-    private Task NotifyErrorAsync(string message, CancellationToken cancellationToken) =>
-        _sendToClient("voiceError", new { message }, cancellationToken);
+    private Task NotifyErrorAsync(string message, CancellationToken cancellationToken, bool recoverable = false) =>
+        _sendToClient("voiceError", new { message, recoverable }, cancellationToken);
+
+    private async Task WaitForSignalAsync(
+        TaskCompletionSource source,
+        TimeSpan timeout,
+        string label,
+        CancellationToken cancellationToken)
+    {
+        using var timeoutCts = new CancellationTokenSource(timeout);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+        try
+        {
+            await source.Task.WaitAsync(linked.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
+        {
+            _logger.LogWarning(
+                "Voice waited for {Label} timed out connectionId={ConnectionId}",
+                label,
+                _connectionId);
+        }
+    }
+
+    private string ResolveRealtimeModel()
+    {
+        var model = _options.RealtimeModel?.Trim();
+        return string.IsNullOrWhiteSpace(model) ? "gpt-realtime" : model;
+    }
+
+    private static bool NeedsRealtimeBetaHeader(string model) =>
+        model.Contains("gpt-4o-realtime", StringComparison.OrdinalIgnoreCase)
+        || model.Contains("preview", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsIgnorableAudioBufferError(string message, string? code) =>
+        ContainsAny(message, "buffer too small", "buffer has 0", "expected at least")
+        || ContainsAny(code, "input_audio_buffer_commit_empty");
+
+    private static bool IsAudioBufferOverflow(string message, string? code) =>
+        ContainsAny(message, "buffer too large", "too many audio", "input audio buffer is too")
+        || ContainsAny(code, "input_audio_buffer_overflow", "buffer_too_large");
+
+    private static bool IsTurnDetectionConfigError(string message, string? param) =>
+        ContainsAny(message, "turn_detection", "semantic_vad")
+        || ContainsAny(param, "turn_detection", "semantic_vad");
+
+    private static bool IsUnknownSessionFieldError(string message, string? param) =>
+        ContainsAny(message, "unknown parameter", "unknown field", "unsupported")
+        && !string.IsNullOrWhiteSpace(param);
+
+    private static bool ContainsAny(string? value, params string[] parts)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        foreach (var part in parts)
+        {
+            if (value.Contains(part, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string ReadErrorField(JsonElement root, string field)
+    {
+        if (root.TryGetProperty("error", out var error)
+            && error.ValueKind == JsonValueKind.Object
+            && error.TryGetProperty(field, out var value)
+            && value.ValueKind == JsonValueKind.String)
+        {
+            return value.GetString() ?? "";
+        }
+
+        return "";
+    }
 
     private static string ReadErrorMessage(JsonElement root)
     {

@@ -223,6 +223,8 @@ builder.Services.AddScoped<IChatMessageCreatedHandler, RasAlSouqPresentaionLayer
 builder.Services.AddSignalR(options =>
 {
     options.MaximumReceiveMessageSize = 256 * 1024;
+    options.KeepAliveInterval = TimeSpan.FromSeconds(10);
+    options.ClientTimeoutInterval = TimeSpan.FromSeconds(60);
 });
 builder.Services.AddMemoryCache();
 builder.Services.Configure<RedisOptions>(builder.Configuration.GetSection(RedisOptions.SectionName));

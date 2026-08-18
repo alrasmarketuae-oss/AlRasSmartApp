@@ -10,7 +10,7 @@ public sealed class AiVoiceAgentOptions
     public bool Enabled { get; set; } = true;
 
     /// <summary>OpenAI Realtime speech-to-speech model.</summary>
-    public string RealtimeModel { get; set; } = "gpt-4o-realtime-preview";
+    public string RealtimeModel { get; set; } = "gpt-realtime";
 
     /// <summary>OpenAI TTS model used only for delayed progress phrases during slow tools.</summary>
     public string ProgressSpeechModel { get; set; } = "gpt-4o-mini-tts";
@@ -18,14 +18,14 @@ public sealed class AiVoiceAgentOptions
     public string FemaleVoice { get; set; } = "coral";
     public string MaleVoice { get; set; } = "ash";
 
-    /// <summary>semantic_vad (preferred) or server_vad.</summary>
-    public string TurnDetection { get; set; } = "semantic_vad";
+    /// <summary>semantic_vad or server_vad. server_vad is more reliable on phone mics.</summary>
+    public string TurnDetection { get; set; } = "server_vad";
 
     /// <summary>semantic_vad eagerness: low | medium | high | auto.</summary>
     public string SemanticEagerness { get; set; } = "medium";
 
-    /// <summary>server_vad energy threshold (0–1). Higher = less sensitive to quiet speech.</summary>
-    public double VadThreshold { get; set; } = 0.42;
+    /// <summary>server_vad energy threshold (0–1). Lower = more sensitive to quiet speech.</summary>
+    public double VadThreshold { get; set; } = 0.35;
 
     public int PrefixPaddingMs { get; set; } = 300;
 
