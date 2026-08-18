@@ -256,10 +256,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "For damaged, expired, or materially different goods: report within 24 business hours of receipt with photos. If support approves, refund is issued within 1 business day.",
     ),
     "aiAssistantSubtitle": MessageLookupByLibrary.simpleMessage(
-      "Alras Smart is an AI Agent and can make mistakes.",
+      "Al-Ras Agent is an AI Agent and can make mistakes.",
     ),
     "aiAssistantThinking": MessageLookupByLibrary.simpleMessage("Thinking…"),
-    "aiAssistantTitle": MessageLookupByLibrary.simpleMessage("allras ai"),
+    "aiAssistantTitle": MessageLookupByLibrary.simpleMessage("Al-Ras Agent"),
     "aiAssistantUnsupportedLanguage": MessageLookupByLibrary.simpleMessage(
       "We currently support Arabic and English. We may translate your question internally to understand it, then reply in a supported language.",
     ),
@@ -275,7 +275,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Voice input is not available on this device",
     ),
     "aiAssistantWelcome": MessageLookupByLibrary.simpleMessage(
-      "Welcome. I’m Alras Smart. Depending on your account type, I can create ads, update prices and quantities, search and compare products, find cheapest/most expensive listings, check shipping prices to a country, and show your ads, orders, sales, and pending orders. Live chat with support is available from Profile.",
+      "Welcome. I’m Al-Ras Agent. Depending on your account type, I can create ads, update prices and quantities, search and compare products, find cheapest/most expensive listings, check shipping prices to a country, and show your ads, orders, sales, and pending orders. Live chat with support is available from Profile.",
     ),
     "aiCorrectedSearch": m3,
     "aiIdentifiedProduct": m4,
@@ -742,7 +742,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Enter your target price",
     ),
     "examplePremiumIranianSaffron": MessageLookupByLibrary.simpleMessage(
-      "Green cardamom",
+      "eg. Green cardamom",
     ),
     "exclusiveAgents": MessageLookupByLibrary.simpleMessage(
       "Products belonging to exclusive agents without official authorization.",
@@ -1547,7 +1547,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Confirm it’s you",
     ),
     "sensitiveAccessWarningBody": MessageLookupByLibrary.simpleMessage(
-      "Alras Smart is an AI agent that can control important account actions such as changing prices and deleting ads. Security verification is required. Thank you for your patience.",
+      "Al-Ras Agent is an AI agent that can control important account actions such as changing prices and deleting ads. Security verification is required. Thank you for your patience.",
     ),
     "sensitiveAccessWarningTitle": MessageLookupByLibrary.simpleMessage(
       "Security check",

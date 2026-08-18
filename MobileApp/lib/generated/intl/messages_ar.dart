@@ -255,10 +255,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "للاسترجاع بسبب تلف أو انتهاء صلاحية أو اختلاف جوهري: أبلغ خلال 24 ساعة عمل من الاستلام مع صور. إن وافق الدعم يُعاد المبلغ خلال يوم عمل واحد.",
     ),
     "aiAssistantSubtitle": MessageLookupByLibrary.simpleMessage(
-      "الراس الذكي وكيل ذكاء اصطناعي وقد يخطئ.",
+      "Al-Ras Agent وكيل ذكاء اصطناعي وقد يخطئ.",
     ),
     "aiAssistantThinking": MessageLookupByLibrary.simpleMessage("يفكر…"),
-    "aiAssistantTitle": MessageLookupByLibrary.simpleMessage("allras ai"),
+    "aiAssistantTitle": MessageLookupByLibrary.simpleMessage("Al-Ras Agent"),
     "aiAssistantUnsupportedLanguage": MessageLookupByLibrary.simpleMessage(
       "ندعم العربية والإنجليزية حالياً. ترجمنا سؤالك للفهم إن أمكن، وسنرد بإحدى اللغتين المدعومتين.",
     ),
@@ -274,7 +274,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "الإدخال الصوتي غير متاح على هذا الجهاز",
     ),
     "aiAssistantWelcome": MessageLookupByLibrary.simpleMessage(
-      "أهلاً بك. أنا الراس الذكي. أقدر — حسب نوع حسابك — أضيف إعلانات، أعدّل الأسعار والكميات، أبحث وأقارن المنتجات، أجيبك بالأرخص والأغلى، أعرف أسعار الشحن لدولتك، وأجيبك بتفاصيل إعلاناتك وطلباتك ومبيعاتك والطلبات المعلّقة. المحادثة المباشرة مع الدعم من الملف الشخصي.",
+      "أهلاً بك. أنا Al-Ras Agent. أقدر — حسب نوع حسابك — أضيف إعلانات، أعدّل الأسعار والكميات، أبحث وأقارن المنتجات، أجيبك بالأرخص والأغلى، أعرف أسعار الشحن لدولتك، وأجيبك بتفاصيل إعلاناتك وطلباتك ومبيعاتك والطلبات المعلّقة. المحادثة المباشرة مع الدعم من الملف الشخصي.",
     ),
     "aiCorrectedSearch": m3,
     "aiIdentifiedProduct": m4,
@@ -747,7 +747,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "أدخل السعر المستهدف",
     ),
     "examplePremiumIranianSaffron": MessageLookupByLibrary.simpleMessage(
-      "هيل أخضر",
+      "eg. هيل أخضر",
     ),
     "exclusiveAgents": MessageLookupByLibrary.simpleMessage(
       "منتجات تخص وكلاء حصريين دون تفويض رسمي.",
@@ -1540,7 +1540,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "أكد أنك أنت",
     ),
     "sensitiveAccessWarningBody": MessageLookupByLibrary.simpleMessage(
-      "الراس الذكي هو وكيل ذكاء اصطناعي يستطيع التحكم في بعض المهام الهامة في حسابك مثل تعديل الأسعار وحذف الإعلانات، لذا التحقق الأمني مطلوب. وشكراً لصبركم.",
+      "Al-Ras Agent هو وكيل ذكاء اصطناعي يستطيع التحكم في بعض المهام الهامة في حسابك مثل تعديل الأسعار وحذف الإعلانات، لذا التحقق الأمني مطلوب. وشكراً لصبركم.",
     ),
     "sensitiveAccessWarningTitle": MessageLookupByLibrary.simpleMessage(
       "تحقق أمني",

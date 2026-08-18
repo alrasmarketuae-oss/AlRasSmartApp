@@ -40,7 +40,6 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
     private DateTime _requestSentUtc;
     private DateTime? _firstAudioUtc;
     private long _lastSpeechStartedMs;
-    private long _lastTurnCompletedMs;
     private readonly ConcurrentDictionary<string, byte> _handledCallIds = new(StringComparer.Ordinal);
 
     public AiVoiceAgentSession(
@@ -308,7 +307,6 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
                 break;
 
             case "input_audio_buffer.speech_stopped":
-                _lastTurnCompletedMs = _sessionWatch.ElapsedMilliseconds;
                 _turnCompletedUtc = DateTime.UtcNow;
                 var vadMs = (_turnCompletedUtc - _turnSpeechStartedUtc).TotalMilliseconds;
                 _logger.LogInformation(
@@ -466,12 +464,22 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
         try
         {
             await using var scope = _scopeFactory.CreateAsyncScope();
-            var tools = scope.ServiceProvider.GetRequiredService<IAiAssistantToolsService>();
-            var result = await tools.ExecuteAsync(
-                _userId,
-                new AiToolCall(callId, name!, string.IsNullOrWhiteSpace(args) ? "{}" : args!),
-                cancellationToken).ConfigureAwait(false);
-            output = result.Content;
+            if (string.Equals(name, "search_help_knowledge", StringComparison.Ordinal))
+            {
+                output = await SearchHelpKnowledgeAsync(
+                    scope.ServiceProvider,
+                    string.IsNullOrWhiteSpace(args) ? "{}" : args!,
+                    cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                var tools = scope.ServiceProvider.GetRequiredService<IAiAssistantToolsService>();
+                var result = await tools.ExecuteAsync(
+                    _userId,
+                    new AiToolCall(callId, name!, string.IsNullOrWhiteSpace(args) ? "{}" : args!),
+                    cancellationToken).ConfigureAwait(false);
+                output = result.Content;
+            }
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -614,6 +622,26 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
             }
 
             var toolsJson = AiVoiceRealtimeToolSchema.ToRealtimeTools(tools.GetToolDefinitions());
+            toolsJson.Add(new JsonObject
+            {
+                ["type"] = "function",
+                ["name"] = "search_help_knowledge",
+                ["description"] =
+                    "Search AlRas platform help/policy knowledge for how-to, commissions, permissions, and support questions. Do not use for live product prices or the user's own ads.",
+                ["parameters"] = new JsonObject
+                {
+                    ["type"] = "object",
+                    ["properties"] = new JsonObject
+                    {
+                        ["query"] = new JsonObject
+                        {
+                            ["type"] = "string",
+                            ["description"] = "The user question in Arabic or English."
+                        }
+                    },
+                    ["required"] = new JsonArray("query")
+                }
+            });
             var instructions = AiVoiceAgentInstructions.Build(_language, audience, displayName, catalog);
             var session = new JsonObject
             {
@@ -636,6 +664,44 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
                 ["type"] = "session.update",
                 ["session"] = session
             };
+        }
+    }
+
+    private async Task<string> SearchHelpKnowledgeAsync(
+        IServiceProvider services,
+        string argumentsJson,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var argsDoc = JsonDocument.Parse(string.IsNullOrWhiteSpace(argumentsJson) ? "{}" : argumentsJson);
+            var query = argsDoc.RootElement.TryGetProperty("query", out var q)
+                ? q.GetString()
+                : null;
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return JsonSerializer.Serialize(new { ok = false, error = "missing_query" });
+            }
+
+            var embedding = services.GetRequiredService<IAiTextEmbeddingService>();
+            var index = services.GetRequiredService<IAiKnowledgeIndex>();
+            var aiOptions = services.GetRequiredService<IOptions<AiAssistantOptions>>().Value;
+            var vector = await embedding.EmbedAsync(query, cancellationToken).ConfigureAwait(false);
+            var hits = await index.SearchAsync(
+                vector,
+                "public",
+                Math.Max(3, Math.Min(8, aiOptions.RetrievalLimit)),
+                cancellationToken).ConfigureAwait(false);
+            return JsonSerializer.Serialize(new
+            {
+                ok = true,
+                hits = hits.Select(h => new { h.Title, content = h.Content.Length > 1200 ? h.Content[..1200] : h.Content })
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Voice help knowledge search failed");
+            return JsonSerializer.Serialize(new { ok = false, error = "knowledge_unavailable" });
         }
     }
 

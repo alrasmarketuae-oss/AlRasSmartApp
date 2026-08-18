@@ -167,7 +167,7 @@ class _AiVoiceCallOverlayState extends State<AiVoiceCallOverlay>
                 ),
                 SizedBox(height: 24.h),
                 Text(
-                  'allras AI',
+                  'Al-Ras Agent',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 24.sp,

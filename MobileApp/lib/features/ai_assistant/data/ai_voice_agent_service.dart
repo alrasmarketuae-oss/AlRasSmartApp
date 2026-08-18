@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';

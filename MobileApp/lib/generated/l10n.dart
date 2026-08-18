@@ -4459,10 +4459,10 @@ class S {
     );
   }
 
-  /// `Green cardamom`
+  /// `eg. Green cardamom`
   String get examplePremiumIranianSaffron {
     return Intl.message(
-      'Green cardamom',
+      'eg. Green cardamom',
       name: 'examplePremiumIranianSaffron',
       desc: '',
       args: [],
@@ -7131,10 +7131,10 @@ class S {
     return Intl.message('Got it', name: 'gotIt', desc: '', args: []);
   }
 
-  /// `allras ai`
+  /// `Al-Ras Agent`
   String get aiAssistantTitle {
     return Intl.message(
-      'allras ai',
+      'Al-Ras Agent',
       name: 'aiAssistantTitle',
       desc: '',
       args: [],
@@ -7146,10 +7146,10 @@ class S {
     return Intl.message('AI', name: 'aiAssistantFabLabel', desc: '', args: []);
   }
 
-  /// `Alras Smart is an AI Agent and can make mistakes.`
+  /// `Al-Ras Agent is an AI Agent and can make mistakes.`
   String get aiAssistantSubtitle {
     return Intl.message(
-      'Alras Smart is an AI Agent and can make mistakes.',
+      'Al-Ras Agent is an AI Agent and can make mistakes.',
       name: 'aiAssistantSubtitle',
       desc: '',
       args: [],
@@ -7186,10 +7186,10 @@ class S {
     );
   }
 
-  /// `Welcome. I’m Alras Smart. Depending on your account type, I can create ads, update prices and quantities, search and compare products, find cheapest/most expensive listings, check shipping prices to a country, and show your ads, orders, sales, and pending orders. Live chat with support is available from Profile.`
+  /// `Welcome. I’m Al-Ras Agent. Depending on your account type, I can create ads, update prices and quantities, search and compare products, find cheapest/most expensive listings, check shipping prices to a country, and show your ads, orders, sales, and pending orders. Live chat with support is available from Profile.`
   String get aiAssistantWelcome {
     return Intl.message(
-      'Welcome. I’m Alras Smart. Depending on your account type, I can create ads, update prices and quantities, search and compare products, find cheapest/most expensive listings, check shipping prices to a country, and show your ads, orders, sales, and pending orders. Live chat with support is available from Profile.',
+      'Welcome. I’m Al-Ras Agent. Depending on your account type, I can create ads, update prices and quantities, search and compare products, find cheapest/most expensive listings, check shipping prices to a country, and show your ads, orders, sales, and pending orders. Live chat with support is available from Profile.',
       name: 'aiAssistantWelcome',
       desc: '',
       args: [],
@@ -7406,10 +7406,10 @@ class S {
     );
   }
 
-  /// `Alras Smart is an AI agent that can control important account actions such as changing prices and deleting ads. Security verification is required. Thank you for your patience.`
+  /// `Al-Ras Agent is an AI agent that can control important account actions such as changing prices and deleting ads. Security verification is required. Thank you for your patience.`
   String get sensitiveAccessWarningBody {
     return Intl.message(
-      'Alras Smart is an AI agent that can control important account actions such as changing prices and deleting ads. Security verification is required. Thank you for your patience.',
+      'Al-Ras Agent is an AI agent that can control important account actions such as changing prices and deleting ads. Security verification is required. Thank you for your patience.',
       name: 'sensitiveAccessWarningBody',
       desc: '',
       args: [],

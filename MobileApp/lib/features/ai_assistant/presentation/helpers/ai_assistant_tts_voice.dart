@@ -111,8 +111,8 @@ class AiAssistantTtsVoice {
 
   static String previewPhrase(String langCode) =>
       langCode == 'ar'
-          ? 'مرحباً، أنا مساعدك في الراس الذكي.'
-          : "Hi, I'm your Al Ras Smart assistant.";
+          ? 'مرحباً، أنا Al-Ras Agent.'
+          : "Hi, I'm Al-Ras Agent.";
 
   /// Picks the best on-device voice map for [isFemale] and [langCode].
   static Map<String, String>? pickVoicePayload({

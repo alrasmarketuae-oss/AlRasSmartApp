@@ -268,14 +268,13 @@ class _AppSearchFieldState extends State<AppSearchField> {
     }
     final tld = marketTld();
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
-    return isAr ? 'ابحث في Alras.$tld' : 'Search Alras.$tld';
+    return isAr ? 'ابحث في Al Ras Smart.$tld' : 'Search Al Ras Smart.$tld';
   }
 
   @override
   Widget build(BuildContext context) {
     final isTablet = MediaQuery.sizeOf(context).shortestSide >= 600;
     final fieldHeight = isTablet ? 36.h : 44.h;
-    final isRtl = Directionality.of(context) == TextDirection.rtl;
     final lensSize = isTablet ? 22.h : 26.h;
     final backWidth = isTablet ? 28.h : 32.h;
     final backIconSize = isTablet ? 16.sp : 18.sp;
@@ -302,9 +301,10 @@ class _AppSearchFieldState extends State<AppSearchField> {
                       width: backWidth,
                       height: fieldHeight,
                       child: Icon(
-                        isRtl ? Icons.arrow_forward : Icons.arrow_back,
+                        Icons.arrow_back_rounded,
                         size: backIconSize,
                         color: AppColors.title(context),
+                        matchTextDirection: true,
                       ),
                     ),
                   ),

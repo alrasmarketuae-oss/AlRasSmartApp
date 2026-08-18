@@ -334,6 +334,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   }
 
   Future<void> _beginVoiceConversationLoop() async {
+    if (_voiceAgent != null) return;
     if (!mounted ||
         !_voiceConversationMode ||
         _micMuted ||
@@ -378,6 +379,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
 
     if (!_voiceReady || !mounted) return;
     await _tts.stop();
+    if (!mounted) return;
     _assistantSpeaking = false;
     final langCode = Localizations.localeOf(context).languageCode;
     await _applyAssistantVoice(langCode, force: true);
@@ -1473,6 +1475,7 @@ class _AiChatHeader extends StatelessWidget {
                     Icons.arrow_back_ios_new_rounded,
                     size: 18.sp,
                     color: Colors.white,
+                    matchTextDirection: true,
                   ),
                 ),
               SizedBox(width: 4.w),

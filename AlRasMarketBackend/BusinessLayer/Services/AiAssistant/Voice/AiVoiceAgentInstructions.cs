@@ -46,6 +46,7 @@ public static class AiVoiceAgentInstructions
             - get_my_purchase_summary / get_my_last_order / explain_my_order_delay: buyer My Orders.
             - create_request_ad / create_booking_ad / create_offer_ad / create_retail_ad / create_category_ad / create_shipping_ad: only when the audience allows it.
             - search_shipping_prices / lookup_create_ad_reference / list_my_addresses / submit_feedback.
+            - search_help_knowledge: platform how-to, commissions, permissions, and policy. Not for live prices.
 
             PRICE UPDATES
             - Most ads have ONE price. Call update_ad_price_quantity immediately. Do not ask جملة/تجزئة unless the tool returns needs_channel_clarification=true.

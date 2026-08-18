@@ -1,7 +1,10 @@
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/widgets/app_header.dart';
 import 'package:alrasmarket/core/widgets/app_search_field.dart';
+import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
+import 'package:alrasmarket/features/company/presentation/controller/cubit/company_cubit.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
@@ -37,7 +40,6 @@ class SearchHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canPop = isBackButton && context.canPop();
     final topInset = MediaQuery.paddingOf(context).top;
     final topPad = topInset > 0 ? topInset + 8.h : 12.h;
 
@@ -47,15 +49,17 @@ class SearchHeader extends StatelessWidget {
         children: [
           Row(
             children: [
-              if (canPop && !isSearch) ...[
+              if (isBackButton) ...[
                 IconButton(
-                  onPressed: () => context.pop(),
+                  onPressed: () => _goBack(context),
                   padding: EdgeInsets.zero,
                   constraints: BoxConstraints.tightFor(width: 40.w, height: 40.w),
+                  tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                   icon: Icon(
                     Icons.arrow_back_ios_new_rounded,
                     size: 18.sp,
                     color: LightColor.defaultColor,
+                    matchTextDirection: true,
                   ),
                 ),
                 SizedBox(width: 4.w),
@@ -74,7 +78,7 @@ class SearchHeader extends StatelessWidget {
               onChanged: onLocalSearchChanged,
               onImageSearchTap: onImageSearchTap,
               onFilterTap: onFilterTap,
-              showBackButton: isBackButton,
+              showBackButton: false,
               showImageSearch: showImageSearch,
             ),
           SizedBox(height: 16.h),
@@ -94,5 +98,18 @@ class SearchHeader extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  static void _goBack(BuildContext context) {
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+    try {
+      context.read<ClintCubit>().setTab(0);
+    } catch (_) {}
+    try {
+      context.read<CompanyCubit>().setTab(0);
+    } catch (_) {}
   }
 }
