@@ -164,16 +164,25 @@ class _AiAssistantViewState extends State<AiAssistantView> {
       await _tts.setSpeechRate(0.48);
       await _tts.setPitch(1.05);
       await _tts.setVolume(1.0);
-      await _tts.awaitSpeakCompletion(true);
+      await _tts.awaitSpeakCompletion(false);
       _tts.setCompletionHandler(() {
         _assistantSpeaking = false;
+        if (mounted) setState(() {});
         unawaited(_onAssistantSpeechFinished());
       });
       _tts.setCancelHandler(() {
         _assistantSpeaking = false;
+        if (mounted) setState(() {});
+      });
+      _tts.setErrorHandler((msg) {
+        debugPrint('TTS error: $msg');
+        _assistantSpeaking = false;
+        if (mounted) setState(() {});
+        unawaited(_onAssistantSpeechFinished());
       });
       _voiceReady = true;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('TTS init error: $e');
       _voiceReady = false;
     }
 
@@ -318,9 +327,10 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   }
 
   Future<bool> _ensureTtsLanguage(String langCode) async {
+    // Try Arabic first, then fall back to English so the user always hears something.
     final candidates = langCode == 'ar'
-        ? const ['ar-SA', 'ar-AE', 'ar-EG', 'ar']
-        : const ['en-US', 'en-GB', 'en'];
+        ? const ['ar-SA', 'ar-AE', 'ar-EG', 'ar', 'en-US', 'en-GB', 'en']
+        : const ['en-US', 'en-GB', 'en', 'ar-SA', 'ar'];
     for (final locale in candidates) {
       try {
         final ok = await _tts.isLanguageAvailable(locale);
@@ -330,8 +340,9 @@ class _AiAssistantViewState extends State<AiAssistantView> {
         }
       } catch (_) {}
     }
+    // Last resort: set without checking availability.
     try {
-      await _tts.setLanguage(candidates.first);
+      await _tts.setLanguage('en-US');
       return true;
     } catch (_) {
       return false;
@@ -343,37 +354,55 @@ class _AiAssistantViewState extends State<AiAssistantView> {
     await _tts.setPitch(pitch);
     final rate = _voiceGender == _AiVoiceGender.female ? 0.48 : 0.46;
     await _tts.setSpeechRate(rate);
-    final voices = await _tts.getVoices;
-    if (voices is! List || voices.isEmpty) return;
 
-    final targetWords = _voiceGender == _AiVoiceGender.female
-        ? <String>['female', 'woman', 'girl', 'feminine', 'samantha', 'zira', 'premium', 'natural']
-        : <String>['male', 'man', 'boy', 'masculine', 'david', 'daniel', 'premium', 'natural'];
+    try {
+      final voices = await _tts.getVoices;
+      if (voices is! List || voices.isEmpty) return;
 
-    dynamic best;
-    var bestScore = -999;
-    for (final v in voices) {
-      if (v is! Map) continue;
-      final locale = (v['locale'] ?? '').toString().toLowerCase();
-      if (langCode == 'ar' && !locale.startsWith('ar')) continue;
-      if (langCode != 'ar' && !locale.startsWith('en')) continue;
+      final targetWords = _voiceGender == _AiVoiceGender.female
+          ? <String>['female', 'woman', 'girl', 'feminine', 'samantha', 'zira', 'premium', 'natural']
+          : <String>['male', 'man', 'boy', 'masculine', 'david', 'daniel', 'premium', 'natural'];
 
-      final blob = v.values.join(' ').toString().toLowerCase();
-      var score = 0;
-      for (final word in targetWords) {
-        if (blob.contains(word)) score += 5;
+      // Score voices matching the current language, then fall back to any voice.
+      dynamic best;
+      var bestScore = -1;
+      dynamic fallback;
+      var fallbackScore = -1;
+
+      for (final v in voices) {
+        if (v is! Map) continue;
+        final locale = (v['locale'] ?? '').toString().toLowerCase();
+        final matchesLang = (langCode == 'ar' && locale.startsWith('ar'))
+            || (langCode != 'ar' && locale.startsWith('en'));
+
+        final blob = v.values.join(' ').toString().toLowerCase();
+        var score = 0;
+        for (final word in targetWords) {
+          if (blob.contains(word)) score += 5;
+        }
+        if (blob.contains('enhanced') || blob.contains('neural')) score += 10;
+        if (blob.contains('premium') || blob.contains('natural')) score += 10;
+        if (blob.contains('wavenet') || blob.contains('standard')) score += 3;
+
+        if (matchesLang && score > bestScore) {
+          best = v;
+          bestScore = score;
+        } else if (!matchesLang && score > fallbackScore) {
+          fallback = v;
+          fallbackScore = score;
+        }
       }
-      if (blob.contains('enhanced') || blob.contains('neural')) score += 10;
-      if (blob.contains('premium') || blob.contains('natural')) score += 10;
-      if (blob.contains('wavenet') || blob.contains('standard')) score += 3;
-      if (score > bestScore) {
-        best = v;
-        bestScore = score;
-      }
-    }
 
-    if (best != null) {
-      await _tts.setVoice(Map<String, String>.from(best));
+      final chosen = best ?? fallback;
+      if (chosen != null) {
+        try {
+          await _tts.setVoice(Map<String, String>.from(chosen));
+        } catch (_) {
+          // setVoice failed; proceed with default voice.
+        }
+      }
+    } catch (_) {
+      // getVoices failed; proceed with default voice/pitch/rate.
     }
   }
 
@@ -385,21 +414,22 @@ class _AiAssistantViewState extends State<AiAssistantView> {
       return;
     }
 
+    if (!mounted) return;
     final langCode = Localizations.localeOf(context).languageCode;
     _composerKey.currentState?.cancelVoiceCapture();
 
     try {
       await _tts.stop();
-      if (!await _ensureTtsLanguage(langCode)) {
-        unawaited(_onAssistantSpeechFinished());
-        return;
-      }
+      await _ensureTtsLanguage(langCode);
       await _applyAssistantVoice(langCode);
+      await _tts.setVolume(1.0);
       if (!mounted) return;
       setState(() => _assistantSpeaking = true);
       await _tts.speak(clean);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('TTS speak error: $e');
       _assistantSpeaking = false;
+      if (mounted) setState(() {});
       unawaited(_onAssistantSpeechFinished());
     }
   }
