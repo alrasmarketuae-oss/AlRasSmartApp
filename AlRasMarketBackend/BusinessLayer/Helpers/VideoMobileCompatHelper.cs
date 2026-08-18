@@ -7,7 +7,8 @@ namespace BusinessLayer.Helpers;
 
 /// <summary>
 /// Converts browser-trimmed WebM (VP8/VP9) to H.264 MP4 so Android/iOS players can play it.
-/// Admin trim uses ffmpeg stream copy (-c copy) on the original file so colors are unchanged.
+/// Admin trim uses ffmpeg stream copy (-c copy) when the cut starts on a keyframe.
+/// Otherwise it re-encodes with the source color tags so a few seconds off the start actually cut.
 /// </summary>
 public static class VideoMobileCompatHelper
 {
@@ -140,13 +141,15 @@ public static class VideoMobileCompatHelper
         }
 
         var extension = NormalizeExtension(sourceExtension);
-        var outputExtension = extension is ".mp4" or ".m4v" or ".mov" or ".webm"
-            ? (extension is ".m4v" or ".mov" ? ".mp4" : extension)
-            : ".mp4";
         var tempDir = Path.Combine(Path.GetTempPath(), "alras-video-trim", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempDir);
         var inputPath = Path.Combine(tempDir, "input" + (string.IsNullOrEmpty(extension) ? ".bin" : extension));
-        var outputPath = Path.Combine(tempDir, "output" + outputExtension);
+        var copyOutputPath = Path.Combine(
+            tempDir,
+            "copy" + (extension is ".mp4" or ".m4v" or ".mov" or ".webm"
+                ? (extension is ".m4v" or ".mov" ? ".mp4" : extension)
+                : ".mp4"));
+        var encodeOutputPath = Path.Combine(tempDir, "accurate.mp4");
 
         try
         {
@@ -160,34 +163,63 @@ public static class VideoMobileCompatHelper
                 await source.CopyToAsync(output, cancellationToken);
             }
 
-            // Stream copy only: no decode/encode, so color space/codec/bitrate stay original.
-            // ffmpeg -ss START -i input -t DURATION -c copy output
-            var copied = await TryRunFfmpegAsync(
-                BuildCopyTrimArgs(inputPath, outputPath, startSeconds, clipDuration, inputSeek: true),
-                cancellationToken);
-            if (copied && (!File.Exists(outputPath) || new FileInfo(outputPath).Length == 0))
-            {
-                copied = false;
-            }
+            var keyframes = await TryGetKeyframeTimesAsync(inputPath, cancellationToken);
+            var canCopy = CanStreamCopyTrim(startSeconds, keyframes);
+            var usedCopy = false;
+            string outputPath;
 
-            if (!copied)
+            if (canCopy)
             {
-                if (File.Exists(outputPath))
-                {
-                    File.Delete(outputPath);
-                }
-
-                copied = await TryRunFfmpegAsync(
-                    BuildCopyTrimArgs(inputPath, outputPath, startSeconds, clipDuration, inputSeek: false),
+                usedCopy = await TryCopyTrimAsync(
+                    inputPath,
+                    copyOutputPath,
+                    startSeconds,
+                    clipDuration,
                     cancellationToken);
             }
 
-            if (!copied || !File.Exists(outputPath) || new FileInfo(outputPath).Length == 0)
+            if (usedCopy)
             {
-                throw new InvalidOperationException(
-                    "Video trim with stream copy failed. Re-encoding is disabled to preserve original colors.");
+                outputPath = copyOutputPath;
+            }
+            else
+            {
+                if (File.Exists(copyOutputPath))
+                {
+                    File.Delete(copyOutputPath);
+                }
+
+                var color = await TryGetVideoColorInfoAsync(inputPath, cancellationToken);
+                var encoded = await TryRunFfmpegAsync(
+                    BuildAccurateTrimArgs(inputPath, encodeOutputPath, startSeconds, clipDuration, color),
+                    cancellationToken);
+                if (!encoded || !HasOutput(encodeOutputPath))
+                {
+                    if (File.Exists(encodeOutputPath))
+                    {
+                        File.Delete(encodeOutputPath);
+                    }
+
+                    encoded = await TryRunFfmpegAsync(
+                        BuildAccurateTrimArgs(
+                            inputPath,
+                            encodeOutputPath,
+                            startSeconds,
+                            clipDuration,
+                            color,
+                            forceYuv420p: true),
+                        cancellationToken);
+                }
+
+                if (!encoded || !HasOutput(encodeOutputPath))
+                {
+                    throw new InvalidOperationException("Video trim failed.");
+                }
+
+                outputPath = encodeOutputPath;
             }
 
+            var outputExtension = Path.GetExtension(outputPath).ToLowerInvariant();
             if (outputExtension is ".mp4" or ".m4v")
             {
                 await Mp4FastStartHelper.TryOptimizeInPlaceAsync(outputPath, cancellationToken);
@@ -195,21 +227,22 @@ public static class VideoMobileCompatHelper
 
             var bytes = await File.ReadAllBytesAsync(outputPath, cancellationToken);
             logger?.LogInformation(
-                "Trimmed video {Start}-{End}s ({Duration}s stored) from {SourceExt} ({SourceBytes} bytes) to {OutExt} ({OutBytes} bytes) using ffmpeg -c copy.",
+                "Trimmed video {Start}-{End}s ({Duration}s stored) from {SourceExt} ({SourceBytes} bytes) to {OutExt} ({OutBytes} bytes) via {Mode}.",
                 startSeconds,
                 endSeconds,
                 durationSeconds,
                 extension,
                 new FileInfo(inputPath).Length,
                 outputExtension,
-                bytes.Length);
+                bytes.Length,
+                usedCopy ? "ffmpeg -c copy" : "ffmpeg accurate");
 
             return new PreparedVideo(
                 new MemoryStream(bytes),
                 "trim" + outputExtension,
                 outputExtension,
                 GuessContentType(outputExtension),
-                Converted: false);
+                Converted: !usedCopy);
         }
         finally
         {
@@ -310,6 +343,335 @@ public static class VideoMobileCompatHelper
 
         args.Add(outputPath);
         return args;
+    }
+
+    private static List<string> BuildAccurateTrimArgs(
+        string inputPath,
+        string outputPath,
+        double startSeconds,
+        double durationSeconds,
+        VideoColorInfo? color,
+        bool forceYuv420p = false)
+    {
+        // -ss before -i is frame-accurate when re-encoding: decode from the previous
+        // keyframe, drop frames until START, then encode. That is what actually cuts
+        // a few seconds off the beginning.
+        var args = new List<string>
+        {
+            "-y",
+            "-ss", FormatFfmpegTime(startSeconds),
+            "-i", inputPath,
+            "-t", FormatFfmpegTime(durationSeconds),
+            "-map", "0:v:0",
+            "-map", "0:a?",
+            "-c:v", "libx264",
+            "-preset", "veryfast",
+            "-crf", "17",
+            "-profile:v", "main",
+            "-level", "4.0",
+        };
+
+        var pixFmt = forceYuv420p ? "yuv420p" : color?.PixFmt;
+        if (string.IsNullOrWhiteSpace(pixFmt) || pixFmt is "yuvj420p")
+        {
+            pixFmt = "yuv420p";
+        }
+
+        args.Add("-pix_fmt");
+        args.Add(pixFmt);
+
+        AddColorTag(args, "-colorspace", color?.ColorSpace);
+        AddColorTag(args, "-color_primaries", color?.ColorPrimaries);
+        AddColorTag(args, "-color_trc", color?.ColorTransfer);
+        var range = NormalizeColorRange(color?.ColorRange);
+        if (range is null && color?.PixFmt == "yuvj420p")
+        {
+            range = "pc";
+        }
+
+        AddColorTag(args, "-color_range", range);
+
+        args.Add("-c:a");
+        args.Add("aac");
+        args.Add("-b:a");
+        args.Add("160k");
+        args.Add("-ac");
+        args.Add("2");
+        args.Add("-movflags");
+        args.Add("+faststart");
+        args.Add(outputPath);
+        return args;
+    }
+
+    private static void AddColorTag(List<string> args, string flag, string? value)
+    {
+        if (!IsUsableColorValue(value))
+        {
+            return;
+        }
+
+        args.Add(flag);
+        args.Add(value!);
+    }
+
+    private static bool IsUsableColorValue(string? value) =>
+        !string.IsNullOrWhiteSpace(value)
+        && !value.Equals("unknown", StringComparison.OrdinalIgnoreCase)
+        && !value.Equals("unspecified", StringComparison.OrdinalIgnoreCase)
+        && !value.Equals("N/A", StringComparison.OrdinalIgnoreCase);
+
+    private static string? NormalizeColorRange(string? value)
+    {
+        if (!IsUsableColorValue(value))
+        {
+            return null;
+        }
+
+        return value!.ToLowerInvariant() switch
+        {
+            "tv" or "mpeg" or "limited" or "1" => "tv",
+            "pc" or "jpeg" or "full" or "2" => "pc",
+            _ => value
+        };
+    }
+
+    private static async Task<bool> TryCopyTrimAsync(
+        string inputPath,
+        string outputPath,
+        double startSeconds,
+        double durationSeconds,
+        CancellationToken cancellationToken)
+    {
+        var copied = await TryRunFfmpegAsync(
+            BuildCopyTrimArgs(inputPath, outputPath, startSeconds, durationSeconds, inputSeek: true),
+            cancellationToken);
+        if (copied && HasOutput(outputPath))
+        {
+            return true;
+        }
+
+        if (File.Exists(outputPath))
+        {
+            File.Delete(outputPath);
+        }
+
+        copied = await TryRunFfmpegAsync(
+            BuildCopyTrimArgs(inputPath, outputPath, startSeconds, durationSeconds, inputSeek: false),
+            cancellationToken);
+        return copied && HasOutput(outputPath);
+    }
+
+    /// <summary>
+    /// Stream copy can only start on a keyframe. Cutting a few seconds off the start
+    /// usually lands between keyframes, so ffmpeg keeps the previous GOP (often from 0).
+    /// </summary>
+    private static bool CanStreamCopyTrim(double startSeconds, IReadOnlyList<double> keyframes)
+    {
+        const double startToleranceSeconds = 0.04;
+        if (startSeconds <= startToleranceSeconds)
+        {
+            return true;
+        }
+
+        if (keyframes.Count == 0)
+        {
+            return false;
+        }
+
+        double? previous = null;
+        foreach (var keyframe in keyframes)
+        {
+            if (keyframe <= startSeconds + 0.001)
+            {
+                previous = keyframe;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return previous is not null && startSeconds - previous.Value <= startToleranceSeconds;
+    }
+
+    private static bool HasOutput(string path) =>
+        File.Exists(path) && new FileInfo(path).Length > 0;
+
+    private sealed record VideoColorInfo(
+        string? PixFmt,
+        string? ColorSpace,
+        string? ColorPrimaries,
+        string? ColorTransfer,
+        string? ColorRange);
+
+    private static async Task<IReadOnlyList<double>> TryGetKeyframeTimesAsync(
+        string inputPath,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await RunCaptureAsync(
+                "ffprobe",
+                [
+                    "-v", "error",
+                    "-select_streams", "v:0",
+                    "-show_entries", "packet=pts_time,flags",
+                    "-of", "csv=p=0",
+                    inputPath
+                ],
+                cancellationToken);
+
+            if (result.ExitCode != 0 || string.IsNullOrWhiteSpace(result.Stdout))
+            {
+                return [];
+            }
+
+            var times = new List<double>();
+            using var reader = new StringReader(result.Stdout);
+            while (await reader.ReadLineAsync(cancellationToken) is { } line)
+            {
+                var parts = line.Split(',', StringSplitOptions.TrimEntries);
+                if (parts.Length < 2 || parts[1].IndexOf('K', StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    continue;
+                }
+
+                if (double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var seconds)
+                    && !double.IsNaN(seconds)
+                    && seconds >= 0)
+                {
+                    times.Add(seconds);
+                }
+            }
+
+            times.Sort();
+            return times;
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    private static async Task<VideoColorInfo?> TryGetVideoColorInfoAsync(
+        string inputPath,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await RunCaptureAsync(
+                "ffprobe",
+                [
+                    "-v", "error",
+                    "-select_streams", "v:0",
+                    "-show_entries", "stream=pix_fmt,color_space,color_primaries,color_transfer,color_range",
+                    "-of", "default=noprint_wrappers=1:nokey=0",
+                    inputPath
+                ],
+                cancellationToken);
+
+            if (result.ExitCode != 0 || string.IsNullOrWhiteSpace(result.Stdout))
+            {
+                return null;
+            }
+
+            string? pixFmt = null;
+            string? colorSpace = null;
+            string? colorPrimaries = null;
+            string? colorTransfer = null;
+            string? colorRange = null;
+            using var reader = new StringReader(result.Stdout);
+            while (await reader.ReadLineAsync(cancellationToken) is { } line)
+            {
+                var separator = line.IndexOf('=');
+                if (separator <= 0)
+                {
+                    continue;
+                }
+
+                var key = line[..separator].Trim();
+                var value = line[(separator + 1)..].Trim();
+                if (!IsUsableColorValue(value) && key != "pix_fmt")
+                {
+                    continue;
+                }
+
+                switch (key)
+                {
+                    case "pix_fmt":
+                        pixFmt = IsUsableColorValue(value) ? value : pixFmt;
+                        break;
+                    case "color_space":
+                        colorSpace = value;
+                        break;
+                    case "color_primaries":
+                        colorPrimaries = value;
+                        break;
+                    case "color_transfer":
+                        colorTransfer = value;
+                        break;
+                    case "color_range":
+                        colorRange = value;
+                        break;
+                }
+            }
+
+            return new VideoColorInfo(pixFmt, colorSpace, colorPrimaries, colorTransfer, colorRange);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static async Task<(int ExitCode, string Stdout, string Stderr)> RunCaptureAsync(
+        string fileName,
+        IReadOnlyList<string> arguments,
+        CancellationToken cancellationToken)
+    {
+        using var process = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = fileName,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            }
+        };
+
+        foreach (var argument in arguments)
+        {
+            process.StartInfo.ArgumentList.Add(argument);
+        }
+
+        if (!process.Start())
+        {
+            return (-1, "", "Failed to start process.");
+        }
+
+        var stdoutTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
+        var stderrTask = process.StandardError.ReadToEndAsync(cancellationToken);
+        try
+        {
+            await process.WaitForExitAsync(cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            try
+            {
+                process.Kill(entireProcessTree: true);
+            }
+            catch
+            {
+                // Best-effort stop.
+            }
+
+            throw;
+        }
+
+        return (process.ExitCode, await stdoutTask, await stderrTask);
     }
 
     private static async Task RunFfmpegAsync(
