@@ -101,36 +101,36 @@ public sealed partial class AiAssistantMcpToolsService
         }
 
         var isHybrid = ProductTypeCodes.HasRetailStockConfigured(product);
-        if (isHybrid && channel is null)
+        if (!isHybrid)
+        {
+            channel = "listing";
+        }
+        else if (channel is null)
         {
             return Json(new
             {
                 ok = false,
                 needs_channel_clarification = true,
+                isHybrid = true,
                 productCode = product.ProductCode,
                 retailCode = product.RetailCode,
                 nameEn = product.NameEn,
                 wholesaleQuantity = product.Quantity,
                 retailQuantity = product.RetailQuantity,
                 message =
-                    "Hybrid ad. Ask: جملة ولا تجزئة؟ Then call mark_ad_sold_out again with channel=wholesale or channel=retail."
+                    "This ad has two stock quantities. Ask ONLY: جملة ولا تجزئة؟ Then call mark_ad_sold_out again with channel=wholesale or channel=retail. Do not explain hybrid theory."
             });
         }
 
-        channel ??= "wholesale";
         if (channel == "retail")
         {
-            if (!isHybrid)
-            {
-                return Json(new { ok = false, error = "This ad has no retail channel." });
-            }
-
             var before = product.RetailQuantity;
             if (before is null or <= 0)
             {
                 return Json(new
                 {
                     ok = true,
+                    isHybrid = true,
                     channel = "retail",
                     productCode = product.RetailCode ?? product.ProductCode,
                     quantity = product.RetailQuantity ?? 0,
@@ -148,6 +148,7 @@ public sealed partial class AiAssistantMcpToolsService
             return Json(new
             {
                 ok = true,
+                isHybrid = true,
                 channel = "retail",
                 productCode = product.RetailCode ?? product.ProductCode,
                 previousQuantity = before,
@@ -167,16 +168,28 @@ public sealed partial class AiAssistantMcpToolsService
                     cancellationToken)
                 .ConfigureAwait(false);
 
+            if (!isHybrid)
+            {
+                return Json(new
+                {
+                    ok = true,
+                    isHybrid = false,
+                    productCode = product.ProductCode,
+                    result,
+                    message =
+                        "Listing marked as sold out. Do NOT mention هجين, جملة, تجزئة, wholesale, or retail."
+                });
+            }
+
             return Json(new
             {
                 ok = true,
+                isHybrid = true,
                 channel = "wholesale",
                 productCode = product.ProductCode,
                 retailCode = product.RetailCode,
                 result,
-                message = isHybrid
-                    ? "Wholesale channel marked sold out. Retail quantity was NOT changed."
-                    : "Listing marked as sold out."
+                message = "Wholesale channel marked sold out. Retail quantity was NOT changed."
             });
         }
         catch (Exception ex)

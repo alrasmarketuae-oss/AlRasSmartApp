@@ -103,14 +103,9 @@ public sealed partial class AiAssistantMcpToolsService
         var outOfStock = row.Quantity <= 0
             && (!isHybrid || row.RetailQuantity is null or <= 0);
 
-        return Json(new
+        object ad;
+        if (isHybrid)
         {
-            ok = true,
-            found = true,
-            which,
-            meaning = newestFirst
-                ? "The seller's most recently created ad (آخر إعلان نزلته / نشرته / أضفته)."
-                : "The seller's earliest created ad (أول إعلان نزلته / نشرته / أضفته).",
             ad = new
             {
                 productId = row.ProductId,
@@ -119,7 +114,7 @@ public sealed partial class AiAssistantMcpToolsService
                 productNameEn = row.NameEn,
                 productNameAr = row.NameAr,
                 productTypeId = row.ProductTypeId,
-                isHybrid,
+                isHybrid = true,
                 status,
                 statusCode,
                 isApproved = row.IsApproved,
@@ -134,12 +129,48 @@ public sealed partial class AiAssistantMcpToolsService
                 updatedAtUtc = row.UpdatedAt.HasValue
                     ? DateTime.SpecifyKind(row.UpdatedAt.Value, DateTimeKind.Utc)
                     : (DateTime?)null
-            },
+            };
+        }
+        else
+        {
+            ad = new
+            {
+                productId = row.ProductId,
+                productCode = row.ProductCode,
+                productNameEn = row.NameEn,
+                productNameAr = row.NameAr,
+                productTypeId = row.ProductTypeId,
+                isHybrid = false,
+                status,
+                statusCode,
+                isApproved = row.IsApproved,
+                outOfStock,
+                price = row.USDPrice,
+                quantity = row.Quantity,
+                unitName = row.UnitName,
+                createdAtUtc = DateTime.SpecifyKind(row.CreatedAt, DateTimeKind.Utc),
+                updatedAtUtc = row.UpdatedAt.HasValue
+                    ? DateTime.SpecifyKind(row.UpdatedAt.Value, DateTimeKind.Utc)
+                    : (DateTime?)null
+            };
+        }
+
+        return Json(new
+        {
+            ok = true,
+            found = true,
+            which,
+            meaning = newestFirst
+                ? "The seller's most recently created ad (آخر إعلان نزلته / نشرته / أضفته)."
+                : "The seller's earliest created ad (أول إعلان نزلته / نشرته / أضفته).",
+            ad,
             instruction = newestFirst
                 ? "Summarize the LAST ad this seller posted: name (AR/EN), ProductCode, status, price/qty with unit, and created date. " +
-                  "This is their listing, not a customer order. Do not invent prices."
+                  "This is their listing, not a customer order. Do not invent prices. " +
+                  "If isHybrid=false, report the single price only — never mention جملة/تجزئة/هجين."
                 : "Summarize the FIRST ad this seller posted: name (AR/EN), ProductCode, status, price/qty with unit, and created date. " +
-                  "This is their listing, not a customer order. Do not invent prices."
+                  "This is their listing, not a customer order. Do not invent prices. " +
+                  "If isHybrid=false, report the single price only — never mention جملة/تجزئة/هجين."
         });
     }
 }

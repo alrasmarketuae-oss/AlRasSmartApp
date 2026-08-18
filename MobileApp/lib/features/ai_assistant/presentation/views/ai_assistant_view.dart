@@ -31,6 +31,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:alrasmarket/features/ai_assistant/presentation/widgets/ai_voice_call_overlay.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 /// Assistant accent ramp, used across the header, avatars, and the send button
@@ -100,12 +101,15 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   static const _voiceGenderPrefKey = 'ai.assistant.voice.gender';
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
+  final _composerKey = GlobalKey<_AiComposerState>();
   final List<_ChatMessage> _messages = [];
   final _realtime = AiAssistantRealtimeService();
   final _historyRepository = AiAssistantRepository();
   final FlutterTts _tts = FlutterTts();
   bool _historyLoading = false;
   bool _voiceReady = false;
+  bool _voiceConversationMode = false;
+  bool _assistantSpeaking = false;
   _AiVoiceGender _voiceGender = _AiVoiceGender.female;
   Future<void>? _connectFuture;
   bool _isThinking = false;
@@ -124,7 +128,6 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   int? _inFlightResponseId;
   final Map<int, String> _questionForResponse = {};
   _ChatMessage? _replyTo;
-
   @override
   void initState() {
     super.initState();
@@ -158,15 +161,60 @@ class _AiAssistantViewState extends State<AiAssistantView> {
     } catch (_) {}
 
     try {
-      await _tts.setSpeechRate(0.47);
-      await _tts.setPitch(1.0);
+      await _tts.setSpeechRate(0.48);
+      await _tts.setPitch(1.05);
       await _tts.setVolume(1.0);
+      await _tts.awaitSpeakCompletion(true);
+      _tts.setCompletionHandler(() {
+        _assistantSpeaking = false;
+        unawaited(_onAssistantSpeechFinished());
+      });
+      _tts.setCancelHandler(() {
+        _assistantSpeaking = false;
+      });
       _voiceReady = true;
     } catch (_) {
       _voiceReady = false;
     }
 
     if (mounted) setState(() {});
+  }
+
+  Future<void> _setVoiceConversationMode(bool enabled) async {
+    setState(() => _voiceConversationMode = enabled);
+    if (!enabled) {
+      await _tts.stop();
+      _assistantSpeaking = false;
+      _composerKey.currentState?.cancelVoiceCapture();
+      return;
+    }
+
+    if (!mounted || _isThinking || _assistantSpeaking) return;
+    await _beginVoiceConversationLoop();
+  }
+
+  Future<void> _beginVoiceConversationLoop() async {
+    if (!mounted || !_voiceConversationMode || _isThinking || _assistantSpeaking) {
+      return;
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    if (!mounted || !_voiceConversationMode || _isThinking || _assistantSpeaking) {
+      return;
+    }
+    await _composerKey.currentState?.beginVoiceTurn(autoSend: true);
+  }
+
+  Future<void> _onAssistantSpeechFinished() async {
+    if (!mounted || !_voiceConversationMode || _isThinking) return;
+    await _beginVoiceConversationLoop();
+  }
+
+  String _textForSpeech(String text) {
+    var clean = text.trim();
+    clean = clean.replaceAll(RegExp(r'\[([^\]]+)\]\([^)]+\)'), r'$1');
+    clean = clean.replaceAll('**', '').replaceAll('*', '');
+    clean = clean.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return clean;
   }
 
   Future<void> _setVoiceGender(_AiVoiceGender gender) async {
@@ -182,95 +230,178 @@ class _AiAssistantViewState extends State<AiAssistantView> {
 
   Future<void> _showVoicePicker() async {
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    var conversationEnabled = _voiceConversationMode;
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  isAr ? 'صوت رد المساعد' : 'Assistant reply voice',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      isAr ? 'المحادثة الصوتية' : 'Voice conversation',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      isAr
+                          ? 'فعّل الوضع الصوتي لتتكلموا مع بعض بالصوت. الردود النصية العادية بدون صوت.'
+                          : 'Turn on voice mode to talk back and forth. Normal text replies stay silent.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        height: 1.35,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      value: conversationEnabled,
+                      onChanged: (value) async {
+                        setSheetState(() => conversationEnabled = value);
+                        await _setVoiceConversationMode(value);
+                      },
+                      title: Text(isAr ? 'محادثة صوتية' : 'Voice conversation'),
+                      subtitle: Text(
+                        isAr
+                            ? 'تتكلم → المساعد يرد بصوت → المايك يفتح تاني'
+                            : 'You speak → assistant replies aloud → mic opens again',
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Text(
+                        isAr ? 'صوت المساعد' : 'Assistant voice',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13.sp,
+                        ),
+                      ),
+                    ),
+                    RadioListTile<_AiVoiceGender>(
+                      value: _AiVoiceGender.female,
+                      groupValue: _voiceGender,
+                      onChanged: (value) {
+                        if (value == null) return;
+                        _setVoiceGender(value);
+                        setSheetState(() {});
+                      },
+                      title: Text(isAr ? 'صوت بنت' : 'Female voice'),
+                    ),
+                    RadioListTile<_AiVoiceGender>(
+                      value: _AiVoiceGender.male,
+                      groupValue: _voiceGender,
+                      onChanged: (value) {
+                        if (value == null) return;
+                        _setVoiceGender(value);
+                        setSheetState(() {});
+                      },
+                      title: Text(isAr ? 'صوت راجل' : 'Male voice'),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                RadioListTile<_AiVoiceGender>(
-                  value: _AiVoiceGender.female,
-                  groupValue: _voiceGender,
-                  onChanged: (value) {
-                    if (value == null) return;
-                    _setVoiceGender(value);
-                    Navigator.of(sheetContext).pop();
-                  },
-                  title: Text(isAr ? 'صوت بنت' : 'Female voice'),
-                ),
-                RadioListTile<_AiVoiceGender>(
-                  value: _AiVoiceGender.male,
-                  groupValue: _voiceGender,
-                  onChanged: (value) {
-                    if (value == null) return;
-                    _setVoiceGender(value);
-                    Navigator.of(sheetContext).pop();
-                  },
-                  title: Text(isAr ? 'صوت راجل' : 'Male voice'),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
   }
 
+  Future<bool> _ensureTtsLanguage(String langCode) async {
+    final candidates = langCode == 'ar'
+        ? const ['ar-SA', 'ar-AE', 'ar-EG', 'ar']
+        : const ['en-US', 'en-GB', 'en'];
+    for (final locale in candidates) {
+      try {
+        final ok = await _tts.isLanguageAvailable(locale);
+        if (ok == true) {
+          await _tts.setLanguage(locale);
+          return true;
+        }
+      } catch (_) {}
+    }
+    try {
+      await _tts.setLanguage(candidates.first);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _applyAssistantVoice(String langCode) async {
+    final pitch = _voiceGender == _AiVoiceGender.female ? 1.06 : 0.92;
+    await _tts.setPitch(pitch);
+    final rate = _voiceGender == _AiVoiceGender.female ? 0.48 : 0.46;
+    await _tts.setSpeechRate(rate);
+    final voices = await _tts.getVoices;
+    if (voices is! List || voices.isEmpty) return;
+
+    final targetWords = _voiceGender == _AiVoiceGender.female
+        ? <String>['female', 'woman', 'girl', 'feminine', 'samantha', 'zira', 'premium', 'natural']
+        : <String>['male', 'man', 'boy', 'masculine', 'david', 'daniel', 'premium', 'natural'];
+
+    dynamic best;
+    var bestScore = -999;
+    for (final v in voices) {
+      if (v is! Map) continue;
+      final locale = (v['locale'] ?? '').toString().toLowerCase();
+      if (langCode == 'ar' && !locale.startsWith('ar')) continue;
+      if (langCode != 'ar' && !locale.startsWith('en')) continue;
+
+      final blob = v.values.join(' ').toString().toLowerCase();
+      var score = 0;
+      for (final word in targetWords) {
+        if (blob.contains(word)) score += 5;
+      }
+      if (blob.contains('enhanced') || blob.contains('neural')) score += 10;
+      if (blob.contains('premium') || blob.contains('natural')) score += 10;
+      if (blob.contains('wavenet') || blob.contains('standard')) score += 3;
+      if (score > bestScore) {
+        best = v;
+        bestScore = score;
+      }
+    }
+
+    if (best != null) {
+      await _tts.setVoice(Map<String, String>.from(best));
+    }
+  }
+
   Future<void> _speakAssistantReply(String text) async {
-    final clean = text.trim();
-    if (!_voiceReady || clean.isEmpty) return;
+    if (!_voiceConversationMode) return;
+    final clean = _textForSpeech(text);
+    if (!_voiceReady || clean.isEmpty) {
+      unawaited(_onAssistantSpeechFinished());
+      return;
+    }
 
     final langCode = Localizations.localeOf(context).languageCode;
-    final ttsLanguage = langCode == 'ar' ? 'ar-SA' : 'en-US';
+    _composerKey.currentState?.cancelVoiceCapture();
 
     try {
       await _tts.stop();
-      await _tts.setLanguage(ttsLanguage);
-      final voices = await _tts.getVoices;
-      if (voices is List && voices.isNotEmpty) {
-        final targetWords = _voiceGender == _AiVoiceGender.female
-            ? <String>['female', 'woman', 'girl', 'feminine', 'أنث']
-            : <String>['male', 'man', 'boy', 'masculine', 'ذكر'];
-
-        dynamic best;
-        var bestScore = -999;
-        for (final v in voices) {
-          if (v is! Map) continue;
-          final locale = (v['locale'] ?? '').toString().toLowerCase();
-          if (langCode == 'ar' && !locale.startsWith('ar')) continue;
-          if (langCode != 'ar' && !locale.startsWith('en')) continue;
-
-          final blob = v.values.join(' ').toString().toLowerCase();
-          var score = 0;
-          for (final word in targetWords) {
-            if (blob.contains(word)) score += 5;
-          }
-          if (blob.contains('enhanced') || blob.contains('neural')) score += 1;
-          if (score > bestScore) {
-            best = v;
-            bestScore = score;
-          }
-        }
-
-        if (best != null) {
-          await _tts.setVoice(Map<String, String>.from(best));
-        }
+      if (!await _ensureTtsLanguage(langCode)) {
+        unawaited(_onAssistantSpeechFinished());
+        return;
       }
-
+      await _applyAssistantVoice(langCode);
+      if (!mounted) return;
+      setState(() => _assistantSpeaking = true);
       await _tts.speak(clean);
-    } catch (_) {}
+    } catch (_) {
+      _assistantSpeaking = false;
+      unawaited(_onAssistantSpeechFinished());
+    }
   }
 
   String _previewForReply(_ChatMessage? message) {
@@ -797,13 +928,18 @@ class _AiAssistantViewState extends State<AiAssistantView> {
           }
         });
         _scrollToEnd();
-        if (finalAnswer.isNotEmpty) {
+        if (_voiceConversationMode && finalAnswer.isNotEmpty) {
           unawaited(_speakAssistantReply(finalAnswer));
+        } else if (_voiceConversationMode) {
+          unawaited(_onAssistantSpeechFinished());
         }
       },
       onError: (message) {
         if (_shouldIgnoreAssistantError()) return;
         _showConnectionError();
+        if (_voiceConversationMode) {
+          unawaited(_onAssistantSpeechFinished());
+        }
       },
     );
   }
@@ -933,6 +1069,12 @@ class _AiAssistantViewState extends State<AiAssistantView> {
     );
   }
 
+  AiCallPhase get _callPhase {
+    if (_assistantSpeaking) return AiCallPhase.speaking;
+    if (_isThinking) return AiCallPhase.thinking;
+    return AiCallPhase.listening;
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = _planMode
@@ -940,62 +1082,82 @@ class _AiAssistantViewState extends State<AiAssistantView> {
         : _AiChatColors.of(context);
     return Scaffold(
       backgroundColor: colors.scaffoldBg,
-      body: Column(
+      body: Stack(
         children: [
-          _AiChatHeader(
-            planMode: _planMode,
-            onCancelPlan: _planMode ? _cancelAdPlan : null,
-            onOpenHistory: AuthService.instance.isAuthenticated
-                ? (_historyLoading ? null : _openHistorySheet)
-                : null,
-            historyLoading: _historyLoading,
-            onOpenVoiceSettings: _showVoicePicker,
-            voiceGender: _voiceGender,
-          ),
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 16.h),
-              itemCount: _messages.length + (_isThinking ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (_isThinking && index == _messages.length) {
-                  return _ThinkingBubble(
-                    steps: List<String>.from(_thinkingSteps),
-                    startedAt: _thinkingStartedAt,
-                    colors: colors,
-                  );
-                }
-                return _SwipeToReply(
-                  onReply: () => _setReply(_messages[index]),
-                  child: _MessageBubble(
-                  message: _messages[index],
-                  colors: colors,
-                  onPickAdMedia: _pickAdMedia,
-                  uploadingAdMedia: _uploadingAdMedia,
-                  sessionId: _realtime.sessionId,
-                  onSupportCallbackSubmitted: () {
-                    setState(() {
-                      _messages[index].showSupportCallbackForm = false;
-                    });
+          Column(
+            children: [
+              _AiChatHeader(
+                planMode: _planMode,
+                onCancelPlan: _planMode ? _cancelAdPlan : null,
+                onOpenHistory: AuthService.instance.isAuthenticated
+                    ? (_historyLoading ? null : _openHistorySheet)
+                    : null,
+                historyLoading: _historyLoading,
+                onOpenVoiceSettings: _showVoicePicker,
+                voiceGender: _voiceGender,
+                voiceConversationMode: _voiceConversationMode,
+              ),
+              Expanded(
+                child: ListView.builder(
+                  controller: _scrollController,
+                  padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 16.h),
+                  itemCount: _messages.length + (_isThinking ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (_isThinking && index == _messages.length) {
+                      return _ThinkingBubble(
+                        steps: List<String>.from(_thinkingSteps),
+                        startedAt: _thinkingStartedAt,
+                        colors: colors,
+                      );
+                    }
+                    return _SwipeToReply(
+                      onReply: () => _setReply(_messages[index]),
+                      child: _MessageBubble(
+                      message: _messages[index],
+                      colors: colors,
+                      onPickAdMedia: _pickAdMedia,
+                      uploadingAdMedia: _uploadingAdMedia,
+                      sessionId: _realtime.sessionId,
+                      onSupportCallbackSubmitted: () {
+                        setState(() {
+                          _messages[index].showSupportCallbackForm = false;
+                        });
+                      },
+                    ),
+                    );
                   },
                 ),
-                );
-              },
+              ),
+              _AiComposer(
+                key: _composerKey,
+                controller: _controller,
+                isThinking: _isThinking,
+                onSend: _send,
+                colors: colors,
+                planMode: _planMode,
+                onPickAdMedia: _planMode ? _pickAdMedia : null,
+                uploadingAdMedia: _uploadingAdMedia,
+                draftImageCount: _draftImagePaths.length,
+                hasDraftVideo: _draftVideoPath != null,
+                replyPreview: _previewForReply(_replyTo),
+                onCancelReply: _replyTo == null ? null : () => setState(() => _replyTo = null),
+                voiceConversationMode: _voiceConversationMode,
+                assistantSpeaking: _assistantSpeaking,
+                onVoiceTurnRetry: _onAssistantSpeechFinished,
+                onListeningChanged: (v) {
+                  if (mounted) setState(() {});
+                },
+              ),
+            ],
+          ),
+          if (_voiceConversationMode)
+            Positioned.fill(
+              child: AiVoiceCallOverlay(
+                phase: _callPhase,
+                onEndCall: () => _setVoiceConversationMode(false),
+                thinkingSteps: List<String>.from(_thinkingSteps),
+              ),
             ),
-          ),
-          _AiComposer(
-            controller: _controller,
-            isThinking: _isThinking,
-            onSend: _send,
-            colors: colors,
-            planMode: _planMode,
-            onPickAdMedia: _planMode ? _pickAdMedia : null,
-            uploadingAdMedia: _uploadingAdMedia,
-            draftImageCount: _draftImagePaths.length,
-            hasDraftVideo: _draftVideoPath != null,
-            replyPreview: _previewForReply(_replyTo),
-            onCancelReply: _replyTo == null ? null : () => setState(() => _replyTo = null),
-          ),
         ],
       ),
     );
@@ -1010,6 +1172,7 @@ class _AiChatHeader extends StatelessWidget {
     this.historyLoading = false,
     this.onOpenVoiceSettings,
     this.voiceGender = _AiVoiceGender.female,
+    this.voiceConversationMode = false,
   });
 
   final bool planMode;
@@ -1018,6 +1181,7 @@ class _AiChatHeader extends StatelessWidget {
   final bool historyLoading;
   final VoidCallback? onOpenVoiceSettings;
   final _AiVoiceGender voiceGender;
+  final bool voiceConversationMode;
 
   @override
   Widget build(BuildContext context) {
@@ -1143,12 +1307,18 @@ class _AiChatHeader extends StatelessWidget {
               if (onOpenVoiceSettings != null)
                 IconButton(
                   onPressed: onOpenVoiceSettings,
-                  tooltip: isAr ? 'صوت الرد' : 'Reply voice',
+                  tooltip: voiceConversationMode
+                      ? (isAr ? 'محادثة صوتية شغّالة' : 'Voice conversation on')
+                      : (isAr ? 'المحادثة الصوتية' : 'Voice conversation'),
                   icon: Icon(
-                    voiceGender == _AiVoiceGender.female
-                        ? Icons.record_voice_over_rounded
-                        : Icons.mic_rounded,
-                    color: Colors.white,
+                    voiceConversationMode
+                        ? Icons.headset_mic_rounded
+                        : (voiceGender == _AiVoiceGender.female
+                            ? Icons.record_voice_over_rounded
+                            : Icons.mic_rounded),
+                    color: voiceConversationMode
+                        ? const Color(0xFFFFF176)
+                        : Colors.white,
                     size: 21.sp,
                   ),
                 ),
@@ -2071,6 +2241,7 @@ class _AttachmentChip extends StatelessWidget {
 
 class _AiComposer extends StatefulWidget {
   const _AiComposer({
+    super.key,
     required this.controller,
     required this.isThinking,
     required this.onSend,
@@ -2082,6 +2253,10 @@ class _AiComposer extends StatefulWidget {
     this.uploadingAdMedia = false,
     this.replyPreview = '',
     this.onCancelReply,
+    this.voiceConversationMode = false,
+    this.assistantSpeaking = false,
+    this.onVoiceTurnRetry,
+    this.onListeningChanged,
   });
 
   final TextEditingController controller;
@@ -2095,6 +2270,10 @@ class _AiComposer extends StatefulWidget {
   final bool uploadingAdMedia;
   final String replyPreview;
   final VoidCallback? onCancelReply;
+  final bool voiceConversationMode;
+  final bool assistantSpeaking;
+  final VoidCallback? onVoiceTurnRetry;
+  final ValueChanged<bool>? onListeningChanged;
 
   @override
   State<_AiComposer> createState() => _AiComposerState();
@@ -2106,8 +2285,22 @@ class _AiComposerState extends State<_AiComposer> {
   bool _correcting = false;
   bool _awaitingConfirm = false;
   bool _finishing = false;
+  bool _autoSendAfterTranscription = false;
   String _baseText = '';
   String? _recordingPath;
+
+  Future<void> beginVoiceTurn({bool autoSend = false}) async {
+    if (!mounted || widget.isThinking || widget.assistantSpeaking) return;
+    if (_listening || _correcting) return;
+    _autoSendAfterTranscription = autoSend;
+    await _toggleVoice();
+  }
+
+  void cancelVoiceCapture() {
+    if (_listening || _correcting || _awaitingConfirm) {
+      _cancelVoice();
+    }
+  }
 
   @override
   void dispose() {
@@ -2120,7 +2313,7 @@ class _AiComposerState extends State<_AiComposer> {
 
   Future<void> _toggleVoice() async {
     final s = S.of(context);
-    if (widget.isThinking || _correcting) return;
+    if (widget.isThinking || _correcting || widget.assistantSpeaking) return;
 
     if (_listening) {
       await _finishListening();
@@ -2159,9 +2352,9 @@ class _AiComposerState extends State<_AiComposer> {
       _awaitingConfirm = false;
       _correcting = false;
       _recordingPath = filePath;
-      // Keep prior typed text visible; Whisper fills after stop.
       widget.controller.text = _baseText;
     });
+    widget.onListeningChanged?.call(true);
   }
 
   Future<void> _finishListening() async {
@@ -2186,11 +2379,16 @@ class _AiComposerState extends State<_AiComposer> {
       _correcting = true;
       _awaitingConfirm = false;
     });
+    widget.onListeningChanged?.call(false);
 
     var finalSpoken = '';
     final audioPath = path ?? _recordingPath;
     if (audioPath != null && await File(audioPath).exists()) {
       try {
+        if (!mounted) {
+          _finishing = false;
+          return;
+        }
         final language =
             Localizations.localeOf(context).languageCode == 'ar' ? 'ar' : 'en';
         final formData = FormData.fromMap({
@@ -2230,17 +2428,24 @@ class _AiComposerState extends State<_AiComposer> {
     }
 
     if (finalSpoken.isEmpty) {
+      final retryVoiceLoop =
+          widget.voiceConversationMode && _autoSendAfterTranscription;
       setState(() {
         _correcting = false;
         _awaitingConfirm = false;
+        _autoSendAfterTranscription = false;
         widget.controller.text = _baseText;
         widget.controller.selection = TextSelection.collapsed(
           offset: widget.controller.text.length,
         );
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.of(context).aiAssistantVoiceUnavailable)),
-      );
+      if (retryVoiceLoop) {
+        widget.onVoiceTurnRetry?.call();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(S.of(context).aiAssistantVoiceUnavailable)),
+        );
+      }
       _finishing = false;
       return;
     }
@@ -2249,6 +2454,21 @@ class _AiComposerState extends State<_AiComposer> {
       if (_baseText.isNotEmpty) _baseText,
       finalSpoken,
     ].join(' ').trim();
+
+    if (_autoSendAfterTranscription && combined.isNotEmpty) {
+      _autoSendAfterTranscription = false;
+      setState(() {
+        _correcting = false;
+        _awaitingConfirm = false;
+        widget.controller.text = combined;
+        widget.controller.selection = TextSelection.collapsed(
+          offset: widget.controller.text.length,
+        );
+      });
+      _finishing = false;
+      widget.onSend();
+      return;
+    }
 
     setState(() {
       _correcting = false;
@@ -2278,6 +2498,7 @@ class _AiComposerState extends State<_AiComposer> {
       _correcting = false;
       _awaitingConfirm = false;
       _finishing = false;
+      _autoSendAfterTranscription = false;
       _recordingPath = null;
       widget.controller.text = _baseText;
       widget.controller.selection = TextSelection.collapsed(
@@ -2300,7 +2521,10 @@ class _AiComposerState extends State<_AiComposer> {
   Widget build(BuildContext context) {
     final s = S.of(context);
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
-    final showStatus = _listening || _correcting || _awaitingConfirm;
+    final showStatus = _listening ||
+        _correcting ||
+        (_awaitingConfirm && !widget.voiceConversationMode) ||
+        (widget.voiceConversationMode && widget.assistantSpeaking);
     return Container(
       decoration: BoxDecoration(
         color: widget.planMode
@@ -2321,6 +2545,31 @@ class _AiComposerState extends State<_AiComposer> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (widget.voiceConversationMode)
+                Padding(
+                  padding: EdgeInsets.only(bottom: 8.h),
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(
+                      widget.assistantSpeaking
+                          ? (isAr ? 'المساعد بيتكلم…' : 'Assistant is speaking…')
+                          : _listening
+                              ? (isAr ? 'محادثة صوتية — تكلم الآن' : 'Voice chat — speak now')
+                              : _correcting
+                                  ? (isAr ? 'جاري فهم صوتك…' : 'Understanding your voice…')
+                                  : (isAr
+                                      ? 'محادثة صوتية شغّالة'
+                                      : 'Voice conversation is on'),
+                      style: TextStyle(
+                        color: widget.assistantSpeaking
+                            ? LightColor.defaultColor
+                            : const Color(0xFFE11D48),
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
               if (widget.planMode)
                 Padding(
                   padding: EdgeInsets.only(bottom: 8.h),
@@ -2445,11 +2694,15 @@ class _AiComposerState extends State<_AiComposer> {
                       SizedBox(width: 6.w),
                       Expanded(
                         child: Text(
-                          _listening
-                              ? s.aiAssistantListening
-                              : _correcting
-                                  ? s.aiAssistantVoiceCorrecting
-                                  : s.aiAssistantVoiceHint,
+                          widget.assistantSpeaking
+                              ? (isAr ? 'المساعد بيتكلم…' : 'Assistant is speaking…')
+                              : _listening
+                                  ? (widget.voiceConversationMode
+                                      ? s.aiAssistantListening
+                                      : s.aiAssistantListening)
+                                  : _correcting
+                                      ? s.aiAssistantVoiceCorrecting
+                                      : s.aiAssistantVoiceHint,
                           style: TextStyle(
                             fontSize: 11.sp,
                             fontWeight: FontWeight.w600,
@@ -2459,7 +2712,7 @@ class _AiComposerState extends State<_AiComposer> {
                           ),
                         ),
                       ),
-                      if (_awaitingConfirm && !_correcting) ...[
+                      if (_awaitingConfirm && !_correcting && !widget.voiceConversationMode) ...[
                         TextButton(
                           onPressed: _cancelVoice,
                           style: TextButton.styleFrom(
@@ -2618,7 +2871,9 @@ class _AiComposerState extends State<_AiComposer> {
                   ),
                   SizedBox(width: 8.w),
                   GestureDetector(
-                    onTap: (widget.isThinking || _correcting)
+                    onTap: (widget.isThinking ||
+                            _correcting ||
+                            widget.assistantSpeaking)
                         ? null
                         : _toggleVoice,
                     child: Container(
@@ -2627,10 +2882,15 @@ class _AiComposerState extends State<_AiComposer> {
                       decoration: BoxDecoration(
                         color: _listening
                             ? const Color(0xFFE11D48)
-                            : (widget.colors.isDark
-                                ? const Color(0xFF243044)
-                                : const Color(0xFFE8F1FC)),
+                            : widget.voiceConversationMode
+                                ? LightColor.defaultColor.withValues(alpha: 0.18)
+                                : (widget.colors.isDark
+                                    ? const Color(0xFF243044)
+                                    : const Color(0xFFE8F1FC)),
                         shape: BoxShape.circle,
+                        border: widget.voiceConversationMode && !_listening
+                            ? Border.all(color: LightColor.defaultColor)
+                            : null,
                       ),
                       child: Icon(
                         _listening ? Icons.stop_rounded : Icons.mic_none_rounded,

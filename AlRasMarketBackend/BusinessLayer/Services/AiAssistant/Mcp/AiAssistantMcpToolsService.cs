@@ -38,10 +38,11 @@ public sealed partial class AiAssistantMcpToolsService(
                     "Update price and/or quantity of EXACTLY ONE of the signed-in seller's own ads per turn. " +
                     "NEVER update all ads, every ad, or multiple ads — even if the user asks. " +
                     "If the user says change all / كل إعلاناتي / جميع الإعلانات, refuse and ask them to name ONE specific ad (or ProductCode). " +
-                    "For HYBRID ads (category + retail), you MUST pass channel=wholesale or channel=retail. " +
-                    "If the user did not say which channel, call the tool without channel (or the tool returns needs_channel_clarification) " +
-                    "and ASK: جملة ولا تجزئة؟ / wholesale or retail? Never update both channels. " +
-                    "Use the SELLER ADS CATALOG / list_my_ads names. If the spoken/typed name is a unique exact match AND channel is known, update immediately. " +
+                    "MOST ads have a SINGLE price. Call this tool immediately — do NOT ask جملة/تجزئة and do NOT tell the user whether the ad is hybrid. " +
+                    "Omit channel unless the user clearly said جملة/wholesale or تجزئة/retail. " +
+                    "ONLY if this tool returns needs_channel_clarification=true, then ask جملة ولا تجزئة؟ and call again with channel. " +
+                    "Never mention هجين / wholesale / retail / جملة / تجزئة in the user reply unless that clarification was required. " +
+                    "Use the SELLER ADS CATALOG / list_my_ads names. If the spoken/typed name is a unique exact match, update immediately. " +
                     "If the name is a slight typo or matches several ads, the tool returns needs_clarification with suggestions — " +
                     "ask the user in their language: did you mean ad A or ad B? When they pick one, call again with that exact product_name or product_code.",
                 parameters = new
@@ -64,8 +65,8 @@ public sealed partial class AiAssistantMcpToolsService(
                         {
                             type = "string",
                             description =
-                                "Required for hybrid ads when ambiguous: \"wholesale\" (category/ton) or \"retail\". " +
-                                "Omit only when ProductCode/RetailCode already identifies the channel, or the ad is not hybrid."
+                                "Pass ONLY if the user clearly said جملة/wholesale or تجزئة/retail. " +
+                                "Otherwise omit. The tool asks for a channel only when the ad is actually hybrid."
                         },
                         price = new
                         {
@@ -316,9 +317,9 @@ public sealed partial class AiAssistantMcpToolsService(
             {
                 name = "mark_ad_sold_out",
                 description =
-                    "Mark EXACTLY ONE ad channel as sold out (quantity = 0). " +
-                    "For hybrid ads pass channel=wholesale or channel=retail; if unknown, omit channel so the tool asks. " +
-                    "Never mark both channels unless the user clearly asked for both in separate turns.",
+                    "Mark EXACTLY ONE owned ad as sold out (quantity = 0). Call immediately. " +
+                    "Do NOT ask جملة/تجزئة unless this tool returns needs_channel_clarification=true. " +
+                    "Most ads have a single stock quantity. Never mention hybrid/wholesale/retail unless that clarification was required.",
                 parameters = new
                 {
                     type = "object",
@@ -868,12 +869,18 @@ public sealed partial class AiAssistantMcpToolsService(
         var isHybrid = ProductTypeCodes.HasRetailStockConfigured(product);
         var resolvedChannel = NormalizeUpdateChannel(channel);
 
-        if (isHybrid && resolvedChannel is null)
+        if (!isHybrid)
+        {
+            // Single-price listing: ignore any wholesale/retail guess and update the only price.
+            resolvedChannel = "listing";
+        }
+        else if (resolvedChannel is null)
         {
             return Json(new
             {
                 ok = false,
                 needs_channel_clarification = true,
+                isHybrid = true,
                 productCode = product.ProductCode,
                 retailCode = product.RetailCode,
                 nameEn = product.NameEn,
@@ -884,21 +891,10 @@ public sealed partial class AiAssistantMcpToolsService(
                 retailQuantity = product.RetailQuantity,
                 retailUnit = product.RetailUnit?.UnitNameEn,
                 message =
-                    "This ad is hybrid (wholesale + retail). Do NOT update either channel yet. " +
-                    "Ask the user clearly: جملة ولا تجزئة؟ / wholesale or retail? " +
-                    "Then call again with channel=wholesale or channel=retail (and the same product_code/name). " +
-                    "Never update both channels in one request."
-            });
-        }
-
-        // Non-hybrid listings are always the wholesale/primary fields.
-        resolvedChannel ??= "wholesale";
-        if (resolvedChannel == "retail" && !isHybrid)
-        {
-            return Json(new
-            {
-                ok = false,
-                error = "This ad has no retail channel. Use channel=wholesale or omit channel."
+                    "This ONE ad has two prices (جملة + تجزئة). Do NOT update yet. " +
+                    "Ask ONLY: جملة ولا تجزئة؟ / wholesale or retail? " +
+                    "Do not explain hybrid theory. Then call again with channel=wholesale or channel=retail " +
+                    "(and the same product_code/name). Never update both channels in one request."
             });
         }
 
@@ -927,6 +923,7 @@ public sealed partial class AiAssistantMcpToolsService(
             return Json(new
             {
                 ok = true,
+                isHybrid = true,
                 channel = "retail",
                 productCode = product.RetailCode ?? product.ProductCode,
                 wholesaleProductCode = product.ProductCode,
@@ -958,9 +955,30 @@ public sealed partial class AiAssistantMcpToolsService(
         QueueTextSearchSync(product.ProductId);
         QueueOwnerUpdatedNotification(product, beforePrice, beforeQty, price, quantity);
 
+        if (!isHybrid)
+        {
+            return Json(new
+            {
+                ok = true,
+                isHybrid = false,
+                productCode = product.ProductCode,
+                name = product.NameEn,
+                previousPrice = beforePrice,
+                previousQuantity = beforeQty,
+                price = product.USDPrice,
+                quantity = product.Quantity,
+                unitName,
+                message =
+                    "Ad updated successfully. This listing has a SINGLE price — not hybrid. " +
+                    "Tell the user the new price/quantity with unitName. " +
+                    "Do NOT mention هجين, جملة, تجزئة, wholesale, or retail."
+            });
+        }
+
         return Json(new
         {
             ok = true,
+            isHybrid = true,
             channel = "wholesale",
             productCode = product.ProductCode,
             retailCode = product.RetailCode,
@@ -971,9 +989,7 @@ public sealed partial class AiAssistantMcpToolsService(
             quantity = product.Quantity,
             unitName,
             message =
-                isHybrid
-                    ? "Wholesale/category channel updated only. Retail price/quantity were NOT changed. Always report quantity with unitName."
-                    : "Ad updated successfully. Price/quantity changes do not require admin re-approval. Always report quantity with unitName (do not convert units)."
+                "Wholesale/category channel updated only. Retail price/quantity were NOT changed. Always report quantity with unitName."
         });
     }
 
@@ -1026,7 +1042,7 @@ public sealed partial class AiAssistantMcpToolsService(
             });
         }
 
-        var ads = await LoadOwnerNameCandidatesAsync(userId.Value, cancellationToken)
+        var ads = await LoadOwnerHybridCatalogAsync(userId.Value, cancellationToken)
             .ConfigureAwait(false);
         return Json(new
         {
@@ -1034,11 +1050,24 @@ public sealed partial class AiAssistantMcpToolsService(
             count = ads.Count,
             ads = ads
                 .OrderBy(x => x.NameEn)
-                .Select(ToAdSuggestion)
+                .Select(a => new
+                {
+                    productCode = a.ProductCode,
+                    retailCode = a.HasRetail ? a.RetailCode : null,
+                    nameEn = a.NameEn,
+                    nameAr = a.NameAr,
+                    isHybrid = a.HasRetail,
+                    price = a.USDPrice,
+                    quantity = a.Quantity,
+                    unitName = a.UnitName,
+                    wholesalePrice = a.HasRetail ? a.USDPrice : (decimal?)null,
+                    retailPrice = a.HasRetail ? a.RetailPrice : null
+                })
                 .ToList(),
             instruction =
                 "Use these exact names when the seller wants to update an ad. " +
-                "For hybrid ads ask جملة ولا تجزئة before updating. " +
+                "Call update_ad_price_quantity immediately. Ask جملة ولا تجزئة ONLY if that tool returns needs_channel_clarification. " +
+                "Ads with isHybrid=false have one price — never mention hybrid/wholesale/retail to the user. " +
                 "If their wording is slightly wrong, ask: did you mean ad A or ad B?"
         });
     }
@@ -1075,7 +1104,8 @@ public sealed partial class AiAssistantMcpToolsService(
             $"SELLER ADS CATALOG ({Math.Min(ads.Count, 150)} of {ads.Count}):\n" +
             string.Join("\n", lines) +
             "\nUse this list when the seller asks to update an ad. " +
-            "Hybrid ads have separate wholesale and retail channels — ask which channel before updating. " +
+            "Ads without the word 'hybrid' have ONE price — update immediately and never mention جملة/تجزئة/هجين. " +
+            "Ask جملة ولا تجزئة ONLY after update_ad_price_quantity returns needs_channel_clarification. " +
             "If their name has a slight typo, ask which catalog ad they meant before calling update.";
     }
 
