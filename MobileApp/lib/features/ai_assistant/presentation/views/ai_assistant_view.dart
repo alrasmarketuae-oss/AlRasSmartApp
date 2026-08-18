@@ -287,8 +287,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   }
 
   void _flushVoiceTranscriptIfNeeded(AiVoiceAgentPhase phase) {
-    if (phase != AiVoiceAgentPhase.listening &&
-        phase != AiVoiceAgentPhase.processing) {
+    if (phase != AiVoiceAgentPhase.listening) {
       return;
     }
     final text = _voiceAssistantBuffer.trim();

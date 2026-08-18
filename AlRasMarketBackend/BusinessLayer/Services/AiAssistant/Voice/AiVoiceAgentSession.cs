@@ -75,41 +75,58 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        var apiKey = _configuration["OpenAI:ApiKey"];
-        if (string.IsNullOrWhiteSpace(apiKey))
+        try
         {
-            throw new InvalidOperationException("OpenAI ApiKey is not configured.");
-        }
+            var apiKey = _configuration["OpenAI:ApiKey"];
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                throw new InvalidOperationException("OpenAI ApiKey is not configured.");
+            }
 
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _lifetime.Token);
-        _socket.Options.SetRequestHeader("Authorization", "Bearer " + apiKey);
-        _socket.Options.KeepAliveInterval = TimeSpan.FromSeconds(15);
-        var model = ResolveRealtimeModel();
-        if (NeedsRealtimeBetaHeader(model))
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _lifetime.Token);
+            _socket.Options.SetRequestHeader("Authorization", "Bearer " + apiKey);
+            _socket.Options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+            var model = ResolveRealtimeModel();
+            if (NeedsRealtimeBetaHeader(model))
+            {
+                _socket.Options.SetRequestHeader("OpenAI-Beta", "realtime=v1");
+            }
+
+            var uri = new Uri($"wss://api.openai.com/v1/realtime?model={Uri.EscapeDataString(model)}");
+            await _socket.ConnectAsync(uri, linked.Token).ConfigureAwait(false);
+
+            _logger.LogInformation(
+                "Voice session started connectionId={ConnectionId} userId={UserId} model={Model} voice={Voice} vad={Vad}",
+                _connectionId,
+                _userId,
+                model,
+                _voice,
+                _options.TurnDetection);
+
+            _receiveLoop = Task.Run(() => ReceiveLoopAsync(_lifetime.Token), CancellationToken.None);
+            await WaitForSignalAsync(_sessionCreated, TimeSpan.FromSeconds(5), "session.created", linked.Token)
+                .ConfigureAwait(false);
+            await SendJsonAsync(await BuildSessionUpdateAsync(linked.Token).ConfigureAwait(false), linked.Token)
+                .ConfigureAwait(false);
+            await WaitForSignalAsync(_sessionUpdated, TimeSpan.FromSeconds(8), "session.updated", linked.Token)
+                .ConfigureAwait(false);
+            _sessionReady = true;
+            await NotifyStatusAsync("listening", CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
         {
-            _socket.Options.SetRequestHeader("OpenAI-Beta", "realtime=v1");
+            throw;
         }
-
-        var uri = new Uri($"wss://api.openai.com/v1/realtime?model={Uri.EscapeDataString(model)}");
-        await _socket.ConnectAsync(uri, linked.Token).ConfigureAwait(false);
-
-        _logger.LogInformation(
-            "Voice session started connectionId={ConnectionId} userId={UserId} model={Model} voice={Voice} vad={Vad}",
-            _connectionId,
-            _userId,
-            model,
-            _voice,
-            _options.TurnDetection);
-
-        _receiveLoop = Task.Run(() => ReceiveLoopAsync(_lifetime.Token), CancellationToken.None);
-        await WaitForSignalAsync(_sessionCreated, TimeSpan.FromSeconds(5), "session.created", linked.Token)
-            .ConfigureAwait(false);
-        await SendJsonAsync(await BuildSessionUpdateAsync(linked.Token).ConfigureAwait(false), linked.Token)
-            .ConfigureAwait(false);
-        await WaitForSignalAsync(_sessionUpdated, TimeSpan.FromSeconds(8), "session.updated", linked.Token)
-            .ConfigureAwait(false);
-        _sessionReady = true;
-        await NotifyStatusAsync("listening", CancellationToken.None).ConfigureAwait(false);
+        catch (Exception ex)
+        {
+            _sessionReady = false;
+            _logger.LogError(
+                ex,
+                "Voice session start failed connectionId={ConnectionId} userId={UserId}",
+                _connectionId,
+                _userId);
+            throw;
+        }
     }
 
     public async Task SendAudioBase64Async(string pcmBase64, CancellationToken cancellationToken)
@@ -136,11 +153,26 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
         }
 
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _lifetime.Token);
-        await SendJsonAsync(new JsonObject
+        try
         {
-            ["type"] = "input_audio_buffer.append",
-            ["audio"] = pcmBase64
-        }, linked.Token).ConfigureAwait(false);
+            await SendJsonAsync(new JsonObject
+            {
+                ["type"] = "input_audio_buffer.append",
+                ["audio"] = pcmBase64
+            }, linked.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Voice send audio failed connectionId={ConnectionId} approxBytes={Bytes}",
+                _connectionId,
+                byteCount);
+        }
     }
 
     public async Task InterruptAsync(CancellationToken cancellationToken)
@@ -166,7 +198,8 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
             _logger.LogDebug(ex, "Voice response.cancel failed (may already be idle)");
         }
 
-        await _sendToClient("voiceInterrupted", new { reason = "user" }, linked.Token).ConfigureAwait(false);
+        await SafeSendToClientAsync("voiceInterrupted", new { reason = "user" }, linked.Token)
+            .ConfigureAwait(false);
         await NotifyStatusAsync("listening", linked.Token).ConfigureAwait(false);
     }
 
@@ -255,7 +288,17 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
                 while (!result.EndOfMessage);
 
                 var json = Encoding.UTF8.GetString(message.GetBuffer(), 0, (int)message.Length);
-                await HandleOpenAiEventAsync(json, cancellationToken).ConfigureAwait(false);
+                try
+                {
+                    await HandleOpenAiEventAsync(json, cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "Voice OpenAI event handling failed connectionId={ConnectionId}",
+                        _connectionId);
+                }
             }
         }
         catch (OperationCanceledException)
@@ -352,33 +395,32 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
                 _turnSpeechStartedUtc = DateTime.UtcNow;
                 Interlocked.Exchange(ref _appendedBytesWithoutSpeech, 0);
                 _logger.LogInformation(
-                    "Voice user speech detected connectionId={ConnectionId} sessionMs={Ms}",
+                    "Voice user speech detected connectionId={ConnectionId} sessionMs={Ms} agentSpeaking={AgentSpeaking}",
                     _connectionId,
-                    _lastSpeechStartedMs);
+                    _lastSpeechStartedMs,
+                    _agentSpeaking);
                 if (_agentSpeaking)
                 {
-                    _logger.LogInformation(
-                        "Voice barge-in connectionId={ConnectionId}",
+                    // Do not barge-in on distant/quiet VAD hits — the mobile client
+                    // interrupts only when mic amplitude shows the user is close.
+                    _logger.LogDebug(
+                        "Voice ignoring distant speech while agent speaks connectionId={ConnectionId}",
                         _connectionId);
-                    _agentSpeaking = false;
-                    try
-                    {
-                        await SendJsonAsync(new JsonObject { ["type"] = "response.cancel" }, cancellationToken)
-                            .ConfigureAwait(false);
-                    }
-                    catch
-                    {
-                        // ignore
-                    }
-
-                    await _sendToClient("voiceInterrupted", new { reason = "speech_started" }, cancellationToken)
-                        .ConfigureAwait(false);
+                    break;
                 }
 
                 await NotifyStatusAsync("listening", cancellationToken).ConfigureAwait(false);
                 break;
 
             case "input_audio_buffer.speech_stopped":
+                if (_agentSpeaking)
+                {
+                    _logger.LogDebug(
+                        "Voice ignoring speech_stopped while agent speaks connectionId={ConnectionId}",
+                        _connectionId);
+                    break;
+                }
+
                 _turnCompletedUtc = DateTime.UtcNow;
                 var vadMs = (_turnCompletedUtc - _turnSpeechStartedUtc).TotalMilliseconds;
                 _logger.LogInformation(
@@ -411,7 +453,7 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
                             "Voice first audio connectionId={ConnectionId} timeToFirstAudioMs={Ttfa} responseStarted=true",
                             _connectionId,
                             Math.Round(Math.Max(0, ttfa)));
-                        await _sendToClient(
+                        await SafeSendToClientAsync(
                             "voiceMetrics",
                             new
                             {
@@ -431,7 +473,7 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
                         await NotifyStatusAsync("speaking", cancellationToken).ConfigureAwait(false);
                     }
 
-                    await _sendToClient(
+                    await SafeSendToClientAsync(
                         "voiceAudio",
                         new { pcmBase64 = audioDelta.GetString(), kind = "response" },
                         cancellationToken).ConfigureAwait(false);
@@ -441,7 +483,8 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
 
             case "response.audio.done":
             case "response.output_audio.done":
-                _agentSpeaking = false;
+                // Keep _agentSpeaking until response.done so stray VAD events
+                // do not flip the client to processing while PCM is still playing.
                 break;
 
             case "response.audio_transcript.delta":
@@ -449,7 +492,7 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
                 if (root.TryGetProperty("delta", out var textDelta)
                     && textDelta.ValueKind == JsonValueKind.String)
                 {
-                    await _sendToClient(
+                    await SafeSendToClientAsync(
                         "voiceTranscript",
                         new { role = "assistant", text = textDelta.GetString(), final = false },
                         cancellationToken).ConfigureAwait(false);
@@ -464,7 +507,7 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
                     var spoken = userText.GetString() ?? "";
                     if (spoken.Length > 0)
                     {
-                        await _sendToClient(
+                        await SafeSendToClientAsync(
                             "voiceTranscript",
                             new { role = "user", text = spoken, final = true },
                             cancellationToken).ConfigureAwait(false);
@@ -497,7 +540,8 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
                     _connectionId,
                     Math.Round(totalMs));
                 _agentSpeaking = false;
-                await NotifyStatusAsync("listening", cancellationToken).ConfigureAwait(false);
+                // Let the client finish playing buffered PCM before switching to listening.
+                await NotifyStatusAsync("response_complete", cancellationToken).ConfigureAwait(false);
                 break;
         }
     }
@@ -583,18 +627,33 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
             name,
             toolWatch.ElapsedMilliseconds);
 
-        await SendJsonAsync(new JsonObject
+        try
         {
-            ["type"] = "conversation.item.create",
-            ["item"] = new JsonObject
+            await SendJsonAsync(new JsonObject
             {
-                ["type"] = "function_call_output",
-                ["call_id"] = callId,
-                ["output"] = output
-            }
-        }, cancellationToken).ConfigureAwait(false);
-        await SendJsonAsync(new JsonObject { ["type"] = "response.create" }, cancellationToken)
-            .ConfigureAwait(false);
+                ["type"] = "conversation.item.create",
+                ["item"] = new JsonObject
+                {
+                    ["type"] = "function_call_output",
+                    ["call_id"] = callId,
+                    ["output"] = output
+                }
+            }, cancellationToken).ConfigureAwait(false);
+            await SendJsonAsync(new JsonObject { ["type"] = "response.create" }, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogError(
+                ex,
+                "Voice tool response send failed connectionId={ConnectionId} tool={Tool}",
+                _connectionId,
+                name);
+            await NotifyErrorAsync(
+                "حصلت مشكلة وأنا بحاول أجيب البيانات، ممكن نجرب تاني؟",
+                cancellationToken,
+                recoverable: true).ConfigureAwait(false);
+        }
     }
 
     private async Task RunProgressSpeechAsync(string toolName, CancellationToken cancellationToken)
@@ -644,7 +703,7 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
             "Voice progress speech connectionId={ConnectionId} chars={Chars}",
             _connectionId,
             phrase.Length);
-        await _sendToClient(
+        await SafeSendToClientAsync(
             "voiceAudio",
             new { pcmBase64 = Convert.ToBase64String(pcm), kind = "progress" },
             cancellationToken).ConfigureAwait(false);
@@ -827,7 +886,7 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
                 ? "medium"
                 : _options.SemanticEagerness,
             ["create_response"] = true,
-            ["interrupt_response"] = true
+            ["interrupt_response"] = _options.InterruptResponse
         };
     }
 
@@ -839,34 +898,74 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
             ["prefix_padding_ms"] = _options.PrefixPaddingMs,
             ["silence_duration_ms"] = _options.SilenceDurationMs,
             ["create_response"] = true,
-            ["interrupt_response"] = true
+            ["interrupt_response"] = _options.InterruptResponse
         };
 
     private async Task SendJsonAsync(JsonNode payload, CancellationToken cancellationToken)
     {
-        var bytes = Encoding.UTF8.GetBytes(payload.ToJsonString());
-        await _sendLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        var payloadType = payload["type"]?.ToString() ?? "unknown";
         try
         {
-            if (_socket.State != WebSocketState.Open)
+            var bytes = Encoding.UTF8.GetBytes(payload.ToJsonString());
+            await _sendLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
             {
-                return;
-            }
+                if (_socket.State != WebSocketState.Open)
+                {
+                    return;
+                }
 
-            await _socket.SendAsync(bytes, WebSocketMessageType.Text, true, cancellationToken)
-                .ConfigureAwait(false);
+                await _socket.SendAsync(bytes, WebSocketMessageType.Text, true, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            finally
+            {
+                _sendLock.Release();
+            }
         }
-        finally
+        catch (OperationCanceledException)
         {
-            _sendLock.Release();
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Voice OpenAI send failed connectionId={ConnectionId} payloadType={PayloadType}",
+                _connectionId,
+                payloadType);
+            throw;
         }
     }
 
     private Task NotifyStatusAsync(string phase, CancellationToken cancellationToken) =>
-        _sendToClient("voiceStatus", new { phase }, cancellationToken);
+        SafeSendToClientAsync("voiceStatus", new { phase }, cancellationToken);
 
     private Task NotifyErrorAsync(string message, CancellationToken cancellationToken, bool recoverable = false) =>
-        _sendToClient("voiceError", new { message, recoverable }, cancellationToken);
+        SafeSendToClientAsync("voiceError", new { message, recoverable }, cancellationToken);
+
+    private async Task SafeSendToClientAsync(
+        string eventName,
+        object payload,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _sendToClient(eventName, payload, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // client disconnected
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Voice client notify failed connectionId={ConnectionId} event={Event}",
+                _connectionId,
+                eventName);
+        }
+    }
 
     private async Task WaitForSignalAsync(
         TaskCompletionSource source,
@@ -998,8 +1097,10 @@ public sealed class AiVoiceAgentSessionManager(IServiceProvider services) : IAsy
             await session.StartAsync(cancellationToken).ConfigureAwait(false);
             return session;
         }
-        catch
+        catch (Exception ex)
         {
+            services.GetRequiredService<ILogger<AiVoiceAgentSessionManager>>()
+                .LogError(ex, "Voice session manager start failed connectionId={ConnectionId}", connectionId);
             _sessions.TryRemove(connectionId, out _);
             await session.DisposeAsync().ConfigureAwait(false);
             throw;

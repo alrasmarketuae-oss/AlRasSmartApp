@@ -19,11 +19,29 @@ public sealed class AiVoiceAgentHub(
 {
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        logger.LogInformation(
-            "Voice hub disconnected connectionId={ConnectionId} error={Error}",
-            Context.ConnectionId,
-            exception?.GetType().Name);
-        await sessions.StopAsync(Context.ConnectionId).ConfigureAwait(false);
+        if (exception is not null)
+        {
+            logger.LogWarning(
+                exception,
+                "Voice hub disconnected connectionId={ConnectionId}",
+                Context.ConnectionId);
+        }
+        else
+        {
+            logger.LogInformation(
+                "Voice hub disconnected connectionId={ConnectionId}",
+                Context.ConnectionId);
+        }
+
+        try
+        {
+            await sessions.StopAsync(Context.ConnectionId).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Voice hub stop session failed connectionId={ConnectionId}", Context.ConnectionId);
+        }
+
         await base.OnDisconnectedAsync(exception).ConfigureAwait(false);
     }
 
@@ -49,7 +67,22 @@ public sealed class AiVoiceAgentHub(
                 voiceGender,
                 async (eventName, payload, ct) =>
                 {
-                    await caller.SendAsync(eventName, payload, ct).ConfigureAwait(false);
+                    try
+                    {
+                        await caller.SendAsync(eventName, payload, ct).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // client left
+                    }
+                    catch (Exception sendEx)
+                    {
+                        logger.LogWarning(
+                            sendEx,
+                            "Voice hub client send failed connectionId={ConnectionId} event={Event}",
+                            connectionId,
+                            eventName);
+                    }
                 },
                 Context.ConnectionAborted).ConfigureAwait(false);
         }
@@ -89,7 +122,7 @@ public sealed class AiVoiceAgentHub(
         }
         catch (Exception ex)
         {
-            logger.LogDebug(ex, "Voice SendAudioChunk failed connectionId={ConnectionId}", Context.ConnectionId);
+            logger.LogWarning(ex, "Voice SendAudioChunk failed connectionId={ConnectionId}", Context.ConnectionId);
         }
     }
 
@@ -110,11 +143,21 @@ public sealed class AiVoiceAgentHub(
         }
         catch (Exception ex)
         {
-            logger.LogDebug(ex, "Voice InterruptAgent failed connectionId={ConnectionId}", Context.ConnectionId);
+            logger.LogWarning(ex, "Voice InterruptAgent failed connectionId={ConnectionId}", Context.ConnectionId);
         }
     }
 
-    public Task StopSession() => sessions.StopAsync(Context.ConnectionId);
+    public async Task StopSession()
+    {
+        try
+        {
+            await sessions.StopAsync(Context.ConnectionId).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Voice StopSession failed connectionId={ConnectionId}", Context.ConnectionId);
+        }
+    }
 
     private Guid? GetCurrentUserId()
     {

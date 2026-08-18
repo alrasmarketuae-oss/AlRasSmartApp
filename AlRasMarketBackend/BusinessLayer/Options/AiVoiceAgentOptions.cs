@@ -24,8 +24,14 @@ public sealed class AiVoiceAgentOptions
     /// <summary>semantic_vad eagerness: low | medium | high | auto.</summary>
     public string SemanticEagerness { get; set; } = "medium";
 
-    /// <summary>server_vad energy threshold (0–1). Lower = more sensitive to quiet speech.</summary>
-    public double VadThreshold { get; set; } = 0.35;
+    /// <summary>
+    /// When false, distant/quiet speech will not cancel the assistant mid-response.
+    /// Barge-in is handled on the client when mic level is clearly close.
+    /// </summary>
+    public bool InterruptResponse { get; set; } = false;
+
+    /// <summary>server_vad energy threshold (0–1). Higher = ignore quieter/farther speech.</summary>
+    public double VadThreshold { get; set; } = 0.48;
 
     public int PrefixPaddingMs { get; set; } = 300;
 

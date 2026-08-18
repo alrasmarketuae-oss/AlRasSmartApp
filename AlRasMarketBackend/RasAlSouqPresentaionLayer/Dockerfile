@@ -27,9 +27,9 @@ RUN dotnet publish -c Release -o /app/publish --no-restore
 # ===========================
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 
-# ffmpeg/ffprobe: keyframe-aware video trim and optional WebM→MP4 for uploads
+# ffmpeg: video trim; OpenAI Realtime voice uses outbound WSS (no extra packages).
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ffmpeg \
+    && apt-get install -y --no-install-recommends ffmpeg ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

@@ -49,7 +49,15 @@ class AiVoiceAgentController with WidgetsBindingObserver {
   int _recoveries = 0;
   DateTime _lastRecoveryAt = DateTime.fromMillisecondsSinceEpoch(0);
   DateTime? _playbackStartedAt;
+  DateTime? _lastResponseAudioAt;
+  Timer? _playbackDrainTimer;
   int _loudFramesWhileSpeaking = 0;
+
+  /// Close-range speech only (~-26 dBFS). Far/quiet sounds should not barge-in.
+  static const _bargeInThresholdDb = -26.0;
+  static const _bargeInPeakThresholdDb = -22.0;
+  static const _bargeInGraceMs = 900;
+  static const _bargeInRequiredFrames = 7;
   final BytesBuilder _sendBuffer = BytesBuilder(copy: false);
   AiVoiceAgentPhase _phase = AiVoiceAgentPhase.connecting;
 
@@ -80,6 +88,8 @@ class AiVoiceAgentController with WidgetsBindingObserver {
           if (kind == 'response') {
             _agentSpeaking = true;
             _playbackStartedAt ??= DateTime.now();
+            _lastResponseAudioAt = DateTime.now();
+            _playbackDrainTimer?.cancel();
             _setPhase(AiVoiceAgentPhase.speaking);
           }
           unawaited(_player.feed(pcmBytes, kind: kind));
@@ -119,8 +129,8 @@ class AiVoiceAgentController with WidgetsBindingObserver {
 
       await _startMic();
       _setPhase(_muted ? AiVoiceAgentPhase.muted : AiVoiceAgentPhase.listening);
-    } catch (e) {
-      debugPrint('Voice agent start failed: $e');
+    } catch (e, st) {
+      debugPrint('Voice agent start failed: $e\n$st');
       _setPhase(AiVoiceAgentPhase.error);
       onError('مقدرناش نفتح المحادثة الصوتية. حاول تاني.');
     }
@@ -163,6 +173,7 @@ class AiVoiceAgentController with WidgetsBindingObserver {
 
   Future<void> dispose() async {
     _closed = true;
+    _playbackDrainTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     await _stopMic();
     await _hub.close();
@@ -172,14 +183,20 @@ class AiVoiceAgentController with WidgetsBindingObserver {
 
   void _onStatus(String phase) {
     switch (phase) {
+      case 'response_complete':
+        _scheduleListeningAfterPlaybackDrain();
+        return;
       case 'listening':
-        _agentSpeaking = false;
-        _playbackStartedAt = null;
-        _setPhase(
-          _muted ? AiVoiceAgentPhase.muted : AiVoiceAgentPhase.listening,
-        );
+        if (_shouldDelayListeningForPlayback()) {
+          _scheduleListeningAfterPlaybackDrain();
+          return;
+        }
+        _finishSpeakingPhase();
         break;
       case 'processing':
+        if (_agentSpeaking || _shouldDelayListeningForPlayback()) {
+          return;
+        }
         _setPhase(AiVoiceAgentPhase.processing);
         break;
       case 'speaking':
@@ -188,6 +205,31 @@ class AiVoiceAgentController with WidgetsBindingObserver {
         _setPhase(AiVoiceAgentPhase.speaking);
         break;
     }
+  }
+
+  bool _shouldDelayListeningForPlayback() =>
+      _player.queuedResponseBytes > 0 ||
+      _lastResponseAudioAt != null &&
+          DateTime.now().difference(_lastResponseAudioAt!).inMilliseconds < 1200;
+
+  void _scheduleListeningAfterPlaybackDrain() {
+    _playbackDrainTimer?.cancel();
+    final delayMs = _player.estimateRemainingPlaybackMs();
+    _playbackDrainTimer = Timer(Duration(milliseconds: delayMs), () {
+      if (_closed) return;
+      _finishSpeakingPhase();
+    });
+  }
+
+  void _finishSpeakingPhase() {
+    _playbackDrainTimer?.cancel();
+    _agentSpeaking = false;
+    _playbackStartedAt = null;
+    _lastResponseAudioAt = null;
+    _player.markResponsePlaybackComplete();
+    _setPhase(
+      _muted ? AiVoiceAgentPhase.muted : AiVoiceAgentPhase.listening,
+    );
   }
 
   Future<void> _startMic() async {
@@ -222,9 +264,12 @@ class AiVoiceAgentController with WidgetsBindingObserver {
     );
 
     final stream = await _recorder.startStream(config);
-    _micSub = stream.listen(_onMicBytes, onError: (Object e) {
-      debugPrint('Mic stream error: $e');
-    });
+    _micSub = stream.listen(
+      _onMicBytes,
+      onError: (Object e, StackTrace st) {
+        debugPrint('Mic stream error: $e\n$st');
+      },
+    );
     _ampSub = _recorder.onAmplitudeChanged(const Duration(milliseconds: 90)).listen(
       _onAmplitude,
       onError: (_) {},
@@ -266,6 +311,8 @@ class AiVoiceAgentController with WidgetsBindingObserver {
         final next = Uint8List.fromList(_sendBuffer.takeBytes());
         await _hub.sendAudioChunk(next);
       }
+    } catch (e, st) {
+      debugPrint('Voice send audio failed: $e\n$st');
     } finally {
       _sendingAudio = false;
     }
@@ -292,8 +339,8 @@ class AiVoiceAgentController with WidgetsBindingObserver {
         await _startMic();
       }
       _setPhase(_muted ? AiVoiceAgentPhase.muted : AiVoiceAgentPhase.listening);
-    } catch (e) {
-      debugPrint('Voice recover failed: $e');
+    } catch (e, st) {
+      debugPrint('Voice recover failed: $e\n$st');
       _setPhase(AiVoiceAgentPhase.error);
       onError('مقدرناش نفتح المحادثة الصوتية. حاول تاني.');
     } finally {
@@ -308,30 +355,41 @@ class AiVoiceAgentController with WidgetsBindingObserver {
     }
     final started = _playbackStartedAt;
     if (started == null ||
-        DateTime.now().difference(started).inMilliseconds < 450) {
+        DateTime.now().difference(started).inMilliseconds < _bargeInGraceMs) {
       return;
     }
-    if (amp.current > -36) {
+
+    final closeEnough = amp.current >= _bargeInThresholdDb &&
+        amp.max >= _bargeInPeakThresholdDb;
+    if (closeEnough) {
       _loudFramesWhileSpeaking++;
     } else {
       _loudFramesWhileSpeaking = 0;
     }
-    if (_loudFramesWhileSpeaking >= 3) {
-      debugPrint('Voice local barge-in amplitude=${amp.current}');
+
+    if (_loudFramesWhileSpeaking >= _bargeInRequiredFrames) {
+      debugPrint(
+        'Voice close-range barge-in current=${amp.current} max=${amp.max}',
+      );
+      _loudFramesWhileSpeaking = 0;
       unawaited(_handleInterrupt(fromServer: false));
     }
   }
 
   Future<void> _handleInterrupt({required bool fromServer}) async {
-    _agentSpeaking = false;
-    _playbackStartedAt = null;
-    _loudFramesWhileSpeaking = 0;
-    await _player.stopPlayback();
-    if (!fromServer) {
-      await _hub.interruptAgent();
-    }
-    if (!_muted) {
-      _setPhase(AiVoiceAgentPhase.listening);
+    try {
+      _agentSpeaking = false;
+      _playbackStartedAt = null;
+      _loudFramesWhileSpeaking = 0;
+      await _player.stopPlayback();
+      if (!fromServer) {
+        await _hub.interruptAgent();
+      }
+      if (!_muted) {
+        _setPhase(AiVoiceAgentPhase.listening);
+      }
+    } catch (e, st) {
+      debugPrint('Voice interrupt failed: $e\n$st');
     }
   }
 

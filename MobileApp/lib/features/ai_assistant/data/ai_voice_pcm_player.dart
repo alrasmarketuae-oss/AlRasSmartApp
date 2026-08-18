@@ -7,11 +7,15 @@ import 'package:flutter_pcm_sound/flutter_pcm_sound.dart' as pcm;
 /// Streams PCM16 24 kHz mono as soon as the first playable chunk arrives.
 class AiVoicePcmPlayer {
   static const sampleRate = 24000;
+  static const bytesPerSecond = sampleRate * 2;
 
   final AudioPlayer _fallback = AudioPlayer();
   bool _pcmReady = false;
   bool _playingProgress = false;
   final BytesBuilder _fallbackBuffer = BytesBuilder(copy: false);
+  int _queuedResponseBytes = 0;
+
+  int get queuedResponseBytes => _queuedResponseBytes;
 
   Future<void> start() async {
     try {
@@ -33,10 +37,15 @@ class AiVoicePcmPlayer {
 
   Future<void> feed(Uint8List pcm16, {required String kind}) async {
     if (pcm16.isEmpty) return;
-    if (kind == 'response' && _playingProgress) {
-      await stopPlayback();
+    if (kind == 'response') {
+      _queuedResponseBytes += pcm16.length;
+      if (_playingProgress) {
+        // Do not release the PCM pipeline — that drops buffered response audio.
+        _playingProgress = false;
+      }
+    } else {
+      _playingProgress = kind == 'progress';
     }
-    _playingProgress = kind == 'progress';
 
     if (_pcmReady) {
       try {
@@ -57,8 +66,18 @@ class AiVoicePcmPlayer {
     }
   }
 
+  void markResponsePlaybackComplete() {
+    _queuedResponseBytes = 0;
+  }
+
+  int estimateRemainingPlaybackMs() {
+    if (_queuedResponseBytes <= 0) return 0;
+    return ((_queuedResponseBytes / bytesPerSecond) * 1000).ceil() + 250;
+  }
+
   Future<void> stopPlayback() async {
     _playingProgress = false;
+    _queuedResponseBytes = 0;
     _fallbackBuffer.clear();
     if (_pcmReady) {
       try {

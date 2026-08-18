@@ -119,19 +119,26 @@ class AiVoiceAgentService {
     });
     hub.onreconnected(({connectionId}) {
       debugPrint('Voice hub reconnected: $connectionId');
-      unawaited(_restartSession());
+      unawaited(_restartSession(onError: onError));
       _onReconnected?.call();
       onReconnected();
     });
 
-    await hub.start();
-    if (_closed || generation != _connectGeneration || !identical(_hub, hub)) {
-      try {
-        await hub.stop();
-      } catch (_) {}
-      return;
+    try {
+      await hub.start();
+      if (_closed || generation != _connectGeneration || !identical(_hub, hub)) {
+        try {
+          await hub.stop();
+        } catch (e, st) {
+          debugPrint('Voice hub stop after aborted connect failed: $e\n$st');
+        }
+        return;
+      }
+      await hub.invoke('StartSession', args: [_language, _voiceGender]);
+    } catch (e, st) {
+      debugPrint('Voice connect failed: $e\n$st');
+      rethrow;
     }
-    await hub.invoke('StartSession', args: [_language, _voiceGender]);
   }
 
   Future<void> sendAudioChunk(Uint8List pcm) async {
@@ -142,8 +149,8 @@ class AiVoiceAgentService {
     if (pcm.isEmpty) return;
     try {
       await hub.invoke('SendAudioChunk', args: [base64Encode(pcm)]);
-    } catch (e) {
-      debugPrint('Voice SendAudioChunk failed: $e');
+    } catch (e, st) {
+      debugPrint('Voice SendAudioChunk failed: $e\n$st');
     }
   }
 
@@ -156,7 +163,9 @@ class AiVoiceAgentService {
     }
     try {
       await hub.invoke('InterruptAgent');
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('Voice InterruptAgent failed: $e\n$st');
+    }
   }
 
   Future<void> stopSession() async {
@@ -166,7 +175,9 @@ class AiVoiceAgentService {
       if (hub.state == HubConnectionState.Connected) {
         await hub.invoke('StopSession');
       }
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('Voice StopSession failed: $e\n$st');
+    }
   }
 
   Future<void> close() async {
@@ -176,15 +187,21 @@ class AiVoiceAgentService {
     await _stopHubOnly();
   }
 
-  Future<void> _restartSession() async {
+  Future<void> _restartSession({
+    void Function(String message, {required bool recoverable})? onError,
+  }) async {
     final hub = _hub;
     if (_closed || hub == null || hub.state != HubConnectionState.Connected) {
       return;
     }
     try {
       await hub.invoke('StartSession', args: [_language, _voiceGender]);
-    } catch (e) {
-      debugPrint('Voice StartSession after reconnect failed: $e');
+    } catch (e, st) {
+      debugPrint('Voice StartSession after reconnect failed: $e\n$st');
+      onError?.call(
+        'مقدرناش نعيد فتح الجلسة الصوتية.',
+        recoverable: true,
+      );
     }
   }
 
@@ -194,7 +211,9 @@ class AiVoiceAgentService {
     if (hub == null) return;
     try {
       await hub.stop();
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('Voice hub stop failed: $e\n$st');
+    }
   }
 
   Map<String, dynamic>? _map(List<Object?>? args) {

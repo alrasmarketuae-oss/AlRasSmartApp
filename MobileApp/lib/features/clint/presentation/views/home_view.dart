@@ -212,6 +212,8 @@ class _HomeViewState extends State<HomeView> {
                               if (!isPersonalCustomer) ...[
                                 _HomeSectionHeader(
                                   title: S.of(context).categories,
+                                  onViewAll: () =>
+                                      context.push(AppRoutes.kCategoriesView),
                                 ),
                                 SizedBox(height: 12.h),
                                 const _CategoriesStrip(),
@@ -535,19 +537,55 @@ class _CategoriesStripError extends StatelessWidget {
 }
 
 class _HomeSectionHeader extends StatelessWidget {
-  const _HomeSectionHeader({required this.title});
+  const _HomeSectionHeader({required this.title, this.onViewAll});
 
   final String title;
+  final VoidCallback? onViewAll;
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: TextStyle(
-        fontSize: 16.sp,
-        fontWeight: FontWeight.w700,
-        color: AppColors.title(context),
-      ),
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w700,
+              color: AppColors.title(context),
+            ),
+          ),
+        ),
+        if (onViewAll != null)
+          InkWell(
+            onTap: onViewAll,
+            borderRadius: BorderRadius.circular(8.r),
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 2.w),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    S.of(context).viewAll,
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w500,
+                      color: LightColor.defaultColor,
+                    ),
+                  ),
+                  SizedBox(width: 2.w),
+                  Icon(
+                    Directionality.of(context) == TextDirection.rtl
+                        ? Icons.chevron_left
+                        : Icons.chevron_right,
+                    size: 18.sp,
+                    color: LightColor.defaultColor,
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
