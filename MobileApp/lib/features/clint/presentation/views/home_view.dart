@@ -219,99 +219,101 @@ class _HomeViewState extends State<HomeView> {
                             ],
                           ),
                         ),
-                        if (isPersonalCustomer)
-                          BlocBuilder<ClintCubit, ClintStates>(
-                            buildWhen: (previous, current) =>
-                                current is FetchHomeProductsLoadingState ||
-                                current is FetchHomeProductsLoadingMoreState ||
-                                current is FetchHomeProductsSuccessState ||
-                                current is FetchHomeProductsErrorState,
-                            builder: (context, state) {
-                              final homeCubit = context.read<ClintCubit>();
-                              final products = displayProducts;
-                              final isLoading = homeCubit.isLoadingHomeProducts;
-                              final isLoadingMore =
-                                  homeCubit.isLoadingMoreHomeProducts;
-                              final error = homeCubit.homeProductsError;
+                        BlocBuilder<ClintCubit, ClintStates>(
+                          buildWhen: (previous, current) =>
+                              current is FetchHomeProductsLoadingState ||
+                              current is FetchHomeProductsLoadingMoreState ||
+                              current is FetchHomeProductsSuccessState ||
+                              current is FetchHomeProductsErrorState,
+                          builder: (context, state) {
+                            final homeCubit = context.read<ClintCubit>();
+                            final products = displayProducts;
+                            final isLoading = homeCubit.isLoadingHomeProducts;
+                            final isLoadingMore =
+                                homeCubit.isLoadingMoreHomeProducts;
+                            final error = homeCubit.homeProductsError;
 
-                              return Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 16.w),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
+                            return Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16.w),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (isPersonalCustomer) ...[
                                     _HomeSectionHeader(
                                       title: S.of(context).retail,
                                     ),
                                     SizedBox(height: 12.h),
-                                    if (isLoading && products.isEmpty)
-                                      const _HomeProductsGridShimmer()
-                                    else if (error != null && products.isEmpty)
-                                      _HomeProductsSectionError(
-                                        message: error,
-                                        onRetry: () => homeCubit.refreshHomeFeed(
-                                          isPerson: isPersonalCustomer,
-                                          resetCached: true,
+                                  ],
+                                  if (isLoading && products.isEmpty)
+                                    const _HomeProductsGridShimmer()
+                                  else if (error != null && products.isEmpty)
+                                    _HomeProductsSectionError(
+                                      message: error,
+                                      onRetry: () => homeCubit.refreshHomeFeed(
+                                        isPerson: isPersonalCustomer,
+                                        resetCached: true,
+                                      ),
+                                    )
+                                  else if (products.isEmpty)
+                                    Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: 8.h,
+                                      ),
+                                      child: Text(
+                                        S.of(context).noSearchResults,
+                                        style: TextStyle(
+                                          fontSize: 13.sp,
+                                          color: const Color(0xFF6B7280),
                                         ),
-                                      )
-                                    else if (products.isEmpty)
+                                      ),
+                                    )
+                                  else ...[
+                                    GridView.builder(
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      gridDelegate:
+                                          ProductGridLayout.delegate(
+                                        context,
+                                        horizontalPadding:
+                                            ProductGridLayout
+                                                .homeHorizontalPadding(
+                                          context,
+                                        ),
+                                        crossAxisSpacing: 12.w,
+                                        mainAxisSpacing: 12.h,
+                                      ),
+                                      itemCount: products.length,
+                                      itemBuilder: (context, index) {
+                                        final product = products[index];
+                                        return ProductCard(
+                                          title: product.productName.isEmpty
+                                              ? S.of(context).premiumSaffron
+                                              : product.productName,
+                                          product: product,
+                                          preferRetailChannel:
+                                              isPersonalCustomer,
+                                        );
+                                      },
+                                    ),
+                                    if (isLoadingMore)
                                       Padding(
                                         padding: EdgeInsets.symmetric(
-                                          vertical: 8.h,
+                                          vertical: 16.h,
                                         ),
-                                        child: Text(
-                                          S.of(context).noSearchResults,
-                                          style: TextStyle(
-                                            fontSize: 13.sp,
-                                            color: const Color(0xFF6B7280),
+                                        child: const Center(
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.5,
+                                            color: Color(0xFF3A7DC5),
                                           ),
                                         ),
-                                      )
-                                    else ...[
-                                      GridView.builder(
-                                        shrinkWrap: true,
-                                        physics:
-                                            const NeverScrollableScrollPhysics(),
-                                        gridDelegate:
-                                            ProductGridLayout.delegate(
-                                          context,
-                                          horizontalPadding:
-                                              ProductGridLayout
-                                                  .homeHorizontalPadding(
-                                            context,
-                                          ),
-                                          crossAxisSpacing: 12.w,
-                                          mainAxisSpacing: 12.h,
-                                        ),
-                                        itemCount: products.length,
-                                        itemBuilder: (context, index) {
-                                          final product = products[index];
-                                          return ProductCard(
-                                            title: product.productName.isEmpty
-                                                ? S.of(context).premiumSaffron
-                                                : product.productName,
-                                            product: product,
-                                            preferRetailChannel: true,
-                                          );
-                                        },
                                       ),
-                                      if (isLoadingMore)
-                                        Padding(
-                                          padding: EdgeInsets.symmetric(
-                                            vertical: 16.h,
-                                          ),
-                                          child: const Center(
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2.5,
-                                              color: Color(0xFF3A7DC5),
-                                            ),
-                                          ),
-                                        ),
-                                    ],
                                   ],
-                                ),
-                              );
-                            },
-                          ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
                         SizedBox(height: 50.h),
                       ],
                     ),
