@@ -1,3 +1,5 @@
+import 'package:alrasmarket/core/router/app_router.dart';
+import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/widgets/app_header.dart';
 import 'package:alrasmarket/core/widgets/app_search_field.dart';
@@ -59,7 +61,6 @@ class SearchHeader extends StatelessWidget {
                     Icons.arrow_back_ios_new_rounded,
                     size: 18.sp,
                     color: LightColor.defaultColor,
-                    matchTextDirection: true,
                   ),
                 ),
                 SizedBox(width: 4.w),
@@ -100,9 +101,13 @@ class SearchHeader extends StatelessWidget {
     );
   }
 
-  static void _goBack(BuildContext context) {
+  static void goBack(BuildContext context) {
     if (context.canPop()) {
       context.pop();
+      return;
+    }
+    if (AuthService.instance.isAdminAccount) {
+      context.go('${AppRoutes.kAdminHomeView}?tab=1');
       return;
     }
     try {
@@ -112,4 +117,6 @@ class SearchHeader extends StatelessWidget {
       context.read<CompanyCubit>().setTab(0);
     } catch (_) {}
   }
+
+  static void _goBack(BuildContext context) => goBack(context);
 }

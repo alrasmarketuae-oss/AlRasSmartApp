@@ -54,7 +54,7 @@ class _HomeLayoutState extends State<HomeLayout> {
           AddOrderView(),
           MyOrdersView(),
           const MyAdsView(isTabView: true),
-          ProfileView(),
+          const ProfileView(isTabView: true),
         ];
         // Keeps the status bar the same colour as the tab shown behind it.
         final tabBackgrounds = [

@@ -30,7 +30,10 @@ const Color _kRed = Color(0xFFF05B54);
 const Color _kRedDark = Color(0xFFDE3F38);
 
 class ProfileView extends StatefulWidget {
-  const ProfileView({super.key});
+  const ProfileView({super.key, this.isTabView = false});
+
+  /// When true, hides back/search (embedded in bottom navigation).
+  final bool isTabView;
 
   @override
   State<ProfileView> createState() => _ProfileViewState();
@@ -220,7 +223,10 @@ class _ProfileViewState extends State<ProfileView> {
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    SearchHeader(),
+                    SearchHeader(
+                      isBackButton: !widget.isTabView,
+                      isSearch: !widget.isTabView,
+                    ),
                     Expanded(
                       child: SingleChildScrollView(
                         padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 100.h),

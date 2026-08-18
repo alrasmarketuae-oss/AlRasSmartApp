@@ -53,7 +53,7 @@ class _PersonHomeLayoutState extends State<PersonHomeLayout> {
         final screens = [
           HomeView(key: ValueKey('person_home'), isPerson: true),
           MyOrdersView(),
-          ProfileView(),
+          const ProfileView(isTabView: true),
         ];
         return ScrollAwareBottomNavScaffold(
           tabIndex: cubit.currentIndex,

@@ -58,6 +58,7 @@ import '../../features/clint/presentation/views/services_views/shipping_post_det
 import 'package:alrasmarket/features/clint/data/models/international_shipping_post_model.dart';
 import '../../features/person/presentation/views/person_home_layout.dart';
 import '../../features/admin/presentation/views/admin_home_layout.dart';
+import '../../features/admin/presentation/widgets/admin_account_page.dart';
 
 abstract class AppRoutes {
   static final GlobalKey<NavigatorState> navigatorKey =
@@ -283,7 +284,10 @@ abstract class AppRoutes {
       ),
       GoRoute(
         path: kAdminHomeView,
-        builder: (context, state) => const AdminHomeLayout(),
+        builder: (context, state) {
+          final tab = int.tryParse(state.uri.queryParameters['tab'] ?? '') ?? 0;
+          return AdminHomeLayout(initialTab: tab.clamp(0, 1));
+        },
       ),
       GoRoute(
         path: kBookingServiceView,
@@ -344,35 +348,43 @@ abstract class AppRoutes {
       ),
       GoRoute(
         path: kEditProfileView,
-        builder: (context, state) => const EditProfileView(),
+        builder: (context, state) =>
+            AdminAccountPage.wrap(const EditProfileView()),
       ),
       GoRoute(
         path: kChangePasswordView,
-        builder: (context, state) => const ChangePasswordView(),
+        builder: (context, state) =>
+            AdminAccountPage.wrap(const ChangePasswordView()),
       ),
       GoRoute(
         path: kSavedAddressesView,
-        builder: (context, state) => const SavedAddressesView(),
+        builder: (context, state) =>
+            AdminAccountPage.wrap(const SavedAddressesView()),
       ),
       GoRoute(
         path: kSavedAdsView,
-        builder: (context, state) => const SavedAdsView(),
+        builder: (context, state) =>
+            AdminAccountPage.wrap(const SavedAdsView()),
       ),
       GoRoute(
         path: kNotificationsView,
-        builder: (context, state) => const NotificationsView(),
+        builder: (context, state) =>
+            AdminAccountPage.wrap(const NotificationsView()),
       ),
       GoRoute(
         path: kLanguageView,
-        builder: (context, state) => const LanguageScreen(),
+        builder: (context, state) =>
+            AdminAccountPage.wrap(const LanguageScreen()),
       ),
       GoRoute(
         path: kTermsAndConditions,
-        builder: (context, state) => const PrivacyPolicy(),
+        builder: (context, state) =>
+            AdminAccountPage.wrap(const PrivacyPolicy()),
       ),
       GoRoute(
         path: kTechnicalSupportView,
-        builder: (context, state) => const TechnicalSupportView(),
+        builder: (context, state) =>
+            AdminAccountPage.wrap(const TechnicalSupportView()),
       ),
       GoRoute(
         path: kComplaintsSuggestionsView,
@@ -389,25 +401,30 @@ abstract class AppRoutes {
             initialMessage = extra['message']?.toString();
             initialOrderReference = extra['orderReference']?.toString();
           }
-          return ComplaintsSuggestionsView(
-            initialType: initialType,
-            initialSubject: initialSubject,
-            initialMessage: initialMessage,
-            initialOrderReference: initialOrderReference,
+          return AdminAccountPage.wrap(
+            ComplaintsSuggestionsView(
+              initialType: initialType,
+              initialSubject: initialSubject,
+              initialMessage: initialMessage,
+              initialOrderReference: initialOrderReference,
+            ),
           );
         },
       ),
       GoRoute(
         path: kSupportChatView,
-        builder: (context, state) => const SupportChatView(),
+        builder: (context, state) =>
+            AdminAccountPage.wrap(const SupportChatView()),
       ),
       GoRoute(
         path: kAiAssistantView,
-        builder: (context, state) => const AiAssistantView(),
+        builder: (context, state) =>
+            AdminAccountPage.wrap(const AiAssistantView()),
       ),
       GoRoute(
         path: kModelTrainingView,
-        builder: (context, state) => const ModelTrainingView(),
+        builder: (context, state) =>
+            AdminAccountPage.wrap(const ModelTrainingView()),
       ),
       GoRoute(
         path: kChangePricesView,
@@ -419,7 +436,10 @@ abstract class AppRoutes {
                 extra['highlightProductId']?.toString() ??
                 extra['productId']?.toString();
           }
-          return ChangePricesView(highlightProductId: highlightProductId);
+          return AdminAccountPage.wrap(
+            ChangePricesView(highlightProductId: highlightProductId),
+            tabIndex: 0,
+          );
         },
       ),
       GoRoute(
@@ -432,15 +452,20 @@ abstract class AppRoutes {
                 extra['highlightProductId']?.toString() ??
                 extra['productId']?.toString();
           }
-          return MyAdsView(
+          final actingOwnerId = extra is Map
+              ? extra['actingOwnerId']?.toString()
+              : null;
+          final page = MyAdsView(
             highlightProductId: highlightProductId,
-            actingOwnerId: extra is Map
-                ? extra['actingOwnerId']?.toString()
-                : null,
+            actingOwnerId: actingOwnerId,
             companyName: extra is Map
                 ? extra['companyName']?.toString()
                 : null,
           );
+          if (actingOwnerId != null && actingOwnerId.isNotEmpty) {
+            return AdminAccountPage.wrap(page, tabIndex: 0);
+          }
+          return page;
         },
       ),
       GoRoute(
@@ -449,11 +474,14 @@ abstract class AppRoutes {
           final extra = state.extra is Map<String, dynamic>
               ? state.extra as Map<String, dynamic>
               : const <String, dynamic>{};
-          return AdRequestOffersView(
-            product: extra['product'],
-            preferRetailPricing: extra['preferRetailPricing'] == true,
-            preferCategoryLabel: extra['preferCategoryLabel'] == true,
-            showBothPricingChannels: extra['showBothPricingChannels'] == true,
+          return AdminAccountPage.wrap(
+            AdRequestOffersView(
+              product: extra['product'],
+              preferRetailPricing: extra['preferRetailPricing'] == true,
+              preferCategoryLabel: extra['preferCategoryLabel'] == true,
+              showBothPricingChannels: extra['showBothPricingChannels'] == true,
+            ),
+            tabIndex: 0,
           );
         },
       ),
@@ -523,7 +551,7 @@ abstract class AppRoutes {
           );
         },
       ),
-      GoRoute(path: kCartView, builder: (context, state) => const CartView()),
+      GoRoute(path: kCartView, builder: (context, state) => AdminAccountPage.wrap(const CartView())),
       GoRoute(
         path: kProductSearchResultsView,
         builder: (context, state) {

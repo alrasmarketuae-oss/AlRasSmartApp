@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
-/// Hides [bottomNavigationBar] when scrolling down and shows it when scrolling up.
+/// Hides [bottomNavigationBar] when scrolling down and shows it when scrolling up
+/// or when scrolling stops.
 class ScrollAwareBottomNavScaffold extends StatefulWidget {
   const ScrollAwareBottomNavScaffold({
     super.key,
@@ -58,6 +60,16 @@ class _ScrollAwareBottomNavScaffoldState
   bool _onScrollNotification(ScrollNotification notification) {
     if (notification.metrics.axis != Axis.vertical) return false;
     if (_ignoreLayoutScroll) return false;
+
+    if (notification is ScrollEndNotification ||
+        (notification is UserScrollNotification &&
+            notification.direction == ScrollDirection.idle)) {
+      if (!_isBottomNavVisible) {
+        _setVisible(true);
+      }
+      return false;
+    }
+
     if (notification is! ScrollUpdateNotification) return false;
 
     final delta = notification.scrollDelta;

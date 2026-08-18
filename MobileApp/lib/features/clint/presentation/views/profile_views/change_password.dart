@@ -5,6 +5,7 @@ import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/widgets/app_header.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/search_header.dart';
 import 'package:alrasmarket/core/widgets/costomtextform.dart';
 import 'package:alrasmarket/core/widgets/primary_button.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_cubit.dart';
@@ -120,7 +121,7 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         GestureDetector(
-                          onTap: () => Navigator.pop(context),
+                          onTap: () => SearchHeader.goBack(context),
                           child: SvgPicture.asset(
                             isAr ? AppAssets.backIconAR : AppAssets.backIconEN,
                             width: 24.w,
