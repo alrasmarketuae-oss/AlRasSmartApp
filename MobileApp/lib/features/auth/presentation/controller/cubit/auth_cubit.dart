@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:alrasmarket/core/serveses/pending_profile_image_uploader.dart';
 import 'package:alrasmarket/core/serveses/cached_constants.dart';
 import 'package:alrasmarket/core/router/where_to_go.dart';
@@ -65,9 +64,11 @@ class AuthCubit extends Cubit<AuthStates> {
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
     serverClientId: _kGoogleServerClientId,
-    clientId: !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS
-        ? _kGoogleIosClientId
-        : null,
+    clientId: kIsWeb
+        ? _kGoogleServerClientId
+        : (defaultTargetPlatform == TargetPlatform.iOS
+            ? _kGoogleIosClientId
+            : null),
   );
 
   static AuthCubit get(context) => BlocProvider.of(context);

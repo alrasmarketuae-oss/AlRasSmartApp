@@ -10,8 +10,6 @@ import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_sta
 import 'package:alrasmarket/features/auth/presentation/widgets/biometric_enrollment_prompt.dart';
 import 'package:alrasmarket/features/auth/presentation/widgets/biometric_unlock_button.dart';
 import 'package:alrasmarket/generated/l10n.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
