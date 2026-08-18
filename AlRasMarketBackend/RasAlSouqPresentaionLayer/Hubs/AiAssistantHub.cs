@@ -40,11 +40,11 @@ public sealed class AiAssistantHub(
     public async Task AskInSession(string message, string language, string? sessionId)
     {
         var text = (message ?? string.Empty).Trim();
-        if (text.Length is < 1 or > 2000)
+        if (text.Length is < 1 or > 8000)
         {
             await Clients.Caller.SendAsync(
                 "aiError",
-                new { message = "Message must be between 1 and 2000 characters." },
+                new { message = "Message must be between 1 and 8000 characters." },
                 Context.ConnectionAborted);
             return;
         }

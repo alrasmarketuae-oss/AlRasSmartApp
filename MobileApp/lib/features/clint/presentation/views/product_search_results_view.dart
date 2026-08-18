@@ -5,12 +5,14 @@ import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/utils/product_grid_layout.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_states.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/image_search_lens_view.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product%20_card.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/search_header.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
 class ProductSearchResultsView extends StatefulWidget {
   const ProductSearchResultsView({
@@ -33,6 +35,12 @@ class ProductSearchResultsView extends StatefulWidget {
 
 class _ProductSearchResultsViewState extends State<ProductSearchResultsView> {
   late final TextEditingController _searchController;
+  bool _lensDismissed = false;
+
+  bool get _hasLensImage {
+    final path = widget.imagePath?.trim();
+    return path != null && path.isNotEmpty && File(path).existsSync();
+  }
 
   @override
   void initState() {
@@ -109,27 +117,43 @@ class _ProductSearchResultsViewState extends State<ProductSearchResultsView> {
   Widget build(BuildContext context) {
     final s = S.of(context);
 
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: AppColors.scaffold(context),
-        body: BlocBuilder<ClintCubit, ClintStates>(
-          buildWhen: (previous, current) =>
-              current is ProductSearchLoadingState ||
-              current is ProductSearchSuccessState ||
-              current is ProductSearchErrorState,
-          builder: (context, state) {
-            final cubit = context.read<ClintCubit>();
-            final fromImage = _isImageSearchContext ||
-                cubit.isImageSearch ||
-                (state is ProductSearchLoadingState && state.fromImage) ||
-                (state is ProductSearchSuccessState && state.fromImage);
-            final isLoading = state is ProductSearchLoadingState ||
-                cubit.isLoadingSearch;
-            final headerTitle = fromImage && isLoading
-                ? s.analyzingImage
-                : s.searchResults;
+    return BlocBuilder<ClintCubit, ClintStates>(
+      buildWhen: (previous, current) =>
+          current is ProductSearchLoadingState ||
+          current is ProductSearchSuccessState ||
+          current is ProductSearchErrorState,
+      builder: (context, state) {
+        final cubit = context.read<ClintCubit>();
+        final fromImage = _isImageSearchContext ||
+            cubit.isImageSearch ||
+            (state is ProductSearchLoadingState && state.fromImage) ||
+            (state is ProductSearchSuccessState && state.fromImage);
+        final isLoading = state is ProductSearchLoadingState ||
+            cubit.isLoadingSearch;
+        final headerTitle = fromImage && isLoading
+            ? s.analyzingImage
+            : s.searchResults;
 
-            return Column(
+        if (!_lensDismissed && _hasLensImage) {
+          return Scaffold(
+            backgroundColor: Colors.black,
+            body: ImageSearchLensView(
+              imagePath: widget.imagePath!,
+              products: cubit.productSearchResults,
+              isLoading: isLoading,
+              onClose: () {
+                if (context.canPop()) context.pop();
+              },
+              onOpenResults: () => setState(() => _lensDismissed = true),
+              onCropSearch: cubit.searchProductsByImage,
+            ),
+          );
+        }
+
+        return SafeArea(
+          child: Scaffold(
+            backgroundColor: AppColors.scaffold(context),
+            body: Column(
               children: [
                 SearchHeader(
                   title: headerTitle,
@@ -246,10 +270,10 @@ class _ProductSearchResultsViewState extends State<ProductSearchResultsView> {
                   ),
                 ),
               ],
-            );
-          },
-        ),
-      ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

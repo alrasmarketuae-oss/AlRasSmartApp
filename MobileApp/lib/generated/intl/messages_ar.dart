@@ -213,6 +213,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "aiAssistantHint": MessageLookupByLibrary.simpleMessage(
       "اسأل عن الإعلانات، الطلبات، الاسترجاع، البحث بالصور…",
     ),
+    "aiAssistantReplyTo": MessageLookupByLibrary.simpleMessage("الرد على"),
+    "aiAssistantCancelReply": MessageLookupByLibrary.simpleMessage(
+      "إلغاء الرد",
+    ),
     "aiAssistantHistoryEmpty": MessageLookupByLibrary.simpleMessage(
       "لا توجد محادثات محفوظة بعد.",
     ),
@@ -254,7 +258,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "الراس الذكي وكيل ذكاء اصطناعي وقد يخطئ.",
     ),
     "aiAssistantThinking": MessageLookupByLibrary.simpleMessage("يفكر…"),
-    "aiAssistantTitle": MessageLookupByLibrary.simpleMessage("الراس الذكي"),
+    "aiAssistantTitle": MessageLookupByLibrary.simpleMessage("allras ai"),
     "aiAssistantUnsupportedLanguage": MessageLookupByLibrary.simpleMessage(
       "ندعم العربية والإنجليزية حالياً. ترجمنا سؤالك للفهم إن أمكن، وسنرد بإحدى اللغتين المدعومتين.",
     ),
@@ -843,6 +847,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "highlightAdOldPrice": MessageLookupByLibrary.simpleMessage("199 درهم"),
     "home": MessageLookupByLibrary.simpleMessage("الرئيسية"),
     "hoursAgo": MessageLookupByLibrary.simpleMessage("ساعات مضت"),
+    "imageSearchCropHint": MessageLookupByLibrary.simpleMessage(
+      "حدد جزءاً من الصورة للبحث مرة أخرى.",
+    ),
+    "imageSearchPeekTitle": MessageLookupByLibrary.simpleMessage(
+      "منتجات مشابهة",
+    ),
+    "imageSearchViewResults": MessageLookupByLibrary.simpleMessage(
+      "عرض النتائج",
+    ),
     "hoursAgoRelative": m14,
     "howCanIPlaceAnOrder": MessageLookupByLibrary.simpleMessage(
       "كيف يمكنني طلب المنتج؟",

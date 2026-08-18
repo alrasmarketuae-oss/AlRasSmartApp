@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using BusinessLayer.Interfaces;
@@ -111,6 +111,23 @@ public sealed class AiAssistantMcpToolLoop(
                 // Echo the assistant tool_calls message, then append each tool result.
                 messages.Add(JsonSerializer.Deserialize<object>(msg.GetRawText())!);
 
+                if (onThinkingStep is not null
+                    && msg.TryGetProperty("content", out var thinkEl))
+                {
+                    var thinkText = thinkEl.ValueKind == JsonValueKind.String
+                        ? thinkEl.GetString()
+                        : null;
+                    if (!string.IsNullOrWhiteSpace(thinkText))
+                    {
+                        foreach (var rawLine in thinkText.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                        {
+                            var line = rawLine.Trim().TrimStart('-', '*', 'â€¢', 'â€“').Trim();
+                            if (line.Length == 0) continue;
+                            await onThinkingStep(line, cancellationToken).ConfigureAwait(false);
+                        }
+                    }
+                }
+
                 foreach (var tc in toolCalls.EnumerateArray())
                 {
                     var id = tc.GetProperty("id").GetString() ?? Guid.NewGuid().ToString("N");
@@ -124,10 +141,6 @@ public sealed class AiAssistantMcpToolLoop(
                     {
                         await onThinkingStep(
                                 DescribeToolCall(name, isArabic),
-                                cancellationToken)
-                            .ConfigureAwait(false);
-                        await onThinkingStep(
-                                PickMcpToolThinking(isArabic),
                                 cancellationToken)
                             .ConfigureAwait(false);
                     }
@@ -293,63 +306,63 @@ public sealed class AiAssistantMcpToolLoop(
     private static string DescribeToolCallAr(string toolName) =>
         toolName switch
         {
-            "get_my_last_order" => "بستدعي أداة: آخر طلب من طلباتي…",
-            "get_my_purchase_summary" => "بستدعي أداة: ملخص مشترياتي / اشتريت بكام…",
-            "explain_my_order_delay" => "بستدعي أداة: ليه الطلب متأخر (طلباتي)…",
-            "get_my_sales_count" => "بستدعي أداة: المبيعات وطلبات الإعلانات…",
-            "get_last_order_on_my_ads" => "بستدعي أداة: آخر طلب على إعلاناتي…",
-            "explain_order_delay_on_my_ads" => "بستدعي أداة: تأخير طلب على الإعلان…",
-            "find_cheapest_product" => "بستدعي أداة: أرخص منتج…",
-            "find_most_expensive_product" => "بستدعي أداة: أغلى منتج…",
-            "search_products" => "بستدعي أداة: إعلانات المنتج…",
-            "list_my_ads" => "بستدعي أداة: قائمة إعلاناتي…",
-            "get_my_last_ad" => "بستدعي أداة: آخر إعلان نزلته…",
-            "get_my_first_ad" => "بستدعي أداة: أول إعلان نزلته…",
-            "update_ad_price_quantity" => "بستدعي أداة: تعديل السعر/الكمية…",
-            "set_ad_listing_status" => "بستدعي أداة: إيقاف/تفعيل إعلان…",
-            "mark_ad_sold_out" => "بستدعي أداة: تعليم نفاد الكمية…",
-            "delete_ad" => "بستدعي أداة: حذف إعلان…",
-            "lookup_create_ad_reference" => "بستدعي أداة: مراجع إنشاء الإعلان (وحدات/دول/موانئ)…",
-            "list_my_addresses" => "بستدعي أداة: عناوين التسليم المحفوظة…",
-            "create_request_ad" => "جاري إنشاء إعلان طلب على السحابة…",
-            "create_booking_ad" => "جاري إنشاء إعلان Booking…",
-            "create_offer_ad" => "جاري إنشاء إعلان Offer…",
-            "create_retail_ad" => "جاري إنشاء إعلان Retail…",
-            "create_category_ad" => "جاري إنشاء إعلان Category…",
-            "search_shipping_prices" => "بستدعي أداة: أسعار الشحن بين الدول…",
-            "create_shipping_ad" => "جاري نشر إعلان الشحن…",
-            _ => $"بستدعي أداة: {toolName}…"
+            "get_my_last_order" => "Ø¨Ø³ØªØ¯Ø¹ÙŠ Ø£Ø¯Ø§Ø©: Ø¢Ø®Ø± Ø·Ù„Ø¨ Ù…Ù† Ø·Ù„Ø¨Ø§ØªÙŠâ€¦",
+            "get_my_purchase_summary" => "Ø¨Ø³ØªØ¯Ø¹ÙŠ Ø£Ø¯Ø§Ø©: Ù…Ù„Ø®Øµ Ù…Ø´ØªØ±ÙŠØ§ØªÙŠ / Ø§Ø´ØªØ±ÙŠØª Ø¨ÙƒØ§Ù…â€¦",
+            "explain_my_order_delay" => "Ø¨Ø³ØªØ¯Ø¹ÙŠ Ø£Ø¯Ø§Ø©: Ù„ÙŠÙ‡ Ø§Ù„Ø·Ù„Ø¨ Ù…ØªØ£Ø®Ø± (Ø·Ù„Ø¨Ø§ØªÙŠ)â€¦",
+            "get_my_sales_count" => "Ø¨Ø³ØªØ¯Ø¹ÙŠ Ø£Ø¯Ø§Ø©: Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª ÙˆØ·Ù„Ø¨Ø§Øª Ø§Ù„Ø¥Ø¹Ù„Ø§Ù†Ø§Øªâ€¦",
+            "get_last_order_on_my_ads" => "Ø¨Ø³ØªØ¯Ø¹ÙŠ Ø£Ø¯Ø§Ø©: Ø¢Ø®Ø± Ø·Ù„Ø¨ Ø¹Ù„Ù‰ Ø¥Ø¹Ù„Ø§Ù†Ø§ØªÙŠâ€¦",
+            "explain_order_delay_on_my_ads" => "Ø¨Ø³ØªØ¯Ø¹ÙŠ Ø£Ø¯Ø§Ø©: ØªØ£Ø®ÙŠØ± Ø·Ù„Ø¨ Ø¹Ù„Ù‰ Ø§Ù„Ø¥Ø¹Ù„Ø§Ù†â€¦",
+            "find_cheapest_product" => "Ø¨Ø³ØªØ¯Ø¹ÙŠ Ø£Ø¯Ø§Ø©: Ø£Ø±Ø®Øµ Ù…Ù†ØªØ¬â€¦",
+            "find_most_expensive_product" => "Ø¨Ø³ØªØ¯Ø¹ÙŠ Ø£Ø¯Ø§Ø©: Ø£ØºÙ„Ù‰ Ù…Ù†ØªØ¬â€¦",
+            "search_products" => "Ø¨Ø³ØªØ¯Ø¹ÙŠ Ø£Ø¯Ø§Ø©: Ø¥Ø¹Ù„Ø§Ù†Ø§Øª Ø§Ù„Ù…Ù†ØªØ¬â€¦",
+            "list_my_ads" => "Ø¨Ø³ØªØ¯Ø¹ÙŠ Ø£Ø¯Ø§Ø©: Ù‚Ø§Ø¦Ù…Ø© Ø¥Ø¹Ù„Ø§Ù†Ø§ØªÙŠâ€¦",
+            "get_my_last_ad" => "Ø¨Ø³ØªØ¯Ø¹ÙŠ Ø£Ø¯Ø§Ø©: Ø¢Ø®Ø± Ø¥Ø¹Ù„Ø§Ù† Ù†Ø²Ù„ØªÙ‡â€¦",
+            "get_my_first_ad" => "Ø¨Ø³ØªØ¯Ø¹ÙŠ Ø£Ø¯Ø§Ø©: Ø£ÙˆÙ„ Ø¥Ø¹Ù„Ø§Ù† Ù†Ø²Ù„ØªÙ‡â€¦",
+            "update_ad_price_quantity" => "Ø¨Ø³ØªØ¯Ø¹ÙŠ Ø£Ø¯Ø§Ø©: ØªØ¹Ø¯ÙŠÙ„ Ø§Ù„Ø³Ø¹Ø±/Ø§Ù„ÙƒÙ…ÙŠØ©â€¦",
+            "set_ad_listing_status" => "Ø¨Ø³ØªØ¯Ø¹ÙŠ Ø£Ø¯Ø§Ø©: Ø¥ÙŠÙ‚Ø§Ù/ØªÙØ¹ÙŠÙ„ Ø¥Ø¹Ù„Ø§Ù†â€¦",
+            "mark_ad_sold_out" => "Ø¨Ø³ØªØ¯Ø¹ÙŠ Ø£Ø¯Ø§Ø©: ØªØ¹Ù„ÙŠÙ… Ù†ÙØ§Ø¯ Ø§Ù„ÙƒÙ…ÙŠØ©â€¦",
+            "delete_ad" => "Ø¨Ø³ØªØ¯Ø¹ÙŠ Ø£Ø¯Ø§Ø©: Ø­Ø°Ù Ø¥Ø¹Ù„Ø§Ù†â€¦",
+            "lookup_create_ad_reference" => "Ø¨Ø³ØªØ¯Ø¹ÙŠ Ø£Ø¯Ø§Ø©: Ù…Ø±Ø§Ø¬Ø¹ Ø¥Ù†Ø´Ø§Ø¡ Ø§Ù„Ø¥Ø¹Ù„Ø§Ù† (ÙˆØ­Ø¯Ø§Øª/Ø¯ÙˆÙ„/Ù…ÙˆØ§Ù†Ø¦)â€¦",
+            "list_my_addresses" => "Ø¨Ø³ØªØ¯Ø¹ÙŠ Ø£Ø¯Ø§Ø©: Ø¹Ù†Ø§ÙˆÙŠÙ† Ø§Ù„ØªØ³Ù„ÙŠÙ… Ø§Ù„Ù…Ø­ÙÙˆØ¸Ø©â€¦",
+            "create_request_ad" => "Ø¬Ø§Ø±ÙŠ Ø¥Ù†Ø´Ø§Ø¡ Ø¥Ø¹Ù„Ø§Ù† Ø·Ù„Ø¨ Ø¹Ù„Ù‰ Ø§Ù„Ø³Ø­Ø§Ø¨Ø©â€¦",
+            "create_booking_ad" => "Ø¬Ø§Ø±ÙŠ Ø¥Ù†Ø´Ø§Ø¡ Ø¥Ø¹Ù„Ø§Ù† Bookingâ€¦",
+            "create_offer_ad" => "Ø¬Ø§Ø±ÙŠ Ø¥Ù†Ø´Ø§Ø¡ Ø¥Ø¹Ù„Ø§Ù† Offerâ€¦",
+            "create_retail_ad" => "Ø¬Ø§Ø±ÙŠ Ø¥Ù†Ø´Ø§Ø¡ Ø¥Ø¹Ù„Ø§Ù† Retailâ€¦",
+            "create_category_ad" => "Ø¬Ø§Ø±ÙŠ Ø¥Ù†Ø´Ø§Ø¡ Ø¥Ø¹Ù„Ø§Ù† Categoryâ€¦",
+            "search_shipping_prices" => "Ø¨Ø³ØªØ¯Ø¹ÙŠ Ø£Ø¯Ø§Ø©: Ø£Ø³Ø¹Ø§Ø± Ø§Ù„Ø´Ø­Ù† Ø¨ÙŠÙ† Ø§Ù„Ø¯ÙˆÙ„â€¦",
+            "create_shipping_ad" => "Ø¬Ø§Ø±ÙŠ Ù†Ø´Ø± Ø¥Ø¹Ù„Ø§Ù† Ø§Ù„Ø´Ø­Ù†â€¦",
+            _ => $"Ø¨Ø³ØªØ¯Ø¹ÙŠ Ø£Ø¯Ø§Ø©: {toolName}â€¦"
         };
 
     private static string DescribeToolCallEn(string toolName) =>
         toolName switch
         {
-            "get_my_last_order" => "Calling tool: your latest purchase (My Orders)…",
-            "get_my_purchase_summary" => "Calling tool: purchase summary / how much you spent…",
-            "explain_my_order_delay" => "Calling tool: why your order may be delayed…",
-            "get_my_sales_count" => "Calling tool: sales and orders on your ads…",
-            "get_last_order_on_my_ads" => "Calling tool: latest order on your ads…",
-            "explain_order_delay_on_my_ads" => "Calling tool: delay on an ad order…",
-            "find_cheapest_product" => "Calling tool: cheapest product match…",
-            "find_most_expensive_product" => "Calling tool: most expensive product match…",
-            "search_products" => "Calling tool: matching product ads…",
-            "list_my_ads" => "Calling tool: your ad catalog…",
-            "get_my_last_ad" => "Calling tool: your most recent ad…",
-            "get_my_first_ad" => "Calling tool: your earliest ad…",
-            "update_ad_price_quantity" => "Calling tool: update price/quantity…",
-            "set_ad_listing_status" => "Calling tool: pause or activate an ad…",
-            "mark_ad_sold_out" => "Calling tool: mark sold out…",
-            "delete_ad" => "Calling tool: delete an ad…",
-            "lookup_create_ad_reference" => "Exploring ad requirements (units/countries/port)…",
-            "list_my_addresses" => "Listing saved delivery addresses…",
-            "create_request_ad" => "Creating the Request ad on the server…",
-            "create_booking_ad" => "Creating the Booking ad…",
-            "create_offer_ad" => "Creating the Offer ad…",
-            "create_retail_ad" => "Creating the Retail ad…",
-            "create_category_ad" => "Creating the Category ad…",
-            "search_shipping_prices" => "Searching shipping prices between countries…",
-            "create_shipping_ad" => "Publishing the shipping ad…",
-            _ => $"Calling tool: {toolName}…"
+            "get_my_last_order" => "Calling tool: your latest purchase (My Orders)â€¦",
+            "get_my_purchase_summary" => "Calling tool: purchase summary / how much you spentâ€¦",
+            "explain_my_order_delay" => "Calling tool: why your order may be delayedâ€¦",
+            "get_my_sales_count" => "Calling tool: sales and orders on your adsâ€¦",
+            "get_last_order_on_my_ads" => "Calling tool: latest order on your adsâ€¦",
+            "explain_order_delay_on_my_ads" => "Calling tool: delay on an ad orderâ€¦",
+            "find_cheapest_product" => "Calling tool: cheapest product matchâ€¦",
+            "find_most_expensive_product" => "Calling tool: most expensive product matchâ€¦",
+            "search_products" => "Calling tool: matching product adsâ€¦",
+            "list_my_ads" => "Calling tool: your ad catalogâ€¦",
+            "get_my_last_ad" => "Calling tool: your most recent adâ€¦",
+            "get_my_first_ad" => "Calling tool: your earliest adâ€¦",
+            "update_ad_price_quantity" => "Calling tool: update price/quantityâ€¦",
+            "set_ad_listing_status" => "Calling tool: pause or activate an adâ€¦",
+            "mark_ad_sold_out" => "Calling tool: mark sold outâ€¦",
+            "delete_ad" => "Calling tool: delete an adâ€¦",
+            "lookup_create_ad_reference" => "Exploring ad requirements (units/countries/port)â€¦",
+            "list_my_addresses" => "Listing saved delivery addressesâ€¦",
+            "create_request_ad" => "Creating the Request ad on the serverâ€¦",
+            "create_booking_ad" => "Creating the Booking adâ€¦",
+            "create_offer_ad" => "Creating the Offer adâ€¦",
+            "create_retail_ad" => "Creating the Retail adâ€¦",
+            "create_category_ad" => "Creating the Category adâ€¦",
+            "search_shipping_prices" => "Searching shipping prices between countriesâ€¦",
+            "create_shipping_ad" => "Publishing the shipping adâ€¦",
+            _ => $"Calling tool: {toolName}â€¦"
         };
 
     private static string DescribeToolResult(string toolName, string content, bool isArabic)
@@ -366,8 +379,8 @@ public sealed class AiAssistantMcpToolLoop(
                 if (isArabic)
                 {
                     return string.IsNullOrWhiteSpace(err)
-                        ? $"الأداة {toolName} رجّعت خطأ."
-                        : $"الأداة {toolName}: {err}";
+                        ? $"Ø§Ù„Ø£Ø¯Ø§Ø© {toolName} Ø±Ø¬Ù‘Ø¹Øª Ø®Ø·Ø£."
+                        : $"Ø§Ù„Ø£Ø¯Ø§Ø© {toolName}: {err}";
                 }
 
                 return string.IsNullOrWhiteSpace(err)
@@ -379,7 +392,7 @@ public sealed class AiAssistantMcpToolLoop(
                 && found.ValueKind == JsonValueKind.False)
             {
                 return isArabic
-                    ? $"الأداة {toolName}: مفيش بيانات مطابقة."
+                    ? $"Ø§Ù„Ø£Ø¯Ø§Ø© {toolName}: Ù…ÙÙŠØ´ Ø¨ÙŠØ§Ù†Ø§Øª Ù…Ø·Ø§Ø¨Ù‚Ø©."
                     : $"Tool {toolName}: no matching data.";
             }
         }
@@ -420,12 +433,12 @@ public sealed class AiAssistantMcpToolLoop(
                     if (paths.Count > 0)
                     {
                         return isArabic
-                            ? "تم رفع الوسائط:\n" + string.Join("\n", paths)
+                            ? "ØªÙ… Ø±ÙØ¹ Ø§Ù„ÙˆØ³Ø§Ø¦Ø·:\n" + string.Join("\n", paths)
                             : "Media uploaded:\n" + string.Join("\n", paths);
                     }
 
                     return isArabic
-                        ? "تم إنشاء الإعلان وإرساله للمراجعة."
+                        ? "ØªÙ… Ø¥Ù†Ø´Ø§Ø¡ Ø§Ù„Ø¥Ø¹Ù„Ø§Ù† ÙˆØ¥Ø±Ø³Ø§Ù„Ù‡ Ù„Ù„Ù…Ø±Ø§Ø¬Ø¹Ø©."
                         : "Ad created and submitted for review.";
                 }
             }
@@ -436,7 +449,7 @@ public sealed class AiAssistantMcpToolLoop(
         }
 
         return isArabic
-            ? $"وصل نتيجة من {toolName}."
+            ? $"ÙˆØµÙ„ Ù†ØªÙŠØ¬Ø© Ù…Ù† {toolName}."
             : $"Received result from {toolName}.";
     }
 
@@ -460,19 +473,19 @@ public sealed class AiAssistantMcpToolLoop(
 
             if (isArabic)
             {
-                var adLabel = string.IsNullOrWhiteSpace(adType) ? "الإعلان" : adType.Trim();
-                var title = string.IsNullOrWhiteSpace(name) ? string.Empty : $" «{name.Trim()}»";
+                var adLabel = string.IsNullOrWhiteSpace(adType) ? "Ø§Ù„Ø¥Ø¹Ù„Ø§Ù†" : adType.Trim();
+                var title = string.IsNullOrWhiteSpace(name) ? string.Empty : $" Â«{name.Trim()}Â»";
                 var codeSuffix = string.IsNullOrWhiteSpace(productCode)
                     ? string.Empty
-                    : $" رمز المنتج (ProductCode): {productCode.Trim()}.";
+                    : $" Ø±Ù…Ø² Ø§Ù„Ù…Ù†ØªØ¬ (ProductCode): {productCode.Trim()}.";
 
                 if (submitted)
                 {
-                    return $"تم إنشاء إعلان {adLabel}{title} بنجاح وإرساله للمراجعة من الإدارة.{codeSuffix} "
-                           + "ستتلقى إشعاراً عند الموافقة أو الرفض.";
+                    return $"ØªÙ… Ø¥Ù†Ø´Ø§Ø¡ Ø¥Ø¹Ù„Ø§Ù† {adLabel}{title} Ø¨Ù†Ø¬Ø§Ø­ ÙˆØ¥Ø±Ø³Ø§Ù„Ù‡ Ù„Ù„Ù…Ø±Ø§Ø¬Ø¹Ø© Ù…Ù† Ø§Ù„Ø¥Ø¯Ø§Ø±Ø©.{codeSuffix} "
+                           + "Ø³ØªØªÙ„Ù‚Ù‰ Ø¥Ø´Ø¹Ø§Ø±Ø§Ù‹ Ø¹Ù†Ø¯ Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø© Ø£Ùˆ Ø§Ù„Ø±ÙØ¶.";
                 }
 
-                return $"تم إنشاء إعلان {adLabel}{title} بنجاح.{codeSuffix}";
+                return $"ØªÙ… Ø¥Ù†Ø´Ø§Ø¡ Ø¥Ø¹Ù„Ø§Ù† {adLabel}{title} Ø¨Ù†Ø¬Ø§Ø­.{codeSuffix}";
             }
 
             var adLabelEn = string.IsNullOrWhiteSpace(adType) ? "ad" : adType.Trim();
@@ -492,7 +505,7 @@ public sealed class AiAssistantMcpToolLoop(
         catch (JsonException)
         {
             return isArabic
-                ? "تم إنشاء الإعلان بنجاح وإرساله للمراجعة من الإدارة."
+                ? "ØªÙ… Ø¥Ù†Ø´Ø§Ø¡ Ø§Ù„Ø¥Ø¹Ù„Ø§Ù† Ø¨Ù†Ø¬Ø§Ø­ ÙˆØ¥Ø±Ø³Ø§Ù„Ù‡ Ù„Ù„Ù…Ø±Ø§Ø¬Ø¹Ø© Ù…Ù† Ø§Ù„Ø¥Ø¯Ø§Ø±Ø©."
                 : "Your ad was created and submitted for admin review.";
         }
     }
@@ -511,77 +524,4 @@ public sealed class AiAssistantMcpToolLoop(
         }
     }
 
-    private static readonly string[] McpToolThinkingAr =
-    [
-        "الشبكة العصبية تراجع السياق الكامل للبيانات…",
-        "أجري استدلالًا أعمق عبر التفاصيل المجمّعة…",
-        "طبقة الذكاء تربط المعلومات الآن…",
-        "أجري تحليلًا دلاليًا لفهم الإعلان بدقة أكبر…",
-        "أراجع النتائج المستنتجة قبل تثبيت أي شيء…",
-        "تحليل ذكاء اصطناعي أعمق يعمل في الخلفية…",
-        "أتحقق كيف يؤثر كل تفصيل على بقية الإعلان…",
-        "أمرّر البيانات عبر طبقة الفهم قبل الإنشاء…",
-        "أطابق التفاصيل المجمّعة بذكاء قبل المتابعة…",
-        "أراجع السياق الكامل قبل الخطوة التالية…",
-        "النموذج يحلّل العلاقات وليس الكلمات فقط…",
-        "أجري مرحلة الاستدلال النهائية قبل الحفظ…",
-        "أبحث عن أي تعارضات محتملة قبل تأكيد البيانات…",
-        "تحليل عميق يعمل — أربط التفاصيل معًا…",
-        "أدع النموذج يتحقق أن الصورة الكاملة منطقية…",
-        "أجري تحققًا دلاليًا قبل تحويل البيانات إلى إعلان…",
-        "طبقة ذكاء تراجع النتيجة من زاوية أخرى…",
-        "أختبر الاتساق عبر الحقول قبل التنفيذ…",
-        "أراجع ما فهمه النموذج قبل اعتماده…",
-        "النموذج يجمع إشارات دقيقة لبناء النتيجة النهائية…",
-        "أجري تحليل ذكاء اصطناعي متعدد المراحل قبل النشر…",
-        "أراجع البيانات بمستوى أعمق قبل الإرسال…",
-        "الاستدلال يعمل الآن — لحظة قبل المتابعة…",
-        "أربط المعنى بالسياق قبل الخطوة الأخيرة…",
-        "أشغّل طبقة الذكاء النهائية الآن…",
-        "أراجع النتيجة عبر إشارات متعددة قبل التأكيد…",
-        "النموذج يقارن التفاصيل داخليًا قبل تثبيت الإعلان…",
-        "أجري مراجعة أخيرة بمستوى الذكاء للصورة الكاملة…",
-        "التحليل يصل لمرحلته النهائية — أجهّز القرار الأخير…",
-        "الذكاء الاصطناعي أوشك على إنهاء التحليل — أثبّت النتيجة الآن…"
-    ];
-
-    private static readonly string[] McpToolThinkingEn =
-    [
-        "The neural network is reviewing the full context of the data…",
-        "Running deeper reasoning across the collected details…",
-        "The intelligence layer is connecting the information now…",
-        "Running semantic analysis to understand the ad more precisely…",
-        "Reviewing the inferred results before locking anything in…",
-        "A deeper AI analysis is running in the background…",
-        "Checking how each detail affects the rest of the ad…",
-        "Passing the data through the understanding layer before creation…",
-        "Matching the collected details intelligently before proceeding…",
-        "Reviewing the full context before taking the next step…",
-        "The model is analyzing relationships, not just individual words…",
-        "Running the final inference stage before saving…",
-        "Checking for possible inconsistencies before confirming the data…",
-        "Deep analysis is running — connecting the details together…",
-        "Letting the model verify that the complete picture makes sense…",
-        "Running semantic validation before turning the data into an ad…",
-        "An intelligence layer is reviewing the result from another angle…",
-        "Testing consistency across the fields before execution…",
-        "Reviewing what the model understood before committing it…",
-        "The model is combining subtle signals to build the final result…",
-        "Running multi-stage AI analysis before publishing…",
-        "Reviewing the data at a deeper level before submission…",
-        "Inference is running now — just a moment before we continue…",
-        "Connecting meaning with context before the final step…",
-        "Running the final intelligence layer now…",
-        "Cross-checking the result using multiple signals before confirmation…",
-        "The model is comparing the details internally before locking the ad…",
-        "Performing one final AI-level review of the complete picture…",
-        "The analysis is reaching its final stage — preparing the final decision…",
-        "The AI has nearly completed its analysis — locking in the result now…"
-    ];
-
-    private static string PickMcpToolThinking(bool isArabic)
-    {
-        var pool = isArabic ? McpToolThinkingAr : McpToolThinkingEn;
-        return pool[Random.Shared.Next(pool.Length)];
-    }
 }

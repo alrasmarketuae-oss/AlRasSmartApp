@@ -77,7 +77,10 @@ public class AdminAssetsController(
 
         return File(stream, contentType, enableRangeProcessing: true);
     }
-
+    private static void applyasync()
+    {
+        Console.WriteLine("kill");
+    }
     private static string? NormalizeAssetPath(string path)
     {
         var trimmed = path.Trim();

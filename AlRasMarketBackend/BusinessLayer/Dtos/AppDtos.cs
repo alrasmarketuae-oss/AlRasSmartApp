@@ -104,6 +104,17 @@ public sealed class UploadProductVideoInput
     public string? ReplaceVideoPath { get; set; }
 }
 
+public sealed class TrimProductVideoInput
+{
+    public string ProductId { get; set; } = string.Empty;
+    public string OwnerId { get; set; } = string.Empty;
+    public string SourcePath { get; set; } = string.Empty;
+    public double StartSeconds { get; set; }
+    public double EndSeconds { get; set; }
+    public string WebRootPath { get; set; } = string.Empty;
+    public bool AllowAdminAccess { get; set; }
+}
+
 public sealed class PresignProductImageInput
 {
     public string ProductId { get; set; } = string.Empty;

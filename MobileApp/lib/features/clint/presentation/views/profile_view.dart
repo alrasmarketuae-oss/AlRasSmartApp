@@ -235,7 +235,7 @@ class _ProfileViewState extends State<ProfileView> {
                                   child: _ShortcutCard(
                                     title: s.aiAssistantTitle,
                                     subtitle: s.aiAssistantCardSubtitle,
-                                    icon: Icons.auto_awesome_rounded,
+                                    assetIcon: AppAssets.aiAgentIcon,
                                     onTap: () {
                                       SensitiveAccessGate.openProtectedRoute(
                                         context,
@@ -622,7 +622,7 @@ class _ShortcutCard extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
       child: Row(
         children: [
-          _RoundIcon(icon: icon, assetIcon: assetIcon, size: 42),
+          _RoundIcon(icon: icon, assetIcon: assetIcon, size: assetIcon?.endsWith('.png') == true ? 52 : 42),
           SizedBox(width: 10.w),
           Expanded(
             child: Column(
@@ -834,8 +834,36 @@ class _RoundIcon extends StatelessWidget {
   final List<Color> colors;
   final double size;
 
+  bool get _isRasterAsset {
+    final path = assetIcon?.toLowerCase() ?? '';
+    return path.endsWith('.png') || path.endsWith('.jpg') || path.endsWith('.jpeg') || path.endsWith('.webp');
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isRasterAsset) {
+      return Container(
+        width: size.w,
+        height: size.w,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: colors.last.withValues(alpha: 0.22),
+              blurRadius: 10.r,
+              offset: Offset(0, 4.h),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Image.asset(
+          assetIcon!,
+          fit: BoxFit.contain,
+        ),
+      );
+    }
+
     return Container(
       width: size.w,
       height: size.w,

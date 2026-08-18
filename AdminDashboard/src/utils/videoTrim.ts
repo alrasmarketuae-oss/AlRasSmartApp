@@ -57,6 +57,84 @@ function waitForSeek(video: HTMLVideoElement): Promise<void> {
   })
 }
 
+function waitForPaintedFrame(video: HTMLVideoElement): Promise<void> {
+  const rvfc = (
+    video as HTMLVideoElement & {
+      requestVideoFrameCallback?: (cb: () => void) => number
+    }
+  ).requestVideoFrameCallback
+
+  if (typeof rvfc === 'function') {
+    return new Promise((resolve) => {
+      rvfc.call(video, () => resolve())
+    })
+  }
+
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+  })
+}
+
+function attachOffscreenVideo(video: HTMLVideoElement) {
+  video.muted = true
+  video.defaultMuted = true
+  video.playsInline = true
+  video.autoplay = false
+  video.preload = 'auto'
+  video.controls = false
+  video.playbackRate = 1
+  video.defaultPlaybackRate = 1
+  video.setAttribute('playsinline', '')
+  video.setAttribute('webkit-playsinline', '')
+  video.disablePictureInPicture = true
+  // Real pixels so the browser paints frames at 1x (hidden 0×0 / display:none
+  // videos get throttled and MediaRecorder timestamps stretch into slow-mo).
+  video.style.cssText = [
+    'position:fixed',
+    'left:-400px',
+    'top:0',
+    'width:320px',
+    'height:180px',
+    'opacity:1',
+    'filter:none',
+    'pointer-events:none',
+    'z-index:-1',
+  ].join(';')
+  document.body.appendChild(video)
+}
+
+function attachSilentAudioClock(stream: MediaStream): () => void {
+  if (stream.getAudioTracks().length > 0) return () => {}
+
+  const AudioCtx =
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+  if (!AudioCtx) return () => {}
+
+  const ctx = new AudioCtx()
+  const dest = ctx.createMediaStreamDestination()
+  const oscillator = ctx.createOscillator()
+  const gain = ctx.createGain()
+  gain.gain.value = 0
+  oscillator.connect(gain)
+  gain.connect(dest)
+  oscillator.start()
+  const track = dest.stream.getAudioTracks()[0]
+  if (track) {
+    stream.addTrack(track)
+  }
+
+  return () => {
+    try {
+      oscillator.stop()
+    } catch {
+      // already stopped
+    }
+    track?.stop()
+    void ctx.close()
+  }
+}
+
 /**
  * MediaRecorder WebM often reports duration as Infinity until seeked to the end.
  * Accept the blob if it loads and either has a finite duration or a seekable end.
@@ -141,13 +219,14 @@ export async function trimVideoToFile(
   const url = URL.createObjectURL(sourceBlob)
   const video = document.createElement('video')
   video.src = url
-  video.muted = true
-  video.playsInline = true
-  video.preload = 'auto'
+  attachOffscreenVideo(video)
+  let stopAudioClock: (() => void) | undefined
 
   try {
     await waitForEvent(video, 'loadedmetadata')
     await waitForEvent(video, 'canplay')
+    video.playbackRate = 1
+    video.defaultPlaybackRate = 1
 
     const recorderMime = pickRecorderMimeType()
     const fileMime = containerMime(recorderMime)
@@ -162,10 +241,14 @@ export async function trimVideoToFile(
       throw new Error('Video trim is not supported in this browser')
     }
 
-    const stream = captureStream.call(videoWithCapture, 30)
+    // Do not pass a frameRate: forcing 30fps while the source paints slower
+    // stretches timestamps and the clip plays like slow motion.
+    const stream = captureStream.call(videoWithCapture)
     if (stream.getVideoTracks().length === 0) {
       throw new Error('Video trim is not supported in this browser')
     }
+
+    stopAudioClock = attachSilentAudioClock(stream)
 
     const recorder = new MediaRecorder(stream, {
       mimeType: recorderMime,
@@ -185,14 +268,15 @@ export async function trimVideoToFile(
     video.currentTime = Math.max(0, startSec)
     await waitForSeek(video)
 
-    // Ensure a painted frame before recording starts (avoids empty WebM headers).
     try {
       await video.play()
-      await new Promise<void>((resolve) => {
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
-      })
+      await waitForPaintedFrame(video)
     } catch {
       throw new Error('Could not play video for trimming')
+    }
+
+    if (video.playbackRate !== 1) {
+      video.playbackRate = 1
     }
 
     recorder.start(250)
@@ -235,6 +319,8 @@ export async function trimVideoToFile(
     for (const track of stream.getTracks()) {
       track.stop()
     }
+    stopAudioClock?.()
+    stopAudioClock = undefined
 
     const trimmedBlob = await blobPromise
     await validateVideoBlob(trimmedBlob)
@@ -246,6 +332,11 @@ export async function trimVideoToFile(
     })
     return { file, durationSeconds }
   } finally {
+    stopAudioClock?.()
+    video.pause()
+    video.removeAttribute('src')
+    video.load()
+    video.remove()
     URL.revokeObjectURL(url)
   }
 }

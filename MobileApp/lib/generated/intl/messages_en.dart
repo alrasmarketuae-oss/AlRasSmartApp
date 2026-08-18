@@ -245,6 +245,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "aiAssistantListening": MessageLookupByLibrary.simpleMessage(
       "Listening… speak now",
     ),
+    "aiAssistantReplyTo": MessageLookupByLibrary.simpleMessage("Replying to"),
+    "aiAssistantCancelReply": MessageLookupByLibrary.simpleMessage(
+      "Cancel reply",
+    ),
     "aiAssistantOutOfScope": MessageLookupByLibrary.simpleMessage(
       "I can only help with Al Ras Smart topics (accounts, ads, orders, payment, returns). Please ask something about the platform.",
     ),
@@ -255,7 +259,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Alras Smart is an AI Agent and can make mistakes.",
     ),
     "aiAssistantThinking": MessageLookupByLibrary.simpleMessage("Thinking…"),
-    "aiAssistantTitle": MessageLookupByLibrary.simpleMessage("Alras Smart"),
+    "aiAssistantTitle": MessageLookupByLibrary.simpleMessage("allras ai"),
     "aiAssistantUnsupportedLanguage": MessageLookupByLibrary.simpleMessage(
       "We currently support Arabic and English. We may translate your question internally to understand it, then reply in a supported language.",
     ),
@@ -838,6 +842,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "highlightAdOldPrice": MessageLookupByLibrary.simpleMessage("199 AED"),
     "home": MessageLookupByLibrary.simpleMessage("Home"),
     "hoursAgo": MessageLookupByLibrary.simpleMessage("hours ago"),
+    "imageSearchCropHint": MessageLookupByLibrary.simpleMessage(
+      "Select an area of the photo to search again.",
+    ),
+    "imageSearchPeekTitle": MessageLookupByLibrary.simpleMessage(
+      "Similar products",
+    ),
+    "imageSearchViewResults": MessageLookupByLibrary.simpleMessage(
+      "View results",
+    ),
     "hoursAgoRelative": m14,
     "howCanIPlaceAnOrder": MessageLookupByLibrary.simpleMessage(
       "How can I place an order?",

@@ -120,6 +120,15 @@ public sealed class UploadOrderVideoInput
     public string WebRootPath { get; set; } = string.Empty;
 }
 
+public sealed class TrimOrderVideoInput
+{
+    public string UserId { get; set; } = string.Empty;
+    public long OrderId { get; set; }
+    public long VideoId { get; set; }
+    public double StartSeconds { get; set; }
+    public double EndSeconds { get; set; }
+}
+
 public sealed class UploadOrderImageInput
 {
     public string UserId { get; set; } = string.Empty;

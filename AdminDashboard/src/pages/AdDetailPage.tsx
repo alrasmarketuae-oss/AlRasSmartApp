@@ -17,7 +17,7 @@ import {
   useRejectProductMutation,
   useUpdateAdminProductMutation,
   useUploadAdminProductImageMutation,
-  useUploadAdminProductVideoMutation,
+  useTrimAdminProductVideoMutation,
 } from '../store'
 import AdminVideoTrimModal from '../components/shared/AdminVideoTrimModal'
 import { getRtkErrorMessage } from '../utils/rtkError'
@@ -67,8 +67,8 @@ export default function AdDetailPage() {
   const [uploadImage, { isLoading: isUploading }] = useUploadAdminProductImageMutation()
   const [deleteImage] = useDeleteAdminProductImageMutation()
   const [deleteVideo] = useDeleteAdminProductVideoMutation()
-  const [uploadProductVideo, { isLoading: isTrimmingVideo }] =
-    useUploadAdminProductVideoMutation()
+  const [trimProductVideo, { isLoading: isTrimmingVideo }] =
+    useTrimAdminProductVideoMutation()
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation()
 
   if (!productId) {
@@ -196,18 +196,22 @@ export default function AdDetailPage() {
     setActionError(message)
   }
 
-  async function handleTrimSave(file: File, durationSeconds: number) {
+  async function handleTrimSave(range: {
+    startSec: number
+    endSec: number
+    durationSeconds: number
+  }) {
     const target = queuedTrimRef.current
     if (!target) return
 
     setActionError(null)
 
     try {
-      await uploadProductVideo({
+      await trimProductVideo({
         productId,
-        file,
-        videoDurationSeconds: durationSeconds,
-        replaceVideoPath: target.path,
+        path: target.path,
+        startSeconds: range.startSec,
+        endSeconds: range.endSec,
       }).unwrap()
       setSuccessMessage(t('ads.trimVideoSaveSuccess'))
     } catch (err) {

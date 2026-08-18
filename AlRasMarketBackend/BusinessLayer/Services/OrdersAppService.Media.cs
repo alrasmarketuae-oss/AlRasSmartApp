@@ -117,6 +117,87 @@ public partial class OrdersAppService
         }
     }
 
+    public async Task<object> TrimOrderVideoAsync(TrimOrderVideoInput input, CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(input.UserId, out var userId))
+        {
+            throw new ArgumentException("Invalid user id.");
+        }
+
+        VideoMobileCompatHelper.ResolveTrimDurationSeconds(input.StartSeconds, input.EndSeconds);
+
+        var video = await orderData.GetOrderVideoWithOrderAsync(input.VideoId, input.OrderId, cancellationToken)
+            ?? throw new KeyNotFoundException("Order video not found.");
+
+        await EnsureUserCanAccessOrderAsync(userId, video.Order!, cancellationToken);
+
+        var sourcePath = video.VideoPath;
+        if (string.IsNullOrWhiteSpace(sourcePath))
+        {
+            throw new KeyNotFoundException("Order video file not found.");
+        }
+
+        await using var sourceStream = await mediaStorage.OpenReadAsync(sourcePath, cancellationToken)
+            ?? throw new KeyNotFoundException("Order video file not found.");
+
+        var trimmed = await VideoMobileCompatHelper.TrimSegmentAsync(
+            sourceStream,
+            Path.GetExtension(sourcePath),
+            input.StartSeconds,
+            input.EndSeconds,
+            logger,
+            cancellationToken);
+        await using (trimmed.Content)
+        {
+            byte[] bytes;
+            if (trimmed.Content is MemoryStream memory)
+            {
+                bytes = memory.ToArray();
+            }
+            else
+            {
+                await using var buffer = new MemoryStream();
+                if (trimmed.Content.CanSeek)
+                {
+                    trimmed.Content.Position = 0;
+                }
+
+                await trimmed.Content.CopyToAsync(buffer, cancellationToken);
+                bytes = buffer.ToArray();
+            }
+
+            var videoFileName = $"order-video-{Guid.NewGuid():N}{trimmed.Extension}";
+            var videoPath = await mediaStorage.SaveBytesAsync(
+                bytes,
+                "order-videos",
+                videoFileName,
+                trimmed.ContentType,
+                cancellationToken);
+
+            var oldPath = video.VideoPath;
+            video.VideoPath = videoPath;
+            await orderData.SaveChangesAsync(cancellationToken);
+
+            try
+            {
+                await mediaStorage.DeleteAsync(oldPath, cancellationToken);
+            }
+            catch
+            {
+                // Replacement succeeded even if the old object remains.
+            }
+
+            return new
+            {
+                video.Id,
+                video.OrderId,
+                path = video.VideoPath,
+                video.UploadedByUserId,
+                video.CreatedAt
+            };
+        }
+    }
+
     public async Task DeleteOrderVideoAsync(string userId, long orderId, long videoId, CancellationToken cancellationToken = default)
     {
         if (!Guid.TryParse(userId, out var parsedUserId))

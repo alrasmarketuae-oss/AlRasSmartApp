@@ -924,6 +924,30 @@ export const adminApi = createApi({
       ],
     }),
 
+    trimOrderVideo: builder.mutation<
+      { id: number; path: string },
+      { orderId: number; videoId: number; startSeconds: number; endSeconds: number }
+    >({
+      query: ({ orderId, videoId, startSeconds, endSeconds }) => ({
+        url: `/api/admin/orders/${orderId}/videos/${videoId}/trim`,
+        method: 'POST',
+        body: { startSeconds, endSeconds },
+      }),
+      transformResponse: (raw: {
+        id?: number
+        Id?: number
+        path?: string
+        Path?: string
+      }) => ({
+        id: raw.id ?? raw.Id ?? 0,
+        path: raw.path ?? raw.Path ?? '',
+      }),
+      invalidatesTags: (_result, _error, { orderId }) => [
+        { type: 'Orders', id: 'LIST' },
+        { type: 'Orders', id: String(orderId) },
+      ],
+    }),
+
     uploadAdminProductVideo: builder.mutation<
       { path: string },
       {
@@ -975,6 +999,24 @@ export const adminApi = createApi({
           }
         }
       },
+      invalidatesTags: (_result, _error, { productId }) => [
+        { type: 'Products', id: productId },
+        { type: 'Products', id: 'LIST' },
+      ],
+    }),
+
+    trimAdminProductVideo: builder.mutation<
+      { path: string },
+      { productId: string; path: string; startSeconds: number; endSeconds: number }
+    >({
+      query: ({ productId, path, startSeconds, endSeconds }) => ({
+        url: `/api/admin/products/${productId}/videos/trim`,
+        method: 'POST',
+        body: { path, startSeconds, endSeconds },
+      }),
+      transformResponse: (raw: { path?: string; Path?: string }) => ({
+        path: raw.path ?? raw.Path ?? '',
+      }),
       invalidatesTags: (_result, _error, { productId }) => [
         { type: 'Products', id: productId },
         { type: 'Products', id: 'LIST' },
@@ -2229,7 +2271,9 @@ export const {
   useDeleteOrderImageMutation,
   useUploadOrderVideoMutation,
   useDeleteOrderVideoMutation,
+  useTrimOrderVideoMutation,
   useUploadAdminProductVideoMutation,
+  useTrimAdminProductVideoMutation,
   useGetShippingProvidersQuery,
   useGetShippingProviderDetailQuery,
   useSetShippingProviderActiveMutation,

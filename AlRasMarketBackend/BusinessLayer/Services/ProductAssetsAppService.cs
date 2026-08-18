@@ -739,6 +739,104 @@ public class ProductAssetsAppService(
         }
     }
 
+    public async Task<object> TrimVideoAsync(
+        TrimProductVideoInput input,
+        CancellationToken cancellationToken = default)
+    {
+        var durationSeconds = VideoMobileCompatHelper.ResolveTrimDurationSeconds(
+            input.StartSeconds,
+            input.EndSeconds);
+
+        if (!Guid.TryParse(input.ProductId, out var productId))
+        {
+            throw new ArgumentException("Invalid product id.");
+        }
+
+        var sourcePath = RequireStoredPathInFolder(
+            input.SourcePath,
+            ProductVideosFolder,
+            allowedExtensions: [".mp4", ".mov", ".webm", ".m4v"]);
+
+        var product = await dbContext.Products
+            .Include(x => x.ProductVideos)
+            .FirstOrDefaultAsync(x => x.ProductId == productId, cancellationToken)
+            ?? throw new KeyNotFoundException("Product not found.");
+
+        var ownsVideo =
+            string.Equals(
+                NormalizeAssetPath(product.VideoPath),
+                sourcePath,
+                StringComparison.OrdinalIgnoreCase)
+            || product.ProductVideos.Any(v =>
+                string.Equals(
+                    NormalizeAssetPath(v.VideoPath),
+                    sourcePath,
+                    StringComparison.OrdinalIgnoreCase));
+        if (!ownsVideo)
+        {
+            throw new KeyNotFoundException("Product video not found.");
+        }
+
+        EnsureVideoSlotAvailable(product, sourcePath);
+
+        await using var sourceStream = await mediaStorage.OpenReadAsync(sourcePath, cancellationToken)
+            ?? throw new KeyNotFoundException("Video file not found.");
+
+        var trimmed = await VideoMobileCompatHelper.TrimSegmentAsync(
+            sourceStream,
+            Path.GetExtension(sourcePath),
+            input.StartSeconds,
+            input.EndSeconds,
+            logger,
+            cancellationToken);
+        await using (trimmed.Content)
+        {
+            var fileName = $"video-{Guid.NewGuid():N}{trimmed.Extension}";
+            var bytes = await ReadStreamBytesAsync(trimmed.Content, cancellationToken);
+            var videoPath = await mediaStorage.SaveBytesAsync(
+                bytes,
+                ProductVideosFolder,
+                fileName,
+                trimmed.ContentType,
+                cancellationToken);
+
+            var result = await CompleteVideoRegistrationAsync(
+                product,
+                productId,
+                videoPath,
+                durationSeconds,
+                input.AllowAdminAccess,
+                cancellationToken);
+
+            if (string.Equals(
+                    NormalizeAssetPath(product.VideoPath),
+                    sourcePath,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                product.VideoPath = videoPath;
+                product.VideoDurationSeconds = durationSeconds;
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
+
+            try
+            {
+                await DeleteVideoByPathAsync(
+                    input.ProductId,
+                    sourcePath,
+                    input.OwnerId,
+                    input.WebRootPath,
+                    input.AllowAdminAccess,
+                    cancellationToken);
+            }
+            catch (KeyNotFoundException)
+            {
+                // Old path already gone — trimmed file still succeeded.
+            }
+
+            return result;
+        }
+    }
+
     public async Task<object> PresignVideoUploadAsync(
         PresignProductVideoInput input,
         CancellationToken cancellationToken = default)

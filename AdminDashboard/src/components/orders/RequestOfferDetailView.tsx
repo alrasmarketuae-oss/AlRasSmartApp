@@ -11,9 +11,9 @@ import {
   useMarkOrderReceivedMutation,
   useRejectRequestOfferMutation,
   useSetCustomOrderStatusMutation,
-  useUploadAdminProductVideoMutation,
+  useTrimAdminProductVideoMutation,
+  useTrimOrderVideoMutation,
   useUploadOrderImageMutation,
-  useUploadOrderVideoMutation,
 } from '../../store'
 import { adminApi } from '../../store/adminApi'
 import { useAppDispatch } from '../../store/hooks'
@@ -226,12 +226,12 @@ export default function RequestOfferDetailView({
     useMarkOrderReceivedMutation()
   const [uploadOrderImage, { isLoading: isUploadingBlur }] = useUploadOrderImageMutation()
   const [deleteOrderImage, { isLoading: isDeletingBlur }] = useDeleteOrderImageMutation()
-  const [uploadOrderVideo, { isLoading: isUploadingOrderVideo }] =
-    useUploadOrderVideoMutation()
   const [deleteOrderVideo, { isLoading: isDeletingOrderVideo }] =
     useDeleteOrderVideoMutation()
-  const [uploadProductVideo, { isLoading: isUploadingProductVideo }] =
-    useUploadAdminProductVideoMutation()
+  const [trimOrderVideo, { isLoading: isTrimmingOrderVideo }] =
+    useTrimOrderVideoMutation()
+  const [trimProductVideo, { isLoading: isTrimmingProductVideo }] =
+    useTrimAdminProductVideoMutation()
   const [deleteProductVideo, { isLoading: isDeletingProductVideo }] =
     useDeleteAdminProductVideoMutation()
 
@@ -247,7 +247,7 @@ export default function RequestOfferDetailView({
   const canMarkReceived = canMarkOrderReceived(order)
   const statusHistory = order.statusHistory ?? []
   const isReplacingImage = isUploadingBlur || isDeletingBlur
-  const isTrimmingVideo = isUploadingOrderVideo || isUploadingProductVideo
+  const isTrimmingVideo = isTrimmingOrderVideo || isTrimmingProductVideo
   const isDeletingVideo = isDeletingOrderVideo || isDeletingProductVideo
   const trimmingVideoPath = backgroundTrimPath
   const isBusy =
@@ -426,23 +426,28 @@ export default function RequestOfferDetailView({
     setBlurError(message)
   }
 
-  async function handleTrimSave(file: File, durationSeconds: number) {
+  async function handleTrimSave(range: {
+    startSec: number
+    endSec: number
+    durationSeconds: number
+  }) {
     const target = queuedTrimRef.current
     if (!target) return
     setBlurError(null)
     try {
       if (target.source === 'order' && target.orderVideoId) {
-        await uploadOrderVideo({ orderId: order.id, file }).unwrap()
-        await deleteOrderVideo({
+        await trimOrderVideo({
           orderId: order.id,
           videoId: target.orderVideoId,
+          startSeconds: range.startSec,
+          endSeconds: range.endSec,
         }).unwrap()
       } else {
-        await uploadProductVideo({
+        await trimProductVideo({
           productId: order.productId,
-          file,
-          videoDurationSeconds: durationSeconds,
-          replaceVideoPath: target.path,
+          path: target.path,
+          startSeconds: range.startSec,
+          endSeconds: range.endSec,
         }).unwrap()
         invalidateOrderDetail()
       }

@@ -6101,6 +6101,36 @@ class S {
     );
   }
 
+  /// `Select an area of the photo to search again.`
+  String get imageSearchCropHint {
+    return Intl.message(
+      'Select an area of the photo to search again.',
+      name: 'imageSearchCropHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Similar products`
+  String get imageSearchPeekTitle {
+    return Intl.message(
+      'Similar products',
+      name: 'imageSearchPeekTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `View results`
+  String get imageSearchViewResults {
+    return Intl.message(
+      'View results',
+      name: 'imageSearchViewResults',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Subject to reconfirm`
   String get subjectToReconfirm {
     return Intl.message(
@@ -7101,10 +7131,10 @@ class S {
     return Intl.message('Got it', name: 'gotIt', desc: '', args: []);
   }
 
-  /// `Alras Smart`
+  /// `allras ai`
   String get aiAssistantTitle {
     return Intl.message(
-      'Alras Smart',
+      'allras ai',
       name: 'aiAssistantTitle',
       desc: '',
       args: [],
@@ -7131,6 +7161,26 @@ class S {
     return Intl.message(
       'Ask about ads, orders, returns, image search…',
       name: 'aiAssistantHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Replying to`
+  String get aiAssistantReplyTo {
+    return Intl.message(
+      'Replying to',
+      name: 'aiAssistantReplyTo',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Cancel reply`
+  String get aiAssistantCancelReply {
+    return Intl.message(
+      'Cancel reply',
+      name: 'aiAssistantCancelReply',
       desc: '',
       args: [],
     );

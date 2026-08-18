@@ -306,6 +306,49 @@ public class AdminProductsController(
         }
     }
 
+    [HttpPost("{productId}/videos/trim")]
+    [RequestSizeLimit(32 * 1024)]
+    public async Task<IActionResult> TrimVideo(
+        string productId,
+        [FromBody] TrimAdminProductVideoRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            var root = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var result = await productAssetsAppService.TrimVideoAsync(new TrimProductVideoInput
+            {
+                ProductId = productId,
+                OwnerId = userId,
+                SourcePath = request.Path,
+                StartSeconds = request.StartSeconds,
+                EndSeconds = request.EndSeconds,
+                WebRootPath = root,
+                AllowAdminAccess = true
+            }, cancellationToken);
+
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
     [HttpDelete("{productId}/videos")]
     public async Task<IActionResult> DeleteVideo(
         string productId,
@@ -415,4 +458,11 @@ public sealed class UploadAdminProductVideoRequest
     public IFormFile? File { get; set; }
     public byte VideoDurationSeconds { get; set; }
     public string? ReplaceVideoPath { get; set; }
+}
+
+public sealed class TrimAdminProductVideoRequest
+{
+    public string Path { get; set; } = string.Empty;
+    public double StartSeconds { get; set; }
+    public double EndSeconds { get; set; }
 }

@@ -137,6 +137,7 @@ class AppAssets {
 
   static const String clockIcon = 'assets/icons/clock.svg';
   static const String profileMessageIcon = 'assets/profile_icons/message.svg';
+  static const String aiAgentIcon = 'assets/profile_icons/ai_agent.png';
   static const String profilePhoneIcon = 'assets/profile_icons/phone.svg';
   static const String profileMail1Icon = 'assets/profile_icons/mail1.svg';
   static const String profileAdsIcon = 'assets/profile_icons/ADS.svg';

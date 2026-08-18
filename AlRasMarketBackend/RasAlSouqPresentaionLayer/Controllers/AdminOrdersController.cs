@@ -460,6 +460,55 @@ public class AdminOrdersController(
         {
             return BadRequest(new { message = ex.Message });
         }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("{orderId:long}/videos/{videoId:long}/trim")]
+    [RequestSizeLimit(32 * 1024)]
+    public async Task<IActionResult> TrimOrderVideo(
+        [FromRoute] long orderId,
+        [FromRoute] long videoId,
+        [FromBody] TrimOrderVideoRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            var result = await ordersAppService.TrimOrderVideoAsync(new TrimOrderVideoInput
+            {
+                UserId = userId,
+                OrderId = orderId,
+                VideoId = videoId,
+                StartSeconds = request.StartSeconds,
+                EndSeconds = request.EndSeconds
+            }, cancellationToken);
+
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
         catch (KeyNotFoundException ex)
         {
             return NotFound(new { message = ex.Message });
@@ -513,6 +562,12 @@ public sealed class UploadOrderImageRequest
 public sealed class UploadOrderVideoRequest
 {
     public IFormFile? File { get; set; }
+}
+
+public sealed class TrimOrderVideoRequest
+{
+    public double StartSeconds { get; set; }
+    public double EndSeconds { get; set; }
 }
 
 public sealed class RespondToOrderReturnRequest

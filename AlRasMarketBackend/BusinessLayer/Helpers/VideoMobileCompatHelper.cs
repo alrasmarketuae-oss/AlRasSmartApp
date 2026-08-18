@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
@@ -7,6 +8,7 @@ namespace BusinessLayer.Helpers;
 /// <summary>
 /// Converts browser-trimmed WebM (VP8/VP9) to H.264 MP4 so Android/iOS players can play it.
 /// Dashboard MediaRecorder usually emits WebM; ExoPlayer/AVPlayer often fail on that format.
+/// Server-side trim cuts the stored original so colors stay the same as the uploaded file.
 /// </summary>
 public static class VideoMobileCompatHelper
 {
@@ -16,6 +18,32 @@ public static class VideoMobileCompatHelper
         string Extension,
         string ContentType,
         bool Converted);
+
+    public static byte ResolveTrimDurationSeconds(double startSeconds, double endSeconds)
+    {
+        if (double.IsNaN(startSeconds) || double.IsInfinity(startSeconds) || startSeconds < 0)
+        {
+            throw new ArgumentException("Start time must be 0 or greater.");
+        }
+
+        if (double.IsNaN(endSeconds) || double.IsInfinity(endSeconds))
+        {
+            throw new ArgumentException("Invalid end time.");
+        }
+
+        var duration = endSeconds - startSeconds;
+        if (duration < 0.5)
+        {
+            throw new ArgumentException("Trimmed clip must be at least 0.5 seconds.");
+        }
+
+        if (duration > 180)
+        {
+            throw new ArgumentException("Trimmed clip cannot exceed 180 seconds.");
+        }
+
+        return (byte)Math.Clamp((int)Math.Round(duration, MidpointRounding.AwayFromZero), 1, 180);
+    }
 
     public static async Task<PreparedVideo> PrepareForMobilePlaybackAsync(
         IFormFile file,
@@ -67,7 +95,10 @@ public static class VideoMobileCompatHelper
                 await input.CopyToAsync(output, cancellationToken);
             }
 
-            await RunFfmpegAsync(inputPath, outputPath, cancellationToken);
+            await RunFfmpegAsync(
+                BuildWebmConvertArgs(inputPath, outputPath),
+                "WebM to MP4 conversion",
+                cancellationToken);
 
             if (!File.Exists(outputPath) || new FileInfo(outputPath).Length == 0)
             {
@@ -88,17 +119,97 @@ public static class VideoMobileCompatHelper
         }
         finally
         {
-            try
+            TryDeleteDirectory(tempDir);
+        }
+    }
+
+    public static async Task<PreparedVideo> TrimSegmentAsync(
+        Stream source,
+        string sourceExtension,
+        double startSeconds,
+        double endSeconds,
+        ILogger? logger = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        var durationSeconds = ResolveTrimDurationSeconds(startSeconds, endSeconds);
+
+        if (!IsFfmpegAvailable())
+        {
+            throw new InvalidOperationException("Trimming videos requires ffmpeg on the server.");
+        }
+
+        var extension = NormalizeExtension(sourceExtension);
+        var tempDir = Path.Combine(Path.GetTempPath(), "alras-video-trim", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        var inputPath = Path.Combine(tempDir, "input" + (string.IsNullOrEmpty(extension) ? ".bin" : extension));
+        var outputPath = Path.Combine(tempDir, "output.mp4");
+
+        try
+        {
+            await using (var output = File.Create(inputPath))
             {
-                if (Directory.Exists(tempDir))
+                if (source.CanSeek)
                 {
-                    Directory.Delete(tempDir, recursive: true);
+                    source.Position = 0;
+                }
+
+                await source.CopyToAsync(output, cancellationToken);
+            }
+
+            var copied = false;
+            if (extension is ".mp4" or ".m4v" or ".mov")
+            {
+                copied = await TryRunFfmpegAsync(
+                    BuildCopyTrimArgs(inputPath, outputPath, startSeconds, endSeconds - startSeconds),
+                    cancellationToken);
+                if (copied && (!File.Exists(outputPath) || new FileInfo(outputPath).Length == 0))
+                {
+                    copied = false;
                 }
             }
-            catch
+
+            if (!copied)
             {
-                // Best-effort temp cleanup.
+                if (File.Exists(outputPath))
+                {
+                    File.Delete(outputPath);
+                }
+
+                await RunFfmpegAsync(
+                    BuildReencodeTrimArgs(inputPath, outputPath, startSeconds, endSeconds - startSeconds),
+                    "Video trim",
+                    cancellationToken);
             }
+
+            if (!File.Exists(outputPath) || new FileInfo(outputPath).Length == 0)
+            {
+                throw new InvalidOperationException("Video trim produced an empty file.");
+            }
+
+            await Mp4FastStartHelper.TryOptimizeInPlaceAsync(outputPath, cancellationToken);
+
+            var bytes = await File.ReadAllBytesAsync(outputPath, cancellationToken);
+            logger?.LogInformation(
+                "Trimmed video {Start}-{End}s ({Duration}s stored) from {SourceExt} ({SourceBytes} bytes) to MP4 ({Mp4Bytes} bytes, copy={Copied}).",
+                startSeconds,
+                endSeconds,
+                durationSeconds,
+                extension,
+                new FileInfo(inputPath).Length,
+                bytes.Length,
+                copied);
+
+            return new PreparedVideo(
+                new MemoryStream(bytes),
+                "trim.mp4",
+                ".mp4",
+                "video/mp4",
+                Converted: !copied);
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDir);
         }
     }
 
@@ -129,12 +240,104 @@ public static class VideoMobileCompatHelper
         }
     }
 
-    private static async Task RunFfmpegAsync(
+    private static List<string> BuildWebmConvertArgs(string inputPath, string outputPath) =>
+    [
+        "-y",
+        "-fflags", "+genpts",
+        "-i", inputPath,
+        "-map", "0:v:0",
+        "-map", "0:a?",
+        "-vf", "setpts=PTS-STARTPTS,format=yuv420p",
+        "-vsync", "vfr",
+        "-c:v", "libx264",
+        "-pix_fmt", "yuv420p",
+        "-profile:v", "main",
+        "-level", "4.0",
+        "-preset", "veryfast",
+        "-crf", "23",
+        "-c:a", "aac",
+        "-b:a", "128k",
+        "-ac", "2",
+        "-movflags", "+faststart",
+        outputPath
+    ];
+
+    private static List<string> BuildCopyTrimArgs(
         string inputPath,
         string outputPath,
+        double startSeconds,
+        double durationSeconds) =>
+    [
+        "-y",
+        "-ss", FormatFfmpegTime(startSeconds),
+        "-i", inputPath,
+        "-t", FormatFfmpegTime(durationSeconds),
+        "-map", "0:v:0",
+        "-map", "0:a?",
+        "-sn",
+        "-dn",
+        "-c", "copy",
+        "-avoid_negative_ts", "make_zero",
+        "-movflags", "+faststart",
+        outputPath
+    ];
+
+    private static List<string> BuildReencodeTrimArgs(
+        string inputPath,
+        string outputPath,
+        double startSeconds,
+        double durationSeconds) =>
+    [
+        "-y",
+        "-i", inputPath,
+        "-ss", FormatFfmpegTime(startSeconds),
+        "-t", FormatFfmpegTime(durationSeconds),
+        "-map", "0:v:0",
+        "-map", "0:a?",
+        "-c:v", "libx264",
+        "-preset", "veryfast",
+        "-crf", "18",
+        "-pix_fmt", "yuv420p",
+        "-profile:v", "main",
+        "-level", "4.0",
+        "-c:a", "aac",
+        "-b:a", "128k",
+        "-ac", "2",
+        "-movflags", "+faststart",
+        outputPath
+    ];
+
+    private static async Task RunFfmpegAsync(
+        IReadOnlyList<string> arguments,
+        string failureLabel,
         CancellationToken cancellationToken)
     {
-        // Baseline H.264 + AAC is widely supported on Android/iOS video_player.
+        var result = await RunFfmpegCoreAsync(arguments, cancellationToken);
+        if (result.Ok)
+        {
+            return;
+        }
+
+        var detail = string.IsNullOrWhiteSpace(result.Stderr)
+            ? $"exit code {result.ExitCode}"
+            : result.Stderr.Length > 500
+                ? result.Stderr[^500..]
+                : result.Stderr;
+        throw new InvalidOperationException($"{failureLabel} failed: {detail}");
+    }
+
+    private static async Task<bool> TryRunFfmpegAsync(
+        IReadOnlyList<string> arguments,
+        CancellationToken cancellationToken)
+    {
+        var result = await RunFfmpegCoreAsync(arguments, cancellationToken);
+        return result.Ok;
+    }
+
+    private static async Task<FfmpegRunResult> RunFfmpegCoreAsync(
+        IReadOnlyList<string> arguments,
+        CancellationToken cancellationToken)
+    {
         using var process = new Process
         {
             StartInfo = new ProcessStartInfo
@@ -147,49 +350,67 @@ public static class VideoMobileCompatHelper
             }
         };
 
-        var args = process.StartInfo.ArgumentList;
-        args.Add("-y");
-        args.Add("-i");
-        args.Add(inputPath);
-        args.Add("-c:v");
-        args.Add("libx264");
-        args.Add("-pix_fmt");
-        args.Add("yuv420p");
-        args.Add("-profile:v");
-        args.Add("baseline");
-        args.Add("-level");
-        args.Add("3.1");
-        args.Add("-preset");
-        args.Add("veryfast");
-        args.Add("-crf");
-        args.Add("23");
-        args.Add("-c:a");
-        args.Add("aac");
-        args.Add("-b:a");
-        args.Add("128k");
-        args.Add("-ac");
-        args.Add("2");
-        args.Add("-movflags");
-        args.Add("+faststart");
-        args.Add(outputPath);
+        foreach (var argument in arguments)
+        {
+            process.StartInfo.ArgumentList.Add(argument);
+        }
 
         if (!process.Start())
         {
-            throw new InvalidOperationException("Failed to start ffmpeg.");
+            return new FfmpegRunResult(false, -1, "Failed to start ffmpeg.");
         }
 
         var stderrTask = process.StandardError.ReadToEndAsync(cancellationToken);
-        await process.WaitForExitAsync(cancellationToken);
-        var stderr = await stderrTask;
-
-        if (process.ExitCode != 0)
+        try
         {
-            var detail = string.IsNullOrWhiteSpace(stderr)
-                ? $"exit code {process.ExitCode}"
-                : stderr.Length > 500
-                    ? stderr[^500..]
-                    : stderr;
-            throw new InvalidOperationException($"WebM to MP4 conversion failed: {detail}");
+            await process.WaitForExitAsync(cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            try
+            {
+                process.Kill(entireProcessTree: true);
+            }
+            catch
+            {
+                // Best-effort stop.
+            }
+
+            throw;
+        }
+
+        var stderr = await stderrTask;
+        return new FfmpegRunResult(process.ExitCode == 0, process.ExitCode, stderr);
+    }
+
+    private readonly record struct FfmpegRunResult(bool Ok, int ExitCode, string Stderr);
+
+    private static string FormatFfmpegTime(double seconds) =>
+        Math.Max(0, seconds).ToString("0.###", CultureInfo.InvariantCulture);
+
+    private static string NormalizeExtension(string? extension)
+    {
+        if (string.IsNullOrWhiteSpace(extension))
+        {
+            return ".mp4";
+        }
+
+        var value = extension.Trim().ToLowerInvariant();
+        return value.StartsWith('.') ? value : "." + value;
+    }
+
+    private static void TryDeleteDirectory(string tempDir)
+    {
+        try
+        {
+            if (Directory.Exists(tempDir))
+            {
+                Directory.Delete(tempDir, recursive: true);
+            }
+        }
+        catch
+        {
+            // Best-effort temp cleanup.
         }
     }
 

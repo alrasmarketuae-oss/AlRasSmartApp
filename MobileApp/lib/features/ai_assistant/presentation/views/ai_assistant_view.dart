@@ -52,11 +52,10 @@ class _AiChatColors {
       ? const Color(0xFF2A2208)
       : (isDark ? const Color(0xFF0B1220) : const Color(0xFFF6F8FC));
 
-  Color get assistantBubbleBg =>
-      isDark ? const Color(0xFF111827) : Colors.white;
+  Color get assistantBubbleBg => Colors.white;
 
   Color get assistantBorder =>
-      isDark ? const Color(0xFF1F2937) : const Color(0xFFE6EAF2);
+      isDark ? const Color(0xFFE6EAF2) : const Color(0xFFE6EAF2);
 
   Color get primaryText =>
       isDark ? const Color(0xFFE5E7EB) : const Color(0xFF1F2937);
@@ -72,14 +71,17 @@ class _AiChatColors {
 
   Color get thinkingPanelBg => planMode
       ? const Color(0xFF3A2F10)
-      : const Color(0xFF151A26);
+      : Colors.white;
 
   Color get thinkingPanelBorder => planMode
       ? const Color(0xFFF0D48A)
-      : const Color(0xFF2A3142);
+      : const Color(0xFFE6EAF2);
+
+  Color get thinkingText =>
+      planMode ? const Color(0xFFF8E7B0) : const Color(0xFF4B5563);
 
   Color get pathCode =>
-      planMode ? const Color(0xFFE6A817) : const Color(0xFF34D399);
+      planMode ? const Color(0xFFE6A817) : const Color(0xFF2E77CC);
 }
 
 class AiAssistantView extends StatefulWidget {
@@ -112,6 +114,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   int _nextResponseId = 0;
   int? _inFlightResponseId;
   final Map<int, String> _questionForResponse = {};
+  _ChatMessage? _replyTo;
 
   @override
   void initState() {
@@ -135,6 +138,18 @@ class _AiAssistantViewState extends State<AiAssistantView> {
     super.dispose();
   }
 
+  String _previewForReply(_ChatMessage? message) {
+    if (message == null) return '';
+    return message.text.trim();
+  }
+
+  void _setReply(_ChatMessage message) {
+    final preview = _previewForReply(message);
+    if (preview.isEmpty) return;
+    HapticFeedback.selectionClick();
+    setState(() => _replyTo = message);
+  }
+
   Future<void> _send() async {
     final visibleText = _controller.text.trim();
     if (visibleText.isEmpty || _isThinking) return;
@@ -142,8 +157,8 @@ class _AiAssistantViewState extends State<AiAssistantView> {
     FocusManager.instance.primaryFocus?.unfocus();
 
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
-
-    // Ad-creation intent → yellow Plan Mode chat (same composer, AI asks for fields).
+    final replyTo = _replyTo;
+    final replyPreview = _previewForReply(replyTo);
     if (!_planMode && looksLikeAiAdCreationIntent(visibleText)) {
       final auth = AuthService.instance;
       final canCreate = auth.isSupplierAccount ||
@@ -192,6 +207,14 @@ class _AiAssistantViewState extends State<AiAssistantView> {
     }
 
     var apiText = visibleText;
+    if (replyTo != null && replyPreview.isNotEmpty) {
+      final quoted = replyPreview.length > 900
+          ? '${replyPreview.substring(0, 900)}…'
+          : replyPreview;
+      apiText = isAr
+          ? 'المستخدم بيرد على الرسالة التالية:\n"""\n$quoted\n"""\nسؤاله/رسالته الجديدة:\n"""\n$visibleText\n"""\nجاوب على الرسالة المقتبسة حسب سؤاله الجديد.'
+          : 'The user is replying to this previous message:\n"""\n$quoted\n"""\nTheir new question/message:\n"""\n$visibleText\n"""\nAnswer using the quoted message as the subject they are asking about.';
+    }
     if (_planMode) {
       final kind = planKindLabel(_planInitialKind);
       final buffer = StringBuffer()..writeln('[PLAN_MODE]');
@@ -227,7 +250,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
         );
         buffer.writeln(bookingIncotermPlanHint(incoterm: incoterm, isAr: isAr));
       }
-      buffer.writeln(visibleText);
+      buffer.writeln(apiText);
       apiText = buffer.toString();
     }
 
@@ -250,8 +273,13 @@ class _AiAssistantViewState extends State<AiAssistantView> {
     // Do not seed fake "thinking" copy here. Steps come only from backend MCP
     // tool calls (aiThinkingStep). Ordinary Q&A shows a spinner with no steps.
     setState(() {
-      _messages.add(_ChatMessage(text: visibleText, isUser: true));
+      _messages.add(_ChatMessage(
+        text: visibleText,
+        isUser: true,
+        replyPreview: replyPreview.isEmpty ? null : replyPreview,
+      ));
       _controller.clear();
+      _replyTo = null;
       _isThinking = true;
       _thinkingStartedAt = DateTime.now();
       _thinkingSteps.clear();
@@ -795,7 +823,9 @@ class _AiAssistantViewState extends State<AiAssistantView> {
                     colors: colors,
                   );
                 }
-                return _MessageBubble(
+                return _SwipeToReply(
+                  onReply: () => _setReply(_messages[index]),
+                  child: _MessageBubble(
                   message: _messages[index],
                   colors: colors,
                   onPickAdMedia: _pickAdMedia,
@@ -806,6 +836,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
                       _messages[index].showSupportCallbackForm = false;
                     });
                   },
+                ),
                 );
               },
             ),
@@ -820,6 +851,8 @@ class _AiAssistantViewState extends State<AiAssistantView> {
             uploadingAdMedia: _uploadingAdMedia,
             draftImageCount: _draftImagePaths.length,
             hasDraftVideo: _draftVideoPath != null,
+            replyPreview: _previewForReply(_replyTo),
+            onCancelReply: _replyTo == null ? null : () => setState(() => _replyTo = null),
           ),
         ],
       ),
@@ -1058,6 +1091,7 @@ class _ChatMessage {
     this.showSupportCallbackForm = false,
     this.supportQuestion,
     this.responseId,
+    this.replyPreview,
     List<MyListingProductModel>? listings,
   })  : thinkingSteps = thinkingSteps ?? <String>[],
         listings = listings ?? <MyListingProductModel>[];
@@ -1070,7 +1104,74 @@ class _ChatMessage {
   bool showSupportCallbackForm;
   String? supportQuestion;
   final int? responseId;
+  final String? replyPreview;
   List<MyListingProductModel> listings;
+}
+
+class _SwipeToReply extends StatefulWidget {
+  const _SwipeToReply({required this.onReply, required this.child});
+
+  final VoidCallback onReply;
+  final Widget child;
+
+  @override
+  State<_SwipeToReply> createState() => _SwipeToReplyState();
+}
+
+class _SwipeToReplyState extends State<_SwipeToReply> {
+  double _dragDx = 0;
+  bool _triggered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onHorizontalDragUpdate: (details) {
+        setState(() {
+          _dragDx = (_dragDx + details.delta.dx).clamp(-80.0, 80.0);
+        });
+        if (!_triggered && _dragDx.abs() >= 36) {
+          _triggered = true;
+          widget.onReply();
+        }
+      },
+      onHorizontalDragEnd: (_) {
+        setState(() {
+          _dragDx = 0;
+          _triggered = false;
+        });
+      },
+      onHorizontalDragCancel: () {
+        setState(() {
+          _dragDx = 0;
+          _triggered = false;
+        });
+      },
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          if (_dragDx.abs() > 12)
+            Align(
+              alignment: _dragDx > 0
+                  ? Alignment.centerLeft
+                  : Alignment.centerRight,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8.w),
+                child: Icon(
+                  Icons.reply_rounded,
+                  color: LightColor.defaultColor,
+                  size: 22.sp,
+                ),
+              ),
+            ),
+          Transform.translate(
+            offset: Offset(_dragDx, 0),
+            child: widget.child,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _MessageBubble extends StatelessWidget {
@@ -1130,13 +1231,45 @@ class _MessageBubble extends StatelessWidget {
               ),
               SizedBox(height: 8.h),
             ],
+            if (message.replyPreview != null &&
+                message.replyPreview!.trim().isNotEmpty) ...[
+              Container(
+                width: double.infinity,
+                margin: EdgeInsets.only(bottom: 8.h),
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 7.h),
+                decoration: BoxDecoration(
+                  color: isUser
+                      ? Colors.white.withValues(alpha: 0.18)
+                      : const Color(0xFFF3F6FB),
+                  borderRadius: BorderRadius.circular(10.r),
+                  border: Border(
+                    left: BorderSide(
+                      color: isUser ? Colors.white : LightColor.defaultColor,
+                      width: 3,
+                    ),
+                  ),
+                ),
+                child: Text(
+                  message.replyPreview!,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    height: 1.3,
+                    color: isUser
+                        ? Colors.white.withValues(alpha: 0.92)
+                        : colors.mutedText,
+                  ),
+                ),
+              ),
+            ],
             if (message.text.isNotEmpty)
               Directionality(
                 textDirection: _detectTextDirection(message.text),
                 child: _LinkifiedMessageText(
                   text: message.text,
                   style: TextStyle(
-                    color: isUser ? Colors.white : colors.primaryText,
+                    color: isUser ? Colors.white : const Color(0xFF1F2937),
                     fontSize: 15.sp,
                     height: 1.5,
                   ),
@@ -1397,7 +1530,7 @@ class _ThinkingLineText extends StatelessWidget {
         style: TextStyle(
           fontSize: 10.5.sp,
           height: 1.35,
-          color: colors.mutedText,
+          color: colors.thinkingText,
           fontStyle: FontStyle.italic,
         ),
       );
@@ -1410,7 +1543,7 @@ class _ThinkingLineText extends StatelessWidget {
         style: TextStyle(
           fontSize: 10.5.sp,
           height: 1.35,
-          color: colors.mutedText,
+          color: colors.thinkingText,
           fontStyle: FontStyle.italic,
         ),
         children: [
@@ -1783,6 +1916,8 @@ class _AiComposer extends StatefulWidget {
     this.planMode = false,
     this.onPickAdMedia,
     this.uploadingAdMedia = false,
+    this.replyPreview = '',
+    this.onCancelReply,
   });
 
   final TextEditingController controller;
@@ -1794,6 +1929,8 @@ class _AiComposer extends StatefulWidget {
   final bool planMode;
   final VoidCallback? onPickAdMedia;
   final bool uploadingAdMedia;
+  final String replyPreview;
+  final VoidCallback? onCancelReply;
 
   @override
   State<_AiComposer> createState() => _AiComposerState();
@@ -2035,6 +2172,65 @@ class _AiComposerState extends State<_AiComposer> {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
+                  ),
+                ),
+              if (widget.replyPreview.trim().isNotEmpty)
+                Container(
+                  width: double.infinity,
+                  margin: EdgeInsets.only(bottom: 8.h),
+                  padding: EdgeInsets.fromLTRB(12.w, 8.h, 4.w, 8.h),
+                  decoration: BoxDecoration(
+                    color: widget.planMode
+                        ? const Color(0xFF3A2F10)
+                        : const Color(0xFFF3F6FB),
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border(
+                      left: BorderSide(
+                        color: LightColor.defaultColor,
+                        width: 3,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.reply_rounded,
+                        size: 18.sp,
+                        color: LightColor.defaultColor,
+                      ),
+                      SizedBox(width: 8.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              s.aiAssistantReplyTo,
+                              style: TextStyle(
+                                fontSize: 11.sp,
+                                fontWeight: FontWeight.w700,
+                                color: LightColor.defaultColor,
+                              ),
+                            ),
+                            SizedBox(height: 2.h),
+                            Text(
+                              widget.replyPreview.trim(),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                height: 1.3,
+                                color: widget.colors.mutedText,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: s.aiAssistantCancelReply,
+                        onPressed: widget.onCancelReply,
+                        icon: Icon(Icons.close_rounded, size: 18.sp),
+                      ),
+                    ],
                   ),
                 ),
               if (widget.draftImageCount > 0 || widget.hasDraftVideo)

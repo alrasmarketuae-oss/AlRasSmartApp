@@ -43,6 +43,7 @@ public interface IOrdersAppService
         CancellationToken cancellationToken = default);
     Task<object> GetOrderVideosAsync(string userId, long orderId, CancellationToken cancellationToken = default);
     Task<object> UploadOrderVideoAsync(UploadOrderVideoInput input, CancellationToken cancellationToken = default);
+    Task<object> TrimOrderVideoAsync(TrimOrderVideoInput input, CancellationToken cancellationToken = default);
     Task DeleteOrderVideoAsync(string userId, long orderId, long videoId, CancellationToken cancellationToken = default);
     Task<object> UploadOrderImageAsync(UploadOrderImageInput input, CancellationToken cancellationToken = default);
     Task DeleteOrderImageAsync(string userId, long orderId, long imageId, CancellationToken cancellationToken = default);

@@ -209,9 +209,9 @@ public sealed class AiAssistantAppService(
         CancellationToken cancellationToken = default)
     {
         var message = (request.Message ?? string.Empty).Trim();
-        if (message.Length is < 1 or > 2000)
+        if (message.Length is < 1 or > 8000)
         {
-            throw new ArgumentException("Message must be between 1 and 2000 characters.");
+            throw new ArgumentException("Message must be between 1 and 8000 characters.");
         }
 
         // App locale + ad-creation sessions must win over English [PLAN_MODE] wrappers.
@@ -243,7 +243,10 @@ public sealed class AiAssistantAppService(
                 ThinkingSteps = thinkingSteps.Count > 0 ? thinkingSteps : answer.ThinkingSteps
             };
 
-        await ThinkAsync(language == "ar" ? "بقرأ السؤال…" : "Reading the question…")
+        await ThinkAsync(
+                language == "ar"
+                    ? $"بشتغل على سؤالك: {TrimForThinking(message)}"
+                    : $"Working on: {TrimForThinking(message)}")
             .ConfigureAwait(false);
 
         // Unauthorized create-ad: refuse immediately — never collect fields or enter plan flow.
@@ -294,7 +297,11 @@ public sealed class AiAssistantAppService(
             // Follow-ups like "and after that?" are meaningless alone, so retrieval
             // is done on the recent turns plus the new message.
             var retrievalQuery = BuildRetrievalQuery(message, history);
-            await ThinkAsync(language == "ar" ? "بدور في معرفة المنصة…" : "Searching platform knowledge…")
+            await EmitQuestionThinkingAsync(
+                    message,
+                    language,
+                    ThinkAsync,
+                    cancellationToken)
                 .ConfigureAwait(false);
             var vector = await embeddingService.EmbedAsync(retrievalQuery, cancellationToken)
                 .ConfigureAwait(false);
@@ -321,9 +328,6 @@ public sealed class AiAssistantAppService(
             // Still generate when knowledge is empty: tools (price/qty/sales/cheapest)
             // can answer live marketplace questions without RAG hits.
             var isAdCreation = IsAdCreationContext(message, history);
-            await ThinkAsync(
-                    language == "ar" ? "بجهّز الرد…" : "Drafting the reply…")
-                .ConfigureAwait(false);
 
             var generated = await GenerateGroundedAnswerAsync(
                     message,
@@ -383,9 +387,9 @@ public sealed class AiAssistantAppService(
         var signedIn = userId.HasValue ? "yes" : "no";
         var system =
             $"""
-            You are Alras Smart (الراس الذكي), the official in-app AI agent for Al Ras Smart.
-            Your name in English is Alras Smart. Your name in Arabic is الراس الذكي.
-            Never call yourself "مساعد سوق العرس" or invent similar wrong names.
+            You are allras ai, the official in-app AI agent for Al Ras Smart.
+            Your name is allras ai (Arabic: أولراس AI). Never invent a different name.
+            When you call tools, put your private reasoning about THIS exact user question in the assistant message content (short specific sentences, one idea per line). Never use generic filler such as "reading the question" or "drafting the reply".
             The current account audience is: {account.Audience}.
             Signed in: {signedIn}.
             The verified account display name/company name is: {displayName}.
@@ -545,6 +549,106 @@ public sealed class AiAssistantAppService(
                 onThinkingStep,
                 cancellationToken)
                 .ConfigureAwait(false);
+    }
+
+    private async Task EmitQuestionThinkingAsync(
+        string message,
+        string language,
+        Func<string, CancellationToken, Task> think,
+        CancellationToken cancellationToken)
+    {
+        var apiKey = configuration["OpenAI:ApiKey"];
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            return;
+        }
+
+        var visible = ExtractUserVisibleText(message);
+        var responseLanguage = language == "ar" ? "Arabic" : "English";
+        try
+        {
+            using var httpRequest = new HttpRequestMessage(
+                HttpMethod.Post,
+                "https://api.openai.com/v1/chat/completions");
+            httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            httpRequest.Content = new StringContent(
+                JsonSerializer.Serialize(new
+                {
+                    model = _options.ChatModel,
+                    temperature = 0.5,
+                    max_tokens = 420,
+                    messages = new object[]
+                    {
+                        new
+                        {
+                            role = "system",
+                            content =
+                                $"""
+                                You are the internal reasoning of allras ai.
+                                Write 5 to 10 short thinking steps in {responseLanguage} that show how you will answer THIS exact user question.
+                                Mention the actual product, order, price, person, or action they asked about.
+                                Do not give the final answer.
+                                Do not use generic filler like "reading the question", "searching knowledge", or "drafting the reply".
+                                One step per line. No numbering, bullets, quotes, or labels.
+                                """
+                        },
+                        new { role = "user", content = visible }
+                    }
+                }),
+                Encoding.UTF8,
+                "application/json");
+
+            using var response = await httpClient.SendAsync(httpRequest, cancellationToken)
+                .ConfigureAwait(false);
+            var json = await response.Content.ReadAsStringAsync(cancellationToken)
+                .ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                logger.LogWarning(
+                    "Question thinking failed ({Status}): {Body}",
+                    (int)response.StatusCode,
+                    json);
+                return;
+            }
+
+            using var doc = JsonDocument.Parse(json);
+            var content = doc.RootElement
+                .GetProperty("choices")[0]
+                .GetProperty("message")
+                .GetProperty("content")
+                .GetString();
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                return;
+            }
+
+            foreach (var rawLine in content.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var line = rawLine.Trim().TrimStart('-', '*', '•', '–').Trim();
+                line = Regex.Replace(line, @"^\d+[\.\)\-]\s*", string.Empty).Trim();
+                if (line.Length == 0)
+                {
+                    continue;
+                }
+
+                await think(line, cancellationToken).ConfigureAwait(false);
+            }
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Question thinking generation failed.");
+        }
+    }
+
+    private static string TrimForThinking(string message)
+    {
+        var visible = ExtractUserVisibleText(message).Replace('\n', ' ').Trim();
+        if (visible.Length <= 90)
+        {
+            return visible;
+        }
+
+        return visible[..90].Trim() + "…";
     }
 
     private static string ResolveAskLanguage(

@@ -2,7 +2,12 @@ import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } f
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import { fetchAdminAssetBlob } from '../../utils/downloadAsset'
 import { getRtkErrorMessage } from '../../utils/rtkError'
-import { trimVideoToFile } from '../../utils/videoTrim'
+
+type TrimVideoRange = {
+  startSec: number
+  endSec: number
+  durationSeconds: number
+}
 
 type AdminVideoTrimModalProps = {
   open: boolean
@@ -12,7 +17,7 @@ type AdminVideoTrimModalProps = {
   onClose: () => void
   onQueued?: () => void
   onFailed?: (message: string) => void
-  onSave: (file: File, durationSeconds: number) => Promise<void>
+  onSave: (range: TrimVideoRange) => Promise<void>
 }
 
 const MIN_CLIP_SEC = 0.5
@@ -362,15 +367,14 @@ export default function AdminVideoTrimModal({
   }
 
   async function handleSave() {
-    const blob = sourceBlobRef.current
-    if (!ready || !blob || trimDuration < MIN_CLIP_SEC || exportStartedRef.current) return
+    if (!ready || trimDuration < MIN_CLIP_SEC || exportStartedRef.current) return
 
     exportStartedRef.current = true
     setError(null)
 
-    const workBlob = blob.slice(0, blob.size, blob.type)
     const start = startSec
     const end = endSec
+    const durationSeconds = Math.max(1, Math.min(180, Math.round(end - start)))
     const save = onSave
     const failed = onFailed
 
@@ -379,12 +383,7 @@ export default function AdminVideoTrimModal({
 
     void (async () => {
       try {
-        const { file, durationSeconds } = await trimVideoToFile(workBlob, start, end)
-        try {
-          await save(file, durationSeconds)
-        } catch {
-          // Upload errors are reported by the parent page.
-        }
+        await save({ startSec: start, endSec: end, durationSeconds })
       } catch (err) {
         failed?.(getRtkErrorMessage(err as never, t('ads.trimVideoSaveError')))
       }
