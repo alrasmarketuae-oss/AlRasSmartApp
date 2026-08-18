@@ -236,6 +236,7 @@ class ApiConstants {
 
   static String get chatHubUrl => '$apiOrigin/chathub';
   static String get aiAssistantHubUrl => '$apiOrigin/aihub';
+  static String get aiVoiceAgentHubUrl => '$apiOrigin/aivoicehub';
   static String get orderHubUrl => '$apiOrigin/orderhub';
   static const String supportAdminUserId =
       'BD469D54-8B82-47F3-A1F0-E1C5D91DDEB0';

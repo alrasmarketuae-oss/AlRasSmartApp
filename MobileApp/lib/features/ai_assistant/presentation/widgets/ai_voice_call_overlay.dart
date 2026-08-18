@@ -18,6 +18,8 @@ class AiVoiceCallOverlay extends StatefulWidget {
     required this.micActive,
     required this.onToggleMicMute,
     required this.onToggleMic,
+    this.voiceConversationMode = false,
+    this.isProcessing = false,
     this.voiceGenderLabel,
   });
 
@@ -28,6 +30,8 @@ class AiVoiceCallOverlay extends StatefulWidget {
   final bool micActive;
   final VoidCallback onToggleMicMute;
   final VoidCallback onToggleMic;
+  final bool voiceConversationMode;
+  final bool isProcessing;
   final String? voiceGenderLabel;
 
   @override
@@ -92,24 +96,37 @@ class _AiVoiceCallOverlayState extends State<AiVoiceCallOverlay>
         AiCallPhase.waiting => const Color(0xFF3B82F6),
       };
 
-  String _statusText(bool isAr) => switch (widget.phase) {
-        AiCallPhase.listening =>
-          isAr ? 'بيسمعك… تكلم الآن' : 'Listening… speak now',
-        AiCallPhase.thinking =>
-          isAr ? 'بيفكر…' : 'Thinking…',
-        AiCallPhase.speaking => isAr ? 'بيتكلم…' : 'Speaking…',
-        AiCallPhase.muted =>
-          isAr ? 'المايك مكتوم' : 'Microphone muted',
-        AiCallPhase.waiting =>
-          isAr ? 'جاهز — اضغط المايك' : 'Ready — tap mic',
-      };
+  String _statusText(bool isAr) {
+    if (widget.voiceConversationMode && widget.isProcessing) {
+      return isAr ? 'براجع الطلب…' : 'Processing…';
+    }
+    if (widget.voiceConversationMode &&
+        widget.phase == AiCallPhase.waiting &&
+        !widget.micMuted) {
+      return isAr ? '🎤 يستمع — تكلم الآن' : '🎤 Listening — speak now';
+    }
+    return switch (widget.phase) {
+      AiCallPhase.listening =>
+        isAr ? '🎤 يستمع… تكلم الآن' : '🎤 Listening… speak now',
+      AiCallPhase.thinking =>
+        widget.voiceConversationMode
+            ? (isAr ? '🧠 براجع الطلب…' : '🧠 Processing…')
+            : (isAr ? 'بيفكر…' : 'Thinking…'),
+      AiCallPhase.speaking =>
+        isAr ? '🔊 بيتكلم…' : '🔊 Speaking…',
+      AiCallPhase.muted => isAr ? 'المايك مكتوم' : 'Microphone muted',
+      AiCallPhase.waiting =>
+        isAr ? 'جاهز — اضغط المايك' : 'Ready — tap mic',
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
     final statusColor = _phaseColor;
     final showWaves = widget.phase == AiCallPhase.listening ||
-        widget.phase == AiCallPhase.speaking;
+        widget.phase == AiCallPhase.speaking ||
+        (widget.voiceConversationMode && widget.isProcessing);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
@@ -207,9 +224,11 @@ class _AiVoiceCallOverlayState extends State<AiVoiceCallOverlay>
                     controller: _waveController,
                     color: statusColor,
                     barCount: 44,
-                    isActive: true,
+                    isActive: widget.phase != AiCallPhase.waiting ||
+                        widget.isProcessing,
                   )
-                else if (widget.phase == AiCallPhase.thinking)
+                else if (widget.phase == AiCallPhase.thinking &&
+                    !widget.voiceConversationMode)
                   _ThinkingDotsVisualizer(
                     steps: widget.thinkingSteps,
                     color: statusColor,
@@ -420,7 +439,7 @@ class _AiVoiceCallOverlayState extends State<AiVoiceCallOverlay>
           ),
           _CircleButton(
             icon: widget.micActive
-                ? Icons.stop_rounded
+                ? Icons.mic_rounded
                 : Icons.mic_none_rounded,
             label: isAr ? 'مايك' : 'Mic',
             color: widget.micActive

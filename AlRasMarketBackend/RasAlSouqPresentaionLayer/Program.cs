@@ -17,6 +17,7 @@ using BusinessLayer.PasswordHelper;
 using BusinessLayer.Services;
 using BusinessLayer.Services.AiAssistant;
 using BusinessLayer.Services.AiAssistant.Mcp;
+using BusinessLayer.Services.AiAssistant.Voice;
 using BusinessLayer.Services.ImageSearch;
 using BusinessLayer.TokenService;
 using BusinessLayer.Caching;
@@ -149,6 +150,8 @@ builder.Services.Configure<AdAutoModerationOptions>(builder.Configuration.GetSec
 builder.Services.Configure<MeilisearchOptions>(builder.Configuration.GetSection(MeilisearchOptions.SectionName));
 builder.Services.Configure<AiAssistantOptions>(
     builder.Configuration.GetSection(AiAssistantOptions.SectionName));
+builder.Services.Configure<AiVoiceAgentOptions>(
+    builder.Configuration.GetSection(AiVoiceAgentOptions.SectionName));
 builder.Services.AddSingleton<IConfigurationAccessor, ConfigurationAccessor>();
 builder.Services.AddHttpClient<IImageEmbeddingService, ClipHttpEmbeddingService>(client =>
 {
@@ -178,6 +181,12 @@ builder.Services.AddHttpClient<IAiAssistantAppService, AiAssistantAppService>(cl
 {
     client.Timeout = TimeSpan.FromSeconds(90);
 });
+builder.Services.AddHttpClient("OpenAiVoiceProgress", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(20);
+});
+builder.Services.AddSingleton<AiVoiceProgressSpeechService>();
+builder.Services.AddSingleton<AiVoiceAgentSessionManager>();
 builder.Services.AddHttpClient<IAdminChatReportAppService, AdminChatReportAppService>(client =>
 {
     client.Timeout = TimeSpan.FromSeconds(90);
@@ -211,7 +220,10 @@ builder.Services.AddScoped<IChatAppService, ChatAppService>();
 builder.Services.AddScoped<IAiConversationStore, AiConversationAppService>();
 builder.Services.AddScoped<IChatMessageEventPublisher, InProcessChatMessageEventPublisher>();
 builder.Services.AddScoped<IChatMessageCreatedHandler, RasAlSouqPresentaionLayer.Services.ChatMessageRealtimeHandler>();
-builder.Services.AddSignalR();
+builder.Services.AddSignalR(options =>
+{
+    options.MaximumReceiveMessageSize = 256 * 1024;
+});
 builder.Services.AddMemoryCache();
 builder.Services.Configure<RedisOptions>(builder.Configuration.GetSection(RedisOptions.SectionName));
 
@@ -313,7 +325,8 @@ builder.Services.AddAuthentication(options =>
             var path = context.HttpContext.Request.Path;
             if (!path.StartsWithSegments("/chathub")
                 && !path.StartsWithSegments("/adminhub")
-                && !path.StartsWithSegments("/aihub"))
+                && !path.StartsWithSegments("/aihub")
+                && !path.StartsWithSegments("/aivoicehub"))
             {
                 return Task.CompletedTask;
             }
@@ -629,6 +642,7 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHub<ChatHub>("/chathub").RequireCors("AllowAdminDashboard");
 app.MapHub<AiAssistantHub>("/aihub").RequireCors("AllowAdminDashboard");
+app.MapHub<AiVoiceAgentHub>("/aivoicehub").RequireCors("AllowAdminDashboard");
 app.MapHub<AdminNotificationHub>("/adminhub").RequireCors("AllowAdminDashboard");
 app.MapHub<OrderHub>("/orderhub").RequireCors("AllowAdminDashboard");
 

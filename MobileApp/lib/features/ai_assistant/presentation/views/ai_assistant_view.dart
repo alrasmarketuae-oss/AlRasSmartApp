@@ -32,6 +32,8 @@ import 'package:record/record.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:alrasmarket/features/ai_assistant/presentation/widgets/ai_voice_call_overlay.dart';
+import 'package:alrasmarket/features/ai_assistant/presentation/helpers/ai_assistant_tts_voice.dart';
+import 'package:alrasmarket/features/ai_assistant/data/ai_voice_agent_controller.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 /// Assistant accent ramp, used across the header, avatars, and the send button
@@ -106,6 +108,9 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   final _realtime = AiAssistantRealtimeService();
   final _historyRepository = AiAssistantRepository();
   final FlutterTts _tts = FlutterTts();
+  AiVoiceAgentController? _voiceAgent;
+  AiVoiceAgentPhase _voiceAgentPhase = AiVoiceAgentPhase.connecting;
+  String _voiceAssistantBuffer = '';
   bool _historyLoading = false;
   bool _voiceReady = false;
   bool _voiceConversationMode = false;
@@ -114,6 +119,8 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   bool _micListening = false;
   bool _micTranscribing = false;
   _AiVoiceGender _voiceGender = _AiVoiceGender.female;
+  String? _appliedVoiceSignature;
+  _AiVoiceGender? _appliedVoiceGender;
   Future<void>? _connectFuture;
   bool _isThinking = false;
   final List<String> _thinkingSteps = [];
@@ -148,6 +155,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   @override
   void dispose() {
     // Mark closed before awaiting so an in-flight connect cannot revive the hub.
+    unawaited(_voiceAgent?.dispose());
     unawaited(_realtime.close());
     unawaited(_tts.stop());
     _controller.dispose();
@@ -174,8 +182,8 @@ class _AiAssistantViewState extends State<AiAssistantView> {
           IosTextToSpeechAudioCategoryOptions.mixWithOthers,
         ],
       );
-      await _tts.setSpeechRate(0.48);
-      await _tts.setPitch(1.05);
+      await _tts.setSpeechRate(AiAssistantTtsVoice.femaleSpeechRate);
+      await _tts.setPitch(AiAssistantTtsVoice.femalePitch);
       await _tts.setVolume(1.0);
       await _tts.awaitSpeakCompletion(true);
       _tts.setCompletionHandler(() {
@@ -193,6 +201,10 @@ class _AiAssistantViewState extends State<AiAssistantView> {
         unawaited(_onAssistantSpeechFinished());
       });
       _voiceReady = true;
+      if (mounted) {
+        final langCode = Localizations.localeOf(context).languageCode;
+        await _applyAssistantVoice(langCode, force: true);
+      }
     } catch (e) {
       debugPrint('TTS init error: $e');
       _voiceReady = false;
@@ -208,21 +220,94 @@ class _AiAssistantViewState extends State<AiAssistantView> {
         _micMuted = false;
         _micListening = false;
         _micTranscribing = false;
+        _assistantSpeaking = false;
+        _voiceAgentPhase = AiVoiceAgentPhase.connecting;
       }
     });
     if (!enabled) {
       await _tts.stop();
       _assistantSpeaking = false;
       _composerKey.currentState?.cancelVoiceCapture();
+      final agent = _voiceAgent;
+      _voiceAgent = null;
+      await agent?.dispose();
       return;
     }
 
-    if (!mounted || _isThinking || _assistantSpeaking) return;
-    await _beginVoiceConversationLoop();
+    _composerKey.currentState?.cancelVoiceCapture();
+    await _tts.stop();
+    await _startRealtimeVoiceAgent();
+  }
+
+  Future<void> _startRealtimeVoiceAgent() async {
+    await _voiceAgent?.dispose();
+    _voiceAgent = null;
+    _voiceAssistantBuffer = '';
+    if (!mounted || !_voiceConversationMode) return;
+    final langCode = Localizations.localeOf(context).languageCode;
+    final agent = AiVoiceAgentController(
+      language: langCode == 'en' ? 'en' : 'ar',
+      voiceGender: _voiceGender == _AiVoiceGender.male ? 'male' : 'female',
+      onPhase: (phase) {
+        if (!mounted) return;
+        _flushVoiceTranscriptIfNeeded(phase);
+        setState(() {
+          _voiceAgentPhase = phase;
+          _micListening = phase == AiVoiceAgentPhase.listening;
+          _assistantSpeaking = phase == AiVoiceAgentPhase.speaking;
+          _micTranscribing = phase == AiVoiceAgentPhase.processing;
+          if (phase == AiVoiceAgentPhase.muted) {
+            _micMuted = true;
+          } else if (phase == AiVoiceAgentPhase.listening ||
+              phase == AiVoiceAgentPhase.speaking ||
+              phase == AiVoiceAgentPhase.processing) {
+            _micMuted = false;
+          }
+        });
+      },
+      onUserTranscript: (text) {
+        if (!mounted || text.trim().isEmpty) return;
+        setState(() {
+          _messages.add(_ChatMessage(text: text.trim(), isUser: true));
+        });
+        _scrollToEnd();
+      },
+      onAssistantTranscript: (text) {
+        _voiceAssistantBuffer += text;
+      },
+      onError: (message) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+      },
+    );
+    _voiceAgent = agent;
+    await agent.start();
+  }
+
+  void _flushVoiceTranscriptIfNeeded(AiVoiceAgentPhase phase) {
+    if (phase != AiVoiceAgentPhase.listening &&
+        phase != AiVoiceAgentPhase.processing) {
+      return;
+    }
+    final text = _voiceAssistantBuffer.trim();
+    if (text.isEmpty) return;
+    _voiceAssistantBuffer = '';
+    if (!mounted) return;
+    setState(() {
+      _messages.add(_ChatMessage(text: text, isUser: false));
+    });
+    _scrollToEnd();
   }
 
   Future<void> _toggleMicMute() async {
     setState(() => _micMuted = !_micMuted);
+    final agent = _voiceAgent;
+    if (agent != null) {
+      await agent.setMuted(_micMuted);
+      return;
+    }
     if (_micMuted) {
       _composerKey.currentState?.cancelVoiceCapture();
       setState(() => _micListening = false);
@@ -234,6 +319,10 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   }
 
   Future<void> _toggleOverlayMic() async {
+    if (_voiceAgent != null) {
+      await _toggleMicMute();
+      return;
+    }
     if (_micMuted || _isThinking || _assistantSpeaking) return;
     final composer = _composerKey.currentState;
     if (composer == null) return;
@@ -252,7 +341,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
         _assistantSpeaking) {
       return;
     }
-    await Future<void>.delayed(const Duration(milliseconds: 350));
+    await Future<void>.delayed(const Duration(milliseconds: 80));
     if (!mounted ||
         !_voiceConversationMode ||
         _micMuted ||
@@ -277,6 +366,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   }
 
   Future<void> _setVoiceGender(_AiVoiceGender gender) async {
+    if (_voiceGender == gender) return;
     setState(() => _voiceGender = gender);
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -285,11 +375,47 @@ class _AiAssistantViewState extends State<AiAssistantView> {
         gender == _AiVoiceGender.male ? 'male' : 'female',
       );
     } catch (_) {}
+
+    if (!_voiceReady || !mounted) return;
+    await _tts.stop();
+    _assistantSpeaking = false;
+    final langCode = Localizations.localeOf(context).languageCode;
+    await _applyAssistantVoice(langCode, force: true);
+    if (_voiceConversationMode && _voiceAgent != null) {
+      unawaited(_startRealtimeVoiceAgent());
+      return;
+    }
+    await _previewAssistantVoice(langCode);
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _previewAssistantVoice(String langCode) async {
+    if (!_voiceReady || !mounted) return;
+    try {
+      if (Platform.isIOS) {
+        await _tts.setIosAudioCategory(
+          IosTextToSpeechAudioCategory.playback,
+          [
+            IosTextToSpeechAudioCategoryOptions.allowBluetooth,
+            IosTextToSpeechAudioCategoryOptions.allowBluetoothA2DP,
+            IosTextToSpeechAudioCategoryOptions.defaultToSpeaker,
+            IosTextToSpeechAudioCategoryOptions.mixWithOthers,
+          ],
+        );
+      }
+      await _ensureTtsLanguage(langCode);
+      await _applyAssistantVoice(langCode, force: true);
+      await _tts.setVolume(1.0);
+      await _tts.speak(AiAssistantTtsVoice.previewPhrase(langCode));
+    } catch (e) {
+      debugPrint('TTS preview error: $e');
+    }
   }
 
   Future<void> _showVoicePicker() async {
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
     var conversationEnabled = _voiceConversationMode;
+    var selectedGender = _voiceGender;
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -331,8 +457,8 @@ class _AiAssistantViewState extends State<AiAssistantView> {
                       title: Text(isAr ? 'محادثة صوتية' : 'Voice conversation'),
                       subtitle: Text(
                         isAr
-                            ? 'تتكلم → المساعد يرد بصوت → المايك يفتح تاني'
-                            : 'You speak → assistant replies aloud → mic opens again',
+                            ? 'تكلم بشكل طبيعي — بدون زر إرسال. المساعد يرد بصوت بشري.'
+                            : 'Speak naturally — no Send button. The assistant replies with a human voice.',
                       ),
                     ),
                     const Divider(height: 1),
@@ -348,23 +474,25 @@ class _AiAssistantViewState extends State<AiAssistantView> {
                     ),
                     RadioListTile<_AiVoiceGender>(
                       value: _AiVoiceGender.female,
-                      groupValue: _voiceGender,
-                      onChanged: (value) {
+                      groupValue: selectedGender,
+                      onChanged: (value) async {
                         if (value == null) return;
-                        _setVoiceGender(value);
+                        selectedGender = value;
                         setSheetState(() {});
+                        await _setVoiceGender(value);
                       },
-                      title: Text(isAr ? 'صوت بنت' : 'Female voice'),
+                      title: Text(isAr ? 'صوت سول — أنثى' : 'Soul voice — female'),
                     ),
                     RadioListTile<_AiVoiceGender>(
                       value: _AiVoiceGender.male,
-                      groupValue: _voiceGender,
-                      onChanged: (value) {
+                      groupValue: selectedGender,
+                      onChanged: (value) async {
                         if (value == null) return;
-                        _setVoiceGender(value);
+                        selectedGender = value;
                         setSheetState(() {});
+                        await _setVoiceGender(value);
                       },
-                      title: Text(isAr ? 'صوت راجل' : 'Male voice'),
+                      title: Text(isAr ? 'صوت سول — ذكر' : 'Soul voice — male'),
                     ),
                   ],
                 ),
@@ -399,60 +527,34 @@ class _AiAssistantViewState extends State<AiAssistantView> {
     }
   }
 
-  Future<void> _applyAssistantVoice(String langCode) async {
-    final pitch = _voiceGender == _AiVoiceGender.female ? 1.06 : 0.92;
-    await _tts.setPitch(pitch);
-    final rate = _voiceGender == _AiVoiceGender.female ? 0.48 : 0.46;
-    await _tts.setSpeechRate(rate);
+  Future<void> _applyAssistantVoice(String langCode, {bool force = false}) async {
+    final isFemale = _voiceGender == _AiVoiceGender.female;
+    await _tts.setPitch(AiAssistantTtsVoice.pitchFor(isFemale: isFemale));
+    await _tts.setSpeechRate(AiAssistantTtsVoice.speechRateFor(isFemale: isFemale));
 
     try {
       final voices = await _tts.getVoices;
       if (voices is! List || voices.isEmpty) return;
 
-      final targetWords = _voiceGender == _AiVoiceGender.female
-          ? <String>['female', 'woman', 'girl', 'feminine', 'samantha', 'zira', 'premium', 'natural']
-          : <String>['male', 'man', 'boy', 'masculine', 'david', 'daniel', 'premium', 'natural'];
+      final payload = AiAssistantTtsVoice.pickVoicePayload(
+        voices: voices,
+        isFemale: isFemale,
+        langCode: langCode,
+      );
+      if (payload == null) return;
 
-      // Score voices matching the current language, then fall back to any voice.
-      dynamic best;
-      var bestScore = -1;
-      dynamic fallback;
-      var fallbackScore = -1;
-
-      for (final v in voices) {
-        if (v is! Map) continue;
-        final locale = (v['locale'] ?? '').toString().toLowerCase();
-        final matchesLang = (langCode == 'ar' && locale.startsWith('ar'))
-            || (langCode != 'ar' && locale.startsWith('en'));
-
-        final blob = v.values.join(' ').toString().toLowerCase();
-        var score = 0;
-        for (final word in targetWords) {
-          if (blob.contains(word)) score += 5;
-        }
-        if (blob.contains('enhanced') || blob.contains('neural')) score += 10;
-        if (blob.contains('premium') || blob.contains('natural')) score += 10;
-        if (blob.contains('wavenet') || blob.contains('standard')) score += 3;
-
-        if (matchesLang && score > bestScore) {
-          best = v;
-          bestScore = score;
-        } else if (!matchesLang && score > fallbackScore) {
-          fallback = v;
-          fallbackScore = score;
-        }
+      final signature = AiAssistantTtsVoice.signature(payload);
+      if (!force &&
+          signature == _appliedVoiceSignature &&
+          _voiceGender == _appliedVoiceGender) {
+        return;
       }
 
-      final chosen = best ?? fallback;
-      if (chosen != null) {
-        try {
-          await _tts.setVoice(Map<String, String>.from(chosen));
-        } catch (_) {
-          // setVoice failed; proceed with default voice.
-        }
-      }
+      await _tts.setVoice(payload);
+      _appliedVoiceSignature = signature;
+      _appliedVoiceGender = _voiceGender;
     } catch (_) {
-      // getVoices failed; proceed with default voice/pitch/rate.
+      // getVoices/setVoice failed; pitch and rate still apply.
     }
   }
 
@@ -1027,16 +1129,16 @@ class _AiAssistantViewState extends State<AiAssistantView> {
           }
         });
         _scrollToEnd();
-        if (_voiceConversationMode && finalAnswer.isNotEmpty) {
+        if (_voiceConversationMode && _voiceAgent == null && finalAnswer.isNotEmpty) {
           unawaited(_speakAssistantReply(finalAnswer));
-        } else if (_voiceConversationMode) {
+        } else if (_voiceConversationMode && _voiceAgent == null) {
           unawaited(_onAssistantSpeechFinished());
         }
       },
       onError: (message) {
         if (_shouldIgnoreAssistantError()) return;
         _showConnectionError();
-        if (_voiceConversationMode) {
+        if (_voiceConversationMode && _voiceAgent == null) {
           unawaited(_onAssistantSpeechFinished());
         }
       },
@@ -1169,18 +1271,41 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   }
 
   AiCallPhase get _callPhase {
+    if (_voiceConversationMode && _voiceAgent != null) {
+      return switch (_voiceAgentPhase) {
+        AiVoiceAgentPhase.muted => AiCallPhase.muted,
+        AiVoiceAgentPhase.speaking => AiCallPhase.speaking,
+        AiVoiceAgentPhase.listening => AiCallPhase.listening,
+        AiVoiceAgentPhase.processing => AiCallPhase.thinking,
+        AiVoiceAgentPhase.connecting => AiCallPhase.waiting,
+        AiVoiceAgentPhase.error => AiCallPhase.waiting,
+      };
+    }
     if (_micMuted) return AiCallPhase.muted;
     if (_assistantSpeaking) return AiCallPhase.speaking;
-    if (_isThinking || _micTranscribing) return AiCallPhase.thinking;
     if (_micListening) return AiCallPhase.listening;
+    if (_voiceConversationMode && (_isThinking || _micTranscribing)) {
+      return AiCallPhase.waiting;
+    }
+    if (_isThinking || _micTranscribing) return AiCallPhase.thinking;
     return AiCallPhase.waiting;
   }
+
+  bool get _voiceCallProcessing =>
+      _voiceConversationMode &&
+      (_voiceAgentPhase == AiVoiceAgentPhase.connecting ||
+          _voiceAgentPhase == AiVoiceAgentPhase.processing ||
+          ((_micTranscribing || _isThinking) &&
+              _voiceAgent == null &&
+              !_micListening &&
+              !_assistantSpeaking &&
+              !_micMuted));
 
   String? get _voiceGenderLabel {
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
     return _voiceGender == _AiVoiceGender.female
-        ? (isAr ? 'صوت بنت' : 'Female voice')
-        : (isAr ? 'صوت راجل' : 'Male voice');
+        ? (isAr ? 'صوت سول — أنثى' : 'Soul voice — female')
+        : (isAr ? 'صوت سول — ذكر' : 'Soul voice — male');
   }
 
   @override
@@ -1209,9 +1334,12 @@ class _AiAssistantViewState extends State<AiAssistantView> {
                 child: ListView.builder(
                   controller: _scrollController,
                   padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 16.h),
-                  itemCount: _messages.length + (_isThinking ? 1 : 0),
+                  itemCount: _messages.length +
+                      (_isThinking && !_voiceConversationMode ? 1 : 0),
                   itemBuilder: (context, index) {
-                    if (_isThinking && index == _messages.length) {
+                    if (_isThinking &&
+                        !_voiceConversationMode &&
+                        index == _messages.length) {
                       return _ThinkingBubble(
                         steps: List<String>.from(_thinkingSteps),
                         startedAt: _thinkingStartedAt,
@@ -1265,6 +1393,8 @@ class _AiAssistantViewState extends State<AiAssistantView> {
             Positioned.fill(
               child: AiVoiceCallOverlay(
                 phase: _callPhase,
+                voiceConversationMode: _voiceConversationMode,
+                isProcessing: _voiceCallProcessing,
                 onEndCall: () => _setVoiceConversationMode(false),
                 thinkingSteps: List<String>.from(_thinkingSteps),
                 micMuted: _micMuted,
@@ -2406,6 +2536,16 @@ class _AiComposerState extends State<_AiComposer> {
   bool _autoSendAfterTranscription = false;
   String _baseText = '';
   String? _recordingPath;
+  StreamSubscription<Amplitude>? _amplitudeSub;
+  Timer? _silenceTimer;
+  Timer? _maxRecordingTimer;
+  bool _speechDetected = false;
+  DateTime? _recordingStartedAt;
+
+  static const _speechThresholdDb = -42.0;
+  static const _silenceDuration = Duration(milliseconds: 900);
+  static const _minRecordingDuration = Duration(milliseconds: 450);
+  static const _maxRecordingDuration = Duration(seconds: 45);
 
   bool get isListening => _listening;
   bool get isTranscribing => _correcting;
@@ -2427,11 +2567,66 @@ class _AiComposerState extends State<_AiComposer> {
 
   @override
   void dispose() {
+    _stopVoiceActivityDetection();
     if (_listening) {
       unawaited(_recorder.stop());
     }
     unawaited(_recorder.dispose());
     super.dispose();
+  }
+
+  void _startVoiceActivityDetection() {
+    _stopVoiceActivityDetection();
+    _speechDetected = false;
+    _recordingStartedAt = DateTime.now();
+
+    _amplitudeSub = _recorder
+        .onAmplitudeChanged(const Duration(milliseconds: 120))
+        .listen(_onVoiceAmplitude);
+
+    _maxRecordingTimer = Timer(_maxRecordingDuration, () {
+      if (_listening && mounted) {
+        unawaited(_finishListening());
+      }
+    });
+  }
+
+  void _stopVoiceActivityDetection() {
+    _amplitudeSub?.cancel();
+    _amplitudeSub = null;
+    _silenceTimer?.cancel();
+    _silenceTimer = null;
+    _maxRecordingTimer?.cancel();
+    _maxRecordingTimer = null;
+    _speechDetected = false;
+    _recordingStartedAt = null;
+  }
+
+  void _onVoiceAmplitude(Amplitude amp) {
+    if (!_listening || !mounted) return;
+
+    if (amp.current > _speechThresholdDb) {
+      _speechDetected = true;
+      _silenceTimer?.cancel();
+      _silenceTimer = null;
+      return;
+    }
+
+    if (!_speechDetected) return;
+
+    final started = _recordingStartedAt;
+    if (started != null &&
+        DateTime.now().difference(started) < _minRecordingDuration) {
+      return;
+    }
+
+    if (_silenceTimer?.isActive ?? false) return;
+
+    _silenceTimer = Timer(_silenceDuration, () {
+      if (_listening && _speechDetected && mounted) {
+        unawaited(_finishListening());
+      }
+    });
   }
 
   Future<void> _toggleVoice() async {
@@ -2485,12 +2680,17 @@ class _AiComposerState extends State<_AiComposer> {
       widget.controller.text = _baseText;
     });
     widget.onListeningChanged?.call(true);
+
+    if (widget.voiceConversationMode && _autoSendAfterTranscription) {
+      _startVoiceActivityDetection();
+    }
   }
 
   Future<void> _finishListening() async {
     if (_finishing) return;
     if (!_listening && !_awaitingConfirm) return;
     _finishing = true;
+    _stopVoiceActivityDetection();
 
     String? path;
     try {
@@ -2616,6 +2816,7 @@ class _AiComposerState extends State<_AiComposer> {
   }
 
   void _cancelVoice() {
+    _stopVoiceActivityDetection();
     unawaited(() async {
       try {
         final path = await _recorder.stop();
