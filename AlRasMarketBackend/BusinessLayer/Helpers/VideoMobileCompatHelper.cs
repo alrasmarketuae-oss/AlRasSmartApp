@@ -7,8 +7,7 @@ namespace BusinessLayer.Helpers;
 
 /// <summary>
 /// Converts browser-trimmed WebM (VP8/VP9) to H.264 MP4 so Android/iOS players can play it.
-/// Dashboard MediaRecorder usually emits WebM; ExoPlayer/AVPlayer often fail on that format.
-/// Server-side trim cuts the stored original so colors stay the same as the uploaded file.
+/// Admin trim uses ffmpeg stream copy (-c copy) on the original file so colors are unchanged.
 /// </summary>
 public static class VideoMobileCompatHelper
 {
@@ -133,6 +132,7 @@ public static class VideoMobileCompatHelper
     {
         ArgumentNullException.ThrowIfNull(source);
         var durationSeconds = ResolveTrimDurationSeconds(startSeconds, endSeconds);
+        var clipDuration = endSeconds - startSeconds;
 
         if (!IsFfmpegAvailable())
         {
@@ -140,10 +140,13 @@ public static class VideoMobileCompatHelper
         }
 
         var extension = NormalizeExtension(sourceExtension);
+        var outputExtension = extension is ".mp4" or ".m4v" or ".mov" or ".webm"
+            ? (extension is ".m4v" or ".mov" ? ".mp4" : extension)
+            : ".mp4";
         var tempDir = Path.Combine(Path.GetTempPath(), "alras-video-trim", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempDir);
         var inputPath = Path.Combine(tempDir, "input" + (string.IsNullOrEmpty(extension) ? ".bin" : extension));
-        var outputPath = Path.Combine(tempDir, "output.mp4");
+        var outputPath = Path.Combine(tempDir, "output" + outputExtension);
 
         try
         {
@@ -157,16 +160,14 @@ public static class VideoMobileCompatHelper
                 await source.CopyToAsync(output, cancellationToken);
             }
 
-            var copied = false;
-            if (extension is ".mp4" or ".m4v" or ".mov")
+            // Stream copy only: no decode/encode, so color space/codec/bitrate stay original.
+            // ffmpeg -ss START -i input -t DURATION -c copy output
+            var copied = await TryRunFfmpegAsync(
+                BuildCopyTrimArgs(inputPath, outputPath, startSeconds, clipDuration, inputSeek: true),
+                cancellationToken);
+            if (copied && (!File.Exists(outputPath) || new FileInfo(outputPath).Length == 0))
             {
-                copied = await TryRunFfmpegAsync(
-                    BuildCopyTrimArgs(inputPath, outputPath, startSeconds, endSeconds - startSeconds),
-                    cancellationToken);
-                if (copied && (!File.Exists(outputPath) || new FileInfo(outputPath).Length == 0))
-                {
-                    copied = false;
-                }
+                copied = false;
             }
 
             if (!copied)
@@ -176,36 +177,39 @@ public static class VideoMobileCompatHelper
                     File.Delete(outputPath);
                 }
 
-                await RunFfmpegAsync(
-                    BuildReencodeTrimArgs(inputPath, outputPath, startSeconds, endSeconds - startSeconds),
-                    "Video trim",
+                copied = await TryRunFfmpegAsync(
+                    BuildCopyTrimArgs(inputPath, outputPath, startSeconds, clipDuration, inputSeek: false),
                     cancellationToken);
             }
 
-            if (!File.Exists(outputPath) || new FileInfo(outputPath).Length == 0)
+            if (!copied || !File.Exists(outputPath) || new FileInfo(outputPath).Length == 0)
             {
-                throw new InvalidOperationException("Video trim produced an empty file.");
+                throw new InvalidOperationException(
+                    "Video trim with stream copy failed. Re-encoding is disabled to preserve original colors.");
             }
 
-            await Mp4FastStartHelper.TryOptimizeInPlaceAsync(outputPath, cancellationToken);
+            if (outputExtension is ".mp4" or ".m4v")
+            {
+                await Mp4FastStartHelper.TryOptimizeInPlaceAsync(outputPath, cancellationToken);
+            }
 
             var bytes = await File.ReadAllBytesAsync(outputPath, cancellationToken);
             logger?.LogInformation(
-                "Trimmed video {Start}-{End}s ({Duration}s stored) from {SourceExt} ({SourceBytes} bytes) to MP4 ({Mp4Bytes} bytes, copy={Copied}).",
+                "Trimmed video {Start}-{End}s ({Duration}s stored) from {SourceExt} ({SourceBytes} bytes) to {OutExt} ({OutBytes} bytes) using ffmpeg -c copy.",
                 startSeconds,
                 endSeconds,
                 durationSeconds,
                 extension,
                 new FileInfo(inputPath).Length,
-                bytes.Length,
-                copied);
+                outputExtension,
+                bytes.Length);
 
             return new PreparedVideo(
                 new MemoryStream(bytes),
-                "trim.mp4",
-                ".mp4",
-                "video/mp4",
-                Converted: !copied);
+                "trim" + outputExtension,
+                outputExtension,
+                GuessContentType(outputExtension),
+                Converted: false);
         }
         finally
         {
@@ -262,50 +266,51 @@ public static class VideoMobileCompatHelper
         outputPath
     ];
 
+    /// <summary>
+    /// ffmpeg -ss START -i input -t DURATION -c copy output
+    /// When <paramref name="inputSeek"/> is false: -i first then -ss (still copy, no re-encode).
+    /// </summary>
     private static List<string> BuildCopyTrimArgs(
         string inputPath,
         string outputPath,
         double startSeconds,
-        double durationSeconds) =>
-    [
-        "-y",
-        "-ss", FormatFfmpegTime(startSeconds),
-        "-i", inputPath,
-        "-t", FormatFfmpegTime(durationSeconds),
-        "-map", "0:v:0",
-        "-map", "0:a?",
-        "-sn",
-        "-dn",
-        "-c", "copy",
-        "-avoid_negative_ts", "make_zero",
-        "-movflags", "+faststart",
-        outputPath
-    ];
+        double durationSeconds,
+        bool inputSeek)
+    {
+        var start = FormatFfmpegTime(startSeconds);
+        var duration = FormatFfmpegTime(durationSeconds);
+        var args = new List<string> { "-y" };
+        if (inputSeek)
+        {
+            args.Add("-ss");
+            args.Add(start);
+            args.Add("-i");
+            args.Add(inputPath);
+        }
+        else
+        {
+            args.Add("-i");
+            args.Add(inputPath);
+            args.Add("-ss");
+            args.Add(start);
+        }
 
-    private static List<string> BuildReencodeTrimArgs(
-        string inputPath,
-        string outputPath,
-        double startSeconds,
-        double durationSeconds) =>
-    [
-        "-y",
-        "-i", inputPath,
-        "-ss", FormatFfmpegTime(startSeconds),
-        "-t", FormatFfmpegTime(durationSeconds),
-        "-map", "0:v:0",
-        "-map", "0:a?",
-        "-c:v", "libx264",
-        "-preset", "veryfast",
-        "-crf", "18",
-        "-pix_fmt", "yuv420p",
-        "-profile:v", "main",
-        "-level", "4.0",
-        "-c:a", "aac",
-        "-b:a", "128k",
-        "-ac", "2",
-        "-movflags", "+faststart",
-        outputPath
-    ];
+        args.Add("-t");
+        args.Add(duration);
+        args.Add("-c");
+        args.Add("copy");
+        args.Add("-avoid_negative_ts");
+        args.Add("make_zero");
+        if (Path.GetExtension(outputPath).Equals(".mp4", StringComparison.OrdinalIgnoreCase)
+            || Path.GetExtension(outputPath).Equals(".m4v", StringComparison.OrdinalIgnoreCase))
+        {
+            args.Add("-movflags");
+            args.Add("+faststart");
+        }
+
+        args.Add(outputPath);
+        return args;
+    }
 
     private static async Task RunFfmpegAsync(
         IReadOnlyList<string> arguments,

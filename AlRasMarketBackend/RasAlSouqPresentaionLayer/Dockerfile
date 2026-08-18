@@ -27,7 +27,7 @@ RUN dotnet publish -c Release -o /app/publish --no-restore
 # ===========================
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 
-# ffmpeg: convert browser-trimmed WebM → H.264 MP4 for mobile playback
+# ffmpeg: stream-copy video trim (-c copy) and optional WebM→MP4 for uploads
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ffmpeg \
     && rm -rf /var/lib/apt/lists/*
