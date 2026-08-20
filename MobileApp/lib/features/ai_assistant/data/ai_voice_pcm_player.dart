@@ -12,18 +12,60 @@ class AiVoicePcmPlayer {
 
   final AudioPlayer _fallback = AudioPlayer();
   bool _pcmReady = false;
+  bool _playingProgress = false;
   final BytesBuilder _fallbackBuffer = BytesBuilder(copy: false);
   int _queuedResponseBytes = 0;
-  int _generation = 0;
-  Future<void> _chain = Future<void>.value();
 
   int get queuedResponseBytes => _queuedResponseBytes;
 
-  Future<void> start() => _enqueue(_setupEngine);
+  Future<void> start() async {
+    try {
+      await pcm.FlutterPcmSound.setLogLevel(pcm.LogLevel.none);
+      await pcm.FlutterPcmSound.setup(
+        sampleRate: sampleRate,
+        channelCount: 1,
+        iosAudioCategory: pcm.IosAudioCategory.playAndRecord,
+      );
+      await pcm.FlutterPcmSound.setFeedThreshold(1200);
+      _pcmReady = true;
+    } catch (e) {
+      debugPrint('PCM sound setup failed, using WAV fallback: $e');
+      _pcmReady = false;
+      await _fallback.setPlayerMode(PlayerMode.lowLatency);
+      await _fallback.setReleaseMode(ReleaseMode.stop);
+    }
+    await _applySpeakerOnce();
+  }
 
-  Future<void> feed(Uint8List pcm16, {required String kind}) {
-    if (pcm16.isEmpty) return Future.value();
-    return _enqueue(() => _feedNow(pcm16, kind: kind));
+  Future<void> feed(Uint8List pcm16, {required String kind}) async {
+    if (pcm16.isEmpty) return;
+    if (kind == 'response') {
+      _queuedResponseBytes += pcm16.length;
+      if (_playingProgress) {
+        // Do not release the PCM pipeline — that drops buffered response audio.
+        _playingProgress = false;
+      }
+    } else {
+      _playingProgress = kind == 'progress';
+    }
+
+    if (_pcmReady) {
+      try {
+        final copy = Uint8List.fromList(pcm16);
+        await pcm.FlutterPcmSound.feed(
+          pcm.PcmArrayInt16(bytes: ByteData.sublistView(copy)),
+        );
+        pcm.FlutterPcmSound.start();
+        return;
+      } catch (e) {
+        debugPrint('PCM feed failed: $e');
+      }
+    }
+
+    _fallbackBuffer.add(pcm16);
+    if (_fallbackBuffer.length >= 3840) {
+      await _playFallbackWav();
+    }
   }
 
   void markResponsePlaybackComplete() {
@@ -35,16 +77,25 @@ class AiVoicePcmPlayer {
     return ((_queuedResponseBytes / bytesPerSecond) * 1000).ceil() + 250;
   }
 
-  /// Stops queued audio without leaving the engine in a dead state.
-  Future<void> stopPlayback() => _enqueue(() async {
-        _generation++;
-        _queuedResponseBytes = 0;
-        _fallbackBuffer.clear();
-        try {
-          await _fallback.stop();
-        } catch (_) {}
-        await _setupEngine();
-      });
+  Future<void> stopPlayback() async {
+    _playingProgress = false;
+    _queuedResponseBytes = 0;
+    _fallbackBuffer.clear();
+    if (_pcmReady) {
+      try {
+        await pcm.FlutterPcmSound.release();
+        await pcm.FlutterPcmSound.setup(
+          sampleRate: sampleRate,
+          channelCount: 1,
+          iosAudioCategory: pcm.IosAudioCategory.playAndRecord,
+        );
+      } catch (_) {}
+    }
+    try {
+      await _fallback.stop();
+    } catch (_) {}
+    await _applySpeakerOnce();
+  }
 
   Future<void> dispose() async {
     await stopPlayback();
@@ -56,31 +107,7 @@ class AiVoicePcmPlayer {
     await _fallback.dispose();
   }
 
-  Future<void> _enqueue(Future<void> Function() op) {
-    final next = _chain.then((_) => op());
-    _chain = next.catchError((Object e, StackTrace st) {
-      debugPrint('PCM player op failed: $e\n$st');
-    });
-    return next;
-  }
-
-  Future<void> _setupEngine() async {
-    try {
-      await pcm.FlutterPcmSound.setLogLevel(pcm.LogLevel.none);
-      await pcm.FlutterPcmSound.setup(
-        sampleRate: sampleRate,
-        channelCount: 1,
-        iosAudioCategory: pcm.IosAudioCategory.playAndRecord,
-        iosAllowBackgroundAudio: true,
-      );
-      await pcm.FlutterPcmSound.setFeedThreshold(1200);
-      _pcmReady = true;
-    } catch (e) {
-      debugPrint('PCM sound setup failed, using WAV fallback: $e');
-      _pcmReady = false;
-      await _fallback.setPlayerMode(PlayerMode.lowLatency);
-      await _fallback.setReleaseMode(ReleaseMode.stop);
-    }
+  Future<void> _applySpeakerOnce() async {
     await AiVoiceSpeakerRoute.apply();
     try {
       await _fallback.setAudioContext(AiVoiceSpeakerRoute.context);
@@ -88,55 +115,12 @@ class AiVoicePcmPlayer {
     } catch (_) {}
   }
 
-  Future<void> _feedNow(Uint8List pcm16, {required String kind}) async {
-    final generation = _generation;
-    if (kind == 'response') {
-      _queuedResponseBytes += pcm16.length;
-    }
-
-    if (_pcmReady) {
-      try {
-        if (generation != _generation) return;
-        final copy = Uint8List.fromList(pcm16);
-        await pcm.FlutterPcmSound.feed(
-          pcm.PcmArrayInt16(bytes: ByteData.sublistView(copy)),
-        );
-        if (generation != _generation) return;
-        pcm.FlutterPcmSound.start();
-        return;
-      } catch (e) {
-        debugPrint('PCM feed failed, rebuilding engine: $e');
-        await _setupEngine();
-        if (generation != _generation || !_pcmReady) {
-          // fall through to WAV
-        } else {
-          try {
-            final copy = Uint8List.fromList(pcm16);
-            await pcm.FlutterPcmSound.feed(
-              pcm.PcmArrayInt16(bytes: ByteData.sublistView(copy)),
-            );
-            pcm.FlutterPcmSound.start();
-            return;
-          } catch (e2) {
-            debugPrint('PCM retry feed failed: $e2');
-          }
-        }
-      }
-    }
-
-    if (generation != _generation) return;
-    _fallbackBuffer.add(pcm16);
-    if (_fallbackBuffer.length >= 3840) {
-      await _playFallbackWav();
-    }
-  }
-
   Future<void> _playFallbackWav() async {
     if (_fallbackBuffer.isEmpty) return;
     final pcmBytes = _fallbackBuffer.takeBytes();
     final wav = _wrapWav(pcmBytes, sampleRate);
     try {
-      await _fallback.play(BytesSource(wav));
+      await _fallback.play(BytesSource(wav, mimeType: 'audio/wav'));
     } catch (e) {
       debugPrint('WAV fallback play failed: $e');
     }

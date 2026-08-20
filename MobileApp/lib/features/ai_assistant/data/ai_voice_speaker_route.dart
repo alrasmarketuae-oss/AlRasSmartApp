@@ -10,7 +10,7 @@ class AiVoiceSpeakerRoute {
         android: const AudioContextAndroid(
           isSpeakerphoneOn: true,
           stayAwake: true,
-          contentType: AndroidContentType.speech,
+          contentType: AndroidContentType.music,
           usageType: AndroidUsageType.media,
           audioMode: AndroidAudioMode.normal,
           audioFocus: AndroidAudioFocus.gain,

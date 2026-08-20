@@ -53,8 +53,6 @@ class AiVoiceAgentController with WidgetsBindingObserver {
   DateTime? _lastResponseAudioAt;
   Timer? _playbackDrainTimer;
   int _loudFramesWhileSpeaking = 0;
-  bool _dropCancelledResponseAudio = false;
-  bool _localInterruptInFlight = false;
 
   /// Close-range speech only (~-26 dBFS). Far/quiet sounds should not barge-in.
   static const _bargeInThresholdDb = -26.0;
@@ -90,8 +88,6 @@ class AiVoiceAgentController with WidgetsBindingObserver {
         onAudio: (pcmBytes, {required kind}) {
           if (_closed) return;
           if (kind == 'response') {
-            // A new spoken reply always wins over a cancelled tail.
-            _dropCancelledResponseAudio = false;
             _agentSpeaking = true;
             _playbackStartedAt ??= DateTime.now();
             _lastResponseAudioAt = DateTime.now();
@@ -99,9 +95,6 @@ class AiVoiceAgentController with WidgetsBindingObserver {
             _setPhase(AiVoiceAgentPhase.speaking);
           }
           unawaited(_player.feed(pcmBytes, kind: kind));
-          if (kind == 'response') {
-            unawaited(AiVoiceSpeakerRoute.apply());
-          }
         },
         onTranscript: (role, text, {required isFinal}) {
           if (role == 'user' && isFinal) {
@@ -193,15 +186,9 @@ class AiVoiceAgentController with WidgetsBindingObserver {
   void _onStatus(String phase) {
     switch (phase) {
       case 'response_complete':
-        if (_dropCancelledResponseAudio) {
-          return;
-        }
         _scheduleListeningAfterPlaybackDrain();
         return;
       case 'listening':
-        if (_dropCancelledResponseAudio) {
-          return;
-        }
         if (_shouldDelayListeningForPlayback()) {
           _scheduleListeningAfterPlaybackDrain();
           return;
@@ -209,18 +196,15 @@ class AiVoiceAgentController with WidgetsBindingObserver {
         _finishSpeakingPhase();
         break;
       case 'processing':
-        _dropCancelledResponseAudio = false;
         if (_agentSpeaking || _shouldDelayListeningForPlayback()) {
           return;
         }
         _setPhase(AiVoiceAgentPhase.processing);
         break;
       case 'speaking':
-        _dropCancelledResponseAudio = false;
         _agentSpeaking = true;
         _playbackStartedAt ??= DateTime.now();
         _setPhase(AiVoiceAgentPhase.speaking);
-        unawaited(AiVoiceSpeakerRoute.apply());
         break;
     }
   }
@@ -397,21 +381,9 @@ class AiVoiceAgentController with WidgetsBindingObserver {
 
   Future<void> _handleInterrupt({required bool fromServer}) async {
     try {
-      if (fromServer && (_localInterruptInFlight || !_agentSpeaking)) {
-        // Ack of a local barge-in. Playback is already resetting.
-        _localInterruptInFlight = false;
-        return;
-      }
-      if (!fromServer) {
-        _localInterruptInFlight = true;
-      }
-      _dropCancelledResponseAudio = true;
-      _playbackDrainTimer?.cancel();
       _agentSpeaking = false;
       _playbackStartedAt = null;
-      _lastResponseAudioAt = null;
       _loudFramesWhileSpeaking = 0;
-      _player.markResponsePlaybackComplete();
       await _player.stopPlayback();
       if (!fromServer) {
         await _hub.interruptAgent();
