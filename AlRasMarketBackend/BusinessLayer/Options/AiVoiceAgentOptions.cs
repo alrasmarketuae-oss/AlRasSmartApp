@@ -31,7 +31,7 @@ public sealed class AiVoiceAgentOptions
     public bool InterruptResponse { get; set; } = false;
 
     /// <summary>server_vad energy threshold (0–1). Higher = ignore quieter/farther speech.</summary>
-    public double VadThreshold { get; set; } = 0.48;
+    public double VadThreshold { get; set; } = 0.55;
 
     public int PrefixPaddingMs { get; set; } = 300;
 
@@ -56,6 +56,21 @@ public sealed class AiVoiceAgentOptions
     public int SampleRate { get; set; } = 24000;
 
     public double Temperature { get; set; } = 0.7;
+
+    /// <summary>
+    /// Cap tool JSON returned into the Realtime conversation to limit text tokens.
+    /// </summary>
+    public int MaxToolOutputChars { get; set; } = 2800;
+
+    /// <summary>
+    /// Close idle voice sessions after this many seconds with no client audio/activity.
+    /// </summary>
+    public int IdleTimeoutSeconds { get; set; } = 90;
+
+    /// <summary>
+    /// Clear OpenAI input buffer after this many seconds of continuous silent appends.
+    /// </summary>
+    public int SilentBufferSeconds { get; set; } = 3;
 
     public string[] ProgressPhrases { get; set; } =
     [

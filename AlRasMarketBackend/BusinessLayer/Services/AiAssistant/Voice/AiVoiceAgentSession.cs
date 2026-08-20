@@ -43,10 +43,24 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
     private long _lastSpeechStartedMs;
     private volatile bool _sessionReady;
     private int _appendedBytesWithoutSpeech;
+    private long _lastActivityUtcTicks = DateTime.UtcNow.Ticks;
+    private Task? _idleWatchdog;
     private readonly TaskCompletionSource _sessionCreated = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly TaskCompletionSource _sessionUpdated = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly ConcurrentDictionary<string, byte> _handledCallIds = new(StringComparer.Ordinal);
-    private const int MaxBufferedBytesWithoutSpeech = 24_000 * 2 * 8;
+
+    /// <summary>Optional hook so the manager can drop an idle session from its map.</summary>
+    public Func<Task>? OnIdleTimeoutAsync { get; set; }
+
+    private int MaxBufferedBytesWithoutSpeech
+    {
+        get
+        {
+            var seconds = Math.Clamp(_options.SilentBufferSeconds <= 0 ? 3 : _options.SilentBufferSeconds, 1, 8);
+            var rate = _options.SampleRate > 0 ? _options.SampleRate : 24000;
+            return rate * 2 * seconds;
+        }
+    }
 
     public AiVoiceAgentSession(
         IServiceScopeFactory scopeFactory,
@@ -112,6 +126,12 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
             await WaitForSignalAsync(_sessionUpdated, TimeSpan.FromSeconds(8), "session.updated", linked.Token)
                 .ConfigureAwait(false);
             _sessionReady = true;
+            TouchActivity();
+            _idleWatchdog = Task.Run(() => IdleWatchdogAsync(_lifetime.Token), CancellationToken.None);
+            var phrases = _options.ProgressPhrases is { Length: > 0 }
+                ? _options.ProgressPhrases
+                : ["ثواني يا فندم، براجع البيانات."];
+            _ = _progressSpeech.WarmCacheAsync(phrases, _voice, _lifetime.Token);
             await NotifyStatusAsync("listening", CancellationToken.None).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
@@ -139,6 +159,7 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
             return;
         }
 
+        TouchActivity();
         var byteCount = (pcmBase64.Length * 3) / 4;
         var pending = Interlocked.Add(ref _appendedBytesWithoutSpeech, byteCount);
         if (pending >= MaxBufferedBytesWithoutSpeech)
@@ -187,6 +208,7 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
             "Voice user interrupted agent connectionId={ConnectionId} sessionMs={Ms}",
             _connectionId,
             _sessionWatch.ElapsedMilliseconds);
+        TouchActivity();
         _agentSpeaking = false;
         _suppressCancelledOutput = true;
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _lifetime.Token);
@@ -614,7 +636,7 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
                     _userId,
                     new AiToolCall(callId, name!, string.IsNullOrWhiteSpace(args) ? "{}" : args!),
                     cancellationToken).ConfigureAwait(false);
-                output = result.Content;
+                output = CompactToolOutput(result.Content);
             }
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -733,7 +755,6 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
     {
         string audience = "guest";
         string? displayName = null;
-        string? catalog = null;
         await using (var scope = _scopeFactory.CreateAsyncScope())
         {
             var tools = scope.ServiceProvider.GetRequiredService<IAiAssistantToolsService>();
@@ -760,16 +781,6 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
                         ? FirstNonEmpty(user.CompanyName, user.FullName)
                         : FirstNonEmpty(user.FullName, user.CompanyName);
                 }
-
-                try
-                {
-                    catalog = await tools.BuildSellerAdsCatalogAsync(userId, cancellationToken)
-                        .ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogDebug(ex, "Voice seller catalog skipped");
-                }
             }
 
             var toolsJson = AiVoiceRealtimeToolSchema.ToRealtimeTools(tools.GetToolDefinitions());
@@ -793,7 +804,7 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
                     ["required"] = new JsonArray("query")
                 }
             });
-            var instructions = AiVoiceAgentInstructions.Build(_language, audience, displayName, catalog);
+            var instructions = AiVoiceAgentInstructions.Build(_language, audience, displayName);
             var session = new JsonObject
             {
                 ["type"] = "realtime",
@@ -860,13 +871,17 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
             var hits = await index.SearchAsync(
                 vector,
                 "public",
-                Math.Max(3, Math.Min(8, aiOptions.RetrievalLimit)),
+                Math.Clamp(aiOptions.RetrievalLimit <= 0 ? 4 : Math.Min(4, aiOptions.RetrievalLimit), 2, 4),
                 cancellationToken).ConfigureAwait(false);
-            return JsonSerializer.Serialize(new
+            return CompactToolOutput(JsonSerializer.Serialize(new
             {
                 ok = true,
-                hits = hits.Select(h => new { h.Title, content = h.Content.Length > 1200 ? h.Content[..1200] : h.Content })
-            });
+                hits = hits.Select(h => new
+                {
+                    h.Title,
+                    content = h.Content.Length > 400 ? h.Content[..400] : h.Content
+                })
+            }));
         }
         catch (Exception ex)
         {
@@ -1096,6 +1111,66 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
         return "error";
     }
 
+    private void TouchActivity() =>
+        Interlocked.Exchange(ref _lastActivityUtcTicks, DateTime.UtcNow.Ticks);
+
+    private async Task IdleWatchdogAsync(CancellationToken cancellationToken)
+    {
+        var idleSeconds = _options.IdleTimeoutSeconds <= 0 ? 90 : _options.IdleTimeoutSeconds;
+        idleSeconds = Math.Clamp(idleSeconds, 30, 600);
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken).ConfigureAwait(false);
+                var last = new DateTime(Interlocked.Read(ref _lastActivityUtcTicks), DateTimeKind.Utc);
+                if ((DateTime.UtcNow - last).TotalSeconds < idleSeconds)
+                {
+                    continue;
+                }
+
+                _logger.LogInformation(
+                    "Voice idle timeout connectionId={ConnectionId} idleSeconds={Seconds}",
+                    _connectionId,
+                    idleSeconds);
+                await NotifyErrorAsync(
+                    "المكالمة اتقفلت بسبب عدم النشاط.",
+                    CancellationToken.None).ConfigureAwait(false);
+                var onIdle = OnIdleTimeoutAsync;
+                if (onIdle is not null)
+                {
+                    _ = onIdle();
+                }
+                else
+                {
+                    _ = DisposeAsync();
+                }
+                return;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // session ending
+        }
+    }
+
+    private string CompactToolOutput(string? output)
+    {
+        if (string.IsNullOrEmpty(output))
+        {
+            return "{}";
+        }
+
+        var max = _options.MaxToolOutputChars <= 0 ? 2800 : _options.MaxToolOutputChars;
+        max = Math.Clamp(max, 800, 8000);
+        if (output.Length <= max)
+        {
+            return output;
+        }
+
+        return output[..(max - 24)] + "...\"truncated\":true}";
+    }
+
     private static string? FirstNonEmpty(params string?[] values) =>
         values.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim();
 }
@@ -1129,6 +1204,8 @@ public sealed class AiVoiceAgentSessionManager(IServiceProvider services) : IAsy
             await session.DisposeAsync().ConfigureAwait(false);
             throw new InvalidOperationException("Voice session already exists.");
         }
+
+        session.OnIdleTimeoutAsync = () => StopAsync(connectionId);
 
         try
         {
