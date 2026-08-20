@@ -26,7 +26,8 @@ services:
       AiAssistant__ChatModel: "gpt-4o-mini"
       AiAssistant__RetrievalLimit: "6"
       AiAssistant__MinScore: "0.35"
-      OpenAI__ApiKey: "${OPENAI_API_KEY}"
+      # Do not set OpenAI__ApiKey to "${OPENAI_API_KEY}" when the var is empty:
+      # an empty env value overrides appsettings.Production.json and breaks voice.
       AiAssistant__VoiceAgent__Enabled: "true"
       AiAssistant__VoiceAgent__RealtimeModel: "gpt-realtime"
       AiAssistant__VoiceAgent__TurnDetection: "server_vad"

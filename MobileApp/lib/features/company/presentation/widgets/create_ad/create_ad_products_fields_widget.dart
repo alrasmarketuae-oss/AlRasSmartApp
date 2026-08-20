@@ -97,19 +97,19 @@ class CreateAdProductsFieldsWidget extends StatelessWidget {
                     },
                   ),
                   SizedBox(height: 10.h),
+                  CreateAdPackingSection(
+                    labelText: hybrid
+                        ? (isAr
+                            ? 'تعبئة الجملة (اختياري)'
+                            : 'Wholesale packing (optional)')
+                        : null,
+                  ),
                   SpecificationsInputWidget(
                     controller: cubit.specificationsController,
                     labelText: hybrid
                         ? (isAr
                             ? 'مواصفات الجملة'
                             : 'Wholesale specifications')
-                        : null,
-                  ),
-                  CreateAdPackingSection(
-                    labelText: hybrid
-                        ? (isAr
-                            ? 'تعبئة الجملة (اختياري)'
-                            : 'Wholesale packing (optional)')
                         : null,
                   ),
                 ],
@@ -154,6 +154,13 @@ class CreateAdProductsFieldsWidget extends StatelessWidget {
                       isCurrencyLocked: true,
                     ),
                     SizedBox(height: 10.h),
+                    CreateAdPackingSection(
+                      controller: cubit.retailPackingKgController,
+                      isRetail: true,
+                      labelText: isAr
+                          ? 'تعبئة التجزئة (اختياري)'
+                          : 'Retail packing (optional)',
+                    ),
                     SpecificationsInputWidget(
                       controller: cubit.retailSpecificationsController,
                       labelText: isAr
@@ -171,13 +178,6 @@ class CreateAdProductsFieldsWidget extends StatelessWidget {
                         }
                         return null;
                       },
-                    ),
-                    CreateAdPackingSection(
-                      controller: cubit.retailPackingKgController,
-                      isRetail: true,
-                      labelText: isAr
-                          ? 'تعبئة التجزئة (اختياري)'
-                          : 'Retail packing (optional)',
                     ),
                   ],
                 ),

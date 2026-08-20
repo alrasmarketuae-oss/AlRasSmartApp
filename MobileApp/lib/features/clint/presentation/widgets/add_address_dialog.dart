@@ -409,7 +409,7 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
             addressId: existing.addressId,
             token: authToken,
             request: request,
-          );
+    );
 
     if (!mounted) return;
 
@@ -696,7 +696,7 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
                       return s.thisFieldIsRequired;
                     }
                     return null;
-                  },
+                        },
                 ),
                 SizedBox(height: 12.h),
                 _searchField(
@@ -830,18 +830,18 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
                     maxLines: 3,
                   ),
                 ] else ...[
-                  SizedBox(height: 12.h),
-                  CustomTextFormField(
-                    controller: _addressLine1Controller,
-                    label: s.addressLine1,
-                    hintText: s.enterAddressLine1,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return s.thisFieldIsRequired;
-                      }
-                      return null;
-                    },
-                  ),
+                SizedBox(height: 12.h),
+                CustomTextFormField(
+                  controller: _addressLine1Controller,
+                  label: s.addressLine1,
+                  hintText: s.enterAddressLine1,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return s.thisFieldIsRequired;
+                    }
+                    return null;
+                  },
+                ),
                 ],
                 if (widget.retailMode) ...[
                   SizedBox(height: 12.h),
@@ -870,12 +870,12 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
                   ),
                   _retailWeightHint(fontFamily, s.retailAddressExcessWeightHint),
                 ] else ...[
-                  SizedBox(height: 12.h),
-                  CustomTextFormField(
-                    controller: _addressLine2Controller,
-                    label: s.addressLine2Optional,
-                    hintText: s.enterAddressLine2Optional,
-                  ),
+                SizedBox(height: 12.h),
+                CustomTextFormField(
+                  controller: _addressLine2Controller,
+                  label: s.addressLine2Optional,
+                  hintText: s.enterAddressLine2Optional,
+                ),
                 ],
               ],
             ),
@@ -911,9 +911,9 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
     String? Function(String?)? validator,
   }) {
     final textStyle = TextStyle(
-      color: const Color(0xFF333333),
-      fontFamily: fontFamily,
-      fontSize: 14.sp,
+        color: const Color(0xFF333333),
+        fontFamily: fontFamily,
+        fontSize: 14.sp,
     );
 
     return RawAutocomplete<_GeoOption>(
@@ -942,8 +942,8 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
             hintStyle: textStyle.copyWith(
               color: const Color(0xFF333333).withValues(alpha: 0.4),
             ),
-            filled: true,
-            fillColor: Colors.white,
+        filled: true,
+        fillColor: Colors.white,
             contentPadding:
                 EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
             suffixIcon: isLoading
@@ -960,13 +960,13 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
                     size: 22.sp,
                     color: const Color(0xFF6B7280),
                   ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.r),
-              borderSide: const BorderSide(color: Color(0xFFEAECF0), width: 1.5),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.r),
-              borderSide: const BorderSide(color: Color(0xFF3A7DC5), width: 1.5),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.r),
+          borderSide: const BorderSide(color: Color(0xFFEAECF0), width: 1.5),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.r),
+          borderSide: const BorderSide(color: Color(0xFF3A7DC5), width: 1.5),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8.r),

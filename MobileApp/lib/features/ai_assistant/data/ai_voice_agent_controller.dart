@@ -88,9 +88,8 @@ class AiVoiceAgentController with WidgetsBindingObserver {
         onAudio: (pcmBytes, {required kind}) {
           if (_closed) return;
           if (kind == 'response') {
-            if (_dropCancelledResponseAudio) {
-              return;
-            }
+            // A new spoken reply always wins over a cancelled tail.
+            _dropCancelledResponseAudio = false;
             _agentSpeaking = true;
             _playbackStartedAt ??= DateTime.now();
             _lastResponseAudioAt = DateTime.now();
@@ -195,10 +194,10 @@ class AiVoiceAgentController with WidgetsBindingObserver {
         _scheduleListeningAfterPlaybackDrain();
         return;
       case 'listening':
-        if (_dropCancelledResponseAudio || _shouldDelayListeningForPlayback()) {
-          if (_dropCancelledResponseAudio) {
-            return;
-          }
+        if (_dropCancelledResponseAudio) {
+          return;
+        }
+        if (_shouldDelayListeningForPlayback()) {
           _scheduleListeningAfterPlaybackDrain();
           return;
         }
@@ -392,8 +391,7 @@ class AiVoiceAgentController with WidgetsBindingObserver {
   Future<void> _handleInterrupt({required bool fromServer}) async {
     try {
       if (fromServer && (_localInterruptInFlight || !_agentSpeaking)) {
-        // Ack of a local barge-in. Do not tear down PCM again — that
-        // drops the next reply's audio while transcript still arrives.
+        // Ack of a local barge-in. Playback is already resetting.
         _localInterruptInFlight = false;
         return;
       }

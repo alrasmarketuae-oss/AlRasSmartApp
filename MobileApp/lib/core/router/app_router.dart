@@ -511,7 +511,10 @@ abstract class AppRoutes {
           final extra = state.extra is Map<String, dynamic>
               ? state.extra as Map<String, dynamic>
               : const <String, dynamic>{};
-          return RequestDetailsView(product: extra['product']);
+          return AdminAccountPage.wrap(
+            RequestDetailsView(product: extra['product']),
+            tabIndex: 0,
+          );
         },
       ),
       GoRoute(
@@ -520,15 +523,19 @@ abstract class AppRoutes {
           final extra = state.extra is Map<String, dynamic>
               ? state.extra as Map<String, dynamic>
               : const <String, dynamic>{};
-          return SubmitOfferView(
-            product: extra['product'],
-            toUserId: extra['toUserId']?.toString() ?? '',
+          return AdminAccountPage.wrap(
+            SubmitOfferView(
+              product: extra['product'],
+              toUserId: extra['toUserId']?.toString() ?? '',
+            ),
+            tabIndex: 0,
           );
         },
       ),
       GoRoute(
         path: kSubmitOfferSuccessView,
-        builder: (context, state) => const SubmitOfferSuccessView(),
+        builder: (context, state) =>
+            AdminAccountPage.wrap(const SubmitOfferSuccessView(), tabIndex: 0),
       ),
       GoRoute(
         path: kBookingDetailsView,
@@ -536,7 +543,10 @@ abstract class AppRoutes {
           final extra = state.extra is Map<String, dynamic>
               ? state.extra as Map<String, dynamic>
               : const <String, dynamic>{};
-          return BookingDetailsView(product: extra['product']);
+          return AdminAccountPage.wrap(
+            BookingDetailsView(product: extra['product']),
+            tabIndex: 0,
+          );
         },
       ),
       GoRoute(
@@ -545,7 +555,10 @@ abstract class AppRoutes {
           final extra = state.extra is Map<String, dynamic>
               ? state.extra as Map<String, dynamic>
               : const <String, dynamic>{};
-          return SendBookingOrderView(product: extra['product']);
+          return AdminAccountPage.wrap(
+            SendBookingOrderView(product: extra['product']),
+            tabIndex: 0,
+          );
         },
       ),
       GoRoute(
@@ -555,7 +568,10 @@ abstract class AppRoutes {
               ? state.extra as Map<String, dynamic>
               : const <String, dynamic>{};
           final orderNumber = extra['orderNumber'] as String? ?? '12345';
-          return BookingSuccessView(orderNumber: orderNumber);
+          return AdminAccountPage.wrap(
+            BookingSuccessView(orderNumber: orderNumber),
+            tabIndex: 0,
+          );
         },
       ),
       GoRoute(
@@ -564,10 +580,14 @@ abstract class AppRoutes {
           final extra = state.extra is Map<String, dynamic>
               ? state.extra as Map<String, dynamic>
               : const <String, dynamic>{};
-          return RetailProductDetailsView(
-            product: extra['product'],
-            isOffer: extra['isOffer'] as bool? ?? false,
-            preferRetailChannel: extra['preferRetailChannel'] as bool? ?? false,
+          return AdminAccountPage.wrap(
+            RetailProductDetailsView(
+              product: extra['product'],
+              isOffer: extra['isOffer'] as bool? ?? false,
+              preferRetailChannel:
+                  extra['preferRetailChannel'] as bool? ?? false,
+            ),
+            tabIndex: 0,
           );
         },
       ),
@@ -578,14 +598,17 @@ abstract class AppRoutes {
           final extra = state.extra is Map<String, dynamic>
               ? state.extra as Map<String, dynamic>
               : const <String, dynamic>{};
-          return ProductSearchResultsView(
-            key: ValueKey(
-              '${extra['query'] ?? ''}|${extra['imagePath'] ?? ''}|${extra['historyId'] ?? ''}|${extra['replayCached'] ?? false}',
+          return AdminAccountPage.wrap(
+            ProductSearchResultsView(
+              key: ValueKey(
+                '${extra['query'] ?? ''}|${extra['imagePath'] ?? ''}|${extra['historyId'] ?? ''}|${extra['replayCached'] ?? false}',
+              ),
+              initialQuery: extra['query']?.toString(),
+              imagePath: extra['imagePath']?.toString(),
+              historyId: extra['historyId']?.toString(),
+              replayCached: extra['replayCached'] == true,
             ),
-            initialQuery: extra['query']?.toString(),
-            imagePath: extra['imagePath']?.toString(),
-            historyId: extra['historyId']?.toString(),
-            replayCached: extra['replayCached'] == true,
+            tabIndex: 0,
           );
         },
       ),
@@ -597,10 +620,13 @@ abstract class AppRoutes {
               : const <String, dynamic>{};
           final order = extra['order'];
           final orderId = int.tryParse(extra['orderId']?.toString() ?? '');
-          return TrackOrderView(
-            order: order is MyOrderModel ? order : null,
-            orderId: orderId,
-            showBuyerActions: extra['showBuyerActions'] != false,
+          return AdminAccountPage.wrap(
+            TrackOrderView(
+              order: order is MyOrderModel ? order : null,
+              orderId: orderId,
+              showBuyerActions: extra['showBuyerActions'] != false,
+            ),
+            tabIndex: 0,
           );
         },
       ),

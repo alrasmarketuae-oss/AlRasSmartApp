@@ -252,14 +252,14 @@ class _ProfileViewState extends State<ProfileView> {
                                   ),
                                 ),
                                 SizedBox(width: 12.w),
-                                Expanded(
+                                        Expanded(
                                   child: _ShortcutCard(
                                     title: s.liveChat,
                                     subtitle: s.liveChatSubtitle,
                                     assetIcon: AppAssets.profileMessageIcon,
                                     onTap: () =>
                                         context.push(AppRoutes.kSupportChatView),
-                                  ),
+                                                ),
                                               ),
                                             ],
                                           ),

@@ -958,18 +958,18 @@ public sealed partial class AiAssistantMcpToolsService(
 
         if (!isHybrid)
         {
-            return Json(new
-            {
-                ok = true,
+        return Json(new
+        {
+            ok = true,
                 isHybrid = false,
-                productCode = product.ProductCode,
-                name = product.NameEn,
-                previousPrice = beforePrice,
-                previousQuantity = beforeQty,
-                price = product.USDPrice,
-                quantity = product.Quantity,
-                unitName,
-                message =
+            productCode = product.ProductCode,
+            name = product.NameEn,
+            previousPrice = beforePrice,
+            previousQuantity = beforeQty,
+            price = product.USDPrice,
+            quantity = product.Quantity,
+            unitName,
+            message =
                     "Ad updated successfully. This listing has a SINGLE price — not hybrid. " +
                     "Tell the user the new price/quantity with unitName. " +
                     "Do NOT mention هجين, جملة, تجزئة, wholesale, or retail."
@@ -1303,7 +1303,7 @@ public sealed partial class AiAssistantMcpToolsService(
                 .ThenBy(x => x.NameEn)
                 .ToList(),
             _ => rankedQuery
-                .OrderByDescending(x => x.Score)
+            .OrderByDescending(x => x.Score)
                 .ThenBy(x => x.CustomerPrice)
                 .ThenBy(x => x.NameEn)
                 .ToList()

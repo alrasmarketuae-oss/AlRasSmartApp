@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:alrasmarket/core/router/app_router.dart';
+import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/services/publish_success_sound.dart';
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
+import 'package:alrasmarket/features/admin/presentation/widgets/admin_account_page.dart';
 import 'package:alrasmarket/features/company/presentation/controller/cubit/create_ad_cubit.dart';
 import 'package:alrasmarket/features/company/presentation/controller/cubit/create_ad_states.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_design.dart';
@@ -72,25 +74,32 @@ class _CreateAdPage extends StatelessWidget {
         }
       },
       builder: (context, state) {
-        return PopScope(
-          canPop: !state.isSubmitting,
-          // Scaffold stays outermost so its background also fills the status bar.
-          child: Scaffold(
-            backgroundColor: CreateAdDesign.pageBg,
-            body: SafeArea(
-              child: Column(
-                children: [
-                  CreateAdHeaderWidget(showBack: state.isEditMode),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
-                      child: const CreateAdFormWidget(),
+        final actingForCompany =
+            context.read<CreateAdCubit>().actingOwnerId?.trim().isNotEmpty ==
+            true;
+        final bottomPad = AuthService.instance.isAdminAccount ? 96.h : 16.h;
+        return AdminAccountPage.wrap(
+          PopScope(
+            canPop: !state.isSubmitting,
+            // Scaffold stays outermost so its background also fills the status bar.
+            child: Scaffold(
+              backgroundColor: CreateAdDesign.pageBg,
+              body: SafeArea(
+                child: Column(
+                  children: [
+                    CreateAdHeaderWidget(showBack: state.isEditMode),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, bottomPad),
+                        child: const CreateAdFormWidget(),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
+          tabIndex: actingForCompany ? 0 : 1,
         );
       },
     );

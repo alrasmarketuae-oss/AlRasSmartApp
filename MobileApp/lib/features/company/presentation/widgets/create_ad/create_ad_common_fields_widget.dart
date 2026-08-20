@@ -51,15 +51,15 @@ class CreateAdCommonFieldsWidget extends StatelessWidget {
               )
             : null;
 
-        // Categories: wholesale specs/packing live in the wholesale block above.
+        // Categories: wholesale packing/specs live in the wholesale block above.
         final specs = showSpecs && !isCategories
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  const CreateAdPackingSection(),
                   SpecificationsInputWidget(
                     controller: cubit.specificationsController,
                   ),
-                  const CreateAdPackingSection(),
                 ],
               )
             : null;
