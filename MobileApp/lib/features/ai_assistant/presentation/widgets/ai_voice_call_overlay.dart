@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:alrasmarket/core/utils/assets.dart';
-import 'package:alrasmarket/features/ai_assistant/data/ai_voice_processing_bell.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -47,11 +46,6 @@ class _AiVoiceCallOverlayState extends State<AiVoiceCallOverlay>
   late final AnimationController _orbController;
   Timer? _durationTimer;
   int _seconds = 0;
-  final _processingBell = AiVoiceProcessingBell();
-
-  bool get _shouldRing =>
-      widget.phase != AiCallPhase.speaking &&
-      (widget.isProcessing || widget.phase == AiCallPhase.thinking);
 
   @override
   void initState() {
@@ -76,30 +70,11 @@ class _AiVoiceCallOverlayState extends State<AiVoiceCallOverlay>
     _durationTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() => _seconds++);
     });
-    unawaited(_syncProcessingBell());
-  }
-
-  @override
-  void didUpdateWidget(covariant AiVoiceCallOverlay oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.isProcessing != widget.isProcessing ||
-        oldWidget.phase != widget.phase) {
-      unawaited(_syncProcessingBell());
-    }
-  }
-
-  Future<void> _syncProcessingBell() async {
-    if (_shouldRing) {
-      await _processingBell.start();
-    } else {
-      await _processingBell.stop();
-    }
   }
 
   @override
   void dispose() {
     _durationTimer?.cancel();
-    unawaited(_processingBell.dispose());
     _pulseController.dispose();
     _waveController.dispose();
     _glowController.dispose();
@@ -362,14 +337,18 @@ class _AiVoiceCallOverlayState extends State<AiVoiceCallOverlay>
                 ),
               ),
               Container(
-                width: 136.w,
-                height: 136.w,
+                width: 128.w,
+                height: 128.w,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white,
-                  border: Border.all(
-                    color: phaseColor.withValues(alpha: 0.85),
-                    width: 3.5,
+                  gradient: RadialGradient(
+                    center: const Alignment(-0.25, -0.35),
+                    colors: [
+                      phaseColor.withValues(alpha: 0.35),
+                      const Color(0xFF1E293B),
+                      const Color(0xFF0F172A),
+                    ],
+                    stops: const [0.0, 0.55, 1.0],
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -377,19 +356,16 @@ class _AiVoiceCallOverlayState extends State<AiVoiceCallOverlay>
                       blurRadius: 36,
                       spreadRadius: 6,
                     ),
-                    BoxShadow(
-                      color: Colors.white.withValues(alpha: 0.18),
-                      blurRadius: 18,
-                    ),
                   ],
                 ),
                 child: ClipOval(
                   child: Padding(
-                    padding: EdgeInsets.all(16.w),
+                    padding: EdgeInsets.all(22.w),
                     child: Image.asset(
-                      AppAssets.brandMark,
+                      AppAssets.aiAgentIcon,
                       fit: BoxFit.contain,
-                      filterQuality: FilterQuality.high,
+                      color: Colors.white.withValues(alpha: 0.9),
+                      colorBlendMode: BlendMode.srcATop,
                     ),
                   ),
                 ),
