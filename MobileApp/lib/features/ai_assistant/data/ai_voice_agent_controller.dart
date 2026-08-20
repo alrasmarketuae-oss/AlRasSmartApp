@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:alrasmarket/features/ai_assistant/data/ai_voice_agent_service.dart';
 import 'package:alrasmarket/features/ai_assistant/data/ai_voice_pcm_player.dart';
+import 'package:alrasmarket/features/ai_assistant/data/ai_voice_speaker_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:record/record.dart';
@@ -81,6 +82,7 @@ class AiVoiceAgentController with WidgetsBindingObserver {
       }
 
       await _player.start();
+      await AiVoiceSpeakerRoute.apply();
       await _hub.connect(
         language: language,
         voiceGender: voiceGender,
@@ -97,6 +99,9 @@ class AiVoiceAgentController with WidgetsBindingObserver {
             _setPhase(AiVoiceAgentPhase.speaking);
           }
           unawaited(_player.feed(pcmBytes, kind: kind));
+          if (kind == 'response') {
+            unawaited(AiVoiceSpeakerRoute.apply());
+          }
         },
         onTranscript: (role, text, {required isFinal}) {
           if (role == 'user' && isFinal) {
@@ -215,6 +220,7 @@ class AiVoiceAgentController with WidgetsBindingObserver {
         _agentSpeaking = true;
         _playbackStartedAt ??= DateTime.now();
         _setPhase(AiVoiceAgentPhase.speaking);
+        unawaited(AiVoiceSpeakerRoute.apply());
         break;
     }
   }
@@ -263,7 +269,7 @@ class AiVoiceAgentController with WidgetsBindingObserver {
       androidConfig: AndroidRecordConfig(
         audioSource: AndroidAudioSource.voiceRecognition,
         speakerphone: true,
-        audioManagerMode: AudioManagerMode.modeInCommunication,
+        audioManagerMode: AudioManagerMode.modeNormal,
       ),
       iosConfig: IosRecordConfig(
         categoryOptions: [
@@ -286,6 +292,7 @@ class AiVoiceAgentController with WidgetsBindingObserver {
       _onAmplitude,
       onError: (_) {},
     );
+    await AiVoiceSpeakerRoute.apply();
   }
 
   Future<void> _stopMic() async {

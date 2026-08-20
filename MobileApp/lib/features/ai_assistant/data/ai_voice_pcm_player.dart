@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:alrasmarket/features/ai_assistant/data/ai_voice_speaker_route.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_pcm_sound/flutter_pcm_sound.dart' as pcm;
@@ -80,6 +81,11 @@ class AiVoicePcmPlayer {
       await _fallback.setPlayerMode(PlayerMode.lowLatency);
       await _fallback.setReleaseMode(ReleaseMode.stop);
     }
+    await AiVoiceSpeakerRoute.apply();
+    try {
+      await _fallback.setAudioContext(AiVoiceSpeakerRoute.context);
+      await _fallback.setVolume(1.0);
+    } catch (_) {}
   }
 
   Future<void> _feedNow(Uint8List pcm16, {required String kind}) async {
