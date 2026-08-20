@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/router/app_router.dart';
+import 'package:alrasmarket/core/widgets/login_required_sheet.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/serveses/cached_constants.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
@@ -34,11 +35,7 @@ class AppHeader extends StatelessWidget {
   }
 
   void _openProfile(BuildContext context) {
-    if (!AuthService.instance.isAuthenticated) {
-      if (AppRoutes.shouldSkipPush(context, AppRoutes.kLoginView)) return;
-      context.push(AppRoutes.kLoginView);
-      return;
-    }
+    if (!ensureLoggedIn(context)) return;
     if (AppRoutes.shouldSkipPush(context, AppRoutes.kEditProfileView)) return;
     context.push(AppRoutes.kEditProfileView);
   }

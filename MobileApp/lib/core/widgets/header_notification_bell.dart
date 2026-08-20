@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/router/app_router.dart';
+import 'package:alrasmarket/core/widgets/login_required_sheet.dart';
 import 'package:alrasmarket/core/serveses/notifications_service.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +20,7 @@ class HeaderNotificationBell extends StatelessWidget {
           padding: EdgeInsets.zero,
           constraints: BoxConstraints.tightFor(width: 40.w, height: 40.w),
           onPressed: () {
+            if (!ensureLoggedIn(context)) return;
             if (AppRoutes.shouldSkipPush(
               context,
               AppRoutes.kNotificationsView,

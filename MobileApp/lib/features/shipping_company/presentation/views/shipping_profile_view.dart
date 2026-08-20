@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/router/app_router.dart';
+import 'package:alrasmarket/core/widgets/login_required_sheet.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/services/sensitive_access_gate.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
@@ -63,7 +64,7 @@ class _ShippingProfileViewState extends State<ShippingProfileView> {
   Future<void> _logout() async {
     await AuthService.instance.logout();
     if (!mounted) return;
-    context.go(AppRoutes.kLoginView);
+    goToGuestHome(context);
   }
 
   @override
@@ -189,6 +190,13 @@ class _ShippingProfileViewState extends State<ShippingProfileView> {
                 icon: Icons.language_outlined,
                 label: s.language,
                 onTap: () => context.push(AppRoutes.kLanguageView),
+              ),
+              SizedBox(height: 10.h),
+              ShippingSettingsTile(
+                icon: Icons.record_voice_over_rounded,
+                label: s.aiAssistantVoiceSetting,
+                onTap: () =>
+                    context.push(AppRoutes.kAiAssistantVoiceSettingsView),
               ),
               SizedBox(height: 10.h),
               ShippingSettingsTile(

@@ -1,13 +1,12 @@
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
-import 'package:alrasmarket/core/services_locator/services_locator.dart';
+import 'package:alrasmarket/core/widgets/login_required_sheet.dart';
 import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/theme/brand_colors.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/widgets/colored_brand_title.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_cubit.dart';
 import 'package:alrasmarket/features/auth/presentation/widgets/biometric_unlock_button.dart';
-import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -118,20 +117,15 @@ class RecordingView extends StatelessWidget {
                             SizedBox(height: 18.h),
                             _LoginButton(
                               label: s.login,
-                              onTap: () => context.go(AppRoutes.kLoginView),
+                              onTap: () => context.push(AppRoutes.kLoginView),
                             ),
                             SizedBox(height: 16.h),
                             _GuestEntry(
                               label: isAr ? 'دخول زائر' : s.loginAsGuest,
                               onTap: () async {
                                 await AuthService.instance.clearAuthData();
-                                final clintCubit = sl<ClintCubit>();
-                                if (!clintCubit.isClosed) {
-                                  clintCubit.clearHomeCatalogMemory();
-                                  clintCubit.setTab(0);
-                                }
                                 if (!context.mounted) return;
-                                context.go(AppRoutes.kClientHomeView);
+                                goToGuestHome(context);
                               },
                             ),
                             SizedBox(height: 16.h),

@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
+import 'package:alrasmarket/features/ai_assistant/data/ai_assistant_voice_prefs.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/services/dio_helper.dart';
@@ -29,7 +31,6 @@ import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as p;
 import 'package:alrasmarket/core/platform/app_paths.dart';
 import 'package:record/record.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:alrasmarket/features/ai_assistant/presentation/widgets/ai_voice_call_overlay.dart';
 import 'package:alrasmarket/features/ai_assistant/presentation/helpers/ai_assistant_tts_voice.dart';
@@ -93,14 +94,15 @@ class _AiChatColors {
 enum _AiVoiceGender { female, male }
 
 class AiAssistantView extends StatefulWidget {
-  const AiAssistantView({super.key});
+  const AiAssistantView({super.key, this.startInVoiceCall = false});
+
+  final bool startInVoiceCall;
 
   @override
   State<AiAssistantView> createState() => _AiAssistantViewState();
 }
 
 class _AiAssistantViewState extends State<AiAssistantView> {
-  static const _voiceGenderPrefKey = 'ai.assistant.voice.gender';
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   final _composerKey = GlobalKey<_AiComposerState>();
@@ -165,10 +167,8 @@ class _AiAssistantViewState extends State<AiAssistantView> {
 
   Future<void> _initVoice() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final saved = prefs.getString(_voiceGenderPrefKey);
-      _voiceGender =
-          saved == 'male' ? _AiVoiceGender.male : _AiVoiceGender.female;
+      final male = await AiAssistantVoicePrefs.isMale();
+      _voiceGender = male ? _AiVoiceGender.male : _AiVoiceGender.female;
     } catch (_) {}
 
     try {
@@ -211,6 +211,9 @@ class _AiAssistantViewState extends State<AiAssistantView> {
     }
 
     if (mounted) setState(() {});
+    if (widget.startInVoiceCall && mounted) {
+      await _setVoiceConversationMode(true);
+    }
   }
 
   Future<void> _setVoiceConversationMode(bool enabled) async {
@@ -228,6 +231,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
       await _tts.stop();
       _assistantSpeaking = false;
       _composerKey.currentState?.cancelVoiceCapture();
+      _flushVoiceTranscriptIfNeeded(AiVoiceAgentPhase.listening);
       final agent = _voiceAgent;
       _voiceAgent = null;
       await agent?.dispose();
@@ -369,11 +373,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
     if (_voiceGender == gender) return;
     setState(() => _voiceGender = gender);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
-        _voiceGenderPrefKey,
-        gender == _AiVoiceGender.male ? 'male' : 'female',
-      );
+      await AiAssistantVoicePrefs.setMale(gender == _AiVoiceGender.male);
     } catch (_) {}
 
     if (!_voiceReady || !mounted) return;
@@ -411,98 +411,6 @@ class _AiAssistantViewState extends State<AiAssistantView> {
     } catch (e) {
       debugPrint('TTS preview error: $e');
     }
-  }
-
-  Future<void> _showVoicePicker() async {
-    final isAr = Localizations.localeOf(context).languageCode == 'ar';
-    var conversationEnabled = _voiceConversationMode;
-    var selectedGender = _voiceGender;
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      isAr ? 'المحادثة الصوتية' : 'Voice conversation',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      isAr
-                          ? 'فعّل الوضع الصوتي لتتكلموا مع بعض بالصوت. الردود النصية العادية بدون صوت.'
-                          : 'Turn on voice mode to talk back and forth. Normal text replies stay silent.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        height: 1.35,
-                        color: Colors.grey.shade700,
-                      ),
-                    ),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      value: conversationEnabled,
-                      onChanged: (value) async {
-                        setSheetState(() => conversationEnabled = value);
-                        await _setVoiceConversationMode(value);
-                      },
-                      title: Text(isAr ? 'محادثة صوتية' : 'Voice conversation'),
-                      subtitle: Text(
-                        isAr
-                            ? 'تكلم بشكل طبيعي — بدون زر إرسال. المساعد يرد بصوت بشري.'
-                            : 'Speak naturally — no Send button. The assistant replies with a human voice.',
-                      ),
-                    ),
-                    const Divider(height: 1),
-                    Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: Text(
-                        isAr ? 'صوت المساعد' : 'Assistant voice',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13.sp,
-                        ),
-                      ),
-                    ),
-                    RadioListTile<_AiVoiceGender>(
-                      value: _AiVoiceGender.female,
-                      groupValue: selectedGender,
-                      onChanged: (value) async {
-                        if (value == null) return;
-                        selectedGender = value;
-                        setSheetState(() {});
-                        await _setVoiceGender(value);
-                      },
-                      title: Text(isAr ? 'صوت سول — أنثى' : 'Soul voice — female'),
-                    ),
-                    RadioListTile<_AiVoiceGender>(
-                      value: _AiVoiceGender.male,
-                      groupValue: selectedGender,
-                      onChanged: (value) async {
-                        if (value == null) return;
-                        selectedGender = value;
-                        setSheetState(() {});
-                        await _setVoiceGender(value);
-                      },
-                      title: Text(isAr ? 'صوت سول — ذكر' : 'Soul voice — male'),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
   }
 
   Future<bool> _ensureTtsLanguage(String langCode) async {
@@ -1327,7 +1235,22 @@ class _AiAssistantViewState extends State<AiAssistantView> {
                     ? (_historyLoading ? null : _openHistorySheet)
                     : null,
                 historyLoading: _historyLoading,
-                onOpenVoiceSettings: _showVoicePicker,
+                onOpenVoiceSettings: () async {
+                  if (AppRoutes.shouldSkipPush(
+                    context,
+                    AppRoutes.kAiAssistantVoiceSettingsView,
+                  )) {
+                    return;
+                  }
+                  await context.push(AppRoutes.kAiAssistantVoiceSettingsView);
+                  if (!mounted) return;
+                  final male = await AiAssistantVoicePrefs.isMale();
+                  final next =
+                      male ? _AiVoiceGender.male : _AiVoiceGender.female;
+                  if (next != _voiceGender) {
+                    await _setVoiceGender(next);
+                  }
+                },
                 voiceGender: _voiceGender,
                 voiceConversationMode: _voiceConversationMode,
               ),
@@ -1474,7 +1397,6 @@ class _AiChatHeader extends StatelessWidget {
                     Icons.arrow_back_ios_new_rounded,
                     size: 18.sp,
                     color: Colors.white,
-                    matchTextDirection: true,
                   ),
                 ),
               SizedBox(width: 4.w),

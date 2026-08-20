@@ -809,6 +809,26 @@ class S {
     );
   }
 
+  /// `Sorry`
+  String get loginRequiredTitle {
+    return Intl.message(
+      'Sorry',
+      name: 'loginRequiredTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `You must log in to continue.`
+  String get loginRequiredMessage {
+    return Intl.message(
+      'You must log in to continue.',
+      name: 'loginRequiredMessage',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Enter full name`
   String get enterFullName {
     return Intl.message(
@@ -7136,6 +7156,96 @@ class S {
     return Intl.message(
       'Al-Ras Agent',
       name: 'aiAssistantTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get aiAssistantHubSubtitle {
+    return Intl.message(
+      'Your smart assistant for Al-Ras Market',
+      name: 'aiAssistantHubSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get aiAssistantHubHello {
+    return Intl.message(
+      'Hello! I’m Al-Ras Agent',
+      name: 'aiAssistantHubHello',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get aiAssistantHubIntro {
+    return Intl.message(
+      'You can chat with me or talk to me by voice. I can help you with ads, orders, shipping prices, and more.',
+      name: 'aiAssistantHubIntro',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get aiAssistantHowToStart {
+    return Intl.message(
+      'How would you like to start?',
+      name: 'aiAssistantHowToStart',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get aiAssistantChatWithAi {
+    return Intl.message(
+      'Chat with AI',
+      name: 'aiAssistantChatWithAi',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get aiAssistantChatWithAiSubtitle {
+    return Intl.message(
+      'Type your questions and get instant answers',
+      name: 'aiAssistantChatWithAiSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get aiAssistantTalkWithAi {
+    return Intl.message(
+      'Talk with AI',
+      name: 'aiAssistantTalkWithAi',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get aiAssistantTalkWithAiSubtitle {
+    return Intl.message(
+      'Speak with me using your voice',
+      name: 'aiAssistantTalkWithAiSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get aiAssistantVoiceSetting {
+    return Intl.message(
+      'AI voice',
+      name: 'aiAssistantVoiceSetting',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get aiAssistantVoiceSettingSubtitle {
+    return Intl.message(
+      'Choose a female or male assistant voice',
+      name: 'aiAssistantVoiceSettingSubtitle',
       desc: '',
       args: [],
     );

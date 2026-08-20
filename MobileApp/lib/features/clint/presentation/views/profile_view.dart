@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/router/app_router.dart';
+import 'package:alrasmarket/core/widgets/login_required_sheet.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/serveses/profile_service.dart';
 import 'package:alrasmarket/core/services/biometric_auth_service.dart';
@@ -183,7 +184,7 @@ class _ProfileViewState extends State<ProfileView> {
     if (!mounted) return;
     context.read<ClintCubit>().setTab(0);
     context.read<CompanyCubit>().setTab(0);
-    context.go(AppRoutes.kLoginView);
+    goToGuestHome(context);
   }
 
   @override
@@ -205,7 +206,7 @@ class _ProfileViewState extends State<ProfileView> {
           if (!context.mounted) return;
           context.read<ClintCubit>().setTab(0);
           context.read<CompanyCubit>().setTab(0);
-          context.go(AppRoutes.kLoginView);
+          goToGuestHome(context);
         }
       },
       child: BlocBuilder<ClintCubit, ClintStates>(
@@ -330,6 +331,14 @@ class _ProfileViewState extends State<ProfileView> {
                               subtitle: s.changeLanguageSubtitle,
                               assetIcon: AppAssets.profileLanguageIcon,
                               onTap: () => context.push(AppRoutes.kLanguageView),
+                            ),
+                            _SettingsTile(
+                              title: s.aiAssistantVoiceSetting,
+                              subtitle: s.aiAssistantVoiceSettingSubtitle,
+                              icon: Icons.record_voice_over_rounded,
+                              onTap: () => context.push(
+                                AppRoutes.kAiAssistantVoiceSettingsView,
+                              ),
                             ),
                             if (_biometricSupported)
                               _SettingsTile(

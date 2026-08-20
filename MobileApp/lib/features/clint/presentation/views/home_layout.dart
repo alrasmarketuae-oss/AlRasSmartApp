@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/serveses/notifications_service.dart';
+import 'package:alrasmarket/core/widgets/login_required_sheet.dart';
 import 'package:alrasmarket/core/widgets/scroll_aware_bottom_nav_scaffold.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/features/clint/presentation/views/home_view.dart';
@@ -80,7 +81,10 @@ class _HomeLayoutState extends State<HomeLayout> {
                 builder: (context, pendingOrdersBadgeCount) {
                   return UserBottomNavBar(
                     currentIndex: currentIndex,
-                    onTap: (index) => context.read<ClintCubit>().setTab(index),
+                    onTap: (index) {
+                      if (index != 0 && !ensureLoggedIn(context)) return;
+                      context.read<ClintCubit>().setTab(index);
+                    },
                     context: context,
                     showMyAds: showMyAds,
                     unreadBadgeCount:

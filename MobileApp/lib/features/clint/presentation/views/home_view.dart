@@ -179,8 +179,8 @@ class _HomeViewState extends State<HomeView> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Guests browse like company home (services + categories),
-                              // but protected actions still redirect to login.
+                              // Guests browse like company home (services + categories).
+                              // Protected tabs (ads, orders, account) show a login dialog.
                               if (!isPersonalCustomer) ...[
                                 IntrinsicHeight(
                                   child: Row(

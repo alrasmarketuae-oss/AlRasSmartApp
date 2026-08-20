@@ -8,7 +8,7 @@ String whereToGo() {
   final hasAccount = hasToken || hasEmail || isVerified != null;
 
   if (!hasAccount) {
-    return AppRoutes.kLoginView;
+    return AppRoutes.kCompanyHomeView;
   }
 
   // Full app access requires a real API token from a verified + approved account.

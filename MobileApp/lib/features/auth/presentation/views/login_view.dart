@@ -334,6 +334,19 @@ class _LoginTopBar extends StatelessWidget {
       textDirection: TextDirection.ltr,
       child: Row(
         children: [
+          if (context.canPop()) ...[
+            IconButton(
+              onPressed: () => context.pop(),
+              padding: EdgeInsets.zero,
+              constraints: BoxConstraints.tightFor(width: 36.w, height: 36.w),
+              icon: Icon(
+                Icons.close_rounded,
+                size: 22.sp,
+                color: _kTitleColor,
+              ),
+            ),
+            SizedBox(width: 4.w),
+          ],
           GestureDetector(
             onTap: () => AuthCubit.get(context).setLocale(),
             behavior: HitTestBehavior.opaque,

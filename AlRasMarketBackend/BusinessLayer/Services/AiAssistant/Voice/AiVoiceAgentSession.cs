@@ -35,6 +35,7 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
     private int _disposed;
     private int _progressPhraseIndex;
     private volatile bool _agentSpeaking;
+    private volatile bool _suppressCancelledOutput;
     private DateTime _turnSpeechStartedUtc;
     private DateTime _turnCompletedUtc;
     private DateTime _requestSentUtc;
@@ -187,6 +188,7 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
             _connectionId,
             _sessionWatch.ElapsedMilliseconds);
         _agentSpeaking = false;
+        _suppressCancelledOutput = true;
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _lifetime.Token);
         try
         {
@@ -433,10 +435,16 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
                 break;
 
             case "response.created":
+                _suppressCancelledOutput = false;
                 break;
 
             case "response.audio.delta":
             case "response.output_audio.delta":
+                if (_suppressCancelledOutput)
+                {
+                    break;
+                }
+
                 if (root.TryGetProperty("delta", out var audioDelta)
                     && audioDelta.ValueKind == JsonValueKind.String)
                 {
@@ -489,6 +497,11 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
 
             case "response.audio_transcript.delta":
             case "response.output_audio_transcript.delta":
+                if (_suppressCancelledOutput)
+                {
+                    break;
+                }
+
                 if (root.TryGetProperty("delta", out var textDelta)
                     && textDelta.ValueKind == JsonValueKind.String)
                 {
@@ -532,13 +545,20 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
                 break;
 
             case "response.done":
+                var cancelled = IsCancelledResponse(root);
                 var totalMs = _firstAudioUtc is null
                     ? 0
                     : (DateTime.UtcNow - _requestSentUtc).TotalMilliseconds;
                 _logger.LogInformation(
-                    "Voice response done connectionId={ConnectionId} totalResponseMs={Ms}",
+                    "Voice response done connectionId={ConnectionId} totalResponseMs={Ms} cancelled={Cancelled}",
                     _connectionId,
-                    Math.Round(totalMs));
+                    Math.Round(totalMs),
+                    cancelled);
+                if (cancelled)
+                {
+                    break;
+                }
+
                 _agentSpeaking = false;
                 // Let the client finish playing buffered PCM before switching to listening.
                 await NotifyStatusAsync("response_complete", cancellationToken).ConfigureAwait(false);
@@ -997,6 +1017,24 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
     private static bool NeedsRealtimeBetaHeader(string model) =>
         model.Contains("gpt-4o-realtime", StringComparison.OrdinalIgnoreCase)
         || model.Contains("preview", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsCancelledResponse(JsonElement root)
+    {
+        if (root.TryGetProperty("response", out var response)
+            && response.ValueKind == JsonValueKind.Object
+            && response.TryGetProperty("status", out var status))
+        {
+            var value = status.GetString();
+            return string.Equals(value, "cancelled", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(value, "incomplete", StringComparison.OrdinalIgnoreCase)
+                    && response.TryGetProperty("status_details", out var details)
+                    && details.ValueKind == JsonValueKind.Object
+                    && details.TryGetProperty("reason", out var reason)
+                    && string.Equals(reason.GetString(), "cancelled", StringComparison.OrdinalIgnoreCase);
+        }
+
+        return false;
+    }
 
     private static bool IsIgnorableAudioBufferError(string message, string? code) =>
         ContainsAny(message, "buffer too small", "buffer has 0", "expected at least")

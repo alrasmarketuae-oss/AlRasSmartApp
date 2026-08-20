@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/serveses/notifications_service.dart';
 import 'package:alrasmarket/core/widgets/scroll_aware_bottom_nav_scaffold.dart';
+import 'package:alrasmarket/core/widgets/login_required_sheet.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_states.dart';
 import 'package:alrasmarket/features/clint/presentation/views/home_view.dart';
@@ -80,8 +81,10 @@ class _CompanyHomeLayoutState extends State<CompanyHomeLayout> {
                 builder: (context, pendingOrdersBadgeCount) {
                   return CompanyBottomNavBar(
                     currentIndex: currentIndex,
-                    onTap: (index) =>
-                        context.read<CompanyCubit>().setTab(index),
+                    onTap: (index) {
+                      if (index != 0 && !ensureLoggedIn(context)) return;
+                      context.read<CompanyCubit>().setTab(index);
+                    },
                     context: context,
                     showMyAds: showMyAds,
                     unreadBadgeCount:

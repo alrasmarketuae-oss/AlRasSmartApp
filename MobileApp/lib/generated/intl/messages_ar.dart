@@ -259,6 +259,36 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "aiAssistantThinking": MessageLookupByLibrary.simpleMessage("يفكر…"),
     "aiAssistantTitle": MessageLookupByLibrary.simpleMessage("Al-Ras Agent"),
+    "aiAssistantHubSubtitle": MessageLookupByLibrary.simpleMessage(
+      "مساعدك الذكي في سوق الرأس",
+    ),
+    "aiAssistantHubHello": MessageLookupByLibrary.simpleMessage(
+      "أهلاً! أنا Al-Ras Agent",
+    ),
+    "aiAssistantHubIntro": MessageLookupByLibrary.simpleMessage(
+      "تقدر تتكلم معايا بالشات أو بالصوت. أساعدك في الإعلانات والطلبات وأسعار الشحن وأكثر.",
+    ),
+    "aiAssistantHowToStart": MessageLookupByLibrary.simpleMessage(
+      "كيف تحب تبدأ؟",
+    ),
+    "aiAssistantChatWithAi": MessageLookupByLibrary.simpleMessage(
+      "محادثة مع الذكاء الاصطناعي",
+    ),
+    "aiAssistantChatWithAiSubtitle": MessageLookupByLibrary.simpleMessage(
+      "اكتب أسئلتك واحصل على إجابات فورية",
+    ),
+    "aiAssistantTalkWithAi": MessageLookupByLibrary.simpleMessage(
+      "مكالمة مع الذكاء الاصطناعي",
+    ),
+    "aiAssistantTalkWithAiSubtitle": MessageLookupByLibrary.simpleMessage(
+      "تكلم معي بصوتك",
+    ),
+    "aiAssistantVoiceSetting": MessageLookupByLibrary.simpleMessage(
+      "صوت الذكاء الاصطناعي",
+    ),
+    "aiAssistantVoiceSettingSubtitle": MessageLookupByLibrary.simpleMessage(
+      "اختر صوت بنت أو ولد للمساعد",
+    ),
     "aiAssistantUnsupportedLanguage": MessageLookupByLibrary.simpleMessage(
       "ندعم العربية والإنجليزية حالياً. ترجمنا سؤالك للفهم إن أمكن، وسنرد بإحدى اللغتين المدعومتين.",
     ),
@@ -928,6 +958,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "login": MessageLookupByLibrary.simpleMessage("تسجيل الدخول"),
     "loginAsGuest": MessageLookupByLibrary.simpleMessage("دخول كزائر"),
+    "loginRequiredTitle": MessageLookupByLibrary.simpleMessage("عذراً"),
+    "loginRequiredMessage": MessageLookupByLibrary.simpleMessage(
+      "يجب تسجيل الدخول للمتابعة",
+    ),
     "loginError": MessageLookupByLibrary.simpleMessage("تسجيل الدخول بخطأ"),
     "loginSubtitle": MessageLookupByLibrary.simpleMessage("دخولك لحسابك"),
     "loginSuccess": MessageLookupByLibrary.simpleMessage("تسجيل الدخول بنجاح"),

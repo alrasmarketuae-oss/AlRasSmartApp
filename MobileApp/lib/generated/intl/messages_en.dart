@@ -260,6 +260,34 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "aiAssistantThinking": MessageLookupByLibrary.simpleMessage("Thinking…"),
     "aiAssistantTitle": MessageLookupByLibrary.simpleMessage("Al-Ras Agent"),
+    "aiAssistantHubSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Your smart assistant for Al-Ras Market",
+    ),
+    "aiAssistantHubHello": MessageLookupByLibrary.simpleMessage(
+      "Hello! I’m Al-Ras Agent",
+    ),
+    "aiAssistantHubIntro": MessageLookupByLibrary.simpleMessage(
+      "You can chat with me or talk to me by voice. I can help you with ads, orders, shipping prices, and more.",
+    ),
+    "aiAssistantHowToStart": MessageLookupByLibrary.simpleMessage(
+      "How would you like to start?",
+    ),
+    "aiAssistantChatWithAi": MessageLookupByLibrary.simpleMessage(
+      "Chat with AI",
+    ),
+    "aiAssistantChatWithAiSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Type your questions and get instant answers",
+    ),
+    "aiAssistantTalkWithAi": MessageLookupByLibrary.simpleMessage(
+      "Talk with AI",
+    ),
+    "aiAssistantTalkWithAiSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Speak with me using your voice",
+    ),
+    "aiAssistantVoiceSetting": MessageLookupByLibrary.simpleMessage("AI voice"),
+    "aiAssistantVoiceSettingSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Choose a female or male assistant voice",
+    ),
     "aiAssistantUnsupportedLanguage": MessageLookupByLibrary.simpleMessage(
       "We currently support Arabic and English. We may translate your question internally to understand it, then reply in a supported language.",
     ),
@@ -921,6 +949,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "login": MessageLookupByLibrary.simpleMessage("Login"),
     "loginAsGuest": MessageLookupByLibrary.simpleMessage("Login as Guest"),
+    "loginRequiredTitle": MessageLookupByLibrary.simpleMessage("Sorry"),
+    "loginRequiredMessage": MessageLookupByLibrary.simpleMessage(
+      "You must log in to continue.",
+    ),
     "loginError": MessageLookupByLibrary.simpleMessage("Login failed"),
     "loginSubtitle": MessageLookupByLibrary.simpleMessage(
       "Sign in to your account",

@@ -20,7 +20,9 @@ import 'package:alrasmarket/features/clint/presentation/views/profile_views/edit
 import 'package:alrasmarket/features/clint/presentation/views/profile_views/language_screen.dart';
 import 'package:alrasmarket/features/clint/presentation/views/profile_views/notification.dart';
 import 'package:alrasmarket/features/clint/presentation/views/profile_views/privacy_policy.dart';
+import 'package:alrasmarket/features/ai_assistant/presentation/views/ai_assistant_hub_view.dart';
 import 'package:alrasmarket/features/ai_assistant/presentation/views/ai_assistant_view.dart';
+import 'package:alrasmarket/features/ai_assistant/presentation/views/ai_assistant_voice_settings_view.dart';
 import 'package:alrasmarket/features/clint/presentation/views/profile_views/model_training_view.dart';
 import 'package:alrasmarket/features/chat/presentation/views/support_chat_view.dart';
 import 'package:alrasmarket/features/clint/presentation/views/profile_views/technical_support.dart';
@@ -108,6 +110,9 @@ abstract class AppRoutes {
   static const String kComplaintsSuggestionsView = '/ComplaintsSuggestionsView';
   static const String kSupportChatView = '/SupportChatView';
   static const String kAiAssistantView = '/AiAssistantView';
+  static const String kAiAssistantChatView = '/AiAssistantChatView';
+  static const String kAiAssistantVoiceSettingsView =
+      '/AiAssistantVoiceSettingsView';
   static const String kModelTrainingView = '/ModelTrainingView';
   static const String kMyAdsView = '/MyAdsView';
   static const String kChangePricesView = '/ChangePricesView';
@@ -419,7 +424,22 @@ abstract class AppRoutes {
       GoRoute(
         path: kAiAssistantView,
         builder: (context, state) =>
-            AdminAccountPage.wrap(const AiAssistantView()),
+            AdminAccountPage.wrap(const AiAssistantHubView()),
+      ),
+      GoRoute(
+        path: kAiAssistantChatView,
+        builder: (context, state) {
+          final extra = state.extra;
+          final startVoice = extra is Map && extra['voice'] == true;
+          return AdminAccountPage.wrap(
+            AiAssistantView(startInVoiceCall: startVoice),
+          );
+        },
+      ),
+      GoRoute(
+        path: kAiAssistantVoiceSettingsView,
+        builder: (context, state) =>
+            AdminAccountPage.wrap(const AiAssistantVoiceSettingsView()),
       ),
       GoRoute(
         path: kModelTrainingView,
