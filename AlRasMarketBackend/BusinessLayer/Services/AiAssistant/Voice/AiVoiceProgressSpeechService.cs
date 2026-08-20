@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using BusinessLayer.Options;
@@ -9,8 +8,8 @@ using Microsoft.Extensions.Options;
 namespace BusinessLayer.Services.AiAssistant.Voice;
 
 /// <summary>
-/// Side-channel wait phrases. PCM is cached in-memory after the first TTS
-/// synthesis so repeat progress audio costs nothing.
+/// Side-channel OpenAI TTS for short user-facing wait phrases.
+/// Does not block the Realtime response path.
 /// </summary>
 public sealed class AiVoiceProgressSpeechService(
     IHttpClientFactory httpClientFactory,
@@ -18,42 +17,13 @@ public sealed class AiVoiceProgressSpeechService(
     IOptions<AiVoiceAgentOptions> options,
     ILogger<AiVoiceProgressSpeechService> logger)
 {
-    private readonly ConcurrentDictionary<string, byte[]> _pcmCache = new(StringComparer.Ordinal);
-
-    public async Task WarmCacheAsync(
-        IEnumerable<string> phrases,
-        string voice,
-        CancellationToken cancellationToken)
-    {
-        foreach (var phrase in phrases)
-        {
-            if (string.IsNullOrWhiteSpace(phrase))
-            {
-                continue;
-            }
-
-            _ = await SynthesizePcmAsync(phrase, voice, cancellationToken).ConfigureAwait(false);
-        }
-    }
-
     public async Task<byte[]?> SynthesizePcmAsync(
         string phrase,
         string voice,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(phrase))
-        {
-            return null;
-        }
-
-        var cacheKey = $"{voice.Trim().ToLowerInvariant()}|{phrase.Trim()}";
-        if (_pcmCache.TryGetValue(cacheKey, out var cached))
-        {
-            return cached;
-        }
-
         var apiKey = configuration["OpenAI:ApiKey"];
-        if (string.IsNullOrWhiteSpace(apiKey))
+        if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(phrase))
         {
             return null;
         }
@@ -84,18 +54,7 @@ public sealed class AiVoiceProgressSpeechService(
                 return null;
             }
 
-            var pcm = await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
-            if (pcm.Length > 0)
-            {
-                _pcmCache[cacheKey] = pcm;
-                logger.LogInformation(
-                    "Voice progress PCM cached voice={Voice} chars={Chars} bytes={Bytes}",
-                    voice,
-                    phrase.Length,
-                    pcm.Length);
-            }
-
-            return pcm;
+            return await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {

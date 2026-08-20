@@ -154,10 +154,10 @@ class AiAssistantHubView extends StatelessWidget {
                     title: s.aiAssistantTalkWithAi,
                     subtitle: s.aiAssistantTalkWithAiSubtitle,
                     rtl: rtl,
-                    onTap: () => context.push(
-                      AppRoutes.kAiAssistantChatView,
-                      extra: {'voice': true},
-                    ),
+                    badgeText: Localizations.localeOf(context).languageCode == 'ar'
+                        ? 'قريبًا'
+                        : 'Coming soon',
+                    onTap: () => _showComingSoon(context),
                   ),
                   SizedBox(height: 36.h),
                   Row(
@@ -185,6 +185,75 @@ class AiAssistantHubView extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  void _showComingSoon(BuildContext context) {
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18.r),
+          ),
+          contentPadding: EdgeInsets.fromLTRB(24.w, 28.h, 24.w, 16.h),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64.w,
+                height: 64.w,
+                decoration: BoxDecoration(
+                  color: _green.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.schedule_rounded,
+                  color: _green,
+                  size: 32.sp,
+                ),
+              ),
+              SizedBox(height: 16.h),
+              Text(
+                isAr ? 'قريبًا' : 'Coming soon',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 20.sp,
+                  fontWeight: FontWeight.w800,
+                  color: _titleBlue,
+                ),
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                isAr
+                    ? 'المكالمة الصوتية مع الذكاء الاصطناعي هتتاح قريبًا.'
+                    : 'AI voice call will be available soon.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF64748B),
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(
+                isAr ? 'حسنًا' : 'OK',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: LightColor.defaultColor,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

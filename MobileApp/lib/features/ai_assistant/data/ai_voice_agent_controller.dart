@@ -92,7 +92,6 @@ class AiVoiceAgentController with WidgetsBindingObserver {
             _playbackStartedAt ??= DateTime.now();
             _lastResponseAudioAt = DateTime.now();
             _playbackDrainTimer?.cancel();
-            _sendBuffer.clear();
             _setPhase(AiVoiceAgentPhase.speaking);
           }
           unawaited(_player.feed(pcmBytes, kind: kind));
@@ -295,8 +294,6 @@ class AiVoiceAgentController with WidgetsBindingObserver {
 
   void _onMicBytes(Uint8List bytes) {
     if (_closed || _muted || _backgrounded || bytes.isEmpty) return;
-    // Keep amplitude barge-in, but do not bill OpenAI for echo while speaking.
-    if (_agentSpeaking) return;
     _sendBuffer.add(bytes);
     // ~80ms at 24 kHz PCM16 mono. Smaller chunks keep VAD from starving.
     if (_sendBuffer.length >= 3840) {
