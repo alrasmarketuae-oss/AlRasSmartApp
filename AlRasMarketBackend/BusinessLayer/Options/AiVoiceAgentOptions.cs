@@ -58,6 +58,12 @@ public sealed class AiVoiceAgentOptions
     public double Temperature { get; set; } = 0.7;
 
     /// <summary>
+    /// Cap tokens for one assistant turn (speech + tool calls). 0 = no cap.
+    /// Keeps voice replies short; leave enough headroom for a tool call.
+    /// </summary>
+    public int MaxResponseOutputTokens { get; set; } = 700;
+
+    /// <summary>
     /// Cap tool JSON returned into the Realtime conversation to limit text tokens.
     /// </summary>
     public int MaxToolOutputChars { get; set; } = 2800;

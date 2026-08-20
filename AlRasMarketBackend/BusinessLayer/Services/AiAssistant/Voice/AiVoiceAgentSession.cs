@@ -840,6 +840,12 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
                 ["tools"] = toolsJson,
                 ["tool_choice"] = "auto"
             };
+            if (_options.MaxResponseOutputTokens > 0)
+            {
+                // GA realtime sessions use max_output_tokens; keep legacy key for older gateways.
+                session["max_output_tokens"] = _options.MaxResponseOutputTokens;
+                session["max_response_output_tokens"] = _options.MaxResponseOutputTokens;
+            }
             return new JsonObject
             {
                 ["type"] = "session.update",
