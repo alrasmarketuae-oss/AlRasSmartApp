@@ -21,11 +21,12 @@ public static class CustomerPricingHelper
             settings,
             categoryCommissions);
 
-        return ProductPricePresenter.Present(
-            markedUp,
-            productTypeId,
-            ResolveProductCurrency(productTypeId, productCurrency),
-            usdToAedRate);
+        return CustomerPriceCalculator.RoundUpToQuarter(
+            ProductPricePresenter.Present(
+                markedUp,
+                productTypeId,
+                ResolveProductCurrency(productTypeId, productCurrency),
+                usdToAedRate));
     }
 
     public static decimal ResolveCartUnitPriceAed(
@@ -57,11 +58,12 @@ public static class CustomerPricingHelper
                     retailUnitName,
                     requestedUnitNameEn);
 
-            var presentedRetail = ProductPricePresenter.Present(
-                markedUpInRequestedUnit,
-                ProductTypeCodes.Retail,
-                "AED",
-                usdToAedRate);
+            var presentedRetail = CustomerPriceCalculator.RoundUpToQuarter(
+                ProductPricePresenter.Present(
+                    markedUpInRequestedUnit,
+                    ProductTypeCodes.Retail,
+                    "AED",
+                    usdToAedRate));
 
             return ToCartAmountAed(presentedRetail, usdToAedRate);
         }
@@ -86,11 +88,12 @@ public static class CustomerPricingHelper
                 productUnitName,
                 requestedUnitNameEn);
 
-        var presented = ProductPricePresenter.Present(
-            markedUpInRequested,
-            product.ProductTypeId,
-            ResolveProductCurrency(product.ProductTypeId, product.Currency),
-            usdToAedRate);
+        var presented = CustomerPriceCalculator.RoundUpToQuarter(
+            ProductPricePresenter.Present(
+                markedUpInRequested,
+                product.ProductTypeId,
+                ResolveProductCurrency(product.ProductTypeId, product.Currency),
+                usdToAedRate));
 
         return ToCartAmountAed(presented, usdToAedRate);
     }
@@ -117,12 +120,17 @@ public static class CustomerPricingHelper
 
     private static decimal ToCartAmountAed(CustomerFacingPrice presented, decimal usdToAedRate)
     {
+        decimal amount;
         if (string.Equals(presented.Currency, "USD", StringComparison.OrdinalIgnoreCase))
         {
-            return presented.PriceAed
+            amount = presented.PriceAed
                 ?? decimal.Round(presented.PriceUsd * usdToAedRate, 2, MidpointRounding.AwayFromZero);
         }
+        else
+        {
+            amount = presented.Price;
+        }
 
-        return presented.Price;
+        return CustomerPriceCalculator.RoundUpToQuarter(amount);
     }
 }

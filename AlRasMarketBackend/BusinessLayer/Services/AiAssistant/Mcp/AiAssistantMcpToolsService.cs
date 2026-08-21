@@ -1214,8 +1214,9 @@ public sealed partial class AiAssistantMcpToolsService(
                     commissionTypeId, r.CategoryId, commissionSettings, categoryCommissions);
                 var markedUp = CustomerPriceCalculator.ApplyProductMarkup(
                     r.USDPrice, commissionTypeId, r.CategoryId, commissionSettings, categoryCommissions);
-                var priced = ProductPricePresenter.Present(
-                    markedUp, commissionTypeId ?? r.ProductTypeId, r.Currency, usdToAedRate);
+                var priced = CustomerPriceCalculator.RoundUpToQuarter(
+                    ProductPricePresenter.Present(
+                        markedUp, commissionTypeId ?? r.ProductTypeId, r.Currency, usdToAedRate));
 
                 channelRows.Add(new NameCandidate(
             r.ProductId,
@@ -1257,8 +1258,9 @@ public sealed partial class AiAssistantMcpToolsService(
                     categoryId: null,
                     commissionSettings,
                     categoryCommissions);
-                var priced = ProductPricePresenter.Present(
-                    markedUp, ProductTypeCodes.Retail, "AED", usdToAedRate);
+                var priced = CustomerPriceCalculator.RoundUpToQuarter(
+                    ProductPricePresenter.Present(
+                        markedUp, ProductTypeCodes.Retail, "AED", usdToAedRate));
 
                 channelRows.Add(new NameCandidate(
                     r.ProductId,

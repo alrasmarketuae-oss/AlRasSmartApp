@@ -63,7 +63,8 @@ public static class CustomerPriceCalculator
             return basePrice;
         }
 
-        return decimal.Round(basePrice * (1 + percent / 100m), 2, MidpointRounding.AwayFromZero);
+        var markedUp = decimal.Round(basePrice * (1 + percent / 100m), 2, MidpointRounding.AwayFromZero);
+        return RoundUpToQuarter(markedUp);
     }
 
     /// <summary>
@@ -82,8 +83,33 @@ public static class CustomerPriceCalculator
             return 0m;
         }
 
-        return decimal.Round(basePrice * (1 - percent / 100m), 2, MidpointRounding.AwayFromZero);
+        var markedDown = decimal.Round(basePrice * (1 - percent / 100m), 2, MidpointRounding.AwayFromZero);
+        return RoundUpToQuarter(markedDown);
     }
+
+    /// <summary>
+    /// Raise fractional product prices to the next quarter:
+    /// … → .25 → .50 → .75 → next whole number.
+    /// Exact quarters (.00 / .25 / .50 / .75) stay unchanged.
+    /// </summary>
+    public static decimal RoundUpToQuarter(decimal value)
+    {
+        if (value <= 0)
+        {
+            return value;
+        }
+
+        return decimal.Ceiling(value * 4m) / 4m;
+    }
+
+    public static CustomerFacingPrice RoundUpToQuarter(CustomerFacingPrice price) =>
+        new()
+        {
+            Price = RoundUpToQuarter(price.Price),
+            Currency = price.Currency,
+            PriceUsd = RoundUpToQuarter(price.PriceUsd),
+            PriceAed = price.PriceAed is null ? null : RoundUpToQuarter(price.PriceAed.Value)
+        };
 
     /// <summary>
     /// Inverse of <see cref="ApplyPercentMarkup"/> for historical order economics

@@ -351,7 +351,8 @@ public partial class ProductsAppService
             categoryId,
             settings,
             categoryCommissions);
-        return ProductPricePresenter.Present(markedUpUsd, productTypeId, productCurrency, usdToAedRate);
+        return CustomerPriceCalculator.RoundUpToQuarter(
+            ProductPricePresenter.Present(markedUpUsd, productTypeId, productCurrency, usdToAedRate));
     }
 
     /// <summary>
