@@ -151,6 +151,26 @@ public partial class ProductsAppService
             var priced = useRetailPrimary ? retailPriced!.Value : wholesalePriced;
             var displayQuantity = useRetailPrimary ? (x.RetailQuantity ?? 0) : x.Quantity;
 
+            // Owner-facing (no commission): same currency presentation as My Ads.
+            var wholesaleOwnerPriced = BuildSupplierFacingPrice(
+                unitPrice,
+                x.ProductTypeId,
+                x.Currency,
+                usdToAedRate);
+            CustomerFacingPrice? retailOwnerPriced = null;
+            if (hasRetailPricing && x.RetailPrice is > 0)
+            {
+                retailOwnerPriced = BuildSupplierFacingPrice(
+                    x.RetailPrice.Value,
+                    ProductTypeCodes.Retail,
+                    "AED",
+                    usdToAedRate);
+            }
+
+            var ownerPriced = useRetailPrimary && retailOwnerPriced is not null
+                ? retailOwnerPriced.Value
+                : wholesaleOwnerPriced;
+
             categoryLookup.TryGetValue(x.CategoryId ?? 0, out var category);
             var categoryNameEn = FirstNonEmpty(x.CategoryName, category?.NameEn);
             var categoryNameAr = FirstNonEmpty(x.CategoryNameAr, category?.NameAr);
@@ -242,6 +262,11 @@ public partial class ProductsAppService
                 currency = priced.Currency,
                 priceAed = priced.PriceAed,
                 usdPrice = priced.PriceUsd,
+                ownerPrice = ownerPriced.Price,
+                ownerCurrency = ownerPriced.Currency,
+                ownerPriceAed = ownerPriced.PriceAed,
+                ownerUsdPrice = ownerPriced.PriceUsd,
+                ownerWholesalePrice = wholesaleOwnerPriced.Price,
                 wholesalePrice = wholesalePriced.Price,
                 wholesaleCurrency = wholesalePriced.Currency,
                 wholesalePriceAed = wholesalePriced.PriceAed,
@@ -331,6 +356,8 @@ public partial class ProductsAppService
                 hasRetailPricing = includeRetail && hasRetailPricing,
                 retailPrice = includeRetail ? retailPriced?.Price : null,
                 retailPriceAed = includeRetail ? retailPriced?.PriceAed : null,
+                ownerRetailPrice = includeRetail ? retailOwnerPriced?.Price : null,
+                ownerRetailPriceAed = includeRetail ? retailOwnerPriced?.PriceAed : null,
                 retailUnitId = includeRetail ? x.RetailUnitId : null,
                 retailUnitName = retailUnitNameEn,
                 retailUnitNameEn,

@@ -91,7 +91,7 @@ public partial class ProductsAppService
     }
 
     private string SearchCardCacheKey(Guid productId, string channel) =>
-        $"products:search-card:v15:v{SearchProductsCacheVersion}:{productId:D}:{channel}";
+        $"products:search-card:v16:v{SearchProductsCacheVersion}:{productId:D}:{channel}";
 
     private async Task<Dictionary<(Guid ProductId, string Channel), object>> BuildSearchCardsFromSqlAsync(
         IReadOnlyList<ProductPublicRow> products,
@@ -210,6 +210,25 @@ public partial class ProductsAppService
         var priced = useRetailPrimary ? retailPriced!.Value : wholesalePriced;
         var displayQuantity = useRetailPrimary ? (x.RetailQuantity ?? 0) : x.Quantity;
 
+        var wholesaleOwnerPriced = BuildSupplierFacingPrice(
+            unitPrice,
+            x.ProductTypeId,
+            x.Currency,
+            usdToAedRate);
+        CustomerFacingPrice? retailOwnerPriced = null;
+        if (hasRetailPricing && x.RetailPrice is > 0)
+        {
+            retailOwnerPriced = BuildSupplierFacingPrice(
+                x.RetailPrice.Value,
+                ProductTypeCodes.Retail,
+                "AED",
+                usdToAedRate);
+        }
+
+        var ownerPriced = useRetailPrimary && retailOwnerPriced is not null
+            ? retailOwnerPriced.Value
+            : wholesaleOwnerPriced;
+
         var wholesaleUnitNameEn = x.UnitName;
         var wholesaleUnitNameAr = CatalogLocalizationHelper.UnitNameAr(x.UnitName);
         var retailUnitNameEn = x.RetailUnitName;
@@ -256,6 +275,11 @@ public partial class ProductsAppService
             currency = priced.Currency,
             priceAed = priced.PriceAed,
             usdPrice = priced.PriceUsd,
+            ownerPrice = ownerPriced.Price,
+            ownerCurrency = ownerPriced.Currency,
+            ownerPriceAed = ownerPriced.PriceAed,
+            ownerUsdPrice = ownerPriced.PriceUsd,
+            x.OwnerId,
             Quantity = displayQuantity,
             description = primaryDescriptionEn,
             descriptionEn = primaryDescriptionEn,
@@ -302,6 +326,8 @@ public partial class ProductsAppService
             hasRetailPricing = channel != "category" && hasRetailPricing,
             retailPrice = channel != "category" ? retailPriced?.Price : null,
             retailPriceAed = channel != "category" ? retailPriced?.PriceAed : null,
+            ownerRetailPrice = channel != "category" ? retailOwnerPriced?.Price : null,
+            ownerRetailPriceAed = channel != "category" ? retailOwnerPriced?.PriceAed : null,
             retailUnitName = channel != "category" ? retailUnitNameEn : null,
             retailUnitNameEn = channel != "category" ? retailUnitNameEn : null,
             retailUnitNameAr = channel != "category" ? retailUnitNameAr : null,

@@ -80,6 +80,10 @@ class MyListingProductModel {
     this.hasRetailPricing = false,
     this.searchListingChannel = '',
     this.retailPrice = '',
+    this.ownerPrice = '',
+    this.ownerCurrency = '',
+    this.ownerUsdPrice = '',
+    this.ownerRetailPrice = '',
     this.retailUnitName = '',
     this.retailUnitNameEn = '',
     this.retailQuantity = '',
@@ -242,6 +246,11 @@ class MyListingProductModel {
 
   final bool hasRetailPricing;
   final String retailPrice;
+  /// Seller-set price without customer commission (from public APIs).
+  final String ownerPrice;
+  final String ownerCurrency;
+  final String ownerUsdPrice;
+  final String ownerRetailPrice;
   final String retailUnitName;
   final String retailUnitNameEn;
   final String retailQuantity;
@@ -356,8 +365,12 @@ class MyListingProductModel {
     return false;
   }
 
-  /// Base listing price without customer markup (for edit forms).
+  /// Base listing price without customer markup (for edit forms / owner view).
   String get ownerListingPrice {
+    final owner = ownerPrice.trim();
+    if (owner.isNotEmpty) return owner;
+    final ownerUsd = ownerUsdPrice.trim();
+    if (ownerUsd.isNotEmpty) return ownerUsd;
     final base = priceUsd.trim();
     if (base.isNotEmpty) return base;
     return displayPrice.trim();
@@ -870,6 +883,18 @@ class MyListingProductModel {
               .toLowerCase(),
       retailPrice: json['retailPrice']?.toString() ??
           json['RetailPrice']?.toString() ??
+          '',
+      ownerPrice: json['ownerPrice']?.toString() ??
+          json['OwnerPrice']?.toString() ??
+          '',
+      ownerCurrency: (json['ownerCurrency'] ?? json['OwnerCurrency'] ?? '')
+          .toString()
+          .toUpperCase(),
+      ownerUsdPrice: json['ownerUsdPrice']?.toString() ??
+          json['OwnerUsdPrice']?.toString() ??
+          '',
+      ownerRetailPrice: json['ownerRetailPrice']?.toString() ??
+          json['OwnerRetailPrice']?.toString() ??
           '',
       retailUnitName: () {
         final localized = LocalizedProductText.pickForLanguage(

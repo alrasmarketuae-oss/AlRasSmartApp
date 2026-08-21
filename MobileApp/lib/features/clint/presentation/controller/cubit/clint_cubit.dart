@@ -2357,6 +2357,11 @@ class ClintCubit extends Cubit<ClintStates> {
           json['priceUsd'] ??
           json['USDPrice'] ??
           (currency == 'USD' ? price : ''),
+      'ownerPrice': json['ownerPrice'] ?? json['OwnerPrice'] ?? '',
+      'ownerCurrency': json['ownerCurrency'] ?? json['OwnerCurrency'] ?? '',
+      'ownerUsdPrice': json['ownerUsdPrice'] ?? json['OwnerUsdPrice'] ?? '',
+      'ownerRetailPrice':
+          json['ownerRetailPrice'] ?? json['OwnerRetailPrice'] ?? '',
       'currency': currency,
       'quantity': json['quantity'] ?? '',
       'unitName': json['unitName'] ?? '',

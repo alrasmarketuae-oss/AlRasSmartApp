@@ -246,11 +246,13 @@ class _ProductCardMarketplaceLayoutState
             priceTypeLabel.isNotEmpty);
 
     final discount = widget.product.discountPercentValue;
-    final showDeal =
-        _offerMode && _dealActive && discount > 0 && widget.product.salePriceValue > 0;
+    final showDeal = _offerMode &&
+        _dealActive &&
+        discount > 0 &&
+        ProductPriceFormatter.saleAmountValue(widget.product) > 0;
     final currency = ProductPriceFormatter.currencyCode(widget.product);
-    final sale = widget.product.salePriceValue;
-    final original = widget.product.originalPriceValue;
+    final sale = ProductPriceFormatter.saleAmountValue(widget.product);
+    final original = ProductPriceFormatter.originalAmountValue(widget.product);
     final unit = ProductPriceFormatter.unitSuffix(
       widget.product,
       s: S.of(context),

@@ -96,11 +96,12 @@ class _OfferProductCardMarketplaceLayoutState
     final soldOut = ProductStock.isSoldOut(product);
     final details = soldOut ? s.soldOut : product.description.trim();
     final discount = product.discountPercentValue;
-    final showDeal = _dealActive && discount > 0 && product.salePriceValue > 0;
+    final showDeal =
+        _dealActive && discount > 0 && ProductPriceFormatter.saleAmountValue(product) > 0;
     final showTimer = showDeal && product.discountDaysValue > 0;
     final currency = ProductPriceFormatter.currencyCode(product);
-    final sale = product.salePriceValue;
-    final original = product.originalPriceValue;
+    final sale = ProductPriceFormatter.saleAmountValue(product);
+    final original = ProductPriceFormatter.originalAmountValue(product);
     final displayPrice = showDeal ? sale : (original > 0 ? original : sale);
     final titleFontSize = ProductGridLayout.cardTitleFontSize(context);
     final detailsFontSize = ProductGridLayout.cardDetailsFontSize(context);
