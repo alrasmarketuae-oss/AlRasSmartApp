@@ -182,7 +182,9 @@ class _ProfileViewState extends State<ProfileView> {
   Future<void> _logout() async {
     await AuthService.instance.logout();
     if (!mounted) return;
-    context.read<ClintCubit>().setTab(0);
+    final clint = context.read<ClintCubit>();
+    clint.setTab(0);
+    clint.clearHomeCatalogMemory();
     context.read<CompanyCubit>().setTab(0);
     goToGuestHome(context);
   }

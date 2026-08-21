@@ -389,7 +389,9 @@ class AuthService {
     isCustomer = null;
     isVerified = null;
     isCompanyAccount = null;
+    isShippingCompanyAccount = null;
     phone = null;
+    phoneNumber = null;
     userImagePath = null;
     hasPassword = null;
     loginProviderName = null;
@@ -407,7 +409,9 @@ class AuthService {
     await CachHelper.removeData('isCustomer');
     await CachHelper.removeData('isVerified');
     await CachHelper.removeData('isCompanyAccount');
+    await CachHelper.removeData('isShippingCompanyAccount');
     await CachHelper.removeData('phone');
+    await CachHelper.removeData('phoneNumber');
     await CachHelper.removeData('userImagePath');
     await CachHelper.removeData('userImageRevision');
     await CachHelper.removeData('hasPassword');

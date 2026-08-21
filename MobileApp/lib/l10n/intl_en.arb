@@ -89,7 +89,7 @@
     "loginSubtitle": "Sign in to your account",
     "shippingCompanySubtitle": "Reliable and fast shipping solutions",
     "loginAsGuest": "Login as Guest",
-    "loginRequiredTitle": "Sorry",
+    "loginRequiredTitle": "Login required",
     "loginRequiredMessage": "You must log in to continue.",
     "enterFullName": "Enter full name"  ,
     "fullName": "Full Name",

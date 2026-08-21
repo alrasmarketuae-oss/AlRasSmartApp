@@ -48,6 +48,16 @@ class CompanyCubit extends Cubit<CompanyStates> {
   /// Admin viewing another company's ads.
   String? listingsOwnerId;
 
+  /// After publishing a new ad from the Create tab, scroll/blink this listing.
+  String? pendingHighlightProductId;
+
+  String? takePendingHighlightProductId() {
+    final id = pendingHighlightProductId?.trim();
+    pendingHighlightProductId = null;
+    if (id == null || id.isEmpty) return null;
+    return id;
+  }
+
   void setTab(int index) {
     currentIndex = index;
     emit(CompanyTabState(index));

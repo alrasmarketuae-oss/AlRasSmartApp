@@ -958,7 +958,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "login": MessageLookupByLibrary.simpleMessage("تسجيل الدخول"),
     "loginAsGuest": MessageLookupByLibrary.simpleMessage("دخول كزائر"),
-    "loginRequiredTitle": MessageLookupByLibrary.simpleMessage("عذراً"),
+    "loginRequiredTitle": MessageLookupByLibrary.simpleMessage("يلزم تسجيل الدخول"),
     "loginRequiredMessage": MessageLookupByLibrary.simpleMessage(
       "يجب تسجيل الدخول للمتابعة",
     ),

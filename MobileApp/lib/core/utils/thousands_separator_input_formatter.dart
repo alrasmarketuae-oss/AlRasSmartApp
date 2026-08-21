@@ -56,16 +56,16 @@ class ThousandsNumberInput {
   }
 
   /// Formats a number for display in edit forms / controllers.
+  /// Fractional money amounts keep two digits (`.50` not `.5`).
   static String format(num value, {bool allowDecimal = true}) {
     if (!allowDecimal || value == value.roundToDouble()) {
       return groupInteger(value.round().toString());
     }
     final fixed = value.toStringAsFixed(2);
     final parts = fixed.split('.');
-    final decimals =
-        parts.length > 1 ? parts[1].replaceFirst(RegExp(r'0+$'), '') : '';
+    final decimals = parts.length > 1 ? parts[1] : '00';
     final grouped = groupInteger(parts.first);
-    return decimals.isEmpty ? grouped : '$grouped.$decimals';
+    return '$grouped.$decimals';
   }
 
   static String formatRaw(String? raw, {bool allowDecimal = true}) {

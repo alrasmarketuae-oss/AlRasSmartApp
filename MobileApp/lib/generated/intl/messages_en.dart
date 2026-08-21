@@ -949,7 +949,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "login": MessageLookupByLibrary.simpleMessage("Login"),
     "loginAsGuest": MessageLookupByLibrary.simpleMessage("Login as Guest"),
-    "loginRequiredTitle": MessageLookupByLibrary.simpleMessage("Sorry"),
+    "loginRequiredTitle": MessageLookupByLibrary.simpleMessage("Login required"),
     "loginRequiredMessage": MessageLookupByLibrary.simpleMessage(
       "You must log in to continue.",
     ),

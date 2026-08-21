@@ -809,10 +809,10 @@ class S {
     );
   }
 
-  /// `Sorry`
+  /// `Login required`
   String get loginRequiredTitle {
     return Intl.message(
-      'Sorry',
+      'Login required',
       name: 'loginRequiredTitle',
       desc: '',
       args: [],

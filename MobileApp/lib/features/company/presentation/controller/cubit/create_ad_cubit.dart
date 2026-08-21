@@ -1706,31 +1706,43 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     })?
   >
   _resolveUserGeoForSubmit() async {
-    final originCountry = state.originCountry;
-    final destinationCountry = state.destinationCountry;
-    final loadingPort = state.originPort;
-    final arrivalPort = state.destinationPort;
     final isFob = state.bookingPriceType == BookingPriceType.fob;
+    var originCountry = (state.originCountry ?? '').trim();
+    if (originCountry.isEmpty) {
+      originCountry = originCountryController.text.trim();
+    }
+    var destinationCountry = (state.destinationCountry ?? '').trim();
+    if (destinationCountry.isEmpty) {
+      destinationCountry = destinationCountryController.text.trim();
+    }
+    final loadingPort = (state.originPort ?? '').trim();
+    final arrivalPort = (state.destinationPort ?? '').trim();
 
-    if (originCountry == null || originCountry.isEmpty) {
+    if (originCountry.isEmpty) {
       return null;
     }
 
-    if (!isFob &&
-        (destinationCountry == null ||
-            destinationCountry.isEmpty ||
-            loadingPort == null ||
-            loadingPort.isEmpty ||
-            arrivalPort == null ||
-            arrivalPort.isEmpty)) {
+    // FOB: only exporting country is required (ports / destination are hidden).
+    if (isFob) {
+      return (
+        originCountry: originCountry,
+        destinationCountry: '',
+        loadingPort: null,
+        arrivalPort: null,
+      );
+    }
+
+    if (destinationCountry.isEmpty ||
+        loadingPort.isEmpty ||
+        arrivalPort.isEmpty) {
       return null;
     }
 
     return (
       originCountry: originCountry,
-      destinationCountry: isFob ? '' : destinationCountry!,
-      loadingPort: isFob ? null : loadingPort,
-      arrivalPort: isFob ? null : arrivalPort,
+      destinationCountry: destinationCountry,
+      loadingPort: loadingPort,
+      arrivalPort: arrivalPort,
     );
   }
 

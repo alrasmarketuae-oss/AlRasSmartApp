@@ -146,6 +146,7 @@ class CreateAdLocationDetailsSection extends StatelessWidget {
         fontSize: 14.sp,
       ),
       validator: validator,
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
       decoration: InputDecoration(
         filled: true,
         fillColor: CreateAdDesign.cardBg,

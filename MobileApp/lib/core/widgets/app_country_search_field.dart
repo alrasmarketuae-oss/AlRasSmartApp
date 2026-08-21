@@ -63,7 +63,20 @@ class _AppCountrySearchFieldState extends State<AppCountrySearchField> {
 
     return FormField<String>(
       initialValue: widget.value,
-      validator: widget.validator,
+      validator: (value) {
+        final trimmed = (value ?? _controller.text).trim();
+        if (widget.enabled && trimmed.isNotEmpty) {
+          final match = AppCountryNames.all.firstWhere(
+            (country) => country.toLowerCase() == trimmed.toLowerCase(),
+            orElse: () => '',
+          );
+          if (match.isNotEmpty) {
+            // Sync cubit/controllers before submit geo checks run.
+            widget.onChanged(match);
+          }
+        }
+        return widget.validator?.call(trimmed.isEmpty ? null : trimmed);
+      },
       builder: (fieldState) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -101,7 +114,21 @@ class _AppCountrySearchFieldState extends State<AppCountrySearchField> {
                   textInputAction: TextInputAction.search,
                   onChanged: (value) {
                     _controller.text = value;
-                    fieldState.didChange(value.isEmpty ? null : value);
+                    final trimmed = value.trim();
+                    fieldState.didChange(trimmed.isEmpty ? null : trimmed);
+                    if (!widget.enabled) return;
+                    if (trimmed.isEmpty) {
+                      widget.onChanged(null);
+                      return;
+                    }
+                    final match = AppCountryNames.all.firstWhere(
+                      (country) =>
+                          country.toLowerCase() == trimmed.toLowerCase(),
+                      orElse: () => '',
+                    );
+                    if (match.isNotEmpty) {
+                      widget.onChanged(match);
+                    }
                   },
                   onFieldSubmitted: (value) {
                     onFieldSubmitted();
@@ -113,6 +140,21 @@ class _AppCountrySearchFieldState extends State<AppCountrySearchField> {
                       orElse: () => trimmed,
                     );
                     if (AppCountryNames.all.contains(match)) {
+                      textEditingController.text = match;
+                      _controller.text = match;
+                      fieldState.didChange(match);
+                      widget.onChanged(match);
+                    }
+                  },
+                  onTapOutside: (_) {
+                    final trimmed = textEditingController.text.trim();
+                    if (trimmed.isEmpty || !widget.enabled) return;
+                    final match = AppCountryNames.all.firstWhere(
+                      (country) =>
+                          country.toLowerCase() == trimmed.toLowerCase(),
+                      orElse: () => '',
+                    );
+                    if (match.isNotEmpty) {
                       textEditingController.text = match;
                       _controller.text = match;
                       fieldState.didChange(match);
@@ -186,7 +228,12 @@ class _AppCountrySearchFieldState extends State<AppCountrySearchField> {
                                 color: const Color(0xFF333333),
                               ),
                             ),
-                            onTap: () => onSelected(option),
+                            onTap: () {
+                              FocusManager.instance.primaryFocus?.unfocus();
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                onSelected(option);
+                              });
+                            },
                           );
                         },
                       ),

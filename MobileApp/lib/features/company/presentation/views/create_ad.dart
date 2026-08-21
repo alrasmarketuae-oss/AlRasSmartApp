@@ -6,6 +6,7 @@ import 'package:alrasmarket/core/services/publish_success_sound.dart';
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/features/admin/presentation/widgets/admin_account_page.dart';
+import 'package:alrasmarket/features/company/presentation/controller/cubit/company_cubit.dart';
 import 'package:alrasmarket/features/company/presentation/controller/cubit/create_ad_cubit.dart';
 import 'package:alrasmarket/features/company/presentation/controller/cubit/create_ad_states.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_design.dart';
@@ -54,7 +55,8 @@ class _CreateAdPage extends StatelessWidget {
           AppToast.showSuccess(context, state.submitSuccessMessage!);
           final navigateProductId = state.submitNavigateProductId;
           final wasEdit = state.isEditMode;
-          final actingForCompany = cubit.actingOwnerId?.trim().isNotEmpty == true;
+          final actingForCompany =
+              cubit.actingOwnerId?.trim().isNotEmpty == true;
           cubit.clearSubmitFeedback();
           if (wasEdit || actingForCompany) {
             if (Navigator.of(context).canPop()) {
@@ -62,11 +64,17 @@ class _CreateAdPage extends StatelessWidget {
             }
             return;
           }
-          if (navigateProductId != null && navigateProductId.isNotEmpty) {
-            context.go(
-              AppRoutes.kMyAdsView,
-              extra: {'highlightProductId': navigateProductId},
-            );
+          // Stay inside CompanyHomeLayout (bottom nav). Never context.go(MyAds)
+          // — that replaces the shell and leaves a dead-end page with no bar.
+          final companyCubit = sl<CompanyCubit>();
+          if (!companyCubit.isClosed) {
+            final id = navigateProductId?.trim();
+            if (id != null && id.isNotEmpty) {
+              companyCubit.pendingHighlightProductId = id;
+            }
+            companyCubit.setTab(3);
+          } else if (context.mounted) {
+            context.go(AppRoutes.kCompanyHomeView);
           }
         } else if (state.submitErrorMessage != null) {
           AppToast.showError(context, state.submitErrorMessage!);

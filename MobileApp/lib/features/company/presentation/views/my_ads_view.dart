@@ -51,16 +51,22 @@ class _MyAdsViewState extends State<MyAdsView> {
   int _accountSectionIndex = 0;
   int _selectedTypeFilterIndex = 0;
   int _selectedStatusFilterIndex = 0;
+  String? _highlightProductId;
 
   @override
   void initState() {
     super.initState();
+    _highlightProductId = widget.highlightProductId;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final cubit = context.read<CompanyCubit>();
       cubit.listingsOwnerId = widget.actingOwnerId;
+      final pending = cubit.takePendingHighlightProductId();
+      if (pending != null) {
+        setState(() => _highlightProductId = pending);
+      }
       // Clear filters so the highlighted product is visible.
-      if (widget.highlightProductId != null &&
-          widget.highlightProductId!.trim().isNotEmpty) {
+      if (_highlightProductId != null &&
+          _highlightProductId!.trim().isNotEmpty) {
         cubit.setMyListingsFilter(
           _isCompanyCustomerAccount
               ? MyAdsFilter.requests.productTypeName
@@ -196,90 +202,112 @@ class _MyAdsViewState extends State<MyAdsView> {
 
     return BlocProvider.value(
       value: sl<CompanyCubit>(),
-      child: SafeArea(
-        child: Scaffold(
-          backgroundColor: AppColors.scaffold(context),
-          floatingActionButton: _isActingForCompany
-              ? FloatingActionButton.extended(
-                  onPressed: _openCreateAd,
-                  backgroundColor: LightColor.defaultColor,
-                  icon: const Icon(Icons.add_rounded, color: Colors.white),
-                  label: Text(
-                    Localizations.localeOf(context).languageCode == 'ar'
-                        ? 'إضافة إعلان'
-                        : 'Add ad',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
+      child: BlocListener<CompanyCubit, CompanyStates>(
+        listenWhen: (previous, current) =>
+            current is CompanyTabState && current.index == 3,
+        listener: (context, state) {
+          final pending =
+              context.read<CompanyCubit>().takePendingHighlightProductId();
+          if (pending == null) return;
+          setState(() {
+            _highlightProductId = pending;
+            _accountSectionIndex = 0;
+            if (!_isCompanyCustomerAccount && !_isOverseasSupplierAccount) {
+              _selectedTypeFilterIndex = 0;
+              _selectedStatusFilterIndex = 0;
+            }
+          });
+          if (!_isCompanyCustomerAccount && !_isOverseasSupplierAccount) {
+            final company = context.read<CompanyCubit>();
+            company.setMyListingsFilter(null);
+            company.setMyListingsStatusFilter(null);
+          }
+        },
+        child: SafeArea(
+          child: Scaffold(
+            backgroundColor: AppColors.scaffold(context),
+            floatingActionButton: _isActingForCompany
+                ? FloatingActionButton.extended(
+                    onPressed: _openCreateAd,
+                    backgroundColor: LightColor.defaultColor,
+                    icon: const Icon(Icons.add_rounded, color: Colors.white),
+                    label: Text(
+                      Localizations.localeOf(context).languageCode == 'ar'
+                          ? 'إضافة إعلان'
+                          : 'Add ad',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                )
-              : null,
-          body: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              MyAdsHeaderWidget(
-                showBackButton: !widget.isTabView,
-                title: widget.companyName,
-              ),
-              const ChangePricesBanner(),
-              if (showMyOffersSection)
-                _AccountSectionTabs(
-                  selectedIndex: _accountSectionIndex,
-                  onSelected: _onAccountSectionSelected,
+                  )
+                : null,
+            body: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                MyAdsHeaderWidget(
+                  showBackButton: !widget.isTabView,
+                  title: widget.companyName,
                 ),
-              if (!showMyOffersSection || _accountSectionIndex == 0) ...[
-                if (!_hideAdTypeFilters)
-                  MyAdsTypeFilterCards(
-                    items: typeItems,
-                    selectedIndex: _selectedTypeFilterIndex,
-                    onSelected: _onTypeFilterSelected,
+                const ChangePricesBanner(),
+                if (showMyOffersSection)
+                  _AccountSectionTabs(
+                    selectedIndex: _accountSectionIndex,
+                    onSelected: _onAccountSectionSelected,
                   ),
-                BlocBuilder<CompanyCubit, CompanyStates>(
-                  buildWhen: (previous, current) =>
-                      current is CompanyMyListingsState,
-                  builder: (context, state) {
-                    final products = state is CompanyMyListingsState
-                        ? state.typeFilteredProducts
-                        : const <MyListingProductModel>[];
-                    final counts = MyAdsListingStatusFilter.values
-                        .map(
-                          (filter) =>
-                              products.where(filter.matches).length,
-                        )
-                        .toList();
-                    return MyAdsStatusFilterChips(
-                      items: statusItems,
-                      selectedIndex: _selectedStatusFilterIndex,
-                      onSelected: _onStatusFilterSelected,
-                      counts: counts,
-                    );
-                  },
-                ),
-                _RecentListingsHeader(
-                  onViewAll: () {
-                    if (_hideAdTypeFilters) {
-                      if (_selectedStatusFilterIndex != 0) {
+                if (!showMyOffersSection || _accountSectionIndex == 0) ...[
+                  if (!_hideAdTypeFilters)
+                    MyAdsTypeFilterCards(
+                      items: typeItems,
+                      selectedIndex: _selectedTypeFilterIndex,
+                      onSelected: _onTypeFilterSelected,
+                    ),
+                  BlocBuilder<CompanyCubit, CompanyStates>(
+                    buildWhen: (previous, current) =>
+                        current is CompanyMyListingsState,
+                    builder: (context, state) {
+                      final products = state is CompanyMyListingsState
+                          ? state.typeFilteredProducts
+                          : const <MyListingProductModel>[];
+                      final counts = MyAdsListingStatusFilter.values
+                          .map(
+                            (filter) =>
+                                products.where(filter.matches).length,
+                          )
+                          .toList();
+                      return MyAdsStatusFilterChips(
+                        items: statusItems,
+                        selectedIndex: _selectedStatusFilterIndex,
+                        onSelected: _onStatusFilterSelected,
+                        counts: counts,
+                      );
+                    },
+                  ),
+                  _RecentListingsHeader(
+                    onViewAll: () {
+                      if (_hideAdTypeFilters) {
+                        if (_selectedStatusFilterIndex != 0) {
+                          _onStatusFilterSelected(0);
+                        }
+                      } else if (_selectedTypeFilterIndex != 0 ||
+                          _selectedStatusFilterIndex != 0) {
+                        _onTypeFilterSelected(0);
                         _onStatusFilterSelected(0);
                       }
-                    } else if (_selectedTypeFilterIndex != 0 ||
-                        _selectedStatusFilterIndex != 0) {
-                      _onTypeFilterSelected(0);
-                      _onStatusFilterSelected(0);
-                    }
-                  },
-                ),
-                Expanded(
-                  child: _MyAdsRefreshableList(
-                    highlightProductId: widget.highlightProductId,
-                    onHighlightedProductFound: _onHighlightedProductFound,
+                    },
                   ),
-                ),
-              ] else if (showMyOffersSection)
-                const Expanded(
-                  child: _MyOffersRefreshableList(),
-                ),
-            ],
+                  Expanded(
+                    child: _MyAdsRefreshableList(
+                      highlightProductId: _highlightProductId,
+                      onHighlightedProductFound: _onHighlightedProductFound,
+                    ),
+                  ),
+                ] else if (showMyOffersSection)
+                  const Expanded(
+                    child: _MyOffersRefreshableList(),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

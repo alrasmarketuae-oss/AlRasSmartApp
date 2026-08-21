@@ -48,6 +48,7 @@ class CreateAdTypeSelectionField extends StatelessWidget {
         DropdownButtonFormField<String>(
           value: effectiveSelected,
           hint: Text(S.of(context).selectAnOption, style: fieldTextStyle),
+          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
           icon: Icon(
             Icons.keyboard_arrow_down_rounded,
             color: const Color(0xFF6B7280),

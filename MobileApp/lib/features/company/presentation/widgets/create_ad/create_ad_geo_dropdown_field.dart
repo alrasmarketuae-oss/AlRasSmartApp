@@ -77,6 +77,7 @@ class CreateAdGeoDropdownField extends StatelessWidget {
       style: fieldTextStyle,
       menuMaxHeight: 320.h,
       validator: validator,
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
       decoration: InputDecoration(
         filled: true,
         fillColor: CreateAdDesign.cardBg,
