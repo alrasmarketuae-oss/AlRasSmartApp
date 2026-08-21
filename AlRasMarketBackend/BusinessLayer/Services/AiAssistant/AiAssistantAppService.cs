@@ -243,12 +243,10 @@ public sealed class AiAssistantAppService(
                 ThinkingSteps = thinkingSteps.Count > 0 ? thinkingSteps : answer.ThinkingSteps
             };
 
-        await ThinkAsync(
+            await ThinkAsync(
                 language == "ar"
-                    ? $"بشتغل على سؤالك: {TrimForThinking(message)}"
-                    : language == "en"
-                        ? $"Working on: {TrimForThinking(message)}"
-                        : $"Working on: {TrimForThinking(message)}")
+                    ? $"تمام، براجع: {TrimForThinking(message)}"
+                    : $"Got it — checking: {TrimForThinking(message)}")
             .ConfigureAwait(false);
 
         // Unauthorized create-ad: refuse immediately — never collect fields or enter plan flow.
@@ -301,12 +299,7 @@ public sealed class AiAssistantAppService(
             // Follow-ups like "and after that?" are meaningless alone, so retrieval
             // is done on the recent turns plus the new message.
             var retrievalQuery = BuildRetrievalQuery(message, history);
-            await EmitQuestionThinkingAsync(
-                    message,
-                    language,
-                    ThinkAsync,
-                    cancellationToken)
-                .ConfigureAwait(false);
+            // Skip the extra thinking LLM call — it adds latency. Keep one short natural line only.
             var vector = await embeddingService.EmbedAsync(retrievalQuery, cancellationToken)
                 .ConfigureAwait(false);
             var hits = await knowledgeIndex.SearchAsync(
@@ -393,7 +386,7 @@ public sealed class AiAssistantAppService(
             $"""
             You are allras ai, the official in-app AI agent for Al Ras Smart.
             Your name is allras ai (Arabic: أولراس AI). Never invent a different name.
-            When you call tools, put your private reasoning about THIS exact user question in the assistant message content (short specific sentences, one idea per line). Never use generic filler such as "reading the question" or "drafting the reply".
+            When you call tools, put a short natural sentence about THIS exact user question in the assistant message content (plain speech, not numbered steps). Never use generic filler such as "reading the question" or "drafting the reply". Keep it to one brief line.
             The current account audience is: {account.Audience}.
             Signed in: {signedIn}.
             The verified account display name/company name is: {displayName}.
@@ -403,6 +396,12 @@ public sealed class AiAssistantAppService(
             Most seller ads have ONE price. When the user asks to change a price, call update_ad_price_quantity immediately.
             Never say "الإعلان هجين" or "الإعلان مش هجين". Never ask جملة ولا تجزئة unless the tool actually returned needs_channel_clarification=true.
             After a successful update with isHybrid=false, confirm the new price only — no wholesale/retail wording.
+            MULTI-EDIT IN ONE TURN:
+            When the user asks to change several ads in the same message (e.g. update prices on two products, pause some and activate others, or "احذف كل الإعلانات ما عدا …" / delete all except …), do it in THIS turn:
+            1) Call list_my_ads (or use the seller catalog) to resolve names/codes.
+            2) For destructive bulk delete/pause: ask ONE short confirmation that lists what you will keep vs remove, then after they agree call the matching tools with confirm=true for each target ad.
+            3) You MAY call update_ad_price_quantity / set_ad_listing_status / mark_ad_sold_out / delete_ad multiple times in the same turn for different ads.
+            4) Never invent ads outside the catalog. Never delete an ad the user explicitly asked to keep.
             CRITICAL unauthorized create-ad — check FIRST before any field checklist or PLAN MODE:
             If the current audience cannot create the requested ad type, refuse immediately in one clear sentence.
             Do NOT list required fields, do NOT ask for product name, do NOT enter multi-step collection.
@@ -425,10 +424,10 @@ public sealed class AiAssistantAppService(
             - list_my_ads: list every ad the signed-in seller owns (names + ProductCode). Use when choosing which ad to edit or manage.
             - get_my_last_ad: SELLER listing — their most recently created ad (آخر إعلان نزلته / نشرته / أضفته / هات آخر إعلان). NOT an order.
             - get_my_first_ad: SELLER listing — their earliest created ad (أول إعلان نزلته / نشرته / أضفته / هات أول إعلان). NOT an order.
-            - update_ad_price_quantity: update price/quantity on EXACTLY ONE of the seller's own ads per user message. NEVER update all ads or multiple ads in one turn, even if the user says "change all my ads / غير كل إعلاناتي". Refuse bulk requests and ask which single ad (name or ProductCode) to change. MOST ads have ONE price only. Call the tool immediately — do NOT ask جملة ولا تجزئة, and do NOT tell the user the ad is hybrid or not hybrid. Only if the tool returns needs_channel_clarification=true (true hybrid ads with two prices), then ask جملة ولا تجزئة؟ and call again with channel=wholesale or channel=retail. Never mention هجين/جملة/تجزئة in the user-facing reply unless that tool flag was returned or the user asked. If the name uniquely matches one catalog ad, update immediately. If the tool returns needs_clarification with suggestions, ask the user clearly: هل تقصد هذا الإعلان أم هذا؟ (list the suggested names) and wait; when they pick one, call the tool again with that product_code or exact product_name. Never invent ad names outside the catalog/tool results.
-            - set_ad_listing_status: pause or activate EXACTLY ONE owned ad (action=pause|active). Same name-clarification rules as update.
-            - mark_ad_sold_out: set quantity to zero on ONE owned ad. Call immediately. Ask جملة/تجزئة ONLY if the tool returns needs_channel_clarification. Same one-action-per-turn rule.
-            - delete_ad: permanently delete ONE owned ad. First call without confirm (or confirm=false) so you can ask the user; only after they clearly agree, call again with confirm=true. Only one mutating account action (update/pause/sold-out/delete) per user message.
+            - update_ad_price_quantity: update price/quantity on a seller-owned ad. You may call it multiple times in one user message for different ads when they asked for several changes. NEVER invent a bulk SQL update without naming each ad. MOST ads have ONE price only. Call the tool immediately — do NOT ask جملة ولا تجزئة, and do NOT tell the user the ad is hybrid or not hybrid. Only if the tool returns needs_channel_clarification=true (true hybrid ads with two prices), then ask جملة ولا تجزئة؟ and call again with channel=wholesale or channel=retail. Never mention هجين/جملة/تجزئة in the user-facing reply unless that tool flag was returned or the user asked. If the name uniquely matches one catalog ad, update immediately. If the tool returns needs_clarification with suggestions, ask the user clearly: هل تقصد هذا الإعلان أم هذا؟ (list the suggested names) and wait; when they pick one, call the tool again with that product_code or exact product_name. Never invent ad names outside the catalog/tool results.
+            - set_ad_listing_status: pause or activate owned ads (action=pause|active). Multiple ads allowed in one turn when requested. Same name-clarification rules as update.
+            - mark_ad_sold_out: set quantity to zero on owned ads. Multiple ads allowed in one turn when requested. Ask جملة/تجزئة ONLY if the tool returns needs_channel_clarification.
+            - delete_ad: permanently delete owned ads. First call without confirm (or confirm=false) so you can ask once; after they clearly agree, call again with confirm=true for each ad to remove. Supports "delete all except …" in one turn: keep the excluded ads, delete the rest after one confirmation.
             - find_cheapest_product: find the cheapest approved public listing by product name (Arabic/English synonyms like هيل/cardamom). Hybrid ads expose wholesale and retail as separate candidates — use the tool's productCode for that channel (RetailCode when channel=retail). Report customerPrice AFTER commission with currency, channel, and quantity with unitName (never invent grams/kg). The app shows Product cards under your reply — keep text short and tell the user they can tap a card for ad details.
             - find_most_expensive_product: same rules as find_cheapest_product but for the highest buyer-facing price.
             - search_products: search public ads by product name/type (هيل, cardamom, type of product, "show me ads"). Use this when the user is browsing listings rather than asking cheap/expensive. Cards appear in chat; summarize, do not paste a long catalog.
@@ -450,8 +449,8 @@ public sealed class AiAssistantAppService(
             PLAN MODE (conversational create-ad in chat — yellow UI on the app):
             When the user message contains [PLAN_MODE] OR asks to create/publish an ad:
             1) Stay in chat. Do NOT tell the user to open a form, yellow form, Create Ad screen, or fill fields outside chat.
-            2) First reply: clearly list EVERY required field for the target ad type as a checklist (same fields as Create Ad). ALWAYS include التعبئة/packaging (kg) in the checklist for every ad type — ask even if the user may answer none. Optional: media, Request delivery_date.
-            3) Request checklist must ALWAYS include: محلي أم إعادة تصدير + عنوان التسليم (من العناوين المحفوظة عبر list_my_addresses) + التعبئة. Offer/Category checklists must include محلي/إعادة تصدير + التعبئة. Booking must include الوحدة + الدولة المصدرة + التعبئة; for CNF/CIF also بلد الوجهة + موانئ; for FOB never list بلد الوجهة or ports.
+            2) First reply: clearly list EVERY required field for the target ad type as a natural checklist (same fields as Create Ad). ALWAYS include التعبئة/packaging (kg) for every ad type — ask even if the user may answer none. Optional: media, Request delivery_date.
+            3) Request checklist must ALWAYS include: محلي أم إعادة تصدير + عنوان التسليم (من العناوين المحفوظة عبر list_my_addresses) + التعبئة + المواصفات + قابل للتفاوض. Do NOT list السعر المستهدف / الكمية / الوحدة / العملة as required — they are OPTIONAL; mention them only as optional extras. Offer/Category checklists must include محلي/إعادة تصدير + التعبئة. Booking must include الوحدة + الدولة المصدرة + التعبئة; for CNF/CIF also بلد الوجهة + موانئ; for FOB never list بلد الوجهة or ports.
             4) Category hybrid checklist: when user wants جملة+تجزئة, list wholesale fields AND retail fields including مواصفات التجزئة separately — never assume wholesale specs equal retail specs.
             5) When the user replies with data: extract what they gave. If anything required is still missing (including retail_specifications for hybrid, or packaging not asked yet), reply explicitly like:
                "نسيت / لسه ناقص: …" (Arabic) or "You still need to provide: …" (English) and list ONLY the missing required fields. Do not call create_* until complete.
@@ -556,100 +555,6 @@ public sealed class AiAssistantAppService(
                 onThinkingStep,
                 cancellationToken)
                 .ConfigureAwait(false);
-    }
-
-    private async Task EmitQuestionThinkingAsync(
-        string message,
-        string language,
-        Func<string, CancellationToken, Task> think,
-        CancellationToken cancellationToken)
-    {
-        var apiKey = configuration["OpenAI:ApiKey"];
-        if (string.IsNullOrWhiteSpace(apiKey))
-        {
-            return;
-        }
-
-        var visible = ExtractUserVisibleText(message);
-        var thinkingLanguage = language switch
-        {
-            "ar" => "Arabic",
-            "en" => "English",
-            _ => "the same language as the user question"
-        };
-        try
-        {
-            using var httpRequest = new HttpRequestMessage(
-                HttpMethod.Post,
-                "https://api.openai.com/v1/chat/completions");
-            httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-            httpRequest.Content = new StringContent(
-                JsonSerializer.Serialize(new
-                {
-                    model = _options.ChatModel,
-                    temperature = 0.5,
-                    max_tokens = 420,
-                    messages = new object[]
-                    {
-                        new
-                        {
-                            role = "system",
-                            content =
-                                $"""
-                                You are the internal reasoning of allras ai.
-                                Write 5 to 10 short thinking steps in {thinkingLanguage} that show how you will answer THIS exact user question.
-                                Mention the actual product, order, price, person, or action they asked about.
-                                Do not give the final answer.
-                                Do not use generic filler like "reading the question", "searching knowledge", or "drafting the reply".
-                                One step per line. No numbering, bullets, quotes, or labels.
-                                """
-                        },
-                        new { role = "user", content = visible }
-                    }
-                }),
-                Encoding.UTF8,
-                "application/json");
-
-            using var response = await httpClient.SendAsync(httpRequest, cancellationToken)
-                .ConfigureAwait(false);
-            var json = await response.Content.ReadAsStringAsync(cancellationToken)
-                .ConfigureAwait(false);
-            if (!response.IsSuccessStatusCode)
-            {
-                logger.LogWarning(
-                    "Question thinking failed ({Status}): {Body}",
-                    (int)response.StatusCode,
-                    json);
-                return;
-            }
-
-            using var doc = JsonDocument.Parse(json);
-            var content = doc.RootElement
-                .GetProperty("choices")[0]
-                .GetProperty("message")
-                .GetProperty("content")
-                .GetString();
-            if (string.IsNullOrWhiteSpace(content))
-            {
-                return;
-            }
-
-            foreach (var rawLine in content.Split('\n', StringSplitOptions.RemoveEmptyEntries))
-            {
-                var line = rawLine.Trim().TrimStart('-', '*', '•', '–').Trim();
-                line = Regex.Replace(line, @"^\d+[\.\)\-]\s*", string.Empty).Trim();
-                if (line.Length == 0)
-                {
-                    continue;
-                }
-
-                await think(line, cancellationToken).ConfigureAwait(false);
-            }
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            logger.LogWarning(ex, "Question thinking generation failed.");
-        }
     }
 
     private static string TrimForThinking(string message)

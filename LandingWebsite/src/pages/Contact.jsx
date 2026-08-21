@@ -11,7 +11,7 @@ function ContactCard({ icon, title, value, actionLabel, href }) {
       {href && (
         <a
           href={href}
-          className="mt-4 inline-block rounded-full bg-gradient-to-r from-brand-blue to-brand-red px-5 py-2 text-sm font-bold text-white"
+          className="mt-4 inline-block rounded-full brand-gradient px-5 py-2 text-sm font-bold text-white"
         >
           {actionLabel}
         </a>
@@ -67,7 +67,7 @@ export default function Contact({ lang }) {
       </div>
     ),
     'Cash on Delivery': (
-      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-600 text-white">
+      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-green text-white">
         <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden>
           <path d="M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2H3V6Zm0 4h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8Zm9 1.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm0 1.6c.56 0 1.02.24 1.02.52h1.4c0-.9-.78-1.63-1.85-1.8v-.72h-1.14v.72c-1.08.16-1.86.9-1.86 1.8 0 .96.86 1.54 1.86 1.75v1.1c-.62-.09-1.06-.39-1.06-.72H8.9c0 .95.84 1.7 1.93 1.86v.67h1.14v-.67c1.1-.16 1.94-.9 1.94-1.86 0-.97-.87-1.57-1.9-1.78V13.1Z" />
         </svg>
@@ -80,12 +80,12 @@ export default function Contact({ lang }) {
       <SeoHelmet pageKey="contact" lang={lang} />
       <div className="mx-auto max-w-5xl px-4 sm:px-6">
         {/* Hero banner */}
-        <div className="mb-10 overflow-hidden rounded-3xl bg-gradient-to-br from-brand-blue to-brand-red p-8 text-center text-white shadow-xl sm:p-12">
+        <div className="mb-10 overflow-hidden rounded-3xl brand-gradient p-8 text-center text-white shadow-xl sm:p-12">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white/20 text-3xl">
             🎧
           </div>
           <h1 className="text-3xl font-extrabold sm:text-4xl">{t.heading}</h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-blue-100">{t.intro}</p>
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-white/90">{t.intro}</p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">

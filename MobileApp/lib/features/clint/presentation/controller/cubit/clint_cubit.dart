@@ -3235,6 +3235,7 @@ class ClintCubit extends Cubit<ClintStates> {
     final form = _offerOrderFormState;
     final product = currentOfferOrderProduct;
     if (form == null || product == null) return;
+    if (form.isSubmitting) return;
 
     if (ProductOwnershipHelper.isOwnedByCurrentUser(product)) {
       emit(OfferOrderErrorState(S.current.cannotOrderOwnProduct));
@@ -3851,11 +3852,16 @@ class ClintCubit extends Cubit<ClintStates> {
     );
   }
 
+  /// Prevents duplicate add-to-cart taps while a cart API call is in flight.
+  bool _cartMutationInFlight = false;
+
   Future<void> addProductToCart({
     required String productId,
     required double quantity,
     required String unitName,
   }) async {
+    if (_cartMutationInFlight) return;
+
     final knownProducts = <MyListingProductModel?>[
       currentOfferOrderProduct,
       currentBookingProduct,
@@ -3870,12 +3876,17 @@ class ClintCubit extends Cubit<ClintStates> {
       }
     }
 
-    await _updateCartQuantity(
-      productId: productId,
-      unitName: unitName,
-      quantity: quantity,
-      successMessage: S.current.productAddedToCart,
-    );
+    _cartMutationInFlight = true;
+    try {
+      await _updateCartQuantity(
+        productId: productId,
+        unitName: unitName,
+        quantity: quantity,
+        successMessage: S.current.productAddedToCart,
+      );
+    } finally {
+      _cartMutationInFlight = false;
+    }
   }
 
   Future<void> _updateCartQuantity({

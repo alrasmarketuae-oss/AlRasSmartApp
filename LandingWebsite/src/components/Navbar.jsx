@@ -39,7 +39,7 @@ export default function Navbar({ lang, setLang }) {
               key={link.to}
               href={link.to}
               onClick={onNavigate}
-              className="block rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-slate-900"
+              className="block rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-brand-blue/5 hover:text-brand-blue"
             >
               {link.label}
             </a>
@@ -48,7 +48,7 @@ export default function Navbar({ lang, setLang }) {
               key={link.to}
               to={link.to}
               onClick={onNavigate}
-              className="block rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-slate-900"
+              className="block rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-brand-blue/5 hover:text-brand-blue"
             >
               {link.label}
             </Link>
@@ -65,10 +65,10 @@ export default function Navbar({ lang, setLang }) {
           <img
             src="/logo.png"
             alt="الراس الذكي"
-            className="h-9 w-9 shrink-0 rounded-xl bg-white object-cover p-1 shadow-lg ring-1 ring-slate-200 sm:h-10 sm:w-10"
+            className="h-9 w-9 shrink-0 rounded-xl bg-white object-cover p-1 shadow-lg ring-1 ring-brand-blue/20 sm:h-10 sm:w-10"
           />
           <div className={`min-w-0 ${isAr ? 'text-right' : 'text-left'}`}>
-            <p className="truncate text-sm font-bold text-slate-900">
+            <p className="truncate text-sm font-bold text-brand-navy">
               {isAr ? 'الراس الذكي' : 'Al Ras Smart'}
             </p>
             <p className="truncate text-xs text-slate-600">
@@ -80,11 +80,11 @@ export default function Navbar({ lang, setLang }) {
         <nav className="hidden items-center gap-1 text-sm font-medium text-slate-700 xl:flex">
           {links.map((link) =>
             link.hash ? (
-              <a key={link.to} href={link.to} className="rounded-lg px-2.5 py-2 transition hover:bg-slate-100 hover:text-slate-900">
+              <a key={link.to} href={link.to} className="rounded-lg px-2.5 py-2 transition hover:bg-brand-blue/5 hover:text-brand-blue">
                 {link.label}
               </a>
             ) : (
-              <Link key={link.to} to={link.to} className="rounded-lg px-2.5 py-2 transition hover:bg-slate-100 hover:text-slate-900">
+              <Link key={link.to} to={link.to} className="rounded-lg px-2.5 py-2 transition hover:bg-brand-blue/5 hover:text-brand-blue">
                 {link.label}
               </Link>
             ),
@@ -130,7 +130,7 @@ export default function Navbar({ lang, setLang }) {
             <a
               href="/#download"
               onClick={() => setMenuOpen(false)}
-              className="mt-3 block rounded-full bg-gradient-to-r from-brand-blue to-brand-red px-4 py-3 text-center text-sm font-bold text-white shadow-lg"
+              className="mt-3 block rounded-full brand-gradient px-4 py-3 text-center text-sm font-bold text-white shadow-lg"
             >
               {t.download}
             </a>

@@ -23,7 +23,7 @@ export default function DeleteAccount({ lang }) {
               href={`mailto:${CONTACT.email}?subject=${encodeURIComponent(
                 isAr ? 'طلب حذف حساب — Al Ras Smart App' : 'Account deletion request — Al Ras Smart App',
               )}`}
-              className="inline-flex rounded-full bg-gradient-to-r from-brand-blue to-brand-red px-5 py-2.5 text-sm font-bold text-white shadow-md"
+              className="inline-flex rounded-full brand-gradient px-5 py-2.5 text-sm font-bold text-white shadow-md"
             >
               {page.emailCta}
             </a>

@@ -19,7 +19,7 @@ export default function ChatRichText({ text, className = '' }) {
             href={node.href}
             target={node.href.startsWith('mailto:') ? undefined : '_blank'}
             rel="noopener noreferrer"
-            className="font-bold text-[#3A6AA5] underline underline-offset-2 hover:text-[#7B61FF]"
+            className="font-bold text-brand-blue underline underline-offset-2 hover:text-brand-red"
             onClick={(e) => e.stopPropagation()}
           >
             {node.label}

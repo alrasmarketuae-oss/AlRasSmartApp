@@ -108,49 +108,57 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
   }
 
   Future<void> _addToCart(String unit) async {
+    if (_isAddingToCart) return;
     if (!(_quantityFormKey.currentState?.validate() ?? false)) return;
 
     final quantity =
         ThousandsNumberInput.parseDouble(_quantityController.text) ?? 0;
     if (quantity <= 0) return;
 
-    if (await _redirectIfCartAtStockLimit(quantity)) {
-      return;
-    }
-
     setState(() => _isAddingToCart = true);
-    await _clintCubit.addProductToCart(
-      productId: widget.product.productId,
-      quantity: quantity,
-      unitName: unit,
-    );
-    if (!mounted) return;
+    try {
+      if (await _redirectIfCartAtStockLimit(quantity)) {
+        return;
+      }
 
-    setState(() => _isAddingToCart = false);
-    final state = _clintCubit.state;
-    if (state is CartLoadedState && state.errorMessage == null) {
-      context.push(AppRoutes.kCartView);
-      return;
+      await _clintCubit.addProductToCart(
+        productId: widget.product.productId,
+        quantity: quantity,
+        unitName: unit,
+      );
+      if (!mounted) return;
+
+      final state = _clintCubit.state;
+      if (state is CartLoadedState && state.errorMessage == null) {
+        context.push(AppRoutes.kCartView);
+        return;
+      }
+
+      final rawMessage = state is CartErrorState
+          ? state.message
+          : state is CartLoadedState
+          ? state.errorMessage
+          : null;
+      final message = UserFacingErrorLocalizer.localizeCartError(
+        rawMessage,
+        availableQuantity: _availableProductQuantity(),
+      );
+
+      if (rawMessage != null &&
+          UserFacingErrorLocalizer.isCartStockLimitMessage(rawMessage)) {
+        AppToast.showInfo(context, message);
+        context.push(AppRoutes.kCartView);
+        return;
+      }
+
+      AppToast.showError(context, message);
+    } finally {
+      if (mounted) {
+        setState(() => _isAddingToCart = false);
+      } else {
+        _isAddingToCart = false;
+      }
     }
-
-    final rawMessage = state is CartErrorState
-        ? state.message
-        : state is CartLoadedState
-        ? state.errorMessage
-        : null;
-    final message = UserFacingErrorLocalizer.localizeCartError(
-      rawMessage,
-      availableQuantity: _availableProductQuantity(),
-    );
-
-    if (rawMessage != null &&
-        UserFacingErrorLocalizer.isCartStockLimitMessage(rawMessage)) {
-      AppToast.showInfo(context, message);
-      context.push(AppRoutes.kCartView);
-      return;
-    }
-
-    AppToast.showError(context, message);
   }
 
   double _availableProductQuantity() {
@@ -213,7 +221,10 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
   }
 
   void _submitOfferOrder() {
+    if (_isAddingToCart) return;
     if (!(_quantityFormKey.currentState?.validate() ?? false)) return;
+    final state = _clintCubit.state;
+    if (state is OfferOrderFormState && state.isSubmitting) return;
     _clintCubit.submitOfferOrder();
   }
 

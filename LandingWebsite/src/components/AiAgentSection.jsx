@@ -7,45 +7,50 @@ export default function AiAgentSection({ lang, onAskAi }) {
   return (
     <section
       id="alras-agent"
-      className="scroll-mt-24 bg-gradient-to-b from-[#F5F9FF] to-white py-12 sm:py-20"
+      className="scroll-mt-24 bg-gradient-to-b from-brand-blue/5 via-white to-brand-green/5 py-12 sm:py-20"
       dir={isAr ? 'rtl' : 'ltr'}
       itemScope
       itemType="https://schema.org/SoftwareApplication"
     >
       <meta itemProp="name" content="Al-Ras Agent" />
       <meta itemProp="applicationCategory" content="BusinessApplication" />
-      <meta
-        itemProp="description"
-        content={t.sectionSubtitle}
-      />
+      <meta itemProp="description" content={t.sectionSubtitle} />
 
       <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-2">
         <div className={`order-2 lg:order-1 ${isAr ? 'text-right' : 'text-left'}`}>
-          <span className="inline-block rounded-full border border-[#7B61FF]/25 bg-[#7B61FF]/10 px-4 py-1.5 text-sm font-semibold text-[#7B61FF]">
+          <span className="inline-block rounded-full border border-brand-blue/25 bg-brand-blue/10 px-4 py-1.5 text-sm font-semibold text-brand-blue">
             {t.sectionBadge}
           </span>
-          <h2 className="mt-5 text-3xl font-extrabold text-[#163A6B] sm:text-4xl" itemProp="alternateName">
+          <h2 className="mt-5 text-3xl font-extrabold text-brand-navy sm:text-4xl" itemProp="alternateName">
             {t.sectionTitle}
           </h2>
           <p className="mt-4 text-base leading-8 text-slate-600">{t.sectionSubtitle}</p>
 
-          <h3 className="mt-10 text-xl font-bold text-slate-900">{t.functionsTitle}</h3>
+          <h3 className="mt-10 text-xl font-bold text-brand-navy">{t.functionsTitle}</h3>
           <ul className="mt-5 grid gap-4 sm:grid-cols-2">
-            {t.functions.map((fn) => (
-              <li
-                key={fn.title}
-                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
-              >
-                <p className="font-bold text-[#163A6B]">{fn.title}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">{fn.desc}</p>
-              </li>
-            ))}
+            {t.functions.map((fn, i) => {
+              const accents = [
+                'border-brand-blue/20',
+                'border-brand-red/20',
+                'border-brand-green/20',
+                'border-brand-blue/20',
+              ]
+              return (
+                <li
+                  key={fn.title}
+                  className={`rounded-2xl border bg-white p-4 shadow-sm ${accents[i % accents.length]}`}
+                >
+                  <p className="font-bold text-brand-navy">{fn.title}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{fn.desc}</p>
+                </li>
+              )
+            })}
           </ul>
 
           <button
             type="button"
             onClick={onAskAi}
-            className="mt-8 inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-[#7B61FF] to-[#3A6AA5] px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:scale-[1.02]"
+            className="mt-8 inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-brand-blue via-brand-green to-brand-red px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand-blue/20 transition hover:scale-[1.02]"
           >
             <img
               src="/seo/alras-agent-robot.png"
@@ -54,12 +59,13 @@ export default function AiAgentSection({ lang, onAskAi }) {
             />
             {t.fabLabel}
           </button>
-          <p className="mt-3 text-xs font-semibold tracking-wide text-[#3A6AA5]">{t.poweredBy}</p>
+          <p className="mt-3 text-xs font-semibold tracking-wide text-brand-blue">{t.poweredBy}</p>
         </div>
 
         <div className="order-1 flex justify-center lg:order-2">
           <div className="relative">
-            <div className="absolute -inset-6 rounded-full bg-[#3A7DC5]/15 blur-3xl" />
+            <div className="absolute -inset-6 rounded-full bg-brand-blue/15 blur-3xl" />
+            <div className="absolute -inset-2 rounded-full bg-brand-green/10 blur-2xl" />
             <img
               src="/seo/alras-agent-robot.png"
               alt={

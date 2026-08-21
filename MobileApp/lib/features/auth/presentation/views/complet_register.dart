@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:alrasmarket/core/media/image_source_picker.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/widgets/auth_header.dart';
@@ -31,29 +32,8 @@ class _CompletRegisterViewState extends State<CompletRegisterView> {
   String? _tradeLicenseFile;
   final List<String> _companySiteImages = [];
 
-  Future<ImageSource?> _pickImageSource() async {
-    return showModalBottomSheet<ImageSource>(
-      context: context,
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.photo_library_outlined),
-                title: const Text('المعرض'),
-                onTap: () => Navigator.pop(context, ImageSource.gallery),
-              ),
-              ListTile(
-                leading: const Icon(Icons.camera_alt_outlined),
-                title: const Text('الكاميرا'),
-                onTap: () => Navigator.pop(context, ImageSource.camera),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+  Future<ImageSource?> _pickImageSource() {
+    return showImageSourceSheet(context);
   }
 
   Future<void> _pickTradeLicense() async {

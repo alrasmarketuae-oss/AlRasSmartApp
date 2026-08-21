@@ -124,7 +124,7 @@ export default function HeroScrollFrames({ lang }) {
           <div className="h-1 w-28 overflow-hidden rounded-full bg-white/25">
             <div
               ref={barRef}
-              className="h-full w-full origin-left scale-x-0 rounded-full bg-white/90 will-change-transform"
+              className="h-full w-full origin-left scale-x-0 rounded-full bg-brand-green will-change-transform"
             />
           </div>
           <span className="text-[11px] font-semibold tracking-wide text-white/75">

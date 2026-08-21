@@ -3,8 +3,10 @@
 
 @theme {
   --font-sans: "Inter", "Cairo", "Segoe UI", Tahoma, Arial, system-ui, sans-serif;
+  /* Logo palette: blue · red · green */
   --color-brand-blue: #0066cc;
   --color-brand-red: #d0091e;
+  --color-brand-green: #54a85c;
   --color-brand-navy: #0b1f3a;
 }
 
@@ -33,7 +35,7 @@ html[lang="ar"] body {
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #0066cc 0%, #d0091e 100%);
+  background: linear-gradient(135deg, #0066cc 0%, #54a85c 48%, #d0091e 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -41,9 +43,17 @@ html[lang="ar"] body {
 
 .hero-glow {
   background:
-    radial-gradient(circle at 20% 20%, rgba(0, 102, 204, 0.18), transparent 40%),
-    radial-gradient(circle at 80% 10%, rgba(208, 9, 30, 0.14), transparent 35%),
-    radial-gradient(circle at 50% 80%, rgba(0, 102, 204, 0.1), transparent 45%);
+    radial-gradient(circle at 18% 18%, rgba(0, 102, 204, 0.2), transparent 42%),
+    radial-gradient(circle at 82% 12%, rgba(208, 9, 30, 0.14), transparent 36%),
+    radial-gradient(circle at 55% 78%, rgba(84, 168, 92, 0.14), transparent 44%);
+}
+
+.brand-gradient {
+  background-image: linear-gradient(135deg, #0066cc 0%, #54a85c 50%, #d0091e 100%);
+}
+
+.brand-gradient-br {
+  background-image: linear-gradient(to bottom right, #0066cc, #d0091e);
 }
 
 /* Floating Ask AI — always-on motion */
@@ -60,12 +70,12 @@ html[lang="ar"] body {
 }
 
 .ask-ai-fab__pulse {
-  background: radial-gradient(circle, rgba(123, 97, 255, 0.28), transparent 70%);
+  background: radial-gradient(circle, rgba(0, 102, 204, 0.3), transparent 70%);
   animation: ask-ai-pulse 2s ease-out infinite;
 }
 
 .ask-ai-fab__ring {
-  border: 2px solid rgba(43, 182, 115, 0.45);
+  border: 2px solid rgba(84, 168, 92, 0.5);
   animation: ask-ai-ring 2.4s ease-out infinite;
 }
 
@@ -130,7 +140,7 @@ html[lang="ar"] body {
   width: 5px;
   height: 5px;
   border-radius: 9999px;
-  background: #7b61ff;
+  background: #0066cc;
   animation: ask-ai-dot 1s ease-in-out infinite;
 }
 

@@ -50,22 +50,22 @@ internal static class AiAssistantKnowledgeSource
             سؤال: من أنت؟ انت مين؟ عرفني بنفسك؟ ايه انت؟ مين بيكلمني؟ ما اسمك؟ بتعرف تعمل ايه؟ تقدر تعمل ايه؟
             الإجابة: أنا الراس الذكي (Alras Smart)، المساعد الرسمي داخل تطبيق الراس الذكي.
             اسمي بالعربية: الراس الذكي. واسمي بالإنجليزية: Alras Smart.
-            أقدر بدقة (حسب نوع حسابك): إضافة إعلانات، تعديل الأسعار والكميات، البحث في المنتجات ومقارنة الأسعار، جلب الأرخص والأغلى، معرفة أسعار الشحن إلى دولة معيّنة، جلب تفاصيل إعلاناتك وطلباتك، ومعرفة مبيعاتك والطلبات المعلّقة على إعلاناتك.
+            أقدر بدقة (حسب نوع حسابك): إضافة إعلانات، تعديل الأسعار والكميات لعدة إعلانات في نفس الرسالة عند الطلب، البحث في المنتجات ومقارنة الأسعار، جلب الأرخص والأغلى، معرفة أسعار الشحن إلى دولة معيّنة، جلب تفاصيل إعلاناتك وطلباتك، ومعرفة مبيعاتك والطلبات المعلّقة على إعلاناتك.
             ما أقدر أعمله يعتمد على نوع الحساب: المورد ينشئ أنواع إعلانات متعددة ويدير الإعلانات والمبيعات؛ عميل الشركة ينشئ Request فقط؛ شركة الشحن تنشئ إعلان شحن فقط؛ العميل الفردي يشتري ويتابع الطلبات ولا ينشئ إعلانات.
             إذا طلب أحد إنشاء إعلان وهو غير مخوّل، أرفض فوراً قبل جمع أي حقول.
             أنا لست موظف دعم بشري: للحالات الفردية التي تحتاج تدخلاً بشرياً استخدم Live Chat من الملف الشخصي.
-            أرد بلغة رسالتك: تكتب بالعربية أرد بالعربية، وتكتب بالإنجليزية أرد بالإنجليزية.
+            أفهم وأتكلم أي لغة يكتب بها المستخدم (عربية بأي لهجة، إنجليزية، فرنسية، هندية، أوردو، فلبينية، وغيرها) وأرد بنفس لغة رسالته فوراً دون تقييد بالعربية أو الإنجليزية فقط.
             """);
         Add(chunks, "assistant-identity", "Who are you? Introduce yourself, what are you", "en", All,
             """
             Question: who are you? What are you? Introduce yourself. Who am I talking to? What is your name? What can you do?
             Answer: I am Alras Smart (الراس الذكي), the official AI agent inside the Al Ras Smart app.
             My English name is Alras Smart. My Arabic name is الراس الذكي.
-            Precisely, I can (depending on your account type): create ads, update prices and quantities, search products and compare prices, fetch the cheapest and most expensive listings, look up shipping prices to a country, fetch details of your ads and orders, and report your sales and pending orders on your ads.
+            Precisely, I can (depending on your account type): create ads, update prices and quantities on multiple ads in the same message when asked, search products and compare prices, fetch the cheapest and most expensive listings, look up shipping prices to a country, fetch details of your ads and orders, and report your sales and pending orders on your ads.
             What I can do depends on account type: suppliers can create multiple ad types and manage ads and sales; company customers can create Request only; shipping companies create shipping ads only; personal customers buy and track orders and cannot create ads.
             If someone tries to create an ad they are not authorized for, I refuse immediately before collecting any fields.
             I am not a human support agent: for individual cases needing human action, use Live Chat from Profile.
-            I reply in the language of your message: Arabic in, Arabic out; English in, English out.
+            I understand and reply in ANY language the user writes (any Arabic dialect, English, French, Hindi, Urdu, Tagalog, Spanish, and more). Match their message language immediately — never force only Arabic or English.
             """);
 
         Add(chunks, "app-introduction", "عرفني عن التطبيق، ما هي هذه المنصة، ايه هو الراس الذكي", "ar", All,
@@ -230,7 +230,8 @@ internal static class AiAssistantKnowledgeSource
             الإجابة: من شريط التنقل اضغط إنشاء إعلان جديد.
             للمورد: ارفع صور المنتج، اكتب الاسم والكمية والسعر، حدد إن كان للسوق المحلي داخل الإمارات أو لإعادة التصدير، ثم اختر نوع الإعلان: منتج، حجز Booking، بيع محلي Retail، طلب Request، أو عرض Offer، وأضف المواصفات.
             للحجز Booking: ارفع الصور، أدخل السعر والعملة ووحدة القياس، اختر نوع السعر FOB أو CNF أو CIF، حدد بلد المنشأ وميناء الشحن ودولة الوجهة وميناء الوصول، وعدد أيام الشحن المتوقعة ونوع التعبئة والمواصفات.
-            إذا لم تجد المنتج: أنشئ طلب Request — ارفع صورة أو اكتب الاسم، حدد الكمية والسعر المستهدف والعملة، وهل السعر قابل للتفاوض، وللسوق المحلي أو إعادة التصدير، وأضف تاريخ التسليم ونوع التعبئة والمواصفات؛ الموردون يقدمون عروضهم بعد النشر.
+            إذا لم تجد المنتج: أنشئ طلب Request — ارفع صورة أو اكتب الاسم، وهل السعر قابل للتفاوض، وللسوق المحلي أو إعادة التصدير، وأضف المواصفات والتعبئة؛ الموردون يقدمون عروضهم بعد النشر.
+            السعر المستهدف والكمية المطلوبة والوحدة والعملة اختيارية في طلب Request — لا تطلبها إلا إذا أرادها المستخدم.
             نوع التعبئة Packing: اختر التعبئة الأساسية أو أضف خيارات تعبئة متعددة إن وُجدت.
             للعرض Offer: ارفع الصور، أدخل السعر قبل وبعد الخصم، حدد العملة والوحدة، محلي أو تصدير، قابل للتفاوض أم لا، ومدة العرض بالأيام والتعبئة والمواصفات.
             بعد إدخال البيانات اضغط نشر Publish؛ يُرسل الإعلان للمراجعة من الإدارة، وبعد الموافقة يظهر داخل التطبيق.
@@ -242,7 +243,8 @@ internal static class AiAssistantKnowledgeSource
             Answer: from the bottom bar tap Create Ad.
             As a supplier: upload product photos, enter name, quantity, and price, choose local UAE market or re-export, pick ad type Product, Booking, Retail, Request, or Offer, and add specifications.
             For Booking: upload photos, enter price, currency, and unit, choose FOB, CNF, or CIF, set origin country and port, destination country and port, expected shipping days, packing type, and specs.
-            If the product is not listed: create a Request — upload a photo or type the name, set quantity, target price, currency, negotiable or fixed, local or re-export, delivery date, packing, and specs; suppliers can submit offers after you publish.
+            If the product is not listed: create a Request — upload a photo or type the name, set negotiable or fixed, local or re-export, packing, and specs; suppliers can submit offers after you publish.
+            Target price, required quantity, unit, and currency are OPTIONAL on Request ads — only collect them when the user wants them.
             Packing: choose the primary pack type or add multiple packing options when available.
             For Offer: upload photos, enter price before and after discount, currency and unit, local or export, negotiable or not, offer duration in days, packing, and specs.
             Tap Publish; the ad goes to admin review and appears in the app after approval.
@@ -451,7 +453,7 @@ internal static class AiAssistantKnowledgeSource
             المورد خارج الإمارات برقم غير إماراتي: Booking فقط — أخبره بذلك ولا تعرض بقية الأنواع، لكن Booking مسموح عبر create_booking_ad في الشات.
 
             عميل الشركة: يضيف إعلان Request فقط (لا Booking ولا Retail ولا Category ولا Offer بخصم).
-            أخبره بذلك ووضّح المطلوب: اسم المنتج، الكمية والوحدة، السعر المستهدف والعملة، قابل للتفاوض، محلي أو إعادة تصدير، عنوان التسليم من العناوين المحفوظة، تاريخ التسليم (اختياري)، صور (اختياري)، ثم النشر من إنشاء طلب أو شات الراس الذكي.
+            أخبره بذلك ووضّح المطلوب: اسم المنتج، المواصفات، قابل للتفاوض، محلي أو إعادة تصدير، عنوان التسليم من العناوين المحفوظة، والتعبئة. السعر المستهدف والكمية والوحدة والعملة اختيارية — لا تسأل عنها إلا إذا ذكرها المستخدم أو طلب تضمينها. تاريخ التسليم والصور اختياريان، ثم النشر من إنشاء طلب أو شات الراس الذكي.
 
             شركة الشحن: تضيف إعلان شحن فقط من الصفحة الرئيسية (ميناء إلى ميناء وأسعار 20ft و40ft).
 
@@ -787,14 +789,14 @@ internal static class AiAssistantKnowledgeSource
             التطبيق يدعم العربية والإنجليزية.
             لتغيير اللغة افتح الملف الشخصي واختر زر اللغة ثم اختر العربية أو الإنجليزية، وتتغير واجهة التطبيق فوراً.
             شركة الشحن تجد خيار اللغة أيضاً داخل ملفها الشخصي.
-            مساعد الذكاء الاصطناعي يرد بلغة رسالتك: إذا كتبت بالعربية يرد بالعربية، وإذا كتبت بالإنجليزية يرد بالإنجليزية.
+            مساعد الذكاء الاصطناعي يرد بأي لغة يكتب بها المستخدم (عربية بأي لهجة، إنجليزية، فرنسية، هندية، أوردو، فلبينية، وغيرها) — نفس لغة الرسالة فوراً.
             """);
         Add(chunks, "language", "Changing the app language", "en", All,
             """
             The app supports Arabic and English.
             To change the language, open Profile, tap the language button, and choose Arabic or English; the interface updates immediately.
             Shipping companies also find the language option inside their Profile.
-            The AI Assistant replies in the language of your message: write in Arabic and it answers in Arabic, write in English and it answers in English.
+            The AI Assistant replies in ANY language the user writes (any Arabic dialect, English, French, Hindi, Urdu, Tagalog, Spanish, and more) — match the message language immediately.
             """);
 
         Add(chunks, "addresses", "العناوين المحفوظة", "ar", Buyers,
@@ -1716,19 +1718,21 @@ internal static class AiAssistantKnowledgeSource
 
         Add(chunks, "ad-edit", "تعديل الإعلان وإعادة المراجعة", "ar", ["supplier"],
             """
-            يمكنك تعديل إعلانك من قسم إعلاناتي.
+            يمكنك تعديل إعلانك من قسم إعلاناتي أو عبر مساعد الراس الذكي في الشات.
             تعديل السعر فقط لا يُخرج الإعلان من حالة الاعتماد ويبقى ظاهراً.
             أما التعديلات الجوهرية مثل الاسم أو الوصف أو الصور أو المواصفات أو النوع فتُعيد الإعلان إلى حالة تحت المعالجة حتى يعتمده الفريق مرة أخرى.
             أثناء إعادة المراجعة قد لا يظهر التعديل للجمهور حتى الموافقة.
             هذا الإجراء يحمي المشترين من تغيير محتوى الإعلان بعد اعتماده.
+            في الشات: يمكن تنفيذ أكثر من تعديل في نفس الرسالة (أسعار، كميات، إيقاف، تفعيل، نفاد، حذف) عندما يطلب المستخدم ذلك صراحة، مثل «احذف كل الإعلانات ما عدا …» بعد تأكيد واحد واضح.
             """);
         Add(chunks, "ad-edit", "Editing a listing and re-review", "en", ["supplier"],
             """
-            You can edit your listing from the My Ads section.
+            You can edit your listing from the My Ads section or via Alras Smart chat.
             A price-only change keeps the listing approved and visible.
             Substantive edits such as the name, description, images, specifications, or type send the listing back to under review until the team approves it again.
             While it is being re-reviewed, the edit may not be publicly visible until approval.
             This protects buyers from listing content being changed after approval.
+            In chat: several edits can run in the same message (prices, quantities, pause, activate, sold-out, delete) when the user clearly asks, e.g. “delete all ads except …” after one clear confirmation.
             """);
 
         Add(chunks, "ad-pause", "إيقاف الإعلان وإعادة تفعيله", "ar", ["supplier"],

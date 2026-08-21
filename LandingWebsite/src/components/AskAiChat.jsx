@@ -7,9 +7,9 @@ import AiSupportCallbackForm, {
   looksLikeSupportCallbackCue,
 } from './AiSupportCallbackForm'
 
-const TITLE_BLUE = '#163A6B'
-const BODY_BLUE = '#3A6AA5'
-const PURPLE = '#7B61FF'
+const TITLE_BLUE = '#0b1f3a'
+const BODY_BLUE = '#0066cc'
+
 
 let messageSeq = 0
 function nextMessageId(role) {
@@ -216,13 +216,13 @@ export default function AskAiChat({ lang, open, onClose }) {
           <img
             src="/seo/alras-agent-robot.png"
             alt=""
-            className="h-10 w-10 rounded-full object-cover ring-2 ring-[#7B61FF]/25"
+            className="h-10 w-10 rounded-full object-cover ring-2 ring-brand-blue/30"
           />
           <div className="min-w-0 flex-1">
             <p className="truncate text-base font-extrabold" style={{ color: TITLE_BLUE }}>
               {t.hubTitle}
             </p>
-            <p className="truncate text-xs font-medium text-[#8A97AB]">{t.hubSubtitle}</p>
+            <p className="truncate text-xs font-medium text-slate-500">{t.hubSubtitle}</p>
           </div>
           <button
             type="button"
@@ -235,11 +235,11 @@ export default function AskAiChat({ lang, open, onClose }) {
 
         <div
           ref={listRef}
-          className="flex-1 space-y-3 overflow-y-auto bg-[#F7FAFF] px-4 py-4"
+          className="flex-1 space-y-3 overflow-y-auto bg-brand-blue/[0.04] px-4 py-4"
           lang="und"
         >
           <div
-            className="rounded-2xl bg-[#EAF3FF] p-4 text-sm leading-6 font-medium"
+            className="rounded-2xl bg-brand-blue/10 p-4 text-sm leading-6 font-medium"
             style={{ color: TITLE_BLUE }}
             dir={isAr ? 'rtl' : 'ltr'}
           >
@@ -257,7 +257,7 @@ export default function AskAiChat({ lang, open, onClose }) {
                 lang="und"
                 className={`rounded-2xl px-3.5 py-2.5 text-sm leading-6 shadow-sm [unicode-bidi:plaintext] ${
                   m.role === 'user'
-                    ? 'bg-[#163A6B] text-white'
+                    ? 'bg-brand-navy text-white'
                     : 'border border-slate-100 bg-white text-slate-800'
                 }`}
               >
@@ -268,7 +268,7 @@ export default function AskAiChat({ lang, open, onClose }) {
                 )}
                 {m.streaming ? (
                   <span
-                    className="ml-0.5 inline-block h-3.5 w-0.5 animate-pulse align-middle bg-[#7B61FF]"
+                    className="ml-0.5 inline-block h-3.5 w-0.5 animate-pulse align-middle bg-brand-blue"
                     aria-hidden
                   />
                 ) : null}
@@ -316,8 +316,7 @@ export default function AskAiChat({ lang, open, onClose }) {
             <button
               type="submit"
               disabled={busy || !input.trim()}
-              className="rounded-full px-4 py-2 text-xs font-bold text-white disabled:opacity-50"
-              style={{ background: PURPLE }}
+              className="rounded-full bg-brand-blue px-4 py-2 text-xs font-bold text-white disabled:opacity-50"
             >
               {t.send}
             </button>

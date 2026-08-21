@@ -35,9 +35,9 @@ public sealed partial class AiAssistantMcpToolsService(
             {
                 name = "update_ad_price_quantity",
                 description =
-                    "Update price and/or quantity of EXACTLY ONE of the signed-in seller's own ads per turn. " +
-                    "NEVER update all ads, every ad, or multiple ads — even if the user asks. " +
-                    "If the user says change all / كل إعلاناتي / جميع الإعلانات, refuse and ask them to name ONE specific ad (or ProductCode). " +
+                    "Update price and/or quantity of ONE of the signed-in seller's own ads per call. " +
+                    "You may call this tool multiple times in the same user turn for DIFFERENT ads when they asked for several changes. " +
+                    "Never invent a silent bulk SQL update without naming each ad. " +
                     "MOST ads have a SINGLE price. Call this tool immediately — do NOT ask جملة/تجزئة and do NOT tell the user whether the ad is hybrid. " +
                     "Omit channel unless the user clearly said جملة/wholesale or تجزئة/retail. " +
                     "ONLY if this tool returns needs_channel_clarification=true, then ask جملة ولا تجزئة؟ and call again with channel. " +
@@ -289,8 +289,9 @@ public sealed partial class AiAssistantMcpToolsService(
             {
                 name = "set_ad_listing_status",
                 description =
-                    "Pause or reactivate EXACTLY ONE of the seller's own approved ads. " +
-                    "action must be \"pause\" or \"active\". Never change multiple ads in one turn. " +
+                    "Pause or reactivate ONE of the seller's own approved ads per call (action=pause|active). " +
+                    "You may call this multiple times in the same user turn for different ads when requested. " +
+                    "action must be \"pause\" or \"active\". " +
                     "Resolve the ad by product_code or unique product_name first.",
                 parameters = new
                 {
@@ -317,7 +318,8 @@ public sealed partial class AiAssistantMcpToolsService(
             {
                 name = "mark_ad_sold_out",
                 description =
-                    "Mark EXACTLY ONE owned ad as sold out (quantity = 0). Call immediately. " +
+                    "Mark ONE owned ad as sold out (quantity = 0) per call. Call immediately. " +
+                    "You may call this multiple times in the same user turn for different ads when requested. " +
                     "Do NOT ask جملة/تجزئة unless this tool returns needs_channel_clarification=true. " +
                     "Most ads have a single stock quantity. Never mention hybrid/wholesale/retail unless that clarification was required.",
                 parameters = new
@@ -344,9 +346,11 @@ public sealed partial class AiAssistantMcpToolsService(
             {
                 name = "delete_ad",
                 description =
-                    "Permanently delete EXACTLY ONE of the seller's ads. " +
-                    "First call without confirm (or confirm=false) to preview; after the user explicitly agrees, call again with confirm=true. " +
-                    "Never delete without confirm=true.",
+                    "Permanently delete one of the seller's ads (call once per ad). " +
+                    "You may delete several ads in the same user turn after ONE clear confirmation " +
+                    "(e.g. delete all except a named ad). " +
+                    "First call without confirm (or confirm=false) to preview; after the user explicitly agrees, call again with confirm=true for each ad to remove. " +
+                    "Never delete without confirm=true. Never delete ads the user asked to keep.",
                 parameters = new
                 {
                     type = "object",

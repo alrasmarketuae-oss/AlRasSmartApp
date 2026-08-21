@@ -1,9 +1,6 @@
 import { useState } from 'react'
 import { createSupportCallback } from '../services/supportCallbackApi'
 
-const PURPLE = '#7B61FF'
-const TITLE_BLUE = '#163A6B'
-
 export default function AiSupportCallbackForm({ lang, question, onSubmitted }) {
   const isAr = lang === 'ar'
   const [fullName, setFullName] = useState('')
@@ -76,7 +73,7 @@ export default function AiSupportCallbackForm({ lang, question, onSubmitted }) {
   if (done) {
     return (
       <div
-        className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm font-semibold text-emerald-800"
+        className="mt-3 rounded-2xl border border-brand-green/30 bg-brand-green/10 px-3 py-3 text-sm font-semibold text-brand-navy"
         dir={isAr ? 'rtl' : 'ltr'}
       >
         {success || labels.ok}
@@ -87,17 +84,15 @@ export default function AiSupportCallbackForm({ lang, question, onSubmitted }) {
   return (
     <form
       onSubmit={onSubmit}
-      className="mt-3 space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-3"
+      className="mt-3 space-y-2 rounded-2xl border border-brand-blue/15 bg-brand-blue/[0.04] p-3"
       dir={isAr ? 'rtl' : 'ltr'}
     >
-      <p className="text-sm font-extrabold" style={{ color: TITLE_BLUE }}>
-        {labels.title}
-      </p>
+      <p className="text-sm font-extrabold text-brand-navy">{labels.title}</p>
       <input
         value={fullName}
         onChange={(e) => setFullName(e.target.value)}
         placeholder={labels.name}
-        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#7B61FF]"
+        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand-blue"
         autoComplete="name"
         disabled={busy}
       />
@@ -105,7 +100,7 @@ export default function AiSupportCallbackForm({ lang, question, onSubmitted }) {
         value={phone}
         onChange={(e) => setPhone(e.target.value)}
         placeholder={labels.phone}
-        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#7B61FF]"
+        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand-blue"
         autoComplete="tel"
         inputMode="tel"
         dir="ltr"
@@ -115,18 +110,17 @@ export default function AiSupportCallbackForm({ lang, question, onSubmitted }) {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder={labels.email}
-        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#7B61FF]"
+        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand-blue"
         autoComplete="email"
         inputMode="email"
         dir="ltr"
         disabled={busy}
       />
-      {error ? <p className="text-xs font-semibold text-red-600">{error}</p> : null}
+      {error ? <p className="text-xs font-semibold text-brand-red">{error}</p> : null}
       <button
         type="submit"
         disabled={busy}
-        className="w-full rounded-full px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60"
-        style={{ background: PURPLE }}
+        className="w-full rounded-full bg-brand-blue px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60"
       >
         {busy ? labels.sending : labels.submit}
       </button>

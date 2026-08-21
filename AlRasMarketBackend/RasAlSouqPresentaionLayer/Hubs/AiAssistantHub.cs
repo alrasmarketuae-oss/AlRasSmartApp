@@ -136,6 +136,11 @@ public sealed class AiAssistantHub(
             }
 
             await Clients.Caller.SendAsync(
+                "aiThinking",
+                new { isThinking = false },
+                Context.ConnectionAborted);
+
+            await Clients.Caller.SendAsync(
                 "aiResponseStarted",
                 new { language = result.Language },
                 Context.ConnectionAborted);

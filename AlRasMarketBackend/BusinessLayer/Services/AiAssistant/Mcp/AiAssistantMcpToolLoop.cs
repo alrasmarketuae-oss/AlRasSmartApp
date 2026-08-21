@@ -14,12 +14,10 @@ public sealed class AiAssistantMcpToolLoop(
     IAiAssistantToolsService toolsService,
     ILogger<AiAssistantMcpToolLoop> logger) : IAiAssistantMcpToolLoop
 {
-    private const int MaxToolRounds = 6;
-    /// <summary>
-    /// Hard cap: never apply more than one successful mutating account action
-    /// per user turn (price/qty, pause/active, sold-out, or delete).
-    /// </summary>
-    private const int MaxSuccessfulMutationsPerTurn = 1;
+    private const int MaxToolRounds = 12;
+    /// Soft cap: several account edits (price/qty, pause/active, sold-out, delete)
+    /// may run in one user turn — e.g. "delete all ads except …".
+    private const int MaxSuccessfulAccountMutationsPerTurn = 25;
 
     private static readonly HashSet<string> MutatingToolNames = new(StringComparer.Ordinal)
     {
@@ -34,6 +32,14 @@ public sealed class AiAssistantMcpToolLoop(
         "create_category_ad",
         "create_shipping_ad",
         "submit_feedback"
+    };
+
+    private static readonly HashSet<string> AccountMutationTools = new(StringComparer.Ordinal)
+    {
+        "update_ad_price_quantity",
+        "set_ad_listing_status",
+        "mark_ad_sold_out",
+        "delete_ad",
     };
 
     private static readonly HashSet<string> AdCreationToolNames = new(StringComparer.Ordinal)
@@ -145,9 +151,8 @@ public sealed class AiAssistantMcpToolLoop(
                             .ConfigureAwait(false);
                     }
 
-                    if (MutatingToolNames.Contains(name)
-                        && !AdCreationToolNames.Contains(name)
-                        && successfulMutations >= MaxSuccessfulMutationsPerTurn)
+                    if (AccountMutationTools.Contains(name)
+                        && successfulMutations >= MaxSuccessfulAccountMutationsPerTurn)
                     {
                         logger.LogWarning(
                             "Blocked mutating tool {Tool} for user {UserId}; already applied {Count} mutation(s) this turn.",
@@ -163,9 +168,9 @@ public sealed class AiAssistantMcpToolLoop(
                                 ok = false,
                                 blocked_bulk_update = true,
                                 error =
-                                    "Only ONE account-changing action is allowed per user message " +
-                                    "(update price/qty, pause/active, sold-out, or delete). " +
-                                    "Tell the user to send another message for the next change."
+                                    "Too many account-changing actions in one message " +
+                                    "(price/qty, pause/active, sold-out, or delete). " +
+                                    "Tell the user what was already applied and ask them to continue in a new message."
                             })
                         });
                         continue;
@@ -179,7 +184,7 @@ public sealed class AiAssistantMcpToolLoop(
 
                     listings.AddRange(ParseListingCards(name, result.Content));
 
-                    if (MutatingToolNames.Contains(name)
+                    if (AccountMutationTools.Contains(name)
                         && IsSuccessfulToolPayload(result.Content))
                     {
                         successfulMutations++;
@@ -191,7 +196,8 @@ public sealed class AiAssistantMcpToolLoop(
                         successfulAdCreationPayload = result.Content;
                     }
 
-                    if (onThinkingStep is not null)
+                    if (onThinkingStep is not null
+                        && !IsSuccessfulToolPayload(result.Content))
                     {
                         await onThinkingStep(
                                 DescribeToolResult(name, result.Content, isArabic),
@@ -306,63 +312,63 @@ public sealed class AiAssistantMcpToolLoop(
     private static string DescribeToolCallAr(string toolName) =>
         toolName switch
         {
-            "get_my_last_order" => "بستدعي أداة: آخر طلب من طلباتي…",
-            "get_my_purchase_summary" => "بستدعي أداة: ملخص مشترياتي / اشتريت بكام…",
-            "explain_my_order_delay" => "بستدعي أداة: ليه الطلب متأخر (طلباتي)…",
-            "get_my_sales_count" => "بستدعي أداة: المبيعات وطلبات الإعلانات…",
-            "get_last_order_on_my_ads" => "بستدعي أداة: آخر طلب على إعلاناتي…",
-            "explain_order_delay_on_my_ads" => "بستدعي أداة: تأخير طلب على الإعلان…",
-            "find_cheapest_product" => "بستدعي أداة: أرخص منتج…",
-            "find_most_expensive_product" => "بستدعي أداة: أغلى منتج…",
-            "search_products" => "بستدعي أداة: إعلانات المنتج…",
-            "list_my_ads" => "بستدعي أداة: قائمة إعلاناتي…",
-            "get_my_last_ad" => "بستدعي أداة: آخر إعلان نزلته…",
-            "get_my_first_ad" => "بستدعي أداة: أول إعلان نزلته…",
-            "update_ad_price_quantity" => "بستدعي أداة: تعديل السعر/الكمية…",
-            "set_ad_listing_status" => "بستدعي أداة: إيقاف/تفعيل إعلان…",
-            "mark_ad_sold_out" => "بستدعي أداة: تعليم نفاد الكمية…",
-            "delete_ad" => "بستدعي أداة: حذف إعلان…",
-            "lookup_create_ad_reference" => "بستدعي أداة: مراجع إنشاء الإعلان (وحدات/دول/موانئ)…",
-            "list_my_addresses" => "بستدعي أداة: عناوين التسليم المحفوظة…",
-            "create_request_ad" => "جاري إنشاء إعلان طلب على السحابة…",
-            "create_booking_ad" => "جاري إنشاء إعلان Booking…",
-            "create_offer_ad" => "جاري إنشاء إعلان Offer…",
-            "create_retail_ad" => "جاري إنشاء إعلان Retail…",
-            "create_category_ad" => "جاري إنشاء إعلان Category…",
-            "search_shipping_prices" => "بستدعي أداة: أسعار الشحن بين الدول…",
-            "create_shipping_ad" => "جاري نشر إعلان الشحن…",
-            _ => $"بستدعي أداة: {toolName}…"
+            "get_my_last_order" => "بشوف آخر طلب من طلباتك…",
+            "get_my_purchase_summary" => "بجمّع مشترياتك…",
+            "explain_my_order_delay" => "براجع ليه الطلب ممكن يتأخر…",
+            "get_my_sales_count" => "بشوف مبيعاتك والطلبات على إعلاناتك…",
+            "get_last_order_on_my_ads" => "بجيب آخر طلب على إعلاناتك…",
+            "explain_order_delay_on_my_ads" => "براجع تأخير طلب على الإعلان…",
+            "find_cheapest_product" => "بدوّر على أرخص سعر…",
+            "find_most_expensive_product" => "بدوّر على أعلى سعر…",
+            "search_products" => "بدوّر في الإعلانات…",
+            "list_my_ads" => "بجيب قائمة إعلاناتك…",
+            "get_my_last_ad" => "بجيب آخر إعلان نزلته…",
+            "get_my_first_ad" => "بجيب أول إعلان نزلته…",
+            "update_ad_price_quantity" => "بحدّث السعر أو الكمية…",
+            "set_ad_listing_status" => "بحدّث حالة الإعلان…",
+            "mark_ad_sold_out" => "بعلّم الكمية نافدة…",
+            "delete_ad" => "بحذف الإعلان…",
+            "lookup_create_ad_reference" => "براجع الوحدات والدول والموانئ…",
+            "list_my_addresses" => "بجيب عناوين التسليم المحفوظة…",
+            "create_request_ad" => "بنشر إعلان الطلب…",
+            "create_booking_ad" => "بنشر إعلان الحجز…",
+            "create_offer_ad" => "بنشر إعلان العرض…",
+            "create_retail_ad" => "بنشر إعلان التجزئة…",
+            "create_category_ad" => "بنشر إعلان الصنف…",
+            "search_shipping_prices" => "بشوف أسعار الشحن…",
+            "create_shipping_ad" => "بنشر إعلان الشحن…",
+            _ => "بلمّ البيانات المطلوبة…"
         };
 
     private static string DescribeToolCallEn(string toolName) =>
         toolName switch
         {
-            "get_my_last_order" => "Calling tool: your latest purchase (My Orders)…",
-            "get_my_purchase_summary" => "Calling tool: purchase summary / how much you spent…",
-            "explain_my_order_delay" => "Calling tool: why your order may be delayed…",
-            "get_my_sales_count" => "Calling tool: sales and orders on your ads…",
-            "get_last_order_on_my_ads" => "Calling tool: latest order on your ads…",
-            "explain_order_delay_on_my_ads" => "Calling tool: delay on an ad order…",
-            "find_cheapest_product" => "Calling tool: cheapest product match…",
-            "find_most_expensive_product" => "Calling tool: most expensive product match…",
-            "search_products" => "Calling tool: matching product ads…",
-            "list_my_ads" => "Calling tool: your ad catalog…",
-            "get_my_last_ad" => "Calling tool: your most recent ad…",
-            "get_my_first_ad" => "Calling tool: your earliest ad…",
-            "update_ad_price_quantity" => "Calling tool: update price/quantity…",
-            "set_ad_listing_status" => "Calling tool: pause or activate an ad…",
-            "mark_ad_sold_out" => "Calling tool: mark sold out…",
-            "delete_ad" => "Calling tool: delete an ad…",
-            "lookup_create_ad_reference" => "Exploring ad requirements (units/countries/port)…",
-            "list_my_addresses" => "Listing saved delivery addresses…",
-            "create_request_ad" => "Creating the Request ad on the server…",
-            "create_booking_ad" => "Creating the Booking ad…",
-            "create_offer_ad" => "Creating the Offer ad…",
-            "create_retail_ad" => "Creating the Retail ad…",
-            "create_category_ad" => "Creating the Category ad…",
-            "search_shipping_prices" => "Searching shipping prices between countries…",
+            "get_my_last_order" => "Checking your latest order…",
+            "get_my_purchase_summary" => "Summarizing your purchases…",
+            "explain_my_order_delay" => "Checking why the order may be delayed…",
+            "get_my_sales_count" => "Checking sales on your ads…",
+            "get_last_order_on_my_ads" => "Fetching the latest order on your ads…",
+            "explain_order_delay_on_my_ads" => "Checking a delay on an ad order…",
+            "find_cheapest_product" => "Looking for the lowest price…",
+            "find_most_expensive_product" => "Looking for the highest price…",
+            "search_products" => "Searching listings…",
+            "list_my_ads" => "Loading your ads…",
+            "get_my_last_ad" => "Fetching your newest ad…",
+            "get_my_first_ad" => "Fetching your oldest ad…",
+            "update_ad_price_quantity" => "Updating price or quantity…",
+            "set_ad_listing_status" => "Updating the listing status…",
+            "mark_ad_sold_out" => "Marking it sold out…",
+            "delete_ad" => "Deleting the ad…",
+            "lookup_create_ad_reference" => "Checking units, countries, and ports…",
+            "list_my_addresses" => "Loading saved delivery addresses…",
+            "create_request_ad" => "Publishing the request ad…",
+            "create_booking_ad" => "Publishing the booking ad…",
+            "create_offer_ad" => "Publishing the offer ad…",
+            "create_retail_ad" => "Publishing the retail ad…",
+            "create_category_ad" => "Publishing the category ad…",
+            "search_shipping_prices" => "Checking shipping rates…",
             "create_shipping_ad" => "Publishing the shipping ad…",
-            _ => $"Calling tool: {toolName}…"
+            _ => "Gathering what I need…"
         };
 
     private static string DescribeToolResult(string toolName, string content, bool isArabic)

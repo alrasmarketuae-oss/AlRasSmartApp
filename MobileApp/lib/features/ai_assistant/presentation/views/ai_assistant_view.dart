@@ -874,12 +874,8 @@ class _AiAssistantViewState extends State<AiAssistantView> {
           if (value) {
             _isThinking = true;
             _thinkingStartedAt ??= DateTime.now();
-          } else if (_messages.isEmpty ||
-              _messages.last.isUser ||
-              _messages.last.text.isEmpty) {
-            // Keep the live thinking bubble until streaming starts.
-            _isThinking = true;
           } else {
+            // Always close the live thinking UI when the server says thinking is done.
             _isThinking = false;
           }
         });
@@ -889,31 +885,34 @@ class _AiAssistantViewState extends State<AiAssistantView> {
         if (!mounted) return;
         setState(() {
           _isThinking = true;
-          if (_thinkingSteps.isEmpty || _thinkingSteps.last != step) {
-            _thinkingSteps.add(step);
+          _thinkingStartedAt ??= DateTime.now();
+          // Stream as continuous prose — replace last unfinished clause instead of stacking "steps".
+          final trimmed = step.trim();
+          if (trimmed.isEmpty) return;
+          if (_thinkingSteps.isEmpty) {
+            _thinkingSteps.add(trimmed);
+          } else if (_thinkingSteps.last != trimmed) {
+            _thinkingSteps.add(trimmed);
+            // Keep the live bubble short so it feels like speech, not a checklist.
+            while (_thinkingSteps.length > 3) {
+              _thinkingSteps.removeAt(0);
+            }
           }
         });
         _scrollToEnd();
       },
       onResponseStarted: () {
         if (!mounted) return;
-        final trace = List<String>.from(_thinkingSteps);
-        final started = _thinkingStartedAt;
-        final durationMs = started == null
-            ? null
-            : DateTime.now().difference(started).inMilliseconds;
         final responseId = _inFlightResponseId;
         setState(() {
           _thinkingSteps.clear();
           _thinkingStartedAt = null;
-          // Steps live on the assistant bubble now — hide the empty live bubble.
           _isThinking = false;
           _messages.add(
             _ChatMessage(
               text: '',
               isUser: false,
-              thinkingSteps: trace,
-              thinkingDurationMs: durationMs,
+              thinkingSteps: const [],
               showMediaUpload: _pendingAdMediaButton || _planMode,
               responseId: responseId,
             ),
@@ -927,15 +926,16 @@ class _AiAssistantViewState extends State<AiAssistantView> {
       onDelta: (value) {
         if (!mounted) return;
         setState(() {
+          _isThinking = false;
+          _thinkingSteps.clear();
           if (_messages.isEmpty || _messages.last.isUser) {
             _messages.add(
               _ChatMessage(
                 text: value,
                 isUser: false,
-                thinkingSteps: List<String>.from(_thinkingSteps),
+                thinkingSteps: const [],
               ),
             );
-            _thinkingSteps.clear();
           } else {
             _messages.last.text += value;
           }
@@ -943,6 +943,8 @@ class _AiAssistantViewState extends State<AiAssistantView> {
         _scrollToEnd();
       },
       onCompleted: (answer, {required offerSupportCallback, listings, thinkingSteps}) {
+        // ignore: unused_element_parameter — live prose only; final reply is the streamed answer.
+        final _ = thinkingSteps;
         if (!mounted) return;
         final isAr = Localizations.localeOf(context).languageCode == 'ar';
         var finalAnswer = answer;
@@ -957,13 +959,10 @@ class _AiAssistantViewState extends State<AiAssistantView> {
             ? null
             : _questionForResponse[responseId];
         final parsedListings = AiProductListings.parse(listings);
-        final parsedThinking = thinkingSteps
-                ?.map((e) => e.trim())
-                .where((e) => e.isNotEmpty)
-                .toList() ??
-            <String>[];
         setState(() {
           _isThinking = false;
+          _thinkingSteps.clear();
+          _thinkingStartedAt = null;
           _inFlightResponseId = null;
           if (finalAnswer.isNotEmpty) {
             final targetIndex = responseId == null
@@ -977,22 +976,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
                   looksLikeTemporaryAssistantFailure(target.text)) {
                 target.text = finalAnswer;
               }
-              if (parsedThinking.isNotEmpty) {
-                final merged = <String>[
-                  ...target.thinkingSteps,
-                  ...parsedThinking.where(
-                    (step) => !target.thinkingSteps.contains(step),
-                  ),
-                ];
-                target.thinkingSteps
-                  ..clear()
-                  ..addAll(merged);
-              } else if (target.thinkingSteps.isEmpty &&
-                  _thinkingSteps.isNotEmpty) {
-                target.thinkingSteps
-                  ..clear()
-                  ..addAll(_thinkingSteps);
-              }
+              target.thinkingSteps.clear();
               if (parsedListings.isNotEmpty) {
                 target.listings = parsedListings;
               }
@@ -1003,9 +987,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
                 _ChatMessage(
                   text: finalAnswer,
                   isUser: false,
-                  thinkingSteps: parsedThinking.isNotEmpty
-                      ? parsedThinking
-                      : List<String>.from(_thinkingSteps),
+                  thinkingSteps: const [],
                   showSupportCallbackForm: offerSupportCallback,
                   supportQuestion: supportQuestion,
                   responseId: responseId,
@@ -1026,7 +1008,6 @@ class _AiAssistantViewState extends State<AiAssistantView> {
               ),
             );
           }
-          _thinkingSteps.clear();
           if (_planMode && looksLikeAdCreateSuccess(finalAnswer)) {
             _planMode = false;
             _planInitialKind = null;
@@ -1721,14 +1702,18 @@ class _MessageBubble extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (!isUser && message.thinkingSteps.isNotEmpty) ...[
-              _ThinkingTrace(
-                steps: message.thinkingSteps,
-                title: isAr ? 'التفكير' : 'Thinking',
-                initiallyExpanded: true,
-                durationMs: message.thinkingDurationMs,
-                colors: colors,
+              // Legacy history may still have stored thinking; show as plain prose only.
+              Padding(
+                padding: EdgeInsets.only(bottom: 8.h),
+                child: Text(
+                  message.thinkingSteps.join(' '),
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    height: 1.45,
+                    color: colors.mutedText,
+                  ),
+                ),
               ),
-              SizedBox(height: 8.h),
             ],
             if (message.replyPreview != null &&
                 message.replyPreview!.trim().isNotEmpty) ...[
@@ -2191,8 +2176,6 @@ class _ThinkingBubbleState extends State<_ThinkingBubble>
 
   @override
   Widget build(BuildContext context) {
-    final s = S.of(context);
-    final isAr = Localizations.localeOf(context).languageCode == 'ar';
     return Padding(
       padding: EdgeInsets.only(bottom: 12.h),
       child: Row(
@@ -2216,64 +2199,50 @@ class _ThinkingBubbleState extends State<_ThinkingBubble>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        s.aiAssistantThinking,
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w600,
-                          color: widget.colors.mutedText,
-                        ),
-                      ),
-                      SizedBox(width: 8.w),
-                      AnimatedBuilder(
-                        animation: _controller,
-                        builder: (context, _) {
-                          return Row(
-                            children: List.generate(3, (i) {
-                              final t = (_controller.value + i * 0.2) % 1.0;
-                              final opacity =
-                                  0.3 +
-                                  (0.7 *
-                                          (1 - (t - 0.5).abs() * 2)
-                                              .clamp(0.0, 1.0));
-                              return Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 2.w),
-                                child: Opacity(
-                                  opacity: opacity,
-                                  child: Container(
-                                    width: 6.w,
-                                    height: 6.w,
-                                    decoration: const BoxDecoration(
-                                      color: LightColor.defaultColor,
-                                      shape: BoxShape.circle,
-                                    ),
+                  if (widget.steps.isEmpty)
+                    AnimatedBuilder(
+                      animation: _controller,
+                      builder: (context, _) {
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: List.generate(3, (i) {
+                            final t = (_controller.value + i * 0.2) % 1.0;
+                            final opacity =
+                                0.3 +
+                                (0.7 *
+                                        (1 - (t - 0.5).abs() * 2)
+                                            .clamp(0.0, 1.0));
+                            return Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 2.w),
+                              child: Opacity(
+                                opacity: opacity,
+                                child: Container(
+                                  width: 6.w,
+                                  height: 6.w,
+                                  decoration: const BoxDecoration(
+                                    color: LightColor.defaultColor,
+                                    shape: BoxShape.circle,
                                   ),
                                 ),
-                              );
-                            }),
-                          );
-                        },
+                              ),
+                            );
+                          }),
+                        );
+                      },
+                    )
+                  else
+                    Directionality(
+                      textDirection:
+                          _detectTextDirection(widget.steps.join(' ')),
+                      child: Text(
+                        widget.steps.join(' '),
+                        style: TextStyle(
+                          color: const Color(0xFF1F2937),
+                          fontSize: 15.sp,
+                          height: 1.5,
+                        ),
                       ),
-                    ],
-                  ),
-                  if (widget.steps.isNotEmpty) ...[
-                    SizedBox(height: 8.h),
-                    _ThinkingTrace(
-                      steps: widget.steps,
-                      title: isAr ? 'التفكير' : 'Thinking',
-                      initiallyExpanded: true,
-                      live: true,
-                      durationMs: widget.startedAt == null
-                          ? null
-                          : DateTime.now()
-                              .difference(widget.startedAt!)
-                              .inMilliseconds,
-                      colors: widget.colors,
                     ),
-                  ],
                 ],
               ),
             ),

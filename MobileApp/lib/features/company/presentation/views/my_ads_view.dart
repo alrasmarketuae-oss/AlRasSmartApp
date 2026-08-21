@@ -64,13 +64,17 @@ class _MyAdsViewState extends State<MyAdsView> {
         cubit.setMyListingsFilter(
           _isCompanyCustomerAccount
               ? MyAdsFilter.requests.productTypeName
-              : null,
+              : _isOverseasSupplierAccount
+                  ? MyAdsFilter.booking.productTypeName
+                  : null,
         );
         cubit.setMyListingsStatusFilter(null);
         setState(() {
           _selectedTypeFilterIndex = _isCompanyCustomerAccount
               ? MyAdsFilter.requests.index
-              : 0;
+              : _isOverseasSupplierAccount
+                  ? MyAdsFilter.booking.index
+                  : 0;
           _selectedStatusFilterIndex = 0;
           _accountSectionIndex = 0;
         });
@@ -78,6 +82,10 @@ class _MyAdsViewState extends State<MyAdsView> {
         // Company customers only publish Requests — lock type filter.
         cubit.setMyListingsFilter(MyAdsFilter.requests.productTypeName);
         setState(() => _selectedTypeFilterIndex = MyAdsFilter.requests.index);
+      } else if (_isOverseasSupplierAccount) {
+        // Non-UAE suppliers only publish Booking — hide other ad-type filters.
+        cubit.setMyListingsFilter(MyAdsFilter.booking.productTypeName);
+        setState(() => _selectedTypeFilterIndex = MyAdsFilter.booking.index);
       }
       cubit.loadMyListings(context);
     });
@@ -130,7 +138,7 @@ class _MyAdsViewState extends State<MyAdsView> {
   }
 
   void _onHighlightedProductFound(MyListingProductModel product) {
-    if (_isCompanyCustomerAccount) return;
+    if (_isCompanyCustomerAccount || _isOverseasSupplierAccount) return;
     final filter = _filterForProduct(product);
     final index = MyAdsFilter.values.indexOf(filter);
     if (index < 0 || index == _selectedTypeFilterIndex) return;
@@ -153,6 +161,15 @@ class _MyAdsViewState extends State<MyAdsView> {
 
   bool get _isCompanyCustomerAccount =>
       !_isActingForCompany && AuthService.instance.isCompanyCustomerAccount;
+
+  /// Overseas / non-UAE supplier: Booking ads only — hide other ad-type chips.
+  bool get _isOverseasSupplierAccount =>
+      !_isActingForCompany &&
+      AuthService.instance.isSupplierAccount &&
+      !AuthService.instance.isUaePhoneNumber;
+
+  bool get _hideAdTypeFilters =>
+      _isCompanyCustomerAccount || _isOverseasSupplierAccount;
 
   @override
   Widget build(BuildContext context) {
@@ -212,7 +229,7 @@ class _MyAdsViewState extends State<MyAdsView> {
                   onSelected: _onAccountSectionSelected,
                 ),
               if (!showMyOffersSection || _accountSectionIndex == 0) ...[
-                if (!_isCompanyCustomerAccount)
+                if (!_hideAdTypeFilters)
                   MyAdsTypeFilterCards(
                     items: typeItems,
                     selectedIndex: _selectedTypeFilterIndex,
@@ -241,7 +258,7 @@ class _MyAdsViewState extends State<MyAdsView> {
                 ),
                 _RecentListingsHeader(
                   onViewAll: () {
-                    if (_isCompanyCustomerAccount) {
+                    if (_hideAdTypeFilters) {
                       if (_selectedStatusFilterIndex != 0) {
                         _onStatusFilterSelected(0);
                       }

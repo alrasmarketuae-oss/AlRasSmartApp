@@ -20,7 +20,7 @@ export default function AppShowcase({ lang }) {
               itemScope
               itemType="https://schema.org/ImageObject"
             >
-              <div className="bg-gradient-to-br from-[#0D2E62]/5 to-[#3B7FC7]/10 p-3 sm:p-6">
+              <div className="bg-gradient-to-br from-brand-blue/5 via-brand-green/5 to-brand-red/5 p-3 sm:p-6">
                 <img
                   src={item.src}
                   alt={item.alt}
@@ -28,11 +28,11 @@ export default function AppShowcase({ lang }) {
                   loading="lazy"
                   decoding="async"
                   itemProp="contentUrl"
-                  className="mx-auto h-auto max-h-[420px] w-full max-w-full rounded-2xl object-contain shadow-lg ring-1 ring-slate-200 sm:max-h-[520px]"
+                  className="mx-auto h-auto max-h-[420px] w-full max-w-full rounded-2xl object-contain shadow-lg ring-1 ring-brand-blue/10 sm:max-h-[520px]"
                 />
               </div>
               <div className={`space-y-2 p-4 sm:p-6 ${isAr ? 'text-right' : 'text-left'}`}>
-                <h3 className="text-lg font-bold text-[#163A6B] sm:text-xl" itemProp="name">
+                <h3 className="text-lg font-bold text-brand-navy sm:text-xl" itemProp="name">
                   {item.title}
                 </h3>
                 <p className="text-sm leading-7 text-slate-600" itemProp="description">

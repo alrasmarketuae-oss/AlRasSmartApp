@@ -10,11 +10,11 @@ export default function EncryptedMessages({ lang }) {
   return (
     <div className="bg-slate-50">
       <SeoHelmet pageKey="encryptedMessages" lang={lang} />
-      <section className="border-b border-slate-200 bg-gradient-to-br from-[#0D2E62] via-[#16498a] to-[#3B7FC7] px-4 py-16 text-white sm:px-6">
+      <section className="border-b border-slate-200 brand-gradient px-4 py-16 text-white sm:px-6">
         <div className={`mx-auto max-w-3xl ${isAr ? 'text-right' : 'text-left'}`}>
-          <p className="mb-3 text-sm font-semibold text-blue-100">{page.badge}</p>
+          <p className="mb-3 text-sm font-semibold text-white/85">{page.badge}</p>
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{page.heading}</h1>
-          <p className="mt-4 text-base leading-8 text-blue-50/95 sm:text-lg">{page.intro}</p>
+          <p className="mt-4 text-base leading-8 text-white/90 sm:text-lg">{page.intro}</p>
         </div>
       </section>
 
