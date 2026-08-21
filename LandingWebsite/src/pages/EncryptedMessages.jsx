@@ -1,5 +1,6 @@
 import { content } from '../data/content'
 import { encryptedMessagesAr, encryptedMessagesEn } from '../data/encryptedMessages'
+import SeoHelmet from '../components/SeoHelmet'
 
 export default function EncryptedMessages({ lang }) {
   const page = content[lang].encryptedMessagesPage
@@ -8,6 +9,7 @@ export default function EncryptedMessages({ lang }) {
 
   return (
     <div className="bg-slate-50">
+      <SeoHelmet pageKey="encryptedMessages" lang={lang} />
       <section className="border-b border-slate-200 bg-gradient-to-br from-[#0D2E62] via-[#16498a] to-[#3B7FC7] px-4 py-16 text-white sm:px-6">
         <div className={`mx-auto max-w-3xl ${isAr ? 'text-right' : 'text-left'}`}>
           <p className="mb-3 text-sm font-semibold text-blue-100">{page.badge}</p>

@@ -1,5 +1,6 @@
 import { CONTACT } from '../data/config'
 import { content } from '../data/content'
+import SeoHelmet from '../components/SeoHelmet'
 
 function ContactCard({ icon, title, value, actionLabel, href }) {
   return (
@@ -76,6 +77,7 @@ export default function Contact({ lang }) {
 
   return (
     <div className="py-12">
+      <SeoHelmet pageKey="contact" lang={lang} />
       <div className="mx-auto max-w-5xl px-4 sm:px-6">
         {/* Hero banner */}
         <div className="mb-10 overflow-hidden rounded-3xl bg-gradient-to-br from-brand-blue to-brand-red p-8 text-center text-white shadow-xl sm:p-12">
@@ -141,27 +143,6 @@ export default function Contact({ lang }) {
                 </div>
               )
             })}
-          </div>
-        </div>
-
-        <div className="mt-8 grid gap-6 md:grid-cols-2">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h3 className={`text-lg font-bold text-slate-900 ${isAr ? 'text-right' : 'text-left'}`}>📦 {t.orderTrackingTitle}</h3>
-            <p className={`mt-2 text-sm leading-7 text-slate-600 ${isAr ? 'text-right' : 'text-left'}`}>{t.orderTrackingDesc}</p>
-            <img
-              src="/help-my-orders.png"
-              alt="My Orders tracking guide"
-              className="mt-4 w-full rounded-xl border border-slate-200 object-cover"
-            />
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h3 className={`text-lg font-bold text-slate-900 ${isAr ? 'text-right' : 'text-left'}`}>📢 {t.adsTrackingTitle}</h3>
-            <p className={`mt-2 text-sm leading-7 text-slate-600 ${isAr ? 'text-right' : 'text-left'}`}>{t.adsTrackingDesc}</p>
-            <img
-              src="/help-my-ads.png"
-              alt="My Ads tracking guide"
-              className="mt-4 w-full rounded-xl border border-slate-200 object-cover"
-            />
           </div>
         </div>
 

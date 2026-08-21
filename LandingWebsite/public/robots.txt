@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Allow: /*.png$
+Allow: /*.jpg$
+Allow: /*.jpeg$
+Allow: /*.webp$
+Allow: /*.svg$
+
+User-agent: Googlebot-Image
+Allow: /
+
+Sitemap: https://alrasmarketapp.com/sitemap.xml

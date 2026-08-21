@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
+import 'package:alrasmarket/core/utils/dio_user_facing_message.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 
 class AiAssistantRealtimeService {
@@ -105,8 +106,7 @@ class AiAssistantRealtimeService {
     hub.on('aiError', (args) {
       if (_closed || generation != _connectGeneration) return;
       onError(
-        _map(args)?['message']?.toString() ??
-            'AI Assistant is unavailable right now.',
+        DioUserFacingMessage.englishHighDemand,
       );
     });
 

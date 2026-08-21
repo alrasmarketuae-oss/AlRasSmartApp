@@ -1,6 +1,7 @@
 import { privacyAr, privacyEn } from '../data/privacy'
 import { termsAr, termsEn } from '../data/terms'
 import { content } from '../data/content'
+import SeoHelmet from '../components/SeoHelmet'
 
 function PolicyBlock({ title, lastUpdated, intro, sections, isAr, accent = 'text-brand-blue' }) {
   return (
@@ -47,6 +48,7 @@ export default function Terms({ lang, privacyOnly = false }) {
 
   return (
     <div className="py-12" dir={isAr ? 'rtl' : 'ltr'} lang={lang}>
+      <SeoHelmet pageKey={privacyOnly ? 'privacy' : 'terms'} lang={lang} />
       <div className="mx-auto max-w-4xl space-y-10 px-4 sm:px-6">
         <div className={isAr ? 'text-right' : 'text-left'}>
           <h1 className="text-4xl font-extrabold text-slate-900">

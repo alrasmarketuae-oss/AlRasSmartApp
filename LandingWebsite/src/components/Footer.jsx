@@ -11,13 +11,16 @@ export default function Footer({ lang }) {
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-3">
         <div className={isAr ? 'text-right' : 'text-left'}>
           <div className="mb-4 flex items-center gap-3">
-            <img src="/logo.png" alt="" className="h-12 w-12 rounded-xl object-cover" />
+            <img src="/logo.png" alt="الراس الذكي" className="h-12 w-12 rounded-xl object-cover" />
             <div>
               <p className="font-bold text-white">{isAr ? 'الراس الذكي' : 'Al Ras Smart'}</p>
               <p className="text-sm text-blue-200">{t.tagline}</p>
             </div>
           </div>
           <p className="text-sm leading-7 text-blue-200/90">{t.rights}</p>
+          <p className="mt-4 text-xs font-semibold tracking-wide text-blue-100/80">
+            Powered by Al Ras Smart
+          </p>
         </div>
 
         <div className={isAr ? 'text-right' : 'text-left'}>

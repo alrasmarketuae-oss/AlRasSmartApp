@@ -1,6 +1,7 @@
 import 'package:alrasmarket/core/error/failure.dart';
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/services/dio_helper.dart';
+import 'package:alrasmarket/core/utils/dio_user_facing_message.dart';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 
@@ -160,12 +161,12 @@ class AiAssistantRepository {
       );
     } on DioException catch (e) {
       return Left(
-        ServerFailure(
-          e.response?.data?.toString() ?? e.message ?? 'Network error',
-        ),
+        ServerFailure(DioUserFacingMessage.fromDio(e)),
       );
     } catch (e) {
-      return Left(ServerFailure('Failed to load AI conversations: $e'));
+      return Left(
+        ServerFailure(DioUserFacingMessage.sanitize(e)),
+      );
     }
   }
 
@@ -196,12 +197,12 @@ class AiAssistantRepository {
       );
     } on DioException catch (e) {
       return Left(
-        ServerFailure(
-          e.response?.data?.toString() ?? e.message ?? 'Network error',
-        ),
+        ServerFailure(DioUserFacingMessage.fromDio(e)),
       );
     } catch (e) {
-      return Left(ServerFailure('Failed to load AI messages: $e'));
+      return Left(
+        ServerFailure(DioUserFacingMessage.sanitize(e)),
+      );
     }
   }
 }

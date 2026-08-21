@@ -304,7 +304,6 @@ class _AppSearchFieldState extends State<AppSearchField> {
                         Icons.arrow_back_rounded,
                         size: backIconSize,
                         color: AppColors.title(context),
-                        matchTextDirection: true,
                       ),
                     ),
                   ),

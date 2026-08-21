@@ -2,6 +2,7 @@ import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/services/dio_helper.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
+import 'package:alrasmarket/core/utils/dio_user_facing_message.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -104,29 +105,16 @@ class _AiSupportCallbackFormState extends State<AiSupportCallbackForm> {
       });
       widget.onSubmitted?.call();
     } on DioException catch (e) {
-      final raw = e.response?.data;
-      String? msg;
-      if (raw is Map) {
-        msg = raw['message']?.toString() ?? raw['Message']?.toString();
-      } else if (raw is String && raw.trim().isNotEmpty) {
-        msg = raw.trim();
-      }
       if (!mounted) return;
       setState(() {
         _submitting = false;
-        _error = msg?.trim().isNotEmpty == true
-            ? msg!.trim()
-            : (isAr
-                ? 'تعذر إرسال الطلب. حاول مرة أخرى.'
-                : 'Could not send request. Try again.');
+        _error = DioUserFacingMessage.fromDio(e, isAr: isAr);
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _submitting = false;
-        _error = isAr
-            ? 'تعذر إرسال الطلب. حاول مرة أخرى.'
-            : 'Could not send request. Try again.';
+        _error = DioUserFacingMessage.highDemand(isAr: isAr);
       });
     }
   }

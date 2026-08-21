@@ -105,12 +105,6 @@ export const content = {
       paymentTitle: 'طرق الدفع المتاحة',
       paymentIntro: 'نوفر خيارات دفع متعددة داخل التطبيق لتناسب كل المستخدمين.',
       paymentMethods: ['Visa', 'Mastercard', 'Debit Card', 'Credit Card', 'Apple Pay', 'Google Pay', 'Cash on Delivery'],
-      orderTrackingTitle: 'كيف أتتبع طلبي؟',
-      orderTrackingDesc:
-        'من الصفحة الرئيسية اضغط على My Orders (كما هو موضح في الصورة بالسهم) لمتابعة حالة الطلب خطوة بخطوة حتى الاستلام.',
-      adsTrackingTitle: 'كيف أتتبع إعلاناتي وحالتها؟',
-      adsTrackingDesc:
-        'من الصفحة الرئيسية اضغط على My Ads (كما هو موضح في الصورة بالسهم) لمراجعة إعلاناتك وحالتها: قيد المراجعة، موافق عليها، مرفوضة، أو متوقفة.',
       rolesTitle: 'شرح أنواع المستخدمين وما يراه كل نوع',
       roles: [
         {
@@ -246,12 +240,6 @@ export const content = {
       paymentTitle: 'Available payment methods',
       paymentIntro: 'The app supports multiple payment options.',
       paymentMethods: ['Visa', 'Mastercard', 'Debit Card', 'Credit Card', 'Apple Pay', 'Google Pay', 'Cash on Delivery'],
-      orderTrackingTitle: 'How do I track my order?',
-      orderTrackingDesc:
-        'From the home screen, tap My Orders (as shown by the arrow) to follow your order status end-to-end.',
-      adsTrackingTitle: 'How do I track my ads and status?',
-      adsTrackingDesc:
-        'From the home screen, tap My Ads (as shown by the arrow) to review ad status: under review, approved, rejected, or paused.',
       rolesTitle: 'Account types and what each can do',
       roles: [
         {

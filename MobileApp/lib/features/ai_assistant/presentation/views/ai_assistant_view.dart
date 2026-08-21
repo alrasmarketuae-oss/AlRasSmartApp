@@ -5,6 +5,7 @@ import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/features/ai_assistant/data/ai_assistant_voice_prefs.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
+import 'package:alrasmarket/core/utils/dio_user_facing_message.dart';
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/services/dio_helper.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
@@ -1090,21 +1091,15 @@ class _AiAssistantViewState extends State<AiAssistantView> {
     if (!mounted) return;
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
     final responseId = _inFlightResponseId;
-    final supportQuestion = responseId == null
-        ? null
-        : _questionForResponse[responseId];
     setState(() {
       _isThinking = false;
       _inFlightResponseId = null;
       _thinkingSteps.clear();
       _messages.add(
         _ChatMessage(
-          text: isAr
-              ? 'تعذر الوصول للمساعد الآن. سيب اسمك ورقم تليفونك وبريدك في النموذج تحت، وفريق الدعم الفني هيتواصل معاك خلال خمس دقايق.'
-              : 'The assistant is unavailable right now. Leave your name, phone, and email below — technical support will call you within five minutes.',
+          text: DioUserFacingMessage.highDemand(isAr: isAr),
           isUser: false,
-          showSupportCallbackForm: true,
-          supportQuestion: supportQuestion,
+          showSupportCallbackForm: false,
           responseId: responseId,
         ),
       );

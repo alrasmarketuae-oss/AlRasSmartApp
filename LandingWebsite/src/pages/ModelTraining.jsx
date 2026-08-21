@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { content } from '../data/content'
 import { modelTrainingAr, modelTrainingEn } from '../data/modelTraining'
+import SeoHelmet from '../components/SeoHelmet'
 
 export default function ModelTraining({ lang }) {
   const isAr = lang === 'ar'
@@ -9,6 +10,7 @@ export default function ModelTraining({ lang }) {
 
   return (
     <div className="py-12" dir={isAr ? 'rtl' : 'ltr'} lang={lang}>
+      <SeoHelmet pageKey="modelTraining" lang={lang} />
       <div className="mx-auto max-w-4xl px-4 sm:px-6">
         <div className={`mb-10 ${isAr ? 'text-right' : 'text-left'}`}>
           <p className="mb-3 text-sm font-semibold text-brand-blue">{page.badge}</p>

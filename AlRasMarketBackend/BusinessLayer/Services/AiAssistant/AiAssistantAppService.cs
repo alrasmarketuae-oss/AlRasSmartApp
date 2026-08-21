@@ -214,7 +214,7 @@ public sealed class AiAssistantAppService(
             throw new ArgumentException("Message must be between 1 and 8000 characters.");
         }
 
-        // App locale + ad-creation sessions must win over English [PLAN_MODE] wrappers.
+        // Prefer the language of the user's message. "auto" = match any spoken language via the LLM.
         var language = ResolveAskLanguage(message, request.Language, history);
         var account = await ResolveAccountContextAsync(userId, cancellationToken)
             .ConfigureAwait(false);
@@ -246,7 +246,9 @@ public sealed class AiAssistantAppService(
         await ThinkAsync(
                 language == "ar"
                     ? $"بشتغل على سؤالك: {TrimForThinking(message)}"
-                    : $"Working on: {TrimForThinking(message)}")
+                    : language == "en"
+                        ? $"Working on: {TrimForThinking(message)}"
+                        : $"Working on: {TrimForThinking(message)}")
             .ConfigureAwait(false);
 
         // Unauthorized create-ad: refuse immediately — never collect fields or enter plan flow.
@@ -264,21 +266,23 @@ public sealed class AiAssistantAppService(
             }
         }
 
-        if (IsGreeting(message) || IsCapabilitiesQuestion(message))
+        // Canned ar/en replies only when language is locked; otherwise let the model match the user.
+        if (language is "ar" or "en"
+            && (IsGreeting(message) || IsCapabilitiesQuestion(message)))
         {
             await ThinkAsync(language == "ar" ? "براجع قدرات الحساب…" : "Checking what this account can do…")
                 .ConfigureAwait(false);
             return Finish(BuildCapabilitiesAnswer(language, account));
         }
 
-        if (IsHumanSupportIntent(message))
+        if (language is "ar" or "en" && IsHumanSupportIntent(message))
         {
             await ThinkAsync(language == "ar" ? "بجهّز تحويل للدعم…" : "Preparing a support handoff…")
                 .ConfigureAwait(false);
             return Finish(BuildSupportCallbackOfferAnswer(language, account.DisplayName, message));
         }
 
-        if (IsClearlyOutOfScope(message))
+        if (language is "ar" or "en" && IsClearlyOutOfScope(message))
         {
             await ThinkAsync(language == "ar" ? "بتأكد إن السؤال ضمن سوق الراس…" : "Checking the question is in scope…")
                 .ConfigureAwait(false);
@@ -380,7 +384,7 @@ public sealed class AiAssistantAppService(
         var context = string.Join(
             "\n\n---\n\n",
             hits.Select((x, i) => $"SOURCE {i + 1}: {x.Title}\n{x.Content}"));
-        var responseLanguage = language == "ar" ? "Arabic" : "English";
+        var responseLanguageRule = BuildResponseLanguageRule(language);
         var displayName = string.IsNullOrWhiteSpace(account.DisplayName)
             ? "not available"
             : account.DisplayName;
@@ -410,10 +414,9 @@ public sealed class AiAssistantAppService(
             CAPABILITIES (answer precisely when asked who you are / what you can do — adapt to audience {account.Audience}):
             You can: create ads (when allowed), update price/quantity on the seller's ads, search products, compare prices, find cheapest/most expensive listings, search shipping prices country-to-country, show the user's own ad details, buyer order details (طلباتي), and seller sales and pending orders on ads.
             Always state that available actions depend on the current account type.
-            Answer in {responseLanguage} only, even if earlier turns in this conversation used another language.
-            If the user writes in an unsupported language, understand/translate it internally, but answer in {responseLanguage}.
+            {responseLanguageRule}
             Mirror the user's everyday register and dialect as closely as possible in every reply (and in any clarifying question):
-            Egyptian عامية, Gulf, Levantine, Maghrebi, Sudanese, formal MSA, mixed Franco-Arab cues, casual English, etc.
+            Egyptian عامية, Gulf, Levantine, Maghrebi, Sudanese, formal MSA, mixed Franco-Arab cues, casual English, French, Hindi, Urdu, Tagalog, and any other language they use.
             Match the tone of their latest message and recent chat history — if they write colloquial ("هاتلي آخر اوردر"، "اشتريت بكام"، "إيه الأخبار") reply in the same spoken style, not stiff formal Arabic unless they wrote formally.
             Keep marketplace facts accurate; only the wording/style should adapt. Do not switch dialect mid-answer without a user cue.
             The earlier messages in this conversation are real context: resolve follow-up questions, pronouns, and short replies such as "and then?" against them instead of asking the user to repeat.
@@ -568,7 +571,12 @@ public sealed class AiAssistantAppService(
         }
 
         var visible = ExtractUserVisibleText(message);
-        var responseLanguage = language == "ar" ? "Arabic" : "English";
+        var thinkingLanguage = language switch
+        {
+            "ar" => "Arabic",
+            "en" => "English",
+            _ => "the same language as the user question"
+        };
         try
         {
             using var httpRequest = new HttpRequestMessage(
@@ -589,7 +597,7 @@ public sealed class AiAssistantAppService(
                             content =
                                 $"""
                                 You are the internal reasoning of allras ai.
-                                Write 5 to 10 short thinking steps in {responseLanguage} that show how you will answer THIS exact user question.
+                                Write 5 to 10 short thinking steps in {thinkingLanguage} that show how you will answer THIS exact user question.
                                 Mention the actual product, order, price, person, or action they asked about.
                                 Do not give the final answer.
                                 Do not use generic filler like "reading the question", "searching knowledge", or "drafting the reply".
@@ -660,14 +668,48 @@ public sealed class AiAssistantAppService(
         string? requestLanguage,
         IReadOnlyList<AiAssistantHistoryMessage>? history)
     {
+        // Ad-creation flows stay locked to the app locale for consistent field labels.
         if (IsAdCreationContext(message, history))
         {
             return NormalizeLanguage(requestLanguage);
         }
 
-        return DetectLanguage(ExtractUserVisibleText(message))
-               ?? NormalizeLanguage(requestLanguage);
+        var detected = DetectLanguage(ExtractUserVisibleText(message));
+        if (detected is not null)
+        {
+            return detected;
+        }
+
+        // Inconclusive script (or non ar/en Latin languages) → match the user via the model.
+        var requested = (requestLanguage ?? string.Empty).Trim();
+        if (requested.Equals("auto", StringComparison.OrdinalIgnoreCase)
+            || requested.Length == 0)
+        {
+            return "auto";
+        }
+
+        return NormalizeLanguage(requestLanguage);
     }
+
+    private static string BuildResponseLanguageRule(string language) =>
+        language switch
+        {
+            "ar" =>
+                """
+                Answer in Arabic only for this turn (match the user's dialect: Egyptian, Gulf, Levantine, Maghrebi, Sudanese, or MSA).
+                """,
+            "en" =>
+                """
+                Answer in English only for this turn.
+                """,
+            _ =>
+                """
+                LANGUAGE RULE (highest priority): Reply in the SAME language as the user's latest message.
+                Any natural language is allowed (Arabic dialects, English, French, Hindi, Urdu, Tagalog, Spanish, etc.).
+                Do NOT force Arabic or English unless the user wrote in that language.
+                If the user switches language mid-chat, switch with them immediately.
+                """
+        };
 
     private static bool IsAdCreationContext(
         string message,
@@ -917,11 +959,19 @@ public sealed class AiAssistantAppService(
     {
         var prefixAr = string.IsNullOrWhiteSpace(displayName) ? "" : $"{displayName}، ";
         var prefixEn = string.IsNullOrWhiteSpace(displayName) ? "" : $"{displayName}, ";
+        if (language == "ar")
+        {
+            return new(
+                $"{prefixAr}المساعد مش متاح دلوقتي لسبب تقني مؤقت. سيب اسمك ورقم تليفونك وبريدك في النموذج تحت، وفريق الدعم الفني هيتواصل معاك خلال خمس دقايق.",
+                language,
+                false,
+                [],
+                OfferSupportCallback: true);
+        }
+
         return new(
-            language == "ar"
-                ? $"{prefixAr}المساعد مش متاح دلوقتي لسبب تقني مؤقت. سيب اسمك ورقم تليفونك وبريدك في النموذج تحت، وفريق الدعم الفني هيتواصل معاك خلال خمس دقايق."
-                : $"{prefixEn}the assistant is temporarily unavailable for a technical reason. Leave your name, phone, and email in the form below and technical support will call you within five minutes.",
-            language,
+            $"{prefixEn}the assistant is temporarily unavailable for a technical reason. Leave your name, phone, and email in the form below and technical support will call you within five minutes.",
+            language is "en" or "auto" ? language : "auto",
             false,
             [],
             OfferSupportCallback: true);
@@ -976,56 +1026,22 @@ public sealed class AiAssistantAppService(
         return markers.Any(m => q.Contains(m, StringComparison.Ordinal));
     }
 
-    private static bool LooksUncertainAnswer(string answer)
+ 
+
+    private static string NormalizeLanguage(string? language)
     {
-        var text = answer.Trim().ToLowerInvariant();
-        if (text.Length == 0) return true;
-
-        string[] markers =
-        [
-            "مش متأكد", "لست متأكد", "معنديش معلومات", "معلومات موثّقة",
-            "معلومات موثقة", "لا أعرف", "لا اعرف", "مش عارف", "غير متأكد",
-            "i'm not sure", "i am not sure", "i don't know", "i do not know",
-            "not certain", "insufficient", "don't have enough", "do not have enough",
-            "outside al ras", "برا نطاق"
-        ];
-        return markers.Any(m => text.Contains(m, StringComparison.Ordinal));
-    }
-
-    private static bool LooksLikeSuccessfulToolAnswer(string answer)
-    {
-        var text = answer.Trim().ToLowerInvariant();
-        string[] markers =
-        [
-            "تم إنشاء", "تم التعديل", "تم التحديث", "تم الحذف", "تم الإرسال",
-            "created successfully", "updated successfully", "deleted successfully",
-            "submitted for admin", "price is", "quantity is", "shipping"
-        ];
-        return markers.Any(m => text.Contains(m, StringComparison.Ordinal));
-    }
-
-    private static string AppendSupportCallbackCue(string answer, string language)
-    {
-        var cue = language == "ar"
-            ? "سيب اسمك ورقم تليفونك وبريدك الإلكتروني في النموذج تحت الرسالة، وفريق الدعم الفني هيتواصل معاك خلال خمس دقايق."
-            : "Please leave your name, phone number, and email in the form below — technical support will call you within five minutes.";
-
-        if (answer.Contains("خمس دقايق", StringComparison.OrdinalIgnoreCase)
-            || answer.Contains("five minutes", StringComparison.OrdinalIgnoreCase)
-            || answer.Contains("خلال 5", StringComparison.OrdinalIgnoreCase))
+        var value = (language ?? string.Empty).Trim();
+        if (value.Equals("auto", StringComparison.OrdinalIgnoreCase))
         {
-            return answer;
+            return "auto";
         }
 
-        return $"{answer.Trim()}\n\n{cue}";
+        return value.StartsWith("ar", StringComparison.OrdinalIgnoreCase) ? "ar" : "en";
     }
 
-    private static string NormalizeLanguage(string? language) =>
-        (language ?? "").Trim().StartsWith("ar", StringComparison.OrdinalIgnoreCase) ? "ar" : "en";
-
     /// <summary>
-    /// Returns the language the user actually typed, or null when the script is
-    /// inconclusive (digits, punctuation, product codes) so the app locale wins.
+    /// Strong Arabic script → ar. Clear English-only Latin → en.
+    /// Other / mixed Latin languages return null so the model can match freely (auto).
     /// </summary>
     private static string? DetectLanguage(string message)
     {
@@ -1038,7 +1054,23 @@ public sealed class AiAssistantAppService(
         }
 
         if (arabic == 0 && latin == 0) return null;
-        return arabic > latin ? "ar" : "en";
+        if (arabic > latin) return "ar";
+
+        // Common English greetings / short English UI phrases → en.
+        // Do NOT classify all Latin script as English (French/Hindi-romanized/etc.).
+        var lower = message.Trim().ToLowerInvariant();
+        string[] englishHints =
+        [
+            "hello", "hi ", "hi,", "hey", "thanks", "thank you", "please", "what ", "how ",
+            "where ", "when ", "why ", "who ", "can you", "i need", "i want", "shipping",
+            "price", "order", "product", "help", "good morning", "good evening"
+        ];
+        if (englishHints.Any(h => lower == h.Trim() || lower.StartsWith(h) || lower.Contains(" " + h)))
+        {
+            return "en";
+        }
+
+        return null;
     }
 
     private static bool LooksLikeCreateAdIntent(string message)

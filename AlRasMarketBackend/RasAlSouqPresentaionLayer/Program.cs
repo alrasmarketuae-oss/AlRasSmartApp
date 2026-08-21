@@ -391,7 +391,9 @@ builder.Services.AddCors(options =>
                     return true;
                 }
 
-                if (uri.Host.EndsWith(".mtempurl.com", StringComparison.OrdinalIgnoreCase)
+                if (uri.Host.Equals("alrasmarketapp.com", StringComparison.OrdinalIgnoreCase)
+                    || uri.Host.Equals("www.alrasmarketapp.com", StringComparison.OrdinalIgnoreCase)
+                    || uri.Host.EndsWith(".mtempurl.com", StringComparison.OrdinalIgnoreCase)
                     || uri.Host.EndsWith(".ltempurl.com", StringComparison.OrdinalIgnoreCase)
                     || uri.Host.EndsWith(".jtempurl.com", StringComparison.OrdinalIgnoreCase)
                     || uri.Host.EndsWith(".qtempurl.com", StringComparison.OrdinalIgnoreCase)

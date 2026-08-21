@@ -1,127 +1,76 @@
 import 'package:dio/dio.dart';
 import '/core/services/error/api_error_model.dart';
+import '/core/utils/dio_user_facing_message.dart';
 
 class ServerException implements Exception {
   final ApiErrorModel errModel;
   const ServerException({required this.errModel});
 
   static void handleDioExceptions(DioException e) {
+    final busy = DioUserFacingMessage.englishHighDemand;
+
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
-        throw const ServerException(
-          errModel: ApiErrorModel(
-            message: 'Please Check your Internet',
-            error: 'Please Check your Internet',
-          ),
-        );
       case DioExceptionType.sendTimeout:
-      // throw ServerException(
-      // errModel: ApiErrorModel.fromJson(e.response!.data));
       case DioExceptionType.receiveTimeout:
-        throw const ServerException(
-          errModel: ApiErrorModel(
-            message: 'Something Wrong Please Try Again Later',
-            error: 'Something Wrong Please Try Again Later',
-          ),
-        );
-      case DioExceptionType.badCertificate:
+      case DioExceptionType.connectionError:
         throw ServerException(
-          errModel: ApiErrorModel.fromJson(e.response!.data),
+          errModel: ApiErrorModel(message: busy, error: busy),
         );
       case DioExceptionType.cancel:
         throw ServerException(
-          errModel: ApiErrorModel.fromJson(e.response!.data),
+          errModel: ApiErrorModel(message: busy, error: busy),
         );
-      case DioExceptionType.connectionError:
-        throw const ServerException(
-          errModel: ApiErrorModel(
-            message: 'Please Check your Internet',
-            error: 'Please Check your Internet',
-          ),
+      case DioExceptionType.badCertificate:
+        throw ServerException(
+          errModel: ApiErrorModel(message: busy, error: busy),
         );
       case DioExceptionType.unknown:
-        if (e.response != null &&
-            e.response?.statusCode != null &&
-            e.response?.statusMessage != null) {
-          ApiErrorModel.fromJson(e.response!.data);
-        }
         throw ServerException(
-          errModel: ApiErrorModel.fromJson(e.response!.data),
+          errModel: ApiErrorModel(
+            message: DioUserFacingMessage.fromDio(e),
+            error: DioUserFacingMessage.fromDio(e),
+          ),
         );
       case DioExceptionType.badResponse:
-        switch (e.response?.statusCode) {
-          case 400: // Bad request
-            throw ServerException(
-              errModel: ApiErrorModel.fromJson(e.response!.data),
-            );
-          case 401: //unauthorized
-            throw ServerException(
-              errModel: ApiErrorModel.fromJson(e.response!.data),
-            );
-          case 403: //forbidden
-            throw ServerException(
-              errModel: ApiErrorModel.fromJson(e.response!.data),
-            );
-          case 404: //not found
-            throw ServerException(
-              errModel: ApiErrorModel.fromJson(e.response!.data),
-            );
-          case 409: //cofficient
-            throw ServerException(
-              errModel: ApiErrorModel.fromJson(e.response!.data),
-            );
-          case 422: //  Unprocessable Entity
-            throw ServerException(
-              errModel: ApiErrorModel.fromJson(e.response!.data),
-            );
-          case 429: //  Too Many Requests
-            throw const ServerException(
-              errModel: ApiErrorModel(
-                message: 'Too many requests, please try again later.',
-                error: 'Too many requests, please try again later.',
-              ),
-            );
-          case 500: // Server exception
-            throw ServerException(
-              errModel: ApiErrorModel.fromJson(e.response!.data),
-            );
-          case 504: // Server exception
-            throw ServerException(
-              errModel: ApiErrorModel.fromJson(e.response!.data),
-            );
+        final status = e.response?.statusCode;
+        if (status != null &&
+            (status == 429 ||
+                status == 500 ||
+                status == 502 ||
+                status == 503 ||
+                status == 504 ||
+                status >= 520)) {
+          throw ServerException(
+            errModel: ApiErrorModel(message: busy, error: busy),
+          );
         }
+
+        final parsed = _tryParseApiError(e.response?.data);
+        if (parsed != null) {
+          throw ServerException(errModel: parsed);
+        }
+
+        throw ServerException(
+          errModel: ApiErrorModel(
+            message: DioUserFacingMessage.fromDio(e),
+            error: DioUserFacingMessage.fromDio(e),
+          ),
+        );
     }
   }
+
+  static ApiErrorModel? _tryParseApiError(dynamic data) {
+    try {
+      if (data is Map<String, dynamic>) {
+        return ApiErrorModel.fromJson(data);
+      }
+      if (data is Map) {
+        return ApiErrorModel.fromJson(Map<String, dynamic>.from(data));
+      }
+    } catch (_) {
+      return null;
+    }
+    return null;
+  }
 }
-
-//  switch (error.type) {
-//     case DioExceptionType.connectionTimeout:
-//       return DataSource.CONNECT_TIMEOUT.getFailure();
-//     case DioExceptionType.sendTimeout:
-//       return DataSource.SEND_TIMEOUT.getFailure();
-//     case DioExceptionType.receiveTimeout:
-//       return DataSource.RECIEVE_TIMEOUT.getFailure();
-//     case DioExceptionType.badResponse:
-//       if (error.response != null &&
-//           error.response?.statusCode != null &&
-//           error.response?.statusMessage != null) {
-//         return ApiErrorModel.fromJson(error.response!.data);
-//       } else {
-//         return DataSource.DEFAULT.getFailure();
-//       }
-//     case DioExceptionType.unknown:
-//       if (error.response != null &&
-//           error.response?.statusCode != null &&
-//           error.response?.statusMessage != null) {
-//         return ApiErrorModel.fromJson(error.response!.data);
-//       } else {
-//         return DataSource.DEFAULT.getFailure();
-//       }
-//     case DioExceptionType.cancel:
-//       return DataSource.CANCEL.getFailure();
-//     case DioExceptionType.connectionError:
-//       return DataSource.NO_INTERNET_CONNECTION.getFailure();
-//     case DioExceptionType.badCertificate:
-//       return DataSource.DEFAULT.getFailure();
-
-//   }
