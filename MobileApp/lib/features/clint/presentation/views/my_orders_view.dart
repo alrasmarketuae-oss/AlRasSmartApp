@@ -11,9 +11,12 @@ import 'package:alrasmarket/features/clint/data/models/my_order_model.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_states.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/notification_navigation_helper.dart';
+import 'package:alrasmarket/features/clint/presentation/helpers/order_list_oldest_section.dart';
 import 'package:alrasmarket/features/clint/presentation/models/my_orders_chip_filter.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/order_card.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/order_list_oldest_header.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/search_header.dart';
+import 'package:alrasmarket/features/company/data/models/my_request_offer_model.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/my_ads/request_offer_card.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
@@ -397,36 +400,13 @@ class _MyOrdersViewState extends State<MyOrdersView> {
           else
             SliverPadding(
               padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 24.h),
-              sliver: SliverList.separated(
-                itemCount: offers.length,
-                separatorBuilder: (_, __) => SizedBox(height: 12.h),
-                itemBuilder: (context, index) {
-                  final offer = offers[index];
-                  final isUpdating =
-                      cubit.updatingIncomingOrderId == offer.orderId;
-                  return RequestOfferCard(
-                    offer: offer,
-                    fontFamily: fontFamily,
-                    isUpdating: isUpdating,
-                    acceptLabel: s.acceptOrderAction,
-                    rejectLabel: s.rejectOrderAction,
-                    onTrack: offer.orderId > 0
-                        ? () => context.push(
-                              AppRoutes.kTrackOrderView,
-                              extra: {
-                                'orderId': offer.orderId,
-                                'showBuyerActions': false,
-                              },
-                            )
-                        : null,
-                    onAccept: offer.canAccept
-                        ? () => _onAcceptIncoming(offer.orderId)
-                        : null,
-                    onReject: offer.canReject
-                        ? () => _onRejectIncoming(offer.orderId)
-                        : null,
-                  );
-                },
+              sliver: _buildIncomingOrdersSliver(
+                offers: offers,
+                cubit: cubit,
+                s: s,
+                fontFamily: fontFamily,
+                onAcceptIncoming: _onAcceptIncoming,
+                onRejectIncoming: _onRejectIncoming,
               ),
             ),
         ],
@@ -500,21 +480,16 @@ class _MyOrdersViewState extends State<MyOrdersView> {
           else
             SliverPadding(
               padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 24.h),
-              sliver: SliverList.separated(
-                itemCount: visible.length,
-                separatorBuilder: (_, __) => SizedBox(height: 14.h),
-                itemBuilder: (context, index) {
-                  final order = visible[index];
-                  return OrderCard(
-                    key: _keyFor(order.id),
-                    order: order,
-                    highlighted: _highlightOrderId == order.id,
-                    onTrackTap: () => context.push(
-                      AppRoutes.kTrackOrderView,
-                      extra: {'order': order},
-                    ),
-                  );
-                },
+              sliver: _buildPurchasesOrdersSliver(
+                orders: visible,
+                oldestLabel: s.oldestOrdersSection,
+                fontFamily: fontFamily,
+                highlightOrderId: _highlightOrderId,
+                keyFor: _keyFor,
+                onTrackTap: (order) => context.push(
+                  AppRoutes.kTrackOrderView,
+                  extra: {'order': order},
+                ),
               ),
             ),
         ],
@@ -574,6 +549,115 @@ class _MyOrdersViewState extends State<MyOrdersView> {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPurchasesOrdersSliver({
+    required List<MyOrderModel> orders,
+    required String oldestLabel,
+    required String fontFamily,
+    required int? highlightOrderId,
+    required GlobalKey Function(int orderId) keyFor,
+    required void Function(MyOrderModel order) onTrackTap,
+  }) {
+    final entries = OrderListOldestSection.buildEntries(
+      items: orders,
+      createdAtOf: (order) => order.createdAt,
+      oldestSectionLabel: oldestLabel,
+    );
+
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          final entry = entries[index];
+          final bottomGap = index < entries.length - 1 ? 14.h : 0.0;
+
+          if (entry.isHeader) {
+            return Padding(
+              padding: EdgeInsets.only(bottom: bottomGap),
+              child: OrderListOldestHeader(
+                label: entry.sectionLabel!,
+                fontFamily: fontFamily,
+              ),
+            );
+          }
+
+          final order = entry.item!;
+          return Padding(
+            padding: EdgeInsets.only(bottom: bottomGap),
+            child: OrderCard(
+              key: keyFor(order.id),
+              order: order,
+              highlighted: highlightOrderId == order.id,
+              onTrackTap: () => onTrackTap(order),
+            ),
+          );
+        },
+        childCount: entries.length,
+      ),
+    );
+  }
+
+  Widget _buildIncomingOrdersSliver({
+    required List<MyRequestOfferModel> offers,
+    required ClintCubit cubit,
+    required S s,
+    required String fontFamily,
+    required Future<void> Function(int orderId) onAcceptIncoming,
+    required Future<void> Function(int orderId) onRejectIncoming,
+  }) {
+    final entries = OrderListOldestSection.buildEntries(
+      items: offers,
+      createdAtOf: (offer) => offer.createdAt,
+      oldestSectionLabel: s.oldestOrdersSection,
+    );
+
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          final entry = entries[index];
+          final bottomGap = index < entries.length - 1 ? 12.h : 0.0;
+
+          if (entry.isHeader) {
+            return Padding(
+              padding: EdgeInsets.only(bottom: bottomGap),
+              child: OrderListOldestHeader(
+                label: entry.sectionLabel!,
+                fontFamily: fontFamily,
+              ),
+            );
+          }
+
+          final offer = entry.item!;
+          final isUpdating = cubit.updatingIncomingOrderId == offer.orderId;
+          return Padding(
+            padding: EdgeInsets.only(bottom: bottomGap),
+            child: RequestOfferCard(
+              offer: offer,
+              fontFamily: fontFamily,
+              isUpdating: isUpdating,
+              acceptLabel: s.acceptOrderAction,
+              rejectLabel: s.rejectOrderAction,
+              onTrack: offer.orderId > 0
+                  ? () => context.push(
+                        AppRoutes.kTrackOrderView,
+                        extra: {
+                          'orderId': offer.orderId,
+                          'showBuyerActions': false,
+                        },
+                      )
+                  : null,
+              onAccept: offer.canAccept
+                  ? () => onAcceptIncoming(offer.orderId)
+                  : null,
+              onReject: offer.canReject
+                  ? () => onRejectIncoming(offer.orderId)
+                  : null,
+            ),
+          );
+        },
+        childCount: entries.length,
       ),
     );
   }

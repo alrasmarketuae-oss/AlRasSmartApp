@@ -1054,6 +1054,16 @@ class S {
     return Intl.message('Order Date', name: 'orderDate', desc: '', args: []);
   }
 
+  /// `Oldest`
+  String get oldestOrdersSection {
+    return Intl.message(
+      'Oldest',
+      name: 'oldestOrdersSection',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Profile`
   String get profile {
     return Intl.message('Profile', name: 'profile', desc: '', args: []);
@@ -1061,12 +1071,7 @@ class S {
 
   /// `Shipping`
   String get shippingPrice {
-    return Intl.message(
-      'Shipping',
-      name: 'shippingPrice',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Shipping', name: 'shippingPrice', desc: '', args: []);
   }
 
   /// `Booking`
@@ -5863,12 +5868,7 @@ class S {
 
   /// `Forwarded`
   String get chatForwarded {
-    return Intl.message(
-      'Forwarded',
-      name: 'chatForwarded',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Forwarded', name: 'chatForwarded', desc: '', args: []);
   }
 
   /// `Reply to`
@@ -7161,6 +7161,7 @@ class S {
     );
   }
 
+  /// `Your smart assistant for Al-Ras Market`
   String get aiAssistantHubSubtitle {
     return Intl.message(
       'Your smart assistant for Al-Ras Market',
@@ -7170,6 +7171,7 @@ class S {
     );
   }
 
+  /// `Hello! I’m Al-Ras Agent`
   String get aiAssistantHubHello {
     return Intl.message(
       'Hello! I’m Al-Ras Agent',
@@ -7179,6 +7181,7 @@ class S {
     );
   }
 
+  /// `You can chat with me or talk to me by voice. I can help you with ads, orders, shipping prices, and more.`
   String get aiAssistantHubIntro {
     return Intl.message(
       'You can chat with me or talk to me by voice. I can help you with ads, orders, shipping prices, and more.',
@@ -7188,6 +7191,7 @@ class S {
     );
   }
 
+  /// `How would you like to start?`
   String get aiAssistantHowToStart {
     return Intl.message(
       'How would you like to start?',
@@ -7197,6 +7201,7 @@ class S {
     );
   }
 
+  /// `Chat with AI`
   String get aiAssistantChatWithAi {
     return Intl.message(
       'Chat with AI',
@@ -7206,6 +7211,7 @@ class S {
     );
   }
 
+  /// `Type your questions and get instant answers`
   String get aiAssistantChatWithAiSubtitle {
     return Intl.message(
       'Type your questions and get instant answers',
@@ -7215,6 +7221,7 @@ class S {
     );
   }
 
+  /// `Talk with AI`
   String get aiAssistantTalkWithAi {
     return Intl.message(
       'Talk with AI',
@@ -7224,6 +7231,7 @@ class S {
     );
   }
 
+  /// `Speak with me using your voice`
   String get aiAssistantTalkWithAiSubtitle {
     return Intl.message(
       'Speak with me using your voice',
@@ -7233,6 +7241,7 @@ class S {
     );
   }
 
+  /// `AI voice`
   String get aiAssistantVoiceSetting {
     return Intl.message(
       'AI voice',
@@ -7242,6 +7251,7 @@ class S {
     );
   }
 
+  /// `Choose a female or male assistant voice`
   String get aiAssistantVoiceSettingSubtitle {
     return Intl.message(
       'Choose a female or male assistant voice',

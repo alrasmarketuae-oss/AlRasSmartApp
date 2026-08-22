@@ -207,8 +207,17 @@ class MessageLookup extends MessageLookupByLibrary {
     "agreeToTermsPrefix": MessageLookupByLibrary.simpleMessage(
       "I agree to the ",
     ),
+    "aiAssistantCancelReply": MessageLookupByLibrary.simpleMessage(
+      "Cancel reply",
+    ),
     "aiAssistantCardSubtitle": MessageLookupByLibrary.simpleMessage(
       "Smart help at your fingertips",
+    ),
+    "aiAssistantChatWithAi": MessageLookupByLibrary.simpleMessage(
+      "Chat with AI",
+    ),
+    "aiAssistantChatWithAiSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Type your questions and get instant answers",
     ),
     "aiAssistantFabLabel": MessageLookupByLibrary.simpleMessage("AI"),
     "aiAssistantHint": MessageLookupByLibrary.simpleMessage(
@@ -239,29 +248,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "aiAssistantHistoryUntitled": MessageLookupByLibrary.simpleMessage(
       "Untitled conversation",
     ),
-    "aiAssistantImageSearchHint": MessageLookupByLibrary.simpleMessage(
-      "Image search: upload a product photo from the search bar to find similar catalog matches. See “Image-search model training” under Help & Support for details.",
-    ),
-    "aiAssistantListening": MessageLookupByLibrary.simpleMessage(
-      "Listening… speak now",
-    ),
-    "aiAssistantReplyTo": MessageLookupByLibrary.simpleMessage("Replying to"),
-    "aiAssistantCancelReply": MessageLookupByLibrary.simpleMessage(
-      "Cancel reply",
-    ),
-    "aiAssistantOutOfScope": MessageLookupByLibrary.simpleMessage(
-      "I can only help with Al Ras Smart topics (accounts, ads, orders, payment, returns). Please ask something about the platform.",
-    ),
-    "aiAssistantReturnPolicyHint": MessageLookupByLibrary.simpleMessage(
-      "For damaged, expired, or materially different goods: report within 24 business hours of receipt with photos. If support approves, refund is issued within 1 business day.",
-    ),
-    "aiAssistantSubtitle": MessageLookupByLibrary.simpleMessage(
-      "Al-Ras Agent is an AI Agent and can make mistakes.",
-    ),
-    "aiAssistantThinking": MessageLookupByLibrary.simpleMessage("Thinking…"),
-    "aiAssistantTitle": MessageLookupByLibrary.simpleMessage("Al-Ras Agent"),
-    "aiAssistantHubSubtitle": MessageLookupByLibrary.simpleMessage(
-      "Your smart assistant for Al-Ras Market",
+    "aiAssistantHowToStart": MessageLookupByLibrary.simpleMessage(
+      "How would you like to start?",
     ),
     "aiAssistantHubHello": MessageLookupByLibrary.simpleMessage(
       "Hello! I’m Al-Ras Agent",
@@ -269,14 +257,24 @@ class MessageLookup extends MessageLookupByLibrary {
     "aiAssistantHubIntro": MessageLookupByLibrary.simpleMessage(
       "You can chat with me or talk to me by voice. I can help you with ads, orders, shipping prices, and more.",
     ),
-    "aiAssistantHowToStart": MessageLookupByLibrary.simpleMessage(
-      "How would you like to start?",
+    "aiAssistantHubSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Your smart assistant for Al-Ras Market",
     ),
-    "aiAssistantChatWithAi": MessageLookupByLibrary.simpleMessage(
-      "Chat with AI",
+    "aiAssistantImageSearchHint": MessageLookupByLibrary.simpleMessage(
+      "Image search: upload a product photo from the search bar to find similar catalog matches. See “Image-search model training” under Help & Support for details.",
     ),
-    "aiAssistantChatWithAiSubtitle": MessageLookupByLibrary.simpleMessage(
-      "Type your questions and get instant answers",
+    "aiAssistantListening": MessageLookupByLibrary.simpleMessage(
+      "Listening… speak now",
+    ),
+    "aiAssistantOutOfScope": MessageLookupByLibrary.simpleMessage(
+      "I can only help with Al Ras Smart topics (accounts, ads, orders, payment, returns). Please ask something about the platform.",
+    ),
+    "aiAssistantReplyTo": MessageLookupByLibrary.simpleMessage("Replying to"),
+    "aiAssistantReturnPolicyHint": MessageLookupByLibrary.simpleMessage(
+      "For damaged, expired, or materially different goods: report within 24 business hours of receipt with photos. If support approves, refund is issued within 1 business day.",
+    ),
+    "aiAssistantSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Al-Ras Agent is an AI Agent and can make mistakes.",
     ),
     "aiAssistantTalkWithAi": MessageLookupByLibrary.simpleMessage(
       "Talk with AI",
@@ -284,10 +282,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "aiAssistantTalkWithAiSubtitle": MessageLookupByLibrary.simpleMessage(
       "Speak with me using your voice",
     ),
-    "aiAssistantVoiceSetting": MessageLookupByLibrary.simpleMessage("AI voice"),
-    "aiAssistantVoiceSettingSubtitle": MessageLookupByLibrary.simpleMessage(
-      "Choose a female or male assistant voice",
-    ),
+    "aiAssistantThinking": MessageLookupByLibrary.simpleMessage("Thinking…"),
+    "aiAssistantTitle": MessageLookupByLibrary.simpleMessage("Al-Ras Agent"),
     "aiAssistantUnsupportedLanguage": MessageLookupByLibrary.simpleMessage(
       "We currently support Arabic and English. We may translate your question internally to understand it, then reply in a supported language.",
     ),
@@ -299,6 +295,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "Review the text, then send or cancel",
     ),
     "aiAssistantVoiceSend": MessageLookupByLibrary.simpleMessage("Send"),
+    "aiAssistantVoiceSetting": MessageLookupByLibrary.simpleMessage("AI voice"),
+    "aiAssistantVoiceSettingSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Choose a female or male assistant voice",
+    ),
     "aiAssistantVoiceUnavailable": MessageLookupByLibrary.simpleMessage(
       "Voice input is not available on this device",
     ),
@@ -419,6 +419,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "changeTargetPricesSubtitle": MessageLookupByLibrary.simpleMessage(
       "Update and manage target prices easily",
     ),
+    "chatDeleteForEveryone": MessageLookupByLibrary.simpleMessage(
+      "Delete for everyone",
+    ),
+    "chatDeleteForMe": MessageLookupByLibrary.simpleMessage("Delete for me"),
+    "chatDeletedMessage": MessageLookupByLibrary.simpleMessage(
+      "This message was deleted",
+    ),
     "chatE2eNoticeBody": MessageLookupByLibrary.simpleMessage(
       "Only people in this conversation can read or listen to these messages.",
     ),
@@ -426,6 +433,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "chatE2eNoticeTitle": MessageLookupByLibrary.simpleMessage(
       "Messages are end-to-end encrypted",
     ),
+    "chatForward": MessageLookupByLibrary.simpleMessage("Forward"),
+    "chatForwarded": MessageLookupByLibrary.simpleMessage("Forwarded"),
+    "chatReply": MessageLookupByLibrary.simpleMessage("Reply"),
+    "chatReplyTo": MessageLookupByLibrary.simpleMessage("Reply to"),
     "chatSessionActiveWith": m7,
     "chatSessionClosedBy": m8,
     "chatSessionStartedWith": m9,
@@ -870,15 +881,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "highlightAdOldPrice": MessageLookupByLibrary.simpleMessage("199 AED"),
     "home": MessageLookupByLibrary.simpleMessage("Home"),
     "hoursAgo": MessageLookupByLibrary.simpleMessage("hours ago"),
-    "imageSearchCropHint": MessageLookupByLibrary.simpleMessage(
-      "Select an area of the photo to search again.",
-    ),
-    "imageSearchPeekTitle": MessageLookupByLibrary.simpleMessage(
-      "Similar products",
-    ),
-    "imageSearchViewResults": MessageLookupByLibrary.simpleMessage(
-      "View results",
-    ),
     "hoursAgoRelative": m14,
     "howCanIPlaceAnOrder": MessageLookupByLibrary.simpleMessage(
       "How can I place an order?",
@@ -894,6 +896,15 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "howDoITrackMyOrderAnswer": MessageLookupByLibrary.simpleMessage(
       "Open My Orders from your profile, select the order, then tap Track Order to follow its current status.",
+    ),
+    "imageSearchCropHint": MessageLookupByLibrary.simpleMessage(
+      "Select an area of the photo to search again.",
+    ),
+    "imageSearchPeekTitle": MessageLookupByLibrary.simpleMessage(
+      "Similar products",
+    ),
+    "imageSearchViewResults": MessageLookupByLibrary.simpleMessage(
+      "View results",
     ),
     "imageSelectedFromGallery": MessageLookupByLibrary.simpleMessage(
       "Image selected from gallery",
@@ -949,11 +960,13 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "login": MessageLookupByLibrary.simpleMessage("Login"),
     "loginAsGuest": MessageLookupByLibrary.simpleMessage("Login as Guest"),
-    "loginRequiredTitle": MessageLookupByLibrary.simpleMessage("Login required"),
+    "loginError": MessageLookupByLibrary.simpleMessage("Login failed"),
     "loginRequiredMessage": MessageLookupByLibrary.simpleMessage(
       "You must log in to continue.",
     ),
-    "loginError": MessageLookupByLibrary.simpleMessage("Login failed"),
+    "loginRequiredTitle": MessageLookupByLibrary.simpleMessage(
+      "Login required",
+    ),
     "loginSubtitle": MessageLookupByLibrary.simpleMessage(
       "Sign in to your account",
     ),
@@ -1111,6 +1124,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "offers": MessageLookupByLibrary.simpleMessage("Offers"),
     "offersAvailable": m22,
     "offersInfo": MessageLookupByLibrary.simpleMessage("Offers"),
+    "oldestOrdersSection": MessageLookupByLibrary.simpleMessage("Oldest"),
     "oneDayAgo": MessageLookupByLibrary.simpleMessage("1 day ago"),
     "oneHourAgo": MessageLookupByLibrary.simpleMessage("1 hour ago"),
     "oneMinuteAgo": MessageLookupByLibrary.simpleMessage("1 minute ago"),
@@ -1228,15 +1242,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "pleaseLoginToChatWithSupport": MessageLookupByLibrary.simpleMessage(
       "Please login to chat with support.",
     ),
-    "chatReply": MessageLookupByLibrary.simpleMessage("Reply"),
-    "chatForward": MessageLookupByLibrary.simpleMessage("Forward"),
-    "chatDeleteForMe": MessageLookupByLibrary.simpleMessage("Delete for me"),
-    "chatDeleteForEveryone":
-        MessageLookupByLibrary.simpleMessage("Delete for everyone"),
-    "chatDeletedMessage":
-        MessageLookupByLibrary.simpleMessage("This message was deleted"),
-    "chatForwarded": MessageLookupByLibrary.simpleMessage("Forwarded"),
-    "chatReplyTo": MessageLookupByLibrary.simpleMessage("Reply to"),
     "pleaseLoginToConfirmYourOrder": MessageLookupByLibrary.simpleMessage(
       "Please login to confirm your order.",
     ),

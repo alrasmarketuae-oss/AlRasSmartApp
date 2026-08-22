@@ -206,16 +206,21 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "afterDiscount": MessageLookupByLibrary.simpleMessage("بعد الخصم"),
     "agreeToTermsPrefix": MessageLookupByLibrary.simpleMessage("أوافق على "),
+    "aiAssistantCancelReply": MessageLookupByLibrary.simpleMessage(
+      "إلغاء الرد",
+    ),
     "aiAssistantCardSubtitle": MessageLookupByLibrary.simpleMessage(
       "مساعدة ذكية بين يديك",
+    ),
+    "aiAssistantChatWithAi": MessageLookupByLibrary.simpleMessage(
+      "محادثة مع الذكاء الاصطناعي",
+    ),
+    "aiAssistantChatWithAiSubtitle": MessageLookupByLibrary.simpleMessage(
+      "اكتب أسئلتك واحصل على إجابات فورية",
     ),
     "aiAssistantFabLabel": MessageLookupByLibrary.simpleMessage("AI"),
     "aiAssistantHint": MessageLookupByLibrary.simpleMessage(
       "اسأل عن الإعلانات، الطلبات، الاسترجاع، البحث بالصور…",
-    ),
-    "aiAssistantReplyTo": MessageLookupByLibrary.simpleMessage("الرد على"),
-    "aiAssistantCancelReply": MessageLookupByLibrary.simpleMessage(
-      "إلغاء الرد",
     ),
     "aiAssistantHistoryEmpty": MessageLookupByLibrary.simpleMessage(
       "لا توجد محادثات محفوظة بعد.",
@@ -242,6 +247,18 @@ class MessageLookup extends MessageLookupByLibrary {
     "aiAssistantHistoryUntitled": MessageLookupByLibrary.simpleMessage(
       "محادثة بدون عنوان",
     ),
+    "aiAssistantHowToStart": MessageLookupByLibrary.simpleMessage(
+      "كيف تحب تبدأ؟",
+    ),
+    "aiAssistantHubHello": MessageLookupByLibrary.simpleMessage(
+      "أهلاً! أنا Al-Ras Agent",
+    ),
+    "aiAssistantHubIntro": MessageLookupByLibrary.simpleMessage(
+      "تقدر تتكلم معايا بالشات أو بالصوت. أساعدك في الإعلانات والطلبات وأسعار الشحن وأكثر.",
+    ),
+    "aiAssistantHubSubtitle": MessageLookupByLibrary.simpleMessage(
+      "مساعدك الذكي في سوق الرأس",
+    ),
     "aiAssistantImageSearchHint": MessageLookupByLibrary.simpleMessage(
       "البحث بالصور: ارفع صورة منتج من شريط البحث ليجد النظام منتجات مشابهة في الكتالوج. التفاصيل في صفحة «تدريب نموذج البحث بالصور» من المساعدة والدعم.",
     ),
@@ -251,31 +268,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "aiAssistantOutOfScope": MessageLookupByLibrary.simpleMessage(
       "أقدر أساعدك في أمور الراس الذكي فقط (حسابات، إعلانات، طلبات، دفع، استرجاع). جرّب سؤالاً عن المنصة.",
     ),
+    "aiAssistantReplyTo": MessageLookupByLibrary.simpleMessage("الرد على"),
     "aiAssistantReturnPolicyHint": MessageLookupByLibrary.simpleMessage(
       "للاسترجاع بسبب تلف أو انتهاء صلاحية أو اختلاف جوهري: أبلغ خلال 24 ساعة عمل من الاستلام مع صور. إن وافق الدعم يُعاد المبلغ خلال يوم عمل واحد.",
     ),
     "aiAssistantSubtitle": MessageLookupByLibrary.simpleMessage(
       "Al-Ras Agent وكيل ذكاء اصطناعي وقد يخطئ.",
-    ),
-    "aiAssistantThinking": MessageLookupByLibrary.simpleMessage("يفكر…"),
-    "aiAssistantTitle": MessageLookupByLibrary.simpleMessage("Al-Ras Agent"),
-    "aiAssistantHubSubtitle": MessageLookupByLibrary.simpleMessage(
-      "مساعدك الذكي في سوق الرأس",
-    ),
-    "aiAssistantHubHello": MessageLookupByLibrary.simpleMessage(
-      "أهلاً! أنا Al-Ras Agent",
-    ),
-    "aiAssistantHubIntro": MessageLookupByLibrary.simpleMessage(
-      "تقدر تتكلم معايا بالشات أو بالصوت. أساعدك في الإعلانات والطلبات وأسعار الشحن وأكثر.",
-    ),
-    "aiAssistantHowToStart": MessageLookupByLibrary.simpleMessage(
-      "كيف تحب تبدأ؟",
-    ),
-    "aiAssistantChatWithAi": MessageLookupByLibrary.simpleMessage(
-      "محادثة مع الذكاء الاصطناعي",
-    ),
-    "aiAssistantChatWithAiSubtitle": MessageLookupByLibrary.simpleMessage(
-      "اكتب أسئلتك واحصل على إجابات فورية",
     ),
     "aiAssistantTalkWithAi": MessageLookupByLibrary.simpleMessage(
       "مكالمة مع الذكاء الاصطناعي",
@@ -283,12 +281,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "aiAssistantTalkWithAiSubtitle": MessageLookupByLibrary.simpleMessage(
       "تكلم معي بصوتك",
     ),
-    "aiAssistantVoiceSetting": MessageLookupByLibrary.simpleMessage(
-      "صوت الذكاء الاصطناعي",
-    ),
-    "aiAssistantVoiceSettingSubtitle": MessageLookupByLibrary.simpleMessage(
-      "اختر صوت بنت أو ولد للمساعد",
-    ),
+    "aiAssistantThinking": MessageLookupByLibrary.simpleMessage("يفكر…"),
+    "aiAssistantTitle": MessageLookupByLibrary.simpleMessage("Al-Ras Agent"),
     "aiAssistantUnsupportedLanguage": MessageLookupByLibrary.simpleMessage(
       "ندعم العربية والإنجليزية حالياً. ترجمنا سؤالك للفهم إن أمكن، وسنرد بإحدى اللغتين المدعومتين.",
     ),
@@ -300,6 +294,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "راجع النص ثم أرسل أو ألغِ",
     ),
     "aiAssistantVoiceSend": MessageLookupByLibrary.simpleMessage("إرسال"),
+    "aiAssistantVoiceSetting": MessageLookupByLibrary.simpleMessage(
+      "صوت الذكاء الاصطناعي",
+    ),
+    "aiAssistantVoiceSettingSubtitle": MessageLookupByLibrary.simpleMessage(
+      "اختر صوت بنت أو ولد للمساعد",
+    ),
     "aiAssistantVoiceUnavailable": MessageLookupByLibrary.simpleMessage(
       "الإدخال الصوتي غير متاح على هذا الجهاز",
     ),
@@ -418,6 +418,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "changeTargetPricesSubtitle": MessageLookupByLibrary.simpleMessage(
       "حدّث وأدر الأسعار المستهدفة بسهولة",
     ),
+    "chatDeleteForEveryone": MessageLookupByLibrary.simpleMessage(
+      "حذف لدى الجميع",
+    ),
+    "chatDeleteForMe": MessageLookupByLibrary.simpleMessage("حذف لدي"),
+    "chatDeletedMessage": MessageLookupByLibrary.simpleMessage(
+      "تم حذف هذه الرسالة",
+    ),
     "chatE2eNoticeBody": MessageLookupByLibrary.simpleMessage(
       "فقط الأشخاص في هذه المحادثة هم من يستطيعون قراءة أو الاستماع لهذه الرسائل.",
     ),
@@ -427,6 +434,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "chatE2eNoticeTitle": MessageLookupByLibrary.simpleMessage(
       "الرسائل مشفّرة تشفيرًا تامًا بين الطرفين",
     ),
+    "chatForward": MessageLookupByLibrary.simpleMessage("تحويل"),
+    "chatForwarded": MessageLookupByLibrary.simpleMessage("محوّلة"),
+    "chatReply": MessageLookupByLibrary.simpleMessage("رد"),
+    "chatReplyTo": MessageLookupByLibrary.simpleMessage("الرد على"),
     "chatSessionActiveWith": m7,
     "chatSessionClosedBy": m8,
     "chatSessionStartedWith": m9,
@@ -877,15 +888,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "highlightAdOldPrice": MessageLookupByLibrary.simpleMessage("199 درهم"),
     "home": MessageLookupByLibrary.simpleMessage("الرئيسية"),
     "hoursAgo": MessageLookupByLibrary.simpleMessage("ساعات مضت"),
-    "imageSearchCropHint": MessageLookupByLibrary.simpleMessage(
-      "حدد جزءاً من الصورة للبحث مرة أخرى.",
-    ),
-    "imageSearchPeekTitle": MessageLookupByLibrary.simpleMessage(
-      "منتجات مشابهة",
-    ),
-    "imageSearchViewResults": MessageLookupByLibrary.simpleMessage(
-      "عرض النتائج",
-    ),
     "hoursAgoRelative": m14,
     "howCanIPlaceAnOrder": MessageLookupByLibrary.simpleMessage(
       "كيف يمكنني طلب المنتج؟",
@@ -901,6 +903,15 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "howDoITrackMyOrderAnswer": MessageLookupByLibrary.simpleMessage(
       "من الملف الشخصي افتح طلباتي، اختر الطلب، ثم اضغط تتبع الطلب لمتابعة حالته الحالية.",
+    ),
+    "imageSearchCropHint": MessageLookupByLibrary.simpleMessage(
+      "حدد جزءاً من الصورة للبحث مرة أخرى.",
+    ),
+    "imageSearchPeekTitle": MessageLookupByLibrary.simpleMessage(
+      "منتجات مشابهة",
+    ),
+    "imageSearchViewResults": MessageLookupByLibrary.simpleMessage(
+      "عرض النتائج",
     ),
     "imageSelectedFromGallery": MessageLookupByLibrary.simpleMessage(
       "صورة محددة من المعرض",
@@ -958,11 +969,13 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "login": MessageLookupByLibrary.simpleMessage("تسجيل الدخول"),
     "loginAsGuest": MessageLookupByLibrary.simpleMessage("دخول كزائر"),
-    "loginRequiredTitle": MessageLookupByLibrary.simpleMessage("يلزم تسجيل الدخول"),
+    "loginError": MessageLookupByLibrary.simpleMessage("تسجيل الدخول بخطأ"),
     "loginRequiredMessage": MessageLookupByLibrary.simpleMessage(
       "يجب تسجيل الدخول للمتابعة",
     ),
-    "loginError": MessageLookupByLibrary.simpleMessage("تسجيل الدخول بخطأ"),
+    "loginRequiredTitle": MessageLookupByLibrary.simpleMessage(
+      "يلزم تسجيل الدخول",
+    ),
     "loginSubtitle": MessageLookupByLibrary.simpleMessage("دخولك لحسابك"),
     "loginSuccess": MessageLookupByLibrary.simpleMessage("تسجيل الدخول بنجاح"),
     "logout": MessageLookupByLibrary.simpleMessage("تسجيل الخروج"),
@@ -1120,6 +1133,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "offers": MessageLookupByLibrary.simpleMessage("عروض"),
     "offersAvailable": m22,
     "offersInfo": MessageLookupByLibrary.simpleMessage("العروض"),
+    "oldestOrdersSection": MessageLookupByLibrary.simpleMessage("الأقدم"),
     "oneDayAgo": MessageLookupByLibrary.simpleMessage("منذ يوم"),
     "oneHourAgo": MessageLookupByLibrary.simpleMessage("منذ ساعة"),
     "oneMinuteAgo": MessageLookupByLibrary.simpleMessage("منذ دقيقة"),
@@ -1231,15 +1245,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "pleaseLoginToChatWithSupport": MessageLookupByLibrary.simpleMessage(
       "يرجى تسجيل الدخول للمحادثة مع فريق الدعم.",
     ),
-    "chatReply": MessageLookupByLibrary.simpleMessage("رد"),
-    "chatForward": MessageLookupByLibrary.simpleMessage("تحويل"),
-    "chatDeleteForMe": MessageLookupByLibrary.simpleMessage("حذف لدي"),
-    "chatDeleteForEveryone":
-        MessageLookupByLibrary.simpleMessage("حذف لدى الجميع"),
-    "chatDeletedMessage":
-        MessageLookupByLibrary.simpleMessage("تم حذف هذه الرسالة"),
-    "chatForwarded": MessageLookupByLibrary.simpleMessage("محوّلة"),
-    "chatReplyTo": MessageLookupByLibrary.simpleMessage("الرد على"),
     "pleaseLoginToConfirmYourOrder": MessageLookupByLibrary.simpleMessage(
       "يرجى تسجيل الدخول لتأكيد الطلب.",
     ),
