@@ -116,12 +116,24 @@ class ApiCacheStore {
     await init();
     if (_cacheDir == null) return;
 
-    await for (final entity in _cacheDir!.list()) {
-      if (entity is! File) continue;
-      final name = entity.uri.pathSegments.last;
-      if (name.startsWith(_safeFileName(prefix))) {
-        await entity.delete();
+    try {
+      if (!await _cacheDir!.exists()) return;
+
+      await for (final entity in _cacheDir!.list()) {
+        if (entity is! File) continue;
+        final name = entity.uri.pathSegments.last;
+        if (name.startsWith(_safeFileName(prefix))) {
+          try {
+            if (await entity.exists()) {
+              await entity.delete();
+            }
+          } catch (e) {
+            debugPrint('ApiCacheStore delete failed ($name): $e');
+          }
+        }
       }
+    } catch (e) {
+      debugPrint('ApiCacheStore removeByPrefix failed ($prefix): $e');
     }
   }
 

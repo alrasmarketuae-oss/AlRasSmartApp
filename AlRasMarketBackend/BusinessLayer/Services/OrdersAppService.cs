@@ -309,6 +309,7 @@ public partial class OrdersAppService(
 
         return new
         {
+            orderId = order.Id,
             order = AdminOrderPricingHelper.ToCustomerFacingDetail(
                 order,
                 product,

@@ -3027,10 +3027,51 @@ class ClintCubit extends Cubit<ClintStates> {
   String bookingToUserId = '';
   final Map<String, ({String country, List<String> ports})> _bookingPortsCache =
       {};
+  int _bookingPortsRequestGeneration = 0;
 
   BookingOrderFormState? get _bookingOrderFormState {
     final current = state;
     return current is BookingOrderFormState ? current : null;
+  }
+
+  /// Prefer canonical English names for geo API lookup (matches create-ad flow).
+  String _bookingOrderCountryForGeoLookup(
+    MyListingProductModel product, {
+    String? selectedCountry,
+  }) {
+    final selected = selectedCountry?.trim() ?? '';
+    if (selected.isNotEmpty) {
+      if (selected == product.destinationCountryName.trim() &&
+          product.destinationCountryNameEn.trim().isNotEmpty) {
+        return product.destinationCountryNameEn.trim();
+      }
+      if (selected == product.originCountryName.trim() &&
+          product.originCountryNameEn.trim().isNotEmpty) {
+        return product.originCountryNameEn.trim();
+      }
+      return selected;
+    }
+
+    final destinationEn = product.destinationCountryNameEn.trim();
+    if (destinationEn.isNotEmpty) return destinationEn;
+
+    final destination = product.destinationCountryName.trim();
+    if (destination.isNotEmpty) return destination;
+
+    return '';
+  }
+
+  String _bookingOrderCountryForDisplay(
+    MyListingProductModel product, {
+    String? normalizedCountry,
+  }) {
+    final normalized = normalizedCountry?.trim() ?? '';
+    if (normalized.isNotEmpty) return normalized;
+
+    final localized = product.destinationCountryName.trim();
+    if (localized.isNotEmpty) return localized;
+
+    return product.destinationCountryNameEn.trim();
   }
 
   void initSendBookingOrder(MyListingProductModel product) {
@@ -3045,20 +3086,26 @@ class ClintCubit extends Cubit<ClintStates> {
     bookingOrderPortController.clear();
     bookingOrderNotesController.clear();
 
-    final defaultCountry = product.destinationCountryName.trim();
+    final lookupCountry = _bookingOrderCountryForGeoLookup(product);
+    final displayCountry = _bookingOrderCountryForDisplay(product);
     emit(
       BookingOrderFormState(
         product: product,
         selectedUnit: unit,
         selectedCountry:
-            defaultCountry.isNotEmpty ? defaultCountry : null,
+            displayCountry.isNotEmpty ? displayCountry : null,
+        isPortsLoading: lookupCountry.isNotEmpty,
       ),
     );
 
-    if (defaultCountry.isNotEmpty) {
-      _loadBookingOrderPorts(
-        defaultCountry,
-        preselectPort: product.arrivalPortName,
+    if (lookupCountry.isNotEmpty) {
+      unawaited(
+        _loadBookingOrderPorts(
+          lookupCountry,
+          preselectPort: product.arrivalPortNameEn.trim().isNotEmpty
+              ? product.arrivalPortNameEn
+              : product.arrivalPortName,
+        ),
       );
     }
   }
@@ -3068,6 +3115,10 @@ class ClintCubit extends Cubit<ClintStates> {
     if (form == null || country == null || country.isEmpty) return;
 
     bookingOrderPortController.clear();
+    final lookupCountry = _bookingOrderCountryForGeoLookup(
+      form.product,
+      selectedCountry: country,
+    );
     emit(
       form.copyWith(
         selectedCountry: country,
@@ -3076,7 +3127,7 @@ class ClintCubit extends Cubit<ClintStates> {
         isPortsLoading: true,
       ),
     );
-    await _loadBookingOrderPorts(country);
+    await _loadBookingOrderPorts(lookupCountry);
   }
 
   void setBookingOrderPort(String? port) {
@@ -3089,12 +3140,20 @@ class ClintCubit extends Cubit<ClintStates> {
   Future<void> _loadBookingOrderPorts(
     String country, {
     String? preselectPort,
+    bool forceRefresh = false,
   }) async {
     final form = _bookingOrderFormState;
     if (form == null) return;
 
-    final cacheKey = country.trim().toLowerCase();
-    if (_bookingPortsCache.containsKey(cacheKey)) {
+    final trimmedCountry = country.trim();
+    if (trimmedCountry.isEmpty) {
+      emit(form.copyWith(isPortsLoading: false, clearPorts: true));
+      return;
+    }
+
+    final requestGeneration = ++_bookingPortsRequestGeneration;
+    final cacheKey = trimmedCountry.toLowerCase();
+    if (!forceRefresh && _bookingPortsCache.containsKey(cacheKey)) {
       final cached = _bookingPortsCache[cacheKey]!;
       final selectedPort = _resolveBookingPortSelection(
         cached.ports,
@@ -3103,8 +3162,10 @@ class ClintCubit extends Cubit<ClintStates> {
       if (selectedPort != null) {
         bookingOrderPortController.text = selectedPort;
       }
+      if (requestGeneration != _bookingPortsRequestGeneration) return;
+      final latest = _bookingOrderFormState ?? form;
       emit(
-        form.copyWith(
+        latest.copyWith(
           selectedCountry: cached.country,
           ports: cached.ports,
           selectedPort: selectedPort,
@@ -3114,18 +3175,46 @@ class ClintCubit extends Cubit<ClintStates> {
       return;
     }
 
-    final result = await _getGeoPortsByCountryUseCase(country);
-    result.fold(
-      (_) {
+    final latestBeforeFetch = _bookingOrderFormState ?? form;
+    if (!latestBeforeFetch.isPortsLoading) {
+      emit(latestBeforeFetch.copyWith(isPortsLoading: true, clearPorts: true));
+    }
+
+    final result = await _getGeoPortsByCountryUseCase(
+      trimmedCountry,
+      forceRefresh: forceRefresh,
+    );
+
+    if (requestGeneration != _bookingPortsRequestGeneration) return;
+
+    await result.fold(
+      (_) async {
+        final product = (_bookingOrderFormState ?? form).product;
+        final fallbackCountry = trimmedCountry == product.destinationCountryNameEn.trim()
+            ? product.destinationCountryName.trim()
+            : product.destinationCountryNameEn.trim();
+        if (!forceRefresh &&
+            fallbackCountry.isNotEmpty &&
+            fallbackCountry.toLowerCase() != cacheKey) {
+          await _loadBookingOrderPorts(
+            fallbackCountry,
+            preselectPort: preselectPort,
+            forceRefresh: true,
+          );
+          return;
+        }
+
         final latest = _bookingOrderFormState ?? form;
-        emit(latest.copyWith(isPortsLoading: false));
+        emit(latest.copyWith(isPortsLoading: false, ports: const []));
       },
-      (response) {
-        final portNames =
-            response.ports.map((port) => port.displayName).toList();
+      (response) async {
+        final portNames = response.ports
+            .map((port) => port.englishName)
+            .where((name) => name.isNotEmpty)
+            .toList();
         final normalizedCountry = response.country.isNotEmpty
             ? response.country
-            : country;
+            : trimmedCountry;
         _bookingPortsCache[cacheKey] = (
           country: normalizedCountry,
           ports: portNames,
@@ -4554,11 +4643,18 @@ class ClintCubit extends Cubit<ClintStates> {
       return;
     }
 
-    emit(
-      BookingOrderErrorState(
-        result.error ?? 'Failed to submit booking order. Please try again.',
-      ),
-    );
+    final error = result.error?.trim() ?? '';
+    // Order may already exist on the server if only local cache refresh failed.
+    if (error.contains('PathNotFoundException')) {
+      emit(const BookingOrderSuccessState(''));
+      return;
+    }
+    if (error.isEmpty) {
+      emit(const BookingOrderSuccessState(''));
+      return;
+    }
+
+    emit(BookingOrderErrorState(error));
     final latest = _bookingOrderFormState ?? form;
     emit(latest.copyWith(isSubmitting: false));
   }

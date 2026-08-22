@@ -32,9 +32,13 @@ class GeoRepository implements BaseGeoRepository {
 
   @override
   Future<Either<Failure, GeoPortsResponse>> getPortsByCountry(
-    String countryName,
-  ) async {
-    final result = await _remote.fetchPortsByCountry(countryName);
+    String countryName, {
+    bool forceRefresh = false,
+  }) async {
+    final result = await _remote.fetchPortsByCountry(
+      countryName,
+      forceRefresh: forceRefresh,
+    );
     return result.fold(Left.new, Right.new);
   }
 

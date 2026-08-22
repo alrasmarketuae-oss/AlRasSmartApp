@@ -146,28 +146,17 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
       }
 
       final data = response?.data;
-      if (data is Map<String, dynamic>) {
-        final nestedOrder = data['order'];
-        final nestedMap = nestedOrder is Map
-            ? Map<String, dynamic>.from(nestedOrder)
-            : null;
-        final orderId =
-            data['orderId']?.toString() ??
-            data['id']?.toString() ??
-            data['orderNumber']?.toString() ??
-            nestedMap?['id']?.toString() ??
-            nestedMap?['orderId']?.toString() ??
-            nestedMap?['Id']?.toString();
-        if (orderId != null && orderId.isNotEmpty) {
-          await ApiCacheStore.instance.invalidateUserOrders();
-          unawaited(CatalogSyncService.instance.afterAdMutation());
-          return Right(orderId);
-        }
+      final orderId = data is Map<String, dynamic>
+          ? _extractCreatedOrderId(data)
+          : null;
+
+      // Order is already persisted — never fail the buyer because cache refresh broke.
+      await _invalidateOrderCachesAfterMutation();
+      if (orderId != null && orderId.isNotEmpty) {
+        return Right(orderId);
       }
 
       // 2xx without a parseable id — still treat as success so UI does not false-fail.
-      await ApiCacheStore.instance.invalidateUserOrders();
-      unawaited(CatalogSyncService.instance.afterAdMutation());
       return const Right('');
     } on DioException catch (e) {
       print('🔵 [Create Order] DioException: ${e.response?.data}');
@@ -606,6 +595,28 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
     } catch (e) {
       return Left(NetworkFailure(e.toString()));
     }
+  }
+
+  String? _extractCreatedOrderId(Map<String, dynamic> data) {
+    final nestedOrder = data['order'];
+    final nestedMap = nestedOrder is Map
+        ? Map<String, dynamic>.from(nestedOrder)
+        : null;
+    return data['orderId']?.toString() ??
+        data['id']?.toString() ??
+        data['orderNumber']?.toString() ??
+        nestedMap?['id']?.toString() ??
+        nestedMap?['orderId']?.toString() ??
+        nestedMap?['Id']?.toString();
+  }
+
+  Future<void> _invalidateOrderCachesAfterMutation() async {
+    try {
+      await ApiCacheStore.instance.invalidateUserOrders();
+    } catch (e) {
+      print('🔵 [Create Order] Order cache invalidation skipped: $e');
+    }
+    unawaited(CatalogSyncService.instance.afterAdMutation());
   }
 
   String? _extractMessage(dynamic data) {

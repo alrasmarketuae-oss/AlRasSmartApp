@@ -37,8 +37,14 @@ class GetGeoPortsByCountryUseCase {
 
   final BaseGeoRepository _repository;
 
-  Future<Either<Failure, GeoPortsResponse>> call(String countryName) {
-    return _repository.getPortsByCountry(countryName);
+  Future<Either<Failure, GeoPortsResponse>> call(
+    String countryName, {
+    bool forceRefresh = false,
+  }) {
+    return _repository.getPortsByCountry(
+      countryName,
+      forceRefresh: forceRefresh,
+    );
   }
 }
 

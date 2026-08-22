@@ -62,10 +62,23 @@ class _SendBookingOrderPage extends StatelessWidget {
           current is BookingOrderErrorState,
       listener: (context, state) {
         if (state is BookingOrderSuccessState) {
-          context.pushReplacement(
-            AppRoutes.kBookingSuccessView,
-            extra: {'orderNumber': state.orderId},
-          );
+          final orderNumber = state.orderId.trim().isEmpty
+              ? null
+              : state.orderId;
+          final extra = orderNumber == null
+              ? const <String, dynamic>{}
+              : <String, dynamic>{'orderNumber': orderNumber};
+          try {
+            context.pushReplacement(
+              AppRoutes.kBookingSuccessView,
+              extra: extra,
+            );
+          } catch (e) {
+            AppRoutes.router.pushReplacement(
+              AppRoutes.kBookingSuccessView,
+              extra: extra,
+            );
+          }
         } else if (state is BookingOrderErrorState) {
           AppToast.showError(context, state.message);
         }
