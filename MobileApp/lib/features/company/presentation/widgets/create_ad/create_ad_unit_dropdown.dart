@@ -124,7 +124,6 @@ class _AnchoredUnitMenuState extends State<_AnchoredUnitMenu> {
   }
 
   Future<void> _toggle() async {
-    FocusManager.instance.primaryFocus?.unfocus();
     if (_open) {
       _removeOverlay();
       return;

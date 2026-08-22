@@ -239,17 +239,27 @@ public partial class OrdersAppService
         Guid fromUserId,
         CancellationToken cancellationToken)
     {
-        var buyer = await orderData.GetUserNotifyByIdAsync(order.FromUserId, cancellationToken);
+        var orderDetails = await orderData.GetOrderWithDetailDetailsAsync(order.Id, cancellationToken)
+            ?? order;
 
-        var isSellerAction = fromUserId == order.ToUserId
-            || fromUserId == (order.Product?.OwnerId ?? Guid.Empty);
-        var statusEn = RequestOfferStatusLabels.ResolveNameEn(order);
-        var statusAr = RequestOfferStatusLabels.ResolveNameAr(order);
-        var isRequestOffer = order.Product?.ProductTypeId == ProductTypeCodes.Requests;
-        var isRetail = ProductTypeCodes.IsRetailOrder(order);
-        var cancellationReasonEn = order.CancellationReason?.NameEn;
-        var cancellationReasonAr = order.CancellationReason?.NameAr;
-        var cancellationNote = order.CancellationNote;
+        var buyer = await orderData.GetUserNotifyByIdAsync(orderDetails.FromUserId, cancellationToken);
+
+        var isSellerAction = fromUserId == orderDetails.ToUserId
+            || fromUserId == (orderDetails.Product?.OwnerId ?? Guid.Empty);
+        var statusEn = RequestOfferStatusLabels.ResolveNameEn(orderDetails);
+        var statusAr = RequestOfferStatusLabels.ResolveNameAr(orderDetails);
+        var isRequestOffer = orderDetails.Product?.ProductTypeId == ProductTypeCodes.Requests;
+        var isRetail = ProductTypeCodes.IsRetailOrder(orderDetails);
+        var cancellationReasonEn = orderDetails.CancellationReason?.NameEn;
+        var cancellationReasonAr = orderDetails.CancellationReason?.NameAr;
+        var cancellationNote = orderDetails.CancellationNote;
+
+        var productName = orderDetails.Product?.NameEn?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(productName))
+        {
+            productName = await orderData.GetProductNameEnAsync(orderDetails.ProductId, cancellationToken)
+                ?? string.Empty;
+        }
 
         if (buyer is not null)
         {
@@ -262,29 +272,39 @@ public partial class OrdersAppService
                     fcmToken: buyer.FcmToken,
                     messageFactory: lang => isSellerAction switch
                     {
-                        true when order.StatusId == OrderStatusCodes.Approved =>
-                            NotificationMessages.OrderAcceptedBySellerBuyer(lang, order.Id),
-                        true when order.StatusId == OrderStatusCodes.Cancelled =>
+                        true when orderDetails.StatusId == OrderStatusCodes.Approved =>
+                            NotificationMessages.OrderAcceptedBySellerBuyer(lang, orderDetails.Id),
+                        true when orderDetails.StatusId == OrderStatusCodes.Cancelled =>
                             NotificationMessages.OrderCancelledBuyer(
                                 lang,
-                                order.Id,
+                                orderDetails.Id,
                                 cancellationReasonEn,
                                 cancellationReasonAr,
                                 cancellationNote),
-                        _ when order.StatusId == OrderStatusCodes.Cancelled =>
+                        _ when orderDetails.StatusId == OrderStatusCodes.Cancelled =>
                             NotificationMessages.OrderCancelledBuyer(
                                 lang,
-                                order.Id,
+                                orderDetails.Id,
                                 cancellationReasonEn,
                                 cancellationReasonAr,
                                 cancellationNote),
-                        _ => NotificationMessages.OrderStatusUpdatedBuyer(lang, order.Id, statusEn, statusAr)
+                        _ => NotificationMessages.OrderStatusUpdatedBuyer(
+                            lang,
+                            orderDetails.Id,
+                            statusEn,
+                            statusAr)
                     },
                     preferredLanguage: buyer.PreferredLanguage,
                     type: "order_status_updated",
                     routeName: isRequestOffer ? "my_offers" : "track_order",
-                    referenceId: order.Id.ToString(),
-                    cancellationToken: cancellationToken);
+                    referenceId: orderDetails.Id.ToString(),
+                    cancellationToken: cancellationToken,
+                    emailHtml: BuildOrderStatusUpdateEmailHtml(
+                        buyer.PreferredLanguage,
+                        orderDetails,
+                        productName,
+                        statusEn,
+                        statusAr));
             }
             catch
             {
@@ -295,8 +315,8 @@ public partial class OrdersAppService
         // Retail: buyer only. Wholesale / booking / offers / requests: also notify seller.
         if (!isRetail)
         {
-            var sellerId = order.Product?.OwnerId ?? order.ToUserId;
-            if (sellerId != Guid.Empty && sellerId != order.FromUserId)
+            var sellerId = orderDetails.Product?.OwnerId ?? orderDetails.ToUserId;
+            if (sellerId != Guid.Empty && sellerId != orderDetails.FromUserId)
             {
                 var seller = await orderData.GetUserNotifyByIdAsync(sellerId, cancellationToken);
                 if (seller is not null)
@@ -308,23 +328,29 @@ public partial class OrdersAppService
                             fromUserId: fromUserId,
                             email: seller.Email,
                             fcmToken: seller.FcmToken,
-                            messageFactory: lang => order.StatusId == OrderStatusCodes.Cancelled
+                            messageFactory: lang => orderDetails.StatusId == OrderStatusCodes.Cancelled
                                 ? NotificationMessages.OrderCancelledSeller(
                                     lang,
-                                    order.Id,
+                                    orderDetails.Id,
                                     cancellationReasonEn,
                                     cancellationReasonAr,
                                     cancellationNote)
                                 : NotificationMessages.OrderStatusUpdatedSeller(
                                     lang,
-                                    order.Id,
+                                    orderDetails.Id,
                                     statusEn,
                                     statusAr),
                             preferredLanguage: seller.PreferredLanguage,
                             type: "order_status_updated",
                             routeName: isRequestOffer ? "my_ads" : "orders",
-                            referenceId: order.Id.ToString(),
-                            cancellationToken: cancellationToken);
+                            referenceId: orderDetails.Id.ToString(),
+                            cancellationToken: cancellationToken,
+                            emailHtml: BuildOrderStatusUpdateEmailHtml(
+                                seller.PreferredLanguage,
+                                orderDetails,
+                                productName,
+                                statusEn,
+                                statusAr));
                     }
                     catch
                     {
@@ -334,7 +360,7 @@ public partial class OrdersAppService
             }
         }
 
-        await PublishOrderRealtimeAsync(order, cancellationToken);
+        await PublishOrderRealtimeAsync(orderDetails, cancellationToken);
     }
 
     private async Task NotifyOfferRejectedByAdminAsync(
@@ -851,4 +877,111 @@ public partial class OrdersAppService
                 ? string.Empty
                 : BrandEmailLayout.InfoCard(arabic ? "الإحداثيات" : "Coordinates", coords));
     }
+
+    private static string BuildOrderStatusUpdateEmailHtml(
+        string? language,
+        Order order,
+        string productName,
+        string statusEn,
+        string statusAr)
+    {
+        var arabic = NotificationMessages.IsArabic(language);
+        var title = arabic ? "تحديث حالة الطلب" : "Order status update";
+        var intro = arabic
+            ? $"تم تحديث حالة طلبك رقم #{order.Id}. في الأسفل قائمة التتبع الكاملة."
+            : $"Your order #{order.Id} status has been updated. The full tracking timeline is below.";
+        var statusPill = arabic
+            ? $"{statusAr} · {statusEn}"
+            : $"{statusEn} · {statusAr}";
+        var qty = order.Quantity == decimal.Truncate(order.Quantity)
+            ? ((long)order.Quantity).ToString()
+            : order.Quantity.ToString("0.##");
+        var total = order.TotalPrice.ToString("0.00");
+
+        var inner =
+            BrandEmailLayout.Headline(title)
+            + BrandEmailLayout.Paragraph(intro)
+            + BrandEmailLayout.StatusPill(statusPill, StatusAccentForOrder(order.StatusId))
+            + BrandEmailLayout.InfoCard(arabic ? "رقم الطلب" : "Order no.", $"#{order.Id}")
+            + BrandEmailLayout.InfoCard(
+                arabic ? "المنتج" : "Product",
+                string.IsNullOrWhiteSpace(productName) ? "—" : productName)
+            + BrandEmailLayout.InfoCard(arabic ? "الكمية" : "Quantity", qty)
+            + BrandEmailLayout.InfoCard(arabic ? "الإجمالي (د.إ)" : "Total (AED)", total)
+            + BuildOrderTrackingTimelineHtml(order, arabic);
+
+        var subject = arabic
+            ? $"تطبيق الراس الذكي — تحديث طلب #{order.Id}"
+            : $"Al Ras Smart — Order #{order.Id} update";
+
+        return BrandEmailLayout.Wrap(subject, inner);
+    }
+
+    private static string BuildOrderTrackingTimelineHtml(Order order, bool arabic)
+    {
+        var steps = new List<(string Label, string? Date, bool IsLatest)>
+        {
+            (
+                arabic ? "تم الطلب" : "Ordered",
+                FormatOrderEmailDate(order.CreatedAt, arabic),
+                false),
+        };
+
+        var history = order.StatusHistories?
+            .OrderBy(h => h.CreatedAtUtc)
+            .ThenBy(h => h.Id)
+            .ToList() ?? [];
+
+        if (history.Count > 0)
+        {
+            for (var i = 0; i < history.Count; i++)
+            {
+                var entry = history[i];
+                var labelEn = RequestOfferStatusLabels.NormalizeDisplayEn(entry.StatusNameEn);
+                var labelAr = RequestOfferStatusLabels.NormalizeDisplayAr(entry.StatusNameAr);
+                var label = arabic
+                    ? (string.IsNullOrWhiteSpace(labelAr) ? labelEn : labelAr)
+                    : (string.IsNullOrWhiteSpace(labelEn) ? labelAr : labelEn);
+                if (string.IsNullOrWhiteSpace(label))
+                {
+                    label = arabic ? "تحديث الحالة" : "Status update";
+                }
+
+                steps.Add((
+                    label,
+                    FormatOrderEmailDate(entry.CreatedAtUtc, arabic),
+                    i == history.Count - 1));
+            }
+        }
+        else
+        {
+            var current = arabic
+                ? RequestOfferStatusLabels.ResolveNameAr(order)
+                : RequestOfferStatusLabels.ResolveNameEn(order);
+            if (!string.IsNullOrWhiteSpace(current))
+            {
+                steps.Add((current, null, true));
+            }
+        }
+
+        return BrandEmailLayout.Timeline(steps, arabic);
+    }
+
+    private static string FormatOrderEmailDate(DateTime value, bool arabic)
+    {
+        var utc = UtcDateTimeHelper.AsUtc(value);
+        var culture = arabic
+            ? new System.Globalization.CultureInfo("ar-AE")
+            : System.Globalization.CultureInfo.InvariantCulture;
+        return utc.ToString("dd MMM yyyy, HH:mm", culture) + " UTC";
+    }
+
+    private static string StatusAccentForOrder(byte statusId) => statusId switch
+    {
+        OrderStatusCodes.Approved => BrandEmailLayout.Green,
+        OrderStatusCodes.Delivered => BrandEmailLayout.Green,
+        OrderStatusCodes.Received => BrandEmailLayout.Green,
+        OrderStatusCodes.Cancelled => BrandEmailLayout.Red,
+        _ => BrandEmailLayout.Blue,
+    };
 }

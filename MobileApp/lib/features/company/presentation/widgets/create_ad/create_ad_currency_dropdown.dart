@@ -59,7 +59,6 @@ class CreateAdCurrencyDropdown extends StatelessWidget {
     final dropdown = DropdownButtonFormField<String>(
       initialValue: displayCurrency,
       isExpanded: true,
-      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
       icon: Icon(
         Icons.keyboard_arrow_down_rounded,
         size: 22.sp,

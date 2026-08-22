@@ -22,13 +22,11 @@ class OrderCard extends StatefulWidget {
   const OrderCard({
     super.key,
     required this.order,
-    this.onAdTap,
     this.onTrackTap,
     this.highlighted = false,
   });
 
   final MyOrderModel order;
-  final VoidCallback? onAdTap;
   final VoidCallback? onTrackTap;
   final bool highlighted;
 
@@ -129,7 +127,11 @@ class _OrderCardState extends State<OrderCard>
         return Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: widget.onAdTap,
+            onTap: widget.onTrackTap ??
+                () => context.push(
+                      AppRoutes.kTrackOrderView,
+                      extra: {'order': order},
+                    ),
             borderRadius: BorderRadius.circular(16.r),
             child: Container(
               width: double.infinity,

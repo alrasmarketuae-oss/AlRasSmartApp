@@ -112,6 +112,7 @@ class _AppCountrySearchFieldState extends State<AppCountrySearchField> {
                   enabled: widget.enabled,
                   style: fieldTextStyle,
                   textInputAction: TextInputAction.search,
+                  onTapOutside: (_) {},
                   onChanged: (value) {
                     _controller.text = value;
                     final trimmed = value.trim();
@@ -140,21 +141,6 @@ class _AppCountrySearchFieldState extends State<AppCountrySearchField> {
                       orElse: () => trimmed,
                     );
                     if (AppCountryNames.all.contains(match)) {
-                      textEditingController.text = match;
-                      _controller.text = match;
-                      fieldState.didChange(match);
-                      widget.onChanged(match);
-                    }
-                  },
-                  onTapOutside: (_) {
-                    final trimmed = textEditingController.text.trim();
-                    if (trimmed.isEmpty || !widget.enabled) return;
-                    final match = AppCountryNames.all.firstWhere(
-                      (country) =>
-                          country.toLowerCase() == trimmed.toLowerCase(),
-                      orElse: () => '',
-                    );
-                    if (match.isNotEmpty) {
                       textEditingController.text = match;
                       _controller.text = match;
                       fieldState.didChange(match);
@@ -228,12 +214,7 @@ class _AppCountrySearchFieldState extends State<AppCountrySearchField> {
                                 color: const Color(0xFF333333),
                               ),
                             ),
-                            onTap: () {
-                              FocusManager.instance.primaryFocus?.unfocus();
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                onSelected(option);
-                              });
-                            },
+                            onTap: () => onSelected(option),
                           );
                         },
                       ),

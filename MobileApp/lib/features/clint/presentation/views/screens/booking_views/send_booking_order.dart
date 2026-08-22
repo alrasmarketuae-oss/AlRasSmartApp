@@ -239,7 +239,6 @@ class _SendBookingOrderPage extends StatelessWidget {
     return DropdownButtonFormField<String>(
       value: items.contains(value) ? value : null,
       isExpanded: true,
-      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
       hint: Text(
         hint,
         style: TextStyle(

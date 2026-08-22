@@ -221,7 +221,6 @@ class _CurrencyDropdownField extends StatelessWidget {
           child: DropdownButton<String>(
             value: CreateAdCurrency.normalize(selectedCurrency),
             isExpanded: true,
-            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
             icon: Icon(
               Icons.keyboard_arrow_down_rounded,
               size: 20.sp,
@@ -313,7 +312,6 @@ class _CurrencySuffixDropdown extends StatelessWidget {
         child: DropdownButton<String>(
           value: CreateAdCurrency.normalize(selectedCurrency),
           isDense: true,
-          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
           icon: Icon(
             Icons.keyboard_arrow_down_rounded,
             size: 20.sp,

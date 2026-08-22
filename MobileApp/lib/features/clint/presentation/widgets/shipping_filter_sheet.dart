@@ -321,7 +321,6 @@ class _ShippingFilterSheetState extends State<ShippingFilterSheet> {
         DropdownButtonFormField<String>(
           value: value != null && items.contains(value) ? value : null,
           isExpanded: true,
-          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
           decoration: InputDecoration(
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
             contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),

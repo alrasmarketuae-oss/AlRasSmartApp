@@ -157,6 +157,52 @@ public static class BrandEmailLayout
 """;
     }
 
+    /// Vertical tracking timeline (ordered step + status history), aligned with app/dashboard.
+    public static string Timeline(
+        IReadOnlyList<(string Label, string? Date, bool IsLatest)> steps,
+        bool rtl)
+    {
+        if (steps.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var title = rtl ? "تتبع الطلب" : "Order tracking";
+        var align = rtl ? "right" : "left";
+        var sb = new System.Text.StringBuilder();
+        sb.Append(
+            $"""<div style="margin:22px 0 6px;text-align:{align};"><p style="margin:0 0 14px;font-size:14px;font-weight:800;color:{Ink};">{WebUtility.HtmlEncode(title)}</p>""");
+
+        for (var i = 0; i < steps.Count; i++)
+        {
+            var (label, date, isLatest) = steps[i];
+            var dot = isLatest ? Blue : Green;
+            var weight = isLatest ? "800" : "600";
+            var color = isLatest ? Blue : Ink;
+            var dateHtml = string.IsNullOrWhiteSpace(date)
+                ? string.Empty
+                : $"""<div style="font-size:12px;color:{Muted};margin-top:4px;">{WebUtility.HtmlEncode(date)}</div>""";
+
+            sb.Append(
+                $"""
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 4px;">
+  <tr>
+    <td width="24" valign="top" style="padding-top:3px;">
+      <div style="width:11px;height:11px;border-radius:50%;background:{dot};margin:0 auto;"></div>
+    </td>
+    <td style="padding:0 0 12px 10px;border-left:2px solid #dbeafe;">
+      <div style="font-size:14px;font-weight:{weight};color:{color};line-height:1.45;">{WebUtility.HtmlEncode(label)}</div>
+      {dateHtml}
+    </td>
+  </tr>
+</table>
+""");
+        }
+
+        sb.Append("</div>");
+        return sb.ToString();
+    }
+
     public static bool ContainsArabic(string? value)
     {
         if (string.IsNullOrEmpty(value))

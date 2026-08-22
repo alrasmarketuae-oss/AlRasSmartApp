@@ -242,7 +242,7 @@ public partial class OrdersAppService
             refundMessage = await TryRefundCancelledOnlineOrderAsync(order.Id, cancellationToken);
         }
 
-        var orderForNotification = await orderData.GetOrderWithListDetailsAsync(input.OrderId, cancellationToken)
+        var orderForNotification = await orderData.GetOrderWithDetailDetailsAsync(input.OrderId, cancellationToken)
             ?? order;
 
         await NotifyBuyerOrderStatusAsync(orderForNotification, userId, cancellationToken);

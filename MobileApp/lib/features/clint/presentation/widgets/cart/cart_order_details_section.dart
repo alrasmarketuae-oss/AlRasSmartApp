@@ -193,7 +193,6 @@ class CartEmirateShippingSection extends StatelessWidget {
                   child: DropdownButton<String>(
                     isExpanded: true,
                     value: _resolveSelectedValue(),
-                    onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
                     hint: Text(s.selectDeliveryEmirate),
                     items: emirates
                         .map(

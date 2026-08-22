@@ -45,7 +45,6 @@ class BookingPriceTypeSelectWidget extends StatelessWidget {
         DropdownButtonFormField<BookingPriceType>(
           value: selectedType,
           isExpanded: true,
-          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(

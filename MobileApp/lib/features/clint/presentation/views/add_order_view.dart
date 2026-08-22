@@ -109,7 +109,6 @@ class _AddOrderViewState extends State<AddOrderView> {
       return DropdownButtonFormField<String>(
         value: ids.contains(_selectedAddressId) ? _selectedAddressId : null,
         isExpanded: true,
-        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
         hint: Text(
           S.of(context).deliveryAddress,
           style: TextStyle(
