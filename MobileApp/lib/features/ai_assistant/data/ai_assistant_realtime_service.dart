@@ -28,6 +28,10 @@ class AiAssistantRealtimeService {
   bool _closed = false;
   int _connectGeneration = 0;
 
+  /// Set when `aiResponseCompleted` arrives for the current ask; stale `aiError`
+  /// events that race behind a successful reply are ignored.
+  bool _responseCompletedForActiveAsk = false;
+
   bool get isConnected =>
       !_closed && _hub?.state == HubConnectionState.Connected;
 
@@ -90,6 +94,7 @@ class AiAssistantRealtimeService {
     });
     hub.on('aiResponseCompleted', (args) {
       if (_closed || generation != _connectGeneration) return;
+      _responseCompletedForActiveAsk = true;
       final data = _map(args);
       final answer = data?['answer']?.toString() ?? '';
       final offer = _asBool(data?['offerSupportCallback']) ||
@@ -105,6 +110,7 @@ class AiAssistantRealtimeService {
     });
     hub.on('aiError', (args) {
       if (_closed || generation != _connectGeneration) return;
+      if (_responseCompletedForActiveAsk) return;
       final data = _map(args);
       final serverMessage = data?['message']?.toString().trim();
       onError(
@@ -131,6 +137,7 @@ class AiAssistantRealtimeService {
     if (hub == null || hub.state != HubConnectionState.Connected) {
       throw StateError('AI Assistant is not connected.');
     }
+    _responseCompletedForActiveAsk = false;
     await hub.invoke('AskInSession', args: [message, language, _sessionId]);
   }
 

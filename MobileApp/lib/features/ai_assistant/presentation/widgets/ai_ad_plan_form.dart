@@ -145,7 +145,9 @@ bool looksLikeTemporaryAssistantFailure(String answer) {
   return q.contains('المساعد مش متاح') ||
       q.contains('تعذر الوصول للمساعد') ||
       q.contains('temporarily unavailable') ||
-      q.contains('unavailable right now');
+      q.contains('unavailable right now') ||
+      q.contains('high demand') ||
+      q.contains('ضغط عالي');
 }
 
 /// True when the assistant reply indicates the ad was created successfully.

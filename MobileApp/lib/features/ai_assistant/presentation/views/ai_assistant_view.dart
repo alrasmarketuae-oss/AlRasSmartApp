@@ -1037,9 +1037,31 @@ class _AiAssistantViewState extends State<AiAssistantView> {
     );
   }
 
+  bool _hasSubstantiveAssistantReply({int? responseId}) {
+    final index = responseId == null
+        ? _messages.lastIndexWhere((m) => !m.isUser)
+        : _messages.lastIndexWhere(
+            (m) => !m.isUser && m.responseId == responseId,
+          );
+    if (index < 0) return false;
+    final text = _messages[index].text.trim();
+    if (text.isEmpty) return false;
+    if (looksLikeTemporaryAssistantFailure(text)) return false;
+    if (_isGenericHighDemandCopy(text)) return false;
+    return true;
+  }
+
   bool _shouldIgnoreAssistantError() {
     for (final step in _thinkingSteps) {
       if (_looksLikeAdCreationThinkingStep(step)) return true;
+    }
+
+    if (_hasSubstantiveAssistantReply(responseId: _inFlightResponseId)) {
+      return true;
+    }
+
+    if (_inFlightResponseId == null && _hasSubstantiveAssistantReply()) {
+      return true;
     }
 
     if (_messages.isEmpty || _messages.last.isUser) return false;
@@ -1051,15 +1073,6 @@ class _AiAssistantViewState extends State<AiAssistantView> {
 
     for (final step in last.thinkingSteps) {
       if (_looksLikeAdCreationThinkingStep(step)) return true;
-    }
-
-    // Hub aiError can arrive after aiResponseCompleted — do not stack a
-    // second "high demand" bubble when we already have a real answer.
-    if (_inFlightResponseId == null &&
-        last.text.trim().isNotEmpty &&
-        !looksLikeTemporaryAssistantFailure(last.text) &&
-        !_isGenericHighDemandCopy(last.text)) {
-      return true;
     }
 
     return false;
@@ -1085,7 +1098,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
   }
 
   void _showConnectionError({String? message}) {
-    if (!mounted) return;
+    if (!mounted || _shouldIgnoreAssistantError()) return;
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
     final responseId = _inFlightResponseId;
     final display = (message != null && message.trim().isNotEmpty)
@@ -1095,6 +1108,15 @@ class _AiAssistantViewState extends State<AiAssistantView> {
       _isThinking = false;
       _inFlightResponseId = null;
       _thinkingSteps.clear();
+      final targetIndex = responseId == null
+          ? _messages.lastIndexWhere((m) => !m.isUser)
+          : _messages.lastIndexWhere(
+              (m) => !m.isUser && m.responseId == responseId,
+            );
+      if (targetIndex >= 0 && _messages[targetIndex].text.trim().isEmpty) {
+        _messages[targetIndex].text = display;
+        return;
+      }
       _messages.add(
         _ChatMessage(
           text: display,
