@@ -1,3 +1,4 @@
+import 'package:alrasmarket/core/constants/app_contact.dart';
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/services/sensitive_access_gate.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
@@ -17,9 +18,9 @@ import 'package:url_launcher/url_launcher.dart';
 class TechnicalSupportView extends StatelessWidget {
   const TechnicalSupportView({super.key});
 
-  static const String _supportPhoneDisplay = '+971 4 228 5598';
-  static const String _supportPhoneTel = '+97142285598';
-  static const String _supportEmail = 'support@alrasmarketapp.com';
+  static const String _supportPhoneDisplay = AppContact.supportPhoneDisplay;
+  static const String _supportPhoneTel = AppContact.supportPhoneTel;
+  static const String _supportEmail = AppContact.supportEmail;
 
   @override
   Widget build(BuildContext context) {

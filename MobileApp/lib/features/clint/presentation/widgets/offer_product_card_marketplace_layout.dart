@@ -191,7 +191,7 @@ class _OfferProductCardMarketplaceLayoutState
               fontWeight: soldOut ? FontWeight.w700 : FontWeight.w400,
               color: soldOut
                   ? const Color(0xFFDC2626)
-                  : AppColors.subtitle(context),
+                  : ProductGridLayout.productCardDetailsColor(context),
               height: 1.35,
             ),
           ),

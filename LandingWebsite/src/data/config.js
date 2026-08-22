@@ -7,8 +7,8 @@ export const STORE_LINKS = {
 export const API_BASE_URL = 'https://api.alrasmarketapp.com/api'
 
 export const CONTACT = {
-  phone: '+971 50 123 4567',
-  phoneTel: '+971501234567',
+  phone: '+971 4 228 5598',
+  phoneTel: '+97142285598',
   email: 'support@alrasmarket.com',
   hours: {
     weekdays: '8:00 AM - 8:00 PM',

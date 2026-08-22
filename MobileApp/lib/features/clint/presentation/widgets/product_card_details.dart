@@ -1,4 +1,4 @@
-import 'package:alrasmarket/core/theme/colors.dart';
+import 'package:alrasmarket/core/utils/product_grid_layout.dart';
 import 'package:alrasmarket/core/utils/category_localization.dart';
 import 'package:alrasmarket/core/utils/product_quantity_formatter.dart';
 import 'package:alrasmarket/core/utils/product_stock.dart';
@@ -33,7 +33,7 @@ class ProductCardDetails extends StatelessWidget {
               style: TextStyle(
                 color: lines[i] == s.soldOut
                     ? const Color(0xFFDC2626)
-                    : AppColors.subtitle(context),
+                    : ProductGridLayout.productCardDetailsColor(context),
                 fontFamily: 'Inter',
                 fontSize: 11.sp,
                 fontWeight:

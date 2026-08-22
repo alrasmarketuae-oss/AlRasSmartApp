@@ -43,6 +43,12 @@ class ProductGridLayout {
   static Color productCardTitleColor(BuildContext context) =>
       const Color(0xFF3A7DC5);
 
+  /// Product card description/details — readable but softer than title black.
+  static Color productCardDetailsColor(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? const Color(0xFFB4BECD) : const Color(0xFF586574);
+  }
+
   /// Kept for compatibility; marketplace cards no longer reserve a discount band.
   static double discountBandHeight(BuildContext context) => 0;
 

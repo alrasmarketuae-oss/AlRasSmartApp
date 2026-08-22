@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:alrasmarket/core/constants/app_contact.dart';
 import 'package:alrasmarket/core/serveses/app_order_listener_service.dart';
 import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/features/clint/data/models/my_order_model.dart';
@@ -381,7 +382,7 @@ class _TrackOrderViewState extends State<TrackOrderView>
                       SizedBox(height: 16.h),
                       TrackOrderCustomerServiceCard(
                         fontFamily: fontFamily,
-                        phoneNumber: displayOrder.supplierPhone,
+                        phoneNumber: AppContact.supportPhoneTel,
                       ),
                     ],
                   ),
