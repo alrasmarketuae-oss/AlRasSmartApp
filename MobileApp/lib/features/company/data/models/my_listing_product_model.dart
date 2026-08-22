@@ -1,5 +1,6 @@
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/utils/localized_product_text.dart';
+import 'package:alrasmarket/core/utils/product_listing_status.dart';
 import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/core/utils/utc_date_time.dart';
 
@@ -57,6 +58,8 @@ class MyListingProductModel {
     this.statusNameEn = '',
     this.listingStatusCode,
     this.isListingApproved = false,
+    this.isSellerPaused,
+    this.isListingSoldOut = false,
     required this.approvalStatus,
     required this.negotiable,
     required this.isFeatured,
@@ -223,6 +226,9 @@ class MyListingProductModel {
   /// Normalized code from API: 1 review, 2 active, 3 paused, 5 rejected.
   final int? listingStatusCode;
   final bool isListingApproved;
+  /// From API when available — manual seller pause only.
+  final bool? isSellerPaused;
+  final bool isListingSoldOut;
   final String approvalStatus;
   final String negotiable;
   final String isFeatured;
@@ -278,11 +284,9 @@ class MyListingProductModel {
     return status.trim();
   }
 
-  /// Listing visibility from API: `Active`, `Paused`, `Under Review`, etc.
-  bool get isListingActive {
-    final s = statusCanonical.toLowerCase();
-    return s == 'active' || s.contains('نشط');
-  }
+  /// Whether the listing is live (not seller-paused). Used for pause/publish toggle.
+  bool get isListingActive =>
+      ProductListingStatus.normalizedFor(this) == ProductListingStatus.active;
 
   bool get isApprovalApproved {
     final s = approvalStatus.trim().toLowerCase();
@@ -651,6 +655,11 @@ class MyListingProductModel {
       ),
       isListingApproved:
           json['isApproved'] == true || json['IsApproved'] == true,
+      isSellerPaused: _parseOptionalBool(
+        json['isSellerPaused'] ?? json['IsSellerPaused'],
+      ),
+      isListingSoldOut:
+          json['isListingSoldOut'] == true || json['IsListingSoldOut'] == true,
       approvalStatus: () {
         final localized = LocalizedProductText.pickForLanguage(
           json: json,
@@ -1280,5 +1289,14 @@ class MyListingProductModel {
     if (value == null) return null;
     if (value is int) return value;
     return int.tryParse(value.toString());
+  }
+
+  static bool? _parseOptionalBool(dynamic value) {
+    if (value == null) return null;
+    if (value is bool) return value;
+    final text = value.toString().trim().toLowerCase();
+    if (text == 'true' || text == '1') return true;
+    if (text == 'false' || text == '0') return false;
+    return null;
   }
 }

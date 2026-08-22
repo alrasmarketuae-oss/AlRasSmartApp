@@ -110,6 +110,7 @@ public sealed class OwnerListingRow
     public string? ArrivalPortNameAr { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
+    public DateTime? DisplayExpiresAtUtc { get; set; }
     public Guid? AddressId { get; set; }
     public List<string> Images { get; set; } = [];
     public List<string> Documents { get; set; } = [];

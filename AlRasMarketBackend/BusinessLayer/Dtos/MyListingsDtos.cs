@@ -70,6 +70,10 @@ public sealed class MyProductListingDto
     public string? StatusNameAr { get; set; }
     /// <summary>Normalized listing status (1 review, 2 active, 3 paused, 5 rejected).</summary>
     public byte ListingStatusCode { get; set; }
+    /// <summary>True only when the seller manually paused (not sold-out / display-expiry auto-pause).</summary>
+    public bool IsSellerPaused { get; set; }
+    /// <summary>True when wholesale quantity is zero (non-request listings).</summary>
+    public bool IsListingSoldOut { get; set; }
     public bool IsApproved { get; set; }
     public string ApprovalStatus { get; set; } = string.Empty;
     public string? ApprovalStatusEn { get; set; }

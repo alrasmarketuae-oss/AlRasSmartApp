@@ -821,6 +821,7 @@ public sealed class ProductDataAccess(
                 ArrivalPortNameAr = x.ArrivalPort != null ? x.ArrivalPort.PortNameAr : null,
                 CreatedAt = x.CreatedAt,
                 UpdatedAt = x.UpdatedAt,
+                DisplayExpiresAtUtc = x.DisplayExpiresAtUtc,
                 AddressId = x.AddressId,
                 Images = x.ProductImages.OrderBy(pi => pi.Id).Select(pi => pi.ImagePath).ToList(),
                 Documents = x.ProductDocuments.OrderBy(pd => pd.Id).Select(pd => pd.DocumentPath).ToList()
@@ -998,29 +999,11 @@ public sealed class ProductDataAccess(
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<int> ExpireDueNonOfferListingsAsync(CancellationToken cancellationToken = default)
+    public Task<int> ExpireDueNonOfferListingsAsync(CancellationToken cancellationToken = default)
     {
-        var utcNow = DateTime.UtcNow;
-        var expired = await dbContext.Products
-            .Where(x =>
-                x.ProductTypeId != 3
-                && x.Status == ProductCatalogCodes.StatusActive
-                && x.DisplayExpiresAtUtc != null
-                && x.DisplayExpiresAtUtc <= utcNow)
-            .ToListAsync(cancellationToken);
-        if (expired.Count == 0)
-        {
-            return 0;
-        }
-
-        foreach (var product in expired)
-        {
-            product.Status = ProductCatalogCodes.StatusPaused;
-            product.UpdatedAt = utcNow;
-        }
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return expired.Count;
+        // Display expiry is enforced by public catalog filters (DisplayExpiresAtUtc).
+        // Do not set Status=Paused — that mixed auto-expiry with seller pause in My Ads.
+        return Task.FromResult(0);
     }
 
     public async Task<int> ExpireDueOfferDiscountsAsync(CancellationToken cancellationToken = default)

@@ -59,6 +59,7 @@ public partial class ProductsAppService
             productIds,
             cancellationToken);
 
+        var utcNow = UtcDateTimeHelper.UtcNow;
         var products = rawProducts.Select(x =>
         {
             var priced = BuildSupplierFacingPrice(x.USDPrice, x.ProductTypeId, x.Currency, usdToAedRate);
@@ -192,6 +193,8 @@ public partial class ProductsAppService
             StatusNameEn = statusEn,
             StatusNameAr = statusAr,
             ListingStatusCode = ProductStatusCodes.Normalize(x.Status, x.IsApproved),
+            IsSellerPaused = MyListingStatusHelper.IsSellerPaused(x, utcNow),
+            IsListingSoldOut = MyListingStatusHelper.IsListingSoldOut(x),
             IsApproved = x.IsApproved == true,
             ApprovalStatus = displayApproval,
             ApprovalStatusEn = approvalEn,

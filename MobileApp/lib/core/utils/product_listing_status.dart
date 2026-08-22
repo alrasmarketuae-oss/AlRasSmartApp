@@ -29,6 +29,13 @@ class ProductListingStatus {
         statusNameEn: product.statusNameEn,
       );
 
+  /// Seller manually paused — excludes sold-out and display-expiry auto-pause.
+  static bool isSellerPaused(MyListingProductModel product) {
+    if (product.isSellerPaused != null) return product.isSellerPaused!;
+    final code = normalizedFor(product);
+    return code == paused && !ProductStock.isSoldOut(product);
+  }
+
   static bool matchesFilter(
     MyListingProductModel product,
     MyAdsListingStatusFilter filter, {
@@ -44,10 +51,12 @@ class ProductListingStatus {
       case MyAdsListingStatusFilter.all:
         return true;
       case MyAdsListingStatusFilter.active:
-        return code == active && !soldOut;
+        return !soldOut &&
+            !isSellerPaused(product) &&
+            code != rejected &&
+            code != underReview;
       case MyAdsListingStatusFilter.paused:
-        // Seller-paused only — sold-out listings belong under Sold out.
-        return code == paused && !soldOut;
+        return isSellerPaused(product);
       case MyAdsListingStatusFilter.underReview:
         return code == underReview;
       case MyAdsListingStatusFilter.soldOut:

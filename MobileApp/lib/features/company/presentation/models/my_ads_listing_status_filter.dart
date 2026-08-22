@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/utils/product_listing_status.dart';
+import 'package:alrasmarket/core/utils/product_stock.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
@@ -72,11 +73,13 @@ class MyAdsListingStatusPresentation {
   MyAdsListingStatusPresentation._();
 
   static String labelFor(MyListingProductModel product, S s) {
+    if (ProductStock.isSoldOut(product)) return s.soldOut;
+    if (ProductListingStatus.isSellerPaused(product)) return s.listingPaused;
     switch (ProductListingStatus.normalizedFor(product)) {
       case ProductListingStatus.active:
         return s.listingActive;
       case ProductListingStatus.paused:
-        return s.listingPaused;
+        return s.listingActive;
       case ProductListingStatus.rejected:
         return s.rejectedAds;
       case ProductListingStatus.underReview:

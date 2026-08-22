@@ -852,6 +852,13 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
           foreground: const Color(0xFF17B26A),
         );
       case ProductListingStatus.paused:
+        if (!ProductListingStatus.isSellerPaused(product)) {
+          return _BadgeStyle(
+            label: s.listingActive,
+            background: const Color(0xFFDCFAE6),
+            foreground: const Color(0xFF17B26A),
+          );
+        }
         return _BadgeStyle(
           label: s.listingPaused,
           background: const Color(0xFFF2F2F2),

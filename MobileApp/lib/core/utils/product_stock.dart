@@ -14,6 +14,7 @@ class ProductStock {
     MyListingProductModel product, {
     bool preferRetail = false,
   }) {
+    if (product.isListingSoldOut) return true;
     if (product.isRequestProduct) return false;
     final qty = parseQuantity(
       product.quantityForChannel(preferRetail: preferRetail),
