@@ -68,7 +68,8 @@ bool _tapTargetsSelectorOrMenu(Offset globalPosition) {
     }
   }
 
-  // Autocomplete suggestions, custom unit menus, and dropdown overlays.
+  // Autocomplete suggestions, custom country/port menus, and dropdown overlays.
+  if (hasElevatedMenuSurface) return true;
   if (hasMenuListTile) return true;
   if (hasMenuInkWell && hasElevatedMenuSurface) return true;
 

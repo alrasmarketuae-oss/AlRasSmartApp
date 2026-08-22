@@ -105,8 +105,12 @@ class AiAssistantRealtimeService {
     });
     hub.on('aiError', (args) {
       if (_closed || generation != _connectGeneration) return;
+      final data = _map(args);
+      final serverMessage = data?['message']?.toString().trim();
       onError(
-        DioUserFacingMessage.englishHighDemand,
+        serverMessage != null && serverMessage.isNotEmpty
+            ? serverMessage
+            : DioUserFacingMessage.englishHighDemand,
       );
     });
 

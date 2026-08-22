@@ -12,6 +12,7 @@ import 'package:alrasmarket/features/clint/presentation/widgets/booking_widets/s
 import 'package:alrasmarket/features/clint/presentation/widgets/booking_widets/send_booking_your_offer_card.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/search_header.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
+import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_geo_dropdown_field.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/create_ad/specifications_input_widget.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
@@ -140,16 +141,19 @@ class _SendBookingOrderPage extends StatelessWidget {
                                 ),
                                 SizedBox(width: 8.w),
                                 Expanded(
-                                  child: _bookingDropdownField(
-                                    fontFamily: fontFamily,
+                                  child: CreateAdGeoDropdownField(
+                                    label: '',
+                                    showLabel: false,
                                     hint: formState.isPortsLoading
                                         ? 'Loading...'
                                         : s.enterPort,
-                                    value: formState.selectedPort,
                                     items: formState.ports,
+                                    selectedValue: formState.selectedPort,
                                     isLoading: formState.isPortsLoading,
                                     enabled: formState.selectedCountry != null &&
                                         formState.ports.isNotEmpty,
+                                    fillColor: Colors.white,
+                                    borderColor: const Color(0xFFEAECF0),
                                     onChanged: cubit.setBookingOrderPort,
                                   ),
                                 ),
@@ -224,73 +228,6 @@ class _SendBookingOrderPage extends StatelessWidget {
         fontSize: 15.sp,
         fontWeight: FontWeight.bold,
       ),
-    );
-  }
-
-  Widget _bookingDropdownField({
-    required String fontFamily,
-    required String hint,
-    required String? value,
-    required List<String> items,
-    required ValueChanged<String?> onChanged,
-    bool isLoading = false,
-    bool enabled = true,
-  }) {
-    return DropdownButtonFormField<String>(
-      value: items.contains(value) ? value : null,
-      isExpanded: true,
-      hint: Text(
-        hint,
-        style: TextStyle(
-          color: const Color(0xFF333333).withValues(alpha: 0.4),
-          fontFamily: fontFamily,
-          fontSize: 14.sp,
-        ),
-      ),
-      icon: isLoading
-          ? SizedBox(
-              width: 18.w,
-              height: 18.h,
-              child: const CircularProgressIndicator(strokeWidth: 2),
-            )
-          : Icon(
-              Icons.keyboard_arrow_down_rounded,
-              color: const Color(0xFF6B7280),
-              size: 20.sp,
-            ),
-      dropdownColor: Colors.white,
-      menuMaxHeight: 320.h,
-      style: TextStyle(
-        color: const Color(0xFF333333),
-        fontFamily: fontFamily,
-        fontSize: 14.sp,
-      ),
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.r),
-          borderSide: const BorderSide(color: Color(0xFFEAECF0), width: 1.5),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.r),
-          borderSide: const BorderSide(color: Color(0xFF3A7DC5), width: 1.5),
-        ),
-      ),
-      items: items
-          .map(
-            (item) => DropdownMenuItem(
-              value: item,
-              child: Text(
-                item,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          )
-          .toList(),
-      onChanged: enabled && !isLoading ? onChanged : null,
     );
   }
 }

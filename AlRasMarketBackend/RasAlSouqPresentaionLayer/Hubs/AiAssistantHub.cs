@@ -92,6 +92,7 @@ public sealed class AiAssistantHub(
             new { isThinking = true },
             Context.ConnectionAborted);
 
+        var responseSent = false;
         try
         {
             var result = await assistant.AskAsync(
@@ -167,6 +168,7 @@ public sealed class AiAssistantHub(
                     thinkingSteps = result.ThinkingSteps
                 },
                 Context.ConnectionAborted);
+            responseSent = true;
         }
         catch (OperationCanceledException)
         {
@@ -174,10 +176,13 @@ public sealed class AiAssistantHub(
         }
         catch
         {
-            await Clients.Caller.SendAsync(
-                "aiError",
-                new { message = "AI Assistant is unavailable right now." },
-                CancellationToken.None);
+            if (!responseSent)
+            {
+                await Clients.Caller.SendAsync(
+                    "aiError",
+                    new { message = "AI Assistant is unavailable right now." },
+                    CancellationToken.None);
+            }
         }
         finally
         {

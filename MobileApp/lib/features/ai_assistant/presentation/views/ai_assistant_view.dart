@@ -85,8 +85,9 @@ class _AiChatColors {
       ? const Color(0xFFF0D48A)
       : const Color(0xFFE6EAF2);
 
-  Color get thinkingText =>
-      planMode ? const Color(0xFFF8E7B0) : const Color(0xFF4B5563);
+  Color get thinkingText => planMode
+      ? const Color(0xFFF8E7B0)
+      : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF9CA3AF));
 
   Color get pathCode =>
       planMode ? const Color(0xFFE6A817) : const Color(0xFF2E77CC);
@@ -1028,7 +1029,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
       },
       onError: (message) {
         if (_shouldIgnoreAssistantError()) return;
-        _showConnectionError();
+        _showConnectionError(message: message);
         if (_voiceConversationMode && _voiceAgent == null) {
           unawaited(_onAssistantSpeechFinished());
         }
@@ -1052,7 +1053,22 @@ class _AiAssistantViewState extends State<AiAssistantView> {
       if (_looksLikeAdCreationThinkingStep(step)) return true;
     }
 
+    // Hub aiError can arrive after aiResponseCompleted — do not stack a
+    // second "high demand" bubble when we already have a real answer.
+    if (_inFlightResponseId == null &&
+        last.text.trim().isNotEmpty &&
+        !looksLikeTemporaryAssistantFailure(last.text) &&
+        !_isGenericHighDemandCopy(last.text)) {
+      return true;
+    }
+
     return false;
+  }
+
+  bool _isGenericHighDemandCopy(String text) {
+    final trimmed = text.trim();
+    return trimmed == DioUserFacingMessage.englishHighDemand ||
+        trimmed == DioUserFacingMessage.arabicHighDemand;
   }
 
   bool _looksLikeAdCreationThinkingStep(String step) {
@@ -1068,17 +1084,20 @@ class _AiAssistantViewState extends State<AiAssistantView> {
     return markers.any(q.contains);
   }
 
-  void _showConnectionError() {
+  void _showConnectionError({String? message}) {
     if (!mounted) return;
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
     final responseId = _inFlightResponseId;
+    final display = (message != null && message.trim().isNotEmpty)
+        ? message.trim()
+        : DioUserFacingMessage.highDemand(isAr: isAr);
     setState(() {
       _isThinking = false;
       _inFlightResponseId = null;
       _thinkingSteps.clear();
       _messages.add(
         _ChatMessage(
-          text: DioUserFacingMessage.highDemand(isAr: isAr),
+          text: display,
           isUser: false,
           showSupportCallbackForm: false,
           responseId: responseId,
@@ -1710,6 +1729,7 @@ class _MessageBubble extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13.sp,
                     height: 1.45,
+                    fontWeight: FontWeight.w400,
                     color: colors.mutedText,
                   ),
                 ),
@@ -1893,7 +1913,7 @@ class _ThinkingTraceState extends State<_ThinkingTrace> {
                   widget.title,
                   style: TextStyle(
                     fontSize: 11.sp,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                     color: widget.colors.mutedText,
                   ),
                 ),
@@ -2014,6 +2034,7 @@ class _ThinkingLineText extends StatelessWidget {
         style: TextStyle(
           fontSize: 10.5.sp,
           height: 1.35,
+          fontWeight: FontWeight.w400,
           color: colors.thinkingText,
           fontStyle: FontStyle.italic,
         ),
@@ -2027,6 +2048,7 @@ class _ThinkingLineText extends StatelessWidget {
         style: TextStyle(
           fontSize: 10.5.sp,
           height: 1.35,
+          fontWeight: FontWeight.w400,
           color: colors.thinkingText,
           fontStyle: FontStyle.italic,
         ),
@@ -2237,9 +2259,10 @@ class _ThinkingBubbleState extends State<_ThinkingBubble>
                       child: Text(
                         widget.steps.join(' '),
                         style: TextStyle(
-                          color: const Color(0xFF1F2937),
-                          fontSize: 15.sp,
-                          height: 1.5,
+                          color: widget.colors.thinkingText,
+                          fontSize: 13.sp,
+                          height: 1.45,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ),

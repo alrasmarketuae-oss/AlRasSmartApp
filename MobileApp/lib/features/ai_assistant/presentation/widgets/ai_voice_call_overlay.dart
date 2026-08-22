@@ -90,7 +90,7 @@ class _AiVoiceCallOverlayState extends State<AiVoiceCallOverlay>
 
   Color get _phaseColor => switch (widget.phase) {
         AiCallPhase.listening => const Color(0xFFE11D48),
-        AiCallPhase.thinking => const Color(0xFFF59E0B),
+        AiCallPhase.thinking => const Color(0xFF9CA3AF),
         AiCallPhase.speaking => const Color(0xFF10B981),
         AiCallPhase.muted => const Color(0xFF94A3B8),
         AiCallPhase.waiting => const Color(0xFF3B82F6),
@@ -201,7 +201,9 @@ class _AiVoiceCallOverlayState extends State<AiVoiceCallOverlay>
                           style: TextStyle(
                             color: statusColor,
                             fontSize: 15.sp,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: widget.phase == AiCallPhase.thinking
+                                ? FontWeight.w400
+                                : FontWeight.w600,
                           ),
                         ),
                       ),
@@ -750,9 +752,10 @@ class _ThinkingDotsVisualizerState extends State<_ThinkingDotsVisualizer>
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
+                  color: Colors.white.withValues(alpha: 0.45),
                   fontSize: 12.sp,
                   height: 1.3,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ),
