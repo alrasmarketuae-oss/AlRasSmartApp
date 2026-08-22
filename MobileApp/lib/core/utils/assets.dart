@@ -39,6 +39,7 @@ class AppAssets {
   //banner images
   static const String bannerImage = 'assets/images/bunner.png';
   static const String bannerImage2 = 'assets/images/bunner2.png';
+  static const String soldOutStamp = 'assets/images/sold_out_stamp.jpg';
   static const String bgImage = 'assets/images/bg.png';
   static const String welcomeBgImage = 'assets/images/welcome_bg.png';
 

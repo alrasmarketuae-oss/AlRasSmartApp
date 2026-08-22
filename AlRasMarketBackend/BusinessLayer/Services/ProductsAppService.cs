@@ -695,7 +695,7 @@ public partial class ProductsAppService(
 
         // Same admin alert/counts as before — off the HTTP critical path.
         // Same path for Offers / Requests / Booking / Category:
-        // violations → admin dashboard (under review); clean no-video → auto-approve.
+        // violations → admin dashboard (under review); clean scan → manual admin approval.
         QueueAdminAdAlert(product, isEdit: isEditResubmit);
         QueueAutoModeration(product.ProductId, requireManualReview: false);
 

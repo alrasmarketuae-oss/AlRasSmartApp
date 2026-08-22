@@ -1,6 +1,7 @@
 import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/utils/product_price_formatter.dart';
+import 'package:alrasmarket/core/utils/product_stock.dart';
 import 'package:alrasmarket/core/utils/relative_time_formatter.dart';
 import 'package:alrasmarket/core/widgets/product_price_text.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_price_type_label.dart';
@@ -212,6 +213,10 @@ class _AdRequestOrderInfoCardState extends State<AdRequestOrderInfoCard> {
     final retailUnit = product.unitNameForChannel(preferRetail: true).trim();
     final priceTypeLabel =
         ProductPriceTypeLabel.fromProduct(product, isAr: isAr);
+    final soldOut = ProductStock.isSoldOut(
+      product,
+      preferRetail: preferRetail,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -235,6 +240,7 @@ class _AdRequestOrderInfoCardState extends State<AdRequestOrderInfoCard> {
                             borderRadius: BorderRadius.circular(8.r),
                             child: BookingProductImageCarousel(
                               mediaItems: images,
+                              showSoldOutStamp: soldOut,
                             ),
                           ),
                         if (images.isNotEmpty && videos.isNotEmpty)
@@ -244,6 +250,7 @@ class _AdRequestOrderInfoCardState extends State<AdRequestOrderInfoCard> {
                             borderRadius: BorderRadius.circular(8.r),
                             child: BookingProductImageCarousel(
                               mediaItems: videos,
+                              showSoldOutStamp: soldOut,
                             ),
                           ),
                         SizedBox(height: 16.h),

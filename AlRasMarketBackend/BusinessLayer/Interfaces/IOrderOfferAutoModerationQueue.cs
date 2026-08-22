@@ -4,7 +4,7 @@ namespace BusinessLayer.Interfaces;
 /// Queued after an order/offer is created and needs admin moderation
 /// (Requests, Offers, Booking, Category with notes/media).
 /// Same policy as product ads: video or image/contact-on-photo → admin only;
-/// no-video text violations → reject; no-video clean → auto-approve.
+/// no-video text violations → reject; no-video clean → manual admin approval.
 /// </summary>
 public sealed record OrderOfferAutoModerationWorkItem(long OrderId);
 

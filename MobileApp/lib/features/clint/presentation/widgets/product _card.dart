@@ -72,6 +72,7 @@ class ProductCard extends StatelessWidget {
               width: double.infinity,
               height: ProductGridLayout.cardImageDisplayHeight(context),
               alignment: Alignment.bottomCenter,
+              preferRetailChannel: useRetailChannel,
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(14.r),
                 topRight: Radius.circular(14.r),

@@ -23,7 +23,7 @@ public interface IOrderOfferAutoModerationService
 /// - no video + notes/text violations → auto-reject + notify buyer
 /// - no video + image violations (phone, company name, brand on photos) →
 ///   admin dashboard only (no auto-reject, no auto-approve)
-/// - no video + clean notes/images → auto-approve for seller
+/// - no video + clean notes/images → left for manual admin approval (no auto-approve)
 /// </summary>
 public sealed class OrderOfferAutoModerationService(
     IRasAlSouqDbContext dbContext,
@@ -229,23 +229,12 @@ public sealed class OrderOfferAutoModerationService(
             return;
         }
 
-        try
-        {
-            await ordersAppService.ApproveRequestOfferForAdminAsync(
-                    adminUserId,
-                    workItem.OrderId,
-                    cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
-            logger.LogInformation(
-                "Order {OrderId} (type={ProductTypeId}, category={CategoryId}) auto-approved after notes/image scan.",
-                workItem.OrderId,
-                order.Product?.ProductTypeId,
-                order.Product?.CategoryId);
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Auto-approve failed for order {OrderId} — leaving for admin.", workItem.OrderId);
-        }
+        logger.LogInformation(
+            "Order {OrderId} (type={ProductTypeId}, category={CategoryId}) passed policy scan — " +
+            "left for manual admin approval.",
+            workItem.OrderId,
+            order.Product?.ProductTypeId,
+            order.Product?.CategoryId);
     }
 
     private static bool IsDocumentPath(string path) =>

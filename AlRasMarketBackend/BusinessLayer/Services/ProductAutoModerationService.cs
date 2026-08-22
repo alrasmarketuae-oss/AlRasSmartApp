@@ -19,7 +19,7 @@ public interface IProductAutoModerationService
 /// Background ad review (all product types: Offers, Requests, Booking, Category/Retail):
 /// - any violation (text, image, video) → leave for admin dashboard only (under review)
 /// - scan failure / incomplete image scan → admin dashboard only
-/// - no video + clean text and images → auto-approve + notify (then CLIP)
+/// - no video + clean text and images → left for manual admin approval (no auto-approve)
 /// - seller edits/resubmits → same scan again
 /// Never auto-rejects — admin decides on flagged ads.
 /// </summary>
@@ -28,7 +28,6 @@ public sealed class ProductAutoModerationService(
     IProductDataAccess productData,
     IFileStorage fileStorage,
     IOpenAiVisionService openAiVision,
-    IAdminProductsAppService adminProducts,
     IProductImageIndexingQueue imageIndexingQueue,
     IOptions<AdAutoModerationOptions> options,
     IOptions<ImageEmbeddingOptions> imageEmbeddingOptions,
@@ -169,24 +168,12 @@ public sealed class ProductAutoModerationService(
             return;
         }
 
-        try
-        {
-            await adminProducts.ApproveProductAsync(
-                    workItem.ProductId.ToString("D"),
-                    new AdminRejectProductRequest(),
-                    cancellationToken)
-                .ConfigureAwait(false);
-
-            logger.LogInformation(
-                "Product {ProductId} (type={ProductTypeId}, category={CategoryId}) auto-approved after policy scan.",
-                workItem.ProductId,
-                product.ProductTypeId,
-                product.CategoryId);
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Auto-approve failed for {ProductId} — leaving for admin.", workItem.ProductId);
-        }
+        logger.LogInformation(
+            "Product {ProductId} (type={ProductTypeId}, category={CategoryId}) passed policy scan — " +
+            "left for manual admin approval.",
+            workItem.ProductId,
+            product.ProductTypeId,
+            product.CategoryId);
 
         await QueueClipAsync(workItem.ProductId, cancellationToken).ConfigureAwait(false);
     }

@@ -1,7 +1,9 @@
 import 'package:alrasmarket/core/utils/assets.dart';
+import 'package:alrasmarket/core/utils/product_stock.dart';
 import 'package:alrasmarket/core/widgets/cached_app_image.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/booking_widets/booking_details_mapper.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_media_preview_screen.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_sold_out_stamp_overlay.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_video_play_mark.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_video_thumbnail.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
@@ -22,6 +24,8 @@ class ProductMediaThumbnail extends StatelessWidget {
     this.showVideoChrome = true,
     this.accentColor,
     this.showDefaultPlaceholderImage = true,
+    this.preferRetailChannel = false,
+    this.showSoldOutStamp,
   });
 
   final MyListingProductModel product;
@@ -36,6 +40,9 @@ class ProductMediaThumbnail extends StatelessWidget {
   final Color? accentColor;
   /// When false, empty media shows a neutral blank tile (no bundled image).
   final bool showDefaultPlaceholderImage;
+  final bool preferRetailChannel;
+  /// When null, derived from [ProductStock.isSoldOut].
+  final bool? showSoldOutStamp;
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +53,8 @@ class ProductMediaThumbnail extends StatelessWidget {
     final durationSeconds =
         BookingDetailsMapper.cardVideoDurationSeconds(product);
     final radius = borderRadius ?? BorderRadius.zero;
+    final soldOut = showSoldOutStamp ??
+        ProductStock.isSoldOut(product, preferRetail: preferRetailChannel);
 
     Widget child;
     if (thumbnailUrl != null) {
@@ -71,34 +80,37 @@ class ProductMediaThumbnail extends StatelessWidget {
 
     final overlayChrome = showVideoChrome && hasVideo && thumbnailUrl != null;
 
-    final stacked = Stack(
-      fit: StackFit.expand,
-      children: [
-        child,
-        if (overlayChrome) ...[
-          const Center(child: ProductVideoPlayMark()),
-          if (_durationLabel(durationSeconds).isNotEmpty)
-            Positioned(
-              left: 8.w,
-              bottom: 8.h,
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.72),
-                  borderRadius: BorderRadius.circular(4.r),
-                ),
-                child: Text(
-                  _durationLabel(durationSeconds),
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w600,
+    final stacked = ProductSoldOutStampOverlay(
+      visible: soldOut,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          child,
+          if (overlayChrome) ...[
+            const Center(child: ProductVideoPlayMark()),
+            if (_durationLabel(durationSeconds).isNotEmpty)
+              Positioned(
+                left: 8.w,
+                bottom: 8.h,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.72),
+                    borderRadius: BorderRadius.circular(4.r),
+                  ),
+                  child: Text(
+                    _durationLabel(durationSeconds),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
-            ),
+          ],
         ],
-      ],
+      ),
     );
 
     return GestureDetector(

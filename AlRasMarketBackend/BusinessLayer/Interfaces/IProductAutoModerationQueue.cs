@@ -4,7 +4,7 @@ namespace BusinessLayer.Interfaces;
 /// Queued after SubmitForAdminReview / owner edit, before CLIP indexing.
 /// Applies to all ad types (Offers, Requests, Booking, Category).
 /// Violations (text, image, video, scan failure) → admin dashboard only (under review).
-/// No auto-reject. Clean no-video scan → auto-approve.
+/// No auto-reject. Clean no-video scan → manual admin approval only.
 /// Same rules on create and edit/resubmit.
 /// </summary>
 public sealed record ProductAutoModerationWorkItem(

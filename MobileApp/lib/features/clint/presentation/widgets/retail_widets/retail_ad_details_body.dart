@@ -152,6 +152,7 @@ class _RetailHero extends StatelessWidget {
                 width: 118.w,
                 height: imageHeight,
                 borderRadius: BorderRadius.circular(14.r),
+                preferRetailChannel: true,
               ),
               if (mediaCount > 0)
                 Positioned(

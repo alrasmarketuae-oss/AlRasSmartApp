@@ -4,6 +4,7 @@ import 'package:alrasmarket/core/widgets/cached_app_image.dart';
 import 'package:alrasmarket/features/clint/presentation/models/product_media_item.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_media_preview_screen.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_video_play_mark.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_sold_out_stamp_overlay.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:video_player/video_player.dart';
@@ -12,9 +13,11 @@ class BookingProductImageCarousel extends StatefulWidget {
   const BookingProductImageCarousel({
     super.key,
     required this.mediaItems,
+    this.showSoldOutStamp = false,
   });
 
   final List<ProductMediaItem> mediaItems;
+  final bool showSoldOutStamp;
 
   @override
   State<BookingProductImageCarousel> createState() =>
@@ -34,58 +37,61 @@ class _BookingProductImageCarouselState
         widget.mediaItems.isEmpty ? 1 : widget.mediaItems.length;
 
     return ClipRRect(
-      child: Stack(
-        children: [
-          SizedBox(
-            height: 188.h,
-            width: double.infinity,
-            child: widget.mediaItems.isEmpty
-                ? Image.asset(AppAssets.bannerImage2, fit: BoxFit.cover)
-                : PageView.builder(
-                    itemCount: widget.mediaItems.length,
-                    onPageChanged: (index) =>
-                        setState(() => _currentIndex = index),
-                    itemBuilder: (_, index) {
-                      final item = widget.mediaItems[index];
-                      return GestureDetector(
-                        onTap: () => ProductMediaPreviewScreen.open(
-                          context,
-                          items: widget.mediaItems,
-                          initialIndex: index,
-                        ),
-                        behavior: HitTestBehavior.opaque,
-                        child: _MediaSlide(
-                          item: item,
-                          autoPlay: _onlyVideo && index == 0,
-                        ),
-                      );
-                    },
-                  ),
-          ),
-          if (widget.mediaItems.length > 1)
-            Positioned(
-              bottom: 12.h,
-              left: 0,
-              right: 0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  count,
-                  (index) => Container(
-                    margin: EdgeInsets.symmetric(horizontal: 3.w),
-                    width: index == _currentIndex ? 16.w : 6.w,
-                    height: 6.h,
-                    decoration: BoxDecoration(
-                      color: index == _currentIndex
-                          ? const Color(0xFF3A7DC5)
-                          : Colors.white.withValues(alpha: 0.6),
-                      borderRadius: BorderRadius.circular(3.r),
+      child: ProductSoldOutStampOverlay(
+        visible: widget.showSoldOutStamp,
+        child: Stack(
+          children: [
+            SizedBox(
+              height: 188.h,
+              width: double.infinity,
+              child: widget.mediaItems.isEmpty
+                  ? Image.asset(AppAssets.bannerImage2, fit: BoxFit.cover)
+                  : PageView.builder(
+                      itemCount: widget.mediaItems.length,
+                      onPageChanged: (index) =>
+                          setState(() => _currentIndex = index),
+                      itemBuilder: (_, index) {
+                        final item = widget.mediaItems[index];
+                        return GestureDetector(
+                          onTap: () => ProductMediaPreviewScreen.open(
+                            context,
+                            items: widget.mediaItems,
+                            initialIndex: index,
+                          ),
+                          behavior: HitTestBehavior.opaque,
+                          child: _MediaSlide(
+                            item: item,
+                            autoPlay: _onlyVideo && index == 0,
+                          ),
+                        );
+                      },
+                    ),
+            ),
+            if (widget.mediaItems.length > 1)
+              Positioned(
+                bottom: 12.h,
+                left: 0,
+                right: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    count,
+                    (index) => Container(
+                      margin: EdgeInsets.symmetric(horizontal: 3.w),
+                      width: index == _currentIndex ? 16.w : 6.w,
+                      height: 6.h,
+                      decoration: BoxDecoration(
+                        color: index == _currentIndex
+                            ? const Color(0xFF3A7DC5)
+                            : Colors.white.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(3.r),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
