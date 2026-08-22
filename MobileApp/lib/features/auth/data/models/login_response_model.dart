@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-import 'package:alrasmarket/core/serveses/auth_service.dart';
-
 class CompanyImageModel {
   final int id;
   final String imagePath;
@@ -144,30 +142,6 @@ class LoginResponseModel {
         isRejected: true,
         rejectionReason: rejectionReason,
       );
-    }
-
-    if (persistSession) {
-      final parsedImagePath =
-          _stringFromJson(json['imgPath'] ?? json['ImgPath']) ?? '';
-      // Never persist an authenticated API session without a real token.
-      // Pending/unverified flows keep email via dedicated AuthCubit handlers.
-      if (token != null && token.isNotEmpty) {
-        AuthService.instance.saveAuthData(
-          personId: id ?? '',
-          authToken: token,
-          userRole: roleName,
-          userRoleId: jwtRoleId ?? '',
-          companyWaiting: (isCompanyAccount == true ||
-                  isShippingCompanyAccount == true) &&
-              isApproved != true,
-          approved: isApproved,
-          isCustomerAcount: isCustomer,
-          verified: isVerified,
-          companyAccount: isCompanyAccount,
-          shippingCompanyAccount: isShippingCompanyAccount,
-          imagePath: parsedImagePath,
-        );
-      }
     }
 
     return LoginResponseModel(

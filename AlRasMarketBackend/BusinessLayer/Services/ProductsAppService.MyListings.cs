@@ -191,6 +191,8 @@ public partial class ProductsAppService
             Status = displayStatus,
             StatusNameEn = statusEn,
             StatusNameAr = statusAr,
+            ListingStatusCode = ProductStatusCodes.Normalize(x.Status, x.IsApproved),
+            IsApproved = x.IsApproved == true,
             ApprovalStatus = displayApproval,
             ApprovalStatusEn = approvalEn,
             ApprovalStatusAr = approvalAr,

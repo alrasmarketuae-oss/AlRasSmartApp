@@ -1,8 +1,8 @@
-import 'package:alrasmarket/core/utils/product_stock.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/features/company/data/models/my_request_offer_model.dart';
 import 'package:alrasmarket/features/company/presentation/models/create_ad_type.dart';
 import 'package:alrasmarket/features/company/presentation/models/my_ads_filter.dart';
+import 'package:alrasmarket/features/company/presentation/models/my_ads_listing_status_matcher.dart';
 import 'package:equatable/equatable.dart';
 
 abstract class CompanyStates extends Equatable {
@@ -102,32 +102,11 @@ class CompanyMyListingsState extends CompanyStates {
       typeFilter!.trim().toLowerCase() == 'retail';
 
   bool _matchesStatusFilter(MyListingProductModel product) {
-    // Always match on English/canonical status — display `status` is localized.
-    final status = product.statusCanonical.toLowerCase();
-    switch (statusFilter) {
-      case 'active':
-        return (status == 'active' || status.contains('نشط')) &&
-            !ProductStock.isSoldOut(
-              product,
-              preferRetail: preferRetailPricing,
-            );
-      case 'paused':
-        return status.contains('paused') ||
-            status.contains('inactive') ||
-            status.contains('متوقف');
-      case 'review':
-        return status.contains('review') || status.contains('مراجع');
-      case 'sold_out':
-        return ProductStock.isSoldOut(
-              product,
-              preferRetail: preferRetailPricing,
-            ) ||
-            status.contains('sold') ||
-            status.contains('out of stock') ||
-            status.contains('نفد');
-      default:
-        return true;
-    }
+    return MyAdsListingStatusMatcher.matchesApiFilter(
+      product,
+      statusFilter,
+      preferRetail: preferRetailPricing,
+    );
   }
 
   CompanyMyListingsState copyWith({

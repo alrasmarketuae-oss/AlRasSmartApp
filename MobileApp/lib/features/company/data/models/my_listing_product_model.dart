@@ -55,6 +55,8 @@ class MyListingProductModel {
     required this.maximumOrderQuantity,
     required this.status,
     this.statusNameEn = '',
+    this.listingStatusCode,
+    this.isListingApproved = false,
     required this.approvalStatus,
     required this.negotiable,
     required this.isFeatured,
@@ -218,6 +220,9 @@ class MyListingProductModel {
   final String status;
   /// Canonical English status from API — use for filters / matching.
   final String statusNameEn;
+  /// Normalized code from API: 1 review, 2 active, 3 paused, 5 rejected.
+  final int? listingStatusCode;
+  final bool isListingApproved;
   final String approvalStatus;
   final String negotiable;
   final String isFeatured;
@@ -639,10 +644,13 @@ class MyListingProductModel {
         enKeys: const [
           'statusNameEn',
           'StatusNameEn',
-          'status',
-          'Status',
         ],
       ),
+      listingStatusCode: _parseOptionalInt(
+        json['listingStatusCode'] ?? json['ListingStatusCode'],
+      ),
+      isListingApproved:
+          json['isApproved'] == true || json['IsApproved'] == true,
       approvalStatus: () {
         final localized = LocalizedProductText.pickForLanguage(
           json: json,
@@ -1266,5 +1274,11 @@ class MyListingProductModel {
     if (ends == null) return null;
     final left = ends.difference(DateTime.now().toUtc());
     return left.isNegative ? Duration.zero : left;
+  }
+
+  static int? _parseOptionalInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    return int.tryParse(value.toString());
   }
 }

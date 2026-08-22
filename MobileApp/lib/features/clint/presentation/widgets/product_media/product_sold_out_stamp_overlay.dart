@@ -10,7 +10,7 @@ class ProductSoldOutStampOverlay extends StatelessWidget {
     this.visible = true,
     this.alignment = Alignment.center,
     this.rotationRadians = -0.12,
-    this.sizeFactor = 0.58,
+    this.sizeFactor = 0.75,
   });
 
   final Widget child;
@@ -30,7 +30,7 @@ class ProductSoldOutStampOverlay extends StatelessWidget {
                 ? constraints.maxWidth
                 : constraints.maxHeight
             : 120.w;
-        final stampSize = (side * sizeFactor).clamp(72.w, 168.w);
+        final stampSize = (side * sizeFactor).clamp(96.w, 228.w);
 
         return Stack(
           fit: StackFit.passthrough,

@@ -5,6 +5,7 @@ import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/utils/product_quantity_formatter.dart';
+import 'package:alrasmarket/core/utils/product_listing_status.dart';
 import 'package:alrasmarket/core/utils/product_stock.dart';
 import 'package:alrasmarket/core/widgets/product_price_text.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_price_type_label.dart';
@@ -148,8 +149,8 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
             ? CreateAdType.categories.label
             : product.productTypeName;
     final typeStyle = _typeBadgeStyle(displayTypeName);
-    final listingBadge = _listingStatusBadge(product.statusCanonical, s);
-    final listingIcon = _listingIconBadge(product.statusCanonical);
+    final listingBadge = _listingStatusBadge(product, s);
+    final listingIcon = _listingIconBadge(product);
     final adType = CreateAdType.fromLabel(
           product.productTypeNameEn.trim().isNotEmpty
               ? product.productTypeNameEn
@@ -834,61 +835,63 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
         && item.supplierNotes.trim().isNotEmpty;
   }
 
-  _BadgeStyle _listingStatusBadge(String statusCanonical, S s) {
-    final value = statusCanonical.trim();
-    final lower = value.toLowerCase();
-
-    if (lower == 'active') {
-      return _BadgeStyle(
-        label: s.listingActive,
-        background: const Color(0xFFDCFAE6),
-        foreground: const Color(0xFF17B26A),
-      );
-    }
-    if (lower.contains('paused') || lower.contains('inactive')) {
-      return _BadgeStyle(
-        label: s.listingPaused,
-        background: const Color(0xFFF2F2F2),
-        foreground: LightColor.greyTextColor,
-      );
-    }
-    if (lower.contains('review')) {
-      return _BadgeStyle(
-        label: s.underReviewAds,
-        background: const Color(0xFFFFFAEB),
-        foreground: const Color(0xFFFDB022),
-      );
-    }
-    if (lower.contains('sold') ||
-        lower.contains('out') ||
-        lower.contains('stock')) {
+  _BadgeStyle _listingStatusBadge(MyListingProductModel product, S s) {
+    if (ProductStock.isSoldOut(product)) {
       return _BadgeStyle(
         label: s.soldOut,
         background: const Color(0xFFFFEBEE),
         foreground: const Color(0xFFE53935),
       );
     }
-    return _BadgeStyle(
-      label: value.isEmpty ? '—' : value,
-      background: const Color(0xFFF2F4F7),
-      foreground: const Color(0xFF475467),
-    );
+
+    switch (ProductListingStatus.normalizedFor(product)) {
+      case ProductListingStatus.active:
+        return _BadgeStyle(
+          label: s.listingActive,
+          background: const Color(0xFFDCFAE6),
+          foreground: const Color(0xFF17B26A),
+        );
+      case ProductListingStatus.paused:
+        return _BadgeStyle(
+          label: s.listingPaused,
+          background: const Color(0xFFF2F2F2),
+          foreground: LightColor.greyTextColor,
+        );
+      case ProductListingStatus.underReview:
+        return _BadgeStyle(
+          label: s.underReviewAds,
+          background: const Color(0xFFFFFAEB),
+          foreground: const Color(0xFFFDB022),
+        );
+      case ProductListingStatus.rejected:
+        return _BadgeStyle(
+          label: s.rejectedAds,
+          background: const Color(0xFFFFEBEE),
+          foreground: const Color(0xFFE53935),
+        );
+      default:
+        final value = product.statusCanonical.trim();
+        return _BadgeStyle(
+          label: value.isEmpty ? '—' : value,
+          background: const Color(0xFFF2F4F7),
+          foreground: const Color(0xFF475467),
+        );
+    }
   }
 
-  String _listingIconBadge(String statusCanonical) {
-    final value = statusCanonical.trim();
-    final lower = value.toLowerCase();
-
-    if (lower == 'active') {
-      return AppAssets.checkCircleIcon;
+  String _listingIconBadge(MyListingProductModel product) {
+    switch (ProductListingStatus.normalizedFor(product)) {
+      case ProductListingStatus.active:
+        return AppAssets.checkCircleIcon;
+      case ProductListingStatus.paused:
+        return AppAssets.profileStopIcon;
+      case ProductListingStatus.underReview:
+        return AppAssets.clockIcon;
+      case ProductListingStatus.rejected:
+        return AppAssets.profileStopIcon;
+      default:
+        return AppAssets.checkCircleIcon;
     }
-    if (lower.contains('paused') || lower.contains('inactive')) {
-      return AppAssets.profileStopIcon;
-    }
-    if (lower.contains('review')) {
-      return AppAssets.clockIcon;
-    }
-    return AppAssets.checkCircleIcon;
   }
 
   _BadgeStyle _typeBadgeStyle(String typeName) {

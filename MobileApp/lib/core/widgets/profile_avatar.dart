@@ -95,6 +95,7 @@ class HeaderProfileAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = AuthService.instance;
     return ProfileAvatar(
+      key: ValueKey(auth.currentUserID ?? 'guest'),
       size: 30.w,
       imagePath: auth.currentUserImagePath,
       fallbackText: _avatarInitial(auth),

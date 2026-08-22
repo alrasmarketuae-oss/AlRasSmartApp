@@ -508,6 +508,28 @@ class ClintCubit extends Cubit<ClintStates> {
     emit(ClintInitialState());
   }
 
+  /// Drops cached orders/offers tied to the previous signed-in account.
+  void clearUserSessionMemory() {
+    myOrders = [];
+    myOrdersError = null;
+    myOrdersTotalCount = 0;
+    myOrdersTotalPages = 0;
+    isLoadingMyOrders = false;
+
+    myOffers = [];
+    myOffersError = null;
+    myOffersTotalCount = 0;
+    myOffersTotalPages = 0;
+    isLoadingMyOffers = false;
+
+    incomingOrders = [];
+    incomingOrdersError = null;
+    incomingOrdersTotalCount = 0;
+    incomingOrdersTotalPages = 0;
+    isLoadingIncomingOrders = false;
+    updatingIncomingOrderId = null;
+  }
+
   /// Loads the next home-feed page when the user is near the end of the list.
   Future<void> loadMoreHomeFeed({required bool isPerson}) async {
     if (isPerson || _isPersonalCustomerAccount) {

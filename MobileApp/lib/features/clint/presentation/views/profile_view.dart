@@ -185,6 +185,7 @@ class _ProfileViewState extends State<ProfileView> {
     final clint = context.read<ClintCubit>();
     clint.setTab(0);
     clint.clearHomeCatalogMemory();
+    clint.clearUserSessionMemory();
     context.read<CompanyCubit>().setTab(0);
     goToGuestHome(context);
   }

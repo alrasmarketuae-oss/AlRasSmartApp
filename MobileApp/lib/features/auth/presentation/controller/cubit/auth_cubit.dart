@@ -14,6 +14,7 @@ import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_sta
 import 'package:alrasmarket/core/services/fcm_token_service.dart';
 import 'package:alrasmarket/core/services/biometric_auth_service.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
+import 'package:alrasmarket/core/serveses/profile_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -115,7 +116,7 @@ class AuthCubit extends Cubit<AuthStates> {
         personId: personId,
         authToken: authToken,
         userEmail: loginResponse.email ?? emailFallback,
-        fullName: loginResponse.fullName,
+        fullName: loginResponse.fullName ?? loginResponse.companyName,
         userRole: loginResponse.role,
         userRoleId: loginResponse.roleId ?? '',
         companyWaiting: loginResponse.isPendingAdminApproval,
@@ -125,6 +126,7 @@ class AuthCubit extends Cubit<AuthStates> {
         companyAccount: loginResponse.isCompanyAccount,
         shippingCompanyAccount: loginResponse.isShippingCompanyAccount,
         userPhone: loginResponse.phone,
+        imagePath: loginResponse.imgPath ?? '',
       );
     }
   }
@@ -171,7 +173,19 @@ class AuthCubit extends Cubit<AuthStates> {
     }
 
     await _saveLoginData(loginResponse, emailFallback);
+    sl<ClintCubit>().clearUserSessionMemory();
     unawaited(BiometricAuthService.instance.refreshSnapshotIfEnabled());
+    unawaited(
+      ProfileService.instance.fetchMyProfile(forceRefresh: true).catchError((_) {
+        return UserProfile(
+          fullName: AuthService.instance.currentUserName ?? '',
+          email: AuthService.instance.currentUserEmail ?? '',
+          roleName: AuthService.instance.currentUserRoleName ?? '',
+          isCompanyAccount:
+              AuthService.instance.currentUserIsCompanyAccount,
+        );
+      }),
+    );
 
     final isSocialLogin =
         loginProviderName == 'google' || loginProviderName == 'apple';
@@ -594,6 +608,7 @@ class AuthCubit extends Cubit<AuthStates> {
         companyAccount: loginResponse.isCompanyAccount,
         shippingCompanyAccount: loginResponse.isShippingCompanyAccount,
         clearSessionToken: token.isEmpty,
+        imagePath: loginResponse.imgPath ?? '',
       );
 
       if (pending || token.isEmpty) {
@@ -832,6 +847,7 @@ class AuthCubit extends Cubit<AuthStates> {
     final clintCubit = sl<ClintCubit>();
     if (!clintCubit.isClosed) {
       clintCubit.clearHomeCatalogMemory();
+      clintCubit.clearUserSessionMemory();
       clintCubit.setTab(0);
     }
 

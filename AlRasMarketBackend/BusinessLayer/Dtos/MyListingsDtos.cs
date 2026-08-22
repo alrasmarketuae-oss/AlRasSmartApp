@@ -68,6 +68,9 @@ public sealed class MyProductListingDto
     public string Status { get; set; } = string.Empty;
     public string? StatusNameEn { get; set; }
     public string? StatusNameAr { get; set; }
+    /// <summary>Normalized listing status (1 review, 2 active, 3 paused, 5 rejected).</summary>
+    public byte ListingStatusCode { get; set; }
+    public bool IsApproved { get; set; }
     public string ApprovalStatus { get; set; } = string.Empty;
     public string? ApprovalStatusEn { get; set; }
     public string? ApprovalStatusAr { get; set; }

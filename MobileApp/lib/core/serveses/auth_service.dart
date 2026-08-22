@@ -182,7 +182,21 @@ class AuthService {
       'Saving auth data - personId: $personId, email: $userEmail, fullName: $fullName, role: $userRole, roleId: $userRoleId, token: $authToken',
     );
 
+    final previousUserId = id;
+    final isFullSession = authToken.isNotEmpty && personId.isNotEmpty;
+    final isAccountSwitch = isFullSession &&
+        previousUserId != null &&
+        previousUserId.isNotEmpty &&
+        previousUserId != personId;
+
     try {
+      if (isFullSession) {
+        await ApiCacheStore.instance.invalidateUserData();
+        if (isAccountSwitch) {
+          profileImageRevision.value++;
+        }
+      }
+
       // Save personId (mapped to 'personId' in cache, 'id' in cached_constants)
       if (personId.isNotEmpty) {
         await CachHelper.saveData(key: 'personId', value: personId);
@@ -199,17 +213,31 @@ class AuthService {
         await AppOrderListenerService.instance.stop();
       }
 
-      // Save email
-      if (userEmail != null) {
-        await CachHelper.saveData(key: 'email', value: userEmail);
-        // Update global email variable from cached_constants
-        email = userEmail;
-      }
+      if (isFullSession) {
+        // Replace identity fields so a new login never keeps the previous account.
+        final resolvedEmail = userEmail ?? '';
+        await CachHelper.saveData(key: 'email', value: resolvedEmail);
+        email = resolvedEmail;
 
-      // Save fullName (mapped to 'fullName' in cache, 'name' in cached_constants)
-      if (fullName != null) {
-        await CachHelper.saveData(key: 'fullName', value: fullName);
-        name = fullName;
+        final resolvedName = fullName ?? '';
+        await CachHelper.saveData(key: 'fullName', value: resolvedName);
+        name = resolvedName;
+
+        await saveProfileImagePath(imagePath ?? '');
+      } else {
+        if (userEmail != null) {
+          await CachHelper.saveData(key: 'email', value: userEmail);
+          email = userEmail;
+        }
+
+        if (fullName != null) {
+          await CachHelper.saveData(key: 'fullName', value: fullName);
+          name = fullName;
+        }
+
+        if (imagePath != null) {
+          await saveProfileImagePath(imagePath);
+        }
       }
 
       // Save role (mapped to 'role' in cache, 'roleName' in cached_constants)
@@ -255,9 +283,10 @@ class AuthService {
       }
       if (userPhone != null && userPhone.isNotEmpty) {
         await savePhone(userPhone);
-      }
-      if (imagePath != null) {
-        await saveProfileImagePath(imagePath);
+      } else if (isFullSession && isAccountSwitch) {
+        await CachHelper.removeData('phone');
+        phone = null;
+        phoneNumber = null;
       }
     } catch (e) {
       debugPrint('Error saving auth data: $e');

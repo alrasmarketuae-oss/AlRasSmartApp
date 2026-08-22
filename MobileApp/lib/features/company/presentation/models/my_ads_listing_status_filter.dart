@@ -1,4 +1,4 @@
-import 'package:alrasmarket/core/utils/product_stock.dart';
+import 'package:alrasmarket/core/utils/product_listing_status.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
@@ -25,27 +25,15 @@ enum MyAdsListingStatusFilter {
     }
   }
 
-  bool matches(MyListingProductModel product) {
-    final status = product.statusCanonical.toLowerCase();
-    switch (this) {
-      case MyAdsListingStatusFilter.all:
-        return true;
-      case MyAdsListingStatusFilter.active:
-        return (status == 'active' || status.contains('نشط')) &&
-            !ProductStock.isSoldOut(product);
-      case MyAdsListingStatusFilter.paused:
-        return status.contains('paused') ||
-            status.contains('inactive') ||
-            status.contains('متوقف');
-      case MyAdsListingStatusFilter.underReview:
-        return status.contains('review') || status.contains('مراجع');
-      case MyAdsListingStatusFilter.soldOut:
-        return ProductStock.isSoldOut(product) ||
-            status.contains('sold') ||
-            status.contains('out of stock') ||
-            status.contains('نفد');
-    }
-  }
+  bool matches(
+    MyListingProductModel product, {
+    bool preferRetail = false,
+  }) =>
+      ProductListingStatus.matchesFilter(
+        product,
+        this,
+        preferRetail: preferRetail,
+      );
 
   IconData get icon {
     switch (this) {
@@ -75,6 +63,27 @@ enum MyAdsListingStatusFilter {
         return const Color(0xFF7C5CFC);
       case MyAdsListingStatusFilter.soldOut:
         return const Color(0xFFE53935);
+    }
+  }
+}
+
+/// Badge labels derived from normalized listing status codes.
+class MyAdsListingStatusPresentation {
+  MyAdsListingStatusPresentation._();
+
+  static String labelFor(MyListingProductModel product, S s) {
+    switch (ProductListingStatus.normalizedFor(product)) {
+      case ProductListingStatus.active:
+        return s.listingActive;
+      case ProductListingStatus.paused:
+        return s.listingPaused;
+      case ProductListingStatus.rejected:
+        return s.rejectedAds;
+      case ProductListingStatus.underReview:
+        return s.underReviewAds;
+      default:
+        final value = product.statusCanonical.trim();
+        return value.isEmpty ? '—' : value;
     }
   }
 }
