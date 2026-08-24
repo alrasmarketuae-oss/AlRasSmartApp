@@ -12,7 +12,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:alrasmarket/core/platform/app_paths.dart';
 import 'package:path/path.dart' as p;
 
-/// Amazon-style visual search: identifying dots first, then crop box + product peek.
+/// Amazon-style visual search: identifying dots first, then product peek.
 class ImageSearchLensView extends StatefulWidget {
   const ImageSearchLensView({
     super.key,
@@ -286,7 +286,8 @@ class _ImageSearchLensViewState extends State<ImageSearchLensView>
   }
 
   bool get _showIdentifying => !widget.resultsReady;
-  bool get _showCropOverlay => widget.resultsReady && !widget.isLoading;
+  // Keep the previous (pre-crop) behavior: no crop UI/interaction.
+  bool get _showCropOverlay => false;
   bool get _busy => widget.isLoading || _cropping;
 
   @override
@@ -433,7 +434,8 @@ class _ImageSearchLensViewState extends State<ImageSearchLensView>
                                     borderRadius: BorderRadius.circular(20.r),
                                   ),
                                   child: Text(
-                                    s.imageSearchCropHint,
+                                    // Reuse "view results" hint instead of crop instruction.
+                                    s.imageSearchViewResults,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       color: Colors.white,

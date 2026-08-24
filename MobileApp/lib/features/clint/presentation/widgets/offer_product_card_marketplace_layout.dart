@@ -91,6 +91,7 @@ class _OfferProductCardMarketplaceLayoutState
   Widget build(BuildContext context) {
     final s = S.of(context);
     final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
     final product = widget.product;
     final displayTitle = (widget.title ?? product.productName).trim();
     final soldOut = ProductStock.isSoldOut(product);
@@ -207,10 +208,11 @@ class _OfferProductCardMarketplaceLayoutState
               children: [
                 if (showDeal && original > sale) ...[
                   Align(
-                    alignment: Alignment.bottomLeft,
+                    alignment: isAr ? Alignment.bottomRight : Alignment.bottomLeft,
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
+                      alignment:
+                          isAr ? Alignment.centerRight : Alignment.centerLeft,
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -239,10 +241,11 @@ class _OfferProductCardMarketplaceLayoutState
                   SizedBox(height: 3.h),
                 ],
                 Align(
-                  alignment: Alignment.bottomLeft,
+                  alignment: isAr ? Alignment.bottomRight : Alignment.bottomLeft,
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
+                    alignment:
+                        isAr ? Alignment.centerRight : Alignment.centerLeft,
                     child: ProductPriceText(
                       amount: _formatAmount(displayPrice),
                       currency: currency,

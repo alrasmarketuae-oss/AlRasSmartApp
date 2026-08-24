@@ -148,6 +148,8 @@ class _ProductCardMarketplaceLayoutState
       return const SizedBox.shrink();
     }
 
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+
     final child = showDeal
         ? Row(
             mainAxisSize: MainAxisSize.min,
@@ -211,7 +213,7 @@ class _ProductCardMarketplaceLayoutState
       width: double.infinity,
       child: FittedBox(
         fit: BoxFit.scaleDown,
-        alignment: Alignment.centerLeft,
+        alignment: isAr ? Alignment.centerRight : Alignment.centerLeft,
         child: child,
       ),
     );
@@ -419,7 +421,7 @@ class _ProductCardMarketplaceLayoutState
                   final maxLines =
                       math.max(1, (constraints.maxHeight / lineHeight).floor());
                   return Align(
-                    alignment: Alignment.topLeft,
+                    alignment: AlignmentDirectional.topStart,
                     child: _detailsText(
                       details: details,
                       soldOut: soldOut,
