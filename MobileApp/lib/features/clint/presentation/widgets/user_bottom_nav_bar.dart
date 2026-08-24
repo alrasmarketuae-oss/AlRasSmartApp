@@ -39,8 +39,8 @@ class UserBottomNavBar extends StatelessWidget {
       ),
       if (isPerson)
         (
-          selectedIcon: AppAssets.servicesIcon4,
-          icon: AppAssets.servicesIcon4,
+          selectedIcon: AppAssets.blueCartIcon,
+          icon: AppAssets.cartIcon,
           label: S.of(context).cart,
           outlinedCircle: false,
           badgeCount: 0,

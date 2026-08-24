@@ -184,8 +184,8 @@ public sealed class AiAssistantHub(
             {
                 await Clients.Caller.SendAsync(
                     "aiError",
-                    new { message = "AI Assistant is unavailable right now." },
-                    CancellationToken.None);
+                    new { message = "Sorry, our servers are currently experiencing high demand. Please try again in a few seconds." },
+                    Context.ConnectionAborted);
             }
         }
         finally

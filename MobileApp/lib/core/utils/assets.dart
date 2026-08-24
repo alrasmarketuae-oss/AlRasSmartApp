@@ -28,6 +28,8 @@ class AppAssets {
   static const String addAdsIcon = 'assets/nav_bar_icons/add_ads.svg';
   static const String blueOrdersIcon = 'assets/nav_bar_icons/ordersb.svg';
   static const String ordersIcon = 'assets/nav_bar_icons/orders.svg';
+  static const String blueCartIcon = 'assets/nav_bar_icons/cartb.svg';
+  static const String cartIcon = 'assets/nav_bar_icons/cart.svg';
   static const String blueProfileIcon = 'assets/nav_bar_icons/profileb.svg';
   static const String profileIcon = 'assets/nav_bar_icons/profile.svg';
   static const String blueMyAdsIcon = 'assets/profile_icons/ADS.svg';
