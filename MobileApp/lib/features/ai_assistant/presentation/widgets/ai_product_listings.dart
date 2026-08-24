@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:alrasmarket/core/utils/product_grid_layout.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product _card.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
@@ -10,17 +12,36 @@ class AiProductListings extends StatelessWidget {
   final List<MyListingProductModel> products;
 
   static List<MyListingProductModel> parse(dynamic raw) {
-    if (raw is! List) return const [];
+    var source = raw;
+    if (source is String && source.trim().isNotEmpty) {
+      try {
+        source = jsonDecode(source);
+      } catch (_) {
+        return const [];
+      }
+    }
+    if (source is! List) return const [];
     final items = <MyListingProductModel>[];
-    for (final item in raw) {
-      if (item is! Map) continue;
-      final product = MyListingProductModel.fromJson(
-        Map<String, dynamic>.from(item),
-      );
-      if (product.productId.trim().isEmpty) continue;
-      items.add(product);
+    for (final item in source) {
+      try {
+        final map = _asStringKeyMap(item);
+        if (map == null) continue;
+        final product = MyListingProductModel.fromJson(map);
+        if (product.productId.trim().isEmpty) continue;
+        items.add(product);
+      } catch (_) {
+        continue;
+      }
     }
     return items;
+  }
+
+  static Map<String, dynamic>? _asStringKeyMap(dynamic item) {
+    if (item is Map<String, dynamic>) return item;
+    if (item is Map) {
+      return item.map((key, value) => MapEntry(key.toString(), value));
+    }
+    return null;
   }
 
   @override
@@ -28,7 +49,9 @@ class AiProductListings extends StatelessWidget {
     if (products.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: EdgeInsets.only(top: 8.h),
-      child: LayoutBuilder(
+      child: SizedBox(
+        width: double.infinity,
+        child: LayoutBuilder(
         builder: (context, constraints) {
           final spacing = 10.w;
           final cellWidth = (constraints.maxWidth - spacing) / 2;
@@ -54,6 +77,7 @@ class AiProductListings extends StatelessWidget {
             },
           );
         },
+        ),
       ),
     );
   }

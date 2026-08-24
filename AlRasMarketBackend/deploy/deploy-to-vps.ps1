@@ -54,7 +54,9 @@ $serviceList = if ([string]::IsNullOrWhiteSpace($Services)) { "" } else { $Servi
 $remoteCmd = @"
 set -e
 cd '$RemotePath'
-tar -xzf backend.tar.gz
+# Windows-built archives can contain duplicate members / metadata headers.
+# --overwrite replaces existing source files instead of aborting the deploy.
+tar --overwrite --no-same-owner -xzf backend.tar.gz
 rm -f backend.tar.gz
 # Stale path from before ProductAdoRepository moved to DataLayer.
 rm -f BusinessLayer/DataAccess/ProductAdoRepository.cs

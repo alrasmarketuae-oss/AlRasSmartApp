@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Globalization;
+using System.Linq;
 using System.Security.Claims;
 using BusinessLayer.Interfaces;
 using Microsoft.AspNetCore.SignalR;
@@ -164,7 +165,10 @@ public sealed class AiAssistantHub(
                     result.UsedKnowledge,
                     result.Sources,
                     offerSupportCallback = result.OfferSupportCallback,
-                    listings = result.Listings,
+                    listings = (result.Listings ?? [])
+                        .Where(x => x.ProductId != Guid.Empty)
+                        .Select(x => x.ToChatJson())
+                        .ToList(),
                     thinkingSteps = result.ThinkingSteps
                 },
                 Context.ConnectionAborted);

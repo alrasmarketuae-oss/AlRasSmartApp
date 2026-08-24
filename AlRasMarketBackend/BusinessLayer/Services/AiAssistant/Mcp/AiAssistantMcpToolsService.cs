@@ -142,12 +142,13 @@ public sealed partial class AiAssistantMcpToolsService(
             {
                 name = "find_cheapest_product",
                 description =
-                    "Find the cheapest publicly active approved marketplace listing matching a product name " +
-                    "(Arabic or English; synonyms like هيل/cardamom are matched). " +
+                    "Find the cheapest publicly active approved marketplace listing. " +
+                    "Pass only the product name (هيل / cardamom) — not the full user sentence. " +
+                    "If the user asked for the cheapest product in general (أرخص منتج / cheapest product) without naming one, omit product_name. " +
                     "Compares BOTH wholesale/category and retail channels on hybrid ads as separate candidates. " +
-                    "Ranks by buyer-facing price AFTER commission markup. " +
-                    "Always report productCode from the winning channel (RetailCode for retail, ProductCode for wholesale), " +
-                    "customerPrice with currency, channel, and quantity with unitName (do not invent grams/kg).",
+                    "Ranks by buyer-facing UNIT price AFTER commission (price of ONE Ton/Kg/etc — never quantity × price). " +
+                    "Returns listing cards the app shows in chat. " +
+                    "Always say: unit price + currency + per unitName, then available stock separately. Never multiply.",
                 parameters = new
                 {
                     type = "object",
@@ -156,10 +157,11 @@ public sealed partial class AiAssistantMcpToolsService(
                         product_name = new
                         {
                             type = "string",
-                            description = "Product name to search for (Arabic or English)."
+                            description =
+                                "Product name only (Arabic or English), e.g. هيل or cardamom. " +
+                                "Omit when the user wants the cheapest listing in the whole market."
                         }
                     },
-                    required = new[] { "product_name" },
                     additionalProperties = false
                 }
             }
@@ -171,12 +173,11 @@ public sealed partial class AiAssistantMcpToolsService(
             {
                 name = "find_most_expensive_product",
                 description =
-                    "Find the most expensive publicly active approved marketplace listing matching a product name " +
-                    "(Arabic or English; synonyms matched). " +
-                    "Compares BOTH wholesale/category and retail channels on hybrid ads as separate candidates. " +
-                    "Ranks by buyer-facing price AFTER commission markup. " +
-                    "Always report productCode from the winning channel (RetailCode for retail, ProductCode for wholesale), " +
-                    "customerPrice with currency, channel, and quantity with unitName.",
+                    "Find the most expensive publicly active approved marketplace listing. " +
+                    "Pass only the product name (هيل / cardamom) — not the full user sentence. " +
+                    "If they asked generally for the most expensive product, omit product_name. " +
+                    "Ranks by buyer-facing UNIT price AFTER commission (one unit, not stock × price). " +
+                    "Returns listing cards for the chat UI. Never multiply price by quantity.",
                 parameters = new
                 {
                     type = "object",
@@ -185,10 +186,10 @@ public sealed partial class AiAssistantMcpToolsService(
                         product_name = new
                         {
                             type = "string",
-                            description = "Product name to search for (Arabic or English)."
+                            description =
+                                "Product name only (Arabic or English). Omit for the most expensive listing in the whole market."
                         }
                     },
-                    required = new[] { "product_name" },
                     additionalProperties = false
                 }
             }
@@ -213,10 +214,11 @@ public sealed partial class AiAssistantMcpToolsService(
                         product_name = new
                         {
                             type = "string",
-                            description = "Product name or type to search for (Arabic or English)."
+                            description =
+                                "Product name or type only (Arabic or English), e.g. هيل. " +
+                                "Omit to browse the latest/cheapest public ads."
                         }
                     },
-                    required = new[] { "product_name" },
                     additionalProperties = false
                 }
             }
@@ -1155,10 +1157,8 @@ public sealed partial class AiAssistantMcpToolsService(
     {
         using var args = JsonDocument.Parse(string.IsNullOrWhiteSpace(argumentsJson) ? "{}" : argumentsJson);
         var productName = GetString(args.RootElement, "product_name");
-        if (string.IsNullOrWhiteSpace(productName))
-        {
-            return Json(new { ok = false, error = "product_name is required." });
-        }
+        var genericCatalogQuery = string.IsNullOrWhiteSpace(productName)
+            || LooksLikeGenericCatalogQuery(productName);
 
         var commissionSettings = await commissionSettingsProvider.GetAsync(cancellationToken)
             .ConfigureAwait(false);
@@ -1293,8 +1293,9 @@ public sealed partial class AiAssistantMcpToolsService(
             .Where(r => ProductStatusCodes.IsPubliclyVisible(r.Status, r.IsApproved))
             .ToList();
 
-        var rankedQuery = RankByName(productName, publicRows)
-            .Where(x => x.Score >= 50);
+        IEnumerable<NameCandidate> rankedQuery = genericCatalogQuery
+            ? publicRows.Select(x => x with { Score = 100 })
+            : RankByName(productName!, publicRows).Where(x => x.Score >= 50);
 
         var ranked = sort switch
         {
@@ -1309,7 +1310,7 @@ public sealed partial class AiAssistantMcpToolsService(
                 .ThenBy(x => x.NameEn)
                 .ToList(),
             _ => rankedQuery
-            .OrderByDescending(x => x.Score)
+                .OrderByDescending(x => x.Score)
                 .ThenBy(x => x.CustomerPrice)
                 .ThenBy(x => x.NameEn)
                 .ToList()
@@ -1320,7 +1321,9 @@ public sealed partial class AiAssistantMcpToolsService(
             return Json(new
             {
                 ok = false,
-                error = $"No approved in-stock products found matching '{productName.Trim()}'."
+                error = genericCatalogQuery
+                    ? "No approved in-stock products are currently listed."
+                    : $"No approved in-stock products found matching '{productName!.Trim()}'."
             });
         }
 
@@ -1337,50 +1340,49 @@ public sealed partial class AiAssistantMcpToolsService(
         return Json(new Dictionary<string, object?>
         {
             ["ok"] = true,
-            [winnerKey] = new
-            {
-                productId = winner.ProductId,
-                productCode = winner.ProductCode,
-                channel = winner.Channel,
-                nameEn = winner.NameEn,
-                nameAr = winner.NameAr,
-                basePrice = winner.USDPrice,
-                customerPrice = winner.CustomerPrice,
-                price = winner.CustomerPrice,
-                currency = winner.CustomerCurrency,
-                priceUsd = winner.CustomerPriceUsd,
-                priceAed = winner.CustomerPriceAed,
-                commissionPercent = winner.CommissionPercent,
-                quantity = winner.Quantity,
-                unitName = winner.UnitName,
-                quantityDisplay = FormatQuantity(winner.Quantity, winner.UnitName),
-                seller = winner.SellerCompany,
-                matchScore = winner.Score
-            },
-            ["alternatives"] = topMatches.Skip(1).Select(m => new
-            {
-                productId = m.ProductId,
-                productCode = m.ProductCode,
-                channel = m.Channel,
-                nameEn = m.NameEn,
-                nameAr = m.NameAr,
-                basePrice = m.USDPrice,
-                customerPrice = m.CustomerPrice,
-                price = m.CustomerPrice,
-                currency = m.CustomerCurrency,
-                commissionPercent = m.CommissionPercent,
-                quantity = m.Quantity,
-                unitName = m.UnitName,
-                quantityDisplay = FormatQuantity(m.Quantity, m.UnitName)
-            }).ToList(),
-            ["listings"] = listings,
+            [winnerKey] = ToUnitPricePayload(winner),
+            ["alternatives"] = topMatches.Skip(1).Select(ToUnitPricePayload).ToList(),
+            ["listings"] = listings.Select(x => x.ToChatJson()).ToList(),
             ["instruction"] =
-                "The mobile app shows listing cards under your reply. Keep the spoken answer short: name, customerPrice with currency, channel, quantity with unitName. " +
-                "Tell the user they can tap a card to open the ad details. Never invent prices. Never dump every field. Never say grams unless unitName is Gram."
+                "CRITICAL: customerPrice / unitPrice is the price of ONE unit (unitName), NOT the price of the whole stock. " +
+                "Example: unitPrice=160000, currency=USD, unitName=Ton, availableQuantity=50 means 160000 USD per Ton, and 50 Tons are in stock — NOT 160000 for 50 tons. " +
+                "NEVER multiply unitPrice by availableQuantity. NEVER say the listing costs unitPrice for the full stock. " +
+                "Spoken answer: name, then unit price with currency per unitName, then available quantity. " +
+                "The app shows listing cards — keep text short. Never invent prices. Never say grams unless unitName is Gram."
         });
     }
 
-    private async Task<List<object>> BuildListingCardsAsync(
+    private static object ToUnitPricePayload(NameCandidate m)
+    {
+        var unit = string.IsNullOrWhiteSpace(m.UnitName) ? "unit" : m.UnitName.Trim();
+        return new
+        {
+            productId = m.ProductId,
+            productCode = m.ProductCode,
+            channel = m.Channel,
+            nameEn = m.NameEn,
+            nameAr = m.NameAr,
+            unitPrice = m.CustomerPrice,
+            customerPrice = m.CustomerPrice,
+            price = m.CustomerPrice,
+            priceIsPerUnit = true,
+            pricePer = unit,
+            currency = m.CustomerCurrency,
+            priceUsd = m.CustomerPriceUsd,
+            priceAed = m.CustomerPriceAed,
+            commissionPercent = m.CommissionPercent,
+            availableQuantity = m.Quantity,
+            quantity = m.Quantity,
+            unitName = m.UnitName,
+            availableStockDisplay = FormatQuantity(m.Quantity, m.UnitName),
+            seller = m.SellerCompany,
+            matchScore = m.Score,
+            howToSay =
+                $"{m.CustomerPrice} {m.CustomerCurrency} per 1 {unit}; available stock {FormatQuantity(m.Quantity, m.UnitName)}. Do not multiply."
+        };
+    }
+
+    private async Task<List<AiProductListingDto>> BuildListingCardsAsync(
         IReadOnlyList<NameCandidate> matches,
         CancellationToken cancellationToken)
     {
@@ -1413,25 +1415,23 @@ public sealed partial class AiAssistantMcpToolsService(
                 ? "retail"
                 : (m.CategoryId is > 0 ? "category" : (string?)null);
             imagesByProduct.TryGetValue(m.ProductId, out var images);
-            return (object)new
-            {
-                productId = m.ProductId,
-                productCode = m.ProductCode,
-                nameEn = m.NameEn,
-                nameAr = m.NameAr,
-                price = m.CustomerPrice,
-                currency = m.CustomerCurrency,
-                usdPrice = m.CustomerPriceUsd,
-                priceAed = m.CustomerPriceAed,
-                quantity = m.Quantity,
-                unitName = m.UnitName,
-                categoryId = m.CategoryId,
-                productTypeId = m.ProductTypeId,
-                productTypeName = isRetail ? "Retail" : (string?)null,
-                searchListingChannel = searchChannel,
-                hasRetailPricing = isRetail,
-                images = images ?? Array.Empty<string>()
-            };
+            return new AiProductListingDto(
+                m.ProductId,
+                m.ProductCode,
+                m.NameEn,
+                m.NameAr,
+                m.CustomerPrice,
+                m.CustomerCurrency,
+                m.CustomerPriceUsd,
+                m.CustomerPriceAed,
+                m.Quantity,
+                m.UnitName,
+                m.CategoryId,
+                m.ProductTypeId,
+                isRetail ? "Retail" : null,
+                searchChannel,
+                isRetail,
+                images ?? Array.Empty<string>());
         }).ToList();
     }
 
@@ -1632,7 +1632,7 @@ public sealed partial class AiAssistantMcpToolsService(
 
     private static List<NameCandidate> RankByName(string query, IEnumerable<NameCandidate> candidates)
     {
-        var terms = ExpandSearchTerms(query);
+        var terms = CollectSearchTerms(query);
         if (terms.Count == 0) return [];
 
         return candidates
@@ -1651,7 +1651,7 @@ public sealed partial class AiAssistantMcpToolsService(
         var q = NormalizeName(query);
         if (string.IsNullOrEmpty(q)) return [];
 
-        var terms = ExpandSearchTerms(query);
+        var terms = CollectSearchTerms(query);
         return candidates
             .Select(c =>
             {
@@ -1735,7 +1735,77 @@ public sealed partial class AiAssistantMcpToolsService(
 
     /// <summary>
     /// Expand Arabic/English marketplace synonyms so "هيل" also matches "Cardamom".
+    /// Also tokenizes phrases like "ارخص زعتر" so filler words do not kill the match.
     /// </summary>
+    private static List<string> CollectSearchTerms(string query)
+    {
+        var terms = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var seed in TokenizeSearchQuery(query))
+        {
+            AddExpandedSearchTerms(terms, seed);
+        }
+
+        AddExpandedSearchTerms(terms, query);
+        terms.RemoveWhere(t => t.Length < 2 || IsSearchFillerToken(t) || IsFillerOnlyPhrase(t));
+        return terms.ToList();
+    }
+
+    private static void AddExpandedSearchTerms(HashSet<string> terms, string seed)
+    {
+        if (string.IsNullOrWhiteSpace(seed)) return;
+        foreach (var term in ExpandSearchTerms(seed))
+        {
+            terms.Add(term);
+        }
+    }
+
+    private static bool LooksLikeGenericCatalogQuery(string query) =>
+        !TokenizeSearchQuery(query).Any();
+
+    private static bool IsFillerOnlyPhrase(string phrase) =>
+        phrase.Contains(' ', StringComparison.Ordinal) && !TokenizeSearchQuery(phrase).Any();
+
+    private static IEnumerable<string> TokenizeSearchQuery(string query)
+    {
+        var normalized = NormalizeName(query);
+        if (string.IsNullOrEmpty(normalized)) yield break;
+
+        foreach (var raw in normalized.Split(
+                     [' ', '-', '_', '/', ',', '.', '?', '!', '؟', '،', '(', ')'],
+                     StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var token = raw;
+            if (token.StartsWith("ال", StringComparison.Ordinal) && token.Length >= 4)
+            {
+                token = token[2..];
+            }
+
+            if (token.Length < 2 || IsSearchFillerToken(token)) continue;
+            yield return token;
+        }
+    }
+
+    private static bool IsSearchFillerToken(string token)
+    {
+        var t = NormalizeName(token);
+        return t.Length > 0 && SearchFillerTokens.Contains(t);
+    }
+
+    private static readonly HashSet<string> SearchFillerTokens = new(StringComparer.Ordinal)
+    {
+        "ارخص", "الارخص", "اغلي", "الاغلي", "ارخصهم", "اغلاهم",
+        "سعر", "اسعار", "منتج", "منتجات", "المنتج", "المنتجات",
+        "اعلان", "اعلانات", "الاعلان", "الاعلانات",
+        "عايز", "عاوز", "هات", "هاتي", "جيب", "وريني", "شوف",
+        "ايه", "كام", "في", "السوق", "عندكم", "موجود", "موجوده",
+        "عايزين", "لي", "لييا", "انا", "من", "علي", "عن",
+        "cheap", "cheapest", "expensive", "lowest", "highest", "most",
+        "price", "prices", "product", "products", "ad", "ads",
+        "listing", "listings", "show", "find", "get", "want", "need",
+        "me", "the", "a", "an", "in", "of", "for", "my", "market",
+        "available", "please"
+    };
+
     private static List<string> ExpandSearchTerms(string query)
     {
         var q = NormalizeName(query);

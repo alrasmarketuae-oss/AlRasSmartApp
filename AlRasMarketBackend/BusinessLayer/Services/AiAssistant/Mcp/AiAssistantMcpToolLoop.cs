@@ -183,6 +183,15 @@ public sealed class AiAssistantMcpToolLoop(
                         .ConfigureAwait(false);
 
                     listings.AddRange(ParseListingCards(name, result.Content));
+                    if (ListingToolNames.Contains(name)
+                        && listings.Count == 0
+                        && IsSuccessfulToolPayload(result.Content))
+                    {
+                        logger.LogWarning(
+                            "AI tool {Tool} succeeded but returned no listing cards. Payload: {Payload}",
+                            name,
+                            TruncateForLog(result.Content));
+                    }
 
                     if (AccountMutationTools.Contains(name)
                         && IsSuccessfulToolPayload(result.Content))
@@ -267,24 +276,175 @@ public sealed class AiAssistantMcpToolLoop(
         try
         {
             using var doc = JsonDocument.Parse(content);
-            if (!doc.RootElement.TryGetProperty("listings", out var listingsEl)
-                || listingsEl.ValueKind != JsonValueKind.Array)
+            var parsed = new List<AiProductListingDto>();
+            if (doc.RootElement.TryGetProperty("listings", out var listingsEl)
+                && listingsEl.ValueKind == JsonValueKind.Array)
             {
-                return [];
+                foreach (var el in listingsEl.EnumerateArray())
+                {
+                    var card = TryReadListingCard(el);
+                    if (card is not null && card.ProductId != Guid.Empty)
+                    {
+                        parsed.Add(card);
+                    }
+                }
             }
 
-            var parsed = JsonSerializer.Deserialize<List<AiProductListingDto>>(
-                listingsEl.GetRawText(),
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            return parsed?
-                .Where(x => x.ProductId != Guid.Empty)
-                .ToList()
-                ?? [];
+            if (parsed.Count == 0)
+            {
+                foreach (var key in new[] { "cheapest", "mostExpensive", "bestMatch", "alternatives" })
+                {
+                    if (!doc.RootElement.TryGetProperty(key, out var extra)) continue;
+                    if (extra.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var el in extra.EnumerateArray())
+                        {
+                            var card = TryReadListingCard(el);
+                            if (card is not null && card.ProductId != Guid.Empty)
+                            {
+                                parsed.Add(card);
+                            }
+                        }
+                    }
+                    else if (extra.ValueKind == JsonValueKind.Object)
+                    {
+                        var card = TryReadListingCard(extra);
+                        if (card is not null && card.ProductId != Guid.Empty)
+                        {
+                            parsed.Add(card);
+                        }
+                    }
+                }
+            }
+
+            return parsed;
         }
         catch
         {
             return [];
         }
+    }
+
+    private static AiProductListingDto? TryReadListingCard(JsonElement el)
+    {
+        if (el.ValueKind != JsonValueKind.Object) return null;
+        if (!TryGetGuid(el, "productId", out var productId) || productId == Guid.Empty)
+        {
+            return null;
+        }
+
+        var images = new List<string>();
+        if (TryGetPropertyIgnoreCase(el, "images", out var imgs)
+            && imgs.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var img in imgs.EnumerateArray())
+            {
+                if (img.ValueKind != JsonValueKind.String) continue;
+                var path = img.GetString();
+                if (!string.IsNullOrWhiteSpace(path)) images.Add(path.Trim());
+            }
+        }
+
+        return new AiProductListingDto(
+            productId,
+            GetJsonString(el, "productCode"),
+            GetJsonString(el, "nameEn"),
+            GetJsonString(el, "nameAr"),
+            GetJsonDecimal(el, "price") ?? 0,
+            GetJsonString(el, "currency"),
+            GetJsonDecimal(el, "usdPrice") ?? GetJsonDecimal(el, "priceUsd"),
+            GetJsonDecimal(el, "priceAed"),
+            GetJsonInt64(el, "quantity") ?? 0,
+            GetJsonString(el, "unitName"),
+            GetJsonByte(el, "categoryId"),
+            GetJsonByte(el, "productTypeId"),
+            GetJsonString(el, "productTypeName"),
+            GetJsonString(el, "searchListingChannel"),
+            GetJsonBool(el, "hasRetailPricing"),
+            images);
+    }
+
+    private static bool TryGetPropertyIgnoreCase(JsonElement el, string name, out JsonElement value)
+    {
+        if (el.TryGetProperty(name, out value)) return true;
+        foreach (var prop in el.EnumerateObject())
+        {
+            if (string.Equals(prop.Name, name, StringComparison.OrdinalIgnoreCase))
+            {
+                value = prop.Value;
+                return true;
+            }
+        }
+
+        value = default;
+        return false;
+    }
+
+    private static bool TryGetGuid(JsonElement el, string name, out Guid id)
+    {
+        id = Guid.Empty;
+        if (!TryGetPropertyIgnoreCase(el, name, out var value)) return false;
+        if (value.ValueKind == JsonValueKind.String)
+        {
+            return Guid.TryParse(value.GetString(), out id);
+        }
+
+        return false;
+    }
+
+    private static string? GetJsonString(JsonElement el, string name) =>
+        TryGetPropertyIgnoreCase(el, name, out var value) && value.ValueKind == JsonValueKind.String
+            ? value.GetString()
+            : null;
+
+    private static decimal? GetJsonDecimal(JsonElement el, string name)
+    {
+        if (!TryGetPropertyIgnoreCase(el, name, out var value)) return null;
+        if (value.ValueKind == JsonValueKind.Number && value.TryGetDecimal(out var n)) return n;
+        if (value.ValueKind == JsonValueKind.String
+            && decimal.TryParse(value.GetString(), out var parsed))
+        {
+            return parsed;
+        }
+
+        return null;
+    }
+
+    private static long? GetJsonInt64(JsonElement el, string name)
+    {
+        if (!TryGetPropertyIgnoreCase(el, name, out var value)) return null;
+        if (value.ValueKind == JsonValueKind.Number)
+        {
+            if (value.TryGetInt64(out var n)) return n;
+            if (value.TryGetDecimal(out var d)) return (long)decimal.Truncate(d);
+        }
+
+        if (value.ValueKind == JsonValueKind.String
+            && long.TryParse(value.GetString(), out var parsed))
+        {
+            return parsed;
+        }
+
+        return null;
+    }
+
+    private static byte? GetJsonByte(JsonElement el, string name)
+    {
+        var n = GetJsonInt64(el, name);
+        if (n is < 0 or > 255) return null;
+        return n is null ? null : (byte)n.Value;
+    }
+
+    private static bool GetJsonBool(JsonElement el, string name)
+    {
+        if (!TryGetPropertyIgnoreCase(el, name, out var value)) return false;
+        return value.ValueKind switch
+        {
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.String when bool.TryParse(value.GetString(), out var b) => b,
+            _ => false
+        };
     }
 
     private static IReadOnlyList<AiProductListingDto> DeduplicateListings(
@@ -514,6 +674,12 @@ public sealed class AiAssistantMcpToolLoop(
                 ? "تم إنشاء الإعلان بنجاح وإرساله للمراجعة من الإدارة."
                 : "Your ad was created and submitted for admin review.";
         }
+    }
+
+    private static string TruncateForLog(string value, int max = 500)
+    {
+        if (string.IsNullOrEmpty(value) || value.Length <= max) return value;
+        return value[..max] + "…";
     }
 
     private static bool IsSuccessfulToolPayload(string content)

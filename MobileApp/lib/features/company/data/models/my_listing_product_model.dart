@@ -491,6 +491,7 @@ class MyListingProductModel {
 
     return MyListingProductModel(
       productId: json['productId']?.toString() ??
+          json['ProductId']?.toString() ??
           _extractProductIdFromAssetPaths(images) ??
           '',
       productName: () {

@@ -965,37 +965,36 @@ class _AiAssistantViewState extends State<AiAssistantView> {
           _thinkingSteps.clear();
           _thinkingStartedAt = null;
           _inFlightResponseId = null;
-          if (finalAnswer.isNotEmpty) {
-            final targetIndex = responseId == null
-                ? (_messages.lastIndexWhere((m) => !m.isUser))
-                : _messages.lastIndexWhere(
-                    (m) => !m.isUser && m.responseId == responseId,
-                  );
-            if (targetIndex >= 0) {
-              final target = _messages[targetIndex];
-              if (target.text.isEmpty ||
-                  looksLikeTemporaryAssistantFailure(target.text)) {
-                target.text = finalAnswer;
-              }
-              target.thinkingSteps.clear();
-              if (parsedListings.isNotEmpty) {
-                target.listings = parsedListings;
-              }
-              target.showSupportCallbackForm = offerSupportCallback;
-              target.supportQuestion = supportQuestion;
-            } else if (_messages.isEmpty || _messages.last.isUser) {
-              _messages.add(
-                _ChatMessage(
-                  text: finalAnswer,
-                  isUser: false,
-                  thinkingSteps: const [],
-                  showSupportCallbackForm: offerSupportCallback,
-                  supportQuestion: supportQuestion,
-                  responseId: responseId,
-                  listings: parsedListings,
-                ),
-              );
+          final targetIndex = responseId == null
+              ? (_messages.lastIndexWhere((m) => !m.isUser))
+              : _messages.lastIndexWhere(
+                  (m) => !m.isUser && m.responseId == responseId,
+                );
+          if (targetIndex >= 0) {
+            final target = _messages[targetIndex];
+            if (finalAnswer.isNotEmpty &&
+                (target.text.isEmpty ||
+                    looksLikeTemporaryAssistantFailure(target.text))) {
+              target.text = finalAnswer;
             }
+            target.thinkingSteps.clear();
+            if (parsedListings.isNotEmpty) {
+              target.listings = parsedListings;
+            }
+            target.showSupportCallbackForm = offerSupportCallback;
+            target.supportQuestion = supportQuestion;
+          } else if (finalAnswer.isNotEmpty || parsedListings.isNotEmpty) {
+            _messages.add(
+              _ChatMessage(
+                text: finalAnswer,
+                isUser: false,
+                thinkingSteps: const [],
+                showSupportCallbackForm: offerSupportCallback,
+                supportQuestion: supportQuestion,
+                responseId: responseId,
+                listings: parsedListings,
+              ),
+            );
           } else if (offerSupportCallback) {
             _messages.add(
               _ChatMessage(

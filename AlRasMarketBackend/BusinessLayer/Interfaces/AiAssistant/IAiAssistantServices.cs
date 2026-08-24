@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using System.Linq;
+
 namespace BusinessLayer.Interfaces;
 
 public sealed record AiKnowledgeChunk(
@@ -44,7 +47,38 @@ public sealed record AiProductListingDto(
     string? ProductTypeName,
     string? SearchListingChannel,
     bool HasRetailPricing = false,
-    IReadOnlyList<string>? Images = null);
+    IReadOnlyList<string>? Images = null)
+{
+    /// <summary>
+    /// Plain JSON map the Flutter chat parser understands (never anonymous objects).
+    /// </summary>
+    public Dictionary<string, object?> ToChatJson()
+    {
+        var displayName = string.IsNullOrWhiteSpace(NameEn) ? NameAr : NameEn;
+        return new Dictionary<string, object?>
+        {
+            ["productId"] = ProductId.ToString("D"),
+            ["productCode"] = ProductCode,
+            ["productName"] = displayName,
+            ["nameEn"] = NameEn,
+            ["nameAr"] = NameAr,
+            ["price"] = Price,
+            ["displayPrice"] = Price,
+            ["currency"] = Currency,
+            ["usdPrice"] = UsdPrice,
+            ["priceUsd"] = UsdPrice,
+            ["priceAed"] = PriceAed,
+            ["quantity"] = Quantity,
+            ["unitName"] = UnitName,
+            ["categoryId"] = CategoryId,
+            ["productTypeId"] = ProductTypeId,
+            ["productTypeName"] = ProductTypeName,
+            ["searchListingChannel"] = SearchListingChannel,
+            ["hasRetailPricing"] = HasRetailPricing,
+            ["images"] = Images?.ToList() ?? new List<string>()
+        };
+    }
+}
 
 public sealed record AiAssistantAnswer(
     string Answer,

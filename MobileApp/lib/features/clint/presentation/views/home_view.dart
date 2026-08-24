@@ -105,17 +105,22 @@ class _HomeViewState extends State<HomeView> {
         final cubit = ClintCubit.get(context);
         final isPersonalCustomer =
             AuthService.instance.isPersonalCustomerAccount;
-        final hideRetailService = AuthService.instance.isSupplierAccount &&
-            !AuthService.instance.isUaePhoneNumber;
+        final isCompanyCustomer =
+            AuthService.instance.isCompanyCustomerAccount;
+        final hideRetailService = isCompanyCustomer ||
+            (AuthService.instance.isSupplierAccount &&
+                !AuthService.instance.isUaePhoneNumber);
         final displayProducts = cubit.homeProducts;
 
-        // Service sections under banners (hide Retail for overseas suppliers).
+        // Service sections under banners (hide Retail for overseas suppliers
+        // and Retail/Requests for company-customer accounts).
         final servicesIcons = [
-          (
-            iconPath: AppAssets.servicesIcon,
-            name: S.of(context).requests,
-            screen: AppRoutes.kRequestsServiceView,
-          ),
+          if (!isCompanyCustomer)
+            (
+              iconPath: AppAssets.servicesIcon,
+              name: S.of(context).requests,
+              screen: AppRoutes.kRequestsServiceView,
+            ),
           (
             iconPath: AppAssets.servicesIcon2,
             name: S.of(context).offers,
