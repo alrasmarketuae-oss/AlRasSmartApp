@@ -256,10 +256,10 @@ public partial class ProductsAppService
             IReadOnlyList<string> fallbackSearchNames = Array.Empty<string>();
             IReadOnlyList<string> fallbackSearchTokens = Array.Empty<string>();
 
-            // CLIP/Qdrant catalog photos are a similarity sample (capped at ~100).
-            // When labels exist (e.g. Cardamom / الهيل), load the full matching catalog
-            // and paginate it — not only when visual hits were empty.
-            if (suggestedNames.Count > 0)
+            // CLIP reference labels (e.g. Cardamom / الهيل) expand the catalog only when
+            // no listing photo was close enough. Otherwise visual matches win — a photo
+            // from the same ad must not be replaced by the whole الهيل category.
+            if (ranked.Count == 0 && suggestedNames.Count > 0)
             {
                 var (fallbackRows, fallbackTotal, fallbackMode, fallbackNames, fallbackTokens, categoryId) =
                     await ResolveCatalogFromClipLabelsAsync(
