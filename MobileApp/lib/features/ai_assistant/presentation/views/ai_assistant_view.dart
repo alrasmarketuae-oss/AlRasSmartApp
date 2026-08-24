@@ -2144,24 +2144,30 @@ class _LinkifiedMessageText extends StatelessWidget {
       }
       final label = match.group(1)!;
       final target = match.group(2)!;
-      spans.add(
-        WidgetSpan(
-          alignment: PlaceholderAlignment.baseline,
-          baseline: TextBaseline.alphabetic,
-          child: GestureDetector(
-            onTap: () => _openLink(target),
-            child: Text(
-              label,
-              style: style.copyWith(
-                color: LightColor.defaultColor,
-                fontWeight: FontWeight.w700,
-                decoration: TextDecoration.underline,
-                decorationColor: LightColor.defaultColor,
+      final isWeb = target.toLowerCase().startsWith('http://') ||
+          target.toLowerCase().startsWith('https://');
+      if (isWeb) {
+        spans.addAll(_parseSegment(label));
+      } else {
+        spans.add(
+          WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: GestureDetector(
+              onTap: () => _openLink(target),
+              child: Text(
+                label,
+                style: style.copyWith(
+                  color: LightColor.defaultColor,
+                  fontWeight: FontWeight.w700,
+                  decoration: TextDecoration.underline,
+                  decorationColor: LightColor.defaultColor,
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
+      }
       cursor = match.end;
     }
     if (cursor < text.length) {

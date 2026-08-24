@@ -432,7 +432,7 @@ public sealed class AiAssistantAppService(
             - find_cheapest_product: MUST call this when the user asks أرخص / cheapest. Pass only the product name (هيل, cardamom) — never the whole sentence. If they said "أرخص منتج" without naming one, omit product_name. UNIT PRICE: tool.unitPrice is for ONE unitName (e.g. 160000 USD per Ton). availableQuantity is stock only. NEVER say the price is for the whole stock. NEVER multiply. Spoken: «السعر 160000 للدولار للطن الواحد، والكمية المتوفرة 50 طن». Cards appear under the reply.
             - find_most_expensive_product: same unit-price rules as find_cheapest_product (أغلى / most expensive). Never multiply price by quantity.
             - search_products: search public ads by product name/type. MUST call this when they want to see ads/cards without asking cheap/expensive. Cards appear in chat; summarize, do not paste a long catalog.
-            CRITICAL product cards: never answer live marketplace prices or names from memory. If they ask cheapest/most expensive/search/show ads, call the matching tool in this turn. Cards only appear when the tool returns listings.
+            CRITICAL product cards: never answer live marketplace prices or names from memory. If they ask about a product, cheapest/most expensive/search/show ads, call the matching tool in this turn. The mobile app renders ProductCard widgets (photo, name, available quantity, unit, sold-out stamp). NEVER write website URLs, markdown links like [name](http://...), or tell the user to open a browser. Keep the spoken/typed reply to one short sentence; cards appear under it.
             - get_my_sales_count: SELLER role — orders customers placed on THIS USER's ads (الطلبات على إعلاناتي / مبيعاتي). Never confuse with My Orders.
             - get_last_order_on_my_ads: SELLER role — latest incoming order on their ads (آخر طلب على إعلاناتي).
             - explain_order_delay_on_my_ads: SELLER role — why an incoming ad order may be delayed.
@@ -574,16 +574,22 @@ public sealed class AiAssistantAppService(
     {
         if (generated.Listings is { Count: > 0 })
         {
-            return generated;
+            return generated with { Answer = StripWebLinksFromAnswer(generated.Answer) };
         }
 
         var toolName = ResolveCatalogListingTool(message);
-        if (toolName is null)
+        if (toolName is null && HasWebProductLinks(generated.Answer))
         {
-            return generated;
+            toolName = "search_products";
         }
 
-        var productName = ExtractCatalogProductName(message);
+        if (toolName is null)
+        {
+            return generated with { Answer = StripWebLinksFromAnswer(generated.Answer) };
+        }
+
+        var productName = ExtractCatalogProductName(message)
+            ?? FirstMarkdownLinkLabel(generated.Answer);
         var args = string.IsNullOrWhiteSpace(productName)
             ? "{}"
             : JsonSerializer.Serialize(new { product_name = productName });
@@ -603,15 +609,15 @@ public sealed class AiAssistantAppService(
                     "Forced catalog tool {Tool} returned no listing cards for {Message}",
                     toolName,
                     TrimForThinking(message));
-                return generated;
+                return generated with { Answer = StripWebLinksFromAnswer(generated.Answer) };
             }
 
-            return new AiMcpLoopResult(generated.Answer, listings);
+            return new AiMcpLoopResult(StripWebLinksFromAnswer(generated.Answer), listings);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             logger.LogWarning(ex, "Failed to attach catalog listing cards for {Tool}", toolName);
-            return generated;
+            return generated with { Answer = StripWebLinksFromAnswer(generated.Answer) };
         }
     }
 
@@ -624,6 +630,11 @@ public sealed class AiAssistantAppService(
         }
 
         var q = visible.Trim().ToLowerInvariant();
+        if (ContainsAny(q, "شحن", "shipping", "حاوية", "container", "من ميناء", "to country"))
+        {
+            return null;
+        }
+
         if (ContainsAny(q, "أرخص", "ارخص", "cheapest", "lowest price", "اقل سعر", "أقل سعر"))
         {
             return "find_cheapest_product";
@@ -644,10 +655,20 @@ public sealed class AiAssistantAppService(
                 "كروت",
                 "إعلانات",
                 "اعلانات",
+                "عايز",
+                "عاوز",
+                "عندك",
+                "عندكم",
+                "وريني",
+                "اديني",
+                "سعر",
+                "منتج",
                 "search product",
                 "find product",
                 "show ads",
-                "show products"))
+                "show products",
+                "looking for",
+                "do you have"))
         {
             return "search_products";
         }
@@ -669,6 +690,32 @@ public sealed class AiAssistantAppService(
         cleaned = Regex.Replace(cleaned, @"\s+", " ").Trim(" ؟?!.،,".ToCharArray());
         return cleaned.Length < 2 ? null : cleaned;
     }
+
+    private static bool HasWebProductLinks(string? text) =>
+        !string.IsNullOrWhiteSpace(text)
+        && MarkdownWebLinkRegex.IsMatch(text);
+
+    private static string? FirstMarkdownLinkLabel(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return null;
+        var match = MarkdownWebLinkRegex.Match(text);
+        var label = match.Success ? match.Groups[1].Value.Trim() : null;
+        return string.IsNullOrWhiteSpace(label) ? null : label;
+    }
+
+    private static string StripWebLinksFromAnswer(string? answer)
+    {
+        if (string.IsNullOrWhiteSpace(answer)) return answer ?? string.Empty;
+        var stripped = MarkdownWebLinkRegex.Replace(answer, "$1");
+        stripped = Regex.Replace(stripped, @"https?://\S+", string.Empty, RegexOptions.IgnoreCase);
+        stripped = Regex.Replace(stripped, @"[ \t]{2,}", " ");
+        stripped = Regex.Replace(stripped, @"\n{3,}", "\n\n");
+        return stripped.Trim();
+    }
+
+    private static readonly Regex MarkdownWebLinkRegex = new(
+        @"\[([^\]]+)\]\((?:https?://|www\.)[^)]+\)",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     private static bool ContainsAny(string haystack, params string[] needles) =>
         needles.Any(n => haystack.Contains(n, StringComparison.OrdinalIgnoreCase));

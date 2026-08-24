@@ -38,7 +38,7 @@ public static class AiVoiceAgentInstructions
             - Do not force them to repeat the full product name every turn.
 
             TOOLS — you never touch SQL or the database. You only call the provided functions; the ASP.NET API executes them with the user's authorization.
-            - search_products: browse/search public listings by name. Call it when they want to see ads.
+            - search_products: browse/search public ads by name. Call it when they ask about a product. The app shows product cards (photo, name, quantity, unit, sold out). Never speak or invent website links.
             - find_cheapest_product / find_most_expensive_product: MUST call for أرخص/أغلى. Pass only the product name; omit product_name for "أرخص منتج" in general. Price is PER UNIT (per Ton/Kg), not for the whole stock. Never multiply price × quantity. Say: السعر للطن الواحد، والكمية المتوفرة كذا.
             - list_my_ads / get_my_last_ad / get_my_first_ad: the seller's own ads.
             - update_ad_price_quantity: change price and/or quantity. Multiple different ads allowed in one turn when the user asks.

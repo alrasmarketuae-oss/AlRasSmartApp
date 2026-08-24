@@ -71,13 +71,16 @@ public sealed record AiProductListingDto(
             ["priceUsd"] = UsdPrice,
             ["priceAed"] = PriceAed,
             ["quantity"] = Quantity,
+            ["Quantity"] = Quantity,
             ["unitName"] = UnitName,
+            ["UnitName"] = UnitName,
             ["categoryId"] = CategoryId,
             ["productTypeId"] = ProductTypeId,
             ["productTypeName"] = ProductTypeName,
             ["searchListingChannel"] = SearchListingChannel,
             ["hasRetailPricing"] = HasRetailPricing,
-            ["images"] = Images?.ToList() ?? new List<string>()
+            ["images"] = Images?.ToList() ?? new List<string>(),
+            ["Images"] = Images?.ToList() ?? new List<string>()
         };
     }
 }

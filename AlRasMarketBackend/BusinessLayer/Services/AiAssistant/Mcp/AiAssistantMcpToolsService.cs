@@ -1457,8 +1457,8 @@ public sealed partial class AiAssistantMcpToolsService(
                 "CRITICAL: customerPrice / unitPrice is the price of ONE unit (unitName), NOT the price of the whole stock. " +
                 "Example: unitPrice=160000, currency=USD, unitName=Ton, availableQuantity=50 means 160000 USD per Ton, and 50 Tons are in stock — NOT 160000 for 50 tons. " +
                 "NEVER multiply unitPrice by availableQuantity. NEVER say the listing costs unitPrice for the full stock. " +
-                "Spoken answer: name, then unit price with currency per unitName, then available quantity. " +
-                "The app shows listing cards — keep text short. Never invent prices. Never say grams unless unitName is Gram."
+                "Spoken answer: one short sentence only. NEVER output URLs or markdown links. " +
+                "The app shows ProductCard widgets with photo, name, available quantity, unit, and sold-out stamp. Never invent prices. Never say grams unless unitName is Gram."
         });
     }
 

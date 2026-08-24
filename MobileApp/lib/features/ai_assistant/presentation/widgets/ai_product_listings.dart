@@ -24,6 +24,14 @@ class AiProductListings extends StatelessWidget {
       if (productId.isEmpty) continue;
       map['productId'] = productId;
       map.putIfAbsent('ProductId', () => productId);
+      map['images'] = map['images'] ?? map['Images'] ?? const [];
+      map['quantity'] = map['quantity'] ?? map['Quantity'];
+      map['unitName'] = map['unitName'] ?? map['UnitName'];
+      map['productName'] = map['productName'] ??
+          map['nameEn'] ??
+          map['NameEn'] ??
+          map['nameAr'] ??
+          map['NameAr'];
       try {
         final product = MyListingProductModel.fromJson(map);
         if (product.productId.trim().isEmpty) continue;

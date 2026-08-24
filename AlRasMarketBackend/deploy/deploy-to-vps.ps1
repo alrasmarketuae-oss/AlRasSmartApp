@@ -42,6 +42,8 @@ tar -czf $tar `
     --exclude=bin --exclude=obj --exclude=.vs --exclude=.git `
     --exclude=scripts/tmp-world-data --exclude=.nuget-cache `
     --exclude=deploy/certbot `
+    --exclude=BusinessLayer/DataAccess `
+    --exclude=loadtests `
     .
 Pop-Location
 Write-Host "    Archive: $([math]::Round((Get-Item $tar).Length / 1MB, 1)) MB"
@@ -54,13 +56,14 @@ $serviceList = if ([string]::IsNullOrWhiteSpace($Services)) { "" } else { $Servi
 $remoteCmd = @"
 set -e
 cd '$RemotePath'
+# Stale path from before ProductAdoRepository moved to DataLayer.
+# Must remove it before extract: Windows tar still lists the folder and mkdir fails.
+rm -rf BusinessLayer/DataAccess 2>/dev/null || true
 # Windows-built archives can contain duplicate members / metadata headers.
 # --overwrite replaces existing source files instead of aborting the deploy.
-tar --overwrite --no-same-owner -xzf backend.tar.gz
-rm -f backend.tar.gz
-# Stale path from before ProductAdoRepository moved to DataLayer.
-rm -f BusinessLayer/DataAccess/ProductAdoRepository.cs
-rmdir BusinessLayer/DataAccess 2>/dev/null || true
+tar --overwrite --no-same-owner --exclude='BusinessLayer/DataAccess' --exclude='./BusinessLayer/DataAccess' -xzf backend.tar.gz
+rm -f backend.tar.gz 2>/dev/null || true
+rm -rf BusinessLayer/DataAccess 2>/dev/null || true
 # Stale AI assistant paths before Services/AiAssistant (+ Mcp) move.
 rm -f BusinessLayer/Services/AiAssistantToolsService.cs
 rm -f BusinessLayer/Services/AiAssistantAppService.cs
