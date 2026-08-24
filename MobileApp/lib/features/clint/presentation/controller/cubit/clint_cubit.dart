@@ -3486,7 +3486,7 @@ class ClintCubit extends Cubit<ClintStates> {
       final preserved = _cartLoadedState;
       emit(
         CartLoadedState(
-          cart: cart,
+          cart: _applyPendingCartQtyWrites(cart),
           isLoading: false,
           selectedPaymentMethod:
               preserved?.selectedPaymentMethod ?? CartPaymentMethod.online,
@@ -3874,6 +3874,15 @@ class ClintCubit extends Cubit<ClintStates> {
     );
   }
 
+  /// Coalesces rapid +/- taps and serializes cart writes so an older API
+  /// response cannot overwrite a newer local quantity ("quantity jumps back").
+  final Map<int, _PendingCartQtyWrite> _pendingCartQtyWrites = {};
+  Future<void> _cartWriteChain = Future.value();
+  bool _cartWriteDraining = false;
+
+  /// Prevents duplicate add-to-cart taps while a cart API call is in flight.
+  bool _cartMutationInFlight = false;
+
   Future<void> incrementItem({
     required int cartItemId,
     required String productId,
@@ -3885,12 +3894,11 @@ class ClintCubit extends Cubit<ClintStates> {
     final item = _findCartItem(current.cart, cartItemId);
     if (item == null || !item.canIncrement) return;
 
-    await _updateCartQuantity(
+    await _queueCartQuantityDelta(
       cartItemId: cartItemId,
       productId: productId,
       unitName: unitName,
-      quantity: 1,
-      optimisticCart: _applyOptimisticQuantityChange(current.cart, cartItemId, 1),
+      delta: 1,
     );
   }
 
@@ -3898,19 +3906,19 @@ class ClintCubit extends Cubit<ClintStates> {
     final current = _cartLoadedState;
     if (current == null) return;
 
-    await _mutateCartItem(
+    final item = _findCartItem(current.cart, cartItemId);
+    if (item == null) return;
+
+    if (item.quantity <= 1) {
+      await removeCartItem(cartItemId: cartItemId);
+      return;
+    }
+
+    await _queueCartQuantityDelta(
       cartItemId: cartItemId,
-      optimisticCart: _applyOptimisticQuantityChange(current.cart, cartItemId, -1),
-      action: () {
-        final token = AuthService.instance.currentToken!;
-        return _reduceCartItemQuantityUseCase(
-          ReduceCartItemQuantityParams(
-            token: token,
-            cartItemId: cartItemId,
-            quantity: 1,
-          ),
-        );
-      },
+      productId: item.productId,
+      unitName: item.unitName,
+      delta: -1,
     );
   }
 
@@ -3936,60 +3944,49 @@ class ClintCubit extends Cubit<ClintStates> {
     final delta = capped - item.quantity;
     if (delta == 0) return;
 
-    if (delta > 0) {
-      await _updateCartQuantity(
-        cartItemId: cartItemId,
-        productId: productId,
-        unitName: unitName,
-        quantity: delta,
-        optimisticCart:
-            _applyOptimisticQuantityChange(current.cart, cartItemId, delta),
-      );
-      return;
-    }
+    // Absolute edits replace any coalesced step taps for this line.
+    _pendingCartQtyWrites.remove(cartItemId);
 
-    final token = AuthService.instance.currentToken;
-    if (token == null || token.isEmpty) {
-      emit(CartErrorState(S.current.pleaseLoginToManageYourCart));
-      return;
-    }
-
-    await _mutateCartItem(
+    await _queueCartQuantityDelta(
       cartItemId: cartItemId,
-      optimisticCart:
-          _applyOptimisticQuantityChange(current.cart, cartItemId, delta),
-      action: () => _reduceCartItemQuantityUseCase(
-        ReduceCartItemQuantityParams(
-          token: token,
-          cartItemId: cartItemId,
-          quantity: -delta,
-        ),
-      ),
+      productId: productId,
+      unitName: unitName,
+      delta: delta,
     );
   }
 
   Future<void> removeCartItem({required int cartItemId}) async {
+    _pendingCartQtyWrites.remove(cartItemId);
+
     final current = _cartLoadedState;
     if (current == null) return;
 
-    await _mutateCartItem(
-      cartItemId: cartItemId,
-      optimisticCart: current.cart.copyWith(
-        items: current.cart.items
-            .where((item) => item.id != cartItemId)
-            .toList(),
-      ),
-      action: () {
-        final token = AuthService.instance.currentToken!;
-        return _removeCartItemUseCase(
-          RemoveCartItemParams(token: token, cartItemId: cartItemId),
-        );
-      },
+    final optimisticCart = current.cart.copyWith(
+      items: current.cart.items
+          .where((item) => item.id != cartItemId)
+          .toList(),
     );
-  }
+    final cleared = _cartWithoutPendingPayment(current);
+    emit(
+      cleared.copyWith(
+        cart: optimisticCart,
+        clearErrorMessage: true,
+        clearSuccessMessage: true,
+      ),
+    );
 
-  /// Prevents duplicate add-to-cart taps while a cart API call is in flight.
-  bool _cartMutationInFlight = false;
+    await _enqueueCartWrite(() async {
+      await _mutateCartItem(
+        cartItemId: cartItemId,
+        action: () {
+          final token = AuthService.instance.currentToken!;
+          return _removeCartItemUseCase(
+            RemoveCartItemParams(token: token, cartItemId: cartItemId),
+          );
+        },
+      );
+    });
+  }
 
   Future<void> addProductToCart({
     required String productId,
@@ -4014,15 +4011,152 @@ class ClintCubit extends Cubit<ClintStates> {
 
     _cartMutationInFlight = true;
     try {
-      await _updateCartQuantity(
-        productId: productId,
-        unitName: unitName,
-        quantity: quantity,
-        successMessage: S.current.productAddedToCart,
-      );
+      await _enqueueCartWrite(() async {
+        await _updateCartQuantity(
+          productId: productId,
+          unitName: unitName,
+          quantity: quantity,
+          successMessage: S.current.productAddedToCart,
+        );
+      });
     } finally {
       _cartMutationInFlight = false;
     }
+  }
+
+  Future<void> _queueCartQuantityDelta({
+    required int cartItemId,
+    required String productId,
+    required String unitName,
+    required double delta,
+  }) async {
+    if (delta == 0) return;
+
+    final token = AuthService.instance.currentToken;
+    if (token == null || token.isEmpty) {
+      emit(CartErrorState(S.current.pleaseLoginToManageYourCart));
+      return;
+    }
+
+    final current = _cartLoadedState;
+    if (current == null) return;
+
+    final item = _findCartItem(current.cart, cartItemId);
+    if (item == null) return;
+
+    var appliedDelta = delta;
+    if (appliedDelta > 0) {
+      final max = item.availableQuantity;
+      if (max != null) {
+        final room = max - item.quantity;
+        if (room <= 0.0001) return;
+        if (appliedDelta > room) appliedDelta = room;
+      }
+    } else if (-appliedDelta >= item.quantity - 0.0001) {
+      await removeCartItem(cartItemId: cartItemId);
+      return;
+    }
+
+    final cleared = _cartWithoutPendingPayment(current);
+    emit(
+      cleared.copyWith(
+        cart: _applyOptimisticQuantityChange(
+          cleared.cart,
+          cartItemId,
+          appliedDelta,
+        ),
+        clearErrorMessage: true,
+        clearSuccessMessage: true,
+      ),
+    );
+
+    final pending = _pendingCartQtyWrites.putIfAbsent(
+      cartItemId,
+      () => _PendingCartQtyWrite(
+        cartItemId: cartItemId,
+        productId: productId,
+        unitName: unitName,
+      ),
+    );
+    pending.delta += appliedDelta;
+    if (pending.delta.abs() < 0.0001) {
+      _pendingCartQtyWrites.remove(cartItemId);
+      return;
+    }
+
+    await _ensureCartWritesDrained();
+  }
+
+  Future<void> _ensureCartWritesDrained() {
+    if (_cartWriteDraining) return _cartWriteChain;
+    _cartWriteDraining = true;
+    _cartWriteChain = _cartWriteChain
+        .then((_) => _drainPendingCartQtyWrites())
+        .whenComplete(() {
+      _cartWriteDraining = false;
+      if (_pendingCartQtyWrites.isNotEmpty) {
+        unawaited(_ensureCartWritesDrained());
+      }
+    });
+    return _cartWriteChain;
+  }
+
+  Future<void> _enqueueCartWrite(Future<void> Function() write) {
+    final done = Completer<void>();
+    _cartWriteChain = _cartWriteChain.then((_) async {
+      try {
+        await write();
+        if (!done.isCompleted) done.complete();
+      } catch (e, st) {
+        if (!done.isCompleted) done.completeError(e, st);
+      }
+    });
+    return done.future;
+  }
+
+  Future<void> _drainPendingCartQtyWrites() async {
+    while (_pendingCartQtyWrites.isNotEmpty) {
+      final batch = Map<int, _PendingCartQtyWrite>.from(_pendingCartQtyWrites);
+      _pendingCartQtyWrites.clear();
+
+      for (final write in batch.values) {
+        if (write.delta.abs() < 0.0001) continue;
+        await _flushCartQuantityWrite(write);
+      }
+    }
+  }
+
+  Future<void> _flushCartQuantityWrite(_PendingCartQtyWrite write) async {
+    final token = AuthService.instance.currentToken;
+    if (token == null || token.isEmpty) {
+      emit(CartErrorState(S.current.pleaseLoginToManageYourCart));
+      return;
+    }
+
+    final delta = write.delta;
+    await _mutateCartItem(
+      cartItemId: write.cartItemId,
+      // Optimistic UI already applied when the taps were queued.
+      action: () {
+        if (delta > 0) {
+          return _addCartItemUseCase(
+            AddCartItemParams(
+              token: token,
+              productId: write.productId,
+              quantity: delta,
+              unitName: write.unitName,
+            ),
+          );
+        }
+        return _reduceCartItemQuantityUseCase(
+          ReduceCartItemQuantityParams(
+            token: token,
+            cartItemId: write.cartItemId,
+            quantity: -delta,
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _updateCartQuantity({
@@ -4093,6 +4227,19 @@ class ClintCubit extends Cubit<ClintStates> {
     return cart.copyWith(items: items);
   }
 
+  CartEntity _applyPendingCartQtyWrites(CartEntity cart) {
+    var merged = cart;
+    for (final write in _pendingCartQtyWrites.values) {
+      if (write.delta.abs() < 0.0001) continue;
+      merged = _applyOptimisticQuantityChange(
+        merged,
+        write.cartItemId,
+        write.delta,
+      );
+    }
+    return merged;
+  }
+
   Future<void> _mutateCartItem({
     int? cartItemId,
     required Future<Either<Failure, CartEntity>> Function() action,
@@ -4118,12 +4265,11 @@ class ClintCubit extends Cubit<ClintStates> {
           clearSuccessMessage: true,
         ),
       );
-    } else if (clearedCurrent != null) {
+    } else if (clearedCurrent != null && optimisticCart == null) {
+      // Keep step buttons usable while a coalesced write is in flight; only
+      // show the updating lock when we did not already paint an optimistic qty.
       emit(
         clearedCurrent.copyWith(
-          isUpdatingItem: true,
-          updatingCartItemId: cartItemId,
-          clearUpdatingCartItemId: cartItemId == null,
           clearErrorMessage: true,
           clearSuccessMessage: true,
         ),
@@ -4134,38 +4280,44 @@ class ClintCubit extends Cubit<ClintStates> {
 
     result.fold(
       (failure) {
+        _pendingCartQtyWrites.clear();
         final localized = UserFacingErrorLocalizer.localizeCartError(
           failure.message,
           cart: revertState?.cart,
           cartItemId: cartItemId,
         );
-        if (revertState != null) {
-          emit(
-            revertState.copyWith(
-              isUpdatingItem: false,
-              clearUpdatingCartItemId: true,
-              errorMessage: localized,
-            ),
-          );
-        } else {
-          emit(CartErrorState(localized));
-        }
+        unawaited(() async {
+          await loadCart();
+          final loaded = _cartLoadedState;
+          if (loaded != null) {
+            emit(loaded.copyWith(errorMessage: localized));
+          } else {
+            emit(CartErrorState(localized));
+          }
+        }());
       },
       (cart) {
-        final emirate = clearedCurrent?.selectedEmirateName;
-        final isSelfPickup = clearedCurrent?.isSelfPickup ?? false;
+        final latest = _cartLoadedState ?? clearedCurrent;
+        final emirate = latest?.selectedEmirateName;
+        final isSelfPickup = latest?.isSelfPickup ?? false;
         final shippingFee = isSelfPickup
             ? 0.0
-            : clearedCurrent?.cart.deliveryFeeAed ?? cart.deliveryFeeAed;
+            : latest?.cart.deliveryFeeAed ?? cart.deliveryFeeAed;
+        final mergedCart = _applyPendingCartQtyWrites(
+          cart.copyWith(deliveryFeeAed: shippingFee),
+        );
         emit(
           CartLoadedState(
-            cart: cart.copyWith(deliveryFeeAed: shippingFee),
+            cart: mergedCart,
             selectedPaymentMethod:
-                clearedCurrent?.selectedPaymentMethod ??
-                    CartPaymentMethod.online,
+                latest?.selectedPaymentMethod ?? CartPaymentMethod.online,
             selectedEmirateName: emirate,
+            selectedAddressId: latest?.selectedAddressId,
+            deliveryAddressLine: latest?.deliveryAddressLine,
             isSelfPickup: isSelfPickup,
-            isCheckingPayment: false,
+            isCheckingPayment: latest?.isCheckingPayment ?? false,
+            paymentSessionId: latest?.paymentSessionId,
+            paymentCheckoutUrl: latest?.paymentCheckoutUrl,
             successMessage: successMessage,
           ),
         );
@@ -4708,4 +4860,17 @@ class _ProductsByTypeBucket {
   int page = 1;
   int totalPages = 1;
   int pageSize = ClintCubit.homeFeedPageSize;
+}
+
+class _PendingCartQtyWrite {
+  _PendingCartQtyWrite({
+    required this.cartItemId,
+    required this.productId,
+    required this.unitName,
+  });
+
+  final int cartItemId;
+  final String productId;
+  final String unitName;
+  double delta = 0;
 }
