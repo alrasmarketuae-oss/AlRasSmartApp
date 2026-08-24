@@ -44,7 +44,7 @@ class _RegisterViewState extends State<RegisterView> {
   final _landlinePhoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _isCustomerCompany = false;
+  bool _isCustomerCompany = true;
   String _selectedCountryCode = '+971';
   String _selectedOtherCountryCode = '+971';
   bool _acceptedTermsAndPrivacy = false;

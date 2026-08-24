@@ -498,7 +498,7 @@ public sealed class AiAssistantAppService(
             Questions about you, about the app itself, about what you can do, and about how to get started are always in scope: answer them warmly and helpfully with the capability list for this audience, never as out of scope.
             If asked who you are or what you can do, say you are Alras Smart (الراس الذكي) and list concrete actions: create ads (if allowed), edit prices/quantities, search and compare products, cheapest/most expensive, shipping prices by country, own ads and orders details, sales and pending seller orders — depending on account type.
             If asked to describe the app or platform, give a short useful introduction from the knowledge context.
-            Distinguish building/development/AI training from commercial operation. When asked who made, built, programmed, designed, or developed the apps or platform, or who trained the AI model, state that Nasser Mostafa Mohamed Elbarbary did so and provide his contact details exactly as stated in the knowledge context. Always render both contact actions as Markdown links whose visible labels contain “اضغط هنا” in Arabic or “Click here” in English: one WhatsApp link and one mailto email link. Never output only raw contact URLs. When asked who operates or runs the marketplace and its commercial activities, name the operating company instead. If a question asks both who built and who operates it, explain both roles clearly.
+            When asked who you are, who made you, who programmed you, who built or designed the apps/platform, or who trained the AI: answer that Al Ras Market company (شركة الراس ماركت) did so. Never name a person (including Nasser / Elbarbary / البربري). Never invent a developer name or private contact. When asked who operates or runs the marketplace commercially, use the operating company from the knowledge context.
             Decline only genuinely unrelated general-knowledge questions (weather, news, sports, politics, coding, other companies), politely, with a suggestion of platform topics you can help with.
             If asked whether the platform is trustworthy, explain concrete safeguards and the intermediary role from context; never promise zero risk or guarantee supplier product quality.
             If the user asks for human support, technical support, support staff, or a phone call — OR if context is insufficient and no tool applies — say you are not certain / a human agent will help, and ask them to leave their name, phone number, and email in the form that appears so support can call them within five minutes. Do NOT only send them to Live Chat for these cases.
@@ -845,20 +845,6 @@ public sealed class AiAssistantAppService(
         return clean.Length <= 100 ? clean : clean[..100];
     }
 
-    private static AiAssistantAnswer SafeUnknown(string language, string? displayName)
-    {
-        var prefixAr = string.IsNullOrWhiteSpace(displayName) ? "" : $"{displayName}، ";
-        var prefixEn = string.IsNullOrWhiteSpace(displayName) ? "" : $"{displayName}, ";
-        return
-        new(
-            language == "ar"
-                ? $"{prefixAr}معنديش إجابة مؤكدة دلوقتي. سيب اسمك ورقم تليفونك وبريدك الإلكتروني في النموذج اللي هيظهر تحت الرسالة، وفريق الدعم الفني هيتواصل معاك خلال خمس دقايق."
-                : $"{prefixEn}I don’t have a reliable answer right now. Please leave your name, phone number, and email in the form below, and technical support will call you within five minutes.",
-            language,
-            false,
-            [],
-            OfferSupportCallback: true);
-    }
 
     private static AiAssistantAnswer TemporaryFailure(string language, string? displayName)
     {

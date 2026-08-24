@@ -113,45 +113,39 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "who-operates", "من يملك المنصة ومن يديرها ومن بناها", "ar", All,
             """
             سؤال: من صاحب التطبيق؟ من بنى المنصة؟ من يدير المنصة؟ ما هي الشركة المشغلة؟
-            الإجابة: بنى وصمّم وبرمج تطبيقات ومنصة الراس الذكي ناصر مصطفى محمد البربري، وهو أيضاً من درّب نموذج الذكاء الاصطناعي الخاص بها.
+            الإجابة: برمجة وتصميم تطبيقات ومنصة الراس الذكي وتدريب المساعد الذكي من شركة الراس ماركت.
             أما تشغيل منصة الراس الذكي وإدارة عمليات السوق فتتولاهما شركة ميرج سبايس لتجارة المواد الغذائية.
-            دور الشركة هو الوساطة وتنظيم العمليات التجارية بين الموردين والعملاء، وهي ليست مالكة للبضائع المعروضة على المنصة.
+            دور الشركة المشغّلة هو الوساطة وتنظيم العمليات التجارية بين الموردين والعملاء، وهي ليست مالكة للبضائع المعروضة على المنصة.
             المورد هو المسؤول عن بضاعته من حيث الجودة والكمية والوزن والتغليف ومطابقتها لوصف الإعلان.
             تخضع الشروط لقوانين دولة الإمارات العربية المتحدة وتختص محاكم دبي بالنزاعات.
+            لا تذكر أي اسم شخصي كمطور أو مبرمج.
             """);
         Add(chunks, "who-operates", "Who built, owns, and operates the platform", "en", All,
             """
             Question: who owns the app? Who built the platform? Who runs it? Which company operates it?
-            Answer: Nasser Mostafa Mohamed Elbarbary built, designed, and programmed the Al Ras Smart apps and platform, and he also trained its AI model.
+            Answer: Al Ras Market company programmed, designed, and built the Al Ras Smart apps and platform, and trained its AI assistant.
             The Al Ras Smart marketplace and its commercial operations are operated by Merge Spice Foodstuff Trading LLC.
-            The company's role is intermediation and organising trade between suppliers and customers; it does not own the goods listed on the platform.
+            The operating company's role is intermediation and organising trade between suppliers and customers; it does not own the goods listed on the platform.
             The supplier is responsible for their goods in terms of quality, quantity, weight, packaging, and matching the listing description.
             The Terms are governed by UAE law and Dubai courts have jurisdiction over disputes.
+            Never name a person as the developer or programmer.
             """);
 
-        Add(chunks, "app-developer", "مين عامل البرنامج، مين المطور، مين صانع التطبيق، من برمج أو بنى الراس الذكي، من درب النموذج", "ar", All,
+        Add(chunks, "app-developer", "مين عامل البرنامج، مين المطور، مين صانع التطبيق، من برمج أو بنى الراس الذكي، من درب النموذج، مين برمجك", "ar", All,
             """
-            سؤال: مين عامل البرنامج ده؟ مين المطور؟ مين الصانع؟ من برمج التطبيق أو بنى المنصة؟ من صمم وطور الراس الذكي؟ من درّب نموذج الذكاء الاصطناعي؟ عاوز أتواصل مع المطور.
-            الإجابة: ناصر مصطفى محمد البربري هو الذي بنى وصمّم وبرمج تطبيقات ومنصة الراس الذكي، وهو أيضاً الذي درّب نموذج الذكاء الاصطناعي الخاص بها.
-            رقم الهاتف وواتساب: +971 56 916 6263.
-            البريد الإلكتروني: nasermostafa.ma122@gmail.com
-            للتواصل عبر واتساب يجب إظهار هذا الرابط بهذه الصيغة بالضبط: [اضغط هنا للتواصل عبر واتساب](https://wa.me/971569166263)
-            للتواصل عبر البريد يجب إظهار هذا الرابط بهذه الصيغة بالضبط: [اضغط هنا لإرسال بريد إلكتروني](mailto:nasermostafa.ma122@gmail.com)
-            يجب أن تكون عبارة «اضغط هنا» قابلة للضغط، ولا تعرض الرابط الخام وحده بدلاً منها.
-            تنبيه مهم: ناصر هو باني ومصمم ومبرمج التطبيقات والمنصة ومدرّب نموذج الذكاء الاصطناعي، أما الشركة التي تشغّل السوق وتدير عملياته التجارية فهي شركة ميرج سبايس لتجارة المواد الغذائية. لا تخلط بين البناء والتطوير والتدريب وبين التشغيل التجاري.
-            للاستفسارات التقنية والتواصل مع المطوّر استخدم بيانات ناصر أعلاه، أما مشكلات الطلبات والاسترجاع والحساب فتُتابع مع دعم الراس الذكي عبر Live Chat.
+            سؤال: مين عامل البرنامج ده؟ مين المطور؟ مين الصانع؟ من برمج التطبيق أو بنى المنصة؟ من صمم وطور الراس الذكي؟ من درّب نموذج الذكاء الاصطناعي؟ مين برمجك؟ عاوز أتواصل مع المطور.
+            الإجابة: أنا مساعد الراس الذكي، وبرمجني ودرّبني شركة الراس ماركت.
+            تطبيقات ومنصة الراس الذكي من تطوير وبرمجة شركة الراس ماركت.
+            لا تذكر أي اسم شخصي (ولا ناصر ولا البربري ولا أي مطور فردي).
+            مشكلات الطلبات والاسترجاع والحساب تُتابع مع دعم الراس الذكي عبر Live Chat.
             """);
-        Add(chunks, "app-developer", "Who made the program, developed or built Al Ras Smart, who trained the AI model", "en", All,
+        Add(chunks, "app-developer", "Who made the program, developed or built Al Ras Smart, who trained the AI model, who programmed you", "en", All,
             """
-            Question: who made this program? Who is the developer? Who built or programmed the app or platform? Who designed and developed Al Ras Smart? Who trained its AI model? I want to contact the developer.
-            Answer: Nasser Mostafa Mohamed Elbarbary built, designed, and programmed the Al Ras Smart apps and platform, and he also trained its AI model.
-            Phone and WhatsApp: +971 56 916 6263.
-            Email: nasermostafa.ma122@gmail.com
-            For WhatsApp, show exactly: [Click here to contact via WhatsApp](https://wa.me/971569166263)
-            For email, show exactly: [Click here to send an email](mailto:nasermostafa.ma122@gmail.com)
-            “Click here” must be clickable; do not replace it with a raw URL alone.
-            Important distinction: Nasser built and developed the apps and platform and trained the AI model, while Merge Spice Foodstuff Trading LLC operates the marketplace and its commercial activities. Do not confuse building, development, and AI training with commercial operation.
-            Use Nasser's details above for technical enquiries or contacting the developer; order, return, and account issues should go to Al Ras Smart support through Live Chat.
+            Question: who made this program? Who is the developer? Who built or programmed the app or platform? Who designed and developed Al Ras Smart? Who trained its AI model? Who programmed you? I want to contact the developer.
+            Answer: I am the Al Ras Smart assistant. Al Ras Market company programmed and trained me.
+            The Al Ras Smart apps and platform were developed and programmed by Al Ras Market company.
+            Never name a person (including Nasser, Elbarbary, or any individual developer).
+            Order, return, and account issues should go to Al Ras Smart support through Live Chat.
             """);
 
         Add(chunks, "what-can-i-do", "ماذا يمكنني أن أفعل في التطبيق بحسابي", "ar", SignedIn,

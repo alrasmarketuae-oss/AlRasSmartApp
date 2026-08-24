@@ -5,14 +5,12 @@ import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/utils/product_grid_layout.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_states.dart';
-import 'package:alrasmarket/features/clint/presentation/widgets/image_search_lens_view.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product%20_card.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/search_header.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 
 class ProductSearchResultsView extends StatefulWidget {
   const ProductSearchResultsView({
@@ -35,12 +33,6 @@ class ProductSearchResultsView extends StatefulWidget {
 
 class _ProductSearchResultsViewState extends State<ProductSearchResultsView> {
   late final TextEditingController _searchController;
-  bool _lensDismissed = false;
-
-  bool get _hasLensImage {
-    final path = widget.imagePath?.trim();
-    return path != null && path.isNotEmpty && File(path).existsSync();
-  }
 
   @override
   void initState() {
@@ -130,25 +122,18 @@ class _ProductSearchResultsViewState extends State<ProductSearchResultsView> {
             (state is ProductSearchSuccessState && state.fromImage);
         final isLoading = state is ProductSearchLoadingState ||
             cubit.isLoadingSearch;
-        final resultsReady = state is ProductSearchSuccessState ||
-            state is ProductSearchErrorState;
         final headerTitle = fromImage && isLoading
             ? s.analyzingImage
             : s.searchResults;
 
-        if (!_lensDismissed && _hasLensImage) {
+        // Full-screen photo + scan dots while the image is being identified.
+        // When the API returns, switch to the full results page.
+        if (fromImage && isLoading) {
           return Scaffold(
             backgroundColor: Colors.black,
-            body: ImageSearchLensView(
-              imagePath: widget.imagePath!,
-              products: cubit.productSearchResults,
-              isLoading: isLoading,
-              resultsReady: resultsReady,
-              onClose: () {
-                if (context.canPop()) context.pop();
-              },
-              onOpenResults: () => setState(() => _lensDismissed = true),
-              onCropSearch: cubit.searchProductsByImage,
+            body: _AnalyzingImageState(
+              imagePath: widget.imagePath,
+              onClose: () => Navigator.of(context).maybePop(),
             ),
           );
         }
@@ -167,11 +152,6 @@ class _ProductSearchResultsViewState extends State<ProductSearchResultsView> {
                   child: Builder(
                     builder: (context) {
                   if (isLoading) {
-                    if (fromImage) {
-                      return _AnalyzingImageState(
-                        imagePath: widget.imagePath,
-                      );
-                    }
                     return const Center(child: CircularProgressIndicator());
                   }
 
@@ -282,9 +262,10 @@ class _ProductSearchResultsViewState extends State<ProductSearchResultsView> {
 }
 
 class _AnalyzingImageState extends StatefulWidget {
-  const _AnalyzingImageState({this.imagePath});
+  const _AnalyzingImageState({this.imagePath, this.onClose});
 
   final String? imagePath;
+  final VoidCallback? onClose;
 
   @override
   State<_AnalyzingImageState> createState() => __AnalyzingImageStateState();
@@ -303,7 +284,6 @@ class __AnalyzingImageStateState extends State<_AnalyzingImageState>
       duration: const Duration(milliseconds: 2200),
     )..repeat();
 
-    // Stable pseudo-random layout (Google Lens–style sparkle points).
     final seed = (widget.imagePath?.hashCode ?? 42).abs();
     var x = seed == 0 ? 1 : seed;
     double next() {
@@ -333,65 +313,89 @@ class __AnalyzingImageStateState extends State<_AnalyzingImageState>
     final path = widget.imagePath?.trim();
     final hasImage = path != null && path.isNotEmpty;
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(24.w, 12.h, 24.w, 24.h),
-      child: Column(
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16.r),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (hasImage)
-                    Image.file(
-                      File(path),
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, error, stackTrace) => _fallbackBg(),
-                    )
-                  else
-                    _fallbackBg(),
-                  // Soft dark veil so white dots read clearly.
-                  const ColoredBox(color: Color(0x33000000)),
-                  AnimatedBuilder(
-                    animation: _controller,
-                    builder: (context, _) {
-                      return CustomPaint(
-                        painter: _WhiteScanDotsPainter(
-                          dots: _dots,
-                          t: _controller.value,
-                        ),
-                      );
-                    },
-                  ),
-                ],
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        if (hasImage)
+          Image.file(
+            File(path),
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+            errorBuilder: (_, error, stackTrace) => _fallbackBg(),
+          )
+        else
+          _fallbackBg(),
+        const ColoredBox(color: Color(0x33000000)),
+        AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
+            return CustomPaint(
+              painter: _WhiteScanDotsPainter(
+                dots: _dots,
+                t: _controller.value,
               ),
+            );
+          },
+        ),
+        SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(8.w, 4.h, 8.w, 0),
+            child: Row(
+              children: [
+                IconButton(
+                  onPressed: widget.onClose,
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.black54,
+                    foregroundColor: Colors.white,
+                  ),
+                  icon: const Icon(Icons.close_rounded),
+                ),
+                SizedBox(width: 8.w),
+                Expanded(
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12.w,
+                      vertical: 8.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(20.r),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          s.analyzingImage,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13.sp,
+                            height: 1.25,
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'Inter',
+                          ),
+                        ),
+                        SizedBox(height: 2.h),
+                        Text(
+                          s.analyzingImageHint,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 11.sp,
+                            height: 1.25,
+                            fontFamily: 'Inter',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          SizedBox(height: 16.h),
-          Text(
-            s.analyzingImage,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF1E3A5F),
-              fontFamily: 'Inter',
-            ),
-          ),
-          SizedBox(height: 6.h),
-          Text(
-            s.analyzingImageHint,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13.sp,
-              height: 1.35,
-              color: const Color(0xFF64748B),
-              fontFamily: 'Inter',
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
