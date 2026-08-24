@@ -13,6 +13,7 @@ import 'package:alrasmarket/features/person/presentation/controller/cubit/person
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../clint/presentation/views/cart_view.dart';
 import '../../../clint/presentation/views/my_orders_view.dart';
 import '../../../clint/presentation/views/profile_view.dart' show ProfileView;
 import '../controller/cubit/person_states.dart';
@@ -37,6 +38,7 @@ class _PersonHomeLayoutState extends State<PersonHomeLayout> {
         unawaited(cubit.fetchIncomingOrders());
       } else {
         unawaited(cubit.fetchMyOrders());
+        unawaited(cubit.loadCart());
       }
     });
   }
@@ -53,14 +55,18 @@ class _PersonHomeLayoutState extends State<PersonHomeLayout> {
         final cubit = PersonCubit.get(context);
         final screens = [
           HomeView(key: ValueKey('person_home'), isPerson: true),
+          const CartView(isTabView: true),
           MyOrdersView(),
           const ProfileView(isTabView: true),
         ];
+        final currentIndex = cubit.currentIndex >= screens.length
+            ? screens.length - 1
+            : cubit.currentIndex;
         return ScrollAwareBottomNavScaffold(
-          tabIndex: cubit.currentIndex,
+          tabIndex: currentIndex,
           backgroundColor: AppColors.scaffold(context),
           body: IndexedStack(
-            index: cubit.currentIndex,
+            index: currentIndex,
             children: screens,
           ),
           bottomNavigationBar: ListenableBuilder(
@@ -71,10 +77,13 @@ class _PersonHomeLayoutState extends State<PersonHomeLayout> {
                     context.read<ClintCubit>().pendingIncomingApprovalCount,
                 builder: (context, pendingOrdersBadgeCount) {
                   return UserBottomNavBar(
-                    currentIndex: cubit.currentIndex,
+                    currentIndex: currentIndex,
                     onTap: (index) {
                       if (index != 0 && !ensureLoggedIn(context)) return;
                       context.read<PersonCubit>().setTab(index);
+                      if (index == 1) {
+                        unawaited(context.read<ClintCubit>().loadCart());
+                      }
                     },
                     context: context,
                     isPerson: true,

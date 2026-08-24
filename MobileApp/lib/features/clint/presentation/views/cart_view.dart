@@ -20,7 +20,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
 class CartView extends StatefulWidget {
-  const CartView({super.key});
+  const CartView({super.key, this.isTabView = false});
+
+  final bool isTabView;
 
   @override
   State<CartView> createState() => _CartViewState();
@@ -103,9 +105,9 @@ class _CartViewState extends State<CartView> {
           builder: (context, state) {
             return Column(
               children: [
-                const SearchHeader(
+                SearchHeader(
                   isSearch: false,
-                  isBackButton: true,
+                  isBackButton: !widget.isTabView,
                 ),
                 Expanded(child: _buildBody(context, state, s)),
               ],

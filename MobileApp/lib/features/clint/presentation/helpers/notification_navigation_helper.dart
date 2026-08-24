@@ -151,7 +151,7 @@ class NotificationNavigationHelper {
 
     final auth = AuthService.instance;
     if (auth.isPersonalCustomerAccount) {
-      sl<PersonCubit>().setTab(1);
+      sl<PersonCubit>().setTab(2);
       context.go(AppRoutes.kPersonHomeView);
       return;
     }
