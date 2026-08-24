@@ -351,13 +351,17 @@ public class ProductsController(
 
         try
         {
+            var searcherUserId = User.FindFirst("EntityId")?.Value
+                ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
             await using var stream = request.File.OpenReadStream();
             var result = await _productsAppService.DetectProductsFromImageAsync(
                 stream,
                 request.File.FileName,
                 cancellationToken,
                 page,
-                pageSize);
+                pageSize,
+                searcherUserId);
             return Ok(result);
         }
         catch (ArgumentException ex)

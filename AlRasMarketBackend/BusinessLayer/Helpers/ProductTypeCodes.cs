@@ -29,6 +29,29 @@ public static class ProductTypeCodes
         categoryId is > 0 && productTypeId.HasValue;
 
     /// <summary>
+    /// Company-customer app surfaces: Categories, Offers, Booking (not Retail or Requests).
+    /// </summary>
+    public static bool IsHiddenFromCompanyCustomerCatalog(
+        byte? categoryId,
+        byte? productTypeId,
+        string? listingChannel = null)
+    {
+        if (IsRequests(productTypeId)) return true;
+        if (string.Equals(listingChannel, "retail", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        // Pure retail ads (no category) are the Retail service tab only.
+        if (IsRetail(productTypeId) && categoryId is not > 0)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// Product type id for wholesale/category commission. Hybrids store ProductTypeId = Retail,
     /// but wholesale markup must use category rates (pass null so category commission wins).
     /// </summary>

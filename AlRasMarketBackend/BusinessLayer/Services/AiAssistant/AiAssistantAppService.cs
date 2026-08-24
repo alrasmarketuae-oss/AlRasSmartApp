@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using BusinessLayer.Options;
+using BusinessLayer.Services.AiAssistant.Mcp;
 using DataLayer.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -424,7 +425,7 @@ public sealed class AiAssistantAppService(
             - list_my_ads: list every ad the signed-in seller owns (names + ProductCode). Use when choosing which ad to edit or manage.
             - get_my_last_ad: SELLER listing — their most recently created ad (آخر إعلان نزلته / نشرته / أضفته / هات آخر إعلان). NOT an order.
             - get_my_first_ad: SELLER listing — their earliest created ad (أول إعلان نزلته / نشرته / أضفته / هات أول إعلان). NOT an order.
-            - update_ad_price_quantity: update price/quantity on a seller-owned ad. You may call it multiple times in one user message for different ads when they asked for several changes. NEVER invent a bulk SQL update without naming each ad. MOST ads have ONE price only. Call the tool immediately — do NOT ask جملة ولا تجزئة, and do NOT tell the user the ad is hybrid or not hybrid. Only if the tool returns needs_channel_clarification=true (true hybrid ads with two prices), then ask جملة ولا تجزئة؟ and call again with channel=wholesale or channel=retail. Never mention هجين/جملة/تجزئة in the user-facing reply unless that tool flag was returned or the user asked. If the name uniquely matches one catalog ad, update immediately. If the tool returns needs_clarification with suggestions, ask the user clearly: هل تقصد هذا الإعلان أم هذا؟ (list the suggested names) and wait; when they pick one, call the tool again with that product_code or exact product_name. Never invent ad names outside the catalog/tool results.
+            - update_ad_price_quantity: update price/quantity on a seller-owned ad. You may call it multiple times in one user message for different ads when they asked for several changes. NEVER invent a bulk SQL update without naming each ad. MOST ads have ONE price only. Call the tool immediately — do NOT ask جملة ولا تجزئة, and do NOT tell the user the ad is hybrid or not hybrid. Only if the tool returns needs_channel_clarification=true (true hybrid ads with two prices), then ask جملة ولا تجزئة؟ and call again with channel=wholesale or channel=retail. Never mention هجين/جملة/تجزئة in the user-facing reply unless that tool flag was returned or the user asked. If the name uniquely matches one catalog ad, OR several ads share that SAME exact name, the tool updates all copies immediately. If the tool returns needs_clarification with suggestions, ask the user clearly: هل تقصد هذا الإعلان أم هذا؟ (list the suggested names) and wait; when they pick one, call the tool again with that product_code or exact product_name. Never invent ad names outside the catalog/tool results.
             - set_ad_listing_status: pause or activate owned ads (action=pause|active). Multiple ads allowed in one turn when requested. Same name-clarification rules as update.
             - mark_ad_sold_out: set quantity to zero on owned ads. Multiple ads allowed in one turn when requested. Ask جملة/تجزئة ONLY if the tool returns needs_channel_clarification.
             - delete_ad: permanently delete owned ads. First call without confirm (or confirm=false) so you can ask once; after they clearly agree, call again with confirm=true for each ad to remove. Supports "delete all except …" in one turn: keep the excluded ads, delete the rest after one confirmation.
@@ -546,7 +547,7 @@ public sealed class AiAssistantAppService(
 
         messages.Add(new { role = "user", content = message });
 
-        return await mcpToolLoop.CompleteWithToolsAsync(
+        var generated = await mcpToolLoop.CompleteWithToolsAsync(
                 httpClient,
                 apiKey,
                 _options.ChatModel,
@@ -555,8 +556,122 @@ public sealed class AiAssistantAppService(
                 language,
                 onThinkingStep,
                 cancellationToken)
-                .ConfigureAwait(false);
+            .ConfigureAwait(false);
+
+        return await AttachCatalogListingsIfNeededAsync(
+                message,
+                userId,
+                generated,
+                cancellationToken)
+            .ConfigureAwait(false);
     }
+
+    private async Task<AiMcpLoopResult> AttachCatalogListingsIfNeededAsync(
+        string message,
+        Guid? userId,
+        AiMcpLoopResult generated,
+        CancellationToken cancellationToken)
+    {
+        if (generated.Listings is { Count: > 0 })
+        {
+            return generated;
+        }
+
+        var toolName = ResolveCatalogListingTool(message);
+        if (toolName is null)
+        {
+            return generated;
+        }
+
+        var productName = ExtractCatalogProductName(message);
+        var args = string.IsNullOrWhiteSpace(productName)
+            ? "{}"
+            : JsonSerializer.Serialize(new { product_name = productName });
+
+        try
+        {
+            var result = await toolsService.ExecuteAsync(
+                    userId,
+                    new AiToolCall(Guid.NewGuid().ToString("N"), toolName, args),
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            var listings = AiAssistantMcpToolLoop.ParseListingCards(toolName, result.Content);
+            if (listings.Count == 0)
+            {
+                logger.LogWarning(
+                    "Forced catalog tool {Tool} returned no listing cards for {Message}",
+                    toolName,
+                    TrimForThinking(message));
+                return generated;
+            }
+
+            return new AiMcpLoopResult(generated.Answer, listings);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Failed to attach catalog listing cards for {Tool}", toolName);
+            return generated;
+        }
+    }
+
+    private static string? ResolveCatalogListingTool(string message)
+    {
+        var visible = ExtractUserVisibleText(message);
+        if (string.IsNullOrWhiteSpace(visible) || IsAdCreationContext(visible, null))
+        {
+            return null;
+        }
+
+        var q = visible.Trim().ToLowerInvariant();
+        if (ContainsAny(q, "أرخص", "ارخص", "cheapest", "lowest price", "اقل سعر", "أقل سعر"))
+        {
+            return "find_cheapest_product";
+        }
+
+        if (ContainsAny(q, "أغلى", "اغلى", "الأغلى", "الاغلى", "most expensive", "highest price", "اغلى سعر"))
+        {
+            return "find_most_expensive_product";
+        }
+
+        if (ContainsAny(
+                q,
+                "ابحث",
+                "دور على",
+                "دور علي",
+                "هات منتجات",
+                "عرض منتجات",
+                "كروت",
+                "إعلانات",
+                "اعلانات",
+                "search product",
+                "find product",
+                "show ads",
+                "show products"))
+        {
+            return "search_products";
+        }
+
+        return null;
+    }
+
+    private static string? ExtractCatalogProductName(string message)
+    {
+        var visible = ExtractUserVisibleText(message).Trim();
+        if (string.IsNullOrWhiteSpace(visible)) return null;
+
+        var cleaned = Regex.Replace(
+            visible,
+            @"أرخص|ارخص|الأرخص|الارخص|أغلى|اغلى|الأغلى|الاغلى|cheapest|most expensive|ابحث(?: عن)?|دور على|دور علي|هات(?:لي)?|عرض|كروت|منتجات|منتج|إعلانات|اعلانات|ads|products?|search|find|show",
+            " ",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+        cleaned = Regex.Replace(cleaned, @"\s+", " ").Trim(" ؟?!.،,".ToCharArray());
+        return cleaned.Length < 2 ? null : cleaned;
+    }
+
+    private static bool ContainsAny(string haystack, params string[] needles) =>
+        needles.Any(n => haystack.Contains(n, StringComparison.OrdinalIgnoreCase));
 
     private static string TrimForThinking(string message)
     {

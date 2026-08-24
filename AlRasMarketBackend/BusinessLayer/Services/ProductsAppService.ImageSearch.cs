@@ -138,7 +138,8 @@ public partial class ProductsAppService
         string fileName,
         CancellationToken cancellationToken = default,
         int page = 1,
-        int pageSize = 20)
+        int pageSize = 20,
+        string? searcherUserId = null)
     {
         var (normalizedPage, normalizedPageSize) = NormalizePaging(page, pageSize);
         var skip = (normalizedPage - 1) * normalizedPageSize;
@@ -203,16 +204,22 @@ public partial class ProductsAppService
                 : [];
 
             var byId = rows.ToDictionary(x => x.ProductId);
+            var hideRetailAndRequests = await IsCompanyCustomerCatalogAudienceAsync(
+                searcherUserId,
+                cancellationToken);
+
             var ranked = orderedIds
                 .Where(byId.ContainsKey)
                 .Select(id => byId[id])
                 .ToList();
+            ranked = FilterCatalogRowsForAudience(ranked, hideRetailAndRequests);
 
             var items = ranked.Count > 0
                 ? await BuildPublicProductListItemsAsync(
                         ranked,
                         cancellationToken,
-                        expandHybridSearchChannels: true)
+                        expandHybridSearchChannels: true,
+                        hideRetailAndRequests: hideRetailAndRequests)
                     .ConfigureAwait(false)
                 : [];
             var totalCount = ranked.Count;
@@ -272,10 +279,12 @@ public partial class ProductsAppService
                 if (fallbackTotal > 0)
                 {
                     ranked = fallbackRows;
+                    ranked = FilterCatalogRowsForAudience(ranked, hideRetailAndRequests);
                     items = await BuildPublicProductListItemsAsync(
                             ranked,
                             cancellationToken,
-                            expandHybridSearchChannels: true)
+                            expandHybridSearchChannels: true,
+                            hideRetailAndRequests: hideRetailAndRequests)
                         .ConfigureAwait(false);
                     totalCount = fallbackTotal;
                     searchMode = fallbackMode;
@@ -293,7 +302,8 @@ public partial class ProductsAppService
                     ? await BuildPublicProductListItemsAsync(
                             ranked,
                             cancellationToken,
-                            expandHybridSearchChannels: true)
+                            expandHybridSearchChannels: true,
+                            hideRetailAndRequests: hideRetailAndRequests)
                         .ConfigureAwait(false)
                     : [];
             }

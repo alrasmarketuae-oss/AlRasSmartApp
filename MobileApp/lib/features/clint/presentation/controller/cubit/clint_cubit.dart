@@ -357,12 +357,31 @@ class ClintCubit extends Cubit<ClintStates> {
     return merged;
   }
 
+  bool _isVisibleInCompanyCustomerSearch(MyListingProductModel item) {
+    if (item.isRequestProduct) return false;
+    if (item.searchListingChannel == 'retail') return false;
+    if (item.isPureRetailProduct) return false;
+    return true;
+  }
+
+  List<MyListingProductModel> _filterSearchResultsForAccount(
+    List<MyListingProductModel> products,
+  ) {
+    if (!AuthService.instance.isCompanyCustomerAccount) {
+      return products;
+    }
+    return products.where(_isVisibleInCompanyCustomerSearch).toList();
+  }
+
   List<MyListingProductModel> _parseHomeProductsResponse(dynamic data) {
     final List<dynamic> items;
-    if (data is List<dynamic>) {
-      items = data;
-    } else if (data is Map<String, dynamic>) {
-      items = data['items'] as List<dynamic>? ?? const [];
+    if (data is List) {
+      items = List<dynamic>.from(data);
+    } else if (data is Map) {
+      final raw = data['items'] ?? data['Items'];
+      items = raw is Iterable && raw is! String
+          ? List<dynamic>.from(raw)
+          : const [];
     } else {
       return const [];
     }
@@ -606,7 +625,9 @@ class ClintCubit extends Cubit<ClintStates> {
       }
 
       final data = response?.data;
-      final products = _parseHomeProductsResponse(data);
+      final products = _filterSearchResultsForAccount(
+        _parseHomeProductsResponse(data),
+      );
       searchAiAssist = _parseSearchAiAssist(data);
       productSearchResults = products;
       _applySearchPaging(
@@ -707,12 +728,14 @@ class ClintCubit extends Cubit<ClintStates> {
         }
       }
 
-      final products = rawItems
-          .whereType<Map>()
-          .map((item) => Map<String, dynamic>.from(item))
-          .map(_mapPublicProductToListingJson)
-          .map(MyListingProductModel.fromJson)
-          .toList();
+      final products = _filterSearchResultsForAccount(
+        rawItems
+            .whereType<Map>()
+            .map((item) => Map<String, dynamic>.from(item))
+            .map(_mapPublicProductToListingJson)
+            .map(MyListingProductModel.fromJson)
+            .toList(),
+      );
 
       // Prefer localized product names for the current UI language.
       final localizedNames = products
@@ -827,7 +850,9 @@ class ClintCubit extends Cubit<ClintStates> {
       }
 
       final data = response?.data;
-      final incoming = _parseHomeProductsResponse(data);
+      final incoming = _filterSearchResultsForAccount(
+        _parseHomeProductsResponse(data),
+      );
       productSearchResults = _mergeSearchProducts(incoming, append: true);
       _applySearchPaging(
         data is Map<String, dynamic> ? data : null,
@@ -889,7 +914,7 @@ class ClintCubit extends Cubit<ClintStates> {
         return;
       }
 
-      final products = entry.toProductModels();
+      final products = _filterSearchResultsForAccount(entry.toProductModels());
       productSearchResults = products;
       searchSuggestedNames = products.isNotEmpty
           ? products

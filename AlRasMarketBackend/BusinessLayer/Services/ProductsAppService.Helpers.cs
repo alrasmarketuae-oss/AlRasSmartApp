@@ -344,4 +344,35 @@ public partial class ProductsAppService
         }
     }
 
+    private async Task<bool> IsCompanyCustomerCatalogAudienceAsync(
+        string? searcherUserId,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(searcherUserId)
+            || !Guid.TryParse(searcherUserId, out var userId)
+            || userId == Guid.Empty)
+        {
+            return false;
+        }
+
+        var user = await productData.GetUserByIdAsync(userId, tracked: false, cancellationToken);
+        return user is { RoleId: RoleIds.Seller, IsCustomer: true };
+    }
+
+    private static List<ProductPublicRow> FilterCatalogRowsForAudience(
+        IReadOnlyList<ProductPublicRow> products,
+        bool hideRetailAndRequests)
+    {
+        if (!hideRetailAndRequests)
+        {
+            return products as List<ProductPublicRow> ?? products.ToList();
+        }
+
+        return products
+            .Where(p => !ProductTypeCodes.IsHiddenFromCompanyCustomerCatalog(
+                p.CategoryId,
+                p.ProductTypeId))
+            .ToList();
+    }
+
 }

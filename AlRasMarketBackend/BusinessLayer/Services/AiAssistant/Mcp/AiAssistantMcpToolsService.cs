@@ -42,8 +42,9 @@ public sealed partial class AiAssistantMcpToolsService(
                     "Omit channel unless the user clearly said جملة/wholesale or تجزئة/retail. " +
                     "ONLY if this tool returns needs_channel_clarification=true, then ask جملة ولا تجزئة؟ and call again with channel. " +
                     "Never mention هجين / wholesale / retail / جملة / تجزئة in the user reply unless that clarification was required. " +
-                    "Use the SELLER ADS CATALOG / list_my_ads names. If the spoken/typed name is a unique exact match, update immediately. " +
-                    "If the name is a slight typo or matches several ads, the tool returns needs_clarification with suggestions — " +
+                    "Use the SELLER ADS CATALOG / list_my_ads names. If the spoken/typed name is an exact match, update immediately. " +
+                    "If several of the seller's ads share that SAME exact name, this tool updates ALL of them in one call — do not ask which copy. " +
+                    "If the name is a slight typo or matches DIFFERENT names, the tool returns needs_clarification with suggestions — " +
                     "ask the user in their language: did you mean ad A or ad B? When they pick one, call again with that exact product_name or product_code.",
                 parameters = new
                 {
@@ -662,11 +663,11 @@ public sealed partial class AiAssistantMcpToolsService(
                 "get_my_last_ad" => await GetMyLastAdAsync(userId, cancellationToken).ConfigureAwait(false),
                 "get_my_first_ad" => await GetMyFirstAdAsync(userId, cancellationToken).ConfigureAwait(false),
                 "find_cheapest_product" => await FindCheapestProductAsync(
-                    call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
+                    userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
                 "find_most_expensive_product" => await FindMostExpensiveProductAsync(
-                    call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
+                    userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
                 "search_products" => await SearchProductsAsync(
-                    call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
+                    userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
                 "get_my_sales_count" => await GetMySalesCountAsync(
                     userId, cancellationToken).ConfigureAwait(false),
                 "get_last_order_on_my_ads" => await GetLastOrderOnMyAdsAsync(
@@ -827,6 +828,18 @@ public sealed partial class AiAssistantMcpToolsService(
             });
         }
 
+        var exactMatches = ranked.Where(x => x.Score >= 100).ToList();
+        if (exactMatches.Count > 0)
+        {
+            return await ApplyPriceQuantityUpdateToAdsAsync(
+                    exactMatches.Select(x => x.ProductId).Distinct().ToList(),
+                    price,
+                    quantity,
+                    channel,
+                    cancellationToken)
+                .ConfigureAwait(false);
+        }
+
         var best = ranked[0];
         var secondScore = ranked.Count > 1 ? ranked[1].Score : 0;
         var uniqueStrong =
@@ -834,20 +847,18 @@ public sealed partial class AiAssistantMcpToolsService(
             && (ranked.Count == 1 || best.Score - secondScore >= 12);
 
         // Unique strong lexical match → resolve channel then update (or ask).
-        if (uniqueStrong && best.Score >= 85)
+        if (uniqueStrong)
         {
             var strongPeers = ranked.Where(x => x.Score == best.Score).ToList();
             if (strongPeers.Count == 1)
-        {
-            var tracked = await dbContext.Products
-                .Include(p => p.Unit)
-                    .Include(p => p.RetailUnit)
-                    .FirstAsync(p => p.ProductId == best.ProductId, cancellationToken)
-                .ConfigureAwait(false);
-
-                return await ApplyPriceQuantityUpdateAsync(
-                        tracked, price, quantity, channel, cancellationToken)
-                .ConfigureAwait(false);
+            {
+                return await ApplyPriceQuantityUpdateToAdsAsync(
+                        [best.ProductId],
+                        price,
+                        quantity,
+                        channel,
+                        cancellationToken)
+                    .ConfigureAwait(false);
             }
         }
 
@@ -863,6 +874,81 @@ public sealed partial class AiAssistantMcpToolsService(
                 "When they choose, call update_ad_price_quantity again with that product_code or exact product_name. Do not invent ads.",
             query = productName.Trim(),
             suggestions
+        });
+    }
+
+    private async Task<string> ApplyPriceQuantityUpdateToAdsAsync(
+        IReadOnlyList<Guid> productIds,
+        decimal? price,
+        long? quantity,
+        string? channel,
+        CancellationToken cancellationToken)
+    {
+        var ids = productIds.Where(id => id != Guid.Empty).Distinct().ToList();
+        if (ids.Count == 0)
+        {
+            return Json(new { ok = false, error = "No matching ads to update." });
+        }
+
+        var products = await dbContext.Products
+            .Include(p => p.Unit)
+            .Include(p => p.RetailUnit)
+            .Where(p => ids.Contains(p.ProductId))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        if (products.Count == 0)
+        {
+            return Json(new { ok = false, error = "No matching ads to update." });
+        }
+
+        var hybridAds = products.Where(ProductTypeCodes.HasRetailStockConfigured).ToList();
+        if (hybridAds.Count > 0 && NormalizeUpdateChannel(channel) is null)
+        {
+            return Json(new
+            {
+                ok = false,
+                needs_channel_clarification = true,
+                matchingAdsCount = products.Count,
+                hybridAdsCount = hybridAds.Count,
+                productCodes = products.Select(p => p.ProductCode).ToList(),
+                names = products.Select(p => p.NameEn).Distinct().ToList(),
+                message =
+                    "One or more matching ads have two prices (جملة + تجزئة). Do NOT update yet. " +
+                    "Ask ONLY: جملة ولا تجزئة؟ Then call again with the same product_name and channel=wholesale or channel=retail. " +
+                    "The tool will then update EVERY ad with this exact name."
+            });
+        }
+
+        var results = new List<object>();
+        foreach (var product in products)
+        {
+            var payload = await ApplyPriceQuantityUpdateAsync(
+                    product, price, quantity, channel, cancellationToken)
+                .ConfigureAwait(false);
+            using var doc = JsonDocument.Parse(payload);
+            if (doc.RootElement.TryGetProperty("ok", out var okEl)
+                && okEl.ValueKind == JsonValueKind.False)
+            {
+                return payload;
+            }
+
+            results.Add(JsonSerializer.Deserialize<object>(payload)!);
+        }
+
+        if (results.Count == 1)
+        {
+            return Json(results[0]);
+        }
+
+        return Json(new
+        {
+            ok = true,
+            updatedCount = results.Count,
+            updated = results,
+            instruction =
+                "Updated every ad with this exact name. Tell the seller how many ads changed " +
+                "and the new price/quantity. Do not ask which copy they meant."
         });
     }
 
@@ -1113,7 +1199,8 @@ public sealed partial class AiAssistantMcpToolsService(
             "\nUse this list when the seller asks to update an ad. " +
             "Ads without the word 'hybrid' have ONE price — update immediately and never mention جملة/تجزئة/هجين. " +
             "Ask جملة ولا تجزئة ONLY after update_ad_price_quantity returns needs_channel_clarification. " +
-            "If their name has a slight typo, ask which catalog ad they meant before calling update.";
+            "If several ads share the same exact name, update_ad_price_quantity changes ALL of them — do not ask which copy. " +
+            "If their name has a slight typo or matches different names, ask which catalog ad they meant before calling update.";
     }
 
     private static object ToAdSuggestion(NameCandidate m) => new
@@ -1128,19 +1215,22 @@ public sealed partial class AiAssistantMcpToolsService(
     };
 
     private Task<string> FindCheapestProductAsync(
+        Guid? userId,
         string argumentsJson,
         CancellationToken cancellationToken) =>
-        FindPricedProductAsync(argumentsJson, ProductMatchSort.Cheapest, 5, cancellationToken);
+        FindPricedProductAsync(userId, argumentsJson, ProductMatchSort.Cheapest, 5, cancellationToken);
 
     private Task<string> FindMostExpensiveProductAsync(
+        Guid? userId,
         string argumentsJson,
         CancellationToken cancellationToken) =>
-        FindPricedProductAsync(argumentsJson, ProductMatchSort.MostExpensive, 5, cancellationToken);
+        FindPricedProductAsync(userId, argumentsJson, ProductMatchSort.MostExpensive, 5, cancellationToken);
 
     private Task<string> SearchProductsAsync(
+        Guid? userId,
         string argumentsJson,
         CancellationToken cancellationToken) =>
-        FindPricedProductAsync(argumentsJson, ProductMatchSort.BestMatch, 8, cancellationToken);
+        FindPricedProductAsync(userId, argumentsJson, ProductMatchSort.BestMatch, 8, cancellationToken);
 
     private enum ProductMatchSort
     {
@@ -1150,6 +1240,7 @@ public sealed partial class AiAssistantMcpToolsService(
     }
 
     private async Task<string> FindPricedProductAsync(
+        Guid? userId,
         string argumentsJson,
         ProductMatchSort sort,
         int take,
@@ -1159,6 +1250,13 @@ public sealed partial class AiAssistantMcpToolsService(
         var productName = GetString(args.RootElement, "product_name");
         var genericCatalogQuery = string.IsNullOrWhiteSpace(productName)
             || LooksLikeGenericCatalogQuery(productName);
+
+        var hideRetailAndRequests = userId is Guid uid
+            && uid != Guid.Empty
+            && string.Equals(
+                await ResolveAudienceAsync(uid, cancellationToken).ConfigureAwait(false),
+                "company_customer",
+                StringComparison.Ordinal);
 
         var commissionSettings = await commissionSettingsProvider.GetAsync(cancellationToken)
             .ConfigureAwait(false);
@@ -1210,6 +1308,12 @@ public sealed partial class AiAssistantMcpToolsService(
         var channelRows = new List<NameCandidate>();
         foreach (var r in rowsRaw)
         {
+            if (hideRetailAndRequests
+                && ProductTypeCodes.IsHiddenFromCompanyCustomerCatalog(r.CategoryId, r.ProductTypeId))
+            {
+                continue;
+            }
+
             if (r.USDPrice > 0 && r.Quantity > 0)
             {
                 var commissionTypeId = ProductTypeCodes.WholesaleCommissionProductTypeId(
@@ -1244,7 +1348,8 @@ public sealed partial class AiAssistantMcpToolsService(
                     Channel: "wholesale"));
             }
 
-            if (ProductTypeCodes.HasRetailPricing(
+            if (!hideRetailAndRequests
+                && ProductTypeCodes.HasRetailPricing(
                     r.CategoryId,
                     r.ProductTypeId,
                     r.RetailPrice,
@@ -1291,6 +1396,11 @@ public sealed partial class AiAssistantMcpToolsService(
 
         var publicRows = channelRows
             .Where(r => ProductStatusCodes.IsPubliclyVisible(r.Status, r.IsApproved))
+            .Where(r => !hideRetailAndRequests
+                || !ProductTypeCodes.IsHiddenFromCompanyCustomerCatalog(
+                    r.CategoryId,
+                    r.ProductTypeId,
+                    r.Channel))
             .ToList();
 
         IEnumerable<NameCandidate> rankedQuery = genericCatalogQuery

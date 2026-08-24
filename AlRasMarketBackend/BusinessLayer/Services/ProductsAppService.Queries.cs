@@ -44,11 +44,15 @@ public partial class ProductsAppService
 
         var queryText = NormalizeSearchQuery(input.Query);
         var (page, pageSize) = NormalizePaging(input.Page, input.PageSize);
+        var hideRetailAndRequests = await IsCompanyCustomerCatalogAudienceAsync(
+            input.SearcherUserId,
+            cancellationToken);
+        var audienceKey = hideRetailAndRequests ? "cc" : "all";
 
         if (ProductCodeGenerator.TryNormalize(queryText, out var productCode))
         {
             var codeCacheKey =
-                $"{SearchProductsCachePrefix}code:{productCode}:v{SearchProductsCacheVersion}:p{page}:s{pageSize}";
+                $"{SearchProductsCachePrefix}code:{productCode}:v{SearchProductsCacheVersion}:aud{audienceKey}:p{page}:s{pageSize}";
             var codeCached = await TryGetProductCacheAsync(codeCacheKey, cancellationToken);
             if (codeCached is not null)
             {
@@ -64,8 +68,9 @@ public partial class ProductsAppService
             var matchedRetailCode = codeProducts.Any(p =>
                 string.Equals(p.RetailCode, productCode, StringComparison.OrdinalIgnoreCase));
 
-            // RetailCode → retail channel only. ProductCode → both hybrid cards.
-            var codeResult = matchedRetailCode
+            // RetailCode → retail channel only (personal customers). ProductCode → both hybrid cards.
+            // Company customers never get the Retail channel or Requests.
+            var codeResult = matchedRetailCode && !hideRetailAndRequests
                 ? await BuildPublicProductListPageAsync(
                     codeProducts,
                     codeProducts.Count,
@@ -81,13 +86,14 @@ public partial class ProductsAppService
                     page,
                     pageSize,
                     cancellationToken,
-                    expandHybridSearchChannels: true);
+                    expandHybridSearchChannels: true,
+                    hideRetailAndRequests: hideRetailAndRequests);
 
             await SetProductCacheAsync(codeCacheKey, codeResult, TimeSpan.FromMinutes(2), cancellationToken);
             return codeResult;
         }
 
-        var cacheKey = $"{SearchProductsCachePrefix}{queryText.ToLowerInvariant()}:v{SearchProductsCacheVersion}:p{page}:s{pageSize}";
+        var cacheKey = $"{SearchProductsCachePrefix}{queryText.ToLowerInvariant()}:v{SearchProductsCacheVersion}:aud{audienceKey}:p{page}:s{pageSize}";
         var cached = await TryGetProductCacheAsync(cacheKey, cancellationToken);
         if (cached is not null)
         {
@@ -127,7 +133,8 @@ public partial class ProductsAppService
 
         var items = await BuildSearchProductCardItemsAsync(
             catalog.Products,
-            cancellationToken);
+            cancellationToken,
+            hideRetailAndRequests);
 
         object result;
         if (catalog.WasMisspelled && !string.IsNullOrWhiteSpace(catalog.CorrectedQuery))

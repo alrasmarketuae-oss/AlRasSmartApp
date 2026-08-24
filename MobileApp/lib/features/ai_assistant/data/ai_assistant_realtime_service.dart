@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:alrasmarket/core/services/api_constants.dart';
@@ -99,12 +100,12 @@ class AiAssistantRealtimeService {
       final answer = data?['answer']?.toString() ?? '';
       final offer = _asBool(data?['offerSupportCallback']) ||
           _asBool(data?['OfferSupportCallback']);
-      final listings = data?['listings'] ?? data?['Listings'];
+      final listings = _asList(data?['listings'] ?? data?['Listings']);
       final thinkingRaw = data?['thinkingSteps'] ?? data?['ThinkingSteps'];
       onCompleted(
         answer,
         offerSupportCallback: offer,
-        listings: listings is List ? listings : null,
+        listings: listings,
         thinkingSteps: _stringList(thinkingRaw),
       );
     });
@@ -173,6 +174,32 @@ class AiAssistantRealtimeService {
   Map<String, dynamic>? _map(List<Object?>? args) {
     if (args == null || args.isEmpty || args.first is! Map) return null;
     return Map<String, dynamic>.from(args.first! as Map);
+  }
+
+  static List<dynamic>? _asList(dynamic raw) {
+    var source = raw;
+    if (source == null) return null;
+    if (source is String && source.trim().isNotEmpty) {
+      try {
+        source = jsonDecode(source);
+      } catch (_) {
+        return null;
+      }
+    }
+    if (source is List) return List<dynamic>.from(source);
+    if (source is Iterable && source is! String) {
+      return List<dynamic>.from(source);
+    }
+    if (source is Map) {
+      final nested = source['listings'] ??
+          source['Listings'] ??
+          source['items'] ??
+          source['Items'];
+      if (nested is Iterable && nested is! String) {
+        return List<dynamic>.from(nested);
+      }
+    }
+    return null;
   }
 
   static List<String>? _stringList(dynamic raw) {

@@ -377,7 +377,8 @@ public interface IProductsAppService
         string fileName,
         CancellationToken cancellationToken = default,
         int page = 1,
-        int pageSize = 20);
+        int pageSize = 20,
+        string? searcherUserId = null);
     Task<MyListingsResponse> GetMyListingsAsync(string ownerId, CancellationToken cancellationToken = default);
 }
 

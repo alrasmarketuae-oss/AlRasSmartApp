@@ -1835,23 +1835,21 @@ class _MessageBubble extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.only(bottom: 12.h),
-      child: Row(
-        mainAxisAlignment: isUser
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (!isUser) ...[
-            const _AiAvatar(size: 26),
-            SizedBox(width: 8.w),
-          ],
-          Flexible(
-            child: Column(
-              crossAxisAlignment: isUser
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
-              children: [
-                GestureDetector(
+          Row(
+            mainAxisAlignment: isUser
+                ? MainAxisAlignment.end
+                : MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (!isUser) ...[
+                const _AiAvatar(size: 26),
+                SizedBox(width: 8.w),
+              ],
+              Flexible(
+                child: GestureDetector(
                   onLongPress: () async {
                     await Clipboard.setData(ClipboardData(text: message.text));
                     if (!context.mounted) return;
@@ -1866,11 +1864,11 @@ class _MessageBubble extends StatelessWidget {
                   },
                   child: bubble,
                 ),
-                if (!isUser && message.listings.isNotEmpty)
-                  AiProductListings(products: message.listings),
-              ],
-            ),
+              ),
+            ],
           ),
+          if (!isUser && message.listings.isNotEmpty)
+            AiProductListings(products: message.listings),
         ],
       ),
     );

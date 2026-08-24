@@ -58,6 +58,8 @@ public sealed record AiProductListingDto(
         return new Dictionary<string, object?>
         {
             ["productId"] = ProductId.ToString("D"),
+            ["ProductId"] = ProductId.ToString("D"),
+            ["id"] = ProductId.ToString("D"),
             ["productCode"] = ProductCode,
             ["productName"] = displayName,
             ["nameEn"] = NameEn,

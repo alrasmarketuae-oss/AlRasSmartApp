@@ -266,9 +266,14 @@ public sealed class AiAssistantMcpToolLoop(
         "search_products"
     };
 
-    private static IReadOnlyList<AiProductListingDto> ParseListingCards(string toolName, string content)
+    internal static IReadOnlyList<AiProductListingDto> ParseListingCards(string toolName, string content)
     {
-        if (!ListingToolNames.Contains(toolName) || string.IsNullOrWhiteSpace(content))
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return [];
+        }
+
+        if (!string.IsNullOrWhiteSpace(toolName) && !ListingToolNames.Contains(toolName))
         {
             return [];
         }
@@ -328,7 +333,8 @@ public sealed class AiAssistantMcpToolLoop(
     private static AiProductListingDto? TryReadListingCard(JsonElement el)
     {
         if (el.ValueKind != JsonValueKind.Object) return null;
-        if (!TryGetGuid(el, "productId", out var productId) || productId == Guid.Empty)
+        if ((!TryGetGuid(el, "productId", out var productId) && !TryGetGuid(el, "id", out productId))
+            || productId == Guid.Empty)
         {
             return null;
         }
