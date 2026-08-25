@@ -8,6 +8,7 @@ import { IconOrders } from '../components/icons'
 import { useAppPreferences } from '../context/AppPreferencesProvider'
 import { useGlobalSearchParam } from '../hooks/useGlobalSearchParam'
 import { useListPageParam } from '../hooks/useListPageParam'
+import { useRegisterAskAiPageData } from '../hooks/useRegisterAskAiPageData'
 import {
   useGetAdminOrderStatsQuery,
   useGetAdminOrdersQuery,
@@ -133,6 +134,43 @@ export default function OrdersPage({ channel }: OrdersPageProps) {
     })
   }, [ordersData?.items])
   const totalPages = ordersData?.totalPages ?? 1
+
+  useRegisterAskAiPageData(
+    useMemo(
+      () => ({
+        screen: 'orders',
+        channel: channel ?? 'all',
+        filters: appliedFilters,
+        page,
+        pageSize,
+        totalCount: ordersData?.totalCount ?? orders.length,
+        totalPages,
+        stats: stats ?? null,
+        orders: orders.slice(0, 40).map((o) => ({
+          id: o.id,
+          statusId: o.statusId,
+          statusName: o.statusName,
+          customerName: o.customerName,
+          supplierName: o.supplierName,
+          totalPrice: o.totalPrice,
+          currency: o.currency,
+          createdAt: o.createdAt,
+          productName: o.productName,
+          productTypeName: o.productTypeName,
+        })),
+      }),
+      [
+        channel,
+        appliedFilters,
+        page,
+        pageSize,
+        ordersData?.totalCount,
+        orders,
+        totalPages,
+        stats,
+      ],
+    ),
+  )
 
   useEffect(() => {
     window.document.querySelector('main')?.scrollTo({ top: 0 })

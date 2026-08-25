@@ -1029,3 +1029,112 @@ body {
   }
 }
 
+/* Floating Ask AI (admin dashboard) */
+.ask-ai-fab {
+  animation: ask-ai-float 2.8s ease-in-out infinite;
+}
+
+.ask-ai-fab__pulse,
+.ask-ai-fab__ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 9999px;
+  pointer-events: none;
+}
+
+.ask-ai-fab__pulse {
+  background: radial-gradient(circle, rgba(59, 127, 199, 0.3), transparent 70%);
+  animation: ask-ai-pulse 2s ease-out infinite;
+}
+
+.ask-ai-fab__ring {
+  border: 2px solid rgba(97, 157, 81, 0.5);
+  animation: ask-ai-ring 2.4s ease-out infinite;
+}
+
+.ask-ai-fab__logo {
+  animation: ask-ai-spin-slow 8s linear infinite;
+}
+
+@keyframes ask-ai-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes ask-ai-pulse {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.85;
+  }
+  70% {
+    transform: scale(1.18);
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes ask-ai-ring {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+@keyframes ask-ai-spin-slow {
+  from {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+  to {
+    transform: rotate(-4deg);
+  }
+}
+
+.ask-ai-typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.ask-ai-typing i {
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: #3b7fc7;
+  animation: ask-ai-dot 1s ease-in-out infinite;
+}
+
+.ask-ai-typing i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.ask-ai-typing i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes ask-ai-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+

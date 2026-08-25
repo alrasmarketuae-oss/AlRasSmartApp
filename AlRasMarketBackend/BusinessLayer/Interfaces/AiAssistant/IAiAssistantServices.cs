@@ -21,6 +21,30 @@ public sealed class AiAssistantAskRequest
 {
     public string Message { get; set; } = string.Empty;
     public string Language { get; set; } = "en";
+
+    /// <summary>
+    /// Prior chat turns (client-supplied). The service keeps at most the last 8
+    /// (15 during ad-creation flows).
+    /// </summary>
+    public List<AiAssistantHistoryMessageDto>? History { get; set; }
+
+    /// <summary>Current UI route, e.g. /orders/123 or /ads.</summary>
+    public string? PagePath { get; set; }
+
+    /// <summary>
+    /// Snapshot of the page the user is viewing (JSON or plain text). Used so
+    /// answers can reference on-screen admin/dashboard data.
+    /// </summary>
+    public string? PageContext { get; set; }
+
+    /// <summary>e.g. admin_dashboard, landing, mobile.</summary>
+    public string? ClientSource { get; set; }
+}
+
+public sealed class AiAssistantHistoryMessageDto
+{
+    public string Role { get; set; } = "user";
+    public string Content { get; set; } = string.Empty;
 }
 
 public sealed class AiAssistantCorrectDictationRequest

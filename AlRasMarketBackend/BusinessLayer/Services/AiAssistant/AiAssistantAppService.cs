@@ -335,6 +335,9 @@ public sealed class AiAssistantAppService(
                     history,
                     userId,
                     isAdCreation,
+                    request.PagePath,
+                    request.PageContext,
+                    request.ClientSource,
                     ThinkAsync,
                     cancellationToken)
                 .ConfigureAwait(false);
@@ -366,6 +369,9 @@ public sealed class AiAssistantAppService(
         IReadOnlyList<AiAssistantHistoryMessage>? history,
         Guid? userId,
         bool isAdCreation,
+        string? pagePath,
+        string? pageContext,
+        string? clientSource,
         Func<string, CancellationToken, Task>? onThinkingStep,
         CancellationToken cancellationToken)
     {
@@ -521,6 +527,12 @@ public sealed class AiAssistantAppService(
             {
                 messages.Add(new { role = "system", content = adsCatalog });
             }
+        }
+
+        var pageContextBlock = BuildUiPageContextBlock(pagePath, pageContext, clientSource);
+        if (!string.IsNullOrWhiteSpace(pageContextBlock))
+        {
+            messages.Add(new { role = "system", content = pageContextBlock });
         }
 
         if (history is { Count: > 0 })
@@ -970,6 +982,51 @@ public sealed class AiAssistantAppService(
         return $"{string.Join("\n", recent)}\n{message}".Trim();
     }
 
+    private static string? BuildUiPageContextBlock(
+        string? pagePath,
+        string? pageContext,
+        string? clientSource)
+    {
+        var path = (pagePath ?? string.Empty).Trim();
+        var snapshot = (pageContext ?? string.Empty).Trim();
+        var source = (clientSource ?? string.Empty).Trim();
+        if (path.Length == 0 && snapshot.Length == 0)
+        {
+            return null;
+        }
+
+        if (snapshot.Length > 24_000)
+        {
+            snapshot = snapshot[..24_000] + "\n…[truncated]";
+        }
+
+        var isAdminDashboard = source.Equals("admin_dashboard", StringComparison.OrdinalIgnoreCase);
+
+        if (isAdminDashboard)
+        {
+            return
+                $"""
+                ADMIN DASHBOARD UI CONTEXT (authoritative for on-screen questions):
+                The user is signed into the Al Ras Smart admin dashboard and is asking about the current screen.
+                Client source: admin_dashboard
+                Current route/path: {(string.IsNullOrEmpty(path) ? "(unknown)" : path)}
+                Prefer this page snapshot over general knowledge when they ask what is on the page, about a row/order/user/ad they are looking at, filters, statuses, or counts shown here.
+                If the snapshot is incomplete for a precise answer, say what is missing and what they should open — do not invent IDs, amounts, or statuses.
+                PAGE SNAPSHOT:
+                {(string.IsNullOrEmpty(snapshot) ? "(no structured snapshot; use the path only)" : snapshot)}
+                """;
+        }
+
+        return
+            $"""
+            CURRENT UI CONTEXT:
+            Client source: {(string.IsNullOrEmpty(source) ? "web" : source)}
+            Current route/path: {(string.IsNullOrEmpty(path) ? "(unknown)" : path)}
+            PAGE SNAPSHOT:
+            {(string.IsNullOrEmpty(snapshot) ? "(none)" : snapshot)}
+            """;
+    }
+
     private async Task<AccountContext> ResolveAccountContextAsync(
         Guid? userId,
         CancellationToken cancellationToken)
@@ -985,6 +1042,7 @@ public sealed class AiAssistantAppService(
 
         var audience = user.RoleId switch
         {
+            1 => "public", // admin — reuse public knowledge; UI page context carries screen data
             5 => "shipping",
             3 => "personal",
             2 when user.IsCustomer == true => "company_customer",

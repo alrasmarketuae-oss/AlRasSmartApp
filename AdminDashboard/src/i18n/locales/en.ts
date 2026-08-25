@@ -1583,4 +1583,19 @@ export const enMessages = {
       cancelled: 'Payment was cancelled',
       cancelledDetail: 'No charges were made. You can try again when placing your order.',
     },
+    askAi: {
+      fabLabel: 'Ask AI',
+      fabAria: 'Open Ask AI assistant',
+      title: 'Ask AI',
+      subtitle: 'Al Ras Smart admin assistant',
+      hello:
+    'Hello 👋 I can see the screen you’re currently viewing and the data displayed on it. I can analyze it, help you understand it, and answer any questions you have. Ask me anything 🚀',
+      placeholder: 'Ask about this page…',
+      send: 'Send',
+      close: 'Close',
+      thinking: 'Thinking…',
+      error: 'Something went wrong. Please try again.',
+      dataSafe: 'Your admin session data stays on Al Ras Smart',
+      poweredBy: 'Powered by Al Ras Smart',
+    },
 } as const

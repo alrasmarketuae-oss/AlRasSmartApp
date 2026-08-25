@@ -30,10 +30,28 @@ public sealed class AiAssistantController(
                 userId = parsed;
             }
 
+            IReadOnlyList<AiAssistantHistoryMessage>? history = null;
+            if (request.History is { Count: > 0 })
+            {
+                history = request.History
+                    .Where(x => x is not null
+                        && !string.IsNullOrWhiteSpace(x.Content)
+                        && (x.Role is "user" or "assistant"
+                            || string.Equals(x.Role, "user", StringComparison.OrdinalIgnoreCase)
+                            || string.Equals(x.Role, "assistant", StringComparison.OrdinalIgnoreCase)))
+                    .Select(x => new AiAssistantHistoryMessage(
+                        string.Equals(x.Role, "assistant", StringComparison.OrdinalIgnoreCase)
+                            ? "assistant"
+                            : "user",
+                        x.Content.Trim()))
+                    .TakeLast(8)
+                    .ToList();
+            }
+
             var result = await assistant.AskAsync(
                 userId,
                 request,
-                history: null,
+                history,
                 onThinkingStep: null,
                 cancellationToken);
             return Ok(result);
