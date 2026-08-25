@@ -364,13 +364,30 @@ class ClintCubit extends Cubit<ClintStates> {
     return true;
   }
 
+  bool _isVisibleInPersonalCustomerSearch(MyListingProductModel item) {
+    if (item.isRequestProduct ||
+        item.isBookingProduct ||
+        item.isOfferProduct) {
+      return false;
+    }
+    if (item.searchListingChannel == 'category') return false;
+    if (item.searchListingChannel == 'retail') return true;
+    if (item.isPureRetailProduct || item.isRetailFeedProduct) return true;
+    // Wholesale / category-only listings are not for personal customers.
+    return false;
+  }
+
   List<MyListingProductModel> _filterSearchResultsForAccount(
     List<MyListingProductModel> products,
   ) {
-    if (!AuthService.instance.isCompanyCustomerAccount) {
-      return products;
+    final auth = AuthService.instance;
+    if (auth.isCompanyCustomerAccount) {
+      return products.where(_isVisibleInCompanyCustomerSearch).toList();
     }
-    return products.where(_isVisibleInCompanyCustomerSearch).toList();
+    if (auth.isPersonalCustomerAccount) {
+      return products.where(_isVisibleInPersonalCustomerSearch).toList();
+    }
+    return products;
   }
 
   List<MyListingProductModel> _parseHomeProductsResponse(dynamic data) {

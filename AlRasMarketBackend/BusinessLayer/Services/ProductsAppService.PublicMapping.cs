@@ -20,15 +20,22 @@ public partial class ProductsAppService
         bool projectRetailAsPrimary = false,
         bool includeRetailFields = true,
         bool expandHybridSearchChannels = false,
-        bool hideRetailAndRequests = false)
+        bool hideRetailAndRequests = false,
+        CatalogSearchAudience catalogAudience = CatalogSearchAudience.All)
     {
+        // Legacy bool maps to company-customer audience when audience not set explicitly.
+        if (hideRetailAndRequests && catalogAudience == CatalogSearchAudience.All)
+        {
+            catalogAudience = CatalogSearchAudience.CompanyCustomer;
+        }
+
         var items = await BuildPublicProductListItemsAsync(
             products,
             cancellationToken,
             projectRetailAsPrimary: projectRetailAsPrimary,
             includeRetailFields: includeRetailFields,
             expandHybridSearchChannels: expandHybridSearchChannels,
-            hideRetailAndRequests: hideRetailAndRequests);
+            catalogAudience: catalogAudience);
 
         return new
         {
@@ -47,14 +54,20 @@ public partial class ProductsAppService
         bool projectRetailAsPrimary = false,
         bool includeRetailFields = true,
         bool expandHybridSearchChannels = false,
-        bool hideRetailAndRequests = false)
+        bool hideRetailAndRequests = false,
+        CatalogSearchAudience catalogAudience = CatalogSearchAudience.All)
     {
+        if (hideRetailAndRequests && catalogAudience == CatalogSearchAudience.All)
+        {
+            catalogAudience = CatalogSearchAudience.CompanyCustomer;
+        }
+
         if (products.Count == 0)
         {
             return [];
         }
 
-        products = FilterCatalogRowsForAudience(products, hideRetailAndRequests);
+        products = FilterCatalogRowsForAudience(products, catalogAudience);
         if (products.Count == 0)
         {
             return [];
@@ -105,12 +118,15 @@ public partial class ProductsAppService
             if (expandHybridSearchChannels
                 && ProductTypeCodes.IsHybridDualListing(product.CategoryId, product.ProductTypeId))
             {
-                if (!hideRetailAndRequests)
+                if (IncludeRetailHybridCard(catalogAudience))
                 {
                     projections.Add((product, ProjectRetail: true, IncludeRetail: true, Channel: "retail"));
                 }
 
-                projections.Add((product, ProjectRetail: false, IncludeRetail: false, Channel: "category"));
+                if (IncludeCategoryHybridCard(catalogAudience))
+                {
+                    projections.Add((product, ProjectRetail: false, IncludeRetail: false, Channel: "category"));
+                }
             }
             else
             {

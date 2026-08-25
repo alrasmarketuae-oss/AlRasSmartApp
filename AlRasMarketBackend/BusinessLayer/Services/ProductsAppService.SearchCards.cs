@@ -14,14 +14,14 @@ public partial class ProductsAppService
     private async Task<List<object>> BuildSearchProductCardItemsAsync(
         IReadOnlyList<ProductPublicRow> products,
         CancellationToken cancellationToken,
-        bool hideRetailAndRequests = false)
+        CatalogSearchAudience catalogAudience = CatalogSearchAudience.All)
     {
         if (products.Count == 0)
         {
             return [];
         }
 
-        products = FilterCatalogRowsForAudience(products, hideRetailAndRequests);
+        products = FilterCatalogRowsForAudience(products, catalogAudience);
         if (products.Count == 0)
         {
             return [];
@@ -32,12 +32,15 @@ public partial class ProductsAppService
         {
             if (ProductTypeCodes.IsHybridDualListing(product.CategoryId, product.ProductTypeId))
             {
-                if (!hideRetailAndRequests)
+                if (IncludeRetailHybridCard(catalogAudience))
                 {
                     projections.Add((product, ProjectRetail: true, Channel: "retail"));
                 }
 
-                projections.Add((product, ProjectRetail: false, Channel: "category"));
+                if (IncludeCategoryHybridCard(catalogAudience))
+                {
+                    projections.Add((product, ProjectRetail: false, Channel: "category"));
+                }
             }
             else
             {

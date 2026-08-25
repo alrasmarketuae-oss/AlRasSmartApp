@@ -52,6 +52,52 @@ public static class ProductTypeCodes
     }
 
     /// <summary>
+    /// Personal-customer search: Retail only (pure retail + hybrid retail channel).
+    /// Hides Booking, Offers, Requests, and wholesale/category-only listings.
+    /// </summary>
+    public static bool IsHiddenFromPersonalCustomerCatalog(
+        byte? categoryId,
+        byte? productTypeId,
+        decimal? retailPrice = null,
+        byte? retailUnitId = null,
+        string? listingChannel = null)
+    {
+        if (string.Equals(listingChannel, "category", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (string.Equals(listingChannel, "retail", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (IsBooking(productTypeId) || IsOffers(productTypeId) || IsRequests(productTypeId))
+        {
+            return true;
+        }
+
+        // Pure retail feed.
+        if (IsRetail(productTypeId) && categoryId is not > 0)
+        {
+            return false;
+        }
+
+        // Hybrid category+retail — personal customers only see the retail card.
+        if (IsRetail(productTypeId) && categoryId is > 0)
+        {
+            return false;
+        }
+
+        if (HasRetailStockConfigured(categoryId, productTypeId, retailPrice, retailUnitId))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
     /// Product type id for wholesale/category commission. Hybrids store ProductTypeId = Retail,
     /// but wholesale markup must use category rates (pass null so category commission wins).
     /// </summary>

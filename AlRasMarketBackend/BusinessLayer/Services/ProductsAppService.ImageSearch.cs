@@ -204,7 +204,7 @@ public partial class ProductsAppService
                 : [];
 
             var byId = rows.ToDictionary(x => x.ProductId);
-            var hideRetailAndRequests = await IsCompanyCustomerCatalogAudienceAsync(
+            var catalogAudience = await ResolveCatalogSearchAudienceAsync(
                 searcherUserId,
                 cancellationToken);
 
@@ -212,14 +212,14 @@ public partial class ProductsAppService
                 .Where(byId.ContainsKey)
                 .Select(id => byId[id])
                 .ToList();
-            ranked = FilterCatalogRowsForAudience(ranked, hideRetailAndRequests);
+            ranked = FilterCatalogRowsForAudience(ranked, catalogAudience);
 
             var items = ranked.Count > 0
                 ? await BuildPublicProductListItemsAsync(
                         ranked,
                         cancellationToken,
                         expandHybridSearchChannels: true,
-                        hideRetailAndRequests: hideRetailAndRequests)
+                        catalogAudience: catalogAudience)
                     .ConfigureAwait(false)
                 : [];
             var totalCount = ranked.Count;
@@ -279,12 +279,12 @@ public partial class ProductsAppService
                 if (fallbackTotal > 0)
                 {
                     ranked = fallbackRows;
-                    ranked = FilterCatalogRowsForAudience(ranked, hideRetailAndRequests);
+                    ranked = FilterCatalogRowsForAudience(ranked, catalogAudience);
                     items = await BuildPublicProductListItemsAsync(
                             ranked,
                             cancellationToken,
                             expandHybridSearchChannels: true,
-                            hideRetailAndRequests: hideRetailAndRequests)
+                            catalogAudience: catalogAudience)
                         .ConfigureAwait(false);
                     totalCount = fallbackTotal;
                     searchMode = fallbackMode;
@@ -303,7 +303,7 @@ public partial class ProductsAppService
                             ranked,
                             cancellationToken,
                             expandHybridSearchChannels: true,
-                            hideRetailAndRequests: hideRetailAndRequests)
+                            catalogAudience: catalogAudience)
                         .ConfigureAwait(false)
                     : [];
             }

@@ -344,7 +344,7 @@ public partial class ProductsAppService
         }
     }
 
-    private async Task<bool> IsCompanyCustomerCatalogAudienceAsync(
+    private async Task<CatalogSearchAudience> ResolveCatalogSearchAudienceAsync(
         string? searcherUserId,
         CancellationToken cancellationToken)
     {
@@ -352,27 +352,70 @@ public partial class ProductsAppService
             || !Guid.TryParse(searcherUserId, out var userId)
             || userId == Guid.Empty)
         {
-            return false;
+            return CatalogSearchAudience.All;
         }
 
         var user = await productData.GetUserByIdAsync(userId, tracked: false, cancellationToken);
-        return user is { RoleId: RoleIds.Seller, IsCustomer: true };
+        if (user is null)
+        {
+            return CatalogSearchAudience.All;
+        }
+
+        // Company customer (Seller role + IsCustomer): Offers / Booking / wholesale.
+        if (user.RoleId == RoleIds.Seller && user.IsCustomer == true)
+        {
+            return CatalogSearchAudience.CompanyCustomer;
+        }
+
+        // Personal customer (Buyer): Retail only.
+        if (user.RoleId == RoleIds.Buyer)
+        {
+            return CatalogSearchAudience.PersonalCustomer;
+        }
+
+        // Supplier (Seller + !IsCustomer), admin, shipping, etc.
+        return CatalogSearchAudience.All;
     }
+
+    private static string CatalogAudienceCacheKey(CatalogSearchAudience audience) =>
+        audience switch
+        {
+            CatalogSearchAudience.CompanyCustomer => "cc",
+            CatalogSearchAudience.PersonalCustomer => "pc",
+            _ => "all",
+        };
 
     private static List<ProductPublicRow> FilterCatalogRowsForAudience(
         IReadOnlyList<ProductPublicRow> products,
-        bool hideRetailAndRequests)
+        CatalogSearchAudience audience)
     {
-        if (!hideRetailAndRequests)
+        if (audience == CatalogSearchAudience.All)
         {
             return products as List<ProductPublicRow> ?? products.ToList();
         }
 
+        if (audience == CatalogSearchAudience.CompanyCustomer)
+        {
+            return products
+                .Where(p => !ProductTypeCodes.IsHiddenFromCompanyCustomerCatalog(
+                    p.CategoryId,
+                    p.ProductTypeId))
+                .ToList();
+        }
+
         return products
-            .Where(p => !ProductTypeCodes.IsHiddenFromCompanyCustomerCatalog(
+            .Where(p => !ProductTypeCodes.IsHiddenFromPersonalCustomerCatalog(
                 p.CategoryId,
-                p.ProductTypeId))
+                p.ProductTypeId,
+                p.RetailPrice,
+                p.RetailUnitId))
             .ToList();
     }
+
+    private static bool IncludeRetailHybridCard(CatalogSearchAudience audience) =>
+        audience != CatalogSearchAudience.CompanyCustomer;
+
+    private static bool IncludeCategoryHybridCard(CatalogSearchAudience audience) =>
+        audience != CatalogSearchAudience.PersonalCustomer;
 
 }

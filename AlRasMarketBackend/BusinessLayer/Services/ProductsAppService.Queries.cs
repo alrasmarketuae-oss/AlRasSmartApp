@@ -44,10 +44,10 @@ public partial class ProductsAppService
 
         var queryText = NormalizeSearchQuery(input.Query);
         var (page, pageSize) = NormalizePaging(input.Page, input.PageSize);
-        var hideRetailAndRequests = await IsCompanyCustomerCatalogAudienceAsync(
+        var catalogAudience = await ResolveCatalogSearchAudienceAsync(
             input.SearcherUserId,
             cancellationToken);
-        var audienceKey = hideRetailAndRequests ? "cc" : "all";
+        var audienceKey = CatalogAudienceCacheKey(catalogAudience);
 
         if (ProductCodeGenerator.TryNormalize(queryText, out var productCode))
         {
@@ -70,7 +70,7 @@ public partial class ProductsAppService
 
             // RetailCode → retail channel only (personal customers). ProductCode → both hybrid cards.
             // Company customers never get the Retail channel or Requests.
-            var codeResult = matchedRetailCode && !hideRetailAndRequests
+            var codeResult = matchedRetailCode && catalogAudience != CatalogSearchAudience.CompanyCustomer
                 ? await BuildPublicProductListPageAsync(
                     codeProducts,
                     codeProducts.Count,
@@ -79,7 +79,8 @@ public partial class ProductsAppService
                     cancellationToken,
                     projectRetailAsPrimary: true,
                     includeRetailFields: true,
-                    expandHybridSearchChannels: false)
+                    expandHybridSearchChannels: false,
+                    catalogAudience: catalogAudience)
                 : await BuildPublicProductListPageAsync(
                     codeProducts,
                     codeProducts.Count,
@@ -87,7 +88,7 @@ public partial class ProductsAppService
                     pageSize,
                     cancellationToken,
                     expandHybridSearchChannels: true,
-                    hideRetailAndRequests: hideRetailAndRequests);
+                    catalogAudience: catalogAudience);
 
             await SetProductCacheAsync(codeCacheKey, codeResult, TimeSpan.FromMinutes(2), cancellationToken);
             return codeResult;
@@ -134,7 +135,7 @@ public partial class ProductsAppService
         var items = await BuildSearchProductCardItemsAsync(
             catalog.Products,
             cancellationToken,
-            hideRetailAndRequests);
+            catalogAudience);
 
         object result;
         if (catalog.WasMisspelled && !string.IsNullOrWhiteSpace(catalog.CorrectedQuery))

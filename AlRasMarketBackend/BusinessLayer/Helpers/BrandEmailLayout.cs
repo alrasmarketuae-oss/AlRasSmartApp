@@ -83,7 +83,7 @@ public static class BrandEmailLayout
           </tr>
           <tr>
             <td style="background:linear-gradient(135deg,{{Blue}} 0%,#2f6aad 48%,{{Green}} 100%);padding:26px 24px 22px;text-align:center;">
-              <img src="{{logo}}" alt="Al Ras Smart" width="72" height="72" style="display:block;margin:0 auto 12px;width:72px;height:72px;border-radius:18px;border:3px solid rgba(255,255,255,0.85);background:#000000;object-fit:contain;" />
+              <img src="{{logo}}" alt="Al Ras Smart" width="96" height="96" style="display:block;margin:0 auto;width:96px;height:96px;border-radius:22px;border:0;background:#000000;object-fit:contain;" />
 
             </td>
           </tr>
