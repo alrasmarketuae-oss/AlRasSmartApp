@@ -323,6 +323,7 @@ class _CartViewState extends State<CartView> {
                     children: [
                       _CheckoutBar(
                         label: isOnline ? s.payWithVisaButton : s.confirmOrder,
+                        loadingLabel: s.creatingOrder,
                         totalAmount: CartItemEntity.formatAmountOnly(
                           state.cart.totalAed,
                         ),
@@ -438,12 +439,14 @@ class _CartTitleRow extends StatelessWidget {
 class _CheckoutBar extends StatelessWidget {
   const _CheckoutBar({
     required this.label,
+    required this.loadingLabel,
     required this.totalAmount,
     required this.isLoading,
     required this.onPressed,
   });
 
   final String label;
+  final String loadingLabel;
   final String totalAmount;
   final bool isLoading;
   final VoidCallback? onPressed;
@@ -474,21 +477,12 @@ class _CheckoutBar extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 16.w),
             child: Row(
               children: [
-                if (isLoading)
-                  SizedBox(
-                    width: 20.w,
-                    height: 20.w,
-                    child: const CircularProgressIndicator(
-                      strokeWidth: 2.2,
-                      color: Colors.white,
-                    ),
-                  )
-                else
+                if (!isLoading)
                   Icon(Icons.lock_rounded, color: Colors.white, size: 18.sp),
-                SizedBox(width: 10.w),
+                if (!isLoading) SizedBox(width: 10.w),
                 Expanded(
                   child: Text(
-                    label,
+                    isLoading ? loadingLabel : label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(

@@ -495,8 +495,7 @@ public partial class OrdersAppService
 
     /// <summary>
     /// Resolves the first status for a newly placed order.
-    /// Offers / Requests / Booking / Category: always admin review first.
-    /// Retail (direct or cart): seller inbox first (seller must accept manually).
+    /// All product types and offers require admin dashboard review before seller/advertiser action.
     /// </summary>
     private static (byte StatusId, bool IsAdminApproved) ResolveInitialOrderStatus(
         Product product,
@@ -505,45 +504,15 @@ public partial class OrdersAppService
         int imageCount,
         int documentCount,
         int videoCount,
-        decimal offerUnitPrice = 0m)
-    {
-        // Supplier bid below the request listing price always waits for admin.
-        if (AdminOrderPricingHelper.IsRequestOfferBelowListingPrice(offerUnitPrice, product))
-        {
-            return (OrderStatusCodes.Ordered, false);
-        }
+        decimal offerUnitPrice = 0m) =>
+        (OrderStatusCodes.Ordered, false);
 
-        if (ProductTypeCodes.UsesSpecOrMediaAdminGate(product))
-        {
-            return (OrderStatusCodes.Ordered, false);
-        }
-
-        if (ProductTypeCodes.IsRetail(product.ProductTypeId))
-        {
-            return (OrderStatusCodes.AwaitingSellerApproval, true);
-        }
-
-        return (ResolveNewOrderStatus(product.ProductTypeId, paymentMethod), false);
-    }
-
-    /// <summary>Cart lines: retail → seller inbox; other gated types → admin first.</summary>
+    /// <summary>Cart lines: all types require admin review first.</summary>
     private static (byte StatusId, bool IsAdminApproved) ResolveInitialOrderStatusForCartLine(
         byte? productTypeId,
         byte? categoryId,
-        string? notes)
-    {
-        if (ProductTypeCodes.IsRetail(productTypeId))
-        {
-            return (OrderStatusCodes.AwaitingSellerApproval, true);
-        }
-
-        if (ProductTypeCodes.UsesSpecOrMediaAdminGate(productTypeId, categoryId))
-        {
-            return (OrderStatusCodes.Ordered, false);
-        }
-
-        return (ResolveNewOrderStatus(productTypeId, paymentMethod: 0), false);
-    }
+        string? notes) =>
+        (OrderStatusCodes.Ordered, false);
 
     /// <summary>
     /// Default initial status for types that are not seller-first or offer/request flows.

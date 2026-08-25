@@ -69,6 +69,64 @@ public class UserPreferencesController(IUserPreferencesAppService userPreference
         }
     }
 
+    /// <summary>Returns whether the user allows FCM/email notification delivery.</summary>
+    [HttpGet("notifications")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetNotificationsPreference(CancellationToken cancellationToken = default)
+    {
+        var userId = GetUserId();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            var result = await userPreferencesAppService.GetNotificationsPreferenceAsync(
+                userId,
+                cancellationToken);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>Turns push/email notifications on or off. In-app inbox still receives rows.</summary>
+    [HttpPut("notifications")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateNotificationsPreference(
+        [FromBody] UpdateNotificationsPreferenceRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = GetUserId();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            var result = await userPreferencesAppService.UpdateNotificationsPreferenceAsync(
+                userId,
+                new UpdateNotificationsPreferenceInput
+                {
+                    IsNotificationsOn = request.IsNotificationsOn,
+                },
+                cancellationToken);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
     private string? GetUserId() =>
         User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 }
@@ -76,4 +134,9 @@ public class UserPreferencesController(IUserPreferencesAppService userPreference
 public sealed class UpdatePreferredLanguageRequest
 {
     public string Language { get; set; } = "en";
+}
+
+public sealed class UpdateNotificationsPreferenceRequest
+{
+    public bool IsNotificationsOn { get; set; } = true;
 }

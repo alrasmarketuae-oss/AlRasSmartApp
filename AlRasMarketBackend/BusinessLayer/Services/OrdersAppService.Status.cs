@@ -72,8 +72,7 @@ public partial class OrdersAppService
         var productTypeId = product?.ProductTypeId;
         var sellerFirst = ProductTypeCodes.StartsWithSellerApproval(product)
             || ProductTypeCodes.IsRetailOrder(order);
-        var needsModeration = ProductTypeCodes.RequiresAdminModerationBeforeSellerApproval(product)
-            && !ProductTypeCodes.IsRetailOrder(order);
+        var needsModeration = ProductTypeCodes.RequiresAdminModerationBeforeSellerApproval(product);
         var stockChanged = false;
 
         if (needsModeration

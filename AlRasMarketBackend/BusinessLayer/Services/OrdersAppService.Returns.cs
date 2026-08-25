@@ -177,15 +177,7 @@ public partial class OrdersAppService
         var order = await orderData.GetOrderWithListDetailsAsync(orderId, cancellationToken)
             ?? throw new KeyNotFoundException("Order not found.");
 
-        // Cart / pure retail is seller-first. Category hybrids (ProductTypeId=Retail + CategoryId)
-        // can still require admin moderation when notes/media are present.
-        if (ProductTypeCodes.IsRetailOrder(order)
-            && !ProductTypeCodes.RequiresAdminModerationBeforeSellerApproval(order.Product))
-        {
-            throw new InvalidOperationException(
-                "Retail orders are accepted by the seller first. Admin updates Shipping/Delivered after seller approval.");
-        }
-
+        // Cart / pure retail and all other types: admin dashboard review first.
         EnsurePendingAdminModerationReview(order);
 
         if (adminUnitPrice is > 0 && ProductTypeCodes.IsRequests(order.Product?.ProductTypeId))
@@ -322,13 +314,6 @@ public partial class OrdersAppService
 
         var order = await orderData.GetOrderWithListDetailsAsync(orderId, cancellationToken)
             ?? throw new KeyNotFoundException("Order not found.");
-
-        if (ProductTypeCodes.IsRetailOrder(order)
-            && !ProductTypeCodes.RequiresAdminModerationBeforeSellerApproval(order.Product))
-        {
-            throw new InvalidOperationException(
-                "Retail orders are rejected by the seller. Use status update to cancel if needed.");
-        }
 
         EnsurePendingAdminModerationReview(order);
 

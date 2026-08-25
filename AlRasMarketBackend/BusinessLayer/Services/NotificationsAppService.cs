@@ -75,11 +75,17 @@ public class NotificationsAppService(
         await dbContext.SaveChangesAsync(cancellationToken);
         NotificationCacheVersions.Bump(toUserId);
 
+        var allowPushAndEmail = NotificationDeliveryPrefs.AllowsPushAndEmail(toUser.IsNotificationsOn);
         var fcmToken = toUser.FcmToken;
         var recipientEmail = toUser.Email;
         var type = input.Type;
         var routeIdText = input.RouteId;
         var referenceId = input.ReferenceId;
+
+        if (!allowPushAndEmail)
+        {
+            return UserMessages.Localize("Notification sent successfully.", toUser.PreferredLanguage);
+        }
 
         _ = Task.Run(async () =>
         {
@@ -93,16 +99,19 @@ public class NotificationsAppService(
                         BrandEmailLayout.Headline(localizedTitle) + BrandEmailLayout.Paragraph(localizedBody));
                 }
 
-                await fcmNotificationService.SendNotificationAsync(
-                    fcmToken!,
-                    new FcmNotificationPayload
-                    {
-                        Title = localizedTitle,
-                        Body = localizedBody,
-                        Type = type,
-                        RouteId = routeIdText,
-                        ReferenceId = referenceId
-                    });
+                if (!string.IsNullOrWhiteSpace(fcmToken))
+                {
+                    await fcmNotificationService.SendNotificationAsync(
+                        fcmToken,
+                        new FcmNotificationPayload
+                        {
+                            Title = localizedTitle,
+                            Body = localizedBody,
+                            Type = type,
+                            RouteId = routeIdText,
+                            ReferenceId = referenceId
+                        });
+                }
             }
             catch (Exception ex)
             {

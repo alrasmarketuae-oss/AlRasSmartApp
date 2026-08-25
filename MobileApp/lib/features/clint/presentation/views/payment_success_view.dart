@@ -258,10 +258,14 @@ class _PaymentSuccessViewState extends State<PaymentSuccessView> {
                     final latestOrder = _latestOrder(
                       context.read<ClintCubit>().myOrders,
                     );
-                    context.push(
-                      AppRoutes.kTrackOrderView,
-                      extra: latestOrder != null ? {'order': latestOrder} : null,
-                    );
+                    if (latestOrder != null) {
+                      context.push(
+                        AppRoutes.kTrackOrderView,
+                        extra: {'order': latestOrder},
+                      );
+                      return;
+                    }
+                    context.go(whereToGo());
                   },
                   height: 48.h,
                   borderRadius: 8.r,

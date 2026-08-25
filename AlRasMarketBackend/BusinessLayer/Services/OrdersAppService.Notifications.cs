@@ -98,6 +98,11 @@ public partial class OrdersAppService
 
             foreach (var admin in admins.GroupBy(x => x.FcmToken!).Select(g => g.First()))
             {
+                if (!NotificationDeliveryPrefs.AllowsPushAndEmail(admin.IsNotificationsOn))
+                {
+                    continue;
+                }
+
                 var (title, body) = NotificationMessages.NewOrderAdmin(
                     admin.PreferredLanguage,
                     sampleOrder.Id,
@@ -446,6 +451,11 @@ public partial class OrdersAppService
 
         foreach (var admin in admins.GroupBy(x => x.FcmToken!).Select(g => g.First()))
         {
+            if (!NotificationDeliveryPrefs.AllowsPushAndEmail(admin.IsNotificationsOn))
+            {
+                continue;
+            }
+
             var (title, body) = NotificationMessages.NewOrderAdmin(
                 admin.PreferredLanguage,
                 order.Id,
@@ -572,6 +582,11 @@ public partial class OrdersAppService
         var productName = order.Product?.NameEn?.Trim() ?? string.Empty;
         foreach (var admin in admins.GroupBy(x => x.FcmToken!).Select(g => g.First()))
         {
+            if (!NotificationDeliveryPrefs.AllowsPushAndEmail(admin.IsNotificationsOn))
+            {
+                continue;
+            }
+
             var (title, body) = NotificationMessages.SellerApprovedOrderAdmin(
                 admin.PreferredLanguage,
                 order.Id,
@@ -783,7 +798,10 @@ public partial class OrdersAppService
 
         NotificationCacheVersions.Bump(toUserId);
 
-        if (!string.IsNullOrWhiteSpace(email))
+        var allowPushAndEmail = NotificationDeliveryPrefs.AllowsPushAndEmail(
+            await orderData.GetIsNotificationsOnAsync(toUserId, cancellationToken));
+
+        if (allowPushAndEmail && !string.IsNullOrWhiteSpace(email))
         {
             try
             {
@@ -801,7 +819,7 @@ public partial class OrdersAppService
             }
         }
 
-        if (!string.IsNullOrWhiteSpace(fcmToken))
+        if (allowPushAndEmail && !string.IsNullOrWhiteSpace(fcmToken))
         {
             try
             {

@@ -254,7 +254,6 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
         },
         child: BlocBuilder<ClintCubit, ClintStates>(
           buildWhen: (previous, current) {
-            if (!widget.isOffer) return false;
             if (previous is OfferOrderFormState &&
                 current is OfferOrderFormState) {
               return previous.isSubmitting != current.isSubmitting;
@@ -263,9 +262,7 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
           },
           builder: (context, state) {
             final isSubmitting =
-                widget.isOffer &&
-                state is OfferOrderFormState &&
-                state.isSubmitting;
+                state is OfferOrderFormState && state.isSubmitting;
 
             final preferRetail = ProductNavigationHelper
                 .resolvePreferRetailChannel(widget.preferRetailChannel);
@@ -277,9 +274,11 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
             final isOwnAd =
                 ProductOwnershipHelper.isOwnedByCurrentUser(widget.product);
             final ctaBusy = isRetailCart ? _isAddingToCart : isSubmitting;
-            final ctaLabel = widget.isOffer
-                ? s.purchaseOrder
-                : (isRetailCart ? s.addToCart : s.purchaseOrder);
+            final ctaLabel = ctaBusy
+                ? (isRetailCart ? s.addingToCart : s.creatingOrder)
+                : (widget.isOffer
+                    ? s.purchaseOrder
+                    : (isRetailCart ? s.addToCart : s.purchaseOrder));
 
             return Scaffold(
               backgroundColor: BookingDetailsDesign.pageBg,
@@ -340,7 +339,7 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
                         child: SizedBox(
                           width: double.infinity,
                           height: 48.h,
-                          child: ElevatedButton.icon(
+                          child: ElevatedButton(
                             onPressed: ctaBusy
                                 ? null
                                 : () {
@@ -374,26 +373,25 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
                                 borderRadius: BorderRadius.circular(12.r),
                               ),
                             ),
-                            icon: ctaBusy
-                                ? SizedBox(
-                                    width: 18.w,
-                                    height: 18.w,
-                                    child: const CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : Icon(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                if (!ctaBusy) ...[
+                                  Icon(
                                     Icons.shopping_cart_outlined,
                                     size: 18.sp,
                                   ),
-                            label: Text(
-                              ctaLabel,
-                              style: TextStyle(
-                                fontFamily: fontFamily,
-                                fontSize: 15.sp,
-                                fontWeight: FontWeight.w700,
-                              ),
+                                  SizedBox(width: 8.w),
+                                ],
+                                Text(
+                                  ctaLabel,
+                                  style: TextStyle(
+                                    fontFamily: fontFamily,
+                                    fontSize: 15.sp,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),

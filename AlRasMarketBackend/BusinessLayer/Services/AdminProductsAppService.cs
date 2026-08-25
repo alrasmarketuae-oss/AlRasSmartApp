@@ -1535,6 +1535,7 @@ public class AdminProductsAppService(
         var ownerId = owner.Id;
         var fcmToken = owner.FcmToken;
         var preferredLanguage = owner.PreferredLanguage;
+        var allowPushAndEmail = NotificationDeliveryPrefs.AllowsPushAndEmail(owner.IsNotificationsOn);
         var storeTitleEn = TruncateNotify(titleEn ?? fcmTitle, 255);
         var storeBodyEn = TruncateNotify(bodyEn ?? fcmBody, 1000);
         var storeTitleAr = string.IsNullOrWhiteSpace(titleAr) ? null : TruncateNotify(titleAr, 255);
@@ -1577,7 +1578,7 @@ public class AdminProductsAppService(
 
                 // Ad approve/reject: inbox + push only (no email).
 
-                if (!string.IsNullOrWhiteSpace(fcmToken))
+                if (allowPushAndEmail && !string.IsNullOrWhiteSpace(fcmToken))
                 {
                     var (pushTitle, pushBody) = NotificationMessages.PickOptional(
                         preferredLanguage,

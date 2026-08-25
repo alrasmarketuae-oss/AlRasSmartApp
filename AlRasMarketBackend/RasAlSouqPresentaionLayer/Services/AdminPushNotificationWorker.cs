@@ -96,7 +96,8 @@ public sealed class AdminPushNotificationWorker(
                     x.Id,
                     x.FcmToken ?? string.Empty,
                     x.Email ?? string.Empty,
-                    x.PreferredLanguage ?? string.Empty))
+                    x.PreferredLanguage ?? string.Empty,
+                    x.IsNotificationsOn))
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (user is null)
@@ -144,7 +145,8 @@ public sealed class AdminPushNotificationWorker(
                 x.Id,
                 x.FcmToken ?? string.Empty,
                 x.Email ?? string.Empty,
-                x.PreferredLanguage ?? string.Empty))
+                x.PreferredLanguage ?? string.Empty,
+                x.IsNotificationsOn))
             .ToListAsync(cancellationToken);
     }
 
@@ -231,7 +233,8 @@ public sealed class AdminPushNotificationWorker(
                     logger.LogWarning(ex, "Failed to store in-app notification for {UserId}", recipient.UserId);
                 }
 
-                if (!string.IsNullOrWhiteSpace(recipient.Email))
+                if (NotificationDeliveryPrefs.AllowsPushAndEmail(recipient.IsNotificationsOn)
+                    && !string.IsNullOrWhiteSpace(recipient.Email))
                 {
                     try
                     {
@@ -247,7 +250,8 @@ public sealed class AdminPushNotificationWorker(
                     }
                 }
 
-                if (!string.IsNullOrWhiteSpace(recipient.Token))
+                if (NotificationDeliveryPrefs.AllowsPushAndEmail(recipient.IsNotificationsOn)
+                    && !string.IsNullOrWhiteSpace(recipient.Token))
                 {
                     try
                     {
@@ -331,5 +335,6 @@ public sealed class AdminPushNotificationWorker(
         Guid UserId,
         string Token,
         string Email,
-        string PreferredLanguage);
+        string PreferredLanguage,
+        bool IsNotificationsOn);
 }

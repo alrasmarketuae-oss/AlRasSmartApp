@@ -98,6 +98,7 @@ public class AdminCompaniesAppService(
         var preferredLanguage = company.PreferredLanguage;
         var companyEmail = company.Email;
         var fcmToken = company.FcmToken;
+        var allowPushAndEmail = NotificationDeliveryPrefs.AllowsPushAndEmail(company.IsNotificationsOn);
         var companyIdText = company.Id.ToString();
         var notificationEn = isPendingProfileEdit
             ? NotificationMessages.CompanyProfileUpdateApproved("en")
@@ -139,6 +140,11 @@ public class AdminCompaniesAppService(
         {
             try
             {
+                if (!allowPushAndEmail)
+                {
+                    return;
+                }
+
                 await emailService.SendAsync(
                     companyEmail,
                     notification.EmailSubject,
@@ -219,6 +225,8 @@ public class AdminCompaniesAppService(
             var registrationPreferredLanguage = company.PreferredLanguage;
             var registrationCompanyEmail = company.Email;
             var registrationFcmToken = company.FcmToken;
+            var registrationAllowPushAndEmail =
+                NotificationDeliveryPrefs.AllowsPushAndEmail(company.IsNotificationsOn);
             var registrationCompanyIdText = company.Id.ToString();
             var registrationRoleId = company.RoleId;
             var registrationNotification = NotificationMessages.CompanyRejected(
@@ -250,6 +258,11 @@ public class AdminCompaniesAppService(
             {
                 try
                 {
+                    if (!registrationAllowPushAndEmail)
+                    {
+                        return;
+                    }
+
                     await emailService.SendAsync(
                         registrationCompanyEmail,
                         registrationNotification.EmailSubject,
@@ -300,6 +313,7 @@ public class AdminCompaniesAppService(
         var preferredLanguage = company.PreferredLanguage;
         var companyEmail = company.Email;
         var fcmToken = company.FcmToken;
+        var allowPushAndEmail = NotificationDeliveryPrefs.AllowsPushAndEmail(company.IsNotificationsOn);
         var companyIdText = company.Id.ToString();
         var companyUserIdForNotify = company.Id;
         var notificationEn = NotificationMessages.CompanyProfileUpdateRejected("en", reason);
@@ -333,6 +347,11 @@ public class AdminCompaniesAppService(
         {
             try
             {
+                if (!allowPushAndEmail)
+                {
+                    return;
+                }
+
                 await emailService.SendAsync(
                     companyEmail,
                     notification.EmailSubject,

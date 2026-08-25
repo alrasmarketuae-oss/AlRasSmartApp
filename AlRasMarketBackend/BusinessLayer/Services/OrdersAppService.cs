@@ -251,9 +251,10 @@ public partial class OrdersAppService(
                 RequestOfferStatusLabels.ApplyAwaitingAdmin(order);
             }
         }
-        else if (ProductTypeCodes.StartsWithSellerApproval(product))
+        else if (ProductTypeCodes.StartsWithSellerApproval(product)
+            || ProductTypeCodes.IsRetail(product.ProductTypeId))
         {
-            RequestOfferStatusLabels.ApplyAwaitingSeller(order);
+            RequestOfferStatusLabels.ApplyAwaitingAdmin(order);
         }
 
         foreach (var path in imagePaths)
@@ -297,11 +298,10 @@ public partial class OrdersAppService(
         ProductsAppService.InvalidateListingCaches();
         await NotifyOrderPartiesAsync([order], cancellationToken);
 
-        // Booking / Category / Offers / Requests pending admin review → scan buyer notes/media.
-        if (!isAdminApproved
-            && ProductTypeCodes.RequiresAdminModerationBeforeSellerApproval(product))
+        // All pending orders → scan buyer notes/media when applicable.
+        if (!isAdminApproved)
         {
-            QueueOrderOfferAutoModeration(order.Id);
+        //    QueueOrderOfferAutoModeration(order.Id);
         }
 
         var commissionSettings = await commissionSettingsProvider.GetAsync(cancellationToken);

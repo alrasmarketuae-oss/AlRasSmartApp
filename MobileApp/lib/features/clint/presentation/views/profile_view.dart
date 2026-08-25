@@ -50,6 +50,8 @@ class _ProfileViewState extends State<ProfileView> {
   bool _biometricSupported = false;
   bool _biometricEnabled = false;
   bool _biometricBusy = false;
+  bool _notificationsOn = true;
+  bool _notificationsBusy = false;
 
   @override
   void initState() {
@@ -132,6 +134,7 @@ class _ProfileViewState extends State<ProfileView> {
                     : S.of(context).supplierAccount)
                 : S.of(context).personalAccount);
         _imgPath = profile.imgPath;
+        _notificationsOn = profile.isNotificationsOn;
         _loading = false;
       });
     } catch (_) {
@@ -165,6 +168,34 @@ class _ProfileViewState extends State<ProfileView> {
     final source = _name.trim().isNotEmpty ? _name : _email;
     if (source.isEmpty) return '?';
     return source.substring(0, 1).toUpperCase();
+  }
+
+  Future<void> _toggleNotifications(bool enable) async {
+    if (_notificationsBusy) return;
+    final previous = _notificationsOn;
+    setState(() {
+      _notificationsBusy = true;
+      _notificationsOn = enable;
+    });
+
+    try {
+      final enabled =
+          await ProfileService.instance.updateNotificationsPreference(enable);
+      if (!mounted) return;
+      setState(() => _notificationsOn = enabled);
+      AppToast.showSuccess(
+        context,
+        enabled
+            ? S.of(context).notificationsEnabledSuccess
+            : S.of(context).notificationsDisabledSuccess,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _notificationsOn = previous);
+      AppToast.showError(context, S.of(context).notificationsUpdateFailed);
+    } finally {
+      if (mounted) setState(() => _notificationsBusy = false);
+    }
   }
 
   Future<void> _openEditProfile() async {
@@ -329,6 +360,25 @@ class _ProfileViewState extends State<ProfileView> {
                             SizedBox(height: 22.h),
                             _SectionTitle(s.settings),
                             SizedBox(height: 12.h),
+                            _SettingsTile(
+                              title: s.notifications,
+                              subtitle: s.notificationsPreferenceSubtitle,
+                              assetIcon: AppAssets.profileNotificationIcon,
+                              trailing: _notificationsBusy
+                                  ? SizedBox(
+                                      width: 22.w,
+                                      height: 22.w,
+                                      child: const CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : Switch.adaptive(
+                                      value: _notificationsOn,
+                                      onChanged: _toggleNotifications,
+                                      activeThumbColor: Colors.white,
+                                      activeTrackColor: _kBlue,
+                                    ),
+                            ),
                             _SettingsTile(
                               title: s.language,
                               subtitle: s.changeLanguageSubtitle,

@@ -1409,6 +1409,11 @@ class S {
     );
   }
 
+  /// `Sending`
+  String get sending {
+    return Intl.message('Sending', name: 'sending', desc: '', args: []);
+  }
+
   /// `Accept order`
   String get acceptOrderAction {
     return Intl.message(
@@ -1929,6 +1934,46 @@ class S {
     return Intl.message(
       'Notifications',
       name: 'notifications',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Push and email alerts. You still see them in the app inbox.`
+  String get notificationsPreferenceSubtitle {
+    return Intl.message(
+      'Push and email alerts. You still see them in the app inbox.',
+      name: 'notificationsPreferenceSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Notifications turned on`
+  String get notificationsEnabledSuccess {
+    return Intl.message(
+      'Notifications turned on',
+      name: 'notificationsEnabledSuccess',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Notifications turned off`
+  String get notificationsDisabledSuccess {
+    return Intl.message(
+      'Notifications turned off',
+      name: 'notificationsDisabledSuccess',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not update notification settings`
+  String get notificationsUpdateFailed {
+    return Intl.message(
+      'Could not update notification settings',
+      name: 'notificationsUpdateFailed',
       desc: '',
       args: [],
     );
@@ -3879,6 +3924,36 @@ class S {
     return Intl.message(
       'Submit Offer',
       name: 'submitOffer',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Submitting offer`
+  String get submittingOffer {
+    return Intl.message(
+      'Submitting offer',
+      name: 'submittingOffer',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Creating order`
+  String get creatingOrder {
+    return Intl.message(
+      'Creating order',
+      name: 'creatingOrder',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Adding to cart`
+  String get addingToCart {
+    return Intl.message(
+      'Adding to cart',
+      name: 'addingToCart',
       desc: '',
       args: [],
     );

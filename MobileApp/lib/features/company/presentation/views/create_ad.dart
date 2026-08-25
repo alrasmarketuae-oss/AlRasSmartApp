@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:alrasmarket/core/router/app_router.dart';
-import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/services/publish_success_sound.dart';
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
@@ -85,7 +84,11 @@ class _CreateAdPage extends StatelessWidget {
         final actingForCompany =
             context.read<CreateAdCubit>().actingOwnerId?.trim().isNotEmpty ==
             true;
-        final bottomPad = AuthService.instance.isAdminAccount ? 96.h : 16.h;
+        // Company/home shells use extendBody: true, so the publish button sits
+        // under the bottom nav unless scroll padding clears it.
+        final bottomPad = kBottomNavigationBarHeight +
+            MediaQuery.viewPaddingOf(context).bottom +
+            32.h;
         return AdminAccountPage.wrap(
           PopScope(
             canPop: !state.isSubmitting,

@@ -59,11 +59,16 @@ cd '$RemotePath'
 # Stale path from before ProductAdoRepository moved to DataLayer.
 # Must remove it before extract: Windows tar still lists the folder and mkdir fails.
 rm -rf BusinessLayer/DataAccess 2>/dev/null || true
+# Windows tar packs dirs as 0555; chmod so new files can be extracted.
+chmod -R u+w BusinessLayer DataLayer RasAlSouqPresentaionLayer deploy clip-service 2>/dev/null || true
 # Windows-built archives can contain duplicate members / metadata headers.
 # --overwrite replaces existing source files instead of aborting the deploy.
-tar --overwrite --no-same-owner --exclude='BusinessLayer/DataAccess' --exclude='./BusinessLayer/DataAccess' -xzf backend.tar.gz
+# --delay-directory-restore keeps dirs writable until all files are extracted
+# (archive dir modes are 0555; applying them mid-extract blocks new files).
+tar --overwrite --no-same-owner --delay-directory-restore --exclude='BusinessLayer/DataAccess' --exclude='./BusinessLayer/DataAccess' -xzf backend.tar.gz
 rm -f backend.tar.gz 2>/dev/null || true
 rm -rf BusinessLayer/DataAccess 2>/dev/null || true
+chmod -R u+w BusinessLayer DataLayer RasAlSouqPresentaionLayer deploy clip-service 2>/dev/null || true
 # Stale AI assistant paths before Services/AiAssistant (+ Mcp) move.
 rm -f BusinessLayer/Services/AiAssistantToolsService.cs
 rm -f BusinessLayer/Services/AiAssistantAppService.cs

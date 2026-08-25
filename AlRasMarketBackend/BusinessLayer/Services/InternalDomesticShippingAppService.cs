@@ -134,4 +134,52 @@ public class UserPreferencesAppService(IRasAlSouqDbContext dbContext) : IUserPre
 
         return new { language, message = language == "ar" ? "تم تحديث اللغة المفضلة." : "Preferred language updated." };
     }
+
+    public async Task<object> GetNotificationsPreferenceAsync(
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(userId, out var parsedUserId))
+        {
+            throw new ArgumentException("Invalid user id.");
+        }
+
+        var user = await dbContext.Users
+            .AsNoTracking()
+            .Where(x => x.Id == parsedUserId)
+            .Select(x => new { x.IsNotificationsOn })
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new KeyNotFoundException("User not found.");
+
+        return new { isNotificationsOn = user.IsNotificationsOn };
+    }
+
+    public async Task<object> UpdateNotificationsPreferenceAsync(
+        string userId,
+        UpdateNotificationsPreferenceInput input,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(userId, out var parsedUserId))
+        {
+            throw new ArgumentException("Invalid user id.");
+        }
+
+        var user = await dbContext.Users.FindAsync([parsedUserId], cancellationToken)
+            ?? throw new KeyNotFoundException("User not found.");
+
+        user.IsNotificationsOn = input.IsNotificationsOn;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new
+        {
+            isNotificationsOn = user.IsNotificationsOn,
+            message = user.IsNotificationsOn
+                ? (user.PreferredLanguage?.StartsWith("ar", StringComparison.OrdinalIgnoreCase) == true
+                    ? "تم تشغيل الإشعارات."
+                    : "Notifications turned on.")
+                : (user.PreferredLanguage?.StartsWith("ar", StringComparison.OrdinalIgnoreCase) == true
+                    ? "تم إيقاف الإشعارات."
+                    : "Notifications turned off."),
+        };
+    }
 }

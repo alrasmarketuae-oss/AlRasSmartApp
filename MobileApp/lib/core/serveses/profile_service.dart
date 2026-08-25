@@ -28,6 +28,7 @@ class UserProfile {
   /// Null when the response predates the field (e.g. a stale cache entry).
   final bool? hasPassword;
   final String? loginProviderName;
+  final bool isNotificationsOn;
 
   const UserProfile({
     required this.fullName,
@@ -46,6 +47,7 @@ class UserProfile {
     this.hasPendingProfileChanges = false,
     this.hasPassword,
     this.loginProviderName,
+    this.isNotificationsOn = true,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -54,6 +56,9 @@ class UserProfile {
     if (birthRaw != null) {
       birth = DateTime.tryParse(birthRaw.toString());
     }
+
+    final notificationsRaw =
+        json['isNotificationsOn'] ?? json['IsNotificationsOn'];
 
     return UserProfile(
       fullName: (json['fullName'] ?? json['FullName'] ?? '').toString(),
@@ -79,6 +84,7 @@ class UserProfile {
       hasPassword: (json['hasPassword'] ?? json['HasPassword']) as bool?,
       loginProviderName:
           (json['loginProviderName'] ?? json['LoginProviderName'])?.toString(),
+      isNotificationsOn: notificationsRaw != false,
     );
   }
 
@@ -99,6 +105,7 @@ class UserProfile {
     'hasPendingProfileChanges': hasPendingProfileChanges,
     'hasPassword': hasPassword,
     'loginProviderName': loginProviderName,
+    'isNotificationsOn': isNotificationsOn,
   };
 }
 
@@ -207,6 +214,38 @@ class ProfileService {
     }
     await _syncAuthFromProfile(profile);
     return profile;
+  }
+
+  Future<bool> updateNotificationsPreference(bool isNotificationsOn) async {
+    final response = await DioHelper.putData(
+      url: ApiConstants.userNotificationsPreferenceEndPoint,
+      data: {'isNotificationsOn': isNotificationsOn},
+      token: AuthService.instance.currentToken,
+    );
+    if (response?.statusCode != 200) {
+      final message = response?.data is Map
+          ? response?.data['message']?.toString()
+          : null;
+      throw Exception(message ?? 'Failed to update notifications preference');
+    }
+
+    final data = response?.data;
+    final enabled = data is Map
+        ? (data['isNotificationsOn'] ?? data['IsNotificationsOn']) != false
+        : isNotificationsOn;
+
+    final userId = AuthService.instance.currentUserID;
+    if (userId != null && userId.isNotEmpty) {
+      final cacheKey = ApiCacheKeys.userProfile(userId);
+      final cached = await ApiCacheStore.instance.read(cacheKey, allowStale: true);
+      if (cached?.data is Map) {
+        final map = Map<String, dynamic>.from(cached!.data as Map);
+        map['isNotificationsOn'] = enabled;
+        await ApiCacheStore.instance.write(cacheKey, map, ApiCacheTtl.profile);
+      }
+    }
+
+    return enabled;
   }
 
   Future<UserProfile> uploadMyProfileImage(String filePath) async {

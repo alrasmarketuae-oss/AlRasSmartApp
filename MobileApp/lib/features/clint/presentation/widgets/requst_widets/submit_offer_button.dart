@@ -1,3 +1,4 @@
+import 'package:alrasmarket/generated/l10n.dart';
 import 'package:alrasmarket/core/widgets/primary_button.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_states.dart';
@@ -20,8 +21,10 @@ class SubmitOfferButtonWidget extends StatelessWidget {
       builder: (context, state) {
         final isSubmitting =
             state is SubmitOfferFormState && state.isSubmitting;
+        final s = S.of(context);
         return PrimaryButton(
-          text: 'Submit Offer',
+          text: s.submitOffer,
+          loadingText: s.submittingOffer,
           isLoading: isSubmitting,
           backgroundColor: const Color(0xFF3A7DC5),
           onPressed: isSubmitting

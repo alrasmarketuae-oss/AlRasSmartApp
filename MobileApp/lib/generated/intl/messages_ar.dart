@@ -197,6 +197,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "أنشئ عرض شحن جديد للعملاء",
     ),
     "addToCart": MessageLookupByLibrary.simpleMessage("أضف إلى السلة"),
+    "addingToCart": MessageLookupByLibrary.simpleMessage(
+      "جاري الإضافة إلى السلة",
+    ),
     "additionalNotes": MessageLookupByLibrary.simpleMessage("ملاحظات إضافية"),
     "address": MessageLookupByLibrary.simpleMessage("العنوان"),
     "addressIsRequired": MessageLookupByLibrary.simpleMessage("العنوان مطلوب"),
@@ -602,6 +605,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "createAccount": MessageLookupByLibrary.simpleMessage("إنشاء حساب"),
     "createAds": MessageLookupByLibrary.simpleMessage("إنشاء إعلان"),
     "createOrder": MessageLookupByLibrary.simpleMessage("إنشاء طلب"),
+    "creatingOrder": MessageLookupByLibrary.simpleMessage("جاري إنشاء الطلب"),
     "currency": MessageLookupByLibrary.simpleMessage("العملة"),
     "currencyAedFull": MessageLookupByLibrary.simpleMessage(
       "درهم إماراتي (AED)",
@@ -1116,6 +1120,18 @@ class MessageLookup extends MessageLookupByLibrary {
       "إعدادات الإشعارات",
     ),
     "notifications": MessageLookupByLibrary.simpleMessage("الإشعارات"),
+    "notificationsDisabledSuccess": MessageLookupByLibrary.simpleMessage(
+      "تم إيقاف الإشعارات",
+    ),
+    "notificationsEnabledSuccess": MessageLookupByLibrary.simpleMessage(
+      "تم تشغيل الإشعارات",
+    ),
+    "notificationsPreferenceSubtitle": MessageLookupByLibrary.simpleMessage(
+      "تنبيهات الدفع والبريد. هتفضل ظاهرة في صندوق الإشعارات داخل التطبيق.",
+    ),
+    "notificationsUpdateFailed": MessageLookupByLibrary.simpleMessage(
+      "تعذر تحديث إعدادات الإشعارات",
+    ),
     "nuts": MessageLookupByLibrary.simpleMessage("مكسرات"),
     "offerDetails": MessageLookupByLibrary.simpleMessage("تفاصيل العرض"),
     "offerDuration": MessageLookupByLibrary.simpleMessage("مدة العرض"),
@@ -1562,6 +1578,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sendPurchaseOrder": MessageLookupByLibrary.simpleMessage(
       "إرسال طلب الشراء",
     ),
+    "sending": MessageLookupByLibrary.simpleMessage("جاري الإرسال"),
     "sensitiveAccessBiometricReason": MessageLookupByLibrary.simpleMessage(
       "تحقق من هويتك لفتح هذه الصفحة",
     ),
@@ -1682,6 +1699,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "submitFeedback": MessageLookupByLibrary.simpleMessage("إرسال"),
     "submitOffer": MessageLookupByLibrary.simpleMessage("تقديم عرض"),
+    "submittingOffer": MessageLookupByLibrary.simpleMessage("جاري تقديم العرض"),
     "sugar": MessageLookupByLibrary.simpleMessage("سكر"),
     "suggestedNames": MessageLookupByLibrary.simpleMessage("أسماء مقترحة"),
     "supplierAccount": MessageLookupByLibrary.simpleMessage("حساب مورد"),

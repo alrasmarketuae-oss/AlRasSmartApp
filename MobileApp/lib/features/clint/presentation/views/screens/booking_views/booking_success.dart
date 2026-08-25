@@ -12,18 +12,24 @@ import 'package:go_router/go_router.dart';
 class BookingSuccessView extends StatelessWidget {
   const BookingSuccessView({
     super.key,
-    this.orderNumber = '12345',
+    this.orderNumber = '',
   });
 
   final String orderNumber;
+
+  int? get _parsedOrderId {
+    final raw = orderNumber.trim().replaceFirst(RegExp(r'^#'), '');
+    return int.tryParse(raw);
+  }
 
   @override
   Widget build(BuildContext context) {
     final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
     final l10n = S.of(context);
-    final displayOrderNumber = orderNumber.startsWith('#')
-        ? orderNumber
-        : '#$orderNumber';
+    final orderId = _parsedOrderId;
+    final displayOrderNumber = orderNumber.trim().isEmpty
+        ? '—'
+        : (orderNumber.startsWith('#') ? orderNumber : '#$orderNumber');
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7FA),
@@ -83,7 +89,16 @@ class BookingSuccessView extends StatelessWidget {
               PrimaryButton(
                 text: l10n.trackOrder,
                 backgroundColor: const Color(0xFF3A7DC5),
-                onPressed: () => context.push(AppRoutes.kTrackOrderView),
+                onPressed: () {
+                  if (orderId != null && orderId > 0) {
+                    context.push(
+                      AppRoutes.kTrackOrderView,
+                      extra: {'orderId': orderId},
+                    );
+                    return;
+                  }
+                  context.go(whereToGo());
+                },
                 height: 48.h,
                 borderRadius: 8.r,
               ),

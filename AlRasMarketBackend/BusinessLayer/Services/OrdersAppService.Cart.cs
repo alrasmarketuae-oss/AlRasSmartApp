@@ -332,14 +332,14 @@ public partial class OrdersAppService
                 UnitPrice = line.UnitPriceAed,
                 TotalPrice = line.LineTotalAed,
                 VatAed = line.LineVatAed,
-                StatusId = OrderStatusCodes.AwaitingSellerApproval,
+                StatusId = OrderStatusCodes.Ordered,
                 OrderGroupId = orderGroupId,
                 PendingOrderId = pendingOrderId,
                 PaymentMethod = paymentMethod,
                 StripeSessionId = stripeSessionId,
                 UnitId = unitId,
                 IsApproved = false,
-                IsAdminApproved = true,
+                IsAdminApproved = false,
                 IsRetailPurchase = true,
                 Notes = notes,
                 StockQuantityDeducted = false,
@@ -352,7 +352,7 @@ public partial class OrdersAppService
                 CreatedAt = DateTime.SpecifyKind(UtcDateTimeHelper.UtcNow, DateTimeKind.Utc),
             };
 
-            RequestOfferStatusLabels.ApplyAwaitingSeller(order);
+            RequestOfferStatusLabels.ApplyAwaitingAdmin(order);
 
             await orderData.AddOrderAsync(order, cancellationToken);
             created.Add(order);

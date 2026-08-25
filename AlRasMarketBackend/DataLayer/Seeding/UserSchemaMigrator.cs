@@ -81,5 +81,13 @@ public static class UserSchemaMigrator
                 "ALTER TABLE dbo.Users ADD Website NVARCHAR(500) NULL;",
                 cancellationToken).ConfigureAwait(false);
         }
+
+        if (!await SqlSchemaHelper.ColumnExistsAsync(connection, "Users", "IsNotificationsOn", cancellationToken)
+                .ConfigureAwait(false))
+        {
+            await SqlSchemaHelper.ExecuteBatchAsync(connection,
+                "ALTER TABLE dbo.Users ADD IsNotificationsOn BIT NOT NULL CONSTRAINT DF_Users_IsNotificationsOn DEFAULT 1;",
+                cancellationToken).ConfigureAwait(false);
+        }
     }
 }

@@ -14,11 +14,13 @@ class PrimaryButton extends StatelessWidget {
   final Color? backgroundColor;
   final Color? textColor;
   final bool expandWidth;
+  final String? loadingText;
   const PrimaryButton({
     super.key,
     required this.text,
     required this.onPressed,
     this.isLoading = false,
+    this.loadingText,
     this.height,
     this.width,
     this.borderRadius = 8,
@@ -41,31 +43,20 @@ class PrimaryButton extends StatelessWidget {
           ),
         ),
         onPressed: isLoading ? null : onPressed,
-        child: isLoading
-            ? SizedBox(
-                width: 18.sp,
-                height: 18.sp,
-                child: const CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-            : Text(
-                text,
-                maxLines: 1,
-                textAlign: TextAlign.center,
-                style:
-                    textStyle ??
-                    TextStyle(
-                      
-                      fontSize: 16.sp,
-                      fontFamily: Theme.of(context).textTheme.labelLarge?.fontFamily,
-                       overflow: TextOverflow.ellipsis,
-                      //  maxLines: 1,
-                      fontWeight: FontWeight.bold,
-                      color: textColor ?? Colors.white,
-                    ),
+        child: Text(
+          isLoading ? (loadingText ?? text) : text,
+          maxLines: 1,
+          textAlign: TextAlign.center,
+          style:
+              textStyle ??
+              TextStyle(
+                fontSize: 16.sp,
+                fontFamily: Theme.of(context).textTheme.labelLarge?.fontFamily,
+                overflow: TextOverflow.ellipsis,
+                fontWeight: FontWeight.bold,
+                color: textColor ?? Colors.white,
               ),
+        ),
       ),
     );
   }

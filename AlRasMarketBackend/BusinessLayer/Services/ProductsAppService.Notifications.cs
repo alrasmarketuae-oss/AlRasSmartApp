@@ -33,6 +33,7 @@ public partial class ProductsAppService
         var ownerEmail = owner.Email;
         var fcmToken = owner.FcmToken;
         var preferredLanguage = owner.PreferredLanguage;
+        var allowPushAndEmail = NotificationDeliveryPrefs.AllowsPushAndEmail(owner.IsNotificationsOn);
 
         var storeTitleEn = TruncateNotificationText(titleEn ?? fcmTitle, 255);
         var storeBodyEn = TruncateNotificationText(bodyEn ?? fcmBody, 1000);
@@ -76,12 +77,12 @@ public partial class ProductsAppService
                     logger.LogWarning(ex, "Failed to persist inbox notification for {LogContext}", logContext);
                 }
 
-                if (!string.IsNullOrWhiteSpace(ownerEmail))
+                if (allowPushAndEmail && !string.IsNullOrWhiteSpace(ownerEmail))
                 {
                     await emailService.SendAsync(ownerEmail, subject, emailHtml);
                 }
 
-                if (!string.IsNullOrWhiteSpace(fcmToken))
+                if (allowPushAndEmail && !string.IsNullOrWhiteSpace(fcmToken))
                 {
                     var (pushTitle, pushBody) = NotificationMessages.PickOptional(
                         preferredLanguage,

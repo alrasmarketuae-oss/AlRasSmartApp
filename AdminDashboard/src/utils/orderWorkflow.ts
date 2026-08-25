@@ -221,10 +221,9 @@ export function needsAdminOrderModeration(order: {
 }): boolean {
   const type = (order.productTypeName ?? '').trim().toLowerCase()
 
-  // Pure cart retail is seller-first (IsAdminApproved already true).
-  // Hybrid category listings keep type "Retail" + categoryId and can await admin when notes/media exist.
+  // All catalog orders (including retail cart) require admin review first.
   if (isRetailProduct(order.productTypeName)) {
-    if (order.categoryId == null || order.isAdminApproved) {
+    if (order.isAdminApproved) {
       return false
     }
     return order.statusId === 1

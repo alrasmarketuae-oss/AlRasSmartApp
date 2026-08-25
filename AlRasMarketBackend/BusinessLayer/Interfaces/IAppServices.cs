@@ -690,4 +690,6 @@ public interface IUserPreferencesAppService
 {
     Task<object> GetPreferredLanguageAsync(string userId, CancellationToken cancellationToken = default);
     Task<object> UpdatePreferredLanguageAsync(string userId, UpdatePreferredLanguageInput input, CancellationToken cancellationToken = default);
+    Task<object> GetNotificationsPreferenceAsync(string userId, CancellationToken cancellationToken = default);
+    Task<object> UpdateNotificationsPreferenceAsync(string userId, UpdateNotificationsPreferenceInput input, CancellationToken cancellationToken = default);
 }

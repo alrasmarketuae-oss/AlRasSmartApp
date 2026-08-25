@@ -7,6 +7,7 @@ public sealed class OrderNotifyUserRow
     public string? FcmToken { get; init; }
     public string? PreferredLanguage { get; init; }
     public byte RoleId { get; init; }
+    public bool IsNotificationsOn { get; init; } = true;
 }
 
 public sealed class OrderProductNotifyMeta

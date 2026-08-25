@@ -2072,7 +2072,7 @@ public sealed partial class AiAssistantMcpToolsService(
 
                 var owner = await db.Users.AsNoTracking()
                     .Where(u => u.Id == ownerId)
-                    .Select(u => new { u.Id, u.FcmToken, u.PreferredLanguage })
+                    .Select(u => new { u.Id, u.FcmToken, u.PreferredLanguage, u.IsNotificationsOn })
                     .FirstOrDefaultAsync()
                     .ConfigureAwait(false);
                 if (owner is null) return;
@@ -2104,7 +2104,8 @@ public sealed partial class AiAssistantMcpToolsService(
                 }).ConfigureAwait(false);
                 NotificationCacheVersions.Bump(ownerId);
 
-                if (!string.IsNullOrWhiteSpace(owner.FcmToken))
+                if (NotificationDeliveryPrefs.AllowsPushAndEmail(owner.IsNotificationsOn)
+                    && !string.IsNullOrWhiteSpace(owner.FcmToken))
                 {
                     var (pushTitle, pushBody) = NotificationMessages.PickOptional(
                         owner.PreferredLanguage,

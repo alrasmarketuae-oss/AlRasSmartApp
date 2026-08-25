@@ -26,3 +26,8 @@ public sealed class UpdatePreferredLanguageInput
 {
     public string Language { get; set; } = "en";
 }
+
+public sealed class UpdateNotificationsPreferenceInput
+{
+    public bool IsNotificationsOn { get; set; } = true;
+}

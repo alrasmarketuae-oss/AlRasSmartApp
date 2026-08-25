@@ -194,6 +194,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Create a new shipping offer for clients",
     ),
     "addToCart": MessageLookupByLibrary.simpleMessage("Add to Cart"),
+    "addingToCart": MessageLookupByLibrary.simpleMessage("Adding to cart"),
     "additionalNotes": MessageLookupByLibrary.simpleMessage("Additional Notes"),
     "address": MessageLookupByLibrary.simpleMessage("Address"),
     "addressIsRequired": MessageLookupByLibrary.simpleMessage(
@@ -599,6 +600,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "createAccount": MessageLookupByLibrary.simpleMessage("Create Account"),
     "createAds": MessageLookupByLibrary.simpleMessage("Create Ad"),
     "createOrder": MessageLookupByLibrary.simpleMessage("Create Order"),
+    "creatingOrder": MessageLookupByLibrary.simpleMessage("Creating order"),
     "currency": MessageLookupByLibrary.simpleMessage("Currency"),
     "currencyAedFull": MessageLookupByLibrary.simpleMessage("UAE Dirham (AED)"),
     "currencyUsdFull": MessageLookupByLibrary.simpleMessage("US Dollar (USD)"),
@@ -1107,6 +1109,18 @@ class MessageLookup extends MessageLookupByLibrary {
       "Notification Settings",
     ),
     "notifications": MessageLookupByLibrary.simpleMessage("Notifications"),
+    "notificationsDisabledSuccess": MessageLookupByLibrary.simpleMessage(
+      "Notifications turned off",
+    ),
+    "notificationsEnabledSuccess": MessageLookupByLibrary.simpleMessage(
+      "Notifications turned on",
+    ),
+    "notificationsPreferenceSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Push and email alerts. You still see them in the app inbox.",
+    ),
+    "notificationsUpdateFailed": MessageLookupByLibrary.simpleMessage(
+      "Could not update notification settings",
+    ),
     "nuts": MessageLookupByLibrary.simpleMessage("Nuts"),
     "offerDetails": MessageLookupByLibrary.simpleMessage("Offer Details"),
     "offerDuration": MessageLookupByLibrary.simpleMessage("Offer Duration"),
@@ -1567,6 +1581,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sendPurchaseOrder": MessageLookupByLibrary.simpleMessage(
       "Send Purchase Order",
     ),
+    "sending": MessageLookupByLibrary.simpleMessage("Sending"),
     "sensitiveAccessBiometricReason": MessageLookupByLibrary.simpleMessage(
       "Verify it’s you to open this page",
     ),
@@ -1691,6 +1706,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "submitFeedback": MessageLookupByLibrary.simpleMessage("Submit"),
     "submitOffer": MessageLookupByLibrary.simpleMessage("Submit Offer"),
+    "submittingOffer": MessageLookupByLibrary.simpleMessage("Submitting offer"),
     "sugar": MessageLookupByLibrary.simpleMessage("Sugar"),
     "suggestedNames": MessageLookupByLibrary.simpleMessage("Suggested names"),
     "supplierAccount": MessageLookupByLibrary.simpleMessage("Supplier Account"),

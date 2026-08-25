@@ -321,30 +321,14 @@ class RequestOfferCard extends StatelessWidget {
           ],
           if (onAccept != null || onReject != null) ...[
             SizedBox(height: 12.h),
-            Row(
-              children: [
-                if (onAccept != null)
-                  Expanded(
-                    child: _ActionChip(
-                      label: acceptLabel ?? s.acceptOffer,
-                      backgroundColor: _actionBlue,
-                      fontFamily: fontFamily,
-                      isLoading: isUpdating,
-                      onPressed: isUpdating ? null : onAccept,
-                    ),
-                  ),
-                if (onAccept != null && onReject != null) SizedBox(width: 12.w),
-                if (onReject != null)
-                  Expanded(
-                    child: _ActionChip(
-                      label: rejectLabel ?? s.rejectOffer,
-                      backgroundColor: _actionRed,
-                      fontFamily: fontFamily,
-                      isLoading: isUpdating,
-                      onPressed: isUpdating ? null : onReject,
-                    ),
-                  ),
-              ],
+            _AcceptRejectActions(
+              acceptLabel: acceptLabel ?? s.acceptOffer,
+              rejectLabel: rejectLabel ?? s.rejectOffer,
+              sendingLabel: s.sending,
+              fontFamily: fontFamily,
+              isUpdating: isUpdating,
+              onAccept: onAccept,
+              onReject: onReject,
             ),
           ],
         ],
@@ -717,16 +701,97 @@ class _TrackOrderButton extends StatelessWidget {
   }
 }
 
+class _AcceptRejectActions extends StatefulWidget {
+  const _AcceptRejectActions({
+    required this.acceptLabel,
+    required this.rejectLabel,
+    required this.sendingLabel,
+    required this.fontFamily,
+    required this.isUpdating,
+    this.onAccept,
+    this.onReject,
+  });
+
+  final String acceptLabel;
+  final String rejectLabel;
+  final String sendingLabel;
+  final String fontFamily;
+  final bool isUpdating;
+  final VoidCallback? onAccept;
+  final VoidCallback? onReject;
+
+  @override
+  State<_AcceptRejectActions> createState() => _AcceptRejectActionsState();
+}
+
+class _AcceptRejectActionsState extends State<_AcceptRejectActions> {
+  /// 0 = none, 1 = accept, 2 = reject
+  int _pendingAction = 0;
+
+  @override
+  void didUpdateWidget(covariant _AcceptRejectActions oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isUpdating && !widget.isUpdating) {
+      _pendingAction = 0;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final busy = widget.isUpdating;
+    return Row(
+      children: [
+        if (widget.onAccept != null)
+          Expanded(
+            child: _ActionChip(
+              label: widget.acceptLabel,
+              loadingLabel: widget.sendingLabel,
+              backgroundColor: RequestOfferCard._actionBlue,
+              fontFamily: widget.fontFamily,
+              isLoading: busy && _pendingAction == 1,
+              onPressed: busy
+                  ? null
+                  : () {
+                      setState(() => _pendingAction = 1);
+                      widget.onAccept?.call();
+                    },
+            ),
+          ),
+        if (widget.onAccept != null && widget.onReject != null)
+          SizedBox(width: 12.w),
+        if (widget.onReject != null)
+          Expanded(
+            child: _ActionChip(
+              label: widget.rejectLabel,
+              loadingLabel: widget.sendingLabel,
+              backgroundColor: RequestOfferCard._actionRed,
+              fontFamily: widget.fontFamily,
+              isLoading: busy && _pendingAction == 2,
+              onPressed: busy
+                  ? null
+                  : () {
+                      setState(() => _pendingAction = 2);
+                      widget.onReject?.call();
+                    },
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 class _ActionChip extends StatelessWidget {
   const _ActionChip({
     required this.label,
     required this.backgroundColor,
     required this.fontFamily,
     required this.isLoading,
+    this.loadingLabel,
     this.onPressed,
   });
 
   final String label;
+  final String? loadingLabel;
   final Color backgroundColor;
   final String fontFamily;
   final bool isLoading;
@@ -744,28 +809,17 @@ class _ActionChip extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
           child: SizedBox(
             width: double.infinity,
-            child: isLoading
-                ? Center(
-                    child: SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                        backgroundColor: Colors.white.withValues(alpha: 0.24),
-                      ),
-                    ),
-                  )
-                : Text(
-                    label,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontFamily: fontFamily,
-                      fontSize: 14.sp,
-                      height: 1.5,
-                    ),
-                  ),
+            child: Text(
+              isLoading ? (loadingLabel ?? label) : label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontFamily: fontFamily,
+                fontSize: 14.sp,
+                height: 1.5,
+                fontWeight: isLoading ? FontWeight.w700 : FontWeight.normal,
+              ),
+            ),
           ),
         ),
       ),

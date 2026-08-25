@@ -61,6 +61,7 @@ import 'package:alrasmarket/features/clint/data/models/international_shipping_po
 import '../../features/person/presentation/views/person_home_layout.dart';
 import '../../features/admin/presentation/views/admin_home_layout.dart';
 import '../../features/admin/presentation/widgets/admin_account_page.dart';
+import 'package:alrasmarket/core/widgets/catalog_bottom_nav_shell.dart';
 
 abstract class AppRoutes {
   static final GlobalKey<NavigatorState> navigatorKey =
@@ -567,7 +568,7 @@ abstract class AppRoutes {
           final extra = state.extra is Map<String, dynamic>
               ? state.extra as Map<String, dynamic>
               : const <String, dynamic>{};
-          final orderNumber = extra['orderNumber'] as String? ?? '12345';
+          final orderNumber = extra['orderNumber']?.toString() ?? '';
           return AdminAccountPage.wrap(
             BookingSuccessView(orderNumber: orderNumber),
             tabIndex: 0,
@@ -599,14 +600,16 @@ abstract class AppRoutes {
               ? state.extra as Map<String, dynamic>
               : const <String, dynamic>{};
           return AdminAccountPage.wrap(
-            ProductSearchResultsView(
-              key: ValueKey(
-                '${extra['query'] ?? ''}|${extra['imagePath'] ?? ''}|${extra['historyId'] ?? ''}|${extra['replayCached'] ?? false}',
+            CatalogBottomNavShell.wrap(
+              ProductSearchResultsView(
+                key: ValueKey(
+                  '${extra['query'] ?? ''}|${extra['imagePath'] ?? ''}|${extra['historyId'] ?? ''}|${extra['replayCached'] ?? false}',
+                ),
+                initialQuery: extra['query']?.toString(),
+                imagePath: extra['imagePath']?.toString(),
+                historyId: extra['historyId']?.toString(),
+                replayCached: extra['replayCached'] == true,
               ),
-              initialQuery: extra['query']?.toString(),
-              imagePath: extra['imagePath']?.toString(),
-              historyId: extra['historyId']?.toString(),
-              replayCached: extra['replayCached'] == true,
             ),
             tabIndex: 0,
           );

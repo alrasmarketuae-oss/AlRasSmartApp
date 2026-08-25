@@ -30,6 +30,8 @@ public class User
     public string? Website { get; set; }
     public bool? IsCustomer { get; set; }
     public string PreferredLanguage { get; set; } = "en";
+    /// <summary>When false, skip FCM/email delivery but still store in-app notifications.</summary>
+    public bool IsNotificationsOn { get; set; } = true;
 
     public Role? Role { get; set; }
     public ICollection<Product> Products { get; set; } = new List<Product>();

@@ -74,13 +74,19 @@ public sealed class ChatMessageRealtimeHandler(
                 u.FcmToken,
                 u.FullName,
                 u.CompanyName,
-                u.PreferredLanguage))
+                u.PreferredLanguage,
+                u.IsNotificationsOn))
             .ToListAsync(ct);
 
         var recipient = users.FirstOrDefault(u => u.Id == recipientId);
         var sender = users.FirstOrDefault(u => u.Id == senderId);
 
         if (recipient is null || recipient.RoleId == AdminRoleId)
+        {
+            return;
+        }
+
+        if (!NotificationDeliveryPrefs.AllowsPushAndEmail(recipient.IsNotificationsOn))
         {
             return;
         }
@@ -153,5 +159,6 @@ public sealed class ChatMessageRealtimeHandler(
         string? FcmToken,
         string FullName,
         string? CompanyName,
-        string PreferredLanguage);
+        string PreferredLanguage,
+        bool IsNotificationsOn);
 }

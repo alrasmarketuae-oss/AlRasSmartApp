@@ -242,7 +242,8 @@ public class ProfileAppService(
             // Social accounts have no hash, so the app hides the current-password field.
             hasPassword = !string.IsNullOrWhiteSpace(user.HashedPassword),
             hasPendingProfileChanges = pending?.HasAnyChange == true,
-            pendingProfileChanges = pending
+            pendingProfileChanges = pending,
+            isNotificationsOn = user.IsNotificationsOn,
         });
     }
 }

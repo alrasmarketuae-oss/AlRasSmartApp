@@ -139,6 +139,7 @@ class _ProductSearchResultsViewState extends State<ProductSearchResultsView> {
         }
 
         return SafeArea(
+          bottom: false,
           child: Scaffold(
             backgroundColor: AppColors.scaffold(context),
             body: Column(
@@ -226,7 +227,12 @@ class _ProductSearchResultsViewState extends State<ProductSearchResultsView> {
                             return false;
                           },
                           child: GridView.builder(
-                          padding: EdgeInsets.fromLTRB(24.w, 8.h, 24.w, 24.h),
+                          padding: EdgeInsets.fromLTRB(
+                            24.w,
+                            8.h,
+                            24.w,
+                            24.h + kBottomNavigationBarHeight,
+                          ),
                           gridDelegate: ProductGridLayout.delegate(
                             context,
                             horizontalPadding: ProductGridLayout

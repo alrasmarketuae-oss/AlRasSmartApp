@@ -95,6 +95,7 @@ public interface IOrderDataAccess
     Task<List<OrderNotifyUserRow>> GetAdminFcmRecipientsAsync(CancellationToken cancellationToken = default);
     Task<List<OrderNotifyUserRow>> GetAdminNotifyRecipientsAsync(CancellationToken cancellationToken = default);
     Task<OrderNotifyUserRow?> GetUserNotifyByIdAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<bool> GetIsNotificationsOnAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<string?> GetProductNameEnAsync(Guid productId, CancellationToken cancellationToken = default);
     Task<List<OrderNotifyUserRow>> GetUsersByIdsAsync(
         IReadOnlyList<Guid> userIds,

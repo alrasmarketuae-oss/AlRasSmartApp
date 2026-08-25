@@ -152,12 +152,11 @@ public static class ProductTypeCodes
         product is not null && UsesSpecOrMediaAdminGate(product.ProductTypeId, product.CategoryId);
 
     /// <summary>
-    /// Always seller-first when there is no spec/media gate: Retail, Booking, and Category.
-    /// Spec/media types use <see cref="UsesSpecOrMediaAdminGate"/> instead when notes/media exist.
+    /// Always seller-first when there is no spec/media gate: Booking and Category wholesale PO.
+    /// Retail and spec/media types (Offers, Requests, Booking notes) go to admin dashboard first.
     /// </summary>
     public static bool StartsWithSellerApproval(byte? productTypeId, byte? categoryId = null) =>
-        IsRetail(productTypeId)
-        || IsBooking(productTypeId)
+        IsBooking(productTypeId)
         || IsCategoryProduct(categoryId, productTypeId);
 
     public static bool StartsWithSellerApproval(Product? product) =>
@@ -184,7 +183,8 @@ public static class ProductTypeCodes
     public static bool RequiresAdminModerationBeforeSellerApproval(
         byte? productTypeId,
         byte? categoryId = null) =>
-        productTypeId is Requests or Offers or Booking
+        IsRetail(productTypeId)
+        || productTypeId is Requests or Offers or Booking
         || IsCategoryProduct(categoryId, productTypeId);
 
     public static bool RequiresAdminModerationBeforeSellerApproval(Product? product) =>

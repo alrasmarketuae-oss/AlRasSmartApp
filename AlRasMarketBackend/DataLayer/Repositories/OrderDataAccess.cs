@@ -234,6 +234,7 @@ public sealed class OrderDataAccess(IRasAlSouqDbContext dbContext) : IOrderDataA
                     (x.FromUser != null && x.FromUser.Email.ToLower().Contains(term)) ||
                     (x.ToUser != null && x.ToUser.FullName.ToLower().Contains(term)) ||
                     (x.ToUser != null && x.ToUser.Email.ToLower().Contains(term)) ||
+                    
                     (x.Product != null && x.Product.NameEn != null && x.Product.NameEn.ToLower().Contains(term)) ||
                     (x.Notes != null && x.Notes.ToLower().Contains(term)));
             }
@@ -352,16 +353,13 @@ public sealed class OrderDataAccess(IRasAlSouqDbContext dbContext) : IOrderDataA
         byte? statusId,
         CancellationToken cancellationToken = default)
     {
-        // Retail: visible immediately (seller-first, no admin gate).
-        // Booking/Category/Offers/Requests: visible when IsAdminApproved
-        // (created true when no notes/media; false until admin approves).
+        // All types: visible to seller only after admin approval.
         var query = OrderQueryHelpers.WithListDetails(dbContext.Orders)
             .Where(x =>
                 (x.ToUserId == userId
                  || (x.Product != null && x.Product.OwnerId == userId))
                 && (
                     x.Product == null
-                    || x.Product.ProductTypeId == OrderCatalogCodes.TypeRetail
                     || x.IsAdminApproved));
 
         if (productId.HasValue)
@@ -412,6 +410,7 @@ public sealed class OrderDataAccess(IRasAlSouqDbContext dbContext) : IOrderDataA
                 Email = x.Email,
                 FcmToken = x.FcmToken,
                 PreferredLanguage = x.PreferredLanguage,
+                IsNotificationsOn = x.IsNotificationsOn,
                 RoleId = x.RoleId
             })
             .ToListAsync(cancellationToken);
@@ -426,6 +425,7 @@ public sealed class OrderDataAccess(IRasAlSouqDbContext dbContext) : IOrderDataA
                 Email = x.Email,
                 FcmToken = x.FcmToken,
                 PreferredLanguage = x.PreferredLanguage,
+                IsNotificationsOn = x.IsNotificationsOn,
                 RoleId = x.RoleId
             })
             .ToListAsync(cancellationToken);
@@ -440,6 +440,7 @@ public sealed class OrderDataAccess(IRasAlSouqDbContext dbContext) : IOrderDataA
                 Email = x.Email,
                 FcmToken = x.FcmToken,
                 PreferredLanguage = x.PreferredLanguage,
+                IsNotificationsOn = x.IsNotificationsOn,
                 RoleId = x.RoleId
             })
             .ToListAsync(cancellationToken);
@@ -454,9 +455,20 @@ public sealed class OrderDataAccess(IRasAlSouqDbContext dbContext) : IOrderDataA
                 Email = x.Email,
                 FcmToken = x.FcmToken,
                 PreferredLanguage = x.PreferredLanguage,
+                IsNotificationsOn = x.IsNotificationsOn,
                 RoleId = x.RoleId
             })
             .FirstOrDefaultAsync(cancellationToken);
+
+    public async Task<bool> GetIsNotificationsOnAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var value = await dbContext.Users
+            .AsNoTracking()
+            .Where(x => x.Id == userId)
+            .Select(x => (bool?)x.IsNotificationsOn)
+            .FirstOrDefaultAsync(cancellationToken);
+        return value ?? true;
+    }
 
     public Task<string?> GetProductNameEnAsync(Guid productId, CancellationToken cancellationToken = default) =>
         dbContext.Products

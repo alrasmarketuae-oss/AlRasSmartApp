@@ -41,6 +41,8 @@ class _TrackOrderViewState extends State<TrackOrderView>
   Timer? _refreshTimer;
   StreamSubscription<int>? _orderUpdatedSub;
   static const _refreshInterval = Duration(seconds: 90);
+  bool _isLoadingOrder = false;
+  bool _loadFailed = false;
 
   @override
   void initState() {
@@ -52,6 +54,8 @@ class _TrackOrderViewState extends State<TrackOrderView>
       // Always load live status from the API (list cache may be stale).
       unawaited(_loadOrderById(orderId));
       unawaited(_subscribeOrderRealtime(orderId));
+    } else if (widget.order == null) {
+      _loadFailed = true;
     }
     _startRefreshTimer();
   }
@@ -96,9 +100,21 @@ class _TrackOrderViewState extends State<TrackOrderView>
   }
 
   Future<void> _loadOrderById(int orderId) async {
+    setState(() {
+      _isLoadingOrder = true;
+      _loadFailed = false;
+    });
     final order = await context.read<ClintCubit>().refreshOrderById(orderId);
-    if (!mounted || order == null) return;
-    setState(() => _currentOrder = order);
+    if (!mounted) return;
+    setState(() {
+      _isLoadingOrder = false;
+      if (order != null) {
+        _currentOrder = order;
+        _loadFailed = false;
+      } else if (_currentOrder == null) {
+        _loadFailed = true;
+      }
+    });
   }
 
   Future<void> _refreshCurrentOrder() async {
@@ -106,16 +122,20 @@ class _TrackOrderViewState extends State<TrackOrderView>
     if (orderId == null || orderId <= 0) return;
     final order = await context.read<ClintCubit>().refreshOrderById(orderId);
     if (!mounted || order == null) return;
-    setState(() => _currentOrder = order);
+    setState(() {
+      _currentOrder = order;
+      _loadFailed = false;
+    });
   }
 
-  int? get _trackedOrderId => _currentOrder?.id ?? widget.orderId;
+  int? get _trackedOrderId => _currentOrder?.id ?? widget.orderId ?? widget.order?.id;
 
-  MyOrderModel get _displayOrder => _currentOrder ?? _demoOrder();
+  MyOrderModel? get _displayOrder => _currentOrder ?? widget.order;
 
   Future<void> _handleCancelOrReturn({required bool isReturn}) async {
     final s = S.of(context);
     final order = _displayOrder;
+    if (order == null) return;
 
     if (isReturn) {
       await _handleReturnRequest(order);
@@ -273,6 +293,107 @@ class _TrackOrderViewState extends State<TrackOrderView>
     final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final displayOrder = _displayOrder;
+
+    return BlocListener<ClintCubit, ClintStates>(
+      listener: (context, state) {
+        if (state is CancelOrderErrorState) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message)),
+          );
+        } else if (state is RefreshOrderSuccessState &&
+            state.order.id == _trackedOrderId) {
+          setState(() {
+            _currentOrder = state.order;
+            _loadFailed = false;
+            _isLoadingOrder = false;
+          });
+        } else if (state is FetchMyOrdersSuccessState) {
+          final orderId = _trackedOrderId;
+          if (orderId == null) return;
+          final matches = state.orders.where((item) => item.id == orderId);
+          if (matches.isNotEmpty) {
+            setState(() {
+              _currentOrder = matches.first;
+              _loadFailed = false;
+              _isLoadingOrder = false;
+            });
+          }
+        }
+      },
+      child: SafeArea(
+        child: Scaffold(
+          backgroundColor: const Color(0xFFF4F7FA),
+          body: Column(
+            children: [
+              SearchHeader(title: s.trackOrder, isSearch: false),
+              Expanded(
+                child: displayOrder == null
+                    ? _buildOrderPlaceholder(
+                        isArabic: isArabic,
+                        fontFamily: fontFamily,
+                        s: s,
+                      )
+                    : _buildOrderBody(
+                        displayOrder: displayOrder,
+                        fontFamily: fontFamily,
+                        isArabic: isArabic,
+                        s: s,
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOrderPlaceholder({
+    required bool isArabic,
+    required String fontFamily,
+    required S s,
+  }) {
+    if (_isLoadingOrder || (!_loadFailed && _trackedOrderId != null)) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final message = isArabic
+        ? 'تعذر تحميل بيانات الطلب.'
+        : 'Could not load order details.';
+
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 32.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: fontFamily,
+                fontSize: 15.sp,
+                color: const Color(0xFF333333),
+              ),
+            ),
+            if (_trackedOrderId != null && _trackedOrderId! > 0) ...[
+              SizedBox(height: 16.h),
+              TextButton(
+                onPressed: () => unawaited(_loadOrderById(_trackedOrderId!)),
+                child: Text(s.retry),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOrderBody({
+    required MyOrderModel displayOrder,
+    required String fontFamily,
+    required bool isArabic,
+    required S s,
+  }) {
     final steps = TrackOrderStatusHelper.buildSteps(
       order: displayOrder,
       l10n: s,
@@ -284,165 +405,82 @@ class _TrackOrderViewState extends State<TrackOrderView>
         TrackOrderStatusHelper.isOnlinePayment(displayOrder) &&
         canReturn;
 
-    return BlocListener<ClintCubit, ClintStates>(
-      listener: (context, state) {
-        if (state is CancelOrderErrorState) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message)),
-          );
-        } else if (state is RefreshOrderSuccessState &&
-            state.order.id == _trackedOrderId) {
-          setState(() => _currentOrder = state.order);
-        } else if (state is FetchMyOrdersSuccessState) {
-          final orderId = _trackedOrderId;
-          if (orderId == null) return;
-          final matches = state.orders.where((item) => item.id == orderId);
-          if (matches.isNotEmpty) {
-            setState(() => _currentOrder = matches.first);
-          }
-        }
-      },
-      child: SafeArea(
-        child: Scaffold(
-          backgroundColor: const Color(0xFFF4F7FA),
-          body: Column(
-            children: [
-              SearchHeader(title: s.trackOrder, isSearch: false),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(24.w, 8.h, 24.w, 24.h),
-                  child: Column(
-                    children: [
-                      TrackOrderSummaryCard(
-                        order: displayOrder,
-                        fontFamily: fontFamily,
-                      ),
-                      SizedBox(height: 16.h),
-                      TrackOrderTimelineCard(
-                        steps: steps,
-                        fontFamily: fontFamily,
-                      ),
-                      if (showOnlineRefundNotice &&
-                          displayOrder.statusId !=
-                              OrderStatusCodes.cancelled) ...[
-                        SizedBox(height: 16.h),
-                        _RefundNoticeCard(
-                          message: s.orderRefundNotice,
-                          fontFamily: fontFamily,
-                        ),
-                      ],
-                      if (canReturn) ...[
-                        SizedBox(height: 16.h),
-                        BlocBuilder<ClintCubit, ClintStates>(
-                          buildWhen: (previous, current) =>
-                              current is CancelOrderLoadingState ||
-                              current is CancelOrderSuccessState ||
-                              current is CancelOrderErrorState,
-                          builder: (context, state) {
-                            final isLoading = state is CancelOrderLoadingState &&
-                                state.orderId == displayOrder.id;
-
-                            return SizedBox(
-                              width: double.infinity,
-                              child: OutlinedButton(
-                                onPressed: isLoading
-                                    ? null
-                                    : () => _handleCancelOrReturn(
-                                          isReturn: true,
-                                        ),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: const Color(0xFFDC2626),
-                                  side: const BorderSide(color: Color(0xFFDC2626)),
-                                  padding: EdgeInsets.symmetric(vertical: 14.h),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12.r),
-                                  ),
-                                ),
-                                child: isLoading
-                                    ? SizedBox(
-                                        height: 20.h,
-                                        width: 20.h,
-                                        child: const CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : Text(
-                                        s.returnOrder,
-                                        style: TextStyle(
-                                          fontFamily: fontFamily,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 15.sp,
-                                        ),
-                                      ),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                      SizedBox(height: 16.h),
-                      TrackOrderCustomerServiceCard(
-                        fontFamily: fontFamily,
-                        phoneNumber: AppContact.supportPhoneTel,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(24.w, 8.h, 24.w, 24.h),
+      child: Column(
+        children: [
+          TrackOrderSummaryCard(
+            order: displayOrder,
+            fontFamily: fontFamily,
           ),
-        ),
-      ),
-    );
-  }
+          SizedBox(height: 16.h),
+          TrackOrderTimelineCard(
+            steps: steps,
+            fontFamily: fontFamily,
+          ),
+          if (showOnlineRefundNotice &&
+              displayOrder.statusId != OrderStatusCodes.cancelled) ...[
+            SizedBox(height: 16.h),
+            _RefundNoticeCard(
+              message: s.orderRefundNotice,
+              fontFamily: fontFamily,
+            ),
+          ],
+          if (canReturn) ...[
+            SizedBox(height: 16.h),
+            BlocBuilder<ClintCubit, ClintStates>(
+              buildWhen: (previous, current) =>
+                  current is CancelOrderLoadingState ||
+                  current is CancelOrderSuccessState ||
+                  current is CancelOrderErrorState,
+              builder: (context, state) {
+                final isLoading = state is CancelOrderLoadingState &&
+                    state.orderId == displayOrder.id;
 
-  MyOrderModel _demoOrder() {
-    return const MyOrderModel(
-      id: 2124536,
-      productId: 'demo-product',
-      customerName: 'Customer',
-      customerEmail: 'customer@example.com',
-      customerPhone: '+971500000000',
-      supplierName: 'Supplier',
-      supplierEmail: 'supplier@example.com',
-      supplierPhone: '+971500000001',
-      productName: 'Whole Black Pepper',
-      productNameEn: 'Whole Black Pepper',
-      productNameAr: 'فلفل أسود كامل',
-      productDescription: 'Premium whole black pepper.',
-      productDescriptionEn: 'Premium whole black pepper.',
-      productDescriptionAr: 'فلفل أسود كامل فاخر.',
-      productTypeName: 'Booking',
-      productTypeNameEn: 'Booking',
-      productTypeNameAr: 'حجز',
-      categoryName: 'Spices',
-      categoryNameEn: 'Spices',
-      categoryNameAr: 'بهارات',
-      categoryId: 1,
-      primaryImagePath: null,
-      unitName: 'tons',
-      unitNameEn: 'Ton',
-      unitNameAr: 'طن',
-      statusId: 1,
-      statusName: 'Ordered',
-      statusLabelAr: 'تم الطلب',
-      unitPrice: 0,
-      totalPrice: 0,
-      customerTotalPrice: 0,
-      amountFormatted: '',
-      currency: 'AED',
-      customerTotalPriceFormatted: '',
-      chargedGrandTotalAed: 0,
-      chargedGrandTotalFormatted: '',
-      quantity: 1,
-      paymentMethod: 1,
-      paymentMethodName: 'CashOnDelivery',
-      createdAt: '',
-      isApproved: false,
-      notes: null,
-      videoPaths: [],
-      images: [],
-      portId: null,
-      portName: null,
+                return SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: isLoading
+                        ? null
+                        : () => _handleCancelOrReturn(
+                              isReturn: true,
+                            ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFDC2626),
+                      side: const BorderSide(color: Color(0xFFDC2626)),
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                    ),
+                    child: isLoading
+                        ? SizedBox(
+                            height: 20.h,
+                            width: 20.h,
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            s.returnOrder,
+                            style: TextStyle(
+                              fontFamily: fontFamily,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15.sp,
+                            ),
+                          ),
+                  ),
+                );
+              },
+            ),
+          ],
+          SizedBox(height: 16.h),
+          TrackOrderCustomerServiceCard(
+            fontFamily: fontFamily,
+            phoneNumber: AppContact.supportPhoneTel,
+          ),
+        ],
+      ),
     );
   }
 }

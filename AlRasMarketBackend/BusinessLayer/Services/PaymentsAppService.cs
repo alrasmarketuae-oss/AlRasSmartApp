@@ -268,21 +268,10 @@ public class PaymentsAppService(
             return legacyOrder.OrderGroupId;
         }
 
-        var legacyProductTypeId = await dbContext.Products
-            .AsNoTracking()
-            .Where(x => x.ProductId == legacyOrder.ProductId)
-            .Select(x => x.ProductTypeId)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        legacyOrder.StatusId = ProductTypeCodes.IsRetail(legacyProductTypeId)
-            ? OrderStatusCodes.AwaitingSellerApproval
-            : OrderStatusCodes.Ordered;
+        legacyOrder.StatusId = OrderStatusCodes.Ordered;
         legacyOrder.IsApproved = false;
-        if (ProductTypeCodes.IsRetail(legacyProductTypeId))
-        {
-            legacyOrder.IsAdminApproved = true;
-            RequestOfferStatusLabels.ApplyAwaitingSeller(legacyOrder);
-        }
+        legacyOrder.IsAdminApproved = false;
+        RequestOfferStatusLabels.ApplyAwaitingAdmin(legacyOrder);
         pendingPayment.IsCompleted = true;
         pendingPayment.PaymentIntentId = session.PaymentIntentId ?? session.Id;
         await dbContext.SaveChangesAsync(cancellationToken);

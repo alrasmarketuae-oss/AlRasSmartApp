@@ -142,6 +142,8 @@ class ApiConstants {
   static String userProfileEndPoint = '/users/me';
   static String userProfileImageEndPoint = '/users/me/image';
   static String userPreferredLanguageEndPoint = '/UserPreferences/language';
+  static String userNotificationsPreferenceEndPoint =
+      '/UserPreferences/notifications';
   static String categoriesEndPoint = '/Categories';
 
   static String createProductEndPoint = '/Products';
