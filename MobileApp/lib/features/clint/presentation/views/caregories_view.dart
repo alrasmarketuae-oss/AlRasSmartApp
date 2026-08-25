@@ -69,9 +69,11 @@ class _CategoriesViewState extends State<CategoriesView> {
                                       ],
                                     )
                                   : GridView.builder(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 24.w,
-                                        vertical: 4.h,
+                                      padding: EdgeInsets.fromLTRB(
+                                        24.w,
+                                        4.h,
+                                        24.w,
+                                        4.h + kBottomNavigationBarHeight,
                                       ),
                                       physics:
                                           const AlwaysScrollableScrollPhysics(),

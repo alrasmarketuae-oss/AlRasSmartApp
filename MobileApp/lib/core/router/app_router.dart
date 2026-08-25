@@ -297,19 +297,23 @@ abstract class AppRoutes {
       ),
       GoRoute(
         path: kBookingServiceView,
-        builder: (context, state) => const BookingServiceView(),
+        builder: (context, state) =>
+            CatalogBottomNavShell.wrap(const BookingServiceView()),
       ),
       GoRoute(
         path: kOffersServiceView,
-        builder: (context, state) => const OffersServiceView(),
+        builder: (context, state) =>
+            CatalogBottomNavShell.wrap(const OffersServiceView()),
       ),
       GoRoute(
         path: kRetailServiceView,
-        builder: (context, state) => const RetailServiceView(),
+        builder: (context, state) =>
+            CatalogBottomNavShell.wrap(const RetailServiceView()),
       ),
       GoRoute(
         path: kShippingPriceServiceView,
-        builder: (context, state) => const ShippingPriceServiceView(),
+        builder: (context, state) =>
+            CatalogBottomNavShell.wrap(const ShippingPriceServiceView()),
       ),
       GoRoute(
         path: kShippingPostDetailsView,
@@ -324,7 +328,8 @@ abstract class AppRoutes {
       ),
       GoRoute(
         path: kCategoriesView,
-        builder: (context, state) => const CategoriesView(),
+        builder: (context, state) =>
+            CatalogBottomNavShell.wrap(const CategoriesView()),
       ),
       GoRoute(
         path: kCategoryProductsView,
@@ -333,15 +338,18 @@ abstract class AppRoutes {
               int.tryParse(state.uri.queryParameters['categoryId'] ?? '') ?? 0;
           final categoryTitle =
               state.uri.queryParameters['title'] ?? 'Category';
-          return CategoryProductsView(
-            categoryId: categoryId,
-            categoryTitle: categoryTitle,
+          return CatalogBottomNavShell.wrap(
+            CategoryProductsView(
+              categoryId: categoryId,
+              categoryTitle: categoryTitle,
+            ),
           );
         },
       ),
       GoRoute(
         path: kRequestsServiceView,
-        builder: (context, state) => const RequestsServiceView(),
+        builder: (context, state) =>
+            CatalogBottomNavShell.wrap(const RequestsServiceView()),
       ),
       GoRoute(
         path: kConfirmCircalView,

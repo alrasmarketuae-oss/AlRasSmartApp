@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
+import 'package:alrasmarket/core/serveses/cached_constants.dart';
 import 'package:alrasmarket/core/serveses/notifications_service.dart';
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
@@ -31,7 +32,7 @@ class CatalogBottomNavShell extends StatelessWidget {
 
   static Widget wrap(Widget child, {int tabIndex = 0}) {
     final auth = AuthService.instance;
-    if (auth.isAdminAccount || auth.isShippingCompanyAccount) {
+    if (auth.isAdminAccount || isShippingCompanyAccount == true) {
       return child;
     }
     return CatalogBottomNavShell(tabIndex: tabIndex, body: child);

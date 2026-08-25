@@ -133,7 +133,12 @@ class _ShippingPriceServiceViewState extends State<ShippingPriceServiceView> {
 
     return [
       SliverPadding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w),
+        padding: EdgeInsets.fromLTRB(
+          16.w,
+          0,
+          16.w,
+          16.h + kBottomNavigationBarHeight,
+        ),
         sliver: SliverList.separated(
           itemCount: posts.length,
           separatorBuilder: (_, __) => SizedBox(height: 16.h),

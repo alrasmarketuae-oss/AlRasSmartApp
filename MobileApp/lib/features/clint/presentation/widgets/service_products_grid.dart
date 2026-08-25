@@ -31,7 +31,12 @@ class ServiceProductsGrid extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         SliverPadding(
-          padding: EdgeInsets.fromLTRB(24.w, 8.h, 24.w, 24.h),
+          padding: EdgeInsets.fromLTRB(
+            24.w,
+            8.h,
+            24.w,
+            24.h + kBottomNavigationBarHeight,
+          ),
           sliver: SliverGrid(
             gridDelegate: useOfferCard
                 ? ProductGridLayout.offerDelegate(

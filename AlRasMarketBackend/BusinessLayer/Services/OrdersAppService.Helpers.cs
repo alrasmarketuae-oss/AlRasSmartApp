@@ -495,7 +495,9 @@ public partial class OrdersAppService
 
     /// <summary>
     /// Resolves the first status for a newly placed order.
-    /// All product types and offers require admin dashboard review before seller/advertiser action.
+    /// Booking / Category / Requests / Offers: admin only when the buyer added
+    /// notes/specs or media; otherwise the order goes straight to the seller.
+    /// Retail and other types still start at the admin dashboard.
     /// </summary>
     private static (byte StatusId, bool IsAdminApproved) ResolveInitialOrderStatus(
         Product product,
@@ -504,15 +506,68 @@ public partial class OrdersAppService
         int imageCount,
         int documentCount,
         int videoCount,
-        decimal offerUnitPrice = 0m) =>
-        (OrderStatusCodes.Ordered, false);
+        decimal offerUnitPrice = 0m)
+    {
+        // Supplier bid below the request listing price always waits for admin,
+        // even when there are no notes/media (those would otherwise skip admin).
+        if (AdminOrderPricingHelper.IsRequestOfferBelowListingPrice(offerUnitPrice, product))
+        {
+            return (OrderStatusCodes.Ordered, false);
+        }
 
-    /// <summary>Cart lines: all types require admin review first.</summary>
+        if (ProductTypeCodes.UsesSpecOrMediaAdminGate(product))
+        {
+            return ResolveSpecOrMediaGateStatus(notes, imageCount, documentCount, videoCount);
+        }
+
+        if (ProductTypeCodes.StartsWithSellerApproval(product))
+        {
+            return (OrderStatusCodes.AwaitingSellerApproval, true);
+        }
+
+        return (ResolveNewOrderStatus(product.ProductTypeId, paymentMethod), false);
+    }
+
+    /// <summary>Cart lines usually have notes only (no staged media paths).</summary>
     private static (byte StatusId, bool IsAdminApproved) ResolveInitialOrderStatusForCartLine(
         byte? productTypeId,
         byte? categoryId,
-        string? notes) =>
-        (OrderStatusCodes.Ordered, false);
+        string? notes)
+    {
+        if (ProductTypeCodes.UsesSpecOrMediaAdminGate(productTypeId, categoryId))
+        {
+            return ResolveSpecOrMediaGateStatus(notes, imageCount: 0, documentCount: 0, videoCount: 0);
+        }
+
+        if (ProductTypeCodes.StartsWithSellerApproval(productTypeId, categoryId))
+        {
+            return (OrderStatusCodes.AwaitingSellerApproval, true);
+        }
+
+        // Pure retail cart → admin dashboard first.
+        return (ResolveNewOrderStatus(productTypeId, paymentMethod: 0), false);
+    }
+
+    private static (byte StatusId, bool IsAdminApproved) ResolveSpecOrMediaGateStatus(
+        string? notes,
+        int imageCount,
+        int documentCount,
+        int videoCount)
+    {
+        var hasSpecOrMedia = !string.IsNullOrWhiteSpace(notes)
+            || imageCount > 0
+            || documentCount > 0
+            || videoCount > 0;
+
+        // Spec and/or media → admin reviews first.
+        if (hasSpecOrMedia)
+        {
+            return (OrderStatusCodes.Ordered, false);
+        }
+
+        // No spec and no media → seller/advertiser directly.
+        return (OrderStatusCodes.AwaitingSellerApproval, true);
+    }
 
     /// <summary>
     /// Default initial status for types that are not seller-first or offer/request flows.

@@ -139,8 +139,8 @@ public static class ProductTypeCodes
         product is not null && TracksSellableStock(product.ProductTypeId, product.CategoryId);
 
     /// <summary>
-    /// Offers, Requests, Booking &amp; Category: if the order has specification/media,
-    /// admin must approve before the seller.
+    /// Offers, Requests, Booking &amp; Category (home/catalog): admin reviews first
+    /// only when the buyer attached notes/specs or media; otherwise seller-first.
     /// </summary>
     public static bool UsesSpecOrMediaAdminGate(byte? productTypeId, byte? categoryId = null) =>
         IsOffers(productTypeId)

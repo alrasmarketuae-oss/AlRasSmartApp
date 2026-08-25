@@ -92,7 +92,12 @@ class _CategoryProductsViewState extends State<CategoryProductsView> {
                   }
 
                   return GridView.builder(
-                    padding: EdgeInsets.fromLTRB(24.w, 8.h, 24.w, 24.h),
+                    padding: EdgeInsets.fromLTRB(
+                      24.w,
+                      8.h,
+                      24.w,
+                      24.h + kBottomNavigationBarHeight,
+                    ),
                     gridDelegate: ProductGridLayout.delegate(
                       context,
                       horizontalPadding:

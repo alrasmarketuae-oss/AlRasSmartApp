@@ -323,6 +323,11 @@ public partial class OrdersAppService
             var (unitId, quantity) = NormalizeRetailCartLineUnit(product, line.UnitId, line.Quantity);
 
             // Cart checkout is always the retail channel (including hybrid category retail).
+            var (statusId, isAdminApproved) = ResolveInitialOrderStatusForCartLine(
+                product?.ProductTypeId,
+                product?.CategoryId,
+                notes);
+
             var order = new Order
             {
                 FromUserId = fromUserId,
@@ -332,14 +337,14 @@ public partial class OrdersAppService
                 UnitPrice = line.UnitPriceAed,
                 TotalPrice = line.LineTotalAed,
                 VatAed = line.LineVatAed,
-                StatusId = OrderStatusCodes.Ordered,
+                StatusId = statusId,
                 OrderGroupId = orderGroupId,
                 PendingOrderId = pendingOrderId,
                 PaymentMethod = paymentMethod,
                 StripeSessionId = stripeSessionId,
                 UnitId = unitId,
                 IsApproved = false,
-                IsAdminApproved = false,
+                IsAdminApproved = isAdminApproved,
                 IsRetailPurchase = true,
                 Notes = notes,
                 StockQuantityDeducted = false,
@@ -352,7 +357,14 @@ public partial class OrdersAppService
                 CreatedAt = DateTime.SpecifyKind(UtcDateTimeHelper.UtcNow, DateTimeKind.Utc),
             };
 
-            RequestOfferStatusLabels.ApplyAwaitingAdmin(order);
+            if (isAdminApproved)
+            {
+                RequestOfferStatusLabels.ApplyAwaitingSeller(order);
+            }
+            else
+            {
+                RequestOfferStatusLabels.ApplyAwaitingAdmin(order);
+            }
 
             await orderData.AddOrderAsync(order, cancellationToken);
             created.Add(order);

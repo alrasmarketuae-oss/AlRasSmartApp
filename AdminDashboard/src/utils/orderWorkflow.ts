@@ -221,13 +221,16 @@ export function needsAdminOrderModeration(order: {
 }): boolean {
   const type = (order.productTypeName ?? '').trim().toLowerCase()
 
-  // All catalog orders (including retail cart) require admin review first.
+  // Retail cart still requires admin review first.
   if (isRetailProduct(order.productTypeName)) {
     if (order.isAdminApproved) {
       return false
     }
     return order.statusId === 1
   }
+
+  // Booking / category / offers / requests: admin only while not yet approved
+  // (buyer added notes/specs/media). Seller-first orders skip this blink.
 
   if (type.includes('booking') || type.includes('حجز')) {
     if (order.isAdminApproved) {

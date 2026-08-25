@@ -254,7 +254,14 @@ public partial class OrdersAppService(
         else if (ProductTypeCodes.StartsWithSellerApproval(product)
             || ProductTypeCodes.IsRetail(product.ProductTypeId))
         {
-            RequestOfferStatusLabels.ApplyAwaitingAdmin(order);
+            if (isAdminApproved)
+            {
+                RequestOfferStatusLabels.ApplyAwaitingSeller(order);
+            }
+            else
+            {
+                RequestOfferStatusLabels.ApplyAwaitingAdmin(order);
+            }
         }
 
         foreach (var path in imagePaths)
