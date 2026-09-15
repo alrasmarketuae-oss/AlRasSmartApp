@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
 import '../../../../core/error/failure.dart';
 import '../../../../core/usecase/base_usecase.dart';
+import '../../../clint/data/models/client_address_model.dart';
 import '../entities/user.dart';
 import '../repository/base_auth_repository.dart';
 
@@ -36,6 +37,7 @@ class RegisterCompanyParameters extends Equatable {
   final String website;
   final bool isCustomer;
   final String preferredLanguage;
+  final CreateAddressRequest? address;
   const RegisterCompanyParameters({
     required this.fullName,
     required this.companyName,
@@ -53,6 +55,7 @@ class RegisterCompanyParameters extends Equatable {
     this.website = '',
     this.isCustomer = false,
     this.preferredLanguage = 'en',
+    this.address,
   });
 
   @override
@@ -73,5 +76,6 @@ class RegisterCompanyParameters extends Equatable {
     website,
     isCustomer,
     preferredLanguage,
+    address,
   ];
 }

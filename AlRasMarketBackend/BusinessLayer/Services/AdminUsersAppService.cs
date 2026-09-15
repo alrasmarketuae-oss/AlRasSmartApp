@@ -125,7 +125,8 @@ public class AdminUsersAppService(
                 CreatedAt = UtcDateTimeHelper.AsUtc(x.CreatedAt),
                 ImgPath = x.ImgPath,
                 CompanyName = x.CompanyName,
-                OrdersCount = dbContext.Orders.Count(o => o.FromUserId == x.Id || o.ToUserId == x.Id)
+                OrdersCount = dbContext.Orders.Count(o => o.FromUserId == x.Id || o.ToUserId == x.Id),
+                ProductsCount = dbContext.Products.Count(p => p.OwnerId == x.Id),
             })
             .ToListAsync(cancellationToken);
 
@@ -171,6 +172,9 @@ public class AdminUsersAppService(
 
         var ordersCount = await dbContext.Orders.CountAsync(
             o => o.FromUserId == user.Id || o.ToUserId == user.Id,
+            cancellationToken);
+        var productsCount = await dbContext.Products.CountAsync(
+            p => p.OwnerId == user.Id,
             cancellationToken);
 
         var dto = new AdminUserDetailDto
@@ -240,6 +244,7 @@ public class AdminUsersAppService(
                 })
                 .ToList(),
             OrdersCount = ordersCount,
+            ProductsCount = productsCount,
             CanApprove = !user.IsRejected
                 && (
                     ((user.RoleId == RoleIds.Seller || user.RoleId == RoleIds.ShippingCompany) && !user.IsApproved && user.IsVerified)

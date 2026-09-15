@@ -222,6 +222,7 @@ class AuthRemoteDataSource implements BaseAuthRemoteDataSource {
           'website': parameters.website,
           'isCustomer': parameters.isCustomer,
           'preferredLanguage': parameters.preferredLanguage,
+          if (parameters.address != null) 'address': parameters.address!.toJson(),
         },
       );
 

@@ -513,6 +513,7 @@ class AuthCubit extends Cubit<AuthStates> {
     emit(RegisterSellerLoadingState());
     print("registerCompany isCustomerCompany: $isCustomerCompany");
     final fcmToken = await _getFcmToken();
+    final pendingAddress = PendingRegistrationAddress.peek();
     final result = await registerSellerUseCase(
       RegisterCompanyParameters(
         fullName: fullName,
@@ -531,12 +532,17 @@ class AuthCubit extends Cubit<AuthStates> {
         website: website,
         isCustomer: isCustomerCompany,
         preferredLanguage: _currentLanguageCode,
+        address: pendingAddress,
       ),
     );
 
     result.fold(
       (failure) => emit(RegisterSellerErrorState(failure.message)),
-      (user) => emit(RegisterSellerSuccessState(user)),
+      (user) {
+        // Address was sent with register-company; clear local pending only on success.
+        PendingRegistrationAddress.clear();
+        emit(RegisterSellerSuccessState(user));
+      },
     );
   }
 

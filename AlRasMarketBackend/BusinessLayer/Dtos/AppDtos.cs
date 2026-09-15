@@ -30,6 +30,30 @@ public sealed class RegisterCompanyInput
     public string? Website { get; set; }
     public bool? IsCustomer { get; set; }
     public string? PreferredLanguage { get; set; }
+    /// <summary>Company HQ / primary address collected during registration.</summary>
+    public RegisterCompanyAddressInput? Address { get; set; }
+}
+
+public sealed class RegisterCompanyAddressInput
+{
+    public Guid? CityId { get; set; }
+    public short? CountryId { get; set; }
+    public string? CityName { get; set; }
+    public string AddressLine1 { get; set; } = string.Empty;
+    public string? AddressLine2 { get; set; }
+    public byte? AddressTypeId { get; set; }
+    public string? Area { get; set; }
+    public string? Street { get; set; }
+    public string? Building { get; set; }
+    public string? FloorNo { get; set; }
+    public string? UnitNo { get; set; }
+    public string? Landmark { get; set; }
+    public string? PostalCode { get; set; }
+    public string? ContactPerson { get; set; }
+    public string? MobileNumber { get; set; }
+    public string? DeliveryInstructions { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
 }
 
 public sealed class RegisterShippingCompanyInput

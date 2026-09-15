@@ -82,7 +82,30 @@ public class AuthController(
                 TaxNumber = request.TaxNumber,
                 Website = request.Website,
                 IsCustomer = request.IsCustomer,
-                PreferredLanguage = request.PreferredLanguage
+                PreferredLanguage = request.PreferredLanguage,
+                Address = request.Address is null
+                    ? null
+                    : new BusinessLayer.Dtos.RegisterCompanyAddressInput
+                    {
+                        CityId = request.Address.CityId,
+                        CountryId = request.Address.CountryId,
+                        CityName = request.Address.CityName,
+                        AddressLine1 = request.Address.AddressLine1,
+                        AddressLine2 = request.Address.AddressLine2,
+                        AddressTypeId = request.Address.AddressTypeId,
+                        Area = request.Address.Area,
+                        Street = request.Address.Street,
+                        Building = request.Address.Building,
+                        FloorNo = request.Address.FloorNo,
+                        UnitNo = request.Address.UnitNo,
+                        Landmark = request.Address.Landmark,
+                        PostalCode = request.Address.PostalCode,
+                        ContactPerson = request.Address.ContactPerson,
+                        MobileNumber = request.Address.MobileNumber,
+                        DeliveryInstructions = request.Address.DeliveryInstructions,
+                        Latitude = request.Address.Latitude,
+                        Longitude = request.Address.Longitude,
+                    },
             });
             return Ok(new { message = result.message, userId = result.userId, imgPath = result.imgPath, isCustomer = result.isCustomer });
         }
@@ -635,6 +658,33 @@ public sealed class RegisterCompanyRequest
     /// App language code: en or ar.
     /// </summary>
     public string? PreferredLanguage { get; set; }
+    /// <summary>
+    /// Optional company address collected during registration.
+    /// </summary>
+    public RegisterCompanyAddressRequest? Address { get; set; }
+}
+
+/// <summary>Company address payload nested under register-company.</summary>
+public sealed class RegisterCompanyAddressRequest
+{
+    public Guid? CityId { get; set; }
+    public short? CountryId { get; set; }
+    public string? CityName { get; set; }
+    public string AddressLine1 { get; set; } = string.Empty;
+    public string? AddressLine2 { get; set; }
+    public byte? AddressTypeId { get; set; }
+    public string? Area { get; set; }
+    public string? Street { get; set; }
+    public string? Building { get; set; }
+    public string? FloorNo { get; set; }
+    public string? UnitNo { get; set; }
+    public string? Landmark { get; set; }
+    public string? PostalCode { get; set; }
+    public string? ContactPerson { get; set; }
+    public string? MobileNumber { get; set; }
+    public string? DeliveryInstructions { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
 }
 
 /// <summary>

@@ -26,6 +26,7 @@ public class AuthAppService(
     IEmailOtpService emailOtpService,
     UserNameTranslationQueue userNameTranslationQueue,
     IAdminRealtimeNotificationService adminRealtimeNotificationService,
+    IAddressesAppService addressesAppService,
     ITurnstileVerifier turnstileVerifier,
     IHttpContextAccessor httpContextAccessor,
     ILogger<AuthAppService> logger) : IAuthAppService
@@ -129,6 +130,49 @@ public class AuthAppService(
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        if (input.Address is not null
+            && (!string.IsNullOrWhiteSpace(input.Address.AddressLine1)
+                || input.Address.Latitude.HasValue
+                || !string.IsNullOrWhiteSpace(input.Address.CityName)
+                || input.Address.CityId.HasValue))
+        {
+            try
+            {
+                await addressesAppService.AddAsync(new AddAddressInput
+                {
+                    UserId = user.Id.ToString("D"),
+                    CityId = input.Address.CityId,
+                    CountryId = input.Address.CountryId,
+                    CityName = input.Address.CityName,
+                    AddressLine1 = string.IsNullOrWhiteSpace(input.Address.AddressLine1)
+                        ? "Company location"
+                        : input.Address.AddressLine1,
+                    AddressLine2 = input.Address.AddressLine2,
+                    AddressTypeId = input.Address.AddressTypeId ?? 1,
+                    Area = input.Address.Area,
+                    Street = input.Address.Street,
+                    Building = input.Address.Building,
+                    FloorNo = input.Address.FloorNo,
+                    UnitNo = input.Address.UnitNo,
+                    Landmark = input.Address.Landmark,
+                    PostalCode = input.Address.PostalCode,
+                    ContactPerson = input.Address.ContactPerson,
+                    MobileNumber = input.Address.MobileNumber,
+                    DeliveryInstructions = input.Address.DeliveryInstructions,
+                    Latitude = input.Address.Latitude,
+                    Longitude = input.Address.Longitude,
+                }, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(
+                    ex,
+                    "Failed to save company registration address for user {UserId}",
+                    user.Id);
+            }
+        }
+
         userNameTranslationQueue.Enqueue(
             user.Id,
             user.FullName,
