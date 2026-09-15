@@ -20,7 +20,7 @@
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         tools:node="remove" />
     <application
-        android:label="Al Ras Smart App"
+        android:label="Alras Smart"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:extractNativeLibs="true"
