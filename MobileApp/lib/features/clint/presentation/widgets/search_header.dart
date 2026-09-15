@@ -44,59 +44,67 @@ class SearchHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final topInset = MediaQuery.paddingOf(context).top;
     final topPad = topInset > 0 ? topInset + 8.h : 12.h;
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
     return Padding(
       padding: EdgeInsets.fromLTRB(16.w, topPad, 16.w, 0),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              if (isBackButton) ...[
-                IconButton(
-                  onPressed: () => _goBack(context),
-                  padding: EdgeInsets.zero,
-                  constraints: BoxConstraints.tightFor(width: 40.w, height: 40.w),
-                  tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-                  icon: Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    size: 18.sp,
+      child: Directionality(
+        textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+        child: Column(
+          children: [
+            Row(
+              children: [
+                if (isBackButton) ...[
+                  IconButton(
+                    onPressed: () => _goBack(context),
+                    padding: EdgeInsets.zero,
+                    constraints:
+                        BoxConstraints.tightFor(width: 40.w, height: 40.w),
+                    tooltip:
+                        MaterialLocalizations.of(context).backButtonTooltip,
+                    icon: Icon(
+                      isArabic
+                          ? Icons.arrow_forward_ios_rounded
+                          : Icons.arrow_back_ios_new_rounded,
+                      size: 18.sp,
+                      color: LightColor.defaultColor,
+                    ),
+                  ),
+                  SizedBox(width: 4.w),
+                ],
+                const Expanded(child: AppHeader()),
+              ],
+            ),
+            if (isSearch) SizedBox(height: 16.h),
+            if (isSearch)
+              AppSearchField(
+                mode: searchMode,
+                initialQuery: initialQuery,
+                controller: searchController,
+                hintText: searchHint,
+                onSubmitted: onSearchSubmitted,
+                onChanged: onLocalSearchChanged,
+                onImageSearchTap: onImageSearchTap,
+                onFilterTap: onFilterTap,
+                showBackButton: false,
+                showImageSearch: showImageSearch,
+              ),
+            SizedBox(height: 16.h),
+            if (title != null)
+              Center(
+                child: Text(
+                  title!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18.sp,
                     color: LightColor.defaultColor,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(width: 4.w),
-              ],
-              const Expanded(child: AppHeader()),
-            ],
-          ),
-          if (isSearch) SizedBox(height: 16.h),
-          if (isSearch)
-            AppSearchField(
-              mode: searchMode,
-              initialQuery: initialQuery,
-              controller: searchController,
-              hintText: searchHint,
-              onSubmitted: onSearchSubmitted,
-              onChanged: onLocalSearchChanged,
-              onImageSearchTap: onImageSearchTap,
-              onFilterTap: onFilterTap,
-              showBackButton: false,
-              showImageSearch: showImageSearch,
-            ),
-          SizedBox(height: 16.h),
-          if (title != null)
-            Center(
-              child: Text(
-                title!,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 18.sp,
-                  color: LightColor.defaultColor,
-                  fontWeight: FontWeight.bold,
-                ),
               ),
-            ),
-          if (title != null) SizedBox(height: 8.h),
-        ],
+            if (title != null) SizedBox(height: 8.h),
+          ],
+        ),
       ),
     );
   }

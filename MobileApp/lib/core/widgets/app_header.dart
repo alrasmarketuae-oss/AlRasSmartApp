@@ -43,79 +43,87 @@ class AppHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final display = displayName(
       name,
       fallback: s.alRasMarket,
     );
     final subtitle = _accountSubtitle(context, s);
 
-    return Row(
-      children: [
-        InkWell(
-          onTap: () => _openProfile(context),
-          borderRadius: BorderRadius.circular(20.r),
-          child: const HeaderProfileAvatar(),
-        ),
-        SizedBox(width: 8.w),
-        Expanded(
-          child: InkWell(
+    // Enforce LTR/RTL from app language so logo + company name flip correctly
+    // even if a parent forced another text direction.
+    return Directionality(
+      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+      child: Row(
+        children: [
+          InkWell(
             onTap: () => _openProfile(context),
-            borderRadius: BorderRadius.circular(8.r),
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 2.h),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    display,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    softWrap: false,
-                    textHeightBehavior: const TextHeightBehavior(
-                      applyHeightToFirstAscent: false,
-                      applyHeightToLastDescent: false,
-                    ),
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.black,
-                      height: 1.15,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                  if (subtitle != null) ...[
-                    SizedBox(height: 2.h),
+            borderRadius: BorderRadius.circular(20.r),
+            child: const HeaderProfileAvatar(),
+          ),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: InkWell(
+              onTap: () => _openProfile(context),
+              borderRadius: BorderRadius.circular(8.r),
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 2.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     Text(
-                      subtitle,
+                      display,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       softWrap: false,
+                      textAlign: TextAlign.start,
                       textHeightBehavior: const TextHeightBehavior(
                         applyHeightToFirstAscent: false,
                         applyHeightToLastDescent: false,
                       ),
                       style: TextStyle(
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF64748B),
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black,
                         height: 1.15,
                         letterSpacing: 0,
                       ),
                     ),
+                    if (subtitle != null) ...[
+                      SizedBox(height: 2.h),
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: false,
+                        textAlign: TextAlign.start,
+                        textHeightBehavior: const TextHeightBehavior(
+                          applyHeightToFirstAscent: false,
+                          applyHeightToLastDescent: false,
+                        ),
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF64748B),
+                          height: 1.15,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),
-        ),
-        if (!isRecording) ...[
-          SizedBox(width: 4.w),
-          const HeaderNotificationBell(),
-          SizedBox(width: 2.w),
-          Image.asset(AppAssets.logo, width: 48.w, height: 40.h),
+          if (!isRecording) ...[
+            SizedBox(width: 4.w),
+            const HeaderNotificationBell(),
+            SizedBox(width: 2.w),
+            Image.asset(AppAssets.logo, width: 48.w, height: 40.h),
+          ],
         ],
-      ],
+      ),
     );
   }
 }
