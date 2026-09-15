@@ -774,10 +774,12 @@ export const enMessages = {
       loadDetailError: 'Could not load ad details',
       reviewLockedTitle: 'Ad under review',
       reviewLockedMessage:
-        'This ad is currently under review by {name}. You can open the details again after they approve or reject it.',
+        'This ad is currently under review by {name}. You cannot open Preview until they finish (approve or reject).',
       reviewLockedGeneric:
-        'This ad is currently under review by another employee. You can open the details again after they approve or reject it.',
+        'This ad is currently under review by another employee. You cannot open Preview until they finish (approve or reject).',
       reviewLockClaimError: 'Could not start ad review',
+      reviewMustOpenPreview:
+        'Open ad Preview first to start review before approving or rejecting.',
       deleteImageConfirm: 'Delete this image?',
       deleteImageError: 'Could not delete image',
       uploadImageError: 'Could not upload image',

@@ -1867,20 +1867,8 @@ public class AdminProductsAppService(
     {
         if (string.IsNullOrWhiteSpace(reviewerUserId) || !Guid.TryParse(reviewerUserId, out var reviewerId))
         {
-            // Legacy callers without reviewer id: still block if another agent holds a fresh lock.
-            var anyActive = await dbContext.ProductReviewLocks
-                .AsNoTracking()
-                .FirstOrDefaultAsync(
-                    x => x.ProductId == productId && x.ReleasedAtUtc == null,
-                    cancellationToken);
-            if (anyActive is not null && DateTime.UtcNow - anyActive.LastHeartbeatUtc <= ReviewLockStaleAfter)
-            {
-                var name = await ResolveAgentDisplayNameAsync(anyActive.AgentUserId, cancellationToken);
-                throw new InvalidOperationException(
-                    BuildLockedByOtherMessage(name));
-            }
-
-            return;
+            throw new InvalidOperationException(
+                "Open the ad Preview to start review before approving or rejecting.");
         }
 
         var active = await dbContext.ProductReviewLocks
@@ -1889,14 +1877,10 @@ public class AdminProductsAppService(
                 x => x.ProductId == productId && x.ReleasedAtUtc == null,
                 cancellationToken);
 
-        if (active is null)
+        if (active is null || DateTime.UtcNow - active.LastHeartbeatUtc > ReviewLockStaleAfter)
         {
-            return;
-        }
-
-        if (DateTime.UtcNow - active.LastHeartbeatUtc > ReviewLockStaleAfter)
-        {
-            return;
+            throw new InvalidOperationException(
+                "Open the ad Preview to start review before approving or rejecting.");
         }
 
         if (active.AgentUserId == reviewerId)
@@ -1961,5 +1945,5 @@ public class AdminProductsAppService(
     }
 
     private static string BuildLockedByOtherMessage(string agentName) =>
-        $"This ad is currently under review by {agentName}. You can open it again after they approve or reject it.";
+        $"This ad is currently under review by {agentName}. You cannot open it until they finish (approve or reject).";
 }

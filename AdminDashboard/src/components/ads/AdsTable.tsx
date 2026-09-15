@@ -1,7 +1,8 @@
-import { Link, useLocation } from 'react-router-dom'
+import { useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import { resolveAssetUrl } from '../../lib/assets'
-import type { AdminProduct } from '../../types/adminProduct'
+import type { AdminProduct, AdminProductReviewLock } from '../../types/adminProduct'
 import { buildListReturnState } from '../../utils/listPageParams'
 import {
   adStatusBadgeClass,
@@ -12,13 +13,16 @@ import {
   resolveAdListStatus,
 } from '../../utils/adsDisplay'
 import { formatRelativeTime } from '../../utils/timeAgo'
+import { useClaimProductReviewLockMutation } from '../../store'
+import { getRtkErrorMessage } from '../../utils/rtkError'
+import { normalizeProductReviewLock } from '../../store/normalizers'
 
 type AdsTableProps = {
   products: AdminProduct[]
-  approvingId: string | null
-  rejectingId: string | null
-  onApprove: (productId: string) => void
-  onReject: (productId: string) => void
+  approvingId?: string | null
+  rejectingId?: string | null
+  onApprove?: (productId: string) => void
+  onReject?: (productId: string) => void
   /** When true, owner column shows client/requester label (request ads). */
   isRequestList?: boolean
 }
@@ -55,17 +59,53 @@ function CalendarIcon() {
   )
 }
 
+function extractLockedPayload(err: unknown): AdminProductReviewLock | null {
+  const data =
+    (err as { data?: unknown } | null)?.data ??
+    (err as { error?: unknown } | null)?.error
+  if (!data || typeof data !== 'object') return null
+  const normalized = normalizeProductReviewLock(data as Record<string, unknown>)
+  return normalized.isLockedByOther ? normalized : null
+}
+
 export default function AdsTable({
   products,
-  approvingId,
-  rejectingId,
-  onApprove,
-  onReject,
   isRequestList = false,
 }: AdsTableProps) {
   const { t, locale } = useAppPreferences()
   const location = useLocation()
+  const navigate = useNavigate()
   const listReturnState = buildListReturnState(location.pathname, location.search)
+  const [claimReviewLock] = useClaimProductReviewLockMutation()
+  const [previewBusyId, setPreviewBusyId] = useState<string | null>(null)
+  const [lockedLock, setLockedLock] = useState<AdminProductReviewLock | null>(null)
+  const [previewError, setPreviewError] = useState<string | null>(null)
+
+  async function handlePreview(productId: string) {
+    setPreviewError(null)
+    setPreviewBusyId(productId)
+    try {
+      const result = await claimReviewLock({ productId }).unwrap()
+      if (!result.isLockedByMe || result.isLockedByOther) {
+        setLockedLock({
+          ...result,
+          isLockedByMe: false,
+          isLockedByOther: true,
+        })
+        return
+      }
+      navigate(`/ads/${productId}`, { state: listReturnState })
+    } catch (err) {
+      const locked = extractLockedPayload(err)
+      if (locked) {
+        setLockedLock(locked)
+        return
+      }
+      setPreviewError(getRtkErrorMessage(err as never, t('ads.reviewLockClaimError')))
+    } finally {
+      setPreviewBusyId(null)
+    }
+  }
 
   if (products.length === 0) {
     return (
@@ -80,6 +120,35 @@ export default function AdsTable({
 
   return (
     <div className="overflow-x-auto">
+      {previewError ? <div className="admin-alert-error mb-3 mx-4">{previewError}</div> : null}
+
+      {lockedLock ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="review-locked-title"
+        >
+          <div className="admin-card w-full max-w-md px-6 py-8 text-center shadow-xl">
+            <p id="review-locked-title" className="text-lg font-bold text-amber-700 dark:text-amber-300">
+              {t('ads.reviewLockedTitle')}
+            </p>
+            <p className="admin-text-muted mt-3 text-sm leading-relaxed">
+              {lockedLock.agentName
+                ? t('ads.reviewLockedMessage', { name: lockedLock.agentName })
+                : lockedLock.message || t('ads.reviewLockedGeneric')}
+            </p>
+            <button
+              type="button"
+              className="keep-white mt-6 inline-block rounded-xl bg-[#3B7FC7] px-5 py-2.5 text-sm font-semibold text-white"
+              onClick={() => setLockedLock(null)}
+            >
+              {t('ads.backToList')}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       <table className="w-full min-w-[1080px] border-collapse text-sm">
         <thead>
           <tr className="admin-text-muted border-b border-slate-100 bg-[#f8fafc] dark:border-slate-700 dark:bg-slate-800/60">
@@ -114,9 +183,7 @@ export default function AdsTable({
         <tbody>
           {products.map((product) => {
             const listStatus = resolveAdListStatus(product)
-            const isApproving = approvingId === product.productId
-            const isRejecting = rejectingId === product.productId
-            const isBusy = isApproving || isRejecting
+            const isPreviewBusy = previewBusyId === product.productId
             const supplierName =
               product.ownerCompanyName?.trim() || product.ownerName || '—'
             const statusLabel =
@@ -222,54 +289,22 @@ export default function AdsTable({
                   </span>
                 </td>
                 <td className="px-4 py-3.5 text-start sm:px-5">
-                  <div className="flex items-center gap-2">
-                    <Link
-                      to={`/ads/${product.productId}`}
-                      state={listReturnState}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#3B7FC7]/40 bg-white px-3 py-1.5 text-xs font-bold text-[#3B7FC7] transition hover:bg-[#3B7FC7]/5"
-                    >
+                  <button
+                    type="button"
+                    disabled={isPreviewBusy || previewBusyId != null}
+                    onClick={() => void handlePreview(product.productId)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#3B7FC7]/40 bg-white px-3 py-1.5 text-xs font-bold text-[#3B7FC7] transition hover:bg-[#3B7FC7]/5 disabled:opacity-60"
+                  >
+                    {isPreviewBusy ? (
+                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#3B7FC7] border-t-transparent" />
+                    ) : (
                       <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                       </svg>
-                      {t('ads.preview')}
-                    </Link>
-
-                    {listStatus === 'pending' ? (
-                      <>
-                        <button
-                          type="button"
-                          disabled={isBusy}
-                          onClick={() => onApprove(product.productId)}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#619D51] text-white transition hover:bg-[#528a45] disabled:opacity-60"
-                          title={t('ads.approve')}
-                        >
-                          {isApproving ? (
-                            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                          ) : (
-                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                            </svg>
-                          )}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={isBusy}
-                          onClick={() => onReject(product.productId)}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#ef4444] text-white transition hover:bg-[#dc2626] disabled:opacity-60"
-                          title={t('ads.reject')}
-                        >
-                          {isRejecting ? (
-                            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                          ) : (
-                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                            </svg>
-                          )}
-                        </button>
-                      </>
-                    ) : null}
-                  </div>
+                    )}
+                    {t('ads.preview')}
+                  </button>
                 </td>
               </tr>
             )
