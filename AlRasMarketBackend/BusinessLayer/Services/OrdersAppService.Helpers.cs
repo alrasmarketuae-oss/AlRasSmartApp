@@ -98,6 +98,91 @@ public partial class OrdersAppService
         }
     }
 
+    private async Task ApplyMyRequestOfferTranslationsAsync(
+        IReadOnlyList<MyRequestOfferDto> items,
+        CancellationToken cancellationToken)
+    {
+        if (items.Count == 0)
+        {
+            return;
+        }
+
+        var productIds = items
+            .Select(x => x.ProductId)
+            .Where(id => id != Guid.Empty)
+            .Distinct()
+            .ToList();
+        if (productIds.Count == 0)
+        {
+            return;
+        }
+
+        var translations = await contentTranslationService.GetProductTranslationsAsync(
+            productIds,
+            cancellationToken);
+
+        foreach (var dto in items)
+        {
+            translations.TryGetValue(dto.ProductId, out var tr);
+
+            var rawNameEn = FirstNonEmpty(dto.ProductNameEn, dto.ProductName);
+            var rawDescriptionEn = FirstNonEmpty(dto.ProductDescriptionEn, dto.ProductDescription);
+
+            var nameEn = FirstNonEmpty(
+                tr?.NameEn,
+                DetectArabicHint(rawNameEn) ? null : rawNameEn);
+            var nameAr = FirstNonEmpty(
+                tr?.NameAr,
+                dto.ProductNameAr,
+                DetectArabicHint(rawNameEn) ? rawNameEn : null);
+            var descriptionEn = FirstNonEmpty(
+                tr?.DescriptionEn,
+                DetectArabicHint(rawDescriptionEn) ? null : rawDescriptionEn);
+            var descriptionAr = FirstNonEmpty(
+                tr?.DescriptionAr,
+                dto.ProductDescriptionAr,
+                DetectArabicHint(rawDescriptionEn) ? rawDescriptionEn : null);
+
+            if (!string.IsNullOrWhiteSpace(nameEn))
+            {
+                dto.ProductNameEn = nameEn;
+                dto.ProductName = nameEn;
+            }
+            else if (DetectArabicHint(rawNameEn))
+            {
+                dto.ProductNameEn = null;
+                if (!string.IsNullOrWhiteSpace(nameAr))
+                {
+                    dto.ProductName = nameAr;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(nameAr))
+            {
+                dto.ProductNameAr = nameAr;
+            }
+
+            if (!string.IsNullOrWhiteSpace(descriptionEn))
+            {
+                dto.ProductDescriptionEn = descriptionEn;
+                dto.ProductDescription = descriptionEn;
+            }
+            else if (DetectArabicHint(rawDescriptionEn))
+            {
+                dto.ProductDescriptionEn = null;
+                if (!string.IsNullOrWhiteSpace(descriptionAr))
+                {
+                    dto.ProductDescription = descriptionAr;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(descriptionAr))
+            {
+                dto.ProductDescriptionAr = descriptionAr;
+            }
+        }
+    }
+
     private static string? FirstNonEmpty(params string?[] values)
     {
         foreach (var value in values)

@@ -6,6 +6,11 @@ class MyRequestOfferModel {
     required this.orderId,
     required this.productId,
     required this.productName,
+    this.productNameEn = '',
+    this.productNameAr = '',
+    this.productDescription = '',
+    this.productDescriptionEn = '',
+    this.productDescriptionAr = '',
     this.productTypeId = 0,
     this.productTypeNameEn = '',
     required this.quantity,
@@ -33,6 +38,11 @@ class MyRequestOfferModel {
   final int orderId;
   final String productId;
   final String productName;
+  final String productNameEn;
+  final String productNameAr;
+  final String productDescription;
+  final String productDescriptionEn;
+  final String productDescriptionAr;
   final int productTypeId;
   final String productTypeNameEn;
   final double quantity;
@@ -76,7 +86,41 @@ class MyRequestOfferModel {
     }
     final en = statusName.trim();
     if (en.isNotEmpty) return en;
-    return isArabic ? '—' : '—';
+    return '—';
+  }
+
+  String localizedProductName({required bool isArabic}) => _pickLocalized(
+        isArabic: isArabic,
+        en: productNameEn,
+        ar: productNameAr,
+        fallback: productName,
+      );
+
+  String localizedProductDescription({required bool isArabic}) => _pickLocalized(
+        isArabic: isArabic,
+        en: productDescriptionEn,
+        ar: productDescriptionAr,
+        fallback: productDescription,
+      );
+
+  /// Ad specs for the card: localized product description, else offer notes.
+  String localizedSpecifications({required bool isArabic}) {
+    final description = localizedProductDescription(isArabic: isArabic).trim();
+    if (description.isNotEmpty) return description;
+    return notes.trim();
+  }
+
+  static String _pickLocalized({
+    required bool isArabic,
+    required String en,
+    required String ar,
+    required String fallback,
+  }) {
+    final preferred = (isArabic ? ar : en).trim();
+    if (preferred.isNotEmpty) return preferred;
+    final secondary = (isArabic ? en : ar).trim();
+    if (secondary.isNotEmpty) return secondary;
+    return fallback.trim();
   }
 
   String? get primaryImageUrl {
@@ -88,10 +132,56 @@ class MyRequestOfferModel {
     final rawImages = json['imagePaths'] as List<dynamic>? ?? const [];
     final rawDocs = json['documentPaths'] as List<dynamic>? ?? const [];
 
+    final productName = _read(json, const [
+          'productName',
+          'ProductName',
+        ]) ??
+        '';
+    final productNameEn = _read(json, const [
+          'productNameEn',
+          'ProductNameEn',
+          'nameEn',
+          'NameEn',
+        ]) ??
+        '';
+    final productNameAr = _read(json, const [
+          'productNameAr',
+          'ProductNameAr',
+          'nameAr',
+          'NameAr',
+        ]) ??
+        '';
+    final productDescription = _read(json, const [
+          'productDescription',
+          'ProductDescription',
+          'description',
+          'Description',
+        ]) ??
+        '';
+    final productDescriptionEn = _read(json, const [
+          'productDescriptionEn',
+          'ProductDescriptionEn',
+          'descriptionEn',
+          'DescriptionEn',
+        ]) ??
+        '';
+    final productDescriptionAr = _read(json, const [
+          'productDescriptionAr',
+          'ProductDescriptionAr',
+          'descriptionAr',
+          'DescriptionAr',
+        ]) ??
+        '';
+
     return MyRequestOfferModel(
       orderId: int.tryParse(json['orderId']?.toString() ?? '') ?? 0,
       productId: json['productId']?.toString() ?? '',
-      productName: json['productName']?.toString() ?? '',
+      productName: productName,
+      productNameEn: productNameEn,
+      productNameAr: productNameAr,
+      productDescription: productDescription,
+      productDescriptionEn: productDescriptionEn,
+      productDescriptionAr: productDescriptionAr,
       productTypeId: int.tryParse(
             (json['productTypeId'] ?? json['ProductTypeId'])?.toString() ?? '',
           ) ??
@@ -130,6 +220,14 @@ class MyRequestOfferModel {
       imagePaths: rawImages.map((e) => e.toString()).toList(),
       documentPaths: rawDocs.map((e) => e.toString()).toList(),
     );
+  }
+
+  static String? _read(Map<String, dynamic> json, List<String> keys) {
+    for (final key in keys) {
+      final value = json[key]?.toString().trim();
+      if (value != null && value.isNotEmpty) return value;
+    }
+    return null;
   }
 
   static double _toDouble(dynamic value) =>

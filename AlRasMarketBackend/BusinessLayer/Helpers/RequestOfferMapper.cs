@@ -24,15 +24,24 @@ public static class RequestOfferMapper
             && order.StatusId == OrderStatusCodes.AwaitingSellerApproval
             && order.IsAdminApproved;
 
+        var unitName = AdminOrderMapper.ResolveOrderUnitName(order, product);
+        var rawName = product.NameEn ?? string.Empty;
+        var rawDescription = product.DescriptionEn;
+
         return new MyRequestOfferDto
         {
             OrderId = order.Id,
             ProductId = order.ProductId,
-            ProductName = product.NameEn ?? string.Empty,
+            ProductName = rawName,
+            ProductNameEn = DetectArabicHint(rawName) ? null : rawName,
+            ProductNameAr = DetectArabicHint(rawName) ? rawName : null,
+            ProductDescription = rawDescription,
+            ProductDescriptionEn = DetectArabicHint(rawDescription) ? null : rawDescription,
+            ProductDescriptionAr = DetectArabicHint(rawDescription) ? rawDescription : null,
             ProductTypeId = product.ProductTypeId,
             ProductTypeNameEn = product.ProductType?.TypeNameEn ?? string.Empty,
             Quantity = order.Quantity,
-            UnitName = AdminOrderMapper.ResolveOrderUnitName(order, product),
+            UnitName = unitName,
             UnitPrice = unitPrice,
             TotalPrice = totalPrice,
             Currency = currency,
@@ -68,6 +77,24 @@ public static class RequestOfferMapper
                 ? UtcDateTimeHelper.AsUtc(order.CancelledAt.Value)
                 : null
         };
+    }
+
+    private static bool DetectArabicHint(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return false;
+        }
+
+        foreach (var ch in text)
+        {
+            if (ch is >= '\u0600' and <= '\u06FF')
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static (decimal UnitPrice, decimal TotalPrice, string Currency) ResolveDisplayedPrices(

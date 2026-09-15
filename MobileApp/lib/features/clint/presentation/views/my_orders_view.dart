@@ -88,7 +88,8 @@ class _MyOrdersViewState extends State<MyOrdersView> {
     }
 
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
-    final productName = newcomers.first.productName.trim();
+    final productName =
+        newcomers.first.localizedProductName(isArabic: isAr).trim();
     final isRequest = newcomers.first.isRequestProductOffer;
     unawaited(
       AppPushNotificationService.instance.showForegroundAlert(

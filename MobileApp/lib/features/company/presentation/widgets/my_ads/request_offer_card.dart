@@ -51,7 +51,9 @@ class RequestOfferCard extends StatelessWidget {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final quantityText = _quantityText(s);
     final deliveryText = _deliveryText();
-    final specificationsText = offer.notes.trim();
+    final productName = offer.localizedProductName(isArabic: isArabic).trim();
+    final specificationsText =
+        offer.localizedSpecifications(isArabic: isArabic).trim();
     final unitPriceAmount = _unitPriceAmount();
     final totalPriceAmount = _totalPriceAmount();
     final hasUnitPrice = unitPriceAmount.isNotEmpty;
@@ -93,9 +95,7 @@ class RequestOfferCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  offer.productName.trim().isEmpty
-                      ? '—'
-                      : offer.productName.trim(),
+                  productName.isEmpty ? '—' : productName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(

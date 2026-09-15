@@ -284,6 +284,8 @@ public partial class OrdersAppService
                 parsedUserId))
             .ToList();
 
+        await ApplyMyRequestOfferTranslationsAsync(items, cancellationToken);
+
         return new AdminPagedResult<MyRequestOfferDto>
         {
             Page = page,

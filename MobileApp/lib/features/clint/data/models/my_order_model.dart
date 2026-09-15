@@ -550,13 +550,25 @@ class RelatedOrderSummary {
     required this.id,
     required this.productId,
     required this.productName,
+    this.productNameEn = '',
+    this.productNameAr = '',
     this.primaryImagePath,
   });
 
   final int id;
   final String productId;
   final String productName;
+  final String productNameEn;
+  final String productNameAr;
   final String? primaryImagePath;
+
+  String localizedProductName({required bool isArabic}) {
+    final preferred = (isArabic ? productNameAr : productNameEn).trim();
+    if (preferred.isNotEmpty) return preferred;
+    final secondary = (isArabic ? productNameEn : productNameAr).trim();
+    if (secondary.isNotEmpty) return secondary;
+    return productName.trim();
+  }
 
   factory RelatedOrderSummary.fromJson(Map<String, dynamic> json) {
     return RelatedOrderSummary(
@@ -566,6 +578,12 @@ class RelatedOrderSummary {
           '',
       productName: json['productName']?.toString() ??
           json['ProductName']?.toString() ??
+          '',
+      productNameEn: json['productNameEn']?.toString() ??
+          json['ProductNameEn']?.toString() ??
+          '',
+      productNameAr: json['productNameAr']?.toString() ??
+          json['ProductNameAr']?.toString() ??
           '',
       primaryImagePath: json['primaryImagePath']?.toString() ??
           json['PrimaryImagePath']?.toString(),

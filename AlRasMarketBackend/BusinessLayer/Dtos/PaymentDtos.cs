@@ -142,6 +142,11 @@ public sealed class MyRequestOfferDto
     public long OrderId { get; set; }
     public Guid ProductId { get; set; }
     public string ProductName { get; set; } = string.Empty;
+    public string? ProductNameEn { get; set; }
+    public string? ProductNameAr { get; set; }
+    public string? ProductDescription { get; set; }
+    public string? ProductDescriptionEn { get; set; }
+    public string? ProductDescriptionAr { get; set; }
     public byte? ProductTypeId { get; set; }
     public string ProductTypeNameEn { get; set; } = string.Empty;
     public decimal Quantity { get; set; }

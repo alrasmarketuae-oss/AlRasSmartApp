@@ -341,8 +341,8 @@ class _OrderCardState extends State<OrderCard>
                         ),
                         child: Text(
                           isArabic
-                              ? 'عرض المنتج: ${item.productName}'
-                              : 'View product: ${item.productName}',
+                              ? 'عرض المنتج: ${item.localizedProductName(isArabic: isArabic)}'
+                              : 'View product: ${item.localizedProductName(isArabic: isArabic)}',
                           style: TextStyle(
                             fontFamily: fontFamily,
                             fontSize: 12.sp,
