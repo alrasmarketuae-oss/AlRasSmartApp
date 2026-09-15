@@ -933,8 +933,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "incomingOrders": MessageLookupByLibrary.simpleMessage("مبيعاتي"),
     "incomingOrdersSubtitle": MessageLookupByLibrary.simpleMessage(
-      "الطلبات والعروض الواردة على إعلاناتك.",
+      "الطلبات الواردة على إعلاناتك (غير الطلبات).",
     ),
+    "incomingRequestOffersSubtitle": MessageLookupByLibrary.simpleMessage(
+      "العروض الواردة على إعلاناتك من نوع الطلبات.",
+    ),
+    "incomingRequestOffersTab": MessageLookupByLibrary.simpleMessage("الواردة"),
     "invalidEmail": MessageLookupByLibrary.simpleMessage(
       "بريد إلكتروني غير صالح",
     ),
@@ -1042,7 +1046,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "myOrders": MessageLookupByLibrary.simpleMessage("طلباتي"),
     "myOrdersSubtitle": MessageLookupByLibrary.simpleMessage(
-      "الطلبات الواردة ومشترياتك في مكان واحد.",
+      "مبيعاتك ومشترياتك والعروض الواردة على طلباتك.",
     ),
     "natureIntermediary": MessageLookupByLibrary.simpleMessage(
       "تعمل شركة ميرج سبايس كوسيط بين المورد والعميل، حيث تتم جميع عمليات البيع والشراء من خلال التطبيق.",
@@ -1067,7 +1071,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "لا توجد تفاصيل",
     ),
     "noIncomingOrdersYet": MessageLookupByLibrary.simpleMessage(
-      "لا توجد طلبات واردة بعد.",
+      "لا توجد مبيعات بعد.",
+    ),
+    "noIncomingRequestOffersYet": MessageLookupByLibrary.simpleMessage(
+      "لا توجد عروض واردة بعد.",
     ),
     "noLiabilityAppLosses": MessageLookupByLibrary.simpleMessage(
       "أي خسائر ناتجة عن سوء استخدام التطبيق",
@@ -1388,7 +1395,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "pulses": MessageLookupByLibrary.simpleMessage("بقوليات"),
     "purchaseOrder": MessageLookupByLibrary.simpleMessage("طلب الشراء"),
-    "purchases": MessageLookupByLibrary.simpleMessage("المشتريات"),
+    "purchases": MessageLookupByLibrary.simpleMessage("مشترياتي"),
     "purchasesSubtitle": MessageLookupByLibrary.simpleMessage(
       "الطلبات التي قدّمتها كمشتري.",
     ),

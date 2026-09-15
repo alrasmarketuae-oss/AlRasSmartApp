@@ -286,9 +286,9 @@ export default function AppRoutes() {
         <Route
           path="/image-search"
           element={
-            <PermissionRoute permission={PERMISSIONS.productsView}>
+            <SuperAdminRoute>
               <ImageSearchPage />
-            </PermissionRoute>
+            </SuperAdminRoute>
           }
         />
         <Route

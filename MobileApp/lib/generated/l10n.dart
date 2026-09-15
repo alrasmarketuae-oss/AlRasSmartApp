@@ -864,10 +864,10 @@ class S {
     return Intl.message('My Orders', name: 'myOrders', desc: '', args: []);
   }
 
-  /// `Incoming sales and your purchases in one place.`
+  /// `Your sales, purchases, and offers on your Request ads.`
   String get myOrdersSubtitle {
     return Intl.message(
-      'Incoming sales and your purchases in one place.',
+      'Your sales, purchases, and offers on your Request ads.',
       name: 'myOrdersSubtitle',
       desc: '',
       args: [],
@@ -879,10 +879,10 @@ class S {
     return Intl.message('My Sales', name: 'incomingOrders', desc: '', args: []);
   }
 
-  /// `Orders and offers received on your ads.`
+  /// `Orders received on your non-Request ads.`
   String get incomingOrdersSubtitle {
     return Intl.message(
-      'Orders and offers received on your ads.',
+      'Orders received on your non-Request ads.',
       name: 'incomingOrdersSubtitle',
       desc: '',
       args: [],
@@ -909,9 +909,9 @@ class S {
     );
   }
 
-  /// `Purchases`
+  /// `My Purchases`
   String get purchases {
-    return Intl.message('Purchases', name: 'purchases', desc: '', args: []);
+    return Intl.message('My Purchases', name: 'purchases', desc: '', args: []);
   }
 
   /// `Orders you placed as a buyer.`
@@ -924,11 +924,41 @@ class S {
     );
   }
 
-  /// `No incoming orders yet.`
+  /// `Incoming`
+  String get incomingRequestOffersTab {
+    return Intl.message(
+      'Incoming',
+      name: 'incomingRequestOffersTab',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Offers received on your Request ads.`
+  String get incomingRequestOffersSubtitle {
+    return Intl.message(
+      'Offers received on your Request ads.',
+      name: 'incomingRequestOffersSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No sales yet.`
   String get noIncomingOrdersYet {
     return Intl.message(
-      'No incoming orders yet.',
+      'No sales yet.',
       name: 'noIncomingOrdersYet',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No incoming offers yet.`
+  String get noIncomingRequestOffersYet {
+    return Intl.message(
+      'No incoming offers yet.',
+      name: 'noIncomingRequestOffersYet',
       desc: '',
       args: [],
     );

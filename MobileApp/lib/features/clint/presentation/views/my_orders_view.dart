@@ -24,9 +24,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
-/// Orders tab layout varies by account:
-/// - Supplier: Incoming + Purchases
-/// - Company customer: Requests + Orders
+/// Orders tab layout:
+/// - Supplier / company customer: Sales + Purchases + Incoming (Request offers)
 /// - Personal customer: Purchases only
 class MyOrdersView extends StatefulWidget {
   const MyOrdersView({super.key});
@@ -36,23 +35,29 @@ class MyOrdersView extends StatefulWidget {
 }
 
 class _MyOrdersViewState extends State<MyOrdersView> {
+  /// 0 = sales, 1 = purchases, 2 = incoming request offers.
   int _sectionIndex = 0;
   MyOrdersChipFilter _filter = MyOrdersChipFilter.all;
   final ScrollController _purchasesScrollController = ScrollController();
-  final ScrollController _incomingScrollController = ScrollController();
+  final ScrollController _salesScrollController = ScrollController();
+  final ScrollController _requestOffersScrollController = ScrollController();
   final Map<int, GlobalKey> _orderKeys = {};
   int? _highlightOrderId;
   int? _scrolledForOrderId;
   StreamSubscription<void>? _ordersRealtimeSub;
 
-  bool get _showIncomingTab =>
-      !AuthService.instance.isPersonalCustomerAccount;
-
-  bool get _isCompanyCustomerAccount =>
-      AuthService.instance.isCompanyCustomerAccount;
+  bool get _showSellerTabs => !AuthService.instance.isPersonalCustomerAccount;
 
   bool get _isPurchasesSection =>
-      !_showIncomingTab || _sectionIndex != 0;
+      !_showSellerTabs || _sectionIndex == 1;
+
+  bool get _isRequestOffersSection => _showSellerTabs && _sectionIndex == 2;
+
+  List<MyRequestOfferModel> _salesOnly(List<MyRequestOfferModel> all) =>
+      all.where((o) => !o.isRequestProductOffer).toList(growable: false);
+
+  List<MyRequestOfferModel> _requestOffersOnly(List<MyRequestOfferModel> all) =>
+      all.where((o) => o.isRequestProductOffer).toList(growable: false);
 
   Future<void> _onOrdersRealtimeUpdate() async {
     if (!mounted) return;
@@ -62,11 +67,9 @@ class _MyOrdersViewState extends State<MyOrdersView> {
 
     if (_isPurchasesSection) {
       await cubit.fetchMyOrders(silent: true);
-      if (_showIncomingTab) {
+      if (_showSellerTabs) {
         await cubit.fetchIncomingOrders(silent: true);
       }
-    } else if (_isCompanyCustomerAccount) {
-      await cubit.fetchIncomingOrders(silent: true);
     } else {
       await cubit.fetchIncomingOrders(silent: true);
     }
@@ -77,33 +80,43 @@ class _MyOrdersViewState extends State<MyOrdersView> {
         .toList();
     if (newcomers.isEmpty) return;
 
-    if (_showIncomingTab && _sectionIndex != 0) {
-      setState(() => _sectionIndex = 0);
+    if (_showSellerTabs) {
+      final first = newcomers.first;
+      setState(() {
+        _sectionIndex = first.isRequestProductOffer ? 2 : 0;
+      });
     }
 
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
     final productName = newcomers.first.productName.trim();
+    final isRequest = newcomers.first.isRequestProductOffer;
     unawaited(
       AppPushNotificationService.instance.showForegroundAlert(
-        title: isAr ? 'طلب جديد متاح' : 'New Order available',
+        title: isRequest
+            ? (isAr ? 'عرض جديد متاح' : 'New offer available')
+            : (isAr ? 'طلب جديد متاح' : 'New Order available'),
         body: productName.isEmpty
-            ? (isAr
-                ? 'وصلك طلب جديد على أحد إعلاناتك.'
-                : 'You received a new order on one of your listings.')
-            : (isAr
-                ? 'لديك طلب جديد على منتج "$productName".'
-                : 'You have a new order for "$productName".'),
+            ? (isRequest
+                ? (isAr
+                    ? 'وصلك عرض جديد على أحد طلباتك.'
+                    : 'You received a new offer on one of your requests.')
+                : (isAr
+                    ? 'وصلك طلب جديد على أحد إعلاناتك.'
+                    : 'You received a new order on one of your listings.'))
+            : (isRequest
+                ? (isAr
+                    ? 'لديك عرض جديد على طلب "$productName".'
+                    : 'You have a new offer on "$productName".')
+                : (isAr
+                    ? 'لديك طلب جديد على منتج "$productName".'
+                    : 'You have a new order for "$productName".')),
         data: {
-          'type': 'new_order',
+          'type': isRequest ? 'request_offer' : 'new_order',
           'orderId': '${newcomers.first.orderId}',
           'referenceId': '${newcomers.first.orderId}',
         },
       ),
     );
-  }
-
-  void _loadCompanyRequestsData() {
-    unawaited(context.read<ClintCubit>().fetchIncomingOrders());
   }
 
   @override
@@ -118,12 +131,8 @@ class _MyOrdersViewState extends State<MyOrdersView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final cubit = context.read<ClintCubit>();
-      if (_showIncomingTab) {
-        if (_isCompanyCustomerAccount) {
-          _loadCompanyRequestsData();
-        } else {
-          cubit.fetchIncomingOrders();
-        }
+      if (_showSellerTabs) {
+        unawaited(cubit.fetchIncomingOrders());
         unawaited(cubit.fetchMyOrders());
       } else {
         cubit.fetchMyOrders();
@@ -138,21 +147,18 @@ class _MyOrdersViewState extends State<MyOrdersView> {
         .removeListener(_onPendingHighlight);
     _ordersRealtimeSub?.cancel();
     _purchasesScrollController.dispose();
-    _incomingScrollController.dispose();
+    _salesScrollController.dispose();
+    _requestOffersScrollController.dispose();
     super.dispose();
   }
 
   void _onSectionSelected(int index) {
     setState(() => _sectionIndex = index);
     final cubit = context.read<ClintCubit>();
-    if (index == 0) {
-      if (_isCompanyCustomerAccount) {
-        _loadCompanyRequestsData();
-      } else {
-        cubit.fetchIncomingOrders();
-      }
-    } else {
+    if (index == 1) {
       cubit.fetchMyOrders();
+    } else {
+      cubit.fetchIncomingOrders();
     }
   }
 
@@ -164,16 +170,34 @@ class _MyOrdersViewState extends State<MyOrdersView> {
   void _consumePendingHighlight() {
     final id = NotificationNavigationHelper.pendingHighlightOrderId.value;
     final openIncoming = NotificationNavigationHelper.pendingOpenIncomingTab;
-    if ((id == null || id <= 0) && !openIncoming) return;
+    final openRequestOffers =
+        NotificationNavigationHelper.pendingOpenRequestOffersTab;
+    if ((id == null || id <= 0) && !openIncoming && !openRequestOffers) {
+      return;
+    }
     NotificationNavigationHelper.pendingHighlightOrderId.value = null;
     NotificationNavigationHelper.pendingOpenIncomingTab = false;
+    NotificationNavigationHelper.pendingOpenRequestOffersTab = false;
+
     final cubit = context.read<ClintCubit>();
+    final matchedIncoming = id != null && id > 0
+        ? cubit.incomingOrders
+            .where((order) => order.orderId == id)
+            .firstOrNull
+        : null;
     final isIncoming = openIncoming ||
-        cubit.incomingOrders.any((order) => order.orderId == id);
+        openRequestOffers ||
+        matchedIncoming != null;
+
     setState(() {
-      if (_showIncomingTab && isIncoming) {
-        _sectionIndex = 0;
-      } else if (_showIncomingTab && id != null && id > 0) {
+      if (_showSellerTabs && isIncoming) {
+        if (openRequestOffers ||
+            (matchedIncoming?.isRequestProductOffer ?? false)) {
+          _sectionIndex = 2;
+        } else {
+          _sectionIndex = 0;
+        }
+      } else if (_showSellerTabs && id != null && id > 0) {
         _sectionIndex = 1;
       }
       _filter = MyOrdersChipFilter.all;
@@ -309,24 +333,40 @@ class _MyOrdersViewState extends State<MyOrdersView> {
                     ],
                   ),
                 ),
-                if (_showIncomingTab) ...[
+                if (_showSellerTabs) ...[
                   _OrdersSectionTabs(
                     selectedIndex: _sectionIndex,
                     onSelected: _onSectionSelected,
-                    isCompanyCustomer: _isCompanyCustomerAccount,
                   ),
                 ],
                 Expanded(
                   child: _isPurchasesSection
                       ? _buildPurchasesSection(context, s, fontFamily)
-                      : _buildIncomingSection(
-                          context,
-                          s,
-                          fontFamily,
-                          subtitle: _isCompanyCustomerAccount
-                              ? s.companyCustomerRequestsSubtitle
-                              : null,
-                        ),
+                      : _isRequestOffersSection
+                          ? _buildIncomingSection(
+                              context,
+                              s,
+                              fontFamily,
+                              scrollController: _requestOffersScrollController,
+                              offers: _requestOffersOnly(
+                                ClintCubit.get(context).incomingOrders,
+                              ),
+                              subtitle: s.incomingRequestOffersSubtitle,
+                              emptyLabel: s.noIncomingRequestOffersYet,
+                              useOfferLabels: true,
+                            )
+                          : _buildIncomingSection(
+                              context,
+                              s,
+                              fontFamily,
+                              scrollController: _salesScrollController,
+                              offers: _salesOnly(
+                                ClintCubit.get(context).incomingOrders,
+                              ),
+                              subtitle: s.incomingOrdersSubtitle,
+                              emptyLabel: s.noIncomingOrdersYet,
+                              useOfferLabels: false,
+                            ),
                 ),
               ],
             ),
@@ -340,16 +380,20 @@ class _MyOrdersViewState extends State<MyOrdersView> {
     BuildContext context,
     S s,
     String fontFamily, {
-    String? subtitle,
+    required ScrollController scrollController,
+    required List<MyRequestOfferModel> offers,
+    required String subtitle,
+    required String emptyLabel,
+    required bool useOfferLabels,
   }) {
     final cubit = ClintCubit.get(context);
-    final offers = cubit.incomingOrders;
+    final allIncoming = cubit.incomingOrders;
 
-    if (cubit.isLoadingIncomingOrders && offers.isEmpty) {
+    if (cubit.isLoadingIncomingOrders && allIncoming.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (cubit.incomingOrdersError != null && offers.isEmpty) {
+    if (cubit.incomingOrdersError != null && allIncoming.isEmpty) {
       return Center(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -365,14 +409,14 @@ class _MyOrdersViewState extends State<MyOrdersView> {
     return RefreshIndicator(
       onRefresh: () => cubit.fetchIncomingOrders(),
       child: CustomScrollView(
-        controller: _incomingScrollController,
+        controller: scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.fromLTRB(24.w, 8.h, 24.w, 8.h),
               child: Text(
-                subtitle ?? s.incomingOrdersSubtitle,
+                subtitle,
                 style: TextStyle(
                   fontFamily: fontFamily,
                   fontSize: 13.sp,
@@ -387,7 +431,7 @@ class _MyOrdersViewState extends State<MyOrdersView> {
               hasScrollBody: false,
               child: Center(
                 child: Text(
-                  s.noIncomingOrdersYet,
+                  emptyLabel,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamily: fontFamily,
@@ -405,7 +449,7 @@ class _MyOrdersViewState extends State<MyOrdersView> {
                 cubit: cubit,
                 s: s,
                 fontFamily: fontFamily,
-                useOfferLabels: _isCompanyCustomerAccount,
+                useOfferLabels: useOfferLabels,
                 onAcceptIncoming: _onAcceptIncoming,
                 onRejectIncoming: _onRejectIncoming,
               ),
@@ -633,12 +677,8 @@ class _MyOrdersViewState extends State<MyOrdersView> {
 
           final offer = entry.item!;
           final isUpdating = cubit.updatingIncomingOrderId == offer.orderId;
-          // Requests ads → Accept Offer; other ads → Accept Order.
-          // Fallback to account-level label when API omits product type.
-          final isRequestOffer = offer.isRequestProductOffer ||
-              (offer.productTypeId == 0 &&
-                  offer.productTypeNameEn.isEmpty &&
-                  useOfferLabels);
+          final isRequestOffer =
+              offer.isRequestProductOffer || useOfferLabels;
           return Padding(
             padding: EdgeInsets.only(bottom: bottomGap),
             child: RequestOfferCard(
@@ -679,30 +719,23 @@ class _OrdersSectionTabs extends StatelessWidget {
   const _OrdersSectionTabs({
     required this.selectedIndex,
     required this.onSelected,
-    required this.isCompanyCustomer,
   });
 
   final int selectedIndex;
   final ValueChanged<int> onSelected;
-  final bool isCompanyCustomer;
 
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
     final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
-    final firstTabLabel = isCompanyCustomer
-        ? s.companyCustomerRequestsTab
-        : s.incomingOrders;
-    final secondTabLabel = isCompanyCustomer
-        ? s.companyCustomerOrdersTab
-        : s.purchases;
     final items = [
-      (label: firstTabLabel, icon: Icons.inbox_outlined),
-      (label: secondTabLabel, icon: Icons.shopping_bag_outlined),
+      (label: s.incomingOrders, icon: Icons.storefront_outlined),
+      (label: s.purchases, icon: Icons.shopping_bag_outlined),
+      (label: s.incomingRequestOffersTab, icon: Icons.inbox_outlined),
     ];
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 4.h),
+      padding: EdgeInsets.fromLTRB(12.w, 0, 12.w, 4.h),
       child: Row(
         children: List.generate(items.length, (index) {
           final isSelected = selectedIndex == index;
@@ -710,21 +743,20 @@ class _OrdersSectionTabs extends StatelessWidget {
           final fg = isSelected ? Colors.white : LightColor.defaultColor;
           return Expanded(
             child: Padding(
-              padding: EdgeInsets.only(
-                right: index == 0 ? 6.w : 0,
-                left: index == 1 ? 6.w : 0,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: 3.w),
               child: GestureDetector(
                 onTap: () => onSelected(index),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
                   padding: EdgeInsets.symmetric(
-                    horizontal: 10.w,
+                    horizontal: 6.w,
                     vertical: 9.h,
                   ),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10.r),
-                    color: isSelected ? LightColor.defaultColor : AppColors.card(context),
+                    color: isSelected
+                        ? LightColor.defaultColor
+                        : AppColors.card(context),
                     border: Border.all(
                       color: LightColor.defaultColor,
                       width: 1.4,
@@ -732,25 +764,21 @@ class _OrdersSectionTabs extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      Icon(item.icon, size: 16.sp, color: fg),
-                      SizedBox(width: 6.w),
+                      Icon(item.icon, size: 14.sp, color: fg),
+                      SizedBox(width: 4.w),
                       Expanded(
                         child: Text(
                           item.label,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             color: fg,
                             fontFamily: fontFamily,
-                            fontSize: 13.sp,
+                            fontSize: 11.5.sp,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                      ),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        size: 18.sp,
-                        color: fg,
                       ),
                     ],
                   ),

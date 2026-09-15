@@ -17,8 +17,11 @@ class NotificationNavigationHelper {
   static final ValueNotifier<int?> pendingHighlightOrderId =
       ValueNotifier<int?>(null);
 
-  /// Seller new-order taps should open Incoming, not Purchases.
+  /// Seller new-order taps should open Sales (مبيعاتي), not Purchases.
   static bool pendingOpenIncomingTab = false;
+
+  /// Request-offer taps should open Incoming (الواردة) on Request ads.
+  static bool pendingOpenRequestOffersTab = false;
 
   static Future<void> open(
     BuildContext context,
@@ -56,9 +59,8 @@ class NotificationNavigationHelper {
       openMyOrdersTab(
         context,
         highlightOrderId: int.tryParse(referenceId),
-        openIncoming: typeName == 'new_order' ||
-            typeName == 'request_offer' ||
-            typeName == 'order',
+        openIncoming: typeName == 'new_order' || typeName == 'order',
+        openRequestOffers: typeName == 'request_offer' || looksLikeRequestOffer,
       );
       return;
     }
@@ -95,9 +97,8 @@ class NotificationNavigationHelper {
       openMyOrdersTab(
         context,
         highlightOrderId: int.tryParse(referenceId),
-        openIncoming: typeName == 'new_order' ||
-            typeName == 'request_offer' ||
-            typeName == 'order',
+        openIncoming: typeName == 'new_order' || typeName == 'order',
+        openRequestOffers: typeName == 'request_offer' || looksLikeRequestOffer,
       );
       return;
     }
@@ -143,8 +144,10 @@ class NotificationNavigationHelper {
     BuildContext context, {
     int? highlightOrderId,
     bool openIncoming = false,
+    bool openRequestOffers = false,
   }) {
     pendingOpenIncomingTab = openIncoming;
+    pendingOpenRequestOffersTab = openRequestOffers;
     if (highlightOrderId != null && highlightOrderId > 0) {
       pendingHighlightOrderId.value = highlightOrderId;
     }

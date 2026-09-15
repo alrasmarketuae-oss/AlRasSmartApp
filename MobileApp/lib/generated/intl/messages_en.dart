@@ -924,7 +924,13 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "incomingOrders": MessageLookupByLibrary.simpleMessage("My Sales"),
     "incomingOrdersSubtitle": MessageLookupByLibrary.simpleMessage(
-      "Orders and offers received on your ads.",
+      "Orders received on your non-Request ads.",
+    ),
+    "incomingRequestOffersSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Offers received on your Request ads.",
+    ),
+    "incomingRequestOffersTab": MessageLookupByLibrary.simpleMessage(
+      "Incoming",
     ),
     "invalidEmail": MessageLookupByLibrary.simpleMessage("Invalid email"),
     "invalidPrice": MessageLookupByLibrary.simpleMessage(
@@ -1035,7 +1041,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "myOrders": MessageLookupByLibrary.simpleMessage("My Orders"),
     "myOrdersSubtitle": MessageLookupByLibrary.simpleMessage(
-      "Incoming sales and your purchases in one place.",
+      "Your sales, purchases, and offers on your Request ads.",
     ),
     "natureIntermediary": MessageLookupByLibrary.simpleMessage(
       "Merge Spice acts as an intermediary between the supplier and the client, with all sales and purchases conducted through the app.",
@@ -1058,7 +1064,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "noDetailsAvailable": MessageLookupByLibrary.simpleMessage("No details"),
     "noIncomingOrdersYet": MessageLookupByLibrary.simpleMessage(
-      "No incoming orders yet.",
+      "No sales yet.",
+    ),
+    "noIncomingRequestOffersYet": MessageLookupByLibrary.simpleMessage(
+      "No incoming offers yet.",
     ),
     "noLiabilityAppLosses": MessageLookupByLibrary.simpleMessage(
       "Any losses due to misuse of the app",
@@ -1385,7 +1394,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "pulses": MessageLookupByLibrary.simpleMessage("Pulses"),
     "purchaseOrder": MessageLookupByLibrary.simpleMessage("Purchase Order"),
-    "purchases": MessageLookupByLibrary.simpleMessage("Purchases"),
+    "purchases": MessageLookupByLibrary.simpleMessage("My Purchases"),
     "purchasesSubtitle": MessageLookupByLibrary.simpleMessage(
       "Orders you placed as a buyer.",
     ),
