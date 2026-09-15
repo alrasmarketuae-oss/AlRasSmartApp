@@ -51,6 +51,7 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
     public DbSet<ChatUserKey> ChatUserKeys => Set<ChatUserKey>();
     public DbSet<UserAdminPermission> UserAdminPermissions => Set<UserAdminPermission>();
     public DbSet<ChatSupportAssignment> ChatSupportAssignments => Set<ChatSupportAssignment>();
+    public DbSet<ProductReviewLock> ProductReviewLocks => Set<ProductReviewLock>();
     public DbSet<InternalDomesticShippingRate> InternalDomesticShippingRates => Set<InternalDomesticShippingRate>();
     public DbSet<InternalDomesticShippingConfig> InternalDomesticShippingConfigs => Set<InternalDomesticShippingConfig>();
     public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
@@ -258,6 +259,22 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.HasOne(x => x.CustomerUser).WithMany().HasForeignKey(x => x.CustomerUserId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(x => x.AgentUser).WithMany().HasForeignKey(x => x.AgentUserId).OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(x => x.CustomerUserId).HasFilter("[ReleasedAtUtc] IS NULL");
+            entity.HasIndex(x => x.AgentUserId).HasFilter("[ReleasedAtUtc] IS NULL");
+        });
+
+        modelBuilder.Entity<ProductReviewLock>(entity =>
+        {
+            entity.ToTable("ProductReviewLocks");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.LockedAtUtc).HasColumnType("datetime");
+            entity.Property(x => x.LastHeartbeatUtc).HasColumnType("datetime");
+            entity.Property(x => x.ReleasedAtUtc).HasColumnType("datetime");
+            entity.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(x => x.AgentUser).WithMany().HasForeignKey(x => x.AgentUserId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(x => x.ProductId)
+                .IsUnique()
+                .HasFilter("[ReleasedAtUtc] IS NULL")
+                .HasDatabaseName("UX_ProductReviewLocks_Product_Active");
             entity.HasIndex(x => x.AgentUserId).HasFilter("[ReleasedAtUtc] IS NULL");
         });
 

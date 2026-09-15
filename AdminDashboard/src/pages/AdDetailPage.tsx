@@ -1,19 +1,24 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import AdDetailView from '../components/ads/AdDetailView'
 import AdEditDialog from '../components/ads/AdEditDialog'
 import RejectAdReasonDialog from '../components/ads/RejectAdReasonDialog'
-import type { AdminUpdateProductPayload } from '../types/adminProduct'
+import type {
+  AdminProductReviewLock,
+  AdminUpdateProductPayload,
+} from '../types/adminProduct'
 import { useAppPreferences } from '../context/AppPreferencesProvider'
 import { useReturnToListPath } from '../hooks/useReturnToListPath'
 import {
   useApproveProductMutation,
+  useClaimProductReviewLockMutation,
   useDeleteAdminProductImageMutation,
   useDeleteAdminProductVideoMutation,
   useDeleteProductMutation,
   useGetAdminProductDetailQuery,
   useGetAdminProductLookupsQuery,
   useGetCategoriesQuery,
+  useHeartbeatProductReviewLockMutation,
   useRejectProductMutation,
   useUpdateAdminProductMutation,
   useUploadAdminProductImageMutation,
@@ -21,6 +26,9 @@ import {
 } from '../store'
 import AdminVideoTrimModal from '../components/shared/AdminVideoTrimModal'
 import { getRtkErrorMessage } from '../utils/rtkError'
+import { normalizeProductReviewLock } from '../store/normalizers'
+
+const HEARTBEAT_MS = 60_000
 
 export default function AdDetailPage() {
   const { productId = '' } = useParams()
@@ -48,13 +56,31 @@ export default function AdDetailPage() {
     supplierNotesEn: '',
     supplierNotesAr: '',
   })
+  const [reviewLock, setReviewLock] = useState<AdminProductReviewLock | null>(null)
+  const [lockReady, setLockReady] = useState(false)
+  const [lockError, setLockError] = useState<string | null>(null)
+
+  const [claimReviewLock] = useClaimProductReviewLockMutation()
+  const [heartbeatReviewLock] = useHeartbeatProductReviewLockMutation()
+
+  // Only the employee who successfully claimed the lock may load/preview the ad.
+  const canLoadDetail =
+    Boolean(productId) &&
+    lockReady &&
+    !lockError &&
+    Boolean(reviewLock?.isLockedByMe) &&
+    !reviewLock?.isLockedByOther
 
   const { data: product, error, isLoading } = useGetAdminProductDetailQuery(
     { productId, lang: locale },
-    { skip: !productId },
+    { skip: !canLoadDetail },
   )
-  const { data: lookups } = useGetAdminProductLookupsQuery()
-  const { data: categoriesData } = useGetCategoriesQuery()
+  const { data: lookups } = useGetAdminProductLookupsQuery(undefined, {
+    skip: !canLoadDetail,
+  })
+  const { data: categoriesData } = useGetCategoriesQuery(undefined, {
+    skip: !canLoadDetail,
+  })
 
   const categories = useMemo(
     () => (categoriesData?.items ?? []).filter((c) => c.categoryId > 0),
@@ -70,6 +96,67 @@ export default function AdDetailPage() {
   const [trimProductVideo, { isLoading: isTrimmingVideo }] =
     useTrimAdminProductVideoMutation()
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation()
+
+  useEffect(() => {
+    if (!productId) return
+
+    let cancelled = false
+    setLockReady(false)
+    setReviewLock(null)
+    setLockError(null)
+
+    void (async () => {
+      try {
+        const result = await claimReviewLock({ productId }).unwrap()
+        if (cancelled) return
+        if (!result.isLockedByMe || result.isLockedByOther) {
+          setReviewLock({
+            ...result,
+            isLockedByMe: false,
+            isLockedByOther: true,
+          })
+          setLockReady(true)
+          return
+        }
+        setReviewLock(result)
+        setLockReady(true)
+      } catch (err) {
+        if (cancelled) return
+        const locked = extractLockedPayload(err)
+        if (locked?.isLockedByOther) {
+          setReviewLock(locked)
+          setLockReady(true)
+          return
+        }
+        setLockError(
+          getRtkErrorMessage(err as never, t('ads.reviewLockClaimError')),
+        )
+        setLockReady(true)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [productId, claimReviewLock, t])
+
+  useEffect(() => {
+    if (!productId || !reviewLock?.isLockedByMe) return
+
+    const timer = window.setInterval(() => {
+      void heartbeatReviewLock({ productId })
+        .unwrap()
+        .then((result) => setReviewLock(result))
+        .catch((err) => {
+          const locked = extractLockedPayload(err)
+          if (locked?.isLockedByOther) {
+            setReviewLock(locked)
+          }
+        })
+    }, HEARTBEAT_MS)
+
+    return () => window.clearInterval(timer)
+  }, [productId, reviewLock?.isLockedByMe, heartbeatReviewLock])
 
   if (!productId) {
     navigate('/ads', { replace: true })
@@ -105,6 +192,18 @@ export default function AdDetailPage() {
     try {
       const result = await approveProduct({ productId, supplierNotesEn }).unwrap()
       setSuccessMessage(result.message || t('ads.approveSuccess'))
+      setReviewLock((prev) =>
+        prev
+          ? {
+              ...prev,
+              isLockedByMe: false,
+              isLockedByOther: false,
+              agentUserId: null,
+              agentName: null,
+              message: null,
+            }
+          : prev,
+      )
     } catch (err) {
       setActionError(getRtkErrorMessage(err as never, t('ads.approveError')))
     }
@@ -134,6 +233,18 @@ export default function AdDetailPage() {
       }).unwrap()
       setRejectDialogOpen(false)
       setSuccessMessage(result.message || t('ads.rejectSuccess'))
+      setReviewLock((prev) =>
+        prev
+          ? {
+              ...prev,
+              isLockedByMe: false,
+              isLockedByOther: false,
+              agentUserId: null,
+              agentName: null,
+              message: null,
+            }
+          : prev,
+      )
     } catch (err) {
       setActionError(getRtkErrorMessage(err as never, t('ads.rejectError')))
     }
@@ -256,6 +367,10 @@ export default function AdDetailPage() {
   }
 
   const emptyLookups = { productTypes: [], units: [] }
+  const lockedByOther = Boolean(reviewLock?.isLockedByOther)
+  const lockedMessage = reviewLock?.agentName
+    ? t('ads.reviewLockedMessage', { name: reviewLock.agentName })
+    : reviewLock?.message || t('ads.reviewLockedGeneric')
 
   return (
     <div className="space-y-2">
@@ -264,7 +379,36 @@ export default function AdDetailPage() {
       ) : null}
       {actionError ? <div className="admin-alert-error">{actionError}</div> : null}
 
-      {isLoading ? (
+      {!lockReady ? (
+        <div className="flex justify-center py-24">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#3B7FC7] border-t-transparent" />
+        </div>
+      ) : lockError ? (
+        <div className="admin-card px-6 py-16 text-center">
+          <p className="text-sm text-red-600 dark:text-red-400">{lockError}</p>
+          <Link
+            to={backToListPath}
+            className="keep-white mt-4 inline-block rounded-xl bg-[#3B7FC7] px-5 py-2.5 text-sm font-semibold text-white"
+          >
+            {t('ads.backToList')}
+          </Link>
+        </div>
+      ) : lockedByOther ? (
+        <div className="admin-card px-6 py-16 text-center">
+          <p className="text-lg font-bold text-amber-700 dark:text-amber-300">
+            {t('ads.reviewLockedTitle')}
+          </p>
+          <p className="admin-text-muted mx-auto mt-3 max-w-md text-sm leading-relaxed">
+            {lockedMessage}
+          </p>
+          <Link
+            to={backToListPath}
+            className="keep-white mt-6 inline-block rounded-xl bg-[#3B7FC7] px-5 py-2.5 text-sm font-semibold text-white"
+          >
+            {t('ads.backToList')}
+          </Link>
+        </div>
+      ) : isLoading ? (
         <div className="flex justify-center py-24">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#3B7FC7] border-t-transparent" />
         </div>
@@ -282,63 +426,70 @@ export default function AdDetailPage() {
         </div>
       ) : (
         <>
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => setShowEdit(true)}
-            className="keep-white inline-flex items-center gap-1.5 rounded-xl bg-[#3B7FC7] px-4 py-2 text-sm font-semibold text-white"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden>
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M16.862 4.487l1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z"
-              />
-            </svg>
-            {t('ads.editFull')}
-          </button>
-        </div>
-        <AdDetailView
-          product={product}
-          lookups={lookups ?? emptyLookups}
-          categories={categories}
-          backToListPath={backToListPath}
-          isSaving={isSaving}
-          isApproving={isApproving}
-          isRejecting={isRejecting}
-          isUploading={isUploading}
-          isReplacingImage={isReplacingImage}
-          isDeleting={isDeleting}
-          deletingImageId={deletingImageId}
-          deletingVideoPath={deletingVideoPath}
-          onSave={(payload) => void handleSave(payload)}
-          onDelete={() => void handleDelete()}
-          onApprove={(notes) => void handleApprove(notes)}
-          onReject={openRejectDialog}
-          onUploadImage={(file) => void handleUploadImage(file)}
-          onDeleteImage={(imageId) => void handleDeleteImage(imageId)}
-          onDeleteVideo={(path) => void handleDeleteVideo(path)}
-          onTrimVideo={(path) => {
-            if (backgroundTrimPath) return
-            const match = product?.videos.find((video) => video.path === path)
-            setTrimTarget({
-              path,
-              durationSeconds:
-                match?.durationSeconds ?? product?.videoDurationSeconds ?? null,
-            })
-          }}
-          trimmingVideoPath={backgroundTrimPath}
-          onReplaceImage={(imageId, file) => handleReplaceImage(imageId, file)}
-        />
-        <AdEditDialog
-          open={showEdit}
-          product={product}
-          categories={categories}
-          units={lookups?.units ?? []}
-          isSaving={isSaving}
-          onClose={() => setShowEdit(false)}
-          onSubmit={(payload) => void handleFullEditSubmit(payload)}
-        />
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setShowEdit(true)}
+              className="keep-white inline-flex items-center gap-1.5 rounded-xl bg-[#3B7FC7] px-4 py-2 text-sm font-semibold text-white"
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                aria-hidden
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M16.862 4.487l1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z"
+                />
+              </svg>
+              {t('ads.editFull')}
+            </button>
+          </div>
+          <AdDetailView
+            product={product}
+            lookups={lookups ?? emptyLookups}
+            categories={categories}
+            backToListPath={backToListPath}
+            isSaving={isSaving}
+            isApproving={isApproving}
+            isRejecting={isRejecting}
+            isUploading={isUploading}
+            isReplacingImage={isReplacingImage}
+            isDeleting={isDeleting}
+            deletingImageId={deletingImageId}
+            deletingVideoPath={deletingVideoPath}
+            onSave={(payload) => void handleSave(payload)}
+            onDelete={() => void handleDelete()}
+            onApprove={(notes) => void handleApprove(notes)}
+            onReject={openRejectDialog}
+            onUploadImage={(file) => void handleUploadImage(file)}
+            onDeleteImage={(imageId) => void handleDeleteImage(imageId)}
+            onDeleteVideo={(path) => void handleDeleteVideo(path)}
+            onTrimVideo={(path) => {
+              if (backgroundTrimPath) return
+              const match = product?.videos.find((video) => video.path === path)
+              setTrimTarget({
+                path,
+                durationSeconds:
+                  match?.durationSeconds ?? product?.videoDurationSeconds ?? null,
+              })
+            }}
+            trimmingVideoPath={backgroundTrimPath}
+            onReplaceImage={(imageId, file) => handleReplaceImage(imageId, file)}
+          />
+          <AdEditDialog
+            open={showEdit}
+            product={product}
+            categories={categories}
+            units={lookups?.units ?? []}
+            isSaving={isSaving}
+            onClose={() => setShowEdit(false)}
+            onSubmit={(payload) => void handleFullEditSubmit(payload)}
+          />
         </>
       )}
 
@@ -362,4 +513,13 @@ export default function AdDetailPage() {
       />
     </div>
   )
+}
+
+function extractLockedPayload(err: unknown): AdminProductReviewLock | null {
+  const data =
+    (err as { data?: unknown } | null)?.data ??
+    (err as { error?: unknown } | null)?.error
+  if (!data || typeof data !== 'object') return null
+  const normalized = normalizeProductReviewLock(data as Record<string, unknown>)
+  return normalized.isLockedByOther ? normalized : null
 }

@@ -6,6 +6,7 @@ import type {
   AdminProductLookups,
   AdminProductsFilters,
   AdminProductStats,
+  AdminProductReviewLock,
   AdminUpdateProductPayload,
 } from '../types/adminProduct'
 import type { GlobalSearchResponse, GlobalSearchSuggestion } from '../types/globalSearch'
@@ -118,6 +119,7 @@ import {
   normalizeProductStats,
   normalizeProductDetail,
   normalizeProductLookups,
+  normalizeProductReviewLock,
   normalizeShippingProvider,
   normalizeShippingProviderDetail,
   normalizeShippingProvidersResponse,
@@ -322,6 +324,28 @@ export const adminApi = createApi({
       }),
       transformResponse: normalizeProductDetail,
       providesTags: (_r, _e, { productId }) => [{ type: 'Products', id: productId }],
+    }),
+
+    claimProductReviewLock: builder.mutation<
+      AdminProductReviewLock,
+      { productId: string }
+    >({
+      query: ({ productId }) => ({
+        url: `/api/admin/products/${productId}/review-lock/claim`,
+        method: 'POST',
+      }),
+      transformResponse: normalizeProductReviewLock,
+    }),
+
+    heartbeatProductReviewLock: builder.mutation<
+      AdminProductReviewLock,
+      { productId: string }
+    >({
+      query: ({ productId }) => ({
+        url: `/api/admin/products/${productId}/review-lock/heartbeat`,
+        method: 'POST',
+      }),
+      transformResponse: normalizeProductReviewLock,
     }),
 
     getAdminProductLookups: builder.query<AdminProductLookups, void>({
@@ -2243,6 +2267,8 @@ export const {
   useApproveProductMutation,
   useRejectProductMutation,
   useGetAdminProductDetailQuery,
+  useClaimProductReviewLockMutation,
+  useHeartbeatProductReviewLockMutation,
   useGetAdminProductLookupsQuery,
   useUpdateAdminProductMutation,
   useUploadAdminProductImageMutation,

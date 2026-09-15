@@ -466,6 +466,7 @@ export const enMessages = {
       company: 'Company',
       status: 'Status',
       orders: 'Orders',
+      adsCount: 'Ads',
       joinDate: 'Join date',
       actions: 'Actions',
       noUsers: 'No users found',
@@ -771,6 +772,12 @@ export const enMessages = {
       saveSuccess: 'Changes saved',
       saveError: 'Could not save changes',
       loadDetailError: 'Could not load ad details',
+      reviewLockedTitle: 'Ad under review',
+      reviewLockedMessage:
+        'This ad is currently under review by {name}. You can open the details again after they approve or reject it.',
+      reviewLockedGeneric:
+        'This ad is currently under review by another employee. You can open the details again after they approve or reject it.',
+      reviewLockClaimError: 'Could not start ad review',
       deleteImageConfirm: 'Delete this image?',
       deleteImageError: 'Could not delete image',
       uploadImageError: 'Could not upload image',

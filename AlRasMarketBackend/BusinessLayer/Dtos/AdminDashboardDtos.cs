@@ -137,6 +137,7 @@ public sealed class AdminUserListItemDto
     public bool HasPendingProfileChanges { get; set; }
     public bool CanApprove { get; set; }
     public int OrdersCount { get; set; }
+    public int ProductsCount { get; set; }
 }
 
 public sealed class AdminUserCompanyImageDto
@@ -178,6 +179,7 @@ public sealed class AdminUserDetailDto
     public IReadOnlyList<AdminUserCompanyImageDto> CompanyImages { get; set; } = [];
     public IReadOnlyList<AdminUserAddressDto> Addresses { get; set; } = [];
     public int OrdersCount { get; set; }
+    public int ProductsCount { get; set; }
     public bool IsCustomer { get; set; }
     public bool CanApprove { get; set; }
     public bool CanDeactivate { get; set; }
@@ -554,6 +556,18 @@ public sealed class AdminProductDetailDto : AdminProductListItemDto
     public IReadOnlyList<AdminProductDocumentDto> Documents { get; set; } = [];
     /// <summary>Previous vs proposed values while a seller edit awaits review.</summary>
     public AdminPendingProductEditDto? PendingEdit { get; set; }
+}
+
+/// <summary>Exclusive review lock for an admin product detail session.</summary>
+public sealed class AdminProductReviewLockDto
+{
+    public string ProductId { get; set; } = string.Empty;
+    public string? AgentUserId { get; set; }
+    public string? AgentName { get; set; }
+    public bool IsLockedByMe { get; set; }
+    public bool IsLockedByOther { get; set; }
+    public DateTime? LockedAtUtc { get; set; }
+    public string? Message { get; set; }
 }
 
 public sealed class AdminPendingProductEditDto

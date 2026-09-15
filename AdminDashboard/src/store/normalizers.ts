@@ -3,6 +3,7 @@ import type {
   AdminProductVideo,
   AdminProductsResponse,
   AdminProductStats,
+  AdminProductReviewLock,
 } from '../types/adminProduct'
 import type {
   AdminOrder,
@@ -132,6 +133,7 @@ export function normalizeUser(raw: RawUser): AdminUser {
     companyNameEn: raw.companyNameEn ?? raw.CompanyNameEn ?? null,
     companyNameAr: raw.companyNameAr ?? raw.CompanyNameAr ?? null,
     ordersCount: raw.ordersCount ?? raw.OrdersCount ?? 0,
+    productsCount: raw.productsCount ?? raw.ProductsCount ?? 0,
   }
 }
 
@@ -534,6 +536,21 @@ function normalizePendingProductEdit(
       raw.previousDocumentPaths ?? raw.PreviousDocumentPaths ?? [],
     proposedDocumentPaths:
       raw.proposedDocumentPaths ?? raw.ProposedDocumentPaths ?? [],
+  }
+}
+
+export function normalizeProductReviewLock(
+  raw: Record<string, unknown> | AdminProductReviewLock,
+): AdminProductReviewLock {
+  const r = raw as Record<string, unknown>
+  return {
+    productId: String(r.productId ?? r.ProductId ?? ''),
+    agentUserId: (r.agentUserId ?? r.AgentUserId)?.toString()?.trim() || null,
+    agentName: (r.agentName ?? r.AgentName)?.toString()?.trim() || null,
+    isLockedByMe: Boolean(r.isLockedByMe ?? r.IsLockedByMe),
+    isLockedByOther: Boolean(r.isLockedByOther ?? r.IsLockedByOther),
+    lockedAtUtc: (r.lockedAtUtc ?? r.LockedAtUtc)?.toString() || null,
+    message: (r.message ?? r.Message)?.toString()?.trim() || null,
   }
 }
 
@@ -1482,6 +1499,7 @@ export function normalizeUserDetail(raw: RawUserDetail): AdminUserDetail {
       mapsUrl: (item.mapsUrl ?? item.MapsUrl ?? null) as string | null,
     })),
     ordersCount: raw.ordersCount ?? raw.OrdersCount ?? 0,
+    productsCount: raw.productsCount ?? raw.ProductsCount ?? 0,
     canApprove:
       raw.canApprove ??
       raw.CanApprove ??

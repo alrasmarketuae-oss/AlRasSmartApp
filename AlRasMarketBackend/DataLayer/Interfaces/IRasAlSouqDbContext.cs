@@ -49,6 +49,7 @@ public interface IRasAlSouqDbContext
     DbSet<ChatUserKey> ChatUserKeys { get; }
     DbSet<UserAdminPermission> UserAdminPermissions { get; }
     DbSet<ChatSupportAssignment> ChatSupportAssignments { get; }
+    DbSet<ProductReviewLock> ProductReviewLocks { get; }
     DbSet<InternalDomesticShippingRate> InternalDomesticShippingRates { get; }
     DbSet<InternalDomesticShippingConfig> InternalDomesticShippingConfigs { get; }
     DbSet<AdminAuditLog> AdminAuditLogs { get; }

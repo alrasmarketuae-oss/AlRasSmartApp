@@ -13,6 +13,8 @@ export {
   useApproveProductMutation,
   useRejectProductMutation,
   useGetAdminProductDetailQuery,
+  useClaimProductReviewLockMutation,
+  useHeartbeatProductReviewLockMutation,
   useGetAdminProductLookupsQuery,
   useUpdateAdminProductMutation,
   useUploadAdminProductImageMutation,

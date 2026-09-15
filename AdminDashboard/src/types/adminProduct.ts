@@ -190,3 +190,13 @@ export type AdminProductStats = {
   retailCount: number
   bookingCount: number
 }
+
+export type AdminProductReviewLock = {
+  productId: string
+  agentUserId: string | null
+  agentName: string | null
+  isLockedByMe: boolean
+  isLockedByOther: boolean
+  lockedAtUtc: string | null
+  message: string | null
+}

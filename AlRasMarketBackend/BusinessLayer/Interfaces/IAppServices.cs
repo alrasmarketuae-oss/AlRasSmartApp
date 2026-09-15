@@ -219,17 +219,34 @@ public interface IAdminProductsAppService
     Task<string> ApproveProductAsync(
         string productId,
         AdminRejectProductRequest? request = null,
+        string? reviewerUserId = null,
         CancellationToken cancellationToken = default);
 
     Task<string> RejectProductAsync(
         string productId,
         AdminRejectProductRequest request,
         CancellationToken cancellationToken = default,
-        string? notifyLanguageOverride = null);
+        string? notifyLanguageOverride = null,
+        string? reviewerUserId = null);
 
     Task<AdminProductDetailDto> GetProductByIdAsync(
         string productId,
         string? language = null,
+        CancellationToken cancellationToken = default);
+
+    Task<AdminProductReviewLockDto> ClaimProductReviewLockAsync(
+        string productId,
+        string agentUserId,
+        CancellationToken cancellationToken = default);
+
+    Task<AdminProductReviewLockDto> HeartbeatProductReviewLockAsync(
+        string productId,
+        string agentUserId,
+        CancellationToken cancellationToken = default);
+
+    Task<AdminProductReviewLockDto?> GetProductReviewLockAsync(
+        string productId,
+        string viewerUserId,
         CancellationToken cancellationToken = default);
 
     Task<object> UpdateProductAsync(

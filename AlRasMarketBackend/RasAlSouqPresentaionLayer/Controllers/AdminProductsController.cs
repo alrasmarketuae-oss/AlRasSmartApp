@@ -153,9 +153,12 @@ public class AdminProductsController(
     {
         try
         {
+            var reviewerUserId = User.FindFirst("EntityId")?.Value
+                ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var message = await adminProductsAppService.ApproveProductAsync(
                 productId,
                 request,
+                reviewerUserId,
                 cancellationToken);
             return Ok(new { message });
         }
@@ -169,7 +172,7 @@ public class AdminProductsController(
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return Conflict(new { message = ex.Message });
         }
     }
 
@@ -181,10 +184,13 @@ public class AdminProductsController(
     {
         try
         {
+            var reviewerUserId = User.FindFirst("EntityId")?.Value
+                ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var message = await adminProductsAppService.RejectProductAsync(
                 productId,
                 request ?? new AdminRejectProductRequest(),
-                cancellationToken);
+                cancellationToken,
+                reviewerUserId: reviewerUserId);
             return Ok(new { message });
         }
         catch (ArgumentException ex)
@@ -194,6 +200,103 @@ public class AdminProductsController(
         catch (KeyNotFoundException ex)
         {
             return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("{productId}/review-lock/claim")]
+    public async Task<IActionResult> ClaimReviewLock(
+        string productId,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            var result = await adminProductsAppService.ClaimProductReviewLockAsync(
+                productId,
+                userId,
+                cancellationToken);
+            if (result.IsLockedByOther)
+            {
+                return Conflict(result);
+            }
+
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("{productId}/review-lock/heartbeat")]
+    public async Task<IActionResult> HeartbeatReviewLock(
+        string productId,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            var result = await adminProductsAppService.HeartbeatProductReviewLockAsync(
+                productId,
+                userId,
+                cancellationToken);
+            if (result.IsLockedByOther)
+            {
+                return Conflict(result);
+            }
+
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("{productId}/review-lock")]
+    public async Task<IActionResult> GetReviewLock(
+        string productId,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            var result = await adminProductsAppService.GetProductReviewLockAsync(
+                productId,
+                userId,
+                cancellationToken);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
     }
 

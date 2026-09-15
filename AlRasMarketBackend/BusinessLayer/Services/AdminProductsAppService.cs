@@ -420,12 +420,15 @@ public class AdminProductsAppService(
     public async Task<string> ApproveProductAsync(
         string productId,
         AdminRejectProductRequest? request = null,
+        string? reviewerUserId = null,
         CancellationToken cancellationToken = default)
     {
         if (!Guid.TryParse(productId, out var parsedProductId))
         {
             throw new ArgumentException("Invalid product id.");
         }
+
+        await EnsureReviewerCanActAsync(parsedProductId, reviewerUserId, cancellationToken);
 
         var product = await dbContext.Products
             .Include(x => x.Owner)
@@ -491,6 +494,7 @@ public class AdminProductsAppService(
             product.PendingProductChanges = null;
         }
 
+        await ReleaseActiveReviewLockInMemoryAsync(parsedProductId, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
         ProductsAppService.InvalidateListingCaches(product.OwnerId);
         QueueTextSearchSync(product.ProductId);
@@ -561,12 +565,15 @@ public class AdminProductsAppService(
         string productId,
         AdminRejectProductRequest request,
         CancellationToken cancellationToken = default,
-        string? notifyLanguageOverride = null)
+        string? notifyLanguageOverride = null,
+        string? reviewerUserId = null)
     {
         if (!Guid.TryParse(productId, out var parsedProductId))
         {
             throw new ArgumentException("Invalid product id.");
         }
+
+        await EnsureReviewerCanActAsync(parsedProductId, reviewerUserId, cancellationToken);
 
         var product = await dbContext.Products
             .Include(x => x.Owner)
@@ -606,6 +613,7 @@ public class AdminProductsAppService(
             product.UpdatedAt = DateTime.UtcNow;
         }
 
+        await ReleaseActiveReviewLockInMemoryAsync(parsedProductId, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
         try
         {
@@ -1661,4 +1669,297 @@ public class AdminProductsAppService(
             _ => null
         };
     }
+
+    /// <summary>Locks older than this without heartbeat can be taken by another reviewer.</summary>
+    private static readonly TimeSpan ReviewLockStaleAfter = TimeSpan.FromMinutes(15);
+
+    public async Task<AdminProductReviewLockDto> ClaimProductReviewLockAsync(
+        string productId,
+        string agentUserId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(productId, out var parsedProductId))
+        {
+            throw new ArgumentException("Invalid product id.");
+        }
+
+        if (!Guid.TryParse(agentUserId, out var agentId))
+        {
+            throw new ArgumentException("Invalid reviewer id.");
+        }
+
+        var exists = await dbContext.Products.AsNoTracking()
+            .AnyAsync(x => x.ProductId == parsedProductId, cancellationToken);
+        if (!exists)
+        {
+            throw new KeyNotFoundException("Product not found.");
+        }
+
+        var context = (DbContext)dbContext;
+        await using var tx = await context.Database.BeginTransactionAsync(
+            System.Data.IsolationLevel.Serializable,
+            cancellationToken);
+
+        try
+        {
+            var utcNow = DateTime.UtcNow;
+            var active = await dbContext.ProductReviewLocks
+                .FirstOrDefaultAsync(
+                    x => x.ProductId == parsedProductId && x.ReleasedAtUtc == null,
+                    cancellationToken);
+
+            if (active is not null)
+            {
+                if (utcNow - active.LastHeartbeatUtc > ReviewLockStaleAfter)
+                {
+                    active.ReleasedAtUtc = utcNow;
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                    active = null;
+                }
+                else if (active.AgentUserId == agentId)
+                {
+                    active.LastHeartbeatUtc = utcNow;
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                    await tx.CommitAsync(cancellationToken);
+                    return await MapReviewLockDtoAsync(active, agentId, cancellationToken);
+                }
+                else
+                {
+                    await tx.CommitAsync(cancellationToken);
+                    return await MapReviewLockDtoAsync(active, agentId, cancellationToken);
+                }
+            }
+
+            var lockRow = new ProductReviewLock
+            {
+                ProductId = parsedProductId,
+                AgentUserId = agentId,
+                LockedAtUtc = utcNow,
+                LastHeartbeatUtc = utcNow,
+            };
+            dbContext.ProductReviewLocks.Add(lockRow);
+            try
+            {
+                await dbContext.SaveChangesAsync(cancellationToken);
+                await tx.CommitAsync(cancellationToken);
+                return await MapReviewLockDtoAsync(lockRow, agentId, cancellationToken);
+            }
+            catch (DbUpdateException)
+            {
+                // Another reviewer claimed first (unique active-lock index).
+                context.ChangeTracker.Clear();
+                await tx.RollbackAsync(cancellationToken);
+
+                var winner = await dbContext.ProductReviewLocks
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(
+                        x => x.ProductId == parsedProductId && x.ReleasedAtUtc == null,
+                        CancellationToken.None);
+                if (winner is null)
+                {
+                    return new AdminProductReviewLockDto
+                    {
+                        ProductId = productId,
+                        IsLockedByMe = false,
+                        IsLockedByOther = true,
+                        Message = "This ad is currently being reviewed by another employee.",
+                    };
+                }
+
+                return await MapReviewLockDtoAsync(winner, agentId, CancellationToken.None);
+            }
+        }
+        catch
+        {
+            try
+            {
+                await tx.RollbackAsync(cancellationToken);
+            }
+            catch
+            {
+                // ignored
+            }
+
+            throw;
+        }
+    }
+
+    public async Task<AdminProductReviewLockDto> HeartbeatProductReviewLockAsync(
+        string productId,
+        string agentUserId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(productId, out var parsedProductId))
+        {
+            throw new ArgumentException("Invalid product id.");
+        }
+
+        if (!Guid.TryParse(agentUserId, out var agentId))
+        {
+            throw new ArgumentException("Invalid reviewer id.");
+        }
+
+        var active = await dbContext.ProductReviewLocks
+            .FirstOrDefaultAsync(
+                x => x.ProductId == parsedProductId && x.ReleasedAtUtc == null,
+                cancellationToken);
+
+        if (active is null)
+        {
+            return await ClaimProductReviewLockAsync(productId, agentUserId, cancellationToken);
+        }
+
+        if (active.AgentUserId != agentId)
+        {
+            return await MapReviewLockDtoAsync(active, agentId, cancellationToken);
+        }
+
+        active.LastHeartbeatUtc = DateTime.UtcNow;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return await MapReviewLockDtoAsync(active, agentId, cancellationToken);
+    }
+
+    public async Task<AdminProductReviewLockDto?> GetProductReviewLockAsync(
+        string productId,
+        string viewerUserId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(productId, out var parsedProductId))
+        {
+            throw new ArgumentException("Invalid product id.");
+        }
+
+        if (!Guid.TryParse(viewerUserId, out var viewerId))
+        {
+            throw new ArgumentException("Invalid reviewer id.");
+        }
+
+        var utcNow = DateTime.UtcNow;
+        var active = await dbContext.ProductReviewLocks
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                x => x.ProductId == parsedProductId && x.ReleasedAtUtc == null,
+                cancellationToken);
+
+        if (active is null)
+        {
+            return new AdminProductReviewLockDto
+            {
+                ProductId = parsedProductId.ToString("D"),
+            };
+        }
+
+        if (utcNow - active.LastHeartbeatUtc > ReviewLockStaleAfter)
+        {
+            return new AdminProductReviewLockDto
+            {
+                ProductId = parsedProductId.ToString("D"),
+            };
+        }
+
+        return await MapReviewLockDtoAsync(active, viewerId, cancellationToken);
+    }
+
+    private async Task EnsureReviewerCanActAsync(
+        Guid productId,
+        string? reviewerUserId,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(reviewerUserId) || !Guid.TryParse(reviewerUserId, out var reviewerId))
+        {
+            // Legacy callers without reviewer id: still block if another agent holds a fresh lock.
+            var anyActive = await dbContext.ProductReviewLocks
+                .AsNoTracking()
+                .FirstOrDefaultAsync(
+                    x => x.ProductId == productId && x.ReleasedAtUtc == null,
+                    cancellationToken);
+            if (anyActive is not null && DateTime.UtcNow - anyActive.LastHeartbeatUtc <= ReviewLockStaleAfter)
+            {
+                var name = await ResolveAgentDisplayNameAsync(anyActive.AgentUserId, cancellationToken);
+                throw new InvalidOperationException(
+                    BuildLockedByOtherMessage(name));
+            }
+
+            return;
+        }
+
+        var active = await dbContext.ProductReviewLocks
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                x => x.ProductId == productId && x.ReleasedAtUtc == null,
+                cancellationToken);
+
+        if (active is null)
+        {
+            return;
+        }
+
+        if (DateTime.UtcNow - active.LastHeartbeatUtc > ReviewLockStaleAfter)
+        {
+            return;
+        }
+
+        if (active.AgentUserId == reviewerId)
+        {
+            return;
+        }
+
+        var agentName = await ResolveAgentDisplayNameAsync(active.AgentUserId, cancellationToken);
+        throw new InvalidOperationException(BuildLockedByOtherMessage(agentName));
+    }
+
+    private async Task ReleaseActiveReviewLockInMemoryAsync(
+        Guid productId,
+        CancellationToken cancellationToken)
+    {
+        var activeLocks = await dbContext.ProductReviewLocks
+            .Where(x => x.ProductId == productId && x.ReleasedAtUtc == null)
+            .ToListAsync(cancellationToken);
+        var utcNow = DateTime.UtcNow;
+        foreach (var row in activeLocks)
+        {
+            row.ReleasedAtUtc = utcNow;
+        }
+    }
+
+    private async Task<AdminProductReviewLockDto> MapReviewLockDtoAsync(
+        ProductReviewLock lockRow,
+        Guid viewerId,
+        CancellationToken cancellationToken)
+    {
+        var isMine = lockRow.AgentUserId == viewerId;
+        var isOther = !isMine && lockRow.ReleasedAtUtc is null;
+        var agentName = await ResolveAgentDisplayNameAsync(lockRow.AgentUserId, cancellationToken);
+        return new AdminProductReviewLockDto
+        {
+            ProductId = lockRow.ProductId.ToString("D"),
+            AgentUserId = lockRow.AgentUserId.ToString("D"),
+            AgentName = agentName,
+            IsLockedByMe = isMine,
+            IsLockedByOther = isOther,
+            LockedAtUtc = lockRow.LockedAtUtc,
+            Message = isOther ? BuildLockedByOtherMessage(agentName) : null,
+        };
+    }
+
+    private async Task<string> ResolveAgentDisplayNameAsync(
+        Guid agentUserId,
+        CancellationToken cancellationToken)
+    {
+        var user = await dbContext.Users.AsNoTracking()
+            .Where(x => x.Id == agentUserId)
+            .Select(x => new { x.FullName, x.Email })
+            .FirstOrDefaultAsync(cancellationToken);
+        var name = user?.FullName?.Trim();
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            return name;
+        }
+
+        var email = user?.Email?.Trim();
+        return string.IsNullOrWhiteSpace(email) ? "another employee" : email;
+    }
+
+    private static string BuildLockedByOtherMessage(string agentName) =>
+        $"This ad is currently under review by {agentName}. You can open it again after they approve or reject it.";
 }

@@ -465,6 +465,7 @@ export const arMessages = {
       company: 'الشركة',
       status: 'الحالة',
       orders: 'الطلبات',
+      adsCount: 'الإعلانات',
       joinDate: 'تاريخ الانضمام',
       actions: 'إجراءات',
       noUsers: 'لا يوجد مستخدمون',
@@ -770,6 +771,12 @@ export const arMessages = {
       saveSuccess: 'تم حفظ التعديلات',
       saveError: 'تعذر حفظ التعديلات',
       loadDetailError: 'تعذر تحميل تفاصيل الإعلان',
+      reviewLockedTitle: 'الإعلان تحت المراجعة',
+      reviewLockedMessage:
+        'هذا الإعلان تحت المراجعة حالياً من قبل {name}. يمكنك فتح التفاصيل مرة أخرى بعد القبول أو الرفض.',
+      reviewLockedGeneric:
+        'هذا الإعلان تحت المراجعة حالياً من قبل موظف آخر. يمكنك فتح التفاصيل مرة أخرى بعد القبول أو الرفض.',
+      reviewLockClaimError: 'تعذر بدء مراجعة الإعلان',
       deleteImageConfirm: 'حذف هذه الصورة؟',
       deleteImageError: 'تعذر حذف الصورة',
       uploadImageError: 'تعذر رفع الصورة',
