@@ -59,9 +59,9 @@ class S {
     return Intl.message('Ecovera', name: 'appName', desc: '', args: []);
   }
 
-  /// `English`
+  /// `Languages`
   String get language {
-    return Intl.message('English', name: 'language', desc: '', args: []);
+    return Intl.message('Languages', name: 'language', desc: '', args: []);
   }
 
   /// `Google Account`
@@ -874,9 +874,9 @@ class S {
     );
   }
 
-  /// `Incoming`
+  /// `My Sales`
   String get incomingOrders {
-    return Intl.message('Incoming', name: 'incomingOrders', desc: '', args: []);
+    return Intl.message('My Sales', name: 'incomingOrders', desc: '', args: []);
   }
 
   /// `Orders and offers received on your ads.`
@@ -2634,9 +2634,9 @@ class S {
     );
   }
 
-  /// `Language`
+  /// `Languages`
   String get languageTitle {
-    return Intl.message('Language', name: 'languageTitle', desc: '', args: []);
+    return Intl.message('Languages', name: 'languageTitle', desc: '', args: []);
   }
 
   /// `Arabic`

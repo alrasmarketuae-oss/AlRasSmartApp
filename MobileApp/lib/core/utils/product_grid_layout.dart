@@ -77,7 +77,7 @@ class ProductGridLayout {
   }
 
   static double postedAtBlockHeight(BuildContext context) =>
-      isTablet(context) ? 34.h : 32.h;
+      isTablet(context) ? 28.h : 26.h;
 
   static double quantityBlockHeight(BuildContext context) {
     final fontSize = cardDetailsFontSize(context);
@@ -148,6 +148,7 @@ class ProductGridLayout {
     return cardImageDisplayHeight(context) +
         cardContentPaddingVertical(context) * 2 +
         titleBlockHeight(context) +
+        postedAtBlockHeight(context) +
         4.h +
         detailsBlockHeight(context) +
         8.h +

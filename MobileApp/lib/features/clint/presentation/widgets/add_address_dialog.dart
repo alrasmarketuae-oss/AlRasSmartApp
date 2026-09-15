@@ -32,6 +32,7 @@ class AddAddressDialog extends StatefulWidget {
     this.retailMode = false,
     this.existing,
     this.collectOnly = false,
+    this.mapOnly = false,
   });
 
   /// When true, only UAE and the seven domestic shipping emirates are shown,
@@ -44,6 +45,10 @@ class AddAddressDialog extends StatefulWidget {
   /// Collect the form payload without calling the API (no auth token yet).
   final bool collectOnly;
 
+  /// Registration / quick-pick mode: only current location or map pin.
+  /// No street / building / contact form fields.
+  final bool mapOnly;
+
   static Future<bool?> show(
     BuildContext context, {
     bool retailMode = false,
@@ -55,10 +60,11 @@ class AddAddressDialog extends StatefulWidget {
     );
   }
 
+  /// Used during company registration — location from map or GPS only.
   static Future<CreateAddressRequest?> collect(BuildContext context) {
     return showDialog<CreateAddressRequest>(
       context: context,
-      builder: (_) => const AddAddressDialog(collectOnly: true),
+      builder: (_) => const AddAddressDialog(collectOnly: true, mapOnly: true),
     );
   }
 
@@ -106,13 +112,16 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
 
   bool get _isEditing => widget.existing != null;
 
-  bool get _isDetailed => !widget.retailMode;
+  bool get _isDetailed => !widget.retailMode && !widget.mapOnly;
 
   bool get _isArabic => Localizations.localeOf(context).languageCode == 'ar';
 
   @override
   void initState() {
     super.initState();
+    if (widget.mapOnly) {
+      _addressTypeId = 1; // Company
+    }
     final existing = widget.existing;
     if (existing != null) {
       _addressLine1Controller.text = existing.addressLine1;
@@ -207,7 +216,9 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
           _countries = countries;
           _isCountriesLoading = false;
         });
-        _applyDefaultCountry();
+        if (!widget.mapOnly) {
+          _applyDefaultCountry();
+        }
       },
     );
   }
@@ -326,6 +337,11 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
   }
 
   Future<void> _submit() async {
+    if (widget.mapOnly) {
+      await _submitMapOnly();
+      return;
+    }
+
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final country = _selectedCountry;
@@ -422,6 +438,109 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
     );
   }
 
+  Future<void> _submitMapOnly() async {
+    if (_isResolvingLocation) return;
+
+    final coords = _pickedCoordinates;
+    if (coords == null) {
+      AppToast.showError(
+        context,
+        _isArabic
+            ? 'اختر موقعك الحالي أو حدده من الخريطة'
+            : 'Choose current location or pick from the map',
+      );
+      return;
+    }
+
+    final country = _selectedCountry;
+    var cityName = _cityController.text.trim();
+    if (cityName.isEmpty) {
+      cityName = _firstNonEmpty([
+            _areaController.text,
+            _streetController.text,
+          ]) ??
+          '';
+    }
+
+    if (country == null || cityName.isEmpty) {
+      AppToast.showError(
+        context,
+        _isArabic
+            ? 'تعذر قراءة الدولة/المدينة من الموقع. حاول مرة أخرى.'
+            : 'Could not read country/city from location. Please try again.',
+      );
+      return;
+    }
+
+    final composedLine1 = [
+      _addressLine1Controller.text.trim(),
+      _streetController.text.trim(),
+      _areaController.text.trim(),
+      cityName,
+    ].where((part) => part.isNotEmpty).toSet().join(', ');
+
+    final fallbackLine1 =
+        '${coords.latitude.toStringAsFixed(5)}, ${coords.longitude.toStringAsFixed(5)}';
+
+    final request = CreateAddressRequest(
+      cityId: _matchTypedCity()?.id,
+      countryId: country.countryId,
+      cityName: cityName,
+      addressLine1: composedLine1.isNotEmpty ? composedLine1 : fallbackLine1,
+      addressTypeId: _addressTypeId,
+      area: _areaController.text,
+      street: _streetController.text,
+      building: _buildingController.text,
+      postalCode: _postalController.text,
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+    );
+
+    if (widget.collectOnly) {
+      if (mounted) Navigator.of(context).pop(request);
+      return;
+    }
+
+    final token = AuthService.instance.currentToken;
+    if (token == null || token.isEmpty) {
+      AppToast.showError(context, S.of(context).pleaseLoginToPublish);
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+    final existing = widget.existing;
+    final result = existing == null
+        ? await _createAddressUseCase(token: token, request: request)
+        : await _updateAddressUseCase(
+            addressId: existing.addressId,
+            token: token,
+            request: request,
+          );
+
+    if (!mounted) return;
+
+    result.fold(
+      (failure) {
+        setState(() => _isSubmitting = false);
+        AppToast.showError(context, failure.message);
+      },
+      (_) => Navigator.of(context).pop(true),
+    );
+  }
+
+  String get _resolvedLocationSummary {
+    final parts = <String>[
+      _addressLine1Controller.text.trim(),
+      _cityController.text.trim(),
+      _countryController.text.trim(),
+    ].where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty && _pickedCoordinates != null) {
+      return 'Lat ${_pickedCoordinates!.latitude.toStringAsFixed(5)}, '
+          'Lng ${_pickedCoordinates!.longitude.toStringAsFixed(5)}';
+    }
+    return parts.join(' · ');
+  }
+
   Future<void> _pickCurrentLocation() async {
     setState(() => _isResolvingLocation = true);
     try {
@@ -480,9 +599,15 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
   Future<void> _applyCoordinates(double lat, double lng) async {
     _pickedCoordinates = LatLng(lat, lng);
 
+    await _ensureCountriesLoaded();
+    if (!mounted) return;
+
     final placemarks = await placemarkFromCoordinates(lat, lng);
     final place = placemarks.isNotEmpty ? placemarks.first : null;
-    if (place == null) return;
+    if (place == null) {
+      setState(() {});
+      return;
+    }
 
     if (!widget.retailMode) {
       final resolved = _findCountryByName(place.country) ??
@@ -530,6 +655,17 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
     }
 
     setState(() {});
+  }
+
+  Future<void> _ensureCountriesLoaded() async {
+    if (_countries.isNotEmpty) return;
+    if (!_isCountriesLoading) {
+      await _loadCountries();
+      return;
+    }
+    for (var i = 0; i < 40 && _isCountriesLoading && mounted; i++) {
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
   }
 
   static String? _firstNonEmpty(List<String?> values) {
@@ -623,7 +759,9 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
       title: Text(
-        _isEditing ? s.editAddress : s.addNewAddress,
+        widget.mapOnly
+            ? (_isArabic ? 'تحديد موقع الشركة' : 'Set company location')
+            : (_isEditing ? s.editAddress : s.addNewAddress),
         style: TextStyle(
           fontFamily: fontFamily,
           fontSize: 18.sp,
@@ -635,7 +773,9 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
-            child: Column(
+            child: widget.mapOnly
+                ? _buildMapOnlyContent(fontFamily)
+                : Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -888,11 +1028,89 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
           child: Text(s.cancel),
         ),
         PrimaryButton(
-          text: s.save,
+          text: widget.mapOnly
+              ? (_isArabic ? 'تأكيد الموقع' : 'Confirm location')
+              : s.save,
           height: 40.h,
-          isLoading: _isSubmitting,
-          onPressed: _isSubmitting ? null : _submit,
+          isLoading: _isSubmitting || (widget.mapOnly && _isResolvingLocation),
+          onPressed: _isSubmitting || _isResolvingLocation ? null : _submit,
         ),
+      ],
+    );
+  }
+
+  Widget _buildMapOnlyContent(String fontFamily) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          _isArabic
+              ? 'حدد موقع الشركة من موقعك الحالي أو من الخريطة.'
+              : 'Set the company location using GPS or the map.',
+          style: TextStyle(
+            color: const Color(0xFF6B7280),
+            fontFamily: fontFamily,
+            fontSize: 13.sp,
+            height: 1.4,
+          ),
+        ),
+        SizedBox(height: 16.h),
+        OutlinedButton.icon(
+          onPressed: _isResolvingLocation ? null : _pickCurrentLocation,
+          icon: const Icon(Icons.my_location),
+          label: Text(
+            _isArabic ? 'موقعي الحالي' : 'Current location',
+            style: TextStyle(fontFamily: fontFamily, fontSize: 14.sp),
+          ),
+          style: OutlinedButton.styleFrom(
+            padding: EdgeInsets.symmetric(vertical: 14.h),
+          ),
+        ),
+        SizedBox(height: 10.h),
+        OutlinedButton.icon(
+          onPressed: _isResolvingLocation ? null : _pickLocationFromMap,
+          icon: const Icon(Icons.map_outlined),
+          label: Text(
+            _isArabic ? 'اختيار من الخريطة' : 'Pick from map',
+            style: TextStyle(fontFamily: fontFamily, fontSize: 14.sp),
+          ),
+          style: OutlinedButton.styleFrom(
+            padding: EdgeInsets.symmetric(vertical: 14.h),
+          ),
+        ),
+        if (_isResolvingLocation) ...[
+          SizedBox(height: 16.h),
+          const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        ] else if (_pickedCoordinates != null) ...[
+          SizedBox(height: 16.h),
+          Container(
+            padding: EdgeInsets.all(12.w),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0F7FF),
+              borderRadius: BorderRadius.circular(10.r),
+              border: Border.all(color: const Color(0xFFD0E4F7)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.place_outlined, color: const Color(0xFF3A7DC5), size: 20.sp),
+                SizedBox(width: 8.w),
+                Expanded(
+                  child: Text(
+                    _resolvedLocationSummary,
+                    style: TextStyle(
+                      color: const Color(0xFF333333),
+                      fontFamily: fontFamily,
+                      fontSize: 13.sp,
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }

@@ -677,31 +677,49 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
   Future<void> setOriginCountry(String? country) async {
     if (country == null || country.isEmpty) return;
 
-    originCountryController.text = country;
+    final next = country.trim();
+    final current = state.originCountry?.trim();
+    if (current != null &&
+        current.toLowerCase() == next.toLowerCase() &&
+        state.originPorts.isNotEmpty) {
+      originCountryController.text = current;
+      return;
+    }
+
+    originCountryController.text = next;
     emit(
       state.copyWith(
-        originCountry: country,
+        originCountry: next,
         clearOriginPort: true,
         clearOriginPorts: true,
         isOriginPortsLoading: true,
       ),
     );
-    await _loadPorts(country: country, isOrigin: true);
+    await _loadPorts(country: next, isOrigin: true);
   }
 
   Future<void> setDestinationCountry(String? country) async {
     if (country == null || country.isEmpty) return;
 
-    destinationCountryController.text = country;
+    final next = country.trim();
+    final current = state.destinationCountry?.trim();
+    if (current != null &&
+        current.toLowerCase() == next.toLowerCase() &&
+        state.destinationPorts.isNotEmpty) {
+      destinationCountryController.text = current;
+      return;
+    }
+
+    destinationCountryController.text = next;
     emit(
       state.copyWith(
-        destinationCountry: country,
+        destinationCountry: next,
         clearDestinationPort: true,
         clearDestinationPorts: true,
         isDestinationPortsLoading: true,
       ),
     );
-    await _loadPorts(country: country, isOrigin: false);
+    await _loadPorts(country: next, isOrigin: false);
   }
 
   Future<void> fetchOriginPorts() async {
@@ -1723,6 +1741,7 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     }
 
     // FOB: only exporting country is required (ports / destination are hidden).
+    // CNF/CIF: exporting country is required; destination/ports are optional (nullable).
     if (isFob) {
       return (
         originCountry: originCountry,
@@ -1732,17 +1751,11 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
       );
     }
 
-    if (destinationCountry.isEmpty ||
-        loadingPort.isEmpty ||
-        arrivalPort.isEmpty) {
-      return null;
-    }
-
     return (
       originCountry: originCountry,
       destinationCountry: destinationCountry,
-      loadingPort: loadingPort,
-      arrivalPort: arrivalPort,
+      loadingPort: loadingPort.isEmpty ? null : loadingPort,
+      arrivalPort: arrivalPort.isEmpty ? null : arrivalPort,
     );
   }
 

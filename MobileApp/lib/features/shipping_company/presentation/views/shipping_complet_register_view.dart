@@ -169,7 +169,7 @@ class _ShippingCompletRegisterViewState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const AuthHeader(),
+                  const AuthHeader(showBack: true),
                   SizedBox(height: 16.h),
                   Text(
                     s.completeShippingCompanyRegistration,

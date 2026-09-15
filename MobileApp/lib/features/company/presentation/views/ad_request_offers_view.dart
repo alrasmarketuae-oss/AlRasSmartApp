@@ -36,8 +36,7 @@ class _AdRequestOffersViewState extends State<AdRequestOffersView> {
   late final ScrollController _scrollController;
   late final CompanyCubit _cubit;
 
-  bool get _isRequestAd =>
-      widget.product.productTypeName.trim().toLowerCase() == 'requests';
+  bool get _isRequestAd => widget.product.isRequestProduct;
 
   @override
   void initState() {
@@ -48,7 +47,7 @@ class _AdRequestOffersViewState extends State<AdRequestOffersView> {
       if (!mounted) return;
       _cubit.loadMyRequestOffers(
         productId: widget.product.productId,
-        productName: widget.product.productName,
+        productName: widget.product.editDisplayName,
       );
     });
   }

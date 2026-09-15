@@ -97,7 +97,7 @@ class _ChangePricesViewState extends State<ChangePricesView> {
     final query = _searchController.text.trim().toLowerCase();
     if (query.isEmpty) return products;
     return products.where((product) {
-      return product.editDisplayName.toLowerCase().contains(query) ||
+      return product.localeDisplayName.toLowerCase().contains(query) ||
           product.productName.toLowerCase().contains(query) ||
           product.productCode.toLowerCase().contains(query);
     }).toList();
@@ -458,7 +458,7 @@ class _PriceRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  product.editDisplayName,
+                  product.localeDisplayName,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(

@@ -317,7 +317,9 @@ public class ShippingCompanyAppService(
                 post.FromPort?.PortNameEn ?? string.Empty,
                 post.ToCountry?.CountryNameEn ?? string.Empty,
                 post.ToPort?.PortNameEn ?? string.Empty,
-                post.PublisherUser?.CompanyName ?? post.PublisherUser?.FullName));
+                string.IsNullOrWhiteSpace(post.PublisherUser?.CompanyName)
+                    ? post.PublisherUser?.FullName
+                    : post.PublisherUser!.CompanyName!.Trim()));
 
     private static object MapPost(InternationalShippingPost post, RouteResolution route) =>
         new

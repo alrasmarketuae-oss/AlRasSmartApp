@@ -6,6 +6,8 @@ class MyRequestOfferModel {
     required this.orderId,
     required this.productId,
     required this.productName,
+    this.productTypeId = 0,
+    this.productTypeNameEn = '',
     required this.quantity,
     required this.unitName,
     required this.unitPrice,
@@ -31,6 +33,8 @@ class MyRequestOfferModel {
   final int orderId;
   final String productId;
   final String productName;
+  final int productTypeId;
+  final String productTypeNameEn;
   final double quantity;
   final String unitName;
   final double unitPrice;
@@ -51,6 +55,13 @@ class MyRequestOfferModel {
   final String notes;
   final List<String> imagePaths;
   final List<String> documentPaths;
+
+  /// Offers on Requests ads use "Accept Offer"; other ads use "Accept Order".
+  bool get isRequestProductOffer {
+    if (productTypeId == 4) return true;
+    final type = productTypeNameEn.trim().toLowerCase();
+    return type == 'requests' || type.contains('request');
+  }
 
   String get displayTotalPrice =>
       totalPriceFormatted.isNotEmpty ? totalPriceFormatted : totalPrice.toString();
@@ -81,6 +92,17 @@ class MyRequestOfferModel {
       orderId: int.tryParse(json['orderId']?.toString() ?? '') ?? 0,
       productId: json['productId']?.toString() ?? '',
       productName: json['productName']?.toString() ?? '',
+      productTypeId: int.tryParse(
+            (json['productTypeId'] ?? json['ProductTypeId'])?.toString() ?? '',
+          ) ??
+          0,
+      productTypeNameEn: (json['productTypeNameEn'] ??
+                  json['ProductTypeNameEn'] ??
+                  json['productTypeName'] ??
+                  json['ProductTypeName'])
+              ?.toString()
+              .trim() ??
+          '',
       quantity: _toDouble(json['quantity']),
       unitName: json['unitName']?.toString() ?? '',
       unitPrice: _toDouble(json['unitPrice']),

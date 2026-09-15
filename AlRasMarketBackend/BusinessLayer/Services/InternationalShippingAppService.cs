@@ -247,7 +247,8 @@ public class InternationalShippingAppService(
             maxDurationDays = x.MaxDurationDays,
             details = x.Details ?? string.Empty,
             x.publisherUserId,
-            publisherName = x.companyName ?? x.publisherName,
+            publisherName = string.IsNullOrWhiteSpace(x.companyName) ? x.publisherName : x.companyName.Trim(),
+            companyName = string.IsNullOrWhiteSpace(x.companyName) ? null : x.companyName.Trim(),
             publisherImgPath = x.publisherImgPath,
             x.CreatedAt
         }).ToList();

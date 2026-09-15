@@ -405,6 +405,7 @@ class _MyOrdersViewState extends State<MyOrdersView> {
                 cubit: cubit,
                 s: s,
                 fontFamily: fontFamily,
+                useOfferLabels: _isCompanyCustomerAccount,
                 onAcceptIncoming: _onAcceptIncoming,
                 onRejectIncoming: _onRejectIncoming,
               ),
@@ -604,6 +605,7 @@ class _MyOrdersViewState extends State<MyOrdersView> {
     required ClintCubit cubit,
     required S s,
     required String fontFamily,
+    required bool useOfferLabels,
     required Future<void> Function(int orderId) onAcceptIncoming,
     required Future<void> Function(int orderId) onRejectIncoming,
   }) {
@@ -631,14 +633,24 @@ class _MyOrdersViewState extends State<MyOrdersView> {
 
           final offer = entry.item!;
           final isUpdating = cubit.updatingIncomingOrderId == offer.orderId;
+          // Requests ads → Accept Offer; other ads → Accept Order.
+          // Fallback to account-level label when API omits product type.
+          final isRequestOffer = offer.isRequestProductOffer ||
+              (offer.productTypeId == 0 &&
+                  offer.productTypeNameEn.isEmpty &&
+                  useOfferLabels);
           return Padding(
             padding: EdgeInsets.only(bottom: bottomGap),
             child: RequestOfferCard(
               offer: offer,
               fontFamily: fontFamily,
               isUpdating: isUpdating,
-              acceptLabel: s.acceptOrderAction,
-              rejectLabel: s.rejectOrderAction,
+              acceptLabel: isRequestOffer
+                  ? s.acceptOfferAction
+                  : s.acceptOrderAction,
+              rejectLabel: isRequestOffer
+                  ? s.rejectOfferAction
+                  : s.rejectOrderAction,
               onTrack: offer.orderId > 0
                   ? () => context.push(
                         AppRoutes.kTrackOrderView,

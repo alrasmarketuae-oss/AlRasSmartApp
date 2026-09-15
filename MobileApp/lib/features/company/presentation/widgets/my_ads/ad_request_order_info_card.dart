@@ -3,6 +3,7 @@ import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/utils/product_price_formatter.dart';
 import 'package:alrasmarket/core/utils/product_stock.dart';
 import 'package:alrasmarket/core/utils/relative_time_formatter.dart';
+import 'package:alrasmarket/core/utils/string_display_format.dart';
 import 'package:alrasmarket/core/widgets/product_price_text.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_price_type_label.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/booking_widets/booking_details_mapper.dart';
@@ -49,7 +50,9 @@ class _AdRequestOrderInfoCardState extends State<AdRequestOrderInfoCard> {
     final s = S.of(context);
     final isAr =
         Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
-    final productName = RequestDetailsMapper.title(product, s);
+    final publishedName = product.localeDisplayName.capitalizeFirst();
+    final productName =
+        publishedName.isEmpty ? s.product : publishedName;
     final adDetailsLabel = isAr ? 'تفاصيل الإعلان' : 'Ad details';
 
     return Padding(

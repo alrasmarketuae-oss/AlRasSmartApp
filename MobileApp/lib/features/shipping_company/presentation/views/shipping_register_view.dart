@@ -108,7 +108,7 @@ class _ShippingRegisterViewState extends State<ShippingRegisterView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const AuthHeader(),
+                    const AuthHeader(showBack: true),
                     SizedBox(height: 16.h),
                     Center(
                       child: SvgPicture.asset(

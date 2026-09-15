@@ -172,7 +172,7 @@ class _CompletRegisterViewState extends State<CompletRegisterView> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     SizedBox(height: 16.h),
-                    const AuthHeader(),
+                    const AuthHeader(showBack: true),
                     SizedBox(height: 24.h),
                     Stack(
                       alignment: Alignment.center,

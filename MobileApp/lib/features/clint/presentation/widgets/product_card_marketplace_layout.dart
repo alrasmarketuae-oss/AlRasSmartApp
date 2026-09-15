@@ -10,6 +10,7 @@ import 'package:alrasmarket/core/utils/product_stock.dart';
 import 'package:alrasmarket/core/utils/string_display_format.dart';
 import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/core/widgets/currency_icon.dart';
+import 'package:alrasmarket/core/widgets/product_posted_at_text.dart';
 import 'package:alrasmarket/core/widgets/product_price_text.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/booking_price_type_label.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_price_type_label.dart';
@@ -275,6 +276,30 @@ class _ProductCardMarketplaceLayoutState
       ),
     );
 
+    final postedAt = widget.product.createdAt.trim();
+    final postedAtChip = postedAt.isEmpty
+        ? const SizedBox.shrink()
+        : Padding(
+            padding: EdgeInsets.only(top: 6.h),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF2F5F9),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: const Color(0xFFE6ECF3)),
+                ),
+                child: ProductPostedAtText(
+                  createdAt: postedAt,
+                  fontFamily: fontFamily,
+                  fontSize: 10.sp,
+                  color: const Color(0xFF6B7A90),
+                ),
+              ),
+            ),
+          );
+
     final dealRow = showDeal
         ? Padding(
             padding: EdgeInsets.only(top: 6.h),
@@ -402,6 +427,7 @@ class _ProductCardMarketplaceLayoutState
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             titleWidget,
+            postedAtChip,
             SizedBox(height: 4.h),
             Expanded(
               child: LayoutBuilder(
@@ -443,6 +469,7 @@ class _ProductCardMarketplaceLayoutState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         titleWidget,
+        postedAtChip,
         SizedBox(height: 4.h),
         _detailsText(
           details: details,

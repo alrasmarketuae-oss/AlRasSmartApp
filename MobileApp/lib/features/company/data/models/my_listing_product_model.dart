@@ -311,6 +311,19 @@ class MyListingProductModel {
     return productName.trim();
   }
 
+  /// Title for My Ads / lists: follows the **app** language, not create language.
+  String get localeDisplayName => LocalizedProductText.pickPair(
+        ar: nameAr,
+        en: nameEn,
+        fallback: productName,
+      );
+
+  String get localeDisplayDescription => LocalizedProductText.pickPair(
+        ar: descriptionAr,
+        en: descriptionEn,
+        fallback: description,
+      );
+
   String get editDisplayDescription {
     if (isCreatedInArabic) {
       final ar = descriptionAr.trim();
@@ -533,9 +546,8 @@ class MyListingProductModel {
       categoryId: _parseCategoryId(json),
       productTypeId: _parseProductTypeId(json),
       productTypeName: () {
-        final localized = LocalizedProductText.pickForLanguage(
+        final localized = LocalizedProductText.pick(
           json: json,
-          language: createdLang,
           arKeys: const ['productTypeNameAr', 'ProductTypeNameAr'],
           enKeys: const [
             'productTypeNameEn',
@@ -602,9 +614,8 @@ class MyListingProductModel {
           json['Quantity']?.toString() ??
           '',
       unitName: () {
-        final localized = LocalizedProductText.pickForLanguage(
+        final localized = LocalizedProductText.pick(
           json: json,
-          language: createdLang,
           arKeys: const ['unitNameAr', 'UnitNameAr'],
           enKeys: const [
             'unitNameEn',

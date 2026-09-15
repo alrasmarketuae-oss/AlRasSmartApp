@@ -583,7 +583,7 @@ public sealed partial class AiAssistantMcpToolsService(
         },
         CreateAdToolDefinition(
             "create_booking_ad",
-            "Create ONE Booking ad (supplier only). Currency is always USD. Ask FOB/CNF/CIF first. FOB: exporting country (الدولة المصدرة) ONLY — never destination or ports. CNF/CIF: MUST collect exporting country + loading port + destination country + arrival port before calling. Also: name, price, qty, unit, shipping days, negotiable, specs, packaging (ALWAYS ask), media.",
+            "Create ONE Booking ad (supplier only). Currency is always USD. Ask FOB/CNF/CIF first. FOB: exporting country (الدولة المصدرة) ONLY — never destination or ports. CNF/CIF: exporting country required; loading port, destination country, and arrival port are OPTIONAL (nullable) — do not block create if they are missing. Also: name, price, qty, unit, shipping days, negotiable, specs, packaging (ALWAYS ask), media.",
             ["name", "price", "quantity", "unit_name", "origin_country_name", "booking_price_type_name", "shipping_duration_days", "specifications"]),
         CreateAdToolDefinition(
             "create_offer_ad",

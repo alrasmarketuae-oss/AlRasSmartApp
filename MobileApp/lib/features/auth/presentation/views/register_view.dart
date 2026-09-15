@@ -85,10 +85,10 @@ class _RegisterViewState extends State<RegisterView> {
   }) {
     final s = S.of(context);
     final addressLabel = isArabic ? 'الموقع / العنوان' : 'Location / Address';
-    final pickLabel = isArabic ? 'تحديد العنوان' : 'Set address';
+    final pickLabel = isArabic ? 'تحديد الموقع' : 'Set location';
     final hint = isArabic
-        ? 'اضغط لتعبئة العنوان بنفس نموذج الملف الشخصي (نوع العنوان، الشارع، الخريطة)'
-        : 'Tap to fill the same address form used in your profile (type, street, map)';
+        ? 'اضغط لاختيار موقعك الحالي أو التحديد من الخريطة'
+        : 'Tap to use current location or pick from the map';
 
     final locationPicker = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -199,8 +199,8 @@ class _RegisterViewState extends State<RegisterView> {
               padding: EdgeInsets.only(top: 6.h),
               child: Text(
                 isArabic
-                    ?                 'الموقع مطلوب — اضغط لتحديده (موقعي الحالي أو الخريطة)'
-              : 'Location is required — tap to choose current location or map',
+                    ? 'الموقع مطلوب — اضغط لتحديده (موقعي الحالي أو الخريطة)'
+                    : 'Location is required — tap to choose current location or map',
                 style: TextStyle(
                   fontSize: 12.sp,
                   color: const Color(0xFFD92D20),
@@ -739,7 +739,7 @@ class _RegisterViewState extends State<RegisterView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const AuthHeader(),
+                    const AuthHeader(showBack: true),
                     SizedBox(height: 20.h),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,

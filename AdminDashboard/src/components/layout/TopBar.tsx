@@ -10,9 +10,15 @@ import PreferencesControls from './PreferencesControls'
 
 type TopBarProps = {
   onMenuClick: () => void
+  onAskAiClick: () => void
+  askAiOpen?: boolean
 }
 
-export default function TopBar({ onMenuClick }: TopBarProps) {
+export default function TopBar({
+  onMenuClick,
+  onAskAiClick,
+  askAiOpen = false,
+}: TopBarProps) {
   const { t } = useAppPreferences()
   const { navCounts, totalBadgeCount } = useAdminNotifications()
   const logout = useLogout()
@@ -61,6 +67,26 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
 
       <div className="ms-auto flex shrink-0 items-center gap-2 sm:gap-3">
         <PreferencesControls />
+        <button
+          type="button"
+          onClick={onAskAiClick}
+          aria-label={t('askAi.fabAria')}
+          aria-pressed={askAiOpen}
+          className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border px-2.5 text-sm font-semibold transition sm:h-11 sm:px-3 ${
+            askAiOpen
+              ? 'border-[#3B7FC7]/45 bg-[#3B7FC7]/12 text-[#0b1f3a] shadow-sm dark:border-[#3B7FC7]/50 dark:bg-[#3B7FC7]/20 dark:text-slate-100'
+              : 'border-slate-200 bg-slate-50 text-[#0b1f3a] hover:bg-[#3B7FC7]/10 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700'
+          }`}
+        >
+          <img
+            src="/seo/alras-agent-robot.png"
+            alt=""
+            className="h-7 w-7 rounded-full object-cover ring-2 ring-[#3B7FC7]/35 sm:h-8 sm:w-8"
+          />
+          <span className="hidden whitespace-nowrap min-[420px]:inline">
+            {t('askAi.fabLabel')}
+          </span>
+        </button>
         <Link
           to="/chat"
           className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-[#2563eb] transition hover:bg-slate-100 sm:h-11 sm:w-11 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"

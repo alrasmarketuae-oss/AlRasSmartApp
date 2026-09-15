@@ -98,13 +98,13 @@ export default function HeroScrollFrames({ lang }) {
             }}
             src={src}
             alt=""
-            width={720}
-            height={406}
+            width={1920}
+            height={1082}
             decoding="async"
             fetchPriority={i === 0 ? 'high' : 'low'}
             draggable={false}
             style={{ opacity: i === 0 ? 1 : 0 }}
-            className="absolute inset-0 h-full w-full select-none object-cover"
+            className="absolute inset-0 h-full w-full select-none object-cover [image-rendering:auto]"
           />
         ))}
 

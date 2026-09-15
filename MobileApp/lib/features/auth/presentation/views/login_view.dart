@@ -326,6 +326,14 @@ class _LoginFormBodyState extends State<_LoginFormBody> {
 class _LoginTopBar extends StatelessWidget {
   const _LoginTopBar();
 
+  void _handleBack(BuildContext context) {
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+    context.go(AppRoutes.krecording);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
@@ -334,19 +342,21 @@ class _LoginTopBar extends StatelessWidget {
       textDirection: TextDirection.ltr,
       child: Row(
         children: [
-          if (context.canPop()) ...[
-            IconButton(
-              onPressed: () => context.pop(),
-              padding: EdgeInsets.zero,
-              constraints: BoxConstraints.tightFor(width: 36.w, height: 36.w),
-              icon: Icon(
-                Icons.close_rounded,
-                size: 22.sp,
-                color: _kTitleColor,
-              ),
+          IconButton(
+            onPressed: () => _handleBack(context),
+            padding: EdgeInsets.zero,
+            constraints: BoxConstraints.tightFor(width: 36.w, height: 36.w),
+            tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+            icon: Icon(
+              // Arrow direction follows locale: ← EN, → AR.
+              isArabic
+                  ? Icons.arrow_forward_rounded
+                  : Icons.arrow_back_rounded,
+              size: 22.sp,
+              color: _kTitleColor,
             ),
-            SizedBox(width: 4.w),
-          ],
+          ),
+          SizedBox(width: 4.w),
           GestureDetector(
             onTap: () => AuthCubit.get(context).setLocale(),
             behavior: HitTestBehavior.opaque,

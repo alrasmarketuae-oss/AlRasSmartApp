@@ -7,7 +7,6 @@ import { AdminAlertProvider } from '../context/AdminAlertProvider'
 import { AskAiPageDataProvider } from '../context/AskAiPageDataProvider'
 import Sidebar from '../components/layout/Sidebar'
 import TopBar from '../components/layout/TopBar'
-import AskAiFab from '../components/askAi/AskAiFab'
 import AskAiChat from '../components/askAi/AskAiChat'
 
 export default function AdminLayout() {
@@ -49,22 +48,17 @@ export default function AdminLayout() {
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden print:h-auto print:overflow-visible">
           <div className="print:hidden">
-            <TopBar onMenuClick={() => setSidebarOpen(true)} />
+            <TopBar
+              onMenuClick={() => setSidebarOpen(true)}
+              onAskAiClick={() => setAskAiOpen(true)}
+              askAiOpen={askAiOpen}
+            />
           </div>
           <main className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 print:overflow-visible print:p-0">
             <Outlet />
           </main>
         </div>
       </div>
-
-      {!askAiOpen ? (
-        <AskAiFab
-          label={t('askAi.fabLabel')}
-          ariaLabel={t('askAi.fabAria')}
-          onClick={() => setAskAiOpen(true)}
-          isRtl={isRtl}
-        />
-      ) : null}
 
       <AskAiChat
         open={askAiOpen}

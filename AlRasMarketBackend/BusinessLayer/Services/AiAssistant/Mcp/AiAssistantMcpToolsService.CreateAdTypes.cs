@@ -69,38 +69,16 @@ public sealed partial class AiAssistantMcpToolsService
         }
 
         var isFob = string.Equals(bookingPriceType, "FOB", StringComparison.OrdinalIgnoreCase);
-        var missingGeo = new List<string>();
+        // Origin/exporting country is always required. For CNF/CIF, destination
+        // country and ports are optional (nullable) — do not block create.
         if (string.IsNullOrWhiteSpace(originCountry))
-        {
-            missingGeo.Add("origin_country_name (الدولة المصدرة)");
-        }
-
-        if (!isFob)
-        {
-            if (string.IsNullOrWhiteSpace(loadingPort))
-            {
-                missingGeo.Add("loading_port_name (ميناء التحميل)");
-            }
-
-            if (string.IsNullOrWhiteSpace(destinationCountry))
-            {
-                missingGeo.Add("destination_country_name (بلد الوجهة)");
-            }
-
-            if (string.IsNullOrWhiteSpace(arrivalPort))
-            {
-                missingGeo.Add("arrival_port_name (ميناء الوصول)");
-            }
-        }
-
-        if (missingGeo.Count > 0)
         {
             return Json(new
             {
                 ok = false,
                 error = isFob
                     ? "origin_country_name (الدولة المصدرة) is required for FOB. Do not ask for or send destination_country_name, loading_port_name, or arrival_port_name."
-                    : $"For {bookingPriceType}, still missing: {string.Join(", ", missingGeo)}. CNF/CIF requires origin country, loading port, destination country, and arrival port."
+                    : "origin_country_name (الدولة المصدرة) is required. Destination country and ports are optional for CNF/CIF."
             });
         }
 
@@ -132,9 +110,15 @@ public sealed partial class AiAssistantMcpToolsService
             UnitName = quantityUnit.UnitName,
             DescriptionEn = specifications,
             OriginCountryName = originCountry.Trim(),
-            LoadingPortName = isFob ? null : loadingPort!.Trim(),
-            DestinationCountryName = isFob ? null : destinationCountry!.Trim(),
-            ArrivalPortName = isFob ? null : arrivalPort!.Trim(),
+            LoadingPortName = isFob || string.IsNullOrWhiteSpace(loadingPort)
+                ? null
+                : loadingPort.Trim(),
+            DestinationCountryName = isFob || string.IsNullOrWhiteSpace(destinationCountry)
+                ? null
+                : destinationCountry.Trim(),
+            ArrivalPortName = isFob || string.IsNullOrWhiteSpace(arrivalPort)
+                ? null
+                : arrivalPort.Trim(),
             BookingPriceTypeName = bookingPriceType,
             ShippingDuration = shippingDays.Trim(),
             Negotiable = GetBool(root, "negotiable") ?? false,

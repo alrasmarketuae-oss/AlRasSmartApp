@@ -204,7 +204,7 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
             children: [
               Expanded(
                 child: Text(
-                  product.productName,
+                  product.localeDisplayName,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -415,7 +415,7 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
                 children: [
                   Expanded(
                     child: Text(
-                      product.productName,
+                      product.localeDisplayName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -697,7 +697,7 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
             ),
           ),
           content: Text(
-            ds.deleteAdConfirmMessage(product.productName),
+            ds.deleteAdConfirmMessage(product.localeDisplayName),
             style: TextStyle(
               fontFamily: fontFamily,
               fontSize: 14.sp,

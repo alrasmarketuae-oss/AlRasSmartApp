@@ -62,6 +62,9 @@ class CreateAdBookingFieldsWidget extends StatelessWidget {
               onCountryChanged: cubit.setOriginCountry,
               onPortChanged: cubit.setOriginPort,
               showPorts: showPorts,
+              // Origin country always required; loading port optional for CNF/CIF.
+              requireCountry: true,
+              requirePort: false,
             ),
             if (showDestination) ...[
               SizedBox(height: 10.h),
@@ -75,6 +78,9 @@ class CreateAdBookingFieldsWidget extends StatelessWidget {
                 onCountryChanged: cubit.setDestinationCountry,
                 onPortChanged: cubit.setDestinationPort,
                 showPorts: showPorts,
+                // Destination country + arrival port optional for CNF/CIF.
+                requireCountry: false,
+                requirePort: false,
               ),
             ],
             SizedBox(height: 10.h),

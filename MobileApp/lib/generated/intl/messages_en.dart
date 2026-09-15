@@ -922,7 +922,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "inactiveAccountSectionTitle": MessageLookupByLibrary.simpleMessage(
       "Inactive user accounts",
     ),
-    "incomingOrders": MessageLookupByLibrary.simpleMessage("Incoming"),
+    "incomingOrders": MessageLookupByLibrary.simpleMessage("My Sales"),
     "incomingOrdersSubtitle": MessageLookupByLibrary.simpleMessage(
       "Orders and offers received on your ads.",
     ),
@@ -935,11 +935,11 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "justNow": MessageLookupByLibrary.simpleMessage("Just now"),
     "landlinePhone": MessageLookupByLibrary.simpleMessage("Landline Number"),
-    "language": MessageLookupByLibrary.simpleMessage("English"),
+    "language": MessageLookupByLibrary.simpleMessage("Languages"),
     "languagePreferenceHint": MessageLookupByLibrary.simpleMessage(
       "Choose your preferred language. The app will update immediately.",
     ),
-    "languageTitle": MessageLookupByLibrary.simpleMessage("Language"),
+    "languageTitle": MessageLookupByLibrary.simpleMessage("Languages"),
     "liabilityQuality": MessageLookupByLibrary.simpleMessage("Quality"),
     "liabilityQuantity": MessageLookupByLibrary.simpleMessage("Quantity"),
     "liabilitySpecs": MessageLookupByLibrary.simpleMessage(

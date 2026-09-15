@@ -29,6 +29,8 @@ public static class RequestOfferMapper
             OrderId = order.Id,
             ProductId = order.ProductId,
             ProductName = product.NameEn ?? string.Empty,
+            ProductTypeId = product.ProductTypeId,
+            ProductTypeNameEn = product.ProductType?.TypeNameEn ?? string.Empty,
             Quantity = order.Quantity,
             UnitName = AdminOrderMapper.ResolveOrderUnitName(order, product),
             UnitPrice = unitPrice,

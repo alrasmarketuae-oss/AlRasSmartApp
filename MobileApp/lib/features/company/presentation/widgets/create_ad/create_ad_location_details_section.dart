@@ -17,6 +17,8 @@ class CreateAdLocationDetailsSection extends StatelessWidget {
     required this.onCountryChanged,
     required this.onPortChanged,
     this.showPorts = true,
+    this.requireCountry = true,
+    this.requirePort = true,
   });
 
   final String countryLabel;
@@ -28,6 +30,8 @@ class CreateAdLocationDetailsSection extends StatelessWidget {
   final ValueChanged<String?> onCountryChanged;
   final ValueChanged<String?> onPortChanged;
   final bool showPorts;
+  final bool requireCountry;
+  final bool requirePort;
 
   @override
   Widget build(BuildContext context) {
@@ -38,12 +42,14 @@ class CreateAdLocationDetailsSection extends StatelessWidget {
       fontFamily: fontFamily,
       hintText: S.of(context).enterCountry,
       onChanged: onCountryChanged,
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return S.of(context).thisFieldIsRequired;
-        }
-        return null;
-      },
+      validator: requireCountry
+          ? (value) {
+              if (value == null || value.isEmpty) {
+                return S.of(context).thisFieldIsRequired;
+              }
+              return null;
+            }
+          : null,
     );
 
     if (!showPorts) {
@@ -98,12 +104,14 @@ class CreateAdLocationDetailsSection extends StatelessWidget {
             isLoading: isPortsLoading,
             enabled: selectedCountry != null && ports.isNotEmpty,
             onChanged: onPortChanged,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return S.of(context).thisFieldIsRequired;
-              }
-              return null;
-            },
+            validator: requirePort
+                ? (value) {
+                    if (value == null || value.isEmpty) {
+                      return S.of(context).thisFieldIsRequired;
+                    }
+                    return null;
+                  }
+                : null,
           ),
         ),
       ],

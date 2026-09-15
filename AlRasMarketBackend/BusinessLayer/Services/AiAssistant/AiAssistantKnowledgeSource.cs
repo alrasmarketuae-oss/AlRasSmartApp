@@ -486,7 +486,7 @@ internal static class AiAssistantKnowledgeSource
             إذا كان نوع الحساب الحالي مورد (supplier) فهذا مسموح تماماً.
             لا تقل "حسابك لا يسمح" ولا ترفض ولا تطلب فتح فورم أو شاشة إنشاء إعلان.
             ادخل وضع الخطة بالحوار: في أول رد اذكر قائمة الحقول المطلوبة لنوع الإعلان.
-            Booking المطلوب: اسم المنتج، الدولة المصدرة، نوع السعر FOB/CNF/CIF، مدة الشحن بالأيام، السعر بالدولار، الكمية والوحدة، هل السعر قابل للتفاوض، المواصفات (اختياري)، الوسائط (اختياري). بلد الوجهة والموانئ مطلوبة فقط مع CNF أو CIF — ولا تُطلب أبداً مع FOB.
+            Booking المطلوب: اسم المنتج، الدولة المصدرة، نوع السعر FOB/CNF/CIF، مدة الشحن بالأيام، السعر بالدولار، الكمية والوحدة، هل السعر قابل للتفاوض، المواصفات (اختياري)، الوسائط (اختياري). بلد الوجهة والموانئ اختيارية مع CNF أو CIF (nullable) — ولا تُطلب أبداً مع FOB.
             لو رد المستخدم ناقص، قل صراحة: "نسيت / لسه ناقص:" واذكر الحقول الناقصة فقط. لا تستدعِ create_booking_ad قبل اكتمال المطلوب.
             بعد اكتمال الحقول استدعِ create_booking_ad مرة واحدة. عملة Booking دائماً USD.
             نفس أسلوب الخطة الحوارية لـ Offer وRetail وCategory وRequest مع الحقول المناسبة لكل نوع.
@@ -497,7 +497,7 @@ internal static class AiAssistantKnowledgeSource
             If the current account audience is supplier, this is fully allowed.
             Never say the account is not allowed, and never ask the user to open a Create Ad form.
             Use conversational Plan Mode: first reply with the full checklist of required fields for that ad type.
-            Booking needs: product name, origin/exporting country, FOB/CNF/CIF, shipping days, USD price, quantity and unit, negotiable yes/no, specs optional, media optional. Destination country and ports are required only for CNF/CIF — never for FOB.
+            Booking needs: product name, origin/exporting country, FOB/CNF/CIF, shipping days, USD price, quantity and unit, negotiable yes/no, specs optional, media optional. Destination country and ports are optional (nullable) for CNF/CIF — never for FOB.
             If the user reply is incomplete, say clearly: "You still need to provide:" and list only the missing required fields. Do not call create_booking_ad until complete.
             When complete, call create_booking_ad once. Booking currency is always USD.
             Same conversational Plan Mode for Offer, Retail, Category, and Request with each type's fields.
@@ -1567,7 +1567,7 @@ internal static class AiAssistantKnowledgeSource
             العملة في Booking هي الدولار USD دائماً ولا يمكن تحويلها إلى درهم.
             اختر نوع السعر أولاً: FOB أو CNF أو CIF.
             أدخل الدولة المصدرة.
-            إذا كان النوع CNF أو CIF فأدخل أيضاً بلد الوجهة وميناء التحميل وميناء الوصول. أما FOB فلا تظهر بلد الوجهة ولا الموانئ ولا تُطلب.
+            إذا كان النوع CNF أو CIF فأدخل أيضاً بلد الوجهة وميناء التحميل وميناء الوصول إن توفرت (اختيارية وليست إلزامية). أما FOB فلا تظهر بلد الوجهة ولا الموانئ ولا تُطلب.
             أدخل الكمية والوحدة والسعر.
             أضف صور المنتج والفيديو والمواصفات، والتعبئة اختيارية.
             احفظ وانشر الإعلان ليدخل المراجعة ثم يظهر ضمن قسم Booking.
@@ -1579,7 +1579,7 @@ internal static class AiAssistantKnowledgeSource
             Booking currency is always USD and cannot be switched to AED.
             Choose the price type first: FOB, CNF, or CIF.
             Enter the exporting/origin country.
-            If the type is CNF or CIF, also enter the destination country, loading port, and arrival port. For FOB, destination country and ports are hidden and not required.
+            If the type is CNF or CIF, you may also enter destination country, loading port, and arrival port when available (optional, not required). For FOB, destination country and ports are hidden and not required.
             Enter the quantity, unit, and price.
             Add product images, video, and specifications; packaging is optional.
             Save and publish so the ad enters review and then appears under the Booking section.

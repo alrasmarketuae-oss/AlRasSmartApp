@@ -448,7 +448,7 @@ public sealed class AiAssistantAppService(
             - lookup_create_ad_reference: resolve units, product_types, categories, Local/Reexport, countries, ports while collecting ad fields.
             - list_my_addresses: list saved delivery addresses (address_id + label). Use before create_request_ad for company_customer.
             - create_request_ad: create ONE Request ad (supplier OR company_customer). Required: product name, specifications, negotiable, Local/Reexport (محلي / إعادة تصدير), address_id from list_my_addresses (mandatory for company_customer), packaging kg (ALWAYS ask; user may say none/لا). OPTIONAL: target price, quantity, unit, currency — only ask/collect when the user wants them. If target price is provided, also collect currency (USD/AED) and unit. Optional delivery_date and media.
-            - create_booking_ad: supplier only. USD locked. Ask name, FOB/CNF/CIF first, then geo: الدولة المصدرة always; for FOB never ask destination country or ports; for CNF/CIF ask destination country + ports, shipping days, price, qty, unit, negotiable, specs, packaging (ALWAYS ask), media.
+            - create_booking_ad: supplier only. USD locked. Ask name, FOB/CNF/CIF first, then geo: الدولة المصدرة always; for FOB never ask destination country or ports; for CNF/CIF destination country + ports are OPTIONAL (nullable) — ask if useful but do not block create when missing. Also shipping days, price, qty, unit, negotiable, specs, packaging (ALWAYS ask), media.
             - create_offer_ad: supplier only. Ask name, before/after price, offer duration days, qty, unit, currency, negotiable, Local/Reexport, specs, packaging (ALWAYS ask), media.
             - create_retail_ad: supplier only. AED locked. Ask name, price, qty, unit, delivery days, negotiable, specs, packaging (ALWAYS ask), media.
             - create_category_ad: supplier only. Ask name, category, wholesale price/qty/unit/currency, negotiable, Local/Reexport, wholesale specs, packaging (ALWAYS ask), media. If hybrid (جملة+تجزئة / enable_retail_pricing): ALSO ask BEFORE create — retail_price AED, retail_quantity, retail_unit, retail_specifications (مواصفات التجزئة منفصلة), retail packaging. Never call the tool for hybrid without retail_specifications.
@@ -458,7 +458,7 @@ public sealed class AiAssistantAppService(
             When the user message contains [PLAN_MODE] OR asks to create/publish an ad:
             1) Stay in chat. Do NOT tell the user to open a form, yellow form, Create Ad screen, or fill fields outside chat.
             2) First reply: clearly list EVERY required field for the target ad type as a natural checklist (same fields as Create Ad). ALWAYS include التعبئة/packaging (kg) for every ad type — ask even if the user may answer none. Optional: media, Request delivery_date.
-            3) Request checklist must ALWAYS include: محلي أم إعادة تصدير + عنوان التسليم (من العناوين المحفوظة عبر list_my_addresses) + التعبئة + المواصفات + قابل للتفاوض. Do NOT list السعر المستهدف / الكمية / الوحدة / العملة as required — they are OPTIONAL; mention them only as optional extras. Offer/Category checklists must include محلي/إعادة تصدير + التعبئة. Booking must include الوحدة + الدولة المصدرة + التعبئة; for CNF/CIF also بلد الوجهة + موانئ; for FOB never list بلد الوجهة or ports.
+            3) Request checklist must ALWAYS include: محلي أم إعادة تصدير + عنوان التسليم (من العناوين المحفوظة عبر list_my_addresses) + التعبئة + المواصفات + قابل للتفاوض. Do NOT list السعر المستهدف / الكمية / الوحدة / العملة as required — they are OPTIONAL; mention them only as optional extras. Offer/Category checklists must include محلي/إعادة تصدير + التعبئة. Booking must include الوحدة + الدولة المصدرة + التعبئة; for CNF/CIF بلد الوجهة + موانئ are OPTIONAL (nullable) — do not list them as required and do not refuse create when missing; for FOB never list بلد الوجهة or ports.
             4) Category hybrid checklist: when user wants جملة+تجزئة, list wholesale fields AND retail fields including مواصفات التجزئة separately — never assume wholesale specs equal retail specs.
             5) When the user replies with data: extract what they gave. If anything required is still missing (including retail_specifications for hybrid, or packaging not asked yet), reply explicitly like:
                "نسيت / لسه ناقص: …" (Arabic) or "You still need to provide: …" (English) and list ONLY the missing required fields. Do not call create_* until complete.
@@ -471,7 +471,7 @@ public sealed class AiAssistantAppService(
             When the user says "5 طن" or "5 tons", set quantity=5 and unit_name=Ton (unit id 1). NEVER set unit_id=5 for tons (5 is Bag). NEVER default to Piece when the user said ton/طن.
             Booking currency is USD; Retail is AED — do not ask for currency on those types. Request accepts USD or AED.
             Booking field labels in Arabic: الدولة المصدرة (origin/export country — NOT بلد المنشأ or Country of Origin), ميناء التحميل, بلد الوجهة, ميناء الوصول.
-            Booking FOB rule: when price type is FOB, do NOT list or ask for بلد الوجهة (destination country), loading port, or arrival port — only الدولة المصدرة. Destination country and ports apply only for CNF and CIF.
+            Booking FOB rule: when price type is FOB, do NOT list or ask for بلد الوجهة (destination country), loading port, or arrival port — only الدولة المصدرة. For CNF/CIF, destination country and ports are OPTIONAL (nullable); never block create_booking_ad when they are missing.
             - shipping audience → shipping ad fields only (no type question).
             - company_customer → Request ads only (no type question).
             - supplier → ask which type (Category, Retail, Booking, Offer, Request) unless they already named it.
@@ -905,11 +905,11 @@ public sealed class AiAssistantAppService(
                 "FOB" =>
                     "BOOKING FOB: اجمع الدولة المصدرة فقط. ممنوع طلب أو إرسال بلد الوجهة أو ميناء التحميل أو ميناء الوصول.",
                 "CNF" =>
-                    "BOOKING CNF: يجب جمع الدولة المصدرة + ميناء التحميل + بلد الوجهة + ميناء الوصول — كلها إلزامية. لا تتصرف كما لو كان FOB.",
+                    "BOOKING CNF: الدولة المصدرة إلزامية. بلد الوجهة وميناء التحميل وميناء الوصول اختيارية (nullable) — لا تمنع إنشاء الإعلان إذا ناقصة.",
                 "CIF" =>
-                    "BOOKING CIF: يجب جمع الدولة المصدرة + ميناء التحميل + بلد الوجهة + ميناء الوصول — كلها إلزامية. لا تتصرف كما لو كان FOB.",
+                    "BOOKING CIF: الدولة المصدرة إلزامية. بلد الوجهة وميناء التحميل وميناء الوصول اختيارية (nullable) — لا تمنع إنشاء الإعلان إذا ناقصة.",
                 _ =>
-                    "BOOKING: اسأل نوع السعر FOB أو CNF أو CIF أولاً. FOB = الدولة المصدرة فقط. CNF/CIF = الدولة المصدرة + الموانئ + بلد الوجهة."
+                    "BOOKING: اسأل نوع السعر FOB أو CNF أو CIF أولاً. FOB = الدولة المصدرة فقط. CNF/CIF = الدولة المصدرة إلزامية والموانئ/بلد الوجهة اختيارية."
             };
         }
 
@@ -918,11 +918,11 @@ public sealed class AiAssistantAppService(
             "FOB" =>
                 "Active BOOKING FOB: collect exporting country only. Never ask or send destination country or ports.",
             "CNF" =>
-                "Active BOOKING CNF: MUST collect origin country, loading port, destination country, and arrival port. Do NOT behave like FOB.",
+                "Active BOOKING CNF: origin/exporting country is required. Destination country and ports are OPTIONAL (nullable) — do not block create when missing.",
             "CIF" =>
-                "Active BOOKING CIF: MUST collect origin country, loading port, destination country, and arrival port. Do NOT behave like FOB.",
+                "Active BOOKING CIF: origin/exporting country is required. Destination country and ports are OPTIONAL (nullable) — do not block create when missing.",
             _ =>
-                "BOOKING: ask FOB/CNF/CIF first. FOB = exporting country only. CNF/CIF = origin + ports + destination country."
+                "BOOKING: ask FOB/CNF/CIF first. FOB = exporting country only. CNF/CIF = origin required; ports and destination optional."
         };
     }
 

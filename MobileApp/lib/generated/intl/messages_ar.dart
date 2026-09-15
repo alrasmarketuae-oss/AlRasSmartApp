@@ -931,7 +931,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "inactiveAccountSectionTitle": MessageLookupByLibrary.simpleMessage(
       "حسابات المستخدمين غير النشطة",
     ),
-    "incomingOrders": MessageLookupByLibrary.simpleMessage("الواردة"),
+    "incomingOrders": MessageLookupByLibrary.simpleMessage("مبيعاتي"),
     "incomingOrdersSubtitle": MessageLookupByLibrary.simpleMessage(
       "الطلبات والعروض الواردة على إعلاناتك.",
     ),
@@ -946,11 +946,11 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "justNow": MessageLookupByLibrary.simpleMessage("الآن"),
     "landlinePhone": MessageLookupByLibrary.simpleMessage("رقم الأرضي"),
-    "language": MessageLookupByLibrary.simpleMessage("العربية"),
+    "language": MessageLookupByLibrary.simpleMessage("اللغات"),
     "languagePreferenceHint": MessageLookupByLibrary.simpleMessage(
       "اختر لغتك المفضلة. سيتم تحديث التطبيق فوراً.",
     ),
-    "languageTitle": MessageLookupByLibrary.simpleMessage("اللغة"),
+    "languageTitle": MessageLookupByLibrary.simpleMessage("اللغات"),
     "liabilityQuality": MessageLookupByLibrary.simpleMessage("الجودة"),
     "liabilityQuantity": MessageLookupByLibrary.simpleMessage("الكمية"),
     "liabilitySpecs": MessageLookupByLibrary.simpleMessage(

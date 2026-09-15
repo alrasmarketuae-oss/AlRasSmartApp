@@ -39,9 +39,17 @@ void main() async {
 
   await ProductSearchIndexService.instance.init();
 
-  // Firebase + FCM bootstrap only — never block splash on APNs/permission.
-  await FcmTokenService.instance.initialize();
-  await AppPushNotificationService.instance.initialize();
+  // Firebase + FCM bootstrap only — never block splash / crash the process.
+  try {
+    await FcmTokenService.instance.initialize();
+  } catch (e) {
+    debugPrint('FcmTokenService init skipped: $e');
+  }
+  try {
+    await AppPushNotificationService.instance.initialize();
+  } catch (e) {
+    debugPrint('AppPushNotificationService init skipped: $e');
+  }
 
   // Local auth cache only (no network) so first frame can paint quickly.
   await AuthService.instance.initializeAuth();

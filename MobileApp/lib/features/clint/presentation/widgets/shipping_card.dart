@@ -229,13 +229,11 @@ class ShippingCard extends StatelessWidget {
         ],
         if (showPhone) ...[
           SizedBox(height: 10.h),
-          SizedBox(
-            height: 50.h,
-            child: _PhoneRow(
-              phoneMasked: data.phoneMasked,
-              onShowNumber: data.onShowNumber,
-              isTablet: isTablet,
-            ),
+          _PhoneRow(
+            companyName: data.carrierName,
+            phoneMasked: data.phoneMasked,
+            onShowNumber: data.onShowNumber,
+            isTablet: isTablet,
           ),
         ],
         if (showPrices) ...[
@@ -366,71 +364,94 @@ class _RoutePill extends StatelessWidget {
 
 class _PhoneRow extends StatelessWidget {
   const _PhoneRow({
+    required this.companyName,
     required this.phoneMasked,
     this.onShowNumber,
     required this.isTablet,
   });
 
+  final String companyName;
   final String phoneMasked;
   final VoidCallback? onShowNumber;
   final bool isTablet;
+
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
+    final name = companyName.trim();
 
-    return Directionality(
-      textDirection: TextDirection.ltr,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: 8.w,
-          vertical: isTablet ? 3.h : 5.h,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.card(context),
-          borderRadius: BorderRadius.circular(8.r),
-          border: Border.all(color: LightColor.defaultColor, width: 1.5),
-        ),
-        child: Row(
-          children: [
-            Material(
-              color: LightColor.defaultColor,
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: 8.w,
+        vertical: isTablet ? 8.h : 8.h,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.card(context),
+        borderRadius: BorderRadius.circular(8.r),
+        border: Border.all(color: LightColor.defaultColor, width: 1.5),
+      ),
+      child: Row(
+        children: [
+          Material(
+            color: LightColor.defaultColor,
+            borderRadius: BorderRadius.circular(8.r),
+            child: InkWell(
+              onTap: onShowNumber,
               borderRadius: BorderRadius.circular(8.r),
-              child: InkWell(
-                onTap: onShowNumber,
-                borderRadius: BorderRadius.circular(8.r),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 12.w,
-                    vertical: 8.h,
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 12.w,
+                  vertical: 8.h,
+                ),
+                child: Text(
+                  s.showNumber,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14.sp,
+                    height: 1.5,
                   ),
-                  child: Text(
-                    s.showNumber,
-                    textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (name.isNotEmpty)
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.title(context),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13.sp,
+                      height: 1.3,
+                    ),
+                  ),
+                if (name.isNotEmpty) SizedBox(height: 2.h),
+                Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: Text(
+                    phoneMasked,
+                    textAlign: TextAlign.start,
+                    style: TextStyle(
+                      color: LightColor.defaultColor,
                       fontWeight: FontWeight.bold,
-                      fontSize: 14.sp,
-                      height: 1.5,
+                      fontSize: 15.sp,
+                      height: 1.3,
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
-            SizedBox(width: 26.w),
-            Expanded(
-              child: Text(
-                phoneMasked,
-                textAlign: TextAlign.start,
-                style: TextStyle(
-                  color: LightColor.defaultColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16.sp,
-                  height: 1.5,
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

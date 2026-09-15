@@ -137,33 +137,48 @@ class _ShippingPostDetailsViewState extends State<ShippingPostDetailsView> {
                     title: s.phoneCall,
                     icon: Icons.phone_outlined,
                     fontFamily: fontFamily,
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Expanded(
-                          child: Text(
-                            phoneDisplay,
-                            textDirection: TextDirection.ltr,
-                            textAlign: TextAlign.start,
-                            style: TextStyle(
-                              fontFamily: fontFamily,
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.w700,
-                              color: LightColor.defaultColor,
-                            ),
+                        Text(
+                          carrierName,
+                          style: TextStyle(
+                            fontFamily: fontFamily,
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.title(context),
                           ),
                         ),
-                        SizedBox(width: 10.w),
-                        ElevatedButton(
-                          onPressed: _callPhone,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: LightColor.defaultColor,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8.r),
+                        SizedBox(height: 8.h),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                phoneDisplay,
+                                textDirection: TextDirection.ltr,
+                                textAlign: TextAlign.start,
+                                style: TextStyle(
+                                  fontFamily: fontFamily,
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: LightColor.defaultColor,
+                                ),
+                              ),
                             ),
-                          ),
-                          child: Text(s.showNumber),
+                            SizedBox(width: 10.w),
+                            ElevatedButton(
+                              onPressed: _callPhone,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: LightColor.defaultColor,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.r),
+                                ),
+                              ),
+                              child: Text(s.showNumber),
+                            ),
+                          ],
                         ),
                       ],
                     ),

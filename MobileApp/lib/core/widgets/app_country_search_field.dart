@@ -230,16 +230,9 @@ class _AppCountrySearchFieldState extends State<AppCountrySearchField> {
     return FormField<String>(
       initialValue: widget.value,
       validator: (value) {
+        // Do not call onChanged here — Form.validate() runs this on submit,
+        // and country handlers clear selected ports when country "changes".
         final trimmed = (value ?? _controller.text).trim();
-        if (widget.enabled && trimmed.isNotEmpty) {
-          final match = AppCountryNames.all.firstWhere(
-            (country) => country.toLowerCase() == trimmed.toLowerCase(),
-            orElse: () => '',
-          );
-          if (match.isNotEmpty) {
-            widget.onChanged(match);
-          }
-        }
         return widget.validator?.call(trimmed.isEmpty ? null : trimmed);
       },
       builder: (fieldState) {

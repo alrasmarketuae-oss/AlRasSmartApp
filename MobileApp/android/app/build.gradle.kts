@@ -40,6 +40,12 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // Only ship ABIs we fully build for Flutter+FFmpeg.
+        // Incomplete plugin-only ABIs (e.g. x86_64 without libflutter.so) crash on launch.
+        ndk {
+            abiFilters.clear()
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a")
+        }
     }
 
     packaging {
@@ -70,6 +76,9 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
+            // Avoid R8 file locks on this Windows host (AccessDenied / used by another process).
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
