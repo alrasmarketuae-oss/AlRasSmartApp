@@ -1,10 +1,11 @@
 allprojects {
     repositories {
-        // Prefer local mirror to avoid Java TLS failures (bad_record_mac).
-        maven { url = uri("file:///C:/src/gradle-mirror/maven-local") }
-        maven { url = uri("file:///C:/src/gradle-mirror/aapt2-only") }
+        // Prefer Google/Maven Central so AndroidX AARs (e.g. appcompat layouts) are complete.
+        // Local mirrors stay as fallback for flaky TLS downloads.
         google()
         mavenCentral()
+        maven { url = uri("file:///C:/src/gradle-mirror/maven-local") }
+        maven { url = uri("file:///C:/src/gradle-mirror/aapt2-only") }
         maven { url = uri("https://www.jitpack.io") }
         maven { url = uri("https://storage.googleapis.com/download.flutter.io") }
     }
@@ -23,11 +24,11 @@ subprojects {
 subprojects {
     buildscript {
         repositories {
-            maven { url = uri("file:///C:/src/gradle-mirror/maven-local") }
-            maven { url = uri("file:///C:/src/gradle-mirror/aapt2-only") }
             google()
             mavenCentral()
             gradlePluginPortal()
+            maven { url = uri("file:///C:/src/gradle-mirror/maven-local") }
+            maven { url = uri("file:///C:/src/gradle-mirror/aapt2-only") }
         }
         configurations.classpath {
             resolutionStrategy {
@@ -36,10 +37,10 @@ subprojects {
         }
     }
     repositories {
-        maven { url = uri("file:///C:/src/gradle-mirror/maven-local") }
-        maven { url = uri("file:///C:/src/gradle-mirror/aapt2-only") }
         google()
         mavenCentral()
+        maven { url = uri("file:///C:/src/gradle-mirror/maven-local") }
+        maven { url = uri("file:///C:/src/gradle-mirror/aapt2-only") }
         maven { url = uri("https://www.jitpack.io") }
         maven { url = uri("https://storage.googleapis.com/download.flutter.io") }
     }

@@ -105,6 +105,8 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // Ensure AppCompat layouts/anims are packaged for Theme.AppCompat (UCrop / plugins).
+    implementation("androidx.appcompat:appcompat:1.6.1")
 }
 
 // Avoid duplicate androidx.collection classes when resolution mixes versions.
