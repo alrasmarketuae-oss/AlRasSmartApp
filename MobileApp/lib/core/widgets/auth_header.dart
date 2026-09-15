@@ -35,33 +35,31 @@ class AuthHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
-    // Keep language control on the visual left and logo on the right in both locales.
-    return Directionality(
-      textDirection: TextDirection.ltr,
-      child: Row(
-        children: [
-          if (showBack) ...[
-            IconButton(
-              onPressed: () => _handleBack(context),
-              padding: EdgeInsets.zero,
-              constraints: BoxConstraints.tightFor(width: 36.w, height: 36.w),
-              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-              icon: Icon(
-                isArabic
-                    ? Icons.arrow_forward_rounded
-                    : Icons.arrow_back_rounded,
-                size: 22.sp,
-                color: AppColors.title(context),
-              ),
+    // Follow app locale: language control on the start side
+    // (left in English / right in Arabic), logo on the end side.
+    return Row(
+      children: [
+        if (showBack) ...[
+          IconButton(
+            onPressed: () => _handleBack(context),
+            padding: EdgeInsets.zero,
+            constraints: BoxConstraints.tightFor(width: 36.w, height: 36.w),
+            tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+            icon: Icon(
+              isArabic
+                  ? Icons.arrow_forward_rounded
+                  : Icons.arrow_back_rounded,
+              size: 22.sp,
+              color: AppColors.title(context),
             ),
-            SizedBox(width: 4.w),
-          ],
-          const LanguageButton(),
-          const Spacer(),
-          if (!isRecording)
-            Image.asset(AppAssets.logo, width: 52.w, height: 42.h),
+          ),
+          SizedBox(width: 4.w),
         ],
-      ),
+        const LanguageButton(),
+        const Spacer(),
+        if (!isRecording)
+          Image.asset(AppAssets.logo, width: 52.w, height: 42.h),
+      ],
     );
   }
 }
