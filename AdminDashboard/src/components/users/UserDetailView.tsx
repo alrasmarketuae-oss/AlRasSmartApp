@@ -521,8 +521,15 @@ export default function UserDetailView({
             <ProfileFieldRow
               icon={InfoFieldIcons.clipboard}
               label={t('users.orders')}
-              value={user.ordersCount > 0 ? user.ordersCount : '—'}
+              value={user.ordersCount}
             />
+            {(user.roleId === 2 || user.roleId === 5) ? (
+              <ProfileFieldRow
+                icon={InfoFieldIcons.clipboard}
+                label={t('users.adsCount')}
+                value={user.productsCount}
+              />
+            ) : null}
           </div>
         </section>
 

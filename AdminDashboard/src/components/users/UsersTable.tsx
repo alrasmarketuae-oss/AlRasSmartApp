@@ -231,10 +231,14 @@ function UserMobileCard({
         </div>
         <div>
           <dt className="admin-text-subtle text-xs">{t('users.orders')}</dt>
-          <dd className="admin-text-muted mt-0.5">
-            {user.ordersCount > 0 ? user.ordersCount : '—'}
-          </dd>
+          <dd className="admin-text-muted mt-0.5">{user.ordersCount}</dd>
         </div>
+        {(user.roleId === 2 || user.roleId === 5) ? (
+          <div>
+            <dt className="admin-text-subtle text-xs">{t('users.adsCount')}</dt>
+            <dd className="admin-text-muted mt-0.5">{user.productsCount}</dd>
+          </div>
+        ) : null}
         <div>
           <dt className="admin-text-subtle text-xs">{t('users.status')}</dt>
           <dd className="mt-1">
@@ -323,6 +327,9 @@ export default function UsersTable({ users }: UsersTableProps) {
                 {t('users.orders')}
               </th>
               <th className="admin-text-muted px-5 py-3 text-start text-sm font-medium">
+                {t('users.adsCount')}
+              </th>
+              <th className="admin-text-muted px-5 py-3 text-start text-sm font-medium">
                 {t('users.joinDate')}
               </th>
               <th className="admin-text-muted px-5 py-3 text-start text-sm font-medium">
@@ -371,7 +378,12 @@ export default function UsersTable({ users }: UsersTableProps) {
                     </div>
                   </td>
                   <td className="px-5 py-5 text-start">
-                    <CellText>{user.ordersCount > 0 ? user.ordersCount : '—'}</CellText>
+                    <CellText>{user.ordersCount}</CellText>
+                  </td>
+                  <td className="px-5 py-5 text-start">
+                    <CellText>
+                      {user.roleId === 2 || user.roleId === 5 ? user.productsCount : '—'}
+                    </CellText>
                   </td>
                   <td className="px-5 py-5 text-start">
                     <CellText>{formatRelativeTime(user.createdAt, locale)}</CellText>

@@ -22,6 +22,7 @@ export type AdminUser = {
   companyNameEn?: string | null
   companyNameAr?: string | null
   ordersCount: number
+  productsCount: number
 }
 
 export type AdminUsersResponse = {

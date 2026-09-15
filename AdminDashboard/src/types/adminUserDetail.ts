@@ -57,6 +57,7 @@ export type AdminUserDetail = {
   companyImages: AdminUserCompanyImage[]
   addresses: AdminUserAddress[]
   ordersCount: number
+  productsCount: number
   canApprove: boolean
   canDeactivate: boolean
   canDelete: boolean

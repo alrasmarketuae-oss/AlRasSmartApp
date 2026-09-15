@@ -30,6 +30,7 @@ type RawUser = AdminUser & {
   TypeLabelAr?: string
   StatusLabelAr?: string
   OrdersCount?: number
+  ProductsCount?: number
   CompanyName?: string | null
   FullNameEn?: string | null
   FullNameAr?: string | null
@@ -1380,6 +1381,7 @@ type RawUserDetail = AdminUserDetail & {
   CompanyImages?: RawUserCompanyImage[]
   Addresses?: Record<string, unknown>[]
   OrdersCount?: number
+  ProductsCount?: number
   CanApprove?: boolean
   IsCustomer?: boolean
   isCustomer?: boolean
