@@ -332,15 +332,37 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
           _thinkingSteps.clear();
           _thinkingStartedAt = null;
           _isThinking = false;
-          _messages.add(
-            AiChatMessage(
-              text: '',
+          final existing = responseId == null
+              ? -1
+              : _messages.lastIndexWhere(
+                  (m) => !m.isUser && m.responseId == responseId,
+                );
+          if (existing >= 0) {
+            // Cards may have created the bubble first — keep listings.
+            final prev = _messages[existing];
+            _messages[existing] = AiChatMessage(
+              text: prev.text,
               isUser: false,
-              thinkingSteps: const [],
-              showMediaUpload: _pendingAdMediaButton || _planMode,
-              responseId: responseId,
-            ),
-          );
+              thinkingSteps: List<String>.from(prev.thinkingSteps),
+              thinkingDurationMs: prev.thinkingDurationMs,
+              showMediaUpload: _pendingAdMediaButton || _planMode || prev.showMediaUpload,
+              showSupportCallbackForm: prev.showSupportCallbackForm,
+              supportQuestion: prev.supportQuestion,
+              responseId: prev.responseId ?? responseId,
+              replyPreview: prev.replyPreview,
+              listings: List<MyListingProductModel>.from(prev.listings),
+            );
+          } else {
+            _messages.add(
+              AiChatMessage(
+                text: '',
+                isUser: false,
+                thinkingSteps: const [],
+                showMediaUpload: _pendingAdMediaButton || _planMode,
+                responseId: responseId,
+              ),
+            );
+          }
           // Keep the button available for the whole plan-mode conversation.
           if (!_planMode) {
             _pendingAdMediaButton = false;
@@ -375,6 +397,12 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
         });
         _scrollToEnd();
       },
+      onListings: (listings) {
+        if (!mounted) return;
+        final parsed = AiProductListings.parse(listings);
+        if (parsed.isEmpty) return;
+        _attachListingsToInFlightReply(parsed);
+      },
       onCompleted: (answer, {required offerSupportCallback, listings, thinkingSteps}) {
         // ignore: unused_element_parameter â€” live prose only; final reply is the streamed answer.
         final _ = thinkingSteps;
@@ -408,6 +436,7 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
             looksLikeSupportCallbackCue(finalAnswer) ||
             looksLikeTemporaryAssistantFailure(finalAnswer);
         final parsedListings = AiProductListings.parse(listings);
+        var needsListingHydrate = false;
         setState(() {
           _isThinking = false;
           _thinkingSteps.clear();
@@ -453,6 +482,7 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
               replyPreview: target.replyPreview,
               listings: nextListings,
             );
+            needsListingHydrate = nextListings.isEmpty;
           } else if (finalAnswer.isNotEmpty ||
               parsedListings.isNotEmpty ||
               shouldShowForm) {
@@ -471,6 +501,7 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
                 listings: parsedListings,
               ),
             );
+            needsListingHydrate = parsedListings.isEmpty;
           }
           if (_planMode && looksLikeAdCreateSuccess(finalAnswer)) {
             _planMode = false;
@@ -484,6 +515,11 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
           }
         });
         _scrollToEnd();
+        // If SignalR dropped cards, pull them from the persisted conversation
+        // (same source that already works when opening history).
+        if (needsListingHydrate) {
+          unawaited(_hydrateListingsFromHistory(responseId: responseId));
+        }
         if (_voiceConversationMode && _voiceAgent == null && finalAnswer.isNotEmpty) {
           unawaited(_speakAssistantReply(finalAnswer));
         } else if (_voiceConversationMode && _voiceAgent == null) {
@@ -501,6 +537,147 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
         if (_voiceConversationMode && _voiceAgent == null) {
           unawaited(_onAssistantSpeechFinished());
         }
+      },
+    );
+  }
+
+  void _attachListingsToInFlightReply(List<MyListingProductModel> listings) {
+    if (!mounted || listings.isEmpty) return;
+    final responseId = _inFlightResponseId;
+    setState(() {
+      var targetIndex = responseId == null
+          ? -1
+          : _messages.lastIndexWhere(
+              (m) => !m.isUser && m.responseId == responseId,
+            );
+      if (targetIndex < 0) {
+        final lastUser = _messages.lastIndexWhere((m) => m.isUser);
+        for (var i = _messages.length - 1; i > lastUser; i--) {
+          if (!_messages[i].isUser) {
+            targetIndex = i;
+            break;
+          }
+        }
+      }
+      if (targetIndex < 0) {
+        // Cards arrived before the assistant bubble — park them on a placeholder.
+        _messages.add(
+          AiChatMessage(
+            text: '',
+            isUser: false,
+            thinkingSteps: const [],
+            responseId: responseId,
+            listings: List<MyListingProductModel>.from(listings),
+          ),
+        );
+        return;
+      }
+      final target = _messages[targetIndex];
+      if (target.listings.isNotEmpty) return;
+      _messages[targetIndex] = AiChatMessage(
+        text: target.text,
+        isUser: false,
+        thinkingSteps: List<String>.from(target.thinkingSteps),
+        thinkingDurationMs: target.thinkingDurationMs,
+        showMediaUpload: target.showMediaUpload,
+        showSupportCallbackForm: target.showSupportCallbackForm,
+        supportQuestion: target.supportQuestion,
+        responseId: target.responseId ?? responseId,
+        replyPreview: target.replyPreview,
+        listings: List<MyListingProductModel>.from(listings),
+      );
+    });
+    _scrollToEnd();
+  }
+
+  /// Live SignalR sometimes drops nested listing objects; the DB row still has
+  /// them (history works). Re-fetch the latest assistant message for this session.
+  Future<void> _hydrateListingsFromHistory({int? responseId}) async {
+    final token = AuthService.instance.currentToken?.trim();
+    if (token == null || token.isEmpty) return;
+
+    // Small delay so AppendAssistantMessageAsync has committed.
+    await Future<void>.delayed(const Duration(milliseconds: 450));
+    if (!mounted) return;
+
+    final sessionId = _realtime.sessionId;
+    final listResult = await _historyRepository.listConversations(
+      token: token,
+      page: 1,
+      pageSize: 10,
+    );
+    if (!mounted) return;
+
+    await listResult.fold<Future<void>>(
+      (_) async {},
+      (page) async {
+        AiConversationSummary? match;
+        for (final item in page.items) {
+          if (item.clientSessionId == sessionId) {
+            match = item;
+            break;
+          }
+        }
+        match ??= page.items.isEmpty ? null : page.items.first;
+        if (match == null || match.id.isEmpty) return;
+
+        final messagesResult = await _historyRepository.getConversationMessages(
+          token: token,
+          conversationId: match.id,
+          limit: 8,
+        );
+        if (!mounted) return;
+
+        messagesResult.fold(
+          (_) {},
+          (messagesPage) {
+            AiConversationMessageModel? lastAssistant;
+            for (var i = messagesPage.messages.length - 1; i >= 0; i--) {
+              final msg = messagesPage.messages[i];
+              if (msg.role.toLowerCase() == 'assistant' &&
+                  msg.listings.isNotEmpty) {
+                lastAssistant = msg;
+                break;
+              }
+            }
+            if (lastAssistant == null) return;
+            final parsed = AiProductListings.parse(lastAssistant.listings);
+            if (parsed.isEmpty) return;
+
+            setState(() {
+              var targetIndex = responseId == null
+                  ? -1
+                  : _messages.lastIndexWhere(
+                      (m) => !m.isUser && m.responseId == responseId,
+                    );
+              if (targetIndex < 0) {
+                final lastUser = _messages.lastIndexWhere((m) => m.isUser);
+                for (var i = _messages.length - 1; i > lastUser; i--) {
+                  if (!_messages[i].isUser) {
+                    targetIndex = i;
+                    break;
+                  }
+                }
+              }
+              if (targetIndex < 0) return;
+              final target = _messages[targetIndex];
+              if (target.listings.isNotEmpty) return;
+              _messages[targetIndex] = AiChatMessage(
+                text: target.text,
+                isUser: false,
+                thinkingSteps: List<String>.from(target.thinkingSteps),
+                thinkingDurationMs: target.thinkingDurationMs,
+                showMediaUpload: target.showMediaUpload,
+                showSupportCallbackForm: target.showSupportCallbackForm,
+                supportQuestion: target.supportQuestion,
+                responseId: target.responseId,
+                replyPreview: target.replyPreview,
+                listings: parsed,
+              );
+            });
+            _scrollToEnd();
+          },
+        );
       },
     );
   }

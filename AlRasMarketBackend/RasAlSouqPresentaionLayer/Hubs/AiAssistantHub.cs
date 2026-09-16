@@ -164,6 +164,17 @@ public sealed class AiAssistantHub(
                 }
             }
 
+            // Product cards travel as a plain JSON string in a dedicated event so
+            // SignalR nested-object camelCase quirks cannot wipe live chat cards
+            // (history already works via ListingsJson in the DB).
+            var listingCards = (result.Listings ?? [])
+                .Where(x => x.ProductId != Guid.Empty)
+                .Select(x => x.ToChatJson())
+                .ToList();
+            var listingsJson = listingCards.Count == 0
+                ? "[]"
+                : System.Text.Json.JsonSerializer.Serialize(listingCards);
+
             await Clients.Caller.SendAsync(
                 "aiThinking",
                 new { isThinking = false },
@@ -174,6 +185,15 @@ public sealed class AiAssistantHub(
                 new { language = result.Language },
                 Context.ConnectionAborted);
 
+            // After the assistant bubble exists on the client, push cards alone.
+            if (listingCards.Count > 0)
+            {
+                await Clients.Caller.SendAsync(
+                    "aiListings",
+                    new { listingsJson },
+                    Context.ConnectionAborted);
+            }
+
             foreach (var chunk in SplitTextElements(result.Answer, 4))
             {
                 await Clients.Caller.SendAsync(
@@ -182,36 +202,6 @@ public sealed class AiAssistantHub(
                     Context.ConnectionAborted);
                 await Task.Delay(8, Context.ConnectionAborted);
             }
-
-            // Strongly typed camelCase cards + listingsJson string backup.
-            // Flutter history path reads persisted DTOs; live SignalR must not drop cards.
-            var listingPayload = (result.Listings ?? [])
-                .Where(x => x.ProductId != Guid.Empty)
-                .Select(x => new
-                {
-                    productId = x.ProductId.ToString("D"),
-                    id = x.ProductId.ToString("D"),
-                    productCode = x.ProductCode,
-                    productName = string.IsNullOrWhiteSpace(x.NameEn) ? x.NameAr : x.NameEn,
-                    nameEn = x.NameEn,
-                    nameAr = x.NameAr,
-                    price = x.Price,
-                    displayPrice = x.Price,
-                    currency = x.Currency,
-                    usdPrice = x.UsdPrice,
-                    priceUsd = x.UsdPrice,
-                    priceAed = x.PriceAed,
-                    quantity = x.Quantity,
-                    unitName = x.UnitName,
-                    categoryId = x.CategoryId,
-                    productTypeId = x.ProductTypeId,
-                    productTypeName = x.ProductTypeName,
-                    searchListingChannel = x.SearchListingChannel,
-                    hasRetailPricing = x.HasRetailPricing,
-                    images = x.Images?.ToList() ?? new List<string>()
-                })
-                .ToList();
-            var listingsJson = System.Text.Json.JsonSerializer.Serialize(listingPayload);
 
             await Clients.Caller.SendAsync(
                 "aiResponseCompleted",
@@ -222,7 +212,7 @@ public sealed class AiAssistantHub(
                     result.UsedKnowledge,
                     result.Sources,
                     offerSupportCallback = result.OfferSupportCallback,
-                    listings = listingPayload,
+                    // String-only backup — avoid nested object arrays on this event.
                     listingsJson,
                     thinkingSteps = result.ThinkingSteps
                 },

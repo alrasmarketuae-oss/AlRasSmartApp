@@ -41,6 +41,7 @@ class AiAssistantRealtimeService {
     required void Function(String step) onThinkingStep,
     required void Function() onResponseStarted,
     required void Function(String value) onDelta,
+    required void Function(List<dynamic> listings) onListings,
     required void Function(
       String answer, {
       required bool offerSupportCallback,
@@ -92,6 +93,18 @@ class AiAssistantRealtimeService {
       if (_closed || generation != _connectGeneration) return;
       final value = _map(args)?['text']?.toString() ?? '';
       if (value.isNotEmpty) onDelta(value);
+    });
+    hub.on('aiListings', (args) {
+      if (_closed || generation != _connectGeneration) return;
+      final data = _map(args);
+      final listings = _asList(
+            data?['listingsJson'] ??
+                data?['ListingsJson'] ??
+                data?['listings'] ??
+                data?['Listings'],
+          ) ??
+          const <dynamic>[];
+      if (listings.isNotEmpty) onListings(listings);
     });
     hub.on('aiResponseCompleted', (args) {
       if (_closed || generation != _connectGeneration) return;
@@ -202,6 +215,8 @@ class AiAssistantRealtimeService {
             map.containsKey('Answer') ||
             map.containsKey('listings') ||
             map.containsKey('Listings') ||
+            map.containsKey('listingsJson') ||
+            map.containsKey('ListingsJson') ||
             map.containsKey('offerSupportCallback') ||
             map.containsKey('OfferSupportCallback')) {
           return map;
