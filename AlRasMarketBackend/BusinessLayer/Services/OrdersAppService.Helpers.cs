@@ -112,21 +112,31 @@ public partial class OrdersAppService
             .Where(id => id != Guid.Empty)
             .Distinct()
             .ToList();
-        if (productIds.Count == 0)
-        {
-            return;
-        }
+        var orderIds = items
+            .Select(x => x.OrderId)
+            .Where(id => id > 0)
+            .Distinct()
+            .ToList();
 
-        var translations = await contentTranslationService.GetProductTranslationsAsync(
-            productIds,
-            cancellationToken);
+        var translations = productIds.Count == 0
+            ? new Dictionary<Guid, ProductFieldTranslations>()
+            : await contentTranslationService.GetProductTranslationsAsync(
+                productIds,
+                cancellationToken);
+        var notesTranslations = orderIds.Count == 0
+            ? new Dictionary<long, OrderOfferNotesTranslations>()
+            : await contentTranslationService.GetOrderOfferNotesTranslationsAsync(
+                orderIds,
+                cancellationToken);
 
         foreach (var dto in items)
         {
             translations.TryGetValue(dto.ProductId, out var tr);
+            notesTranslations.TryGetValue(dto.OrderId, out var notesTr);
 
             var rawNameEn = FirstNonEmpty(dto.ProductNameEn, dto.ProductName);
             var rawDescriptionEn = FirstNonEmpty(dto.ProductDescriptionEn, dto.ProductDescription);
+            var rawNotesEn = FirstNonEmpty(dto.NotesEn, dto.Notes);
 
             var nameEn = FirstNonEmpty(
                 tr?.NameEn,
@@ -135,13 +145,23 @@ public partial class OrdersAppService
                 tr?.NameAr,
                 dto.ProductNameAr,
                 DetectArabicHint(rawNameEn) ? rawNameEn : null);
+            // Prefer wholesale Description; fall back to RetailDescription for retail ads.
             var descriptionEn = FirstNonEmpty(
                 tr?.DescriptionEn,
+                tr?.RetailDescriptionEn,
                 DetectArabicHint(rawDescriptionEn) ? null : rawDescriptionEn);
             var descriptionAr = FirstNonEmpty(
                 tr?.DescriptionAr,
+                tr?.RetailDescriptionAr,
                 dto.ProductDescriptionAr,
                 DetectArabicHint(rawDescriptionEn) ? rawDescriptionEn : null);
+            var notesEn = FirstNonEmpty(
+                notesTr?.NotesEn,
+                DetectArabicHint(rawNotesEn) ? null : rawNotesEn);
+            var notesAr = FirstNonEmpty(
+                notesTr?.NotesAr,
+                dto.NotesAr,
+                DetectArabicHint(rawNotesEn) ? rawNotesEn : null);
 
             if (!string.IsNullOrWhiteSpace(nameEn))
             {
@@ -179,6 +199,39 @@ public partial class OrdersAppService
             if (!string.IsNullOrWhiteSpace(descriptionAr))
             {
                 dto.ProductDescriptionAr = descriptionAr;
+            }
+
+            if (!string.IsNullOrWhiteSpace(notesEn))
+            {
+                dto.NotesEn = notesEn;
+                dto.Notes = notesEn;
+            }
+            else if (DetectArabicHint(rawNotesEn))
+            {
+                dto.NotesEn = null;
+                if (!string.IsNullOrWhiteSpace(notesAr))
+                {
+                    dto.Notes = notesAr;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(notesAr))
+            {
+                dto.NotesAr = notesAr;
+            }
+
+            // Keep catalog bilingual fields filled even when mapper missed Ar.
+            if (string.IsNullOrWhiteSpace(dto.UnitNameAr))
+            {
+                dto.UnitNameAr = CatalogLocalizationHelper.UnitNameAr(
+                    FirstNonEmpty(dto.UnitNameEn, dto.UnitName));
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.ProductTypeNameAr))
+            {
+                dto.ProductTypeNameAr = CatalogLocalizationHelper.ProductTypeNameAr(
+                    dto.ProductTypeId,
+                    dto.ProductTypeNameEn);
             }
         }
     }

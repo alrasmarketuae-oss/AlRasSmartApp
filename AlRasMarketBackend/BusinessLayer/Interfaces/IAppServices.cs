@@ -554,6 +554,12 @@ public sealed class ProductFieldTranslations
     public string? ShippingDescriptionEn { get; init; }
 }
 
+public sealed class OrderOfferNotesTranslations
+{
+    public string? NotesEn { get; init; }
+    public string? NotesAr { get; init; }
+}
+
 public sealed class UserFieldTranslations
 {
     public string? FullNameAr { get; init; }
@@ -576,6 +582,10 @@ public interface IContentTranslationService
     Task UpsertOrderOfferNotesAsync(
         long orderId,
         string? notes,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyDictionary<long, OrderOfferNotesTranslations>> GetOrderOfferNotesTranslationsAsync(
+        IEnumerable<long> orderIds,
         CancellationToken cancellationToken = default);
 
     /// <summary>Stores bilingual admin/auto-moderation rejection notes without AI translation.</summary>

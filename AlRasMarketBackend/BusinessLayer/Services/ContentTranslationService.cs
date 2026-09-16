@@ -230,6 +230,42 @@ public class ContentTranslationService(
         return map;
     }
 
+    public async Task<IReadOnlyDictionary<long, OrderOfferNotesTranslations>> GetOrderOfferNotesTranslationsAsync(
+        IEnumerable<long> orderIds,
+        CancellationToken cancellationToken = default)
+    {
+        var ids = orderIds.Distinct().ToList();
+        if (ids.Count == 0)
+        {
+            return new Dictionary<long, OrderOfferNotesTranslations>();
+        }
+
+        var rows = await dbContext.ContentTranslations.AsNoTracking()
+            .Where(x =>
+                x.Scope == ContentTranslationScopes.Order
+                && x.OrderId != null
+                && ids.Contains(x.OrderId.Value)
+                && x.Field == ContentTranslationFields.OfferNotes)
+            .ToListAsync(cancellationToken);
+
+        var map = new Dictionary<long, OrderOfferNotesTranslations>();
+        foreach (var row in rows)
+        {
+            if (row.OrderId is null)
+            {
+                continue;
+            }
+
+            map[row.OrderId.Value] = new OrderOfferNotesTranslations
+            {
+                NotesEn = row.TextEn,
+                NotesAr = row.TextAr
+            };
+        }
+
+        return map;
+    }
+
     public async Task UpsertUserFieldsAsync(
         Guid userId,
         string? fullName,

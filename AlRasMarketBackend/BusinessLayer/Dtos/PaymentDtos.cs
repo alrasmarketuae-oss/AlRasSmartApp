@@ -149,8 +149,11 @@ public sealed class MyRequestOfferDto
     public string? ProductDescriptionAr { get; set; }
     public byte? ProductTypeId { get; set; }
     public string ProductTypeNameEn { get; set; } = string.Empty;
+    public string? ProductTypeNameAr { get; set; }
     public decimal Quantity { get; set; }
     public string UnitName { get; set; } = string.Empty;
+    public string? UnitNameEn { get; set; }
+    public string? UnitNameAr { get; set; }
     public decimal UnitPrice { get; set; }
     public decimal TotalPrice { get; set; }
     public string Currency { get; set; } = "AED";
@@ -165,8 +168,14 @@ public sealed class MyRequestOfferDto
     public bool CanReject { get; set; }
     public DateTime CreatedAt { get; set; }
     public string? PortName { get; set; }
+    public string? PortNameEn { get; set; }
+    public string? PortNameAr { get; set; }
     public string? DestinationCountryName { get; set; }
+    public string? DestinationCountryNameEn { get; set; }
+    public string? DestinationCountryNameAr { get; set; }
     public string? Notes { get; set; }
+    public string? NotesEn { get; set; }
+    public string? NotesAr { get; set; }
     public List<string> ImagePaths { get; set; } = [];
     public List<string> DocumentPaths { get; set; } = [];
     public byte? CancellationReasonId { get; set; }

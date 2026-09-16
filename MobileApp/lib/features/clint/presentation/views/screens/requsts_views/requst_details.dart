@@ -4,10 +4,10 @@ import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/services/product_view_service.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/theme/app_fonts.dart';
-import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_ownership_helper.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/booking_widets/booking_details_app_bar.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/booking_widets/booking_details_design.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/cannot_order_own_product_banner.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/requst_widets/request_ad_details_body.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/generated/l10n.dart';
@@ -59,7 +59,9 @@ class _RequestDetailsViewState extends State<RequestDetailsView> {
               ),
             ),
           ),
-          if (showSubmitOfferButton)
+          if (isOwnAd)
+            CannotOrderOwnProductBanner(fontFamily: fontFamily)
+          else if (showSubmitOfferButton)
             SafeArea(
               top: false,
               child: Padding(
@@ -69,10 +71,6 @@ class _RequestDetailsViewState extends State<RequestDetailsView> {
                   height: 48.h,
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      if (isOwnAd) {
-                        AppToast.showError(context, s.cannotOrderOwnProduct);
-                        return;
-                      }
                       context.push(
                         AppRoutes.kSubmitOfferView,
                         extra: {

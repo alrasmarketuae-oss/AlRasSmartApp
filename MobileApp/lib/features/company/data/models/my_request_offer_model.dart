@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/services/api_constants.dart';
+import 'package:alrasmarket/core/utils/localized_product_text.dart';
 import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 
 class MyRequestOfferModel {
@@ -13,8 +14,11 @@ class MyRequestOfferModel {
     this.productDescriptionAr = '',
     this.productTypeId = 0,
     this.productTypeNameEn = '',
+    this.productTypeNameAr = '',
     required this.quantity,
     required this.unitName,
+    this.unitNameEn = '',
+    this.unitNameAr = '',
     required this.unitPrice,
     required this.totalPrice,
     required this.currency,
@@ -29,8 +33,14 @@ class MyRequestOfferModel {
     required this.canReject,
     required this.createdAt,
     required this.portName,
+    this.portNameEn = '',
+    this.portNameAr = '',
     this.destinationCountryName = '',
+    this.destinationCountryNameEn = '',
+    this.destinationCountryNameAr = '',
     required this.notes,
+    this.notesEn = '',
+    this.notesAr = '',
     required this.imagePaths,
     required this.documentPaths,
   });
@@ -45,8 +55,11 @@ class MyRequestOfferModel {
   final String productDescriptionAr;
   final int productTypeId;
   final String productTypeNameEn;
+  final String productTypeNameAr;
   final double quantity;
   final String unitName;
+  final String unitNameEn;
+  final String unitNameAr;
   final double unitPrice;
   final double totalPrice;
   final String currency;
@@ -61,8 +74,14 @@ class MyRequestOfferModel {
   final bool canReject;
   final String createdAt;
   final String portName;
+  final String portNameEn;
+  final String portNameAr;
   final String destinationCountryName;
+  final String destinationCountryNameEn;
+  final String destinationCountryNameAr;
   final String notes;
+  final String notesEn;
+  final String notesAr;
   final List<String> imagePaths;
   final List<String> documentPaths;
 
@@ -103,12 +122,40 @@ class MyRequestOfferModel {
         fallback: productDescription,
       );
 
+  String localizedNotes({required bool isArabic}) => _pickLocalized(
+        isArabic: isArabic,
+        en: notesEn,
+        ar: notesAr,
+        fallback: notes,
+      );
+
   /// Ad specs for the card: localized product description, else offer notes.
   String localizedSpecifications({required bool isArabic}) {
     final description = localizedProductDescription(isArabic: isArabic).trim();
     if (description.isNotEmpty) return description;
-    return notes.trim();
+    return localizedNotes(isArabic: isArabic).trim();
   }
+
+  String localizedUnitName({required bool isArabic}) => _pickLocalized(
+        isArabic: isArabic,
+        en: unitNameEn,
+        ar: unitNameAr,
+        fallback: unitName,
+      );
+
+  String localizedPortName({required bool isArabic}) => _pickLocalized(
+        isArabic: isArabic,
+        en: portNameEn,
+        ar: portNameAr,
+        fallback: portName,
+      );
+
+  String localizedDestinationCountry({required bool isArabic}) => _pickLocalized(
+        isArabic: isArabic,
+        en: destinationCountryNameEn,
+        ar: destinationCountryNameAr,
+        fallback: destinationCountryName,
+      );
 
   static String _pickLocalized({
     required bool isArabic,
@@ -129,94 +176,203 @@ class MyRequestOfferModel {
   }
 
   factory MyRequestOfferModel.fromJson(Map<String, dynamic> json) {
-    final rawImages = json['imagePaths'] as List<dynamic>? ?? const [];
-    final rawDocs = json['documentPaths'] as List<dynamic>? ?? const [];
+    final rawImages = json['imagePaths'] as List<dynamic>? ??
+        json['ImagePaths'] as List<dynamic>? ??
+        const [];
+    final rawDocs = json['documentPaths'] as List<dynamic>? ??
+        json['DocumentPaths'] as List<dynamic>? ??
+        const [];
 
-    final productName = _read(json, const [
-          'productName',
-          'ProductName',
-        ]) ??
-        '';
-    final productNameEn = _read(json, const [
-          'productNameEn',
-          'ProductNameEn',
-          'nameEn',
-          'NameEn',
-        ]) ??
-        '';
-    final productNameAr = _read(json, const [
+    final nameEn = LocalizedProductText.pickEn(
+      json: json,
+      enKeys: const [
+        'productNameEn',
+        'ProductNameEn',
+        'nameEn',
+        'NameEn',
+        'productName',
+        'ProductName',
+      ],
+    );
+    final nameAr = _read(json, const [
           'productNameAr',
           'ProductNameAr',
           'nameAr',
           'NameAr',
         ]) ??
         '';
-    final productDescription = _read(json, const [
-          'productDescription',
-          'ProductDescription',
-          'description',
-          'Description',
-        ]) ??
-        '';
-    final productDescriptionEn = _read(json, const [
-          'productDescriptionEn',
-          'ProductDescriptionEn',
-          'descriptionEn',
-          'DescriptionEn',
-        ]) ??
-        '';
-    final productDescriptionAr = _read(json, const [
+    final namePair = _splitEnAr(nameEn, nameAr);
+
+    final descriptionEn = LocalizedProductText.pickEn(
+      json: json,
+      enKeys: const [
+        'productDescriptionEn',
+        'ProductDescriptionEn',
+        'descriptionEn',
+        'DescriptionEn',
+        'productDescription',
+        'ProductDescription',
+        'description',
+        'Description',
+      ],
+    );
+    final descriptionAr = _read(json, const [
           'productDescriptionAr',
           'ProductDescriptionAr',
           'descriptionAr',
           'DescriptionAr',
         ]) ??
         '';
+    final descriptionPair = _splitEnAr(descriptionEn, descriptionAr);
+
+    final unitEn = LocalizedProductText.pickEn(
+      json: json,
+      enKeys: const [
+        'unitNameEn',
+        'UnitNameEn',
+        'unitName',
+        'UnitName',
+      ],
+    );
+    final unitAr = _read(json, const [
+          'unitNameAr',
+          'UnitNameAr',
+        ]) ??
+        '';
+    final unitPair = _splitEnAr(unitEn, unitAr);
+
+    final portEn = LocalizedProductText.pickEn(
+      json: json,
+      enKeys: const [
+        'portNameEn',
+        'PortNameEn',
+        'portName',
+        'PortName',
+      ],
+    );
+    final portAr = _read(json, const [
+          'portNameAr',
+          'PortNameAr',
+        ]) ??
+        '';
+    final portPair = _splitEnAr(portEn, portAr);
+
+    final countryEn = LocalizedProductText.pickEn(
+      json: json,
+      enKeys: const [
+        'destinationCountryNameEn',
+        'DestinationCountryNameEn',
+        'destinationCountryName',
+        'DestinationCountryName',
+      ],
+    );
+    final countryAr = _read(json, const [
+          'destinationCountryNameAr',
+          'DestinationCountryNameAr',
+        ]) ??
+        '';
+    final countryPair = _splitEnAr(countryEn, countryAr);
+
+    final notesEn = LocalizedProductText.pickEn(
+      json: json,
+      enKeys: const [
+        'notesEn',
+        'NotesEn',
+        'notes',
+        'Notes',
+      ],
+    );
+    final notesAr = _read(json, const [
+          'notesAr',
+          'NotesAr',
+        ]) ??
+        '';
+    final notesPair = _splitEnAr(notesEn, notesAr);
+
+    final typeEn = (json['productTypeNameEn'] ??
+                json['ProductTypeNameEn'] ??
+                json['productTypeName'] ??
+                json['ProductTypeName'])
+            ?.toString()
+            .trim() ??
+        '';
+    final typeAr = _read(json, const [
+          'productTypeNameAr',
+          'ProductTypeNameAr',
+        ]) ??
+        '';
 
     return MyRequestOfferModel(
-      orderId: int.tryParse(json['orderId']?.toString() ?? '') ?? 0,
-      productId: json['productId']?.toString() ?? '',
-      productName: productName,
-      productNameEn: productNameEn,
-      productNameAr: productNameAr,
-      productDescription: productDescription,
-      productDescriptionEn: productDescriptionEn,
-      productDescriptionAr: productDescriptionAr,
+      orderId: int.tryParse(json['orderId']?.toString() ??
+              json['OrderId']?.toString() ??
+              '') ??
+          0,
+      productId: json['productId']?.toString() ??
+          json['ProductId']?.toString() ??
+          '',
+      productName: LocalizedProductText.pickName(json).isNotEmpty
+          ? LocalizedProductText.pickName(json)
+          : (namePair.en.isNotEmpty ? namePair.en : namePair.ar),
+      productNameEn: namePair.en,
+      productNameAr: namePair.ar,
+      productDescription: LocalizedProductText.pickDescription(json).isNotEmpty
+          ? LocalizedProductText.pickDescription(json)
+          : (descriptionPair.en.isNotEmpty
+              ? descriptionPair.en
+              : descriptionPair.ar),
+      productDescriptionEn: descriptionPair.en,
+      productDescriptionAr: descriptionPair.ar,
       productTypeId: int.tryParse(
             (json['productTypeId'] ?? json['ProductTypeId'])?.toString() ?? '',
           ) ??
           0,
-      productTypeNameEn: (json['productTypeNameEn'] ??
-                  json['ProductTypeNameEn'] ??
-                  json['productTypeName'] ??
-                  json['ProductTypeName'])
-              ?.toString()
-              .trim() ??
+      productTypeNameEn: typeEn,
+      productTypeNameAr: typeAr,
+      quantity: _toDouble(json['quantity'] ?? json['Quantity']),
+      unitName: LocalizedProductText.pickUnit(json).isNotEmpty
+          ? LocalizedProductText.pickUnit(json)
+          : (unitPair.en.isNotEmpty ? unitPair.en : unitPair.ar),
+      unitNameEn: unitPair.en,
+      unitNameAr: unitPair.ar,
+      unitPrice: _toDouble(json['unitPrice'] ?? json['UnitPrice']),
+      totalPrice: _toDouble(json['totalPrice'] ?? json['TotalPrice']),
+      currency: json['currency']?.toString() ??
+          json['Currency']?.toString() ??
           '',
-      quantity: _toDouble(json['quantity']),
-      unitName: json['unitName']?.toString() ?? '',
-      unitPrice: _toDouble(json['unitPrice']),
-      totalPrice: _toDouble(json['totalPrice']),
-      currency: json['currency']?.toString() ?? '',
-      unitPriceFormatted: json['unitPriceFormatted']?.toString() ?? '',
-      totalPriceFormatted: json['totalPriceFormatted']?.toString() ?? '',
-      statusId: int.tryParse(json['statusId']?.toString() ?? '') ?? 0,
+      unitPriceFormatted: json['unitPriceFormatted']?.toString() ??
+          json['UnitPriceFormatted']?.toString() ??
+          '',
+      totalPriceFormatted: json['totalPriceFormatted']?.toString() ??
+          json['TotalPriceFormatted']?.toString() ??
+          '',
+      statusId: int.tryParse(json['statusId']?.toString() ??
+              json['StatusId']?.toString() ??
+              '') ??
+          0,
       statusName: json['statusName']?.toString() ??
           json['StatusName']?.toString() ??
           '',
       statusAr: json['statusAr']?.toString() ??
           json['StatusAr']?.toString() ??
           '',
-      isApproved: json['isApproved'] == true,
+      isApproved: json['isApproved'] == true || json['IsApproved'] == true,
       isAdminApproved:
           json['isAdminApproved'] == true || json['IsAdminApproved'] == true,
-      canAccept: json['canAccept'] == true,
-      canReject: json['canReject'] == true,
-      createdAt: json['createdAt']?.toString() ?? '',
-      portName: json['portName']?.toString() ?? '',
+      canAccept: json['canAccept'] == true || json['CanAccept'] == true,
+      canReject: json['canReject'] == true || json['CanReject'] == true,
+      createdAt: json['createdAt']?.toString() ??
+          json['CreatedAt']?.toString() ??
+          '',
+      portName: portPair.en.isNotEmpty ? portPair.en : portPair.ar,
+      portNameEn: portPair.en,
+      portNameAr: portPair.ar,
       destinationCountryName:
-          json['destinationCountryName']?.toString() ?? '',
-      notes: json['notes']?.toString() ?? '',
+          countryPair.en.isNotEmpty ? countryPair.en : countryPair.ar,
+      destinationCountryNameEn: countryPair.en,
+      destinationCountryNameAr: countryPair.ar,
+      notes: notesPair.en.isNotEmpty ? notesPair.en : notesPair.ar,
+      notesEn: notesPair.en,
+      notesAr: notesPair.ar,
       imagePaths: rawImages.map((e) => e.toString()).toList(),
       documentPaths: rawDocs.map((e) => e.toString()).toList(),
     );
@@ -228,6 +384,25 @@ class MyRequestOfferModel {
       if (value != null && value.isNotEmpty) return value;
     }
     return null;
+  }
+
+  static ({String en, String ar}) _splitEnAr(String en, String ar) {
+    final enTrim = en.trim();
+    final arTrim = ar.trim();
+    if (arTrim.isEmpty && _hasArabic(enTrim)) {
+      return (en: '', ar: enTrim);
+    }
+    if (enTrim.isNotEmpty && _hasArabic(enTrim) && arTrim.isNotEmpty) {
+      return (en: '', ar: arTrim);
+    }
+    return (en: enTrim, ar: arTrim);
+  }
+
+  static bool _hasArabic(String text) {
+    for (final code in text.runes) {
+      if (code >= 0x0600 && code <= 0x06FF) return true;
+    }
+    return false;
   }
 
   static double _toDouble(dynamic value) =>

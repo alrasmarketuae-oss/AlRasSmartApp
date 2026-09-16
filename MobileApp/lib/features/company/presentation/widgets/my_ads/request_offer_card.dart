@@ -49,8 +49,8 @@ class RequestOfferCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = S.of(context);
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    final quantityText = _quantityText(s);
-    final deliveryText = _deliveryText();
+    final quantityText = _quantityText(s, isArabic);
+    final deliveryText = _deliveryText(isArabic);
     final productName = offer.localizedProductName(isArabic: isArabic).trim();
     final specificationsText =
         offer.localizedSpecifications(isArabic: isArabic).trim();
@@ -61,7 +61,7 @@ class RequestOfferCard extends StatelessWidget {
     final currency = _resolvedCurrency();
     final unitPriceLabel = CreateAdPriceLabels.pricePerUnitLabel(
       s,
-      offer.unitName,
+      offer.localizedUnitName(isArabic: isArabic),
     );
     final mediaItems = _mediaItems();
     final statusLabel = _statusLabel(s, isArabic);
@@ -372,22 +372,23 @@ class RequestOfferCard extends StatelessWidget {
     );
   }
 
-  String _quantityText(S s) {
+  String _quantityText(S s, bool isArabic) {
     if (offer.quantity <= 0) return '';
     final qty = offer.quantity == offer.quantity.roundToDouble()
         ? offer.quantity.toInt().toString()
         : offer.quantity.toString();
     return ProductQuantityFormatter.quantityWithUnit(
       quantityText: qty,
-      unitName: offer.unitName,
+      unitName: offer.localizedUnitName(isArabic: isArabic),
       s: s,
     );
   }
 
-  String _deliveryText() {
-    final country = offer.destinationCountryName.trim();
+  String _deliveryText(bool isArabic) {
+    final country =
+        offer.localizedDestinationCountry(isArabic: isArabic).trim();
     if (country.isNotEmpty) return country;
-    return offer.portName.trim();
+    return offer.localizedPortName(isArabic: isArabic).trim();
   }
 
   String _unitPriceAmount() {

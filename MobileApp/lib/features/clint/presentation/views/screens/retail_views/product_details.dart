@@ -16,6 +16,7 @@ import 'package:alrasmarket/features/clint/presentation/helpers/product_navigati
 import 'package:alrasmarket/features/clint/presentation/helpers/product_ownership_helper.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/booking_widets/booking_details_app_bar.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/booking_widets/booking_details_design.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/cannot_order_own_product_banner.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product_sold_out_label.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/retail_widets/offer_ad_details_body.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/retail_widets/retail_ad_details_body.dart';
@@ -331,7 +332,9 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
                       ),
                     ),
                   ),
-                  if (!soldOut)
+                  if (!soldOut && isOwnAd)
+                    CannotOrderOwnProductBanner(fontFamily: fontFamily)
+                  else if (!soldOut)
                     SafeArea(
                       top: false,
                       child: Padding(
@@ -343,13 +346,6 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
                             onPressed: ctaBusy
                                 ? null
                                 : () {
-                                    if (isOwnAd) {
-                                      AppToast.showError(
-                                        context,
-                                        s.cannotOrderOwnProduct,
-                                      );
-                                      return;
-                                    }
                                     if (widget.isOffer) {
                                       _submitOfferOrder();
                                       return;

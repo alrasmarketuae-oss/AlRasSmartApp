@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/services/product_view_service.dart';
 import 'package:alrasmarket/core/theme/app_fonts.dart';
-import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/core/utils/product_stock.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_details_opener.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_ownership_helper.dart';
@@ -11,6 +10,7 @@ import 'package:alrasmarket/features/clint/presentation/widgets/booking_widets/b
 import 'package:alrasmarket/features/clint/presentation/widgets/booking_widets/booking_details_app_bar.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/booking_widets/booking_details_design.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/booking_widets/category_ad_details_body.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/cannot_order_own_product_banner.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product_sold_out_label.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/generated/l10n.dart';
@@ -96,7 +96,9 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
               ),
             ),
           ),
-          if (!soldOut)
+          if (!soldOut && isOwnAd)
+            CannotOrderOwnProductBanner(fontFamily: fontFamily)
+          else if (!soldOut)
             SafeArea(
               top: false,
               child: Padding(
@@ -106,10 +108,6 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
                   height: 48.h,
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      if (isOwnAd) {
-                        AppToast.showError(context, s.cannotOrderOwnProduct);
-                        return;
-                      }
                       context.push(
                         AppRoutes.kSendBookingOrderView,
                         extra: {'product': _product},

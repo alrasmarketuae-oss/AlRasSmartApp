@@ -26,7 +26,15 @@ public static class RequestOfferMapper
 
         var unitName = AdminOrderMapper.ResolveOrderUnitName(order, product);
         var rawName = product.NameEn ?? string.Empty;
-        var rawDescription = product.DescriptionEn;
+        var rawDescription = FirstNonEmpty(product.DescriptionEn, product.RetailDescriptionEn);
+        var portEn = order.Port?.PortNameEn;
+        var portAr = order.Port?.PortNameAr;
+        var countryEn = order.Port?.Country?.CountryNameEn
+            ?? product.DestinationCountry?.CountryNameEn;
+        var countryAr = order.Port?.Country?.CountryNameAr
+            ?? product.DestinationCountry?.CountryNameAr;
+        var productTypeEn = product.ProductType?.TypeNameEn ?? string.Empty;
+        var rawNotes = order.Notes;
 
         return new MyRequestOfferDto
         {
@@ -39,9 +47,14 @@ public static class RequestOfferMapper
             ProductDescriptionEn = DetectArabicHint(rawDescription) ? null : rawDescription,
             ProductDescriptionAr = DetectArabicHint(rawDescription) ? rawDescription : null,
             ProductTypeId = product.ProductTypeId,
-            ProductTypeNameEn = product.ProductType?.TypeNameEn ?? string.Empty,
+            ProductTypeNameEn = productTypeEn,
+            ProductTypeNameAr = CatalogLocalizationHelper.ProductTypeNameAr(
+                product.ProductTypeId,
+                productTypeEn),
             Quantity = order.Quantity,
             UnitName = unitName,
+            UnitNameEn = unitName,
+            UnitNameAr = CatalogLocalizationHelper.UnitNameAr(unitName),
             UnitPrice = unitPrice,
             TotalPrice = totalPrice,
             Currency = currency,
@@ -55,10 +68,15 @@ public static class RequestOfferMapper
             CanAccept = isPendingSellerAction,
             CanReject = isPendingSellerAction,
             CreatedAt = UtcDateTimeHelper.AsUtc(order.CreatedAt),
-            PortName = order.Port?.PortNameEn,
-            DestinationCountryName = order.Port?.Country?.CountryNameEn
-                ?? product.DestinationCountry?.CountryNameEn,
-            Notes = order.Notes,
+            PortName = portEn ?? portAr,
+            PortNameEn = portEn,
+            PortNameAr = portAr,
+            DestinationCountryName = countryEn ?? countryAr,
+            DestinationCountryNameEn = countryEn,
+            DestinationCountryNameAr = countryAr,
+            Notes = rawNotes,
+            NotesEn = DetectArabicHint(rawNotes) ? null : rawNotes,
+            NotesAr = DetectArabicHint(rawNotes) ? rawNotes : null,
             ImagePaths = order.Images?
                 .OrderBy(x => x.Id)
                 .Select(x => x.ImagePath)
@@ -77,6 +95,19 @@ public static class RequestOfferMapper
                 ? UtcDateTimeHelper.AsUtc(order.CancelledAt.Value)
                 : null
         };
+    }
+
+    private static string? FirstNonEmpty(params string?[] values)
+    {
+        foreach (var value in values)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value.Trim();
+            }
+        }
+
+        return null;
     }
 
     private static bool DetectArabicHint(string? text)
