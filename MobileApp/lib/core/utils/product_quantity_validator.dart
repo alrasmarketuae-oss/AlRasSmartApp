@@ -1,5 +1,4 @@
 import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
-import 'package:alrasmarket/features/company/presentation/helpers/create_ad_form_mapper.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 
@@ -57,31 +56,16 @@ class ProductQuantityValidator {
     return null;
   }
 
+  /// Validates offer quantity on a Request ad.
+  /// Offered quantity may be greater than the requested quantity.
   static String? validateOfferAgainstRequiredQuantity({
     required String? rawValue,
     required S s,
     required MyListingProductModel requestProduct,
     String? offerUnit,
   }) {
-    final requiredError = validateRequiredField(rawValue, s);
-    if (requiredError != null) return requiredError;
-
-    final quantity = _parseQuantity(rawValue)!;
-    final requiredQuantity = _parseQuantity(requestProduct.quantity) ?? 0;
-    if (requiredQuantity > 0 && quantity > requiredQuantity) {
-      final requestUnit = requestProduct.unitName.trim();
-      final submittedUnit = (offerUnit ?? requestUnit).trim();
-      if (requestUnit.isEmpty ||
-          _unitsMatch(submittedUnit, requestUnit)) {
-        return s.quantityExceedsRequired(_format(requiredQuantity));
-      }
-    }
-
-    return null;
-  }
-
-  static bool _unitsMatch(String a, String b) {
-    if (a.isEmpty || b.isEmpty) return true;
-    return CreateAdFormMapper.mapUnitName(a) == CreateAdFormMapper.mapUnitName(b);
+    // Request offers can exceed the buyer's stated quantity — only require a
+    // positive amount. [requestProduct] / [offerUnit] kept for call-site compatibility.
+    return validateRequiredField(rawValue, s);
   }
 }

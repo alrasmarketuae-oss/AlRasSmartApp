@@ -82,6 +82,11 @@ public static class RequestOfferMapper
                 .Select(x => x.ImagePath)
                 .Where(IsImagePath)
                 .ToList() ?? [],
+            VideoPaths = order.Videos?
+                .OrderByDescending(x => x.CreatedAt)
+                .Select(x => x.VideoPath)
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .ToList() ?? [],
             DocumentPaths = order.Images?
                 .OrderBy(x => x.Id)
                 .Select(x => x.ImagePath)

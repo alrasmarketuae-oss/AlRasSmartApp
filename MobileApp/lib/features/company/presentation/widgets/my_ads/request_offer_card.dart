@@ -165,7 +165,7 @@ class RequestOfferCard extends StatelessWidget {
                 GestureDetector(
                   onTap: () => _openMediaPreview(context, mediaItems, 0),
                   child: _OfferMediaThumb(
-                    path: offer.imagePaths.first,
+                    path: offer.mediaPaths.first,
                     width: 72.w,
                     height: 72.w,
                     borderRadius: BorderRadius.circular(8.r),
@@ -268,7 +268,7 @@ class RequestOfferCard extends StatelessWidget {
                   return GestureDetector(
                     onTap: () => _openMediaPreview(context, mediaItems, index),
                     child: _OfferMediaThumb(
-                      path: offer.imagePaths[index],
+                      path: offer.mediaPaths[index],
                       width: 56.w,
                       height: 56.h,
                       borderRadius: BorderRadius.circular(6.r),
@@ -345,7 +345,7 @@ class RequestOfferCard extends StatelessWidget {
 
   List<ProductMediaItem> _mediaItems() {
     final items = <ProductMediaItem>[];
-    for (final path in offer.imagePaths) {
+    for (final path in offer.mediaPaths) {
       final url = MyRequestOfferModel.resolveAssetUrl(path);
       if (url == null) continue;
       items.add(

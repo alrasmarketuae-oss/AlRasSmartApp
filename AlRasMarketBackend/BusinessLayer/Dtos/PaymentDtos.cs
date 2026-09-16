@@ -177,6 +177,7 @@ public sealed class MyRequestOfferDto
     public string? NotesEn { get; set; }
     public string? NotesAr { get; set; }
     public List<string> ImagePaths { get; set; } = [];
+    public List<string> VideoPaths { get; set; } = [];
     public List<string> DocumentPaths { get; set; } = [];
     public byte? CancellationReasonId { get; set; }
     public string? CancellationReasonNameEn { get; set; }

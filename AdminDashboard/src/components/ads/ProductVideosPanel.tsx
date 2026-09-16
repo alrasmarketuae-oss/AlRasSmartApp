@@ -17,6 +17,8 @@ type ProductVideosPanelProps = {
   onTrimVideo?: (path: string) => void
   trimLabel?: string
   trimmingPath?: string | null
+  onOpenPreview?: (path: string) => void
+  openPreviewLabel?: string
 }
 
 /** Single video player with prev/next — avoids stacking one &lt;video&gt; per path. */
@@ -37,6 +39,8 @@ export default function ProductVideosPanel({
   onTrimVideo,
   trimLabel = 'Trim video',
   trimmingPath = null,
+  onOpenPreview,
+  openPreviewLabel = 'Preview',
 }: ProductVideosPanelProps) {
   if (videos.length === 0) {
     return (
@@ -65,14 +69,35 @@ export default function ProductVideosPanel({
     <div className={className}>
       {activeUrl ? (
         <div className="space-y-1">
-          <video
-            key={activePath}
-            controls
-            muted={activeVideo.isMuted ?? true}
-            preload="metadata"
-            className={videoClassName}
-            src={activeUrl}
-          />
+          {onOpenPreview ? (
+            <button
+              type="button"
+              onClick={() => onOpenPreview(activePath)}
+              className="relative block w-full overflow-hidden rounded-lg text-start cursor-zoom-in"
+              title={openPreviewLabel}
+            >
+              <video
+                key={activePath}
+                muted
+                playsInline
+                preload="metadata"
+                className={`${videoClassName} pointer-events-none`}
+                src={activeUrl}
+              />
+              <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25 text-2xl text-white">
+                ▶
+              </span>
+            </button>
+          ) : (
+            <video
+              key={activePath}
+              controls
+              muted={activeVideo.isMuted ?? true}
+              preload="metadata"
+              className={videoClassName}
+              src={activeUrl}
+            />
+          )}
           {activeVideo.durationSeconds != null && activeVideo.durationSeconds > 0 ? (
             <p className="text-center text-[10px] font-semibold text-slate-500">
               {activeVideo.durationSeconds}s
@@ -108,6 +133,16 @@ export default function ProductVideosPanel({
       ) : null}
 
       <div className="flex flex-wrap gap-2">
+        {onOpenPreview ? (
+          <button
+            type="button"
+            disabled={actionBusy}
+            onClick={() => onOpenPreview(activePath)}
+            className="rounded border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-slate-700 disabled:opacity-50"
+          >
+            {openPreviewLabel}
+          </button>
+        ) : null}
         {onTrimVideo ? (
           <button
             type="button"

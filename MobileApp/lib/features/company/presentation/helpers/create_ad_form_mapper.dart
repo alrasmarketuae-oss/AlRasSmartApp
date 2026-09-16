@@ -134,8 +134,16 @@ class CreateAdFormMapper {
   }
 
   static bool isVideoPath(String path) {
-    final ext = path.split('.').last.toLowerCase();
-    return ext == 'mp4' || ext == 'mov' || ext == 'webm' || ext == 'm4v';
+    final lower = path.toLowerCase();
+    final ext = lower.contains('.') ? lower.split('.').last : '';
+    return ext == 'mp4' ||
+        ext == 'mov' ||
+        ext == 'webm' ||
+        ext == 'm4v' ||
+        ext == 'avi' ||
+        ext == 'mkv' ||
+        lower.contains('/order-videos/') ||
+        lower.contains('/product-videos/');
   }
 
   static bool _isImagePath(String path) {

@@ -254,7 +254,6 @@ export default function UserDetailView({
       : null
   const licenceHref = user.licencePath ? resolveAssetUrl(user.licencePath) : null
   const licenceIsImage = Boolean(user.licencePath && isImagePath(user.licencePath))
-  const documentNumber = user.commercialRegister?.trim() || user.licenseNumber?.trim() || ''
   const previewImages = [
     licenceIsImage && licenceHref ? licenceHref : null,
     ...user.companyImages.map((image) => resolveAssetUrl(image.imagePath)),
@@ -540,11 +539,7 @@ export default function UserDetailView({
               icon={InfoFieldIcons.document}
               iconClass={ICON_BLUE}
             />
-            <ProfileFieldRow
-              icon={InfoFieldIcons.document}
-              label={t('users.documentNumber')}
-              value={documentNumber || '—'}
-            />
+   
             {isSupplier ? (
               <ProfileFieldRow
                 icon={InfoFieldIcons.document}
@@ -644,11 +639,7 @@ export default function UserDetailView({
               label={t('users.postalCode')}
               value={primaryAddress.postalCode?.trim() || '—'}
             />
-            <ProfileFieldRow
-              icon={InfoFieldIcons.document}
-              label={t('users.documentNumber')}
-              value={documentNumber || '—'}
-            />
+ 
             <ProfileFieldRow
               icon={InfoFieldIcons.tag}
               label={t('users.addressType')}

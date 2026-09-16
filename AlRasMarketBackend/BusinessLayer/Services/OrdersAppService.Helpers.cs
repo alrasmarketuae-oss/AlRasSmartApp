@@ -320,7 +320,19 @@ public partial class OrdersAppService
         }
 
         var (_, availableStock) = ResolveOrderStockChannel(order, product);
-        if (deductQuantity > (decimal)availableStock)
+        // Request offers may exceed the original requested quantity — fulfil by
+        // consuming remaining request qty (down to zero) without rejecting accept.
+        if (ProductTypeCodes.IsRequests(product.ProductTypeId)
+            && deductQuantity > (decimal)availableStock)
+        {
+            deductQuantity = (decimal)availableStock;
+            if (deductQuantity <= 0)
+            {
+                order.StockQuantityDeducted = true;
+                return;
+            }
+        }
+        else if (deductQuantity > (decimal)availableStock)
         {
             throw new InvalidOperationException(
                 $"Requested quantity ({deductQuantity}) exceeds available quantity ({availableStock}) for '{product.NameEn}'.");
@@ -423,6 +435,12 @@ public partial class OrdersAppService
         {
             throw new InvalidOperationException(
                 $"Minimum order quantity is {product.MinimumOrderQuantity.Value}.");
+        }
+
+        // Request ads: suppliers may offer more than the stated requested quantity.
+        if (ProductTypeCodes.IsRequests(product.ProductTypeId))
+        {
+            return;
         }
 
         if (product.MaximumOrderQuantity.HasValue && quantity > product.MaximumOrderQuantity.Value)

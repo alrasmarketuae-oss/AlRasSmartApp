@@ -27,6 +27,7 @@ import ContactSupplierDialog, {
 } from '../shared/ContactSupplierDialog'
 import WhatsAppPhoneLink from '../shared/WhatsAppPhoneLink'
 import ConfirmDialog from '../ui/ConfirmDialog'
+import ImageGallery, { type GalleryMediaItem } from '../ui/ImageGallery'
 import { getRtkErrorMessage } from '../../utils/rtkError'
 import OrderStatusHistoryStrip from './OrderStatusHistoryStrip'
 import RelatedOrdersBanner from './RelatedOrdersBanner'
@@ -209,6 +210,7 @@ export default function RequestOfferDetailView({
   } | null>(null)
   const [backgroundTrimPath, setBackgroundTrimPath] = useState<string | null>(null)
   const [selectedVideoIndex, setSelectedVideoIndex] = useState(0)
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null)
   const [showProductDetails, setShowProductDetails] = useState(false)
   const [advertiserUnitPrice, setAdvertiserUnitPrice] = useState(() =>
     defaultAdvertiserUnitPrice(order),
@@ -356,6 +358,28 @@ export default function RequestOfferDetailView({
     () => videoItems.map((item) => ({ path: item.path, isMuted: true })),
     [videoItems],
   )
+
+  const galleryMedia = useMemo<GalleryMediaItem[]>(() => {
+    const images = photoItems.map((item) => ({
+      src: item.path,
+      kind: 'image' as const,
+      id: item.id,
+      path: item.path,
+    }))
+    const videos = videoItems.map((item) => ({
+      src: item.path,
+      kind: 'video' as const,
+      id: item.orderVideoId,
+      path: item.path,
+      isMuted: true,
+    }))
+    return [...images, ...videos]
+  }, [photoItems, videoItems])
+
+  function openMediaPreview(path: string) {
+    const index = galleryMedia.findIndex((item) => item.path === path || item.src === path)
+    setPreviewIndex(index >= 0 ? index : 0)
+  }
 
   function invalidateOrderDetail() {
     dispatch(adminApi.util.invalidateTags([{ type: 'Orders', id: String(order.id) }]))
@@ -1015,14 +1039,13 @@ export default function RequestOfferDetailView({
                           if (!url) return null
                           return (
                             <div key={item.path} className="flex flex-col items-center gap-1.5">
-                              <a
-                                href={url}
-                                target="_blank"
-                                rel="noreferrer"
+                              <button
+                                type="button"
+                                onClick={() => openMediaPreview(item.path)}
                                 className="block h-14 w-14 overflow-hidden rounded-lg ring-1 ring-slate-200"
                               >
                                 <img src={url} alt="" className="h-full w-full object-cover" />
-                              </a>
+                              </button>
                               {typeof item.id === 'number' && item.id > 0 ? (
                                 <div className="flex flex-wrap gap-1">
                                   <button
@@ -1169,14 +1192,13 @@ export default function RequestOfferDetailView({
                         key={item.path}
                         className="flex w-28 flex-col gap-1.5 rounded-xl ring-1 ring-slate-200 p-2 dark:ring-slate-700"
                       >
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noreferrer"
+                        <button
+                          type="button"
+                          onClick={() => openMediaPreview(item.path)}
                           className="block aspect-square overflow-hidden rounded-lg"
                         >
                           <img src={url} alt="" className="h-full w-full object-cover" />
-                        </a>
+                        </button>
                         {typeof item.id === 'number' && item.id > 0 ? (
                           <div className="flex flex-col gap-1">
                             <button
@@ -1227,6 +1249,8 @@ export default function RequestOfferDetailView({
                     onTrimVideo={openTrimVideo}
                     trimLabel={t('ads.trimVideo')}
                     trimmingPath={trimmingVideoPath}
+                    onOpenPreview={(path) => openMediaPreview(path)}
+                    openPreviewLabel={t('ads.preview')}
                   />
                 </div>
               ) : null}
@@ -1556,6 +1580,15 @@ export default function RequestOfferDetailView({
         onQueued={handleTrimQueued}
         onFailed={handleTrimFailed}
         onSave={handleTrimSave}
+      />
+
+      <ImageGallery
+        media={galleryMedia}
+        initialIndex={previewIndex ?? 0}
+        open={previewIndex != null}
+        onClose={() => setPreviewIndex(null)}
+        muteLabel="Mute"
+        unmuteLabel="Unmute"
       />
     </div>
   )

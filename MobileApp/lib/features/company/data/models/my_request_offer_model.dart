@@ -42,6 +42,7 @@ class MyRequestOfferModel {
     this.notesEn = '',
     this.notesAr = '',
     required this.imagePaths,
+    this.videoPaths = const [],
     required this.documentPaths,
   });
 
@@ -83,6 +84,7 @@ class MyRequestOfferModel {
   final String notesEn;
   final String notesAr;
   final List<String> imagePaths;
+  final List<String> videoPaths;
   final List<String> documentPaths;
 
   /// Offers on Requests ads use "Accept Offer"; other ads use "Accept Order".
@@ -175,9 +177,18 @@ class MyRequestOfferModel {
     return resolveAssetUrl(imagePaths.first);
   }
 
+  /// Images first, then videos — used by offer card gallery.
+  List<String> get mediaPaths => [
+        ...imagePaths.where((p) => p.trim().isNotEmpty),
+        ...videoPaths.where((p) => p.trim().isNotEmpty),
+      ];
+
   factory MyRequestOfferModel.fromJson(Map<String, dynamic> json) {
     final rawImages = json['imagePaths'] as List<dynamic>? ??
         json['ImagePaths'] as List<dynamic>? ??
+        const [];
+    final rawVideos = json['videoPaths'] as List<dynamic>? ??
+        json['VideoPaths'] as List<dynamic>? ??
         const [];
     final rawDocs = json['documentPaths'] as List<dynamic>? ??
         json['DocumentPaths'] as List<dynamic>? ??
@@ -374,6 +385,7 @@ class MyRequestOfferModel {
       notesEn: notesPair.en,
       notesAr: notesPair.ar,
       imagePaths: rawImages.map((e) => e.toString()).toList(),
+      videoPaths: rawVideos.map((e) => e.toString()).toList(),
       documentPaths: rawDocs.map((e) => e.toString()).toList(),
     );
   }

@@ -31,6 +31,7 @@ class NotificationNavigationHelper {
     final referenceId = item.referenceId.trim();
     final title = item.title.toLowerCase();
     final typeName = item.typeName.toLowerCase().trim();
+    final orderId = int.tryParse(referenceId);
     final looksLikeOrder = typeName == 'order' ||
         typeName == 'new_order' ||
         typeName == 'product_order' ||
@@ -40,6 +41,9 @@ class NotificationNavigationHelper {
         typeName.contains('order_created') ||
         title.contains('new order') ||
         title.contains('طلب جديد');
+    final isOrderStatusUpdate = typeName.contains('order_status') ||
+        typeName.contains('order_refund') ||
+        route == 'track_order';
     // Only open the request-offers screen for real request-ad offers.
     // Legacy product-order pushes used type=request_offer + "New offer available".
     final looksLikeRequestOffer = title.contains('offer on your request') ||
@@ -55,13 +59,25 @@ class NotificationNavigationHelper {
       return;
     }
 
+    // Buyer status updates (e.g. Received) must open tracking, not My Ads/Account.
+    if (isOrderStatusUpdate && orderId != null && orderId > 0) {
+      openTrackOrder(context, orderId: orderId);
+      return;
+    }
+
     if (route == 'track_order' || route == 'orders') {
       openMyOrdersTab(
         context,
-        highlightOrderId: int.tryParse(referenceId),
+        highlightOrderId: orderId,
         openIncoming: typeName == 'new_order' || typeName == 'order',
         openRequestOffers: typeName == 'request_offer' || looksLikeRequestOffer,
       );
+      return;
+    }
+
+    // Legacy payloads used my_offers for buyer request-order status updates.
+    if (route == 'my_offers' && looksLikeOrder && orderId != null && orderId > 0) {
+      openTrackOrder(context, orderId: orderId);
       return;
     }
 
@@ -94,9 +110,13 @@ class NotificationNavigationHelper {
     }
 
     if (looksLikeOrder) {
+      if (orderId != null && orderId > 0 && typeName.contains('order_status')) {
+        openTrackOrder(context, orderId: orderId);
+        return;
+      }
       openMyOrdersTab(
         context,
-        highlightOrderId: int.tryParse(referenceId),
+        highlightOrderId: orderId,
         openIncoming: typeName == 'new_order' || typeName == 'order',
         openRequestOffers: typeName == 'request_offer' || looksLikeRequestOffer,
       );
@@ -137,6 +157,19 @@ class NotificationNavigationHelper {
         highlightOrderId: int.tryParse(referenceId),
       );
     }
+  }
+
+  /// Opens My Orders, then pushes the order tracking screen for [orderId].
+  static void openTrackOrder(BuildContext context, {required int orderId}) {
+    openMyOrdersTab(context, highlightOrderId: orderId);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final navContext = AppRoutes.navigatorKey.currentContext ?? context;
+      if (!navContext.mounted) return;
+      navContext.push(
+        AppRoutes.kTrackOrderView,
+        extra: <String, dynamic>{'orderId': orderId},
+      );
+    });
   }
 
   /// Opens the bottom-bar My Orders tab and optionally highlights an order card.

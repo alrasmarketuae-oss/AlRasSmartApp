@@ -301,7 +301,8 @@ public partial class OrdersAppService
                     },
                     preferredLanguage: buyer.PreferredLanguage,
                     type: "order_status_updated",
-                    routeName: isRequestOffer ? "my_offers" : "track_order",
+                    // Always open order tracking for the buyer (including Request offers / Received).
+                    routeName: "track_order",
                     referenceId: orderDetails.Id.ToString(),
                     cancellationToken: cancellationToken,
                     emailHtml: BuildOrderStatusUpdateEmailHtml(
@@ -347,7 +348,8 @@ public partial class OrdersAppService
                                     statusAr),
                             preferredLanguage: seller.PreferredLanguage,
                             type: "order_status_updated",
-                            routeName: isRequestOffer ? "my_ads" : "orders",
+                            // Status updates open Orders, not My Ads (Account).
+                            routeName: "orders",
                             referenceId: orderDetails.Id.ToString(),
                             cancellationToken: cancellationToken,
                             emailHtml: BuildOrderStatusUpdateEmailHtml(

@@ -479,16 +479,26 @@ class AppPushNotificationService {
     }
 
     // Same routing as in-app notification list (Android + iOS).
-    final referenceId = (data['highlightProductId'] ??
-            data['productId'] ??
-            data['ProductId'] ??
-            data['referenceId'] ??
-            data['ReferenceId'] ??
-            data['orderId'] ??
-            data['OrderId'] ??
-            '')
-        .toString()
-        .trim();
+    // Prefer order id for order payloads so status taps open tracking.
+    final isOrderType = type.contains('order');
+    final referenceId = (isOrderType
+            ? (data['orderId'] ??
+                data['OrderId'] ??
+                data['referenceId'] ??
+                data['ReferenceId'] ??
+                data['highlightProductId'] ??
+                data['productId'] ??
+                data['ProductId'])
+            : (data['highlightProductId'] ??
+                data['productId'] ??
+                data['ProductId'] ??
+                data['referenceId'] ??
+                data['ReferenceId'] ??
+                data['orderId'] ??
+                data['OrderId']))
+        ?.toString()
+        .trim() ??
+        '';
 
     final item = AppNotificationModel(
       id: (data['id'] ?? data['Id'] ?? '').toString(),
