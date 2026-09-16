@@ -427,6 +427,19 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
             }
             target.showSupportCallbackForm = shouldShowForm;
             target.supportQuestion = supportQuestion;
+            // Replace list entry so ListView keys/rebuild pick up cards + form.
+            _messages[targetIndex] = AiChatMessage(
+              text: target.text,
+              isUser: false,
+              thinkingSteps: List<String>.from(target.thinkingSteps),
+              thinkingDurationMs: target.thinkingDurationMs,
+              showMediaUpload: target.showMediaUpload,
+              showSupportCallbackForm: shouldShowForm,
+              supportQuestion: supportQuestion,
+              responseId: target.responseId,
+              replyPreview: target.replyPreview,
+              listings: List<MyListingProductModel>.from(target.listings),
+            );
           } else if (finalAnswer.isNotEmpty ||
               parsedListings.isNotEmpty ||
               shouldShowForm) {
@@ -465,13 +478,54 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
         }
       },
       onError: (message) {
-        if (_shouldIgnoreAssistantError()) return;
+        // If text already streamed, SignalR may still fail on the completed
+        // payload — keep the reply and still attach the support form when needed.
+        if (_shouldIgnoreAssistantError()) {
+          _attachSupportFormToInFlightReply();
+          return;
+        }
         _showConnectionError(message: message);
         if (_voiceConversationMode && _voiceAgent == null) {
           unawaited(_onAssistantSpeechFinished());
         }
       },
     );
+  }
+
+  void _attachSupportFormToInFlightReply() {
+    if (!mounted) return;
+    final responseId = _inFlightResponseId;
+    final supportQuestion = responseId == null
+        ? null
+        : _questionForResponse[responseId];
+    setState(() {
+      _isThinking = false;
+      final targetIndex = responseId == null
+          ? _messages.lastIndexWhere((m) => !m.isUser)
+          : _messages.lastIndexWhere(
+              (m) => !m.isUser && m.responseId == responseId,
+            );
+      if (targetIndex < 0) return;
+      final target = _messages[targetIndex];
+      final shouldShow = looksLikeSupportCallbackIntent(supportQuestion) ||
+          looksLikeSupportCallbackCue(target.text) ||
+          looksLikeTemporaryAssistantFailure(target.text) ||
+          target.showSupportCallbackForm;
+      if (!shouldShow) return;
+      _messages[targetIndex] = AiChatMessage(
+        text: target.text,
+        isUser: false,
+        thinkingSteps: List<String>.from(target.thinkingSteps),
+        thinkingDurationMs: target.thinkingDurationMs,
+        showMediaUpload: target.showMediaUpload,
+        showSupportCallbackForm: true,
+        supportQuestion: supportQuestion ?? target.supportQuestion,
+        responseId: target.responseId,
+        replyPreview: target.replyPreview,
+        listings: List<MyListingProductModel>.from(target.listings),
+      );
+    });
+    _scrollToEnd();
   }
 
   bool _hasSubstantiveAssistantReply({int? responseId}) {
@@ -705,17 +759,23 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
                         colors: colors,
                       );
                     }
+                    final msg = _messages[index];
                     return AiSwipeToReply(
-                      onReply: () => _setReply(_messages[index]),
+                      key: ValueKey(
+                        'msg-$index-${msg.responseId}-'
+                        '${msg.showSupportCallbackForm}-'
+                        '${msg.listings.length}-${msg.text.length}',
+                      ),
+                      onReply: () => _setReply(msg),
                       child: AiMessageBubble(
-                      message: _messages[index],
-                      colors: colors,
-                      onPickAdMedia: _pickAdMedia,
-                      uploadingAdMedia: _uploadingAdMedia,
-                      sessionId: _realtime.sessionId,
-                      // Keep the form mounted so the success state remains visible.
-                      onSupportCallbackSubmitted: null,
-                    ),
+                        message: msg,
+                        colors: colors,
+                        onPickAdMedia: _pickAdMedia,
+                        uploadingAdMedia: _uploadingAdMedia,
+                        sessionId: _realtime.sessionId,
+                        // Keep the form mounted so the success state remains visible.
+                        onSupportCallbackSubmitted: null,
+                      ),
                     );
                   },
                 ),

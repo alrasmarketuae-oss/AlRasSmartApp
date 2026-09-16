@@ -17,7 +17,9 @@ using BusinessLayer.PasswordHelper;
 using BusinessLayer.Services;
 using BusinessLayer.Services.AiAssistant;
 using BusinessLayer.Services.AiAssistant.Mcp;
+using BusinessLayer.Services.AiAssistant.Shopping;
 using BusinessLayer.Services.AiAssistant.Voice;
+using BusinessLayer.Interfaces.AiAssistant;
 using BusinessLayer.Services.ImageSearch;
 using BusinessLayer.TokenService;
 using BusinessLayer.Caching;
@@ -152,6 +154,21 @@ builder.Services.Configure<AiAssistantOptions>(
     builder.Configuration.GetSection(AiAssistantOptions.SectionName));
 builder.Services.Configure<AiVoiceAgentOptions>(
     builder.Configuration.GetSection(AiVoiceAgentOptions.SectionName));
+builder.Services.Configure<AiShoppingAgentOptions>(
+    builder.Configuration.GetSection(AiShoppingAgentOptions.SectionName));
+builder.Services.AddSingleton<IAiShoppingAccessGate, AiShoppingAccessGate>();
+builder.Services.AddSingleton<IAiShoppingCostGuard, AiShoppingCostGuard>();
+builder.Services.AddSingleton<IAiShoppingSessionStore, AiShoppingSessionStore>();
+builder.Services.AddSingleton<IAiShoppingIdempotencyStore, AiShoppingIdempotencyStore>();
+builder.Services.AddSingleton<IAiAsyncToolJobRegistry, AiAsyncToolJobRegistry>();
+builder.Services.AddSingleton<IAiShoppingObservability, AiShoppingObservability>();
+builder.Services.AddHttpClient(nameof(AiResponsesApiClient), client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(90);
+});
+builder.Services.AddSingleton<IAiResponsesApiClient, AiResponsesApiClient>();
+builder.Services.AddScoped<IAiShoppingToolsService, AiShoppingToolsService>();
+builder.Services.AddScoped<IAiShoppingAgentService, AiShoppingAgentService>();
 builder.Services.AddSingleton<IConfigurationAccessor, ConfigurationAccessor>();
 builder.Services.AddHttpClient<IImageEmbeddingService, ClipHttpEmbeddingService>(client =>
 {

@@ -136,6 +136,12 @@ class AiMessageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final isUser = message.isUser;
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    // Defensive: even if the hub flag was dropped mid-stream, show the form
+    // when the assistant reply itself invites the user to leave contact details.
+    final showSupportForm = !isUser &&
+        (message.showSupportCallbackForm ||
+            looksLikeSupportCallbackCue(message.text) ||
+            looksLikeTemporaryAssistantFailure(message.text));
     final bubble = Container(
       padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 11.h),
       constraints: BoxConstraints(maxWidth: 0.72.sw),
@@ -283,14 +289,22 @@ class AiMessageBubble extends StatelessWidget {
               ),
             ],
           ),
-          if (!isUser && message.showSupportCallbackForm)
+          if (showSupportForm)
             AiSupportCallbackForm(
+              key: ValueKey(
+                'support-${message.responseId ?? message.text.hashCode}',
+              ),
               question: message.supportQuestion,
               sessionId: sessionId,
               onSubmitted: onSupportCallbackSubmitted,
             ),
           if (!isUser && message.listings.isNotEmpty)
-            AiProductListings(products: message.listings),
+            AiProductListings(
+              key: ValueKey(
+                'listings-${message.responseId ?? 0}-${message.listings.length}',
+              ),
+              products: message.listings,
+            ),
         ],
       ),
     );

@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
 using BusinessLayer.Interfaces;
+using BusinessLayer.Interfaces.AiAssistant;
 using Microsoft.AspNetCore.SignalR;
 
 namespace RasAlSouqPresentaionLayer.Hubs;
@@ -13,6 +14,10 @@ namespace RasAlSouqPresentaionLayer.Hubs;
 /// </summary>
 public sealed class AiAssistantHub(
     IAiAssistantAppService assistant,
+    IAiShoppingAgentService shoppingAgent,
+    IAiShoppingAccessGate shoppingAccessGate,
+    IAiAsyncToolJobRegistry asyncToolJobs,
+    IAiShoppingSessionStore shoppingSessions,
     IAiConversationStore conversationStore) : Hub
 {
     private const int MaxHistoryMessages = 30;
@@ -29,6 +34,7 @@ public sealed class AiAssistantHub(
             foreach (var key in keys.Keys)
             {
                 Sessions.TryRemove(key, out _);
+                asyncToolJobs.CancelSession(key, "disconnect");
             }
         }
 
@@ -96,18 +102,39 @@ public sealed class AiAssistantHub(
         var responseSent = false;
         try
         {
-            var result = await assistant.AskAsync(
-                userId,
-                new AiAssistantAskRequest { Message = text, Language = language },
-                history,
-                async (step, ct) =>
-                {
-                    await Clients.Caller.SendAsync(
-                        "aiThinkingStep",
-                        new { text = step },
-                        ct);
-                },
-                Context.ConnectionAborted);
+            var clientSessionId = ExtractClientSessionId(sessionId, Context.ConnectionId);
+            var useShopping = shoppingAccessGate.ShouldRouteToShoppingAgent(userId, text);
+            AiAssistantAnswer result;
+            if (useShopping)
+            {
+                result = await shoppingAgent.AskAsync(
+                    userId,
+                    clientSessionId,
+                    new AiAssistantAskRequest { Message = text, Language = language },
+                    async (step, ct) =>
+                    {
+                        await Clients.Caller.SendAsync(
+                            "aiThinkingStep",
+                            new { text = step },
+                            ct);
+                    },
+                    Context.ConnectionAborted);
+            }
+            else
+            {
+                result = await assistant.AskAsync(
+                    userId,
+                    new AiAssistantAskRequest { Message = text, Language = language },
+                    history,
+                    async (step, ct) =>
+                    {
+                        await Clients.Caller.SendAsync(
+                            "aiThinkingStep",
+                            new { text = step },
+                            ct);
+                    },
+                    Context.ConnectionAborted);
+            }
 
             session.Add("user", text);
             session.Add("assistant", result.Answer);
@@ -156,22 +183,73 @@ public sealed class AiAssistantHub(
                 await Task.Delay(8, Context.ConnectionAborted);
             }
 
-            await Clients.Caller.SendAsync(
-                "aiResponseCompleted",
-                new
+            // Prefer strongly-typed maps — Dictionary<string, object?> from ToChatJson()
+            // can fail System.Text.Json in SignalR after deltas already streamed, so the
+            // client keeps the text but never receives offerSupportCallback / listings.
+            var listingPayload = (result.Listings ?? [])
+                .Where(x => x.ProductId != Guid.Empty)
+                .Select(x => new
                 {
-                    answer = result.Answer,
-                    result.Language,
-                    result.UsedKnowledge,
-                    result.Sources,
-                    offerSupportCallback = result.OfferSupportCallback,
-                    listings = (result.Listings ?? [])
-                        .Where(x => x.ProductId != Guid.Empty)
-                        .Select(x => x.ToChatJson())
-                        .ToList(),
-                    thinkingSteps = result.ThinkingSteps
-                },
-                Context.ConnectionAborted);
+                    productId = x.ProductId.ToString("D"),
+                    ProductId = x.ProductId.ToString("D"),
+                    id = x.ProductId.ToString("D"),
+                    productCode = x.ProductCode,
+                    productName = string.IsNullOrWhiteSpace(x.NameEn) ? x.NameAr : x.NameEn,
+                    nameEn = x.NameEn,
+                    nameAr = x.NameAr,
+                    price = x.Price,
+                    displayPrice = x.Price,
+                    currency = x.Currency,
+                    usdPrice = x.UsdPrice,
+                    priceUsd = x.UsdPrice,
+                    priceAed = x.PriceAed,
+                    quantity = x.Quantity,
+                    Quantity = x.Quantity,
+                    unitName = x.UnitName,
+                    UnitName = x.UnitName,
+                    categoryId = x.CategoryId,
+                    productTypeId = x.ProductTypeId,
+                    productTypeName = x.ProductTypeName,
+                    searchListingChannel = x.SearchListingChannel,
+                    hasRetailPricing = x.HasRetailPricing,
+                    images = x.Images?.ToList() ?? new List<string>(),
+                    Images = x.Images?.ToList() ?? new List<string>()
+                })
+                .ToList();
+
+            try
+            {
+                await Clients.Caller.SendAsync(
+                    "aiResponseCompleted",
+                    new
+                    {
+                        answer = result.Answer,
+                        result.Language,
+                        result.UsedKnowledge,
+                        result.Sources,
+                        offerSupportCallback = result.OfferSupportCallback,
+                        listings = listingPayload,
+                        thinkingSteps = result.ThinkingSteps
+                    },
+                    Context.ConnectionAborted);
+            }
+            catch
+            {
+                // Last-resort: still deliver the completion flags without rich listings.
+                await Clients.Caller.SendAsync(
+                    "aiResponseCompleted",
+                    new
+                    {
+                        answer = result.Answer,
+                        result.Language,
+                        result.UsedKnowledge,
+                        result.Sources,
+                        offerSupportCallback = result.OfferSupportCallback,
+                        listings = Array.Empty<object>(),
+                        thinkingSteps = result.ThinkingSteps
+                    },
+                    Context.ConnectionAborted);
+            }
             responseSent = true;
         }
         catch (OperationCanceledException)
@@ -206,6 +284,10 @@ public sealed class AiAssistantHub(
     {
         var key = ResolveSessionKey(sessionId);
         Sessions.TryRemove(key, out _);
+        asyncToolJobs.CancelSession(key, "clear_session");
+        var userId = GetCurrentUserId();
+        var clientSessionId = ExtractClientSessionId(sessionId, Context.ConnectionId);
+        shoppingSessions.Reset(userId, clientSessionId);
         if (ConnectionSessions.TryGetValue(Context.ConnectionId, out var keys))
         {
             keys.TryRemove(key, out _);

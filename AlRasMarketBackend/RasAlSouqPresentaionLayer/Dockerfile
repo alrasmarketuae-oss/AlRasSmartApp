@@ -27,7 +27,8 @@ RUN dotnet publish -c Release -o /app/publish --no-restore
 # ===========================
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 
-# ffmpeg: video trim; OpenAI Realtime voice uses outbound WSS (no extra packages).
+# ffmpeg: video trim. Voice (Realtime WSS) + Astra shopping (HTTPS Responses API)
+# need only ca-certificates — no extra runtime packages.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ffmpeg ca-certificates \
     && rm -rf /var/lib/apt/lists/*
