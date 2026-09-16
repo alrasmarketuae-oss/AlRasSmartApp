@@ -1,5 +1,6 @@
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
+import 'package:alrasmarket/core/widgets/animated_ellipsis_text.dart';
 import 'package:alrasmarket/core/widgets/primary_button.dart';
 import 'package:alrasmarket/core/widgets/product_price_text.dart';
 import 'package:alrasmarket/features/clint/domain/entities/cart_item_entity.dart';
@@ -323,7 +324,7 @@ class _CartViewState extends State<CartView> {
                     children: [
                       _CheckoutBar(
                         label: isOnline ? s.payWithVisaButton : s.confirmOrder,
-                        loadingLabel: s.creatingOrder,
+                        loadingLabel: s.sending,
                         totalAmount: CartItemEntity.formatAmountOnly(
                           state.cart.totalAed,
                         ),
@@ -481,16 +482,26 @@ class _CheckoutBar extends StatelessWidget {
                   Icon(Icons.lock_rounded, color: Colors.white, size: 18.sp),
                 if (!isLoading) SizedBox(width: 10.w),
                 Expanded(
-                  child: Text(
-                    isLoading ? loadingLabel : label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
+                  child: isLoading
+                      ? AnimatedEllipsisText(
+                          label: loadingLabel,
+                          textAlign: TextAlign.start,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        )
+                      : Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                 ),
                 ProductPriceText(
                   amount: totalAmount,
