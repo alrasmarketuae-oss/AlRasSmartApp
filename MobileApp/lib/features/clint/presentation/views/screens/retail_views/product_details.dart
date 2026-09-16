@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:alrasmarket/core/widgets/animated_ellipsis_text.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/core/utils/product_quantity_validator.dart';
 import 'package:alrasmarket/core/utils/product_stock.dart';
@@ -275,11 +276,11 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
             final isOwnAd =
                 ProductOwnershipHelper.isOwnedByCurrentUser(widget.product);
             final ctaBusy = isRetailCart ? _isAddingToCart : isSubmitting;
-            final ctaLabel = ctaBusy
-                ? (isRetailCart ? s.addingToCart : s.creatingOrder)
-                : (widget.isOffer
-                    ? s.purchaseOrder
-                    : (isRetailCart ? s.addToCart : s.purchaseOrder));
+            final idleLabel = widget.isOffer
+                ? s.purchaseOrder
+                : (isRetailCart ? s.addToCart : s.purchaseOrder);
+            final busyLabel =
+                isRetailCart ? s.addingToCart : s.sending;
 
             return Scaffold(
               backgroundColor: BookingDetailsDesign.pageBg,
@@ -379,14 +380,25 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
                                   ),
                                   SizedBox(width: 8.w),
                                 ],
-                                Text(
-                                  ctaLabel,
-                                  style: TextStyle(
-                                    fontFamily: fontFamily,
-                                    fontSize: 15.sp,
-                                    fontWeight: FontWeight.w700,
+                                if (ctaBusy)
+                                  AnimatedEllipsisText(
+                                    label: busyLabel,
+                                    style: TextStyle(
+                                      fontFamily: fontFamily,
+                                      fontSize: 15.sp,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                else
+                                  Text(
+                                    idleLabel,
+                                    style: TextStyle(
+                                      fontFamily: fontFamily,
+                                      fontSize: 15.sp,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
-                                ),
                               ],
                             ),
                           ),

@@ -24,7 +24,7 @@ class SubmitOfferButtonWidget extends StatelessWidget {
         final s = S.of(context);
         return PrimaryButton(
           text: s.submitOffer,
-          loadingText: s.submittingOffer,
+          loadingText: s.sending,
           isLoading: isSubmitting,
           backgroundColor: const Color(0xFF3A7DC5),
           onPressed: isSubmitting

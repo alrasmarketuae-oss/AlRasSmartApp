@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../core/theme/colors.dart';
+import 'animated_ellipsis_text.dart';
 
 class PrimaryButton extends StatelessWidget {
   final String text;
@@ -32,6 +33,15 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final style =
+        textStyle ??
+        TextStyle(
+          fontSize: 16.sp,
+          fontFamily: Theme.of(context).textTheme.labelLarge?.fontFamily,
+          overflow: TextOverflow.ellipsis,
+          fontWeight: FontWeight.bold,
+          color: textColor ?? Colors.white,
+        );
     return SizedBox(
       height: height ?? 48.h,
       width: expandWidth ? (width ?? double.infinity) : width,
@@ -43,20 +53,17 @@ class PrimaryButton extends StatelessWidget {
           ),
         ),
         onPressed: isLoading ? null : onPressed,
-        child: Text(
-          isLoading ? (loadingText ?? text) : text,
-          maxLines: 1,
-          textAlign: TextAlign.center,
-          style:
-              textStyle ??
-              TextStyle(
-                fontSize: 16.sp,
-                fontFamily: Theme.of(context).textTheme.labelLarge?.fontFamily,
-                overflow: TextOverflow.ellipsis,
-                fontWeight: FontWeight.bold,
-                color: textColor ?? Colors.white,
+        child: isLoading
+            ? AnimatedEllipsisText(
+                label: loadingText ?? text,
+                style: style,
+              )
+            : Text(
+                text,
+                maxLines: 1,
+                textAlign: TextAlign.center,
+                style: style,
               ),
-        ),
       ),
     );
   }

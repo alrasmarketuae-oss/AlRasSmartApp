@@ -202,7 +202,7 @@ class _SendBookingOrderPage extends StatelessWidget {
                     padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 24.h),
                     child: PrimaryButton(
                       text: s.sendPurchaseOrder,
-                      loadingText: s.creatingOrder,
+                      loadingText: s.sending,
                       isLoading: formState.isSubmitting,
                       onPressed: formState.isSubmitting
                           ? null
