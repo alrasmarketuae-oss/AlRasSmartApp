@@ -41,6 +41,10 @@ enum CreateAdType {
         return CreateAdType.offers;
       case 'طلبات':
       case 'طلب':
+      case 'استفسار':
+      case 'استفسارات':
+      case 'inquiry':
+      case 'inquiries':
         return CreateAdType.requests;
       case 'حجز':
       case 'بوكينج':

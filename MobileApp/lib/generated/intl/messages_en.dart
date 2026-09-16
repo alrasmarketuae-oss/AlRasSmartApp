@@ -505,7 +505,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "commissionOffers": MessageLookupByLibrary.simpleMessage("Offers"),
     "commissionPercentValue": m10,
-    "commissionRequests": MessageLookupByLibrary.simpleMessage("Requests"),
+    "commissionRequests": MessageLookupByLibrary.simpleMessage("Inquiry"),
     "commissionRetail": MessageLookupByLibrary.simpleMessage("Retail"),
     "commissionSectionTitle": MessageLookupByLibrary.simpleMessage(
       "App fees on product prices",
@@ -523,7 +523,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "My Request ads",
     ),
     "companyCustomerRequestsSubtitle": MessageLookupByLibrary.simpleMessage(
-      "Supplier offers received on your Request ads.",
+      "Supplier offers received on your Inquiry ads.",
     ),
     "companyCustomerRequestsTab": MessageLookupByLibrary.simpleMessage(
       "Incoming offers",
@@ -1463,7 +1463,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "requestedReceiptDate": MessageLookupByLibrary.simpleMessage(
       "Requested Receipt Date",
     ),
-    "requests": MessageLookupByLibrary.simpleMessage("Requests"),
+    "requests": MessageLookupByLibrary.simpleMessage("Inquiry"),
     "requiredDeliveryDate": MessageLookupByLibrary.simpleMessage(
       "Required Delivery Date",
     ),
@@ -1686,7 +1686,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "shippingTimeRange": m33,
     "showAll": MessageLookupByLibrary.simpleMessage("Show All"),
     "showAllRequests": MessageLookupByLibrary.simpleMessage(
-      "Show all requests",
+      "Show all inquiries",
     ),
     "showNumber": MessageLookupByLibrary.simpleMessage("Show number"),
     "signInToContinue": MessageLookupByLibrary.simpleMessage(

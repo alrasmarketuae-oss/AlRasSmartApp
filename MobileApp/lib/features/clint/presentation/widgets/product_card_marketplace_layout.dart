@@ -389,16 +389,25 @@ class _ProductCardMarketplaceLayoutState
         ],
         if (showReconfirm) ...[
           SizedBox(height: quantityWithUnit.isNotEmpty ? 4.h : 6.h),
-          Text(
-            S.of(context).subjectToReconfirm,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontFamily: fontFamily,
-              fontSize: detailsFontSize,
-              fontWeight: FontWeight.w600,
-              color: const Color.fromRGBO(220, 38, 38, 1),
-              height: 1.2,
+          Align(
+            alignment: isAr ? Alignment.centerRight : Alignment.centerLeft,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: isAr ? Alignment.centerRight : Alignment.centerLeft,
+              child: Text(
+                S.of(context).subjectToReconfirm,
+                maxLines: 1,
+                softWrap: false,
+                style: TextStyle(
+                  fontFamily: fontFamily,
+                  fontSize: ProductGridLayout.isTablet(context)
+                      ? (detailsFontSize * 0.85)
+                      : detailsFontSize,
+                  fontWeight: FontWeight.w600,
+                  color: const Color.fromRGBO(220, 38, 38, 1),
+                  height: 1.2,
+                ),
+              ),
             ),
           ),
         ],

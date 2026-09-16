@@ -106,7 +106,7 @@ class _OfferProductCardMarketplaceLayoutState
     final displayPrice = showDeal ? sale : (original > 0 ? original : sale);
     final titleFontSize = ProductGridLayout.cardTitleFontSize(context);
     final detailsFontSize = ProductGridLayout.cardDetailsFontSize(context);
-    final priceFontSize = ProductGridLayout.cardPriceFontSize(context);
+    final priceFontSize = ProductGridLayout.cardPriceFontSize(context) + 1.5.sp;
     final isTablet = ProductGridLayout.isTablet(context);
     final smallPriceFontSize = isTablet ? 11.5.sp : 11.sp;
 
@@ -254,7 +254,7 @@ class _OfferProductCardMarketplaceLayoutState
                         fontFamily: fontFamily,
                         fontSize: priceFontSize,
                         fontWeight: FontWeight.w800,
-                        color: const Color(0xFF619D50),
+                        color: const Color(0xFFDC2626),
                         height: 1.1,
                       ),
                       iconSize: priceFontSize,

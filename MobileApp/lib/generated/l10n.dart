@@ -974,10 +974,10 @@ class S {
     );
   }
 
-  /// `Supplier offers received on your Request ads.`
+  /// `Supplier offers received on your Inquiry ads.`
   String get companyCustomerRequestsSubtitle {
     return Intl.message(
-      'Supplier offers received on your Request ads.',
+      'Supplier offers received on your Inquiry ads.',
       name: 'companyCustomerRequestsSubtitle',
       desc: '',
       args: [],
@@ -1639,9 +1639,9 @@ class S {
     return Intl.message('Orders', name: 'orders', desc: '', args: []);
   }
 
-  /// `Requests`
+  /// `Inquiry`
   String get requests {
-    return Intl.message('Requests', name: 'requests', desc: '', args: []);
+    return Intl.message('Inquiry', name: 'requests', desc: '', args: []);
   }
 
   /// `Order Details`
@@ -3474,10 +3474,10 @@ class S {
     );
   }
 
-  /// `Requests`
+  /// `Inquiry`
   String get commissionRequests {
     return Intl.message(
-      'Requests',
+      'Inquiry',
       name: 'commissionRequests',
       desc: '',
       args: [],
@@ -4209,10 +4209,10 @@ class S {
     );
   }
 
-  /// `Show all requests`
+  /// `Show all inquiries`
   String get showAllRequests {
     return Intl.message(
-      'Show all requests',
+      'Show all inquiries',
       name: 'showAllRequests',
       desc: '',
       args: [],
