@@ -5,6 +5,7 @@ import 'package:alrasmarket/features/company/presentation/controller/cubit/compa
 import 'package:alrasmarket/features/company/presentation/controller/cubit/company_states.dart';
 import 'package:alrasmarket/features/company/presentation/models/my_ads_filter.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/my_ads/my_ad_announcement_card.dart';
+import 'package:alrasmarket/features/company/presentation/widgets/my_ads/my_ads_list_skeleton.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -89,17 +90,11 @@ class _MyAdsListPlaceholderWidgetState
       buildWhen: (previous, current) => current is CompanyMyListingsState,
       builder: (context, state) {
         if (state is! CompanyMyListingsState) {
-          return const Center(child: CircularProgressIndicator());
+          return const MyAdsListSkeleton();
         }
 
-        if (state.isLoading) {
-          return ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            children: const [
-              SizedBox(height: 240),
-              Center(child: CircularProgressIndicator()),
-            ],
-          );
+        if (state.isLoading && state.products.isEmpty) {
+          return const MyAdsListSkeleton();
         }
 
         if (state.errorMessage != null) {

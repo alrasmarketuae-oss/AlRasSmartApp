@@ -17,6 +17,7 @@ import 'package:alrasmarket/features/company/presentation/widgets/my_ads/change_
 import 'package:alrasmarket/features/company/presentation/widgets/my_ads/my_ads_filter_chips.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/my_ads/my_ads_header_widget.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/my_ads/my_ads_list_placeholder_widget.dart';
+import 'package:alrasmarket/features/company/presentation/widgets/my_ads/my_ads_list_skeleton.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -499,13 +500,7 @@ class _MyOffersRefreshableList extends StatelessWidget {
         return RefreshIndicator(
           onRefresh: () => cubit.fetchMyOffers(),
           child: cubit.isLoadingMyOffers && cubit.myOffers.isEmpty
-              ? ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: const [
-                    SizedBox(height: 240),
-                    Center(child: CircularProgressIndicator()),
-                  ],
-                )
+              ? const MyOffersListSkeleton()
               : cubit.myOffersError != null && cubit.myOffers.isEmpty
                   ? ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
