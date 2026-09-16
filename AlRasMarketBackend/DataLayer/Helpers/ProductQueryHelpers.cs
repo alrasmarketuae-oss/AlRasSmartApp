@@ -23,11 +23,13 @@ public static class ProductQueryHelpers
     public static IQueryable<Product> ApplyPublicProductFilter(IQueryable<Product> query)
     {
         var utcNow = DateTime.UtcNow;
+        // Include paused listings (sold-out qty=0 auto-pauses) so search still returns them;
+        // the mobile app shows the sold-out stamp. Do not hide zero-quantity products.
         return query.Where(x =>
             (x.Status == ProductCatalogCodes.StatusActive
+                || x.Status == ProductCatalogCodes.StatusPaused
                 || (x.Status == ProductCatalogCodes.StatusUnderReview && x.IsApproved == true))
-            && (x.DisplayExpiresAtUtc == null || x.DisplayExpiresAtUtc > utcNow)
-            && (x.ProductTypeId != ProductCatalogCodes.TypeRequests || x.Quantity > 0));
+            && (x.DisplayExpiresAtUtc == null || x.DisplayExpiresAtUtc > utcNow));
     }
 
     public static IQueryable<Product> ApplyHomeCatalogProductFilter(IQueryable<Product> query)
@@ -38,7 +40,6 @@ public static class ProductQueryHelpers
             && (x.ProductTypeId == null || x.ProductTypeId == ProductCatalogCodes.TypeRetail)
             && x.IsApproved == true
             && x.Status != ProductCatalogCodes.StatusRejected
-            && (x.ProductTypeId != ProductCatalogCodes.TypeRequests || x.Quantity > 0)
             && (x.Status == ProductCatalogCodes.StatusActive
                 || x.Status == ProductCatalogCodes.StatusPaused
                 || (x.Status == ProductCatalogCodes.StatusUnderReview && x.IsApproved == true)));

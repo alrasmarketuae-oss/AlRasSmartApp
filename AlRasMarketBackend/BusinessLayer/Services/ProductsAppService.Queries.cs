@@ -261,9 +261,9 @@ public partial class ProductsAppService
             .Where(byId.ContainsKey)
             .Select(id => byId[id])
             .Where(p =>
-                (p.Status == ProductCatalogCodes.StatusActive
+                p.Status == ProductCatalogCodes.StatusActive
+                    || p.Status == ProductCatalogCodes.StatusPaused
                     || (p.Status == ProductCatalogCodes.StatusUnderReview && p.IsApproved == true))
-                && (p.ProductTypeId != ProductCatalogCodes.TypeRequests || p.Quantity > 0))
             .ToList();
 
         var totalCount = publicOrdered.Count;

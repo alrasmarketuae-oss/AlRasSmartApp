@@ -295,16 +295,17 @@ export default function RequestOfferDetailView({
     order.supplierUnitPrice,
   ])
 
-  const subtotal =
-    order.customerTotalPriceFormatted?.trim() ||
-    `${(order.customerTotalPrice || order.totalPrice || 0).toFixed(2)} ${order.currency}`
-
+  
   const vatAmount =
-    order.vatAed > 0 ? formatAdAmount(`${order.vatAed.toFixed(2)} AED`, locale) : '—'
+  order.vatAed > 0 ? formatAdAmount(`${order.vatAed.toFixed(2)} AED`, locale) : '—'
   const appProfit = formatAdAmount(
     order.appProfitFormatted || `${order.appProfitAmount.toFixed(2)} ${order.currency}`,
     locale,
   )
+  // Subtotal = amount due to the offerer/supplier only (no app commission).
+  const subtotal =
+    order.supplierTotalPriceFormatted?.trim() ||
+    `${(order.supplierTotalPrice || 0).toFixed(2)} ${order.currency}`
   const grandTotal = formatOrderAmount(order)
 
   const fulfillmentLabel = formatPriceTypeLabel(order.shippingDescription, t)

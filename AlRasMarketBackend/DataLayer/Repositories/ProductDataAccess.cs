@@ -481,8 +481,7 @@ public sealed class ProductDataAccess(
                     && x.Status != ProductCatalogCodes.StatusRejected
                     && (x.Status == ProductCatalogCodes.StatusActive
                         || x.Status == ProductCatalogCodes.StatusPaused
-                        || (x.Status == ProductCatalogCodes.StatusUnderReview && x.IsApproved == true))
-                    && (x.ProductTypeId != ProductCatalogCodes.TypeRequests || x.Quantity > 0));
+                        || (x.Status == ProductCatalogCodes.StatusUnderReview && x.IsApproved == true)));
         }
 
         var totalCount = await productsQuery.CountAsync(cancellationToken);

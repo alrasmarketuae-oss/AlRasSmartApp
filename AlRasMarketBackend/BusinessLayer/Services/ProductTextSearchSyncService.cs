@@ -154,9 +154,9 @@ public sealed class ProductTextSearchSyncService(
         var utcNow = DateTime.UtcNow;
         var isPublic =
             (row.Status == ProductCatalogCodes.StatusActive
+                || row.Status == ProductCatalogCodes.StatusPaused
                 || (row.Status == ProductCatalogCodes.StatusUnderReview && row.IsApproved == true))
-            && (row.DisplayExpiresAtUtc == null || row.DisplayExpiresAtUtc > utcNow)
-            && (row.ProductTypeId != ProductCatalogCodes.TypeRequests || row.Quantity > 0);
+            && (row.DisplayExpiresAtUtc == null || row.DisplayExpiresAtUtc > utcNow);
 
         var translations = await dbContext.ContentTranslations.AsNoTracking()
             .Where(t =>
