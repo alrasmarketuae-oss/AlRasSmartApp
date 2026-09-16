@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/widgets/cached_app_image.dart';
+import 'package:alrasmarket/features/clint/presentation/models/product_media_item.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_media_preview_screen.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_video_thumbnail.dart';
 import 'package:alrasmarket/features/company/presentation/helpers/create_ad_form_mapper.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_design.dart';
@@ -19,6 +21,7 @@ class CreateAdProductImagesWidget extends StatelessWidget {
     this.isCompressingMedia = false,
     this.mediaCompressionProgress = 0,
     this.mediaCompressionLabel,
+    this.showRequiredError = false,
   });
 
   final List<String> productImages;
@@ -27,12 +30,16 @@ class CreateAdProductImagesWidget extends StatelessWidget {
   final bool isCompressingMedia;
   final double mediaCompressionProgress;
   final String? mediaCompressionLabel;
+  final bool showRequiredError;
 
   bool _isVideoPath(String path) => CreateAdFormMapper.isVideoPath(path);
 
   @override
   Widget build(BuildContext context) {
     final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
+    final accentColor = showRequiredError
+        ? const Color(0xFFC62828)
+        : CreateAdDesign.brand.withValues(alpha: 0.45);
 
     return CreateAdSectionCard(
       child: Column(
@@ -46,7 +53,6 @@ class CreateAdProductImagesWidget extends StatelessWidget {
                 child: CreateAdRequiredLabel(
                   S.of(context).productImages,
                   fontFamily: fontFamily,
-                  required: false,
                 ),
               ),
             ],
@@ -57,7 +63,7 @@ class CreateAdProductImagesWidget extends StatelessWidget {
             children: [
               CustomPaint(
                 painter: _DashedRRectPainter(
-                  color: CreateAdDesign.brand.withValues(alpha: 0.45),
+                  color: accentColor,
                   radius: 12.r,
                 ),
                 child: Container(
@@ -65,7 +71,9 @@ class CreateAdProductImagesWidget extends StatelessWidget {
                       EdgeInsets.symmetric(horizontal: 12.w, vertical: 18.h),
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: CreateAdDesign.iconBg.withValues(alpha: 0.35),
+                    color: showRequiredError
+                        ? const Color(0xFFC62828).withValues(alpha: 0.06)
+                        : CreateAdDesign.iconBg.withValues(alpha: 0.35),
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   // Keep gallery ListView outside the pick InkWell — nesting
@@ -87,7 +95,9 @@ class CreateAdProductImagesWidget extends StatelessWidget {
                                 child: Icon(
                                   Icons.cloud_upload_outlined,
                                   size: 22.sp,
-                                  color: CreateAdDesign.brand,
+                                  color: showRequiredError
+                                      ? const Color(0xFFC62828)
+                                      : CreateAdDesign.brand,
                                 ),
                               ),
                               SizedBox(height: 10.h),
@@ -129,31 +139,42 @@ class CreateAdProductImagesWidget extends StatelessWidget {
                                   final isVideo = _isVideoPath(filePath);
                                   return Stack(
                                     children: [
-                                      Container(
-                                        width: 100.w,
-                                        height: 100.h,
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFF5F5F5),
+                                      Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                          onTap: () =>
+                                              _openMediaPreview(context, index),
                                           borderRadius:
                                               BorderRadius.circular(12.r),
-                                        ),
-                                        child: ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(12.r),
-                                          child: isVideo
-                                              ? ProductVideoThumbnail(
-                                                  videoUrl:
-                                                      _resolveVideoSource(
-                                                    filePath,
-                                                  ),
-                                                  width: 100.w,
-                                                  height: 100.h,
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                    12.r,
-                                                  ),
-                                                )
-                                              : _buildImagePreview(filePath),
+                                          child: Container(
+                                            width: 100.w,
+                                            height: 100.h,
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFF5F5F5),
+                                              borderRadius:
+                                                  BorderRadius.circular(12.r),
+                                            ),
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(12.r),
+                                              child: isVideo
+                                                  ? ProductVideoThumbnail(
+                                                      videoUrl:
+                                                          _resolveVideoSource(
+                                                        filePath,
+                                                      ),
+                                                      width: 100.w,
+                                                      height: 100.h,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                        12.r,
+                                                      ),
+                                                    )
+                                                  : _buildImagePreview(
+                                                      filePath,
+                                                    ),
+                                            ),
+                                          ),
                                         ),
                                       ),
                                       Positioned(
@@ -276,6 +297,18 @@ class CreateAdProductImagesWidget extends StatelessWidget {
                 ),
             ],
           ),
+          if (showRequiredError) ...[
+            SizedBox(height: 8.h),
+            Text(
+              S.of(context).productImagesRequired,
+              style: TextStyle(
+                fontSize: 11.sp,
+                fontFamily: fontFamily,
+                color: const Color(0xFFC62828),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -292,6 +325,30 @@ class CreateAdProductImagesWidget extends StatelessWidget {
       return _resolveRemoteUrl(path);
     }
     return path;
+  }
+
+  String _previewUrl(String path) {
+    if (_isRemotePath(path)) return _resolveRemoteUrl(path);
+    return path;
+  }
+
+  void _openMediaPreview(BuildContext context, int index) {
+    if (productImages.isEmpty) return;
+    final items = productImages
+        .map(
+          (path) => ProductMediaItem(
+            url: _previewUrl(path),
+            kind: _isVideoPath(path)
+                ? ProductMediaKind.video
+                : ProductMediaKind.image,
+          ),
+        )
+        .toList();
+    ProductMediaPreviewScreen.open(
+      context,
+      items: items,
+      initialIndex: index,
+    );
   }
 
   Widget _buildImagePreview(String filePath) {

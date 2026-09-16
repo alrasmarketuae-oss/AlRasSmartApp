@@ -175,17 +175,14 @@ class AuthCubit extends Cubit<AuthStates> {
     await _saveLoginData(loginResponse, emailFallback);
     sl<ClintCubit>().clearUserSessionMemory();
     unawaited(BiometricAuthService.instance.refreshSnapshotIfEnabled());
-    unawaited(
-      ProfileService.instance.fetchMyProfile(forceRefresh: true).catchError((_) {
-        return UserProfile(
-          fullName: AuthService.instance.currentUserName ?? '',
-          email: AuthService.instance.currentUserEmail ?? '',
-          roleName: AuthService.instance.currentUserRoleName ?? '',
-          isCompanyAccount:
-              AuthService.instance.currentUserIsCompanyAccount,
-        );
-      }),
-    );
+    // Await profile so name/phone (UAE gating) are ready before navigation.
+    try {
+      await ProfileService.instance
+          .fetchMyProfile(forceRefresh: true)
+          .timeout(const Duration(seconds: 12));
+    } catch (_) {
+      // Login still succeeds; header/create-ad refresh when profile arrives later.
+    }
 
     final isSocialLogin =
         loginProviderName == 'google' || loginProviderName == 'apple';
@@ -682,7 +679,11 @@ class AuthCubit extends Cubit<AuthStates> {
     unawaited(PendingProfileImageUploader.uploadIfPending());
     _resetHomeTabs();
     final destination = whereToGo();
-    context.go(destination);
+    // Force home shell remount so IndexedStack children (Create Ad / Profile)
+    // do not keep the previous account's state.
+    final sid = AuthService.instance.currentUserID ?? 'guest';
+    final uri = Uri(path: destination, queryParameters: {'sid': sid});
+    context.go(uri.toString());
 
     final isHome = destination == AppRoutes.kPersonHomeView ||
         destination == AppRoutes.kClientHomeView ||
@@ -704,7 +705,9 @@ class AuthCubit extends Cubit<AuthStates> {
   static void navigateAfterBiometricUnlock(BuildContext context) {
     _resetHomeTabs();
     final destination = whereToGo();
-    context.go(destination);
+    final sid = AuthService.instance.currentUserID ?? 'guest';
+    final uri = Uri(path: destination, queryParameters: {'sid': sid});
+    context.go(uri.toString());
 
     final isHome = destination == AppRoutes.kPersonHomeView ||
         destination == AppRoutes.kClientHomeView ||

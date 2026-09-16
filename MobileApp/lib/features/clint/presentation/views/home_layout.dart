@@ -50,12 +50,19 @@ class _HomeLayoutState extends State<HomeLayout> {
       builder: (context, state) {
         final cubit = ClintCubit.get(context);
         const showMyAds = true;
+        final sessionKey = AuthService.instance.currentUserID ?? 'guest';
         final screens = [
-          HomeView(key: ValueKey('client_home')),
-          AddOrderView(),
-          MyOrdersView(),
-          const MyAdsView(isTabView: true),
-          const ProfileView(isTabView: true),
+          HomeView(key: ValueKey('client_home_$sessionKey')),
+          AddOrderView(key: ValueKey('client_add_$sessionKey')),
+          MyOrdersView(key: ValueKey('client_orders_$sessionKey')),
+          MyAdsView(
+            key: ValueKey('client_ads_$sessionKey'),
+            isTabView: true,
+          ),
+          ProfileView(
+            key: ValueKey('client_profile_$sessionKey'),
+            isTabView: true,
+          ),
         ];
         // Keeps the status bar the same colour as the tab shown behind it.
         final tabBackgrounds = [

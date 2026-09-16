@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/router/where_to_go.dart';
+import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/features/auth/presentation/views/complet_register.dart';
 import 'package:alrasmarket/features/auth/presentation/views/login_view.dart';
 import 'package:alrasmarket/features/auth/presentation/views/otp_view.dart';
@@ -234,7 +235,8 @@ abstract class AppRoutes {
       GoRoute(
         path: kClientHomeView,
         builder: (context, state) {
-          return const HomeLayout();
+          final sessionKey = AuthService.instance.currentUserID ?? 'guest';
+          return HomeLayout(key: ValueKey('client_shell_$sessionKey'));
         },
       ),
 
@@ -244,7 +246,10 @@ abstract class AppRoutes {
       ),
       GoRoute(
         path: kCompanyHomeView,
-        builder: (context, state) => const CompanyHomeLayout(),
+        builder: (context, state) {
+          final sessionKey = AuthService.instance.currentUserID ?? 'guest';
+          return CompanyHomeLayout(key: ValueKey('company_shell_$sessionKey'));
+        },
       ),
       GoRoute(
         path: kShippingLoginView,
@@ -286,7 +291,10 @@ abstract class AppRoutes {
       ),
       GoRoute(
         path: kPersonHomeView,
-        builder: (context, state) => const PersonHomeLayout(),
+        builder: (context, state) {
+          final sessionKey = AuthService.instance.currentUserID ?? 'guest';
+          return PersonHomeLayout(key: ValueKey('person_shell_$sessionKey'));
+        },
       ),
       GoRoute(
         path: kAdminHomeView,

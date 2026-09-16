@@ -183,15 +183,13 @@ public sealed class AiAssistantHub(
                 await Task.Delay(8, Context.ConnectionAborted);
             }
 
-            // Prefer strongly-typed maps — Dictionary<string, object?> from ToChatJson()
-            // can fail System.Text.Json in SignalR after deltas already streamed, so the
-            // client keeps the text but never receives offerSupportCallback / listings.
+            // Strongly typed camelCase cards + listingsJson string backup.
+            // Flutter history path reads persisted DTOs; live SignalR must not drop cards.
             var listingPayload = (result.Listings ?? [])
                 .Where(x => x.ProductId != Guid.Empty)
                 .Select(x => new
                 {
                     productId = x.ProductId.ToString("D"),
-                    ProductId = x.ProductId.ToString("D"),
                     id = x.ProductId.ToString("D"),
                     productCode = x.ProductCode,
                     productName = string.IsNullOrWhiteSpace(x.NameEn) ? x.NameAr : x.NameEn,
@@ -204,52 +202,31 @@ public sealed class AiAssistantHub(
                     priceUsd = x.UsdPrice,
                     priceAed = x.PriceAed,
                     quantity = x.Quantity,
-                    Quantity = x.Quantity,
                     unitName = x.UnitName,
-                    UnitName = x.UnitName,
                     categoryId = x.CategoryId,
                     productTypeId = x.ProductTypeId,
                     productTypeName = x.ProductTypeName,
                     searchListingChannel = x.SearchListingChannel,
                     hasRetailPricing = x.HasRetailPricing,
-                    images = x.Images?.ToList() ?? new List<string>(),
-                    Images = x.Images?.ToList() ?? new List<string>()
+                    images = x.Images?.ToList() ?? new List<string>()
                 })
                 .ToList();
+            var listingsJson = System.Text.Json.JsonSerializer.Serialize(listingPayload);
 
-            try
-            {
-                await Clients.Caller.SendAsync(
-                    "aiResponseCompleted",
-                    new
-                    {
-                        answer = result.Answer,
-                        result.Language,
-                        result.UsedKnowledge,
-                        result.Sources,
-                        offerSupportCallback = result.OfferSupportCallback,
-                        listings = listingPayload,
-                        thinkingSteps = result.ThinkingSteps
-                    },
-                    Context.ConnectionAborted);
-            }
-            catch
-            {
-                // Last-resort: still deliver the completion flags without rich listings.
-                await Clients.Caller.SendAsync(
-                    "aiResponseCompleted",
-                    new
-                    {
-                        answer = result.Answer,
-                        result.Language,
-                        result.UsedKnowledge,
-                        result.Sources,
-                        offerSupportCallback = result.OfferSupportCallback,
-                        listings = Array.Empty<object>(),
-                        thinkingSteps = result.ThinkingSteps
-                    },
-                    Context.ConnectionAborted);
-            }
+            await Clients.Caller.SendAsync(
+                "aiResponseCompleted",
+                new
+                {
+                    answer = result.Answer,
+                    result.Language,
+                    result.UsedKnowledge,
+                    result.Sources,
+                    offerSupportCallback = result.OfferSupportCallback,
+                    listings = listingPayload,
+                    listingsJson,
+                    thinkingSteps = result.ThinkingSteps
+                },
+                Context.ConnectionAborted);
             responseSent = true;
         }
         catch (OperationCanceledException)

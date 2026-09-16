@@ -49,6 +49,7 @@ class CreateAdFormState extends Equatable {
     this.publishHasImages = false,
     this.publishHasVideo = false,
     this.publishHasDocuments = false,
+    this.mediaSectionInvalid = false,
   });
 
   final String? selectedType;
@@ -95,6 +96,9 @@ class CreateAdFormState extends Equatable {
   final bool publishHasImages;
   final bool publishHasVideo;
   final bool publishHasDocuments;
+
+  /// True when Publish was pressed without any product images.
+  final bool mediaSectionInvalid;
 
   bool get isEditMode =>
       editingProductId != null && editingProductId!.isNotEmpty;
@@ -143,6 +147,7 @@ class CreateAdFormState extends Equatable {
     bool? publishHasImages,
     bool? publishHasVideo,
     bool? publishHasDocuments,
+    bool? mediaSectionInvalid,
     bool clearMediaCompressionLabel = false,
     bool clearRequiredDeliveryDate = false,
     bool clearAddress = false,
@@ -228,6 +233,7 @@ class CreateAdFormState extends Equatable {
       publishHasImages: publishHasImages ?? this.publishHasImages,
       publishHasVideo: publishHasVideo ?? this.publishHasVideo,
       publishHasDocuments: publishHasDocuments ?? this.publishHasDocuments,
+      mediaSectionInvalid: mediaSectionInvalid ?? this.mediaSectionInvalid,
     );
   }
 
@@ -274,5 +280,6 @@ class CreateAdFormState extends Equatable {
         publishHasImages,
         publishHasVideo,
         publishHasDocuments,
+        mediaSectionInvalid,
       ];
 }

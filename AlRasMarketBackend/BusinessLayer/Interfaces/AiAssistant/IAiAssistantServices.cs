@@ -82,7 +82,6 @@ public sealed record AiProductListingDto(
         return new Dictionary<string, object?>
         {
             ["productId"] = ProductId.ToString("D"),
-            ["ProductId"] = ProductId.ToString("D"),
             ["id"] = ProductId.ToString("D"),
             ["productCode"] = ProductCode,
             ["productName"] = displayName,
@@ -95,16 +94,13 @@ public sealed record AiProductListingDto(
             ["priceUsd"] = UsdPrice,
             ["priceAed"] = PriceAed,
             ["quantity"] = Quantity,
-            ["Quantity"] = Quantity,
             ["unitName"] = UnitName,
-            ["UnitName"] = UnitName,
             ["categoryId"] = CategoryId,
             ["productTypeId"] = ProductTypeId,
             ["productTypeName"] = ProductTypeName,
             ["searchListingChannel"] = SearchListingChannel,
             ["hasRetailPricing"] = HasRetailPricing,
-            ["images"] = Images?.ToList() ?? new List<string>(),
-            ["Images"] = Images?.ToList() ?? new List<string>()
+            ["images"] = Images?.ToList() ?? new List<string>()
         };
     }
 }

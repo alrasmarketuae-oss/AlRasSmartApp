@@ -352,13 +352,21 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
         setState(() {
           _isThinking = false;
           _thinkingSteps.clear();
-          if (_messages.isEmpty || _messages.last.isUser) {
+          final responseId = _inFlightResponseId;
+          final byId = responseId == null
+              ? -1
+              : _messages.lastIndexWhere(
+                  (m) => !m.isUser && m.responseId == responseId,
+                );
+          if (byId >= 0) {
+            _messages[byId].text += value;
+          } else if (_messages.isEmpty || _messages.last.isUser) {
             _messages.add(
               AiChatMessage(
                 text: value,
                 isUser: false,
                 thinkingSteps: const [],
-                responseId: _inFlightResponseId,
+                responseId: responseId,
               ),
             );
           } else {
@@ -406,13 +414,20 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
           _thinkingStartedAt = null;
           _inFlightResponseId = null;
           var targetIndex = responseId == null
-              ? (_messages.lastIndexWhere((m) => !m.isUser))
+              ? -1
               : _messages.lastIndexWhere(
                   (m) => !m.isUser && m.responseId == responseId,
                 );
-          // If responseId mismatch (reconnect), fall back to latest assistant bubble.
+          // Fall back to the latest assistant bubble AFTER the latest user message
+          // (never the welcome message at the top of a fresh chat).
           if (targetIndex < 0) {
-            targetIndex = _messages.lastIndexWhere((m) => !m.isUser);
+            final lastUser = _messages.lastIndexWhere((m) => m.isUser);
+            for (var i = _messages.length - 1; i > lastUser; i--) {
+              if (!_messages[i].isUser) {
+                targetIndex = i;
+                break;
+              }
+            }
           }
           if (targetIndex >= 0) {
             final target = _messages[targetIndex];
@@ -422,11 +437,9 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
               target.text = finalAnswer;
             }
             target.thinkingSteps.clear();
-            if (parsedListings.isNotEmpty) {
-              target.listings = List<MyListingProductModel>.from(parsedListings);
-            }
-            target.showSupportCallbackForm = shouldShowForm;
-            target.supportQuestion = supportQuestion;
+            final nextListings = parsedListings.isNotEmpty
+                ? List<MyListingProductModel>.from(parsedListings)
+                : List<MyListingProductModel>.from(target.listings);
             // Replace list entry so ListView keys/rebuild pick up cards + form.
             _messages[targetIndex] = AiChatMessage(
               text: target.text,
@@ -436,9 +449,9 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
               showMediaUpload: target.showMediaUpload,
               showSupportCallbackForm: shouldShowForm,
               supportQuestion: supportQuestion,
-              responseId: target.responseId,
+              responseId: target.responseId ?? responseId,
               replyPreview: target.replyPreview,
-              listings: List<MyListingProductModel>.from(target.listings),
+              listings: nextListings,
             );
           } else if (finalAnswer.isNotEmpty ||
               parsedListings.isNotEmpty ||

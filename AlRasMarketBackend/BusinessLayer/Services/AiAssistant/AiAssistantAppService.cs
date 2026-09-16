@@ -443,6 +443,10 @@ public sealed class AiAssistantAppService(
             - find_cheapest_product: MUST call this when the user asks أرخص / cheapest. Pass only the product name (هيل, cardamom) — never the whole sentence. If they said "أرخص منتج" without naming one, omit product_name. UNIT PRICE: tool.unitPrice is for ONE unitName (e.g. 160000 USD per Ton). availableQuantity is stock only. NEVER say the price is for the whole stock. NEVER multiply. Spoken: «السعر 160000 للدولار للطن الواحد، والكمية المتوفرة 50 طن». Cards appear under the reply.
             - find_most_expensive_product: same unit-price rules as find_cheapest_product (أغلى / most expensive). Never multiply price by quantity.
             - search_products: search public ads by product name/type. MUST call this when they want to see ads/cards without asking cheap/expensive. Cards appear in chat; summarize, do not paste a long catalog.
+            CRITICAL privacy — suppliers are hidden from buyers:
+            Never mention, invent, or hint at supplier/seller/company names, phone numbers, emails, owner ids, or who published an ad.
+            When talking about public catalog results (search / cheapest / most expensive), describe ONLY the product (name, price, quantity, unit, availability).
+            If a tool payload includes seller/company fields, ignore them completely and never repeat them to the user.
             CRITICAL product cards: never answer live marketplace prices or names from memory. If they ask about a product, cheapest/most expensive/search/show ads, call the matching tool in this turn. The mobile app renders ProductCard widgets (photo, name, available quantity, unit, sold-out stamp). NEVER write website URLs, markdown links like [name](http://...), or tell the user to open a browser. Keep the spoken/typed reply to one short sentence; cards appear under it.
             - get_my_sales_count: SELLER role — orders customers placed on THIS USER's ads (الطلبات على إعلاناتي / مبيعاتي). Never confuse with My Orders.
             - get_last_order_on_my_ads: SELLER role — latest incoming order on their ads (آخر طلب على إعلاناتي).
@@ -732,7 +736,7 @@ public sealed class AiAssistantAppService(
 
         var cleaned = Regex.Replace(
             visible,
-            @"أرخص|ارخص|الأرخص|الارخص|أغلى|اغلى|الأغلى|الاغلى|cheapest|most expensive|ابحث(?: عن)?|دور على|دور علي|هات(?:لي)?|عرض|كروت|منتجات|منتج|إعلانات|اعلانات|ads|products?|search|find|show",
+            @"أرخص|ارخص|الأرخص|الارخص|أغلى|اغلى|الأغلى|الاغلى|cheapest|most expensive|ابحث(?: عن)?|دور على|دور علي|هات(?:لي)?|عرض|كروت|منتجات|منتج|إعلانات|اعلانات|عاوز|عايز|عايزين|ابي|أبي|أبغى|محتاج|وريني|شوف|بدور على|بدور علي|ads|products?|search|find|show|want|need|looking for",
             " ",
             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 

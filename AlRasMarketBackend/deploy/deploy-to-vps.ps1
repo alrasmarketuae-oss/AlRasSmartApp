@@ -44,6 +44,7 @@ tar -czf $tar `
     --exclude=deploy/certbot `
     --exclude=BusinessLayer/DataAccess `
     --exclude=loadtests `
+    --exclude=tmp_json_test `
     .
 Pop-Location
 Write-Host "    Archive: $([math]::Round((Get-Item $tar).Length / 1MB, 1)) MB"
@@ -59,6 +60,7 @@ cd '$RemotePath'
 # Stale path from before ProductAdoRepository moved to DataLayer.
 # Must remove it before extract: Windows tar still lists the folder and mkdir fails.
 rm -rf BusinessLayer/DataAccess 2>/dev/null || true
+rm -rf tmp_json_test 2>/dev/null || true
 # Windows tar packs dirs as 0555; chmod so new files can be extracted.
 chmod -R u+w BusinessLayer DataLayer RasAlSouqPresentaionLayer deploy clip-service 2>/dev/null || true
 # Windows-built archives can contain duplicate members / metadata headers.

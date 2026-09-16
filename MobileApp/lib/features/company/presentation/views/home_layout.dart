@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/serveses/notifications_service.dart';
 import 'package:alrasmarket/core/widgets/scroll_aware_bottom_nav_scaffold.dart';
@@ -50,12 +51,22 @@ class _CompanyHomeLayoutState extends State<CompanyHomeLayout> {
       builder: (context, state) {
         final cubit = CompanyCubit.get(context);
         const showMyAds = true;
+        final sessionKey = AuthService.instance.currentUserID ?? 'guest';
         final screens = [
-          HomeView(key: ValueKey('company_supplier_home'), isCompany: true),
-          CreateAdView(),
-          MyOrdersView(),
-          const MyAdsView(isTabView: true),
-          const ProfileView(isTabView: true),
+          HomeView(
+            key: ValueKey('company_home_$sessionKey'),
+            isCompany: true,
+          ),
+          CreateAdView(key: ValueKey('company_create_$sessionKey')),
+          MyOrdersView(key: ValueKey('company_orders_$sessionKey')),
+          MyAdsView(
+            key: ValueKey('company_ads_$sessionKey'),
+            isTabView: true,
+          ),
+          ProfileView(
+            key: ValueKey('company_profile_$sessionKey'),
+            isTabView: true,
+          ),
         ];
         // Keeps the status bar the same colour as the tab shown behind it.
         final tabBackgrounds = [

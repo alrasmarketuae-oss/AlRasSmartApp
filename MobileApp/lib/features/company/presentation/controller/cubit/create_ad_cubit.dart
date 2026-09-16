@@ -76,6 +76,13 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     );
   }
 
+  /// Re-evaluate Booking-only lock after login/profile phone sync.
+  void refreshAccountRestrictions() {
+    if (isClosed) return;
+    if (AuthService.instance.isUaePhoneNumber) return;
+    _applyNonUaeBookingDefault();
+  }
+
   final GetGeoPortsByCountryUseCase _getGeoPortsByCountryUseCase;
   final GetCategoriesUseCase _getCategoriesUseCase;
   final CreateProductUseCase _createProductUseCase;
@@ -127,6 +134,7 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
       context.read<CreateAdCubit>();
 
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  final GlobalKey mediaSectionKey = GlobalKey();
   final productNameController = TextEditingController();
   final quantityController = TextEditingController();
   final specificationsController = TextEditingController();
@@ -891,12 +899,18 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     _appendUniquePaths(
       current: state.productImages,
       picked: rawPaths,
-      onUpdate: (paths) => emit(
-        state.copyWith(
-          productImages: paths,
-          isCompressingMedia: true,
-        ),
-      ),
+      onUpdate: (paths) {
+        final hasImage = paths.any(
+          (path) => !CreateAdFormMapper.isVideoPath(path),
+        );
+        emit(
+          state.copyWith(
+            productImages: paths,
+            isCompressingMedia: true,
+            mediaSectionInvalid: hasImage ? false : state.mediaSectionInvalid,
+          ),
+        );
+      },
     );
 
     unawaited(
@@ -936,6 +950,21 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
       return;
     }
 
+    final hasProductImage = state.productImages.any(
+      (path) => !CreateAdFormMapper.isVideoPath(path),
+    );
+    if (!hasProductImage) {
+      emit(
+        state.copyWith(
+          mediaSectionInvalid: true,
+          submitErrorMessage: S.current.productImagesRequired,
+          clearSubmitSuccessMessage: true,
+        ),
+      );
+      _scrollToMediaSection();
+      return;
+    }
+
     if (!state.isEditMode && !(formKey.currentState?.validate() ?? false)) {
       return;
     }
@@ -956,6 +985,21 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
         selectedType == CreateAdType.booking;
 
     await _executeSubmit(requiresGeo: requiresUserGeo);
+  }
+
+  void _scrollToMediaSection() {
+    final ctx = mediaSectionKey.currentContext;
+    if (ctx == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final target = mediaSectionKey.currentContext;
+      if (target == null) return;
+      Scrollable.ensureVisible(
+        target,
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeOutCubic,
+        alignment: 0.08,
+      );
+    });
   }
 
   /// Creates a **Requests** product from the client add-order form.

@@ -22,6 +22,14 @@ class AuthService {
   /// Bumped whenever profile image changes so UI can refresh cached avatars.
   final ValueNotifier<int> profileImageRevision = ValueNotifier(0);
 
+  /// Bumped whenever identity fields change (name, phone, user id, logout/login)
+  /// so headers and account-gated UI rebuild without visiting Profile.
+  final ValueNotifier<int> identityRevision = ValueNotifier(0);
+
+  void _notifyIdentityChanged() {
+    identityRevision.value++;
+  }
+
   String? get currentProfileImageUrl {
     final path = userImagePath?.trim();
     if (path == null || path.isEmpty) return null;
@@ -77,12 +85,15 @@ class AuthService {
       !isAdminAccount &&
       isShippingCompanyAccount != true;
 
-  /// UAE mobile numbers start with +971 / 971.
+  /// UAE mobile numbers: +971 / 971, or local 05xxxxxxxx / 5xxxxxxxx.
   bool get isUaePhoneNumber {
     final raw = (phone ?? '').replaceAll(RegExp(r'[\s\-]'), '');
     if (raw.isEmpty) return false;
     final digits = raw.replaceAll(RegExp(r'[^\d]'), '');
-    return digits.startsWith('971') || raw.startsWith('+971');
+    if (digits.startsWith('971') || raw.startsWith('+971')) return true;
+    // Local UAE mobiles are 9 digits starting with 5, often stored with a leading 0.
+    if (RegExp(r'^0?5\d{8}$').hasMatch(digits)) return true;
+    return false;
   }
 
   /// Company buyer account (IsCustomer=true on login).
@@ -281,12 +292,18 @@ class AuthService {
         );
         isShippingCompanyAccount = shippingCompanyAccount;
       }
-      if (userPhone != null && userPhone.isNotEmpty) {
-        await savePhone(userPhone);
-      } else if (isFullSession && isAccountSwitch) {
+      if (userPhone != null && userPhone.trim().isNotEmpty) {
+        await savePhone(userPhone.trim());
+      } else if (isFullSession) {
+        // Never keep a previous account's phone after a fresh session login.
         await CachHelper.removeData('phone');
+        await CachHelper.removeData('phoneNumber');
         phone = null;
         phoneNumber = null;
+      }
+
+      if (isFullSession) {
+        _notifyIdentityChanged();
       }
     } catch (e) {
       debugPrint('Error saving auth data: $e');
@@ -341,8 +358,11 @@ class AuthService {
   }
 
   Future<void> savePhone(String userPhone) async {
-    await CachHelper.saveData(key: 'phone', value: userPhone);
-    phone = userPhone;
+    final next = userPhone.trim();
+    final changed = phone != next;
+    await CachHelper.saveData(key: 'phone', value: next);
+    phone = next;
+    if (changed) _notifyIdentityChanged();
   }
 
   Future<void> saveProfileImagePath(String path) async {
@@ -364,6 +384,7 @@ class AuthService {
     String? imagePath,
   }) async {
     try {
+      var identityChanged = false;
       if (userEmail != null) {
         await CachHelper.saveData(key: 'email', value: userEmail);
         // Update global email variable from cached_constants
@@ -371,6 +392,7 @@ class AuthService {
       }
       if (fullName != null) {
         await CachHelper.saveData(key: 'fullName', value: fullName);
+        if (name != fullName) identityChanged = true;
         name = fullName;
       }
       if (userRole != null) {
@@ -380,6 +402,7 @@ class AuthService {
       if (imagePath != null) {
         await saveProfileImagePath(imagePath);
       }
+      if (identityChanged) _notifyIdentityChanged();
     } catch (e) {
       debugPrint('Error updating profile data: $e');
       rethrow;
@@ -425,6 +448,7 @@ class AuthService {
     hasPassword = null;
     loginProviderName = null;
     profileImageRevision.value = 0;
+    _notifyIdentityChanged();
 
     // Remove only the auth-related keys
     await CachHelper.removeData('personId');

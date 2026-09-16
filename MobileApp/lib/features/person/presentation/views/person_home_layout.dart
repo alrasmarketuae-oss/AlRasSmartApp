@@ -53,11 +53,18 @@ class _PersonHomeLayoutState extends State<PersonHomeLayout> {
       },
       builder: (context, state) {
         final cubit = PersonCubit.get(context);
+        final sessionKey = AuthService.instance.currentUserID ?? 'guest';
         final screens = [
-          HomeView(key: ValueKey('person_home'), isPerson: true),
-          const CartView(isTabView: true),
-          MyOrdersView(),
-          const ProfileView(isTabView: true),
+          HomeView(key: ValueKey('person_home_$sessionKey'), isPerson: true),
+          CartView(
+            key: ValueKey('person_cart_$sessionKey'),
+            isTabView: true,
+          ),
+          MyOrdersView(key: ValueKey('person_orders_$sessionKey')),
+          ProfileView(
+            key: ValueKey('person_profile_$sessionKey'),
+            isTabView: true,
+          ),
         ];
         final currentIndex = cubit.currentIndex >= screens.length
             ? screens.length - 1

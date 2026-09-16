@@ -5629,6 +5629,16 @@ class S {
     );
   }
 
+  /// `Please add at least one product image before publishing.`
+  String get productImagesRequired {
+    return Intl.message(
+      'Please add at least one product image before publishing.',
+      name: 'productImagesRequired',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `You can upload at most {maxCount} videos.`
   String maxProductVideosExceeded(int maxCount) {
     return Intl.message(

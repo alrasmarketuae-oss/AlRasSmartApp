@@ -153,7 +153,9 @@ class LoginResponseModel {
       companyName: _stringFromJson(json['companyName'] ?? json['CompanyName']),
       roleName: roleName,
       roleId: jwtRoleId,
-      phone: _stringFromJson(json['phone'] ?? json['Phone']),
+      phone: _stringFromJson(
+        json['phone'] ?? json['Phone'] ?? json['phoneNumber'] ?? json['PhoneNumber'],
+      ),
       isCompanyAccount: isCompanyAccount,
       isShippingCompanyAccount: isShippingCompanyAccount,
       isApproved: isApproved,

@@ -103,12 +103,16 @@ class AiAssistantRealtimeService {
       final offer = _asBool(data?['offerSupportCallback']) ||
           _asBool(data?['OfferSupportCallback']) ||
           _asBool(data?['offer_support_callback']);
-          final listings = _asList(
-            data?['listings'] ??
+      // Prefer listingsJson string (stable across SignalR serializers), then array.
+      final listings = _asList(
+            data?['listingsJson'] ??
+                data?['ListingsJson'] ??
+                data?['listings'] ??
                 data?['Listings'] ??
                 data?['productListings'] ??
                 data?['ProductListings'],
-          );
+          ) ??
+          const <dynamic>[];
       final thinkingRaw = data?['thinkingSteps'] ?? data?['ThinkingSteps'];
       onCompleted(
         answer,

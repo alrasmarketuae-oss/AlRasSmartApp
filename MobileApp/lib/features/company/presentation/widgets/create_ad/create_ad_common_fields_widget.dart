@@ -35,19 +35,22 @@ class CreateAdCommonFieldsWidget extends StatelessWidget {
           previous.selectedCategoryId != current.selectedCategoryId ||
           previous.selectedType != current.selectedType ||
           previous.isCompressingMedia != current.isCompressingMedia ||
-          previous.mediaCompressionProgress != current.mediaCompressionProgress,
+          previous.mediaCompressionProgress != current.mediaCompressionProgress ||
+          previous.mediaSectionInvalid != current.mediaSectionInvalid,
       builder: (context, state) {
         final isCategories =
             state.selectedType == CreateAdType.categories.label;
 
         final media = showMedia
             ? CreateAdProductImagesWidget(
+                key: cubit.mediaSectionKey,
                 productImages: state.productImages,
                 onPickTap: () => cubit.pickProductImages(context),
                 onRemove: cubit.removeProductImage,
                 isCompressingMedia: state.isCompressingMedia,
                 mediaCompressionProgress: state.mediaCompressionProgress,
                 mediaCompressionLabel: state.mediaCompressionLabel,
+                showRequiredError: state.mediaSectionInvalid,
               )
             : null;
 
