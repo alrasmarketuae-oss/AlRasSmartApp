@@ -541,6 +541,19 @@
       "unit": { "type": "String" }
     }
   },
+  "quantityPerUnitGeneric": "الكمية لكل وحدة",
+  "quantityPerUnit": "الكمية لكل {unit}",
+  "@quantityPerUnit": {
+    "placeholders": {
+      "unit": { "type": "String" }
+    }
+  },
+  "requiredQuantityPerUnit": "الكمية المطلوبة لكل {unit}",
+  "@requiredQuantityPerUnit": {
+    "placeholders": {
+      "unit": { "type": "String" }
+    }
+  },
   "enterPricePerUnit": "أدخل السعر لكل {unit}",
   "@enterPricePerUnit": {
     "placeholders": {

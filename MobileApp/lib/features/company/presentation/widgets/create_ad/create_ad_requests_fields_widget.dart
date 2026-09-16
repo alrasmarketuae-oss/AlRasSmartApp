@@ -36,7 +36,6 @@ class CreateAdRequestsFieldsWidget extends StatelessWidget {
           priceController: priceController,
           selectedNegotiationType: selectedNegotiationType,
           onNegotiationChanged: onNegotiationChanged,
-          quantityLabel: S.of(context).requiredQuantity,
           hintText: S.of(context).enterYourTargetPrice,
           fromBuyer: fromBuyer,
         ),

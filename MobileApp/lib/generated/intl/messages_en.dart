@@ -80,34 +80,38 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m26(required) =>
       "Quantity cannot exceed the required quantity (${required}).";
 
-  static String m27(requested, available) =>
+  static String m27(unit) => "Quantity per ${unit}";
+
+  static String m28(requested, available) =>
       "Requested quantity (${requested}) exceeds available quantity (${available}).";
 
-  static String m28(count) => "${count} seconds ago";
+  static String m29(unit) => "Required quantity per ${unit}";
 
-  static String m29(count) => "Selected Documents (${count})";
+  static String m30(count) => "${count} seconds ago";
 
-  static String m30(count) => "Selected Media (${count})";
+  static String m31(count) => "Selected Documents (${count})";
 
-  static String m31(from, to) => "Shipping time: ${from}-${to} days";
+  static String m32(count) => "Selected Media (${count})";
 
-  static String m32(hours) => "${hours} hours ago";
+  static String m33(from, to) => "Shipping time: ${from}-${to} days";
 
-  static String m33(minutes) => "${minutes} min ago";
+  static String m34(hours) => "${hours} hours ago";
 
-  static String m34(unit) => "Target price per ${unit}";
+  static String m35(minutes) => "${minutes} min ago";
 
-  static String m35(maxMb) =>
+  static String m36(unit) => "Target price per ${unit}";
+
+  static String m37(maxMb) =>
       "Could not compress video below ${maxMb} MB. Try a shorter video.";
 
-  static String m36(sizeMb) => "Video compressed to ${sizeMb} MB.";
+  static String m38(sizeMb) => "Video compressed to ${sizeMb} MB.";
 
-  static String m37(sizeMb, maxMb) =>
+  static String m39(sizeMb, maxMb) =>
       "Video size is ${sizeMb} MB. Maximum allowed size is ${maxMb} MB.";
 
-  static String m38(count) => "${count} weeks ago";
+  static String m40(count) => "${count} weeks ago";
 
-  static String m39(count) => "${count} years ago";
+  static String m41(count) => "${count} years ago";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1403,6 +1407,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "quantity": MessageLookupByLibrary.simpleMessage("Quantity"),
     "quantityExceedsRequired": m26,
+    "quantityPerUnit": m27,
+    "quantityPerUnitGeneric": MessageLookupByLibrary.simpleMessage(
+      "Quantity per unit",
+    ),
     "quantityTypeManuallyHint": MessageLookupByLibrary.simpleMessage(
       "You can also type the quantity manually",
     ),
@@ -1451,7 +1459,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "requestedQuantity": MessageLookupByLibrary.simpleMessage(
       "Requested Quantity",
     ),
-    "requestedQuantityExceedsAvailable": m27,
+    "requestedQuantityExceedsAvailable": m28,
     "requestedReceiptDate": MessageLookupByLibrary.simpleMessage(
       "Requested Receipt Date",
     ),
@@ -1462,6 +1470,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "requiredQuantity": MessageLookupByLibrary.simpleMessage(
       "Required Quantity",
     ),
+    "requiredQuantityPerUnit": m29,
     "requiredSpecifications": MessageLookupByLibrary.simpleMessage(
       "Required Specifications",
     ),
@@ -1563,7 +1572,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "secondNature": MessageLookupByLibrary.simpleMessage(
       "Second: Nature of the App\'s Work",
     ),
-    "secondsAgo": m28,
+    "secondsAgo": m30,
     "selectAnOption": MessageLookupByLibrary.simpleMessage("Select an option"),
     "selectCategory": MessageLookupByLibrary.simpleMessage("Select Category"),
     "selectCountryFirst": MessageLookupByLibrary.simpleMessage(
@@ -1582,8 +1591,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "selectRequestFulfillment": MessageLookupByLibrary.simpleMessage(
       "Select local or rexport",
     ),
-    "selectedDocuments": m29,
-    "selectedMedia": m30,
+    "selectedDocuments": m31,
+    "selectedMedia": m32,
     "selection": MessageLookupByLibrary.simpleMessage("Selection"),
     "selfPickup": MessageLookupByLibrary.simpleMessage("Self Pickup"),
     "selfPickupHint": MessageLookupByLibrary.simpleMessage(
@@ -1674,7 +1683,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "shippingProfileReviewNote": MessageLookupByLibrary.simpleMessage(
       "Please ensure the entered data is correct. Any changes to shipping company data will be reviewed before approval.",
     ),
-    "shippingTimeRange": m31,
+    "shippingTimeRange": m33,
     "showAll": MessageLookupByLibrary.simpleMessage("Show All"),
     "showAllRequests": MessageLookupByLibrary.simpleMessage(
       "Show all requests",
@@ -1694,8 +1703,8 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "signUp": MessageLookupByLibrary.simpleMessage("Sign Up"),
     "similarAds": MessageLookupByLibrary.simpleMessage("Similar ads"),
-    "sinceHoursAgo": m32,
-    "sinceMinutesAgo": m33,
+    "sinceHoursAgo": m34,
+    "sinceMinutesAgo": m35,
     "sixthRestrictions": MessageLookupByLibrary.simpleMessage(
       "Sixth: Restrictions and Prohibitions",
     ),
@@ -1765,7 +1774,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Tap to upload image or video",
     ),
     "targetPrice": MessageLookupByLibrary.simpleMessage("Target Price"),
-    "targetPricePerUnit": m34,
+    "targetPricePerUnit": m36,
     "targetPricePerUnitGeneric": MessageLookupByLibrary.simpleMessage(
       "Target price per unit",
     ),
@@ -1853,8 +1862,8 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "vatFivePercent": MessageLookupByLibrary.simpleMessage("VAT (5%)"),
     "video": MessageLookupByLibrary.simpleMessage("Video"),
-    "videoCompressFailed": m35,
-    "videoCompressedToMb": m36,
+    "videoCompressFailed": m37,
+    "videoCompressedToMb": m38,
     "videoDurationUnreadable": MessageLookupByLibrary.simpleMessage(
       "Could not read video duration. Please try another file.",
     ),
@@ -1870,13 +1879,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "videoSelectedFromGallery": MessageLookupByLibrary.simpleMessage(
       "Video selected from gallery",
     ),
-    "videoSizeExceeded": m37,
+    "videoSizeExceeded": m39,
     "viewAll": MessageLookupByLibrary.simpleMessage("View All"),
     "viewDetails": MessageLookupByLibrary.simpleMessage("View Details"),
     "viewOffers": MessageLookupByLibrary.simpleMessage("View Offers"),
     "website": MessageLookupByLibrary.simpleMessage("Website"),
     "websiteHint": MessageLookupByLibrary.simpleMessage("https://"),
-    "weeksAgo": m38,
+    "weeksAgo": m40,
     "welcomeBack": MessageLookupByLibrary.simpleMessage("Welcome"),
     "welcomeShippingCompany": MessageLookupByLibrary.simpleMessage(
       "Welcome to your shipping company dashboard",
@@ -1899,7 +1908,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "wholesalePrice": MessageLookupByLibrary.simpleMessage("Wholesale price"),
     "workingHours": MessageLookupByLibrary.simpleMessage("Working Hours"),
-    "yearsAgo": m39,
+    "yearsAgo": m41,
     "youAcceptedTheOffer": MessageLookupByLibrary.simpleMessage(
       "I accepted the offer",
     ),

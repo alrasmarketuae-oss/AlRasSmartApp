@@ -10,6 +10,18 @@ class CreateAdPriceLabels {
     return s.pricePerUnit(localizedUnit);
   }
 
+  static String quantityPerUnitLabel(S s, String unit) {
+    final localizedUnit = ProductQuantityFormatter.singularUnitLabel(unit, s);
+    if (localizedUnit.isEmpty) return s.quantityPerUnitGeneric;
+    return s.quantityPerUnit(localizedUnit);
+  }
+
+  static String requiredQuantityPerUnitLabel(S s, String unit) {
+    final localizedUnit = ProductQuantityFormatter.singularUnitLabel(unit, s);
+    if (localizedUnit.isEmpty) return s.requiredQuantity;
+    return s.requiredQuantityPerUnit(localizedUnit);
+  }
+
   /// Tip shown next to the price label, e.g. `Price/kg` or `السعر/كجم`.
   static String priceOverSelectedUnitTip(S s, String unit) {
     final localizedUnit = ProductQuantityFormatter.singularUnitLabel(unit, s);

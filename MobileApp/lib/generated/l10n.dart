@@ -4364,6 +4364,36 @@ class S {
     );
   }
 
+  /// `Quantity per unit`
+  String get quantityPerUnitGeneric {
+    return Intl.message(
+      'Quantity per unit',
+      name: 'quantityPerUnitGeneric',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Quantity per {unit}`
+  String quantityPerUnit(String unit) {
+    return Intl.message(
+      'Quantity per $unit',
+      name: 'quantityPerUnit',
+      desc: '',
+      args: [unit],
+    );
+  }
+
+  /// `Required quantity per {unit}`
+  String requiredQuantityPerUnit(String unit) {
+    return Intl.message(
+      'Required quantity per $unit',
+      name: 'requiredQuantityPerUnit',
+      desc: '',
+      args: [unit],
+    );
+  }
+
   /// `Enter price per {unit}`
   String enterPricePerUnit(String unit) {
     return Intl.message(

@@ -529,6 +529,19 @@
       "unit": { "type": "String" }
     }
   },
+  "quantityPerUnitGeneric": "Quantity per unit",
+  "quantityPerUnit": "Quantity per {unit}",
+  "@quantityPerUnit": {
+    "placeholders": {
+      "unit": { "type": "String" }
+    }
+  },
+  "requiredQuantityPerUnit": "Required quantity per {unit}",
+  "@requiredQuantityPerUnit": {
+    "placeholders": {
+      "unit": { "type": "String" }
+    }
+  },
   "enterPricePerUnit": "Enter price per {unit}",
   "@enterPricePerUnit": {
     "placeholders": {

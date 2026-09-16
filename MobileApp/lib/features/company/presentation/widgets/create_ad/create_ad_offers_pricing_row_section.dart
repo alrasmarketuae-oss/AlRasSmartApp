@@ -43,12 +43,21 @@ class CreateAdOffersPricingRowSection extends StatelessWidget {
       fontSize: 14.sp,
       height: 1.5,
     );
+    final quantityLabel =
+        CreateAdPriceLabels.quantityPerUnitLabel(s, selectedUnit);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        _buildTabletPricingRows(
+          context: context,
+          s: s,
+          fontFamily: fontFamily,
+          fieldTextStyle: fieldTextStyle,
+        ),
+        SizedBox(height: 10.h),
         Text(
-          s.availableQuantity,
+          quantityLabel,
           style: TextStyle(
             color: const Color(0xFF333333),
             fontFamily: fontFamily,
@@ -79,13 +88,6 @@ class CreateAdOffersPricingRowSection extends StatelessWidget {
             }
             return null;
           },
-        ),
-        SizedBox(height: 10.h),
-        _buildTabletPricingRows(
-          context: context,
-          s: s,
-          fontFamily: fontFamily,
-          fieldTextStyle: fieldTextStyle,
         ),
       ],
     );

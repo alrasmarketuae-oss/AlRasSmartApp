@@ -81,34 +81,38 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m26(required) =>
       "لا يمكن أن تتجاوز الكمية الكمية المطلوبة (${required}).";
 
-  static String m27(requested, available) =>
+  static String m27(unit) => "الكمية لكل ${unit}";
+
+  static String m28(requested, available) =>
       "الكمية المطلوبة (${requested}) تتجاوز الكمية المتاحة (${available}).";
 
-  static String m28(count) => "منذ ${count} ثانية";
+  static String m29(unit) => "الكمية المطلوبة لكل ${unit}";
 
-  static String m29(count) => "المستندات المختارة (${count})";
+  static String m30(count) => "منذ ${count} ثانية";
 
-  static String m30(count) => "الوسائط المختارة (${count})";
+  static String m31(count) => "المستندات المختارة (${count})";
 
-  static String m31(from, to) => "مدة الشحن: ${from}-${to} يوم";
+  static String m32(count) => "الوسائط المختارة (${count})";
 
-  static String m32(hours) => "منذ ${hours} ساعات";
+  static String m33(from, to) => "مدة الشحن: ${from}-${to} يوم";
 
-  static String m33(minutes) => "منذ ${minutes} دقيقة";
+  static String m34(hours) => "منذ ${hours} ساعات";
 
-  static String m34(unit) => "السعر المستهدف لكل ${unit}";
+  static String m35(minutes) => "منذ ${minutes} دقيقة";
 
-  static String m35(maxMb) =>
+  static String m36(unit) => "السعر المستهدف لكل ${unit}";
+
+  static String m37(maxMb) =>
       "تعذر ضغط الفيديو إلى أقل من ${maxMb} ميجا. جرّب فيديو أقصر.";
 
-  static String m36(sizeMb) => "تم ضغط الفيديو إلى ${sizeMb} ميجا.";
+  static String m38(sizeMb) => "تم ضغط الفيديو إلى ${sizeMb} ميجا.";
 
-  static String m37(sizeMb, maxMb) =>
+  static String m39(sizeMb, maxMb) =>
       "حجم الفيديو ${sizeMb} ميجا. الحد الأقصى المسموح ${maxMb} ميجا.";
 
-  static String m38(count) => "منذ ${count} أسبوع";
+  static String m40(count) => "منذ ${count} أسبوع";
 
-  static String m39(count) => "منذ ${count} سنة";
+  static String m41(count) => "منذ ${count} سنة";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1404,6 +1408,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "quantity": MessageLookupByLibrary.simpleMessage("الكمية"),
     "quantityExceedsRequired": m26,
+    "quantityPerUnit": m27,
+    "quantityPerUnitGeneric": MessageLookupByLibrary.simpleMessage(
+      "الكمية لكل وحدة",
+    ),
     "quantityTypeManuallyHint": MessageLookupByLibrary.simpleMessage(
       "يمكنك أيضاً كتابة الكمية يدوياً",
     ),
@@ -1448,7 +1456,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "requestedQuantity": MessageLookupByLibrary.simpleMessage(
       "الكمية المطلوبة",
     ),
-    "requestedQuantityExceedsAvailable": m27,
+    "requestedQuantityExceedsAvailable": m28,
     "requestedReceiptDate": MessageLookupByLibrary.simpleMessage(
       "تاريخ الاستلام المطلوب",
     ),
@@ -1457,6 +1465,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "تاريخ التسليم المطلوب",
     ),
     "requiredQuantity": MessageLookupByLibrary.simpleMessage("الكمية المطلوبة"),
+    "requiredQuantityPerUnit": m29,
     "requiredSpecifications": MessageLookupByLibrary.simpleMessage(
       "المواصفات المطلوبة",
     ),
@@ -1556,7 +1565,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "secondNature": MessageLookupByLibrary.simpleMessage(
       "ثانياً: طبيعة عمل التطبيق",
     ),
-    "secondsAgo": m28,
+    "secondsAgo": m30,
     "selectAnOption": MessageLookupByLibrary.simpleMessage("اختر خياراً"),
     "selectCategory": MessageLookupByLibrary.simpleMessage("اختر الفئة"),
     "selectCountryFirst": MessageLookupByLibrary.simpleMessage(
@@ -1575,8 +1584,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "selectRequestFulfillment": MessageLookupByLibrary.simpleMessage(
       "اختر محلي أو إعادة تصدير",
     ),
-    "selectedDocuments": m29,
-    "selectedMedia": m30,
+    "selectedDocuments": m31,
+    "selectedMedia": m32,
     "selection": MessageLookupByLibrary.simpleMessage("الاختيار"),
     "selfPickup": MessageLookupByLibrary.simpleMessage("استلام بنفسي"),
     "selfPickupHint": MessageLookupByLibrary.simpleMessage(
@@ -1667,7 +1676,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "shippingProfileReviewNote": MessageLookupByLibrary.simpleMessage(
       "يرجى التأكد من صحة البيانات المدخلة. سيتم مراجعة أي تغييرات على بيانات شركة الشحن قبل اعتمادها.",
     ),
-    "shippingTimeRange": m31,
+    "shippingTimeRange": m33,
     "showAll": MessageLookupByLibrary.simpleMessage("عرض الكل"),
     "showAllRequests": MessageLookupByLibrary.simpleMessage("عرض كل الطلبات"),
     "showNumber": MessageLookupByLibrary.simpleMessage("إظهار الرقم"),
@@ -1685,8 +1694,8 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "signUp": MessageLookupByLibrary.simpleMessage("سجل الآن"),
     "similarAds": MessageLookupByLibrary.simpleMessage("إعلانات مشابهة"),
-    "sinceHoursAgo": m32,
-    "sinceMinutesAgo": m33,
+    "sinceHoursAgo": m34,
+    "sinceMinutesAgo": m35,
     "sixthRestrictions": MessageLookupByLibrary.simpleMessage(
       "سادساً: القيود والمحظورات",
     ),
@@ -1754,7 +1763,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "اضغط لرفع صورة أو فيديو",
     ),
     "targetPrice": MessageLookupByLibrary.simpleMessage("السعر المستهدف"),
-    "targetPricePerUnit": m34,
+    "targetPricePerUnit": m36,
     "targetPricePerUnitGeneric": MessageLookupByLibrary.simpleMessage(
       "السعر المستهدف لكل وحدة",
     ),
@@ -1838,8 +1847,8 @@ class MessageLookup extends MessageLookupByLibrary {
       "ضريبة القيمة المضافة (5%)",
     ),
     "video": MessageLookupByLibrary.simpleMessage("فيديو"),
-    "videoCompressFailed": m35,
-    "videoCompressedToMb": m36,
+    "videoCompressFailed": m37,
+    "videoCompressedToMb": m38,
     "videoDurationUnreadable": MessageLookupByLibrary.simpleMessage(
       "تعذر قراءة مدة الفيديو. جرّب ملفاً آخر.",
     ),
@@ -1855,13 +1864,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "videoSelectedFromGallery": MessageLookupByLibrary.simpleMessage(
       "فيديو محدد من المعرض",
     ),
-    "videoSizeExceeded": m37,
+    "videoSizeExceeded": m39,
     "viewAll": MessageLookupByLibrary.simpleMessage("عرض الكل"),
     "viewDetails": MessageLookupByLibrary.simpleMessage("عرض التفاصيل"),
     "viewOffers": MessageLookupByLibrary.simpleMessage("عرض العروض"),
     "website": MessageLookupByLibrary.simpleMessage("الموقع الإلكتروني"),
     "websiteHint": MessageLookupByLibrary.simpleMessage("https://"),
-    "weeksAgo": m38,
+    "weeksAgo": m40,
     "welcomeBack": MessageLookupByLibrary.simpleMessage("مرحبًا بك"),
     "welcomeShippingCompany": MessageLookupByLibrary.simpleMessage(
       "مرحباً بك في لوحة تحكم شركة الشحن",
@@ -1882,7 +1891,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "wholeBlackPepper": MessageLookupByLibrary.simpleMessage("بذور أسود كاملة"),
     "wholesalePrice": MessageLookupByLibrary.simpleMessage("سعر الجملة"),
     "workingHours": MessageLookupByLibrary.simpleMessage("ساعات العمل"),
-    "yearsAgo": m39,
+    "yearsAgo": m41,
     "youAcceptedTheOffer": MessageLookupByLibrary.simpleMessage(
       "لقد قبلت العرض",
     ),

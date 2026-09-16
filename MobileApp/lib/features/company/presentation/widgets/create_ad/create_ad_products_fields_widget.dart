@@ -1,6 +1,7 @@
 import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/features/company/presentation/controller/cubit/create_ad_cubit.dart';
 import 'package:alrasmarket/features/company/presentation/controller/cubit/create_ad_states.dart';
+import 'package:alrasmarket/features/company/presentation/helpers/create_ad_price_labels.dart';
 import 'package:alrasmarket/features/company/presentation/models/create_ad_currency.dart';
 import 'package:alrasmarket/features/company/presentation/models/negotiation_type.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_design.dart';
@@ -144,7 +145,10 @@ class CreateAdProductsFieldsWidget extends StatelessWidget {
                     CreateAdPricingRowSection(
                       quantityController: cubit.retailQuantityController,
                       priceController: cubit.retailPriceController,
-                      quantityLabel: s.availableQuantity,
+                      quantityLabel: CreateAdPriceLabels.quantityPerUnitLabel(
+                        s,
+                        state.selectedRetailUnit,
+                      ),
                       priceLabel: s.retailPriceLabel,
                       priceHint: s.enterPrice,
                       selectedCurrency: CreateAdCurrency.aed,

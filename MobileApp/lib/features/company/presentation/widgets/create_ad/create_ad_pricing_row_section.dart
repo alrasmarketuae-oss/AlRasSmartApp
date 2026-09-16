@@ -63,7 +63,14 @@ class CreateAdPricingRowSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        _buildPricingFieldsRow(
+          context: context,
+          s: s,
+          fontFamily: fontFamily,
+          fieldTextStyle: fieldTextStyle,
+        ),
         if (showQuantityField) ...[
+          SizedBox(height: 10.h),
           Text(
             quantityLabel,
             style: TextStyle(
@@ -104,14 +111,7 @@ class CreateAdPricingRowSection extends StatelessWidget {
               return null;
             },
           ),
-          SizedBox(height: 10.h),
         ],
-        _buildPricingFieldsRow(
-          context: context,
-          s: s,
-          fontFamily: fontFamily,
-          fieldTextStyle: fieldTextStyle,
-        ),
       ],
     );
   }

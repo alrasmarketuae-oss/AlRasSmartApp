@@ -50,7 +50,15 @@ class CreateAdPriceNegotiationSection extends StatelessWidget {
         final isBooking = state.selectedType == CreateAdType.booking.label;
         final isRequest = state.selectedType == CreateAdType.requests.label;
         final resolvedQuantityLabel = quantityLabel ??
-            (isRequest ? s.requiredQuantity : s.availableQuantity);
+            (isRequest
+                ? CreateAdPriceLabels.requiredQuantityPerUnitLabel(
+                    s,
+                    state.selectedUnit,
+                  )
+                : CreateAdPriceLabels.quantityPerUnitLabel(
+                    s,
+                    state.selectedUnit,
+                  ));
         final resolvedPriceLabel = isRequest ? s.targetPrice : null;
         final resolvedPerUnitHint = isRequest
             ? (hintText?.trim().isNotEmpty == true
