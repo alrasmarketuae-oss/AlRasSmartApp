@@ -935,6 +935,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
                 text: value,
                 isUser: false,
                 thinkingSteps: const [],
+                responseId: _inFlightResponseId,
               ),
             );
           } else {
@@ -959,6 +960,11 @@ class _AiAssistantViewState extends State<AiAssistantView> {
         final supportQuestion = responseId == null
             ? null
             : _questionForResponse[responseId];
+        // Fallback: show callback form when user asked for human/tech support
+        // even if the server flag is missing (older hub / phrasing miss).
+        final shouldShowForm = offerSupportCallback ||
+            looksLikeSupportCallbackIntent(supportQuestion) ||
+            looksLikeSupportCallbackCue(finalAnswer);
         final parsedListings = AiProductListings.parse(listings);
         setState(() {
           _isThinking = false;
@@ -981,7 +987,7 @@ class _AiAssistantViewState extends State<AiAssistantView> {
             if (parsedListings.isNotEmpty) {
               target.listings = parsedListings;
             }
-            target.showSupportCallbackForm = offerSupportCallback;
+            target.showSupportCallbackForm = shouldShowForm;
             target.supportQuestion = supportQuestion;
           } else if (finalAnswer.isNotEmpty || parsedListings.isNotEmpty) {
             _messages.add(
@@ -989,13 +995,13 @@ class _AiAssistantViewState extends State<AiAssistantView> {
                 text: finalAnswer,
                 isUser: false,
                 thinkingSteps: const [],
-                showSupportCallbackForm: offerSupportCallback,
+                showSupportCallbackForm: shouldShowForm,
                 supportQuestion: supportQuestion,
                 responseId: responseId,
                 listings: parsedListings,
               ),
             );
-          } else if (offerSupportCallback) {
+          } else if (shouldShowForm) {
             _messages.add(
               _ChatMessage(
                 text: isAr
@@ -2324,15 +2330,27 @@ bool looksLikeSupportCallbackIntent(String? message) {
     'الدعم الفني',
     'دعم بشري',
     'الدعم البشري',
+    'الدعم',
     'كلم الدعم',
     'محتاج اكلم',
     'محتاج أكلم',
+    'محتاج اتكلم',
+    'محتاج أتكلم',
+    'عايز اكلم',
+    'عايز أكلم',
+    'عايز اتكلم',
+    'عايز أتكلم',
+    'عاوز اكلم',
+    'عاوز اتكلم',
     'محتاج الدعم',
     'خدمة العملاء',
     'كلمني',
+    'اتصل بيا',
+    'اتصلوا بيا',
     'technical support',
     'tech support',
     'human support',
+    'human technical',
     'talk to support',
     'talk to technical',
     'talk with support',
@@ -2341,6 +2359,7 @@ bool looksLikeSupportCallbackIntent(String? message) {
     'contact support',
     'contact technical',
     'call support',
+    'call me',
     'customer service',
     'customer care',
     'customer support',

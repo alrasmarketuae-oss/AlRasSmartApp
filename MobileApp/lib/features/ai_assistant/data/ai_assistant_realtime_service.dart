@@ -173,15 +173,33 @@ class AiAssistantRealtimeService {
 
   Map<String, dynamic>? _map(List<Object?>? args) {
     if (args == null || args.isEmpty || args.first is! Map) return null;
-    return Map<String, dynamic>.from(args.first! as Map);
+    return _deepStringKeyedMap(args.first! as Map);
+  }
+
+  /// SignalR often delivers nested maps as Map<Object?, Object?>; normalize
+  /// recursively so listing productId / name fields parse reliably.
+  static Map<String, dynamic> _deepStringKeyedMap(Map raw) {
+    final out = <String, dynamic>{};
+    raw.forEach((key, value) {
+      out[key.toString()] = _deepNormalize(value);
+    });
+    return out;
+  }
+
+  static dynamic _deepNormalize(dynamic value) {
+    if (value is Map) return _deepStringKeyedMap(value);
+    if (value is List) {
+      return value.map(_deepNormalize).toList();
+    }
+    return value;
   }
 
   static List<dynamic>? _asList(dynamic raw) {
-    var source = raw;
+    var source = _deepNormalize(raw);
     if (source == null) return null;
     if (source is String && source.trim().isNotEmpty) {
       try {
-        source = jsonDecode(source);
+        source = _deepNormalize(jsonDecode(source));
       } catch (_) {
         return null;
       }
@@ -194,7 +212,9 @@ class AiAssistantRealtimeService {
       final nested = source['listings'] ??
           source['Listings'] ??
           source['items'] ??
-          source['Items'];
+          source['Items'] ??
+          source['cheapest'] ??
+          source['alternatives'];
       if (nested is Iterable && nested is! String) {
         return List<dynamic>.from(nested);
       }

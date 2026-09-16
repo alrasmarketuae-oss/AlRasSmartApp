@@ -274,11 +274,14 @@ public sealed class AiAssistantAppService(
             return Finish(BuildCapabilitiesAnswer(language, account));
         }
 
-        if (language is "ar" or "en" && IsHumanSupportIntent(message))
+        if (IsHumanSupportIntent(ExtractUserVisibleText(message)))
         {
-            await ThinkAsync(language == "ar" ? "بجهّز تحويل للدعم…" : "Preparing a support handoff…")
+            var supportLanguage = language is "ar" or "en"
+                ? language
+                : (DetectLanguage(ExtractUserVisibleText(message)) ?? "ar");
+            await ThinkAsync(supportLanguage == "ar" ? "بجهّز تحويل للدعم…" : "Preparing a support handoff…")
                 .ConfigureAwait(false);
-            return Finish(BuildSupportCallbackOfferAnswer(language, account.DisplayName, message));
+            return Finish(BuildSupportCallbackOfferAnswer(supportLanguage, account.DisplayName, message));
         }
 
         if (language is "ar" or "en" && IsClearlyOutOfScope(message))
@@ -343,13 +346,15 @@ public sealed class AiAssistantAppService(
                 .ConfigureAwait(false);
 
             var usedKnowledge = hits.Count > 0;
+            var offerSupportCallback = IsHumanSupportIntent(ExtractUserVisibleText(message))
+                || LooksLikeSupportCallbackAnswer(generated.Answer);
 
             return Finish(new AiAssistantAnswer(
                 generated.Answer,
                 language,
                 usedKnowledge,
                 hits.Select(x => x.Source).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
-                OfferSupportCallback: false,
+                OfferSupportCallback: offerSupportCallback,
                 Listings: generated.Listings));
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -674,13 +679,35 @@ public sealed class AiAssistantAppService(
                 "وريني",
                 "اديني",
                 "سعر",
+                "أسعار",
+                "اسعار",
+                "بكام",
+                "بكم",
+                "كام",
+                "فيه",
+                "موجود",
                 "منتج",
+                "منتجات",
                 "search product",
                 "find product",
                 "show ads",
                 "show products",
                 "looking for",
-                "do you have"))
+                "do you have",
+                "price of",
+                "how much"))
+        {
+            return "search_products";
+        }
+
+        // Bare product-name queries (e.g. "هيل" / "cardamom") still deserve cards.
+        var maybeProduct = ExtractCatalogProductName(visible);
+        if (!string.IsNullOrWhiteSpace(maybeProduct)
+            && maybeProduct.Length >= 2
+            && !IsGreeting(maybeProduct)
+            && !IsCapabilitiesQuestion(maybeProduct)
+            && !IsClearlyOutOfScope(maybeProduct)
+            && !IsHumanSupportIntent(maybeProduct))
         {
             return "search_products";
         }
@@ -1114,14 +1141,18 @@ public sealed class AiAssistantAppService(
         string[] markers =
         [
             // Arabic
-            "دعم فني", "الدعم الفني", "دعم بشري", "الدعم البشري",
+            "دعم فني", "الدعم الفني", "دعم بشري", "الدعم البشري", "الدعم",
             "كلم الدعم", "كلم حد", "عاوز اكلم", "عايز اكلم", "عاوز أكلم", "عايز أكلم",
-            "محتاج اكلم", "محتاج أكلم", "محتاج الدعم", "محتاج دعم",
+            "عاوز اتكلم", "عايز اتكلم", "عاوز أتكلم", "عايز أتكلم",
+            "محتاج اكلم", "محتاج أكلم", "محتاج اتكلم", "محتاج أتكلم",
+            "محتاج الدعم", "محتاج دعم", "ابي الدعم", "أبغى الدعم",
             "محاج اكلم", "محاج أكلم", "ابي اكلم", "أبي أكلم", "أبغى أكلم",
-            "موظف دعم", "خدمة العملاء", "كلمني", "اتصلوا بيا", "اتصل بيا",
+            "ابي اتكلم", "أبي أتكلم", "أبغى أتكلم",
+            "موظف دعم", "خدمة العملاء", "كلمني", "اتصلوا بيا", "اتصل بيا", "اتصلي بيا",
             "رقم الدعم", "تليفون الدعم", "هاتف الدعم", "تواصل مع الدعم",
+            "حولني للدعم", "حولني للدعم الفني", "ابي اكلم دعم", "عايز دعم فني",
             // English — keep broad so natural phrasing still matches
-            "technical support", "tech support", "human support",
+            "technical support", "tech support", "human support", "human technical",
             "talk to support", "talk to technical", "talk to tech",
             "talk with support", "speak to support", "speak with support",
             "speak to agent", "speak to someone", "speak with someone",
@@ -1136,6 +1167,23 @@ public sealed class AiAssistantAppService(
         ];
 
         return markers.Any(m => q.Contains(m, StringComparison.Ordinal));
+    }
+
+    private static bool LooksLikeSupportCallbackAnswer(string? answer)
+    {
+        var text = (answer ?? string.Empty).Trim().ToLowerInvariant();
+        if (text.Length == 0) return false;
+
+        string[] markers =
+        [
+            "خمس دقايق", "خلال خمس", "خلال 5", "النموذج تحت", "رقم تليفونك",
+            "اكتب اسمك ورقم", "هيتواصل معاك", "هيتم الاتصال",
+            "five minutes", "form below", "leave your name",
+            "phone number, and email", "technical support will call",
+            "we'll call you", "we’ll call you", "called within five"
+        ];
+
+        return markers.Any(m => text.Contains(m, StringComparison.Ordinal));
     }
 
  
