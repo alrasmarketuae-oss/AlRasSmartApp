@@ -1,5 +1,6 @@
 import 'package:alrasmarket/core/constants/country_names.dart';
 import 'package:alrasmarket/core/theme/app_fonts.dart';
+import 'package:alrasmarket/core/widgets/dismiss_keyboard.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -137,74 +138,76 @@ class _AppCountrySearchFieldState extends State<AppCountrySearchField> {
               targetAnchor: Alignment.topLeft,
               followerAnchor: Alignment.topLeft,
               offset: Offset(0, fieldSize.height + 4),
-              child: Material(
-                elevation: 8,
-                borderRadius: BorderRadius.circular(8.r),
-                clipBehavior: Clip.antiAlias,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minWidth: fieldSize.width,
-                    maxWidth: fieldSize.width,
-                    maxHeight: maxHeight,
-                  ),
-                  child: _filtered.isEmpty
-                      ? Padding(
-                          padding: EdgeInsets.all(14.w),
-                          child: Text(
-                            S.of(overlayContext).selectAnOption,
-                            style: TextStyle(
-                              fontFamily: widget.fontFamily ??
-                                  AppFonts.familyFor(
-                                    Localizations.localeOf(overlayContext),
-                                  ),
-                              fontSize: 13.sp,
-                              color: const Color(0xFF6B7280),
-                            ),
-                          ),
-                        )
-                      : ListView.builder(
-                          padding: EdgeInsets.zero,
-                          shrinkWrap: true,
-                          itemCount: _filtered.length,
-                          itemBuilder: (context, index) {
-                            final option = _filtered[index];
-                            final selected =
-                                option.toLowerCase() ==
-                                    _controller.text.trim().toLowerCase();
-                            return InkWell(
-                              onTapDown: (_) =>
-                                  _applySelection(option, fieldState),
-                              onTap: () =>
-                                  _applySelection(option, fieldState),
-                              child: Container(
-                                width: double.infinity,
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 12.w,
-                                  vertical: 12.h,
-                                ),
-                                color: selected
-                                    ? const Color(0xFFE8F2FC)
-                                    : Colors.transparent,
-                                child: Text(
-                                  option,
-                                  style: TextStyle(
-                                    fontFamily: widget.fontFamily ??
-                                        AppFonts.familyFor(
-                                          Localizations.localeOf(context),
-                                        ),
-                                    fontSize: 14.sp,
-                                    fontWeight: selected
-                                        ? FontWeight.w700
-                                        : FontWeight.w500,
-                                    color: selected
-                                        ? const Color(0xFF1B5FB8)
-                                        : const Color(0xFF333333),
-                                  ),
-                                ),
+              child: MetaData(
+                metaData: kDismissKeyboardExempt,
+                behavior: HitTestBehavior.deferToChild,
+                child: Material(
+                  elevation: 8,
+                  borderRadius: BorderRadius.circular(8.r),
+                  clipBehavior: Clip.antiAlias,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minWidth: fieldSize.width,
+                      maxWidth: fieldSize.width,
+                      maxHeight: maxHeight,
+                    ),
+                    child: _filtered.isEmpty
+                        ? Padding(
+                            padding: EdgeInsets.all(14.w),
+                            child: Text(
+                              S.of(overlayContext).selectAnOption,
+                              style: TextStyle(
+                                fontFamily: widget.fontFamily ??
+                                    AppFonts.familyFor(
+                                      Localizations.localeOf(overlayContext),
+                                    ),
+                                fontSize: 13.sp,
+                                color: const Color(0xFF6B7280),
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: EdgeInsets.zero,
+                            shrinkWrap: true,
+                            itemCount: _filtered.length,
+                            itemBuilder: (context, index) {
+                              final option = _filtered[index];
+                              final selected =
+                                  option.toLowerCase() ==
+                                      _controller.text.trim().toLowerCase();
+                              return InkWell(
+                                onTap: () =>
+                                    _applySelection(option, fieldState),
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 12.w,
+                                    vertical: 12.h,
+                                  ),
+                                  color: selected
+                                      ? const Color(0xFFE8F2FC)
+                                      : Colors.transparent,
+                                  child: Text(
+                                    option,
+                                    style: TextStyle(
+                                      fontFamily: widget.fontFamily ??
+                                          AppFonts.familyFor(
+                                            Localizations.localeOf(context),
+                                          ),
+                                      fontSize: 14.sp,
+                                      fontWeight: selected
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
+                                      color: selected
+                                          ? const Color(0xFF1B5FB8)
+                                          : const Color(0xFF333333),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
                 ),
               ),
             ),

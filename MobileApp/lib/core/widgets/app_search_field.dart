@@ -7,6 +7,7 @@ import 'package:alrasmarket/core/serveses/product_search_index_service.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/widgets/costomtextform.dart';
+import 'package:alrasmarket/core/widgets/dismiss_keyboard.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/features/company/presentation/controller/cubit/company_cubit.dart';
 import 'package:alrasmarket/generated/l10n.dart';
@@ -366,66 +367,69 @@ class _AppSearchFieldState extends State<AppSearchField> {
           ],
         ),
         if (_isCatalog && _showSuggestions)
-          Container(
-            margin: EdgeInsets.only(top: 6.h),
-            decoration: BoxDecoration(
-              color: AppColors.card(context),
-              borderRadius: BorderRadius.circular(12.r),
-              border: Border.all(color: AppColors.inputBorder(context)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            constraints: BoxConstraints(maxHeight: 220.h),
-            child: ListView.separated(
-              padding: EdgeInsets.symmetric(vertical: 4.h),
-              shrinkWrap: true,
-              itemCount: _suggestions.length,
-              separatorBuilder: (_, _) => Divider(
-                height: 1,
-                color: LightColor.greyTextColor.withValues(alpha: 0.15),
+          MetaData(
+            metaData: kDismissKeyboardExempt,
+            behavior: HitTestBehavior.deferToChild,
+            child: Container(
+              margin: EdgeInsets.only(top: 6.h),
+              decoration: BoxDecoration(
+                color: AppColors.card(context),
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(color: AppColors.inputBorder(context)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              itemBuilder: (context, index) {
-                final option = _suggestions[index];
-                return Listener(
-                  behavior: HitTestBehavior.opaque,
-                  onPointerDown: (_) {
-                    _pickingSuggestion = true;
-                    _pickSuggestion(option);
-                  },
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 12.w,
-                      vertical: 10.h,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.search,
-                          size: 16.sp,
-                          color: LightColor.defaultColor,
-                        ),
-                        SizedBox(width: 8.w),
-                        Expanded(
-                          child: Text(
-                            option,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              color: AppColors.title(context),
+              constraints: BoxConstraints(maxHeight: 220.h),
+              child: ListView.separated(
+                padding: EdgeInsets.symmetric(vertical: 4.h),
+                shrinkWrap: true,
+                itemCount: _suggestions.length,
+                separatorBuilder: (_, _) => Divider(
+                  height: 1,
+                  color: LightColor.greyTextColor.withValues(alpha: 0.15),
+                ),
+                itemBuilder: (context, index) {
+                  final option = _suggestions[index];
+                  return InkWell(
+                    onTap: () {
+                      _pickingSuggestion = true;
+                      _pickSuggestion(option);
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12.w,
+                        vertical: 10.h,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.search,
+                            size: 16.sp,
+                            color: LightColor.defaultColor,
+                          ),
+                          SizedBox(width: 8.w),
+                          Expanded(
+                            child: Text(
+                              option,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                color: AppColors.title(context),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
       ],

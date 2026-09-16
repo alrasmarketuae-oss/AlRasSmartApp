@@ -1,30 +1,73 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
+/// Marker for scrollable suggestion / dropdown menus that must not dismiss
+/// the keyboard (or close via unfocus) when the user scrolls them.
+const Object kDismissKeyboardExempt = Object();
+
 /// Closes the software keyboard when the user taps outside the focused field.
 ///
-/// Unfocus is deferred to the next frame so dropdowns and selectors receive
-/// the tap before the keyboard closes (immediate unfocus cancels selection).
-class DismissKeyboard extends StatelessWidget {
+/// Scrolls and drags do not dismiss. Menus wrapped in
+/// [MetaData] with [kDismissKeyboardExempt] are ignored.
+class DismissKeyboard extends StatefulWidget {
   const DismissKeyboard({super.key, required this.child});
 
   final Widget child;
 
   @override
+  State<DismissKeyboard> createState() => _DismissKeyboardState();
+}
+
+class _DismissKeyboardState extends State<DismissKeyboard> {
+  int? _pointer;
+  Offset? _downPosition;
+
+  @override
   Widget build(BuildContext context) {
     return Listener(
       behavior: HitTestBehavior.translucent,
-      onPointerDown: _scheduleDismissIfTapOutsideFocusedField,
-      child: child,
+      onPointerDown: _onPointerDown,
+      onPointerMove: _onPointerMove,
+      onPointerUp: _onPointerUp,
+      onPointerCancel: _onPointerCancel,
+      child: widget.child,
     );
   }
-}
 
-void _scheduleDismissIfTapOutsideFocusedField(PointerDownEvent event) {
-  final position = event.position;
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    _dismissIfTapOutsideFocusedField(position);
-  });
+  void _onPointerDown(PointerDownEvent event) {
+    if (_pointer != null) return;
+    _pointer = event.pointer;
+    _downPosition = event.position;
+  }
+
+  void _onPointerMove(PointerMoveEvent event) {
+    if (event.pointer != _pointer || _downPosition == null) return;
+    if ((event.position - _downPosition!).distance > kTouchSlop) {
+      _clearPointer();
+    }
+  }
+
+  void _onPointerUp(PointerUpEvent event) {
+    if (event.pointer != _pointer) return;
+    final position = _downPosition;
+    _clearPointer();
+    if (position == null) return;
+    // Real tap (not a scroll/drag): dismiss keyboard if outside the field/menu.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _dismissIfTapOutsideFocusedField(position);
+    });
+  }
+
+  void _onPointerCancel(PointerCancelEvent event) {
+    if (event.pointer != _pointer) return;
+    _clearPointer();
+  }
+
+  void _clearPointer() {
+    _pointer = null;
+    _downPosition = null;
+  }
 }
 
 void _dismissIfTapOutsideFocusedField(Offset globalPosition) {
@@ -54,10 +97,16 @@ bool _tapTargetsSelectorOrMenu(Offset globalPosition) {
 
   for (final entry in result.path) {
     final target = entry.target;
+
+    if (target is RenderMetaData &&
+        identical(target.metaData, kDismissKeyboardExempt)) {
+      return true;
+    }
+
     if (target is! RenderObject) continue;
     final creator = target.debugCreator;
-    if (creator is! Widget) continue;
-    final widget = creator;
+    if (creator is! DebugCreator) continue;
+    final widget = creator.element.widget;
 
     if (_isSelectorWidget(widget)) return true;
 

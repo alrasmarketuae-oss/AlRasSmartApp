@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/theme/app_fonts.dart';
+import 'package:alrasmarket/core/widgets/dismiss_keyboard.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_design.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
@@ -194,51 +195,54 @@ class _AnchoredGeoMenuState extends State<_AnchoredGeoMenu> {
               targetAnchor: Alignment.topLeft,
               followerAnchor: Alignment.topLeft,
               offset: Offset(0, fieldSize.height + 4),
-              child: Material(
-                elevation: 8,
-                color: widget.fillColor,
-                borderRadius: BorderRadius.circular(widget.borderRadius),
-                clipBehavior: Clip.antiAlias,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minWidth: fieldSize.width,
-                    maxWidth: fieldSize.width,
-                    maxHeight: maxHeight,
-                  ),
-                  child: ListView.builder(
-                    padding: EdgeInsets.zero,
-                    shrinkWrap: true,
-                    itemCount: widget.items.length,
-                    itemBuilder: (context, index) {
-                      final item = widget.items[index];
-                      final selected = item == widget.selectedValue;
-                      return InkWell(
-                        onTapDown: (_) => _select(item, fieldState),
-                        onTap: () => _select(item, fieldState),
-                        child: Container(
-                          width: double.infinity,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 12.w,
-                            vertical: 12.h,
-                          ),
-                          color: selected
-                              ? const Color(0xFFE8F2FC)
-                              : Colors.transparent,
-                          child: Text(
-                            item,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: widget.fieldTextStyle.copyWith(
-                              color: selected
-                                  ? const Color(0xFF1B5FB8)
-                                  : CreateAdDesign.text,
-                              fontWeight:
-                                  selected ? FontWeight.w700 : FontWeight.w500,
+              child: MetaData(
+                metaData: kDismissKeyboardExempt,
+                behavior: HitTestBehavior.deferToChild,
+                child: Material(
+                  elevation: 8,
+                  color: widget.fillColor,
+                  borderRadius: BorderRadius.circular(widget.borderRadius),
+                  clipBehavior: Clip.antiAlias,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minWidth: fieldSize.width,
+                      maxWidth: fieldSize.width,
+                      maxHeight: maxHeight,
+                    ),
+                    child: ListView.builder(
+                      padding: EdgeInsets.zero,
+                      shrinkWrap: true,
+                      itemCount: widget.items.length,
+                      itemBuilder: (context, index) {
+                        final item = widget.items[index];
+                        final selected = item == widget.selectedValue;
+                        return InkWell(
+                          onTap: () => _select(item, fieldState),
+                          child: Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 12.w,
+                              vertical: 12.h,
+                            ),
+                            color: selected
+                                ? const Color(0xFFE8F2FC)
+                                : Colors.transparent,
+                            child: Text(
+                              item,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: widget.fieldTextStyle.copyWith(
+                                color: selected
+                                    ? const Color(0xFF1B5FB8)
+                                    : CreateAdDesign.text,
+                                fontWeight:
+                                    selected ? FontWeight.w700 : FontWeight.w500,
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
