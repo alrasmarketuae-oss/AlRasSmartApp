@@ -6,6 +6,7 @@ import 'package:alrasmarket/features/company/data/models/my_listing_product_mode
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+/// Product cards shown under an AI assistant reply (same card as marketplace).
 class AiProductListings extends StatelessWidget {
   const AiProductListings({super.key, required this.products});
 
@@ -24,6 +25,7 @@ class AiProductListings extends StatelessWidget {
       if (productId.isEmpty) continue;
       map['productId'] = productId;
       map.putIfAbsent('ProductId', () => productId);
+      map.putIfAbsent('id', () => productId);
       map['images'] = map['images'] ?? map['Images'] ?? const [];
       map['quantity'] = map['quantity'] ?? map['Quantity'];
       map['unitName'] = map['unitName'] ?? map['UnitName'];
@@ -31,11 +33,17 @@ class AiProductListings extends StatelessWidget {
           map['nameEn'] ??
           map['NameEn'] ??
           map['nameAr'] ??
-          map['NameAr'];
+          map['NameAr'] ??
+          map['name'];
+      map['price'] = map['price'] ??
+          map['displayPrice'] ??
+          map['DisplayPrice'] ??
+          map['Price'];
+      map['shipping'] ??= <String, dynamic>{};
       try {
         final product = MyListingProductModel.fromJson(map);
         if (product.productId.trim().isEmpty) continue;
-        if (!seen.add(product.productId)) continue;
+        if (!seen.add(product.productId.toLowerCase())) continue;
         items.add(product);
       } catch (_) {
         final fallback = MyListingProductModel.notificationStub(
@@ -44,10 +52,11 @@ class AiProductListings extends StatelessWidget {
                   map['nameEn'] ??
                   map['NameEn'] ??
                   map['nameAr'] ??
+                  map['name'] ??
                   '')
               .toString(),
         );
-        if (!seen.add(fallback.productId)) continue;
+        if (!seen.add(fallback.productId.toLowerCase())) continue;
         items.add(fallback);
       }
     }
@@ -66,12 +75,26 @@ class AiProductListings extends StatelessWidget {
     }
     if (source is Map) {
       final map = source.map((key, value) => MapEntry(key.toString(), value));
+      // Tool payloads sometimes nest cards under content / data.
+      final nestedContent = map['content'] ?? map['Content'];
+      if (nestedContent is String && nestedContent.trim().isNotEmpty) {
+        try {
+          final decoded = jsonDecode(nestedContent);
+          final fromContent = _extractList(decoded);
+          if (fromContent.isNotEmpty) return fromContent;
+        } catch (_) {}
+      }
       source = map['listings'] ??
           map['Listings'] ??
           map['items'] ??
           map['Items'] ??
+          map['products'] ??
+          map['Products'] ??
           map['cheapest'] ??
-          map['alternatives'];
+          map['mostExpensive'] ??
+          map['alternatives'] ??
+          map['data'] ??
+          map['Data'];
     }
     if (source is List) return List<dynamic>.from(source);
     if (source is Iterable && source is! String) {
@@ -88,7 +111,7 @@ class AiProductListings extends StatelessWidget {
         return null;
       }
     }
-    if (item is Map<String, dynamic>) return item;
+    if (item is Map<String, dynamic>) return Map<String, dynamic>.from(item);
     if (item is Map) {
       return item.map((key, value) => MapEntry(key.toString(), value));
     }
@@ -102,9 +125,15 @@ class AiProductListings extends StatelessWidget {
       'productID',
       'id',
       'Id',
+      'ID',
     ]) {
-      final value = map[key]?.toString().trim() ?? '';
-      if (value.isNotEmpty && value.toLowerCase() != 'null') return value;
+      var value = map[key]?.toString().trim() ?? '';
+      if (value.isEmpty || value.toLowerCase() == 'null') continue;
+      // Normalize GUID braces / whitespace.
+      if (value.startsWith('{') && value.endsWith('}')) {
+        value = value.substring(1, value.length - 1).trim();
+      }
+      if (value.isNotEmpty) return value;
     }
     return '';
   }

@@ -1,6 +1,7 @@
 import 'package:alrasmarket/core/utils/product_quantity_formatter.dart';
 import 'package:alrasmarket/core/utils/relative_time_formatter.dart';
 import 'package:alrasmarket/features/clint/data/models/my_order_model.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/track_order_widgets/decision_maker_order_status_labels.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:intl/intl.dart';
 
@@ -44,6 +45,7 @@ class TrackOrderStatusHelper {
     required MyOrderModel order,
     required S l10n,
     bool? isArabic,
+    bool forDecisionMaker = false,
   }) {
     if (order.statusId == OrderStatusCodes.cancelled) {
       final steps = <TrackOrderStepData>[
@@ -109,14 +111,20 @@ class TrackOrderStatusHelper {
     // Hide Paid / Shipping / Paid-to-supplier steps.
     final arabic =
         isArabic ?? Intl.getCurrentLocale().toLowerCase().startsWith('ar');
-    return _buildTextStatusTimeline(order, l10n, arabic);
+    return _buildTextStatusTimeline(
+      order,
+      l10n,
+      arabic,
+      forDecisionMaker: forDecisionMaker,
+    );
   }
 
   static List<TrackOrderStepData> _buildTextStatusTimeline(
     MyOrderModel order,
     S l10n,
-    bool isArabic,
-  ) {
+    bool isArabic, {
+    bool forDecisionMaker = false,
+  }) {
     final createdDate = _formatRelative(l10n, order.createdAt);
     final history = order.statusHistory;
 
@@ -134,9 +142,16 @@ class TrackOrderStatusHelper {
         final isLast = i == history.length - 1;
         final isReceived = order.statusId == OrderStatusCodes.delivered ||
             order.statusId == OrderStatusCodes.received;
+        final historyLabel = forDecisionMaker
+            ? DecisionMakerOrderStatusLabels.remap(
+                apiLabel: entry.label(isArabic: isArabic),
+                statusId: entry.statusId,
+                s: l10n,
+              )
+            : entry.label(isArabic: isArabic);
         steps.add(
           TrackOrderStepData(
-            title: entry.label(isArabic: isArabic),
+            title: historyLabel,
             state: isLast
                 ? (isReceived
                     ? TrackOrderStepState.completed
@@ -149,7 +164,12 @@ class TrackOrderStatusHelper {
       return steps;
     }
 
-    final currentLabel = displayStatusLabel(order, isArabic: isArabic);
+    final currentLabel = displayStatusLabel(
+      order,
+      isArabic: isArabic,
+      forDecisionMaker: forDecisionMaker,
+      l10n: l10n,
+    );
 
     final steps = <TrackOrderStepData>[
       TrackOrderStepData(
@@ -173,7 +193,11 @@ class TrackOrderStatusHelper {
     if (order.statusId == OrderStatusCodes.awaitingSellerApproval) {
       steps.add(
         TrackOrderStepData(
-          title: isArabic ? 'بانتظار موافقة البائع' : 'Awaiting seller approval',
+          title: forDecisionMaker
+              ? l10n.awaitingYourApproval
+              : (isArabic
+                  ? 'بانتظار موافقة البائع'
+                  : 'Awaiting seller approval'),
           state: TrackOrderStepState.inProgress,
           subtitle: currentLabel,
         ),
@@ -211,25 +235,35 @@ class TrackOrderStatusHelper {
   }
 
   /// Prefer API/custom bilingual labels (no Paid-to-Merge-Spice override).
-  static String displayStatusLabel(MyOrderModel order, {required bool isArabic}) {
+  static String displayStatusLabel(
+    MyOrderModel order, {
+    required bool isArabic,
+    bool forDecisionMaker = false,
+    S? l10n,
+  }) {
     final fromApi = order.statusLabel(isArabic: isArabic).trim();
-    if (fromApi.isNotEmpty) {
-      return fromApi;
-    }
+    final resolved = fromApi.isNotEmpty
+        ? fromApi
+        : order.statusId == OrderStatusCodes.received
+            ? (isArabic ? 'تم التسليم' : 'Delivered')
+            : order.statusId == OrderStatusCodes.awaitingSellerApproval
+                ? (isArabic
+                    ? 'بانتظار موافقة البائع'
+                    : 'Awaiting seller approval')
+                : order.statusId == OrderStatusCodes.ordered && !order.isApproved
+                    ? (isArabic
+                        ? 'بانتظار موافقة التطبيق'
+                        : 'Awaiting app approval')
+                    : (isArabic ? 'غير معروف' : 'Unknown');
 
-    if (order.statusId == OrderStatusCodes.received) {
-      return isArabic ? 'تم التسليم' : 'Delivered';
+    if (forDecisionMaker && l10n != null) {
+      return DecisionMakerOrderStatusLabels.remap(
+        apiLabel: resolved,
+        statusId: order.statusId,
+        s: l10n,
+      );
     }
-
-    if (order.statusId == OrderStatusCodes.awaitingSellerApproval) {
-      return isArabic ? 'بانتظار موافقة البائع' : 'Awaiting seller approval';
-    }
-
-    if (order.statusId == OrderStatusCodes.ordered && !order.isApproved) {
-      return isArabic ? 'بانتظار موافقة التطبيق' : 'Awaiting app approval';
-    }
-
-    return isArabic ? 'غير معروف' : 'Unknown';
+    return resolved;
   }
 
   static String? _formatRelative(S l10n, String raw) {

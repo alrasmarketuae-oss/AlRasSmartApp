@@ -164,19 +164,24 @@ class CompanyCubit extends Cubit<CompanyStates> {
       if (state is CompanyMyListingsState) {
         _cachedListingsState = state as CompanyMyListingsState;
       }
+      final previous = state is CompanyAdRequestOffersState
+          ? state as CompanyAdRequestOffersState
+          : null;
+      final keepUpdating = previous?.isUpdatingStatus == true;
       emit(
         CompanyAdRequestOffersState(
           productId: productId,
           productName: productName,
-          isLoading: true,
+          isLoading: !keepUpdating,
           isLoadingMore: false,
-          isUpdatingStatus: false,
-          offers: loadMore && state is CompanyAdRequestOffersState
-              ? (state as CompanyAdRequestOffersState).offers
+          isUpdatingStatus: keepUpdating,
+          offers: keepUpdating
+              ? previous!.offers
               : const [],
           page: page,
-          totalPages: 0,
-          totalCount: 0,
+          totalPages: keepUpdating ? previous!.totalPages : 0,
+          totalCount: keepUpdating ? previous!.totalCount : 0,
+          updatingOrderId: keepUpdating ? previous!.updatingOrderId : null,
         ),
       );
     } else {
@@ -340,11 +345,23 @@ class CompanyCubit extends Cubit<CompanyStates> {
         return failure.message;
       },
       (_) async {
-        await loadMyRequestOffers(
-          productId: current.productId,
-          productName: current.productName,
-        );
-        unawaited(CatalogSyncService.instance.afterAdMutation());
+        try {
+          await loadMyRequestOffers(
+            productId: current.productId,
+            productName: current.productName,
+          );
+          unawaited(CatalogSyncService.instance.afterAdMutation());
+        } finally {
+          final after = state;
+          if (after is CompanyAdRequestOffersState) {
+            emit(
+              after.copyWith(
+                isUpdatingStatus: false,
+                clearUpdatingOrderId: true,
+              ),
+            );
+          }
+        }
         return null;
       },
     );

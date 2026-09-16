@@ -1897,6 +1897,18 @@ class MessageLookup extends MessageLookupByLibrary {
     "wholesalePrice": MessageLookupByLibrary.simpleMessage("Wholesale price"),
     "workingHours": MessageLookupByLibrary.simpleMessage("Working Hours"),
     "yearsAgo": m39,
+    "youAcceptedTheOffer": MessageLookupByLibrary.simpleMessage(
+      "I accepted the offer",
+    ),
+    "youAcceptedTheOrder": MessageLookupByLibrary.simpleMessage(
+      "I accepted the order",
+    ),
+    "youRejectedTheOffer": MessageLookupByLibrary.simpleMessage(
+      "I rejected the offer",
+    ),
+    "youRejectedTheOrder": MessageLookupByLibrary.simpleMessage(
+      "I rejected the order",
+    ),
     "yourAccountIsUnderReviewWeWillNotifyYouOnceItIsApproved":
         MessageLookupByLibrary.simpleMessage(
           "Your account is under review. We will notify you once it is approved.",

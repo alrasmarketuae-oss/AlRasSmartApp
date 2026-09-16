@@ -2083,9 +2083,12 @@ class ClintCubit extends Cubit<ClintStates> {
         return failure.message;
       },
       (_) async {
-        updatingIncomingOrderId = null;
-        await fetchIncomingOrders();
-        emit(IncomingOrderStatusUpdatedState(orderId));
+        try {
+          await fetchIncomingOrders();
+        } finally {
+          updatingIncomingOrderId = null;
+          emit(IncomingOrderStatusUpdatedState(orderId));
+        }
         return null;
       },
     );

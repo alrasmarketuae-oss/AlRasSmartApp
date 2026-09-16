@@ -138,37 +138,3 @@ String bookingIncotermPlanHint({
       ? 'اسأل عن نوع السعر FOB أو CNF أو CIF أولاً ثم اعرض الحقول حسب النوع.'
       : 'Ask FOB/CNF/CIF first, then list fields matching that price type.';
 }
-
-/// True when the assistant reply indicates a generic temporary outage message.
-bool looksLikeTemporaryAssistantFailure(String answer) {
-  final q = answer.toLowerCase();
-  return q.contains('المساعد مش متاح') ||
-      q.contains('تعذر الوصول للمساعد') ||
-      q.contains('temporarily unavailable') ||
-      q.contains('unavailable right now') ||
-      q.contains('high demand') ||
-      q.contains('ضغط عالي');
-}
-
-/// True when the assistant reply indicates the ad was created successfully.
-bool looksLikeAdCreateSuccess(String answer) {
-  final q = answer.toLowerCase();
-  const markers = [
-    'تم إنشاء',
-    'تم نشر',
-    'اتنشر',
-    'نُشر',
-    'نشرت',
-    'إرساله للمراجعة',
-    'created successfully',
-    'published successfully',
-    'ad created',
-    'listing created',
-    'submitted for review',
-    'submitted for admin review',
-    'productcode',
-    'product code',
-    'رمز المنتج',
-  ];
-  return markers.any(q.contains);
-}

@@ -398,6 +398,7 @@ class _TrackOrderViewState extends State<TrackOrderView>
       order: displayOrder,
       l10n: s,
       isArabic: isArabic,
+      forDecisionMaker: !widget.showBuyerActions,
     );
     final canReturn = widget.showBuyerActions &&
         TrackOrderStatusHelper.canReturnOrder(displayOrder);

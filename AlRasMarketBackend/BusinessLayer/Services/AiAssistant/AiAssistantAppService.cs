@@ -688,6 +688,14 @@ public sealed class AiAssistantAppService(
                 "موجود",
                 "منتج",
                 "منتجات",
+                "ابي",
+                "أبغى",
+                "ابي اشتري",
+                "ابي أشوف",
+                "شو فيه",
+                "شو عندكم",
+                "بدور على",
+                "بدور علي",
                 "search product",
                 "find product",
                 "show ads",
@@ -695,7 +703,9 @@ public sealed class AiAssistantAppService(
                 "looking for",
                 "do you have",
                 "price of",
-                "how much"))
+                "how much",
+                "any ads",
+                "product cards"))
         {
             return "search_products";
         }

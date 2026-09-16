@@ -97,10 +97,18 @@ class AiAssistantRealtimeService {
       if (_closed || generation != _connectGeneration) return;
       _responseCompletedForActiveAsk = true;
       final data = _map(args);
-      final answer = data?['answer']?.toString() ?? '';
+      final answer = data?['answer']?.toString() ??
+          data?['Answer']?.toString() ??
+          '';
       final offer = _asBool(data?['offerSupportCallback']) ||
-          _asBool(data?['OfferSupportCallback']);
-      final listings = _asList(data?['listings'] ?? data?['Listings']);
+          _asBool(data?['OfferSupportCallback']) ||
+          _asBool(data?['offer_support_callback']);
+          final listings = _asList(
+            data?['listings'] ??
+                data?['Listings'] ??
+                data?['productListings'] ??
+                data?['ProductListings'],
+          );
       final thinkingRaw = data?['thinkingSteps'] ?? data?['ThinkingSteps'];
       onCompleted(
         answer,
@@ -172,8 +180,31 @@ class AiAssistantRealtimeService {
   }
 
   Map<String, dynamic>? _map(List<Object?>? args) {
-    if (args == null || args.isEmpty || args.first is! Map) return null;
-    return _deepStringKeyedMap(args.first! as Map);
+    if (args == null || args.isEmpty) return null;
+    final first = args.first;
+    if (first is Map) return _deepStringKeyedMap(first);
+    if (first is String && first.trim().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(first);
+        if (decoded is Map) return _deepStringKeyedMap(decoded);
+      } catch (_) {}
+    }
+    // Some clients deliver the payload fields as the sole list element nested
+    // under "arguments" / "data".
+    for (final arg in args) {
+      if (arg is Map) {
+        final map = _deepStringKeyedMap(arg);
+        if (map.containsKey('answer') ||
+            map.containsKey('Answer') ||
+            map.containsKey('listings') ||
+            map.containsKey('Listings') ||
+            map.containsKey('offerSupportCallback') ||
+            map.containsKey('OfferSupportCallback')) {
+          return map;
+        }
+      }
+    }
+    return null;
   }
 
   /// SignalR often delivers nested maps as Map<Object?, Object?>; normalize

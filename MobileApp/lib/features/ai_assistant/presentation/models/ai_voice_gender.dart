@@ -1,0 +1,1 @@
+enum AiVoiceGender { female, male }

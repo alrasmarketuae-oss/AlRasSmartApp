@@ -6,8 +6,8 @@ import 'package:alrasmarket/core/widgets/product_price_text.dart';
 import 'package:alrasmarket/features/clint/presentation/models/product_media_item.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_media_preview_screen.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_video_thumbnail.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/track_order_widgets/decision_maker_order_status_labels.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/track_order_widgets/order_status_style.dart';
-import 'package:alrasmarket/features/clint/presentation/widgets/track_order_widgets/track_order_status_helper.dart';
 import 'package:alrasmarket/features/company/data/models/my_request_offer_model.dart';
 import 'package:alrasmarket/features/company/presentation/helpers/create_ad_form_mapper.dart';
 import 'package:alrasmarket/features/company/presentation/helpers/create_ad_price_labels.dart';
@@ -419,10 +419,13 @@ class RequestOfferCard extends StatelessWidget {
   }
 
   String _statusLabel(S s, bool isArabic) {
-    if (offer.statusId == OrderStatusCodes.awaitingSellerApproval) {
-      return s.awaitingYourApproval;
-    }
-    return offer.statusLabel(isArabic: isArabic);
+    return DecisionMakerOrderStatusLabels.remapOffer(
+      statusName: offer.statusName,
+      statusAr: offer.statusAr,
+      statusId: offer.statusId,
+      isArabic: isArabic,
+      s: s,
+    );
   }
 
   String _resolvedCurrency() {
@@ -739,7 +742,7 @@ class _AcceptRejectActionsState extends State<_AcceptRejectActions> {
 
   @override
   Widget build(BuildContext context) {
-    final busy = widget.isUpdating;
+    final busy = widget.isUpdating || _pendingAction != 0;
     return Row(
       children: [
         if (widget.onAccept != null)
@@ -749,7 +752,8 @@ class _AcceptRejectActionsState extends State<_AcceptRejectActions> {
               loadingLabel: widget.sendingLabel,
               backgroundColor: RequestOfferCard._actionBlue,
               fontFamily: widget.fontFamily,
-              isLoading: busy && _pendingAction == 1,
+              isLoading: _pendingAction == 1 ||
+                  (widget.isUpdating && _pendingAction != 2),
               onPressed: busy
                   ? null
                   : () {
@@ -767,7 +771,7 @@ class _AcceptRejectActionsState extends State<_AcceptRejectActions> {
               loadingLabel: widget.sendingLabel,
               backgroundColor: RequestOfferCard._actionRed,
               fontFamily: widget.fontFamily,
-              isLoading: busy && _pendingAction == 2,
+              isLoading: _pendingAction == 2,
               onPressed: busy
                   ? null
                   : () {
@@ -800,6 +804,13 @@ class _ActionChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final style = TextStyle(
+      color: Colors.white,
+      fontFamily: fontFamily,
+      fontSize: 14.sp,
+      height: 1.5,
+      fontWeight: isLoading ? FontWeight.w700 : FontWeight.normal,
+    );
     return Material(
       color: backgroundColor,
       borderRadius: BorderRadius.circular(8.r),
@@ -810,20 +821,68 @@ class _ActionChip extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
           child: SizedBox(
             width: double.infinity,
-            child: Text(
-              isLoading ? (loadingLabel ?? label) : label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white,
-                fontFamily: fontFamily,
-                fontSize: 14.sp,
-                height: 1.5,
-                fontWeight: isLoading ? FontWeight.w700 : FontWeight.normal,
-              ),
-            ),
+            child: isLoading
+                ? _AnimatedSendingText(
+                    label: loadingLabel ?? label,
+                    style: style,
+                  )
+                : Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    style: style,
+                  ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _AnimatedSendingText extends StatefulWidget {
+  const _AnimatedSendingText({
+    required this.label,
+    required this.style,
+  });
+
+  final String label;
+  final TextStyle style;
+
+  @override
+  State<_AnimatedSendingText> createState() => _AnimatedSendingTextState();
+}
+
+class _AnimatedSendingTextState extends State<_AnimatedSendingText>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final phase = (_controller.value * 3).floor() % 3;
+        final dots = '.' * (phase + 1);
+        return Text(
+          '${widget.label}$dots',
+          textAlign: TextAlign.center,
+          style: widget.style,
+        );
+      },
     );
   }
 }

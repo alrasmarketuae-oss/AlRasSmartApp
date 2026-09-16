@@ -1880,6 +1880,18 @@ class MessageLookup extends MessageLookupByLibrary {
     "wholesalePrice": MessageLookupByLibrary.simpleMessage("سعر الجملة"),
     "workingHours": MessageLookupByLibrary.simpleMessage("ساعات العمل"),
     "yearsAgo": m39,
+    "youAcceptedTheOffer": MessageLookupByLibrary.simpleMessage(
+      "لقد قبلت العرض",
+    ),
+    "youAcceptedTheOrder": MessageLookupByLibrary.simpleMessage(
+      "لقد قبلت الطلب",
+    ),
+    "youRejectedTheOffer": MessageLookupByLibrary.simpleMessage(
+      "لقد رفضت العرض",
+    ),
+    "youRejectedTheOrder": MessageLookupByLibrary.simpleMessage(
+      "لقد رفضت الطلب",
+    ),
     "yourAccountIsUnderReviewWeWillNotifyYouOnceItIsApproved":
         MessageLookupByLibrary.simpleMessage(
           "حسابك تحت المراجعة. سنقوم بالإعلام عندما يتم الموافقة عليه.",

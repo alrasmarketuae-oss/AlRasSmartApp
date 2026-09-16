@@ -1784,6 +1784,46 @@ class S {
     );
   }
 
+  /// `I accepted the order`
+  String get youAcceptedTheOrder {
+    return Intl.message(
+      'I accepted the order',
+      name: 'youAcceptedTheOrder',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `I rejected the order`
+  String get youRejectedTheOrder {
+    return Intl.message(
+      'I rejected the order',
+      name: 'youRejectedTheOrder',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `I accepted the offer`
+  String get youAcceptedTheOffer {
+    return Intl.message(
+      'I accepted the offer',
+      name: 'youAcceptedTheOffer',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `I rejected the offer`
+  String get youRejectedTheOffer {
+    return Intl.message(
+      'I rejected the offer',
+      name: 'youRejectedTheOffer',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Active`
   String get listingActive {
     return Intl.message('Active', name: 'listingActive', desc: '', args: []);
