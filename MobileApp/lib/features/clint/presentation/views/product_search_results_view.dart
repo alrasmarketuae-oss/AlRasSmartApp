@@ -6,6 +6,7 @@ import 'package:alrasmarket/core/utils/product_grid_layout.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_states.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product%20_card.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/product_grid_skeleton.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/search_header.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
@@ -153,7 +154,7 @@ class _ProductSearchResultsViewState extends State<ProductSearchResultsView> {
                   child: Builder(
                     builder: (context) {
                   if (isLoading) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const ProductGridSkeleton();
                   }
 
                   if (state is ProductSearchErrorState) {

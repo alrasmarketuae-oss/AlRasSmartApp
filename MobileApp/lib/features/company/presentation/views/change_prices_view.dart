@@ -8,7 +8,6 @@ import 'package:alrasmarket/core/utils/product_price_formatter.dart';
 import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/core/widgets/cached_app_image.dart';
 import 'package:alrasmarket/core/widgets/primary_button.dart';
-import 'package:alrasmarket/core/widgets/app_search_field.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/search_header.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/features/company/presentation/controller/cubit/company_cubit.dart';
@@ -191,64 +190,62 @@ class _ChangePricesViewState extends State<ChangePricesView> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F9FE),
-      body: Column(
-        children: [
-          SearchHeader(title: title, isSearch: false),
-          Expanded(
-            child: BlocBuilder<CompanyCubit, CompanyStates>(
-              buildWhen: (previous, current) =>
-                  current is CompanyMyListingsState,
-              builder: (context, state) {
-                if (state is! CompanyMyListingsState) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            _ChangePricesPageHeader(
+              title: title,
+              subtitle: s.changePricesSubtitle,
+              searchController: _searchController,
+              searchHint: s.changePricesSearchHint,
+              onSearchChanged: () => setState(() {}),
+            ),
+            Expanded(
+              child: BlocBuilder<CompanyCubit, CompanyStates>(
+                buildWhen: (previous, current) =>
+                    current is CompanyMyListingsState,
+                builder: (context, state) {
+                  if (state is! CompanyMyListingsState) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-                _ensureEditors(state.products);
-                final products = _visible(state.products);
-                final dirtyCount = state.products
-                    .where(
-                      (product) => _editors[product.productId]?.isDirty == true,
-                    )
-                    .length;
+                  _ensureEditors(state.products);
+                  final products = _visible(state.products);
+                  final dirtyCount = state.products
+                      .where(
+                        (product) =>
+                            _editors[product.productId]?.isDirty == true,
+                      )
+                      .length;
 
-                return Column(
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 10.h),
-                      child: AppSearchField(
-                        mode: AppSearchMode.local,
-                        controller: _searchController,
-                        hintText: s.changePricesSearchHint,
-                        showBackButton: false,
-                        showImageSearch: false,
-                        enableSuggestions: false,
-                        onChanged: (_) => setState(() {}),
+                  return Column(
+                    children: [
+                      Expanded(
+                        child: _buildList(state, products, s),
                       ),
-                    ),
-                    Expanded(
-                      child: _buildList(state, products, s),
-                    ),
-                    SafeArea(
-                      top: false,
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 12.h),
-                        child: PrimaryButton(
-                          text: dirtyCount > 0
-                              ? '${s.saveChanges} ($dirtyCount)'
-                              : s.saveChanges,
-                          isLoading: _savingAll,
-                          onPressed: dirtyCount == 0 || _savingAll
-                              ? null
-                              : () => _saveAll(state.products),
+                      SafeArea(
+                        top: false,
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 12.h),
+                          child: PrimaryButton(
+                            text: dirtyCount > 0
+                                ? '${s.saveChanges} ($dirtyCount)'
+                                : s.saveChanges,
+                            isLoading: _savingAll,
+                            onPressed: dirtyCount == 0 || _savingAll
+                                ? null
+                                : () => _saveAll(state.products),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                );
-              },
+                    ],
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -330,6 +327,162 @@ class _ChangePricesViewState extends State<ChangePricesView> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _ChangePricesPageHeader extends StatelessWidget {
+  const _ChangePricesPageHeader({
+    required this.title,
+    required this.subtitle,
+    required this.searchController,
+    required this.searchHint,
+    required this.onSearchChanged,
+  });
+
+  final String title;
+  final String subtitle;
+  final TextEditingController searchController;
+  final String searchHint;
+  final VoidCallback onSearchChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 12.h),
+      child: Directionality(
+        textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                IconButton(
+                  onPressed: () => SearchHeader.goBack(context),
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints.tightFor(width: 40.w, height: 40.w),
+                  tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                  icon: Icon(
+                    isArabic
+                        ? Icons.arrow_forward_ios_rounded
+                        : Icons.arrow_back_ios_new_rounded,
+                    size: 18.sp,
+                    color: LightColor.defaultColor,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w800,
+                      color: LightColor.defaultColor,
+                      height: 1.2,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 40.w),
+              ],
+            ),
+            SizedBox(height: 4.h),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12.5.sp,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF64748B),
+                height: 1.35,
+              ),
+            ),
+            SizedBox(height: 14.h),
+            _ChangePricesLocalSearch(
+              controller: searchController,
+              hintText: searchHint,
+              onChanged: (_) => onSearchChanged(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ChangePricesLocalSearch extends StatelessWidget {
+  const _ChangePricesLocalSearch({
+    required this.controller,
+    required this.hintText,
+    required this.onChanged,
+  });
+
+  final TextEditingController controller;
+  final String hintText;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 46.h,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(color: const Color(0xFFE6EEF8)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF16233A).withValues(alpha: 0.05),
+            blurRadius: 10.r,
+            offset: Offset(0, 3.h),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        textInputAction: TextInputAction.search,
+        style: TextStyle(
+          fontSize: 14.sp,
+          fontWeight: FontWeight.w600,
+          color: const Color(0xFF16233A),
+        ),
+        decoration: InputDecoration(
+          isDense: true,
+          hintText: hintText,
+          hintStyle: TextStyle(
+            fontSize: 13.5.sp,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF94A3B8),
+          ),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            size: 22.sp,
+            color: LightColor.defaultColor,
+          ),
+          suffixIcon: ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (context, value, _) {
+              if (value.text.isEmpty) return SizedBox(width: 8.w);
+              return IconButton(
+                onPressed: () {
+                  controller.clear();
+                  onChanged('');
+                },
+                icon: Icon(
+                  Icons.close_rounded,
+                  size: 20.sp,
+                  color: const Color(0xFF94A3B8),
+                ),
+              );
+            },
+          ),
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(vertical: 12.h),
+        ),
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:alrasmarket/core/widgets/primary_button.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_states.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product%20_card.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/product_grid_skeleton.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/search_header.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
@@ -59,7 +60,7 @@ class _CategoryProductsViewState extends State<CategoryProductsView> {
 
                   if (state is FetchCategoryProductsLoadingState &&
                       state.categoryId == widget.categoryId) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const ProductGridSkeleton();
                   }
 
                   if (state is FetchCategoryProductsErrorState &&
@@ -79,7 +80,7 @@ class _CategoryProductsViewState extends State<CategoryProductsView> {
                   if (cubit.isLoadingCategoryProducts &&
                       products.isEmpty &&
                       isCurrentCategory) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const ProductGridSkeleton();
                   }
 
                   if (products.isEmpty) {

@@ -1,6 +1,7 @@
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/features/clint/data/models/category_model.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/categories_grid_skeleton.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/category_label.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/category_image.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/search_header.dart';
@@ -47,7 +48,7 @@ class _CategoriesViewState extends State<CategoriesView> {
                 SizedBox(height: 12.h),
                 Expanded(
                   child: isLoading
-                      ? const Center(child: CircularProgressIndicator())
+                      ? const CategoriesGridSkeleton()
                       : error != null && categories.isEmpty
                           ? _CategoriesError(
                               message: error,
