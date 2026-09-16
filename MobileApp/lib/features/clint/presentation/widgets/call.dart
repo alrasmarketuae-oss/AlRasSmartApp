@@ -5,13 +5,23 @@ import 'package:flutter_svg/svg.dart';
 class CallCard extends StatelessWidget {
   const CallCard({
     super.key,
-    required this.icon,
+    this.icon,
+    this.iconData,
     required this.title,
     required this.subtitle,
     required this.buttonText,
     required this.onTap,
-  });
-  final String icon;
+  }) : assert(
+          icon != null || iconData != null,
+          'CallCard requires either icon (SVG asset) or iconData (Material icon)',
+        );
+
+  /// SVG asset path (optional if [iconData] is provided).
+  final String? icon;
+
+  /// Material icon (preferred when SVG would be invisible / missing).
+  final IconData? iconData;
+
   final String title;
   final String subtitle;
   final String buttonText;
@@ -19,6 +29,8 @@ class CallCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tint = LightColor.defaultColor;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -33,12 +45,21 @@ class CallCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: AppColors.iconSoft(context),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: SvgPicture.asset(icon, width: 24, height: 24),
+                child: iconData != null
+                    ? Icon(iconData, size: 24, color: tint)
+                    : SvgPicture.asset(
+                        icon!,
+                        width: 24,
+                        height: 24,
+                        colorFilter: ColorFilter.mode(tint, BlendMode.srcIn),
+                      ),
               ),
               const SizedBox(width: 16),
               Expanded(

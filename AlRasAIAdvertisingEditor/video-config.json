@@ -1,0 +1,29 @@
+{
+  "defaultFormat": "9:16",
+  "formats": {
+    "9:16": { "width": 1080, "height": 1920, "fps": 30 },
+    "16:9": { "width": 1920, "height": 1080, "fps": 30 },
+    "1:1": { "width": 1080, "height": 1080, "fps": 30 }
+  },
+  "preview": {
+    "scale": 0.35,
+    "fps": 24,
+    "crf": 28
+  },
+  "render": {
+    "codec": "h264",
+    "crf": 18,
+    "audioBitrate": "192k",
+    "pixelFormat": "yuv420p"
+  },
+  "music": {
+    "speechVolume": 0.12,
+    "ambientVolume": 0.3,
+    "duckFadeSeconds": 0.25
+  },
+  "captions": {
+    "maxCharsPerLine": 28,
+    "maxLines": 2,
+    "preferredPhraseSeconds": 2.8
+  }
+}

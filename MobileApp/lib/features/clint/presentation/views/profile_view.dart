@@ -276,7 +276,7 @@ class _ProfileViewState extends State<ProfileView> {
                                   child: _ShortcutCard(
                                     title: s.aiAssistantTitle,
                                     subtitle: s.aiAssistantCardSubtitle,
-                                    assetIcon: AppAssets.aiAgentIcon,
+                                    icon: Icons.smart_toy_outlined,
                                     onTap: () {
                                       SensitiveAccessGate.openProtectedRoute(
                                         context,

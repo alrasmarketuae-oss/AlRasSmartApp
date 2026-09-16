@@ -125,7 +125,7 @@ class TechnicalSupportView extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       CallCard(
-                        icon: AppAssets.profileHelpSupportIcon,
+                        iconData: Icons.feedback_outlined,
                         title: S.of(context).complaintsSuggestions,
                         subtitle: S.of(context).complaintsSuggestionsSubtitle,
                         buttonText: S.of(context).submitFeedback,
@@ -142,7 +142,7 @@ class TechnicalSupportView extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       CallCard(
-                        icon: AppAssets.profileHelpSupportIcon,
+                        iconData: Icons.smart_toy_outlined,
                         title: S.of(context).aiAssistantTitle,
                         subtitle: S.of(context).aiAssistantSubtitle,
                         buttonText: S.of(context).aiAssistantFabLabel,
@@ -153,7 +153,7 @@ class TechnicalSupportView extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       CallCard(
-                        icon: AppAssets.profilePrivacyPolicyIcon,
+                        iconData: Icons.model_training_outlined,
                         title: S.of(context).modelTrainingTitle,
                         subtitle: S.of(context).modelTrainingTitle,
                         buttonText: S.of(context).gotIt,

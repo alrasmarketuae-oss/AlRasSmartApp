@@ -241,8 +241,14 @@ class ClintCubit extends Cubit<ClintStates> {
   bool _ordersRealtimeStarted = false;
 
   /// Orders on my ads that still need seller approval (incoming tab badge).
-  int get pendingIncomingApprovalCount =>
-      incomingOrders.where((order) => order.canAccept).length;
+  int get pendingIncomingApprovalCount {
+    final orders = incomingOrders.where((order) => order.canAccept);
+    // Company customers buy only — badge reflects request offers, not sales.
+    if (AuthService.instance.isCompanyCustomerAccount) {
+      return orders.where((order) => order.isRequestProductOffer).length;
+    }
+    return orders.length;
+  }
 
   Future<void> ensureOrdersRealtimeListener() async {
     if (_ordersRealtimeStarted) return;

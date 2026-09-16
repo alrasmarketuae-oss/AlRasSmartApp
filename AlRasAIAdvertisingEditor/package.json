@@ -1,0 +1,43 @@
+{
+  "name": "alras-ai-advertising-editor",
+  "version": "1.0.0",
+  "description": "AI Advertising Video Editor for Al Ras Market — Creative Director + Remotion + FFmpeg",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "edit": "tsx src/cli/index.ts edit",
+    "preview": "tsx src/cli/index.ts preview",
+    "analyze": "tsx src/cli/index.ts analyze",
+    "plan": "tsx src/cli/index.ts plan",
+    "render": "tsx src/cli/index.ts render",
+    "studio": "remotion studio src/remotion/index.tsx",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/bundler": "^4.0.286",
+    "@remotion/cli": "^4.0.286",
+    "@remotion/media-utils": "^4.0.286",
+    "@remotion/renderer": "^4.0.286",
+    "commander": "^13.1.0",
+    "dotenv": "^16.4.7",
+    "openai": "^4.86.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.286",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.9"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

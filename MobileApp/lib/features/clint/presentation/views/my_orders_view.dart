@@ -25,7 +25,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
 /// Orders tab layout:
-/// - Supplier / company customer: Sales + Purchases + Incoming (Request offers)
+/// - Supplier: Sales + Purchases + Incoming request offers
+/// - Company customer (buyer only): Purchases + Incoming request offers
 /// - Personal customer: Purchases only
 class MyOrdersView extends StatefulWidget {
   const MyOrdersView({super.key});
@@ -34,8 +35,9 @@ class MyOrdersView extends StatefulWidget {
   State<MyOrdersView> createState() => _MyOrdersViewState();
 }
 
+enum _OrdersSection { sales, purchases, requestOffers }
+
 class _MyOrdersViewState extends State<MyOrdersView> {
-  /// 0 = sales, 1 = purchases, 2 = incoming request offers.
   int _sectionIndex = 0;
   MyOrdersChipFilter _filter = MyOrdersChipFilter.all;
   final ScrollController _purchasesScrollController = ScrollController();
@@ -46,12 +48,48 @@ class _MyOrdersViewState extends State<MyOrdersView> {
   int? _scrolledForOrderId;
   StreamSubscription<void>? _ordersRealtimeSub;
 
-  bool get _showSellerTabs => !AuthService.instance.isPersonalCustomerAccount;
+  /// Company customers buy only — never show "My Sales".
+  List<_OrdersSection> get _availableSections {
+    final auth = AuthService.instance;
+    if (auth.isSupplierAccount) {
+      return const [
+        _OrdersSection.sales,
+        _OrdersSection.purchases,
+        _OrdersSection.requestOffers,
+      ];
+    }
+    if (auth.isCompanyCustomerAccount) {
+      return const [
+        _OrdersSection.purchases,
+        _OrdersSection.requestOffers,
+      ];
+    }
+    return const [_OrdersSection.purchases];
+  }
 
-  bool get _isPurchasesSection =>
-      !_showSellerTabs || _sectionIndex == 1;
+  bool get _showSectionTabs => _availableSections.length > 1;
 
-  bool get _isRequestOffersSection => _showSellerTabs && _sectionIndex == 2;
+  bool get _loadsIncoming =>
+      AuthService.instance.isSupplierAccount ||
+      AuthService.instance.isCompanyCustomerAccount;
+
+  _OrdersSection get _currentSection {
+    final sections = _availableSections;
+    if (_sectionIndex < 0 || _sectionIndex >= sections.length) {
+      return sections.first;
+    }
+    return sections[_sectionIndex];
+  }
+
+  bool get _isPurchasesSection => _currentSection == _OrdersSection.purchases;
+
+  bool get _isRequestOffersSection =>
+      _currentSection == _OrdersSection.requestOffers;
+
+  int _indexOfSection(_OrdersSection section) {
+    final index = _availableSections.indexOf(section);
+    return index < 0 ? 0 : index;
+  }
 
   List<MyRequestOfferModel> _salesOnly(List<MyRequestOfferModel> all) =>
       all.where((o) => !o.isRequestProductOffer).toList(growable: false);
@@ -67,7 +105,7 @@ class _MyOrdersViewState extends State<MyOrdersView> {
 
     if (_isPurchasesSection) {
       await cubit.fetchMyOrders(silent: true);
-      if (_showSellerTabs) {
+      if (_loadsIncoming) {
         await cubit.fetchIncomingOrders(silent: true);
       }
     } else {
@@ -80,10 +118,16 @@ class _MyOrdersViewState extends State<MyOrdersView> {
         .toList();
     if (newcomers.isEmpty) return;
 
-    if (_showSellerTabs) {
+    if (_showSectionTabs) {
       final first = newcomers.first;
       setState(() {
-        _sectionIndex = first.isRequestProductOffer ? 2 : 0;
+        if (first.isRequestProductOffer) {
+          _sectionIndex = _indexOfSection(_OrdersSection.requestOffers);
+        } else if (AuthService.instance.isSupplierAccount) {
+          _sectionIndex = _indexOfSection(_OrdersSection.sales);
+        } else {
+          _sectionIndex = _indexOfSection(_OrdersSection.purchases);
+        }
       });
     }
 
@@ -132,7 +176,7 @@ class _MyOrdersViewState extends State<MyOrdersView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final cubit = context.read<ClintCubit>();
-      if (_showSellerTabs) {
+      if (_loadsIncoming) {
         unawaited(cubit.fetchIncomingOrders());
         unawaited(cubit.fetchMyOrders());
       } else {
@@ -156,7 +200,8 @@ class _MyOrdersViewState extends State<MyOrdersView> {
   void _onSectionSelected(int index) {
     setState(() => _sectionIndex = index);
     final cubit = context.read<ClintCubit>();
-    if (index == 1) {
+    final section = _availableSections[index];
+    if (section == _OrdersSection.purchases) {
       cubit.fetchMyOrders();
     } else {
       cubit.fetchIncomingOrders();
@@ -191,15 +236,17 @@ class _MyOrdersViewState extends State<MyOrdersView> {
         matchedIncoming != null;
 
     setState(() {
-      if (_showSellerTabs && isIncoming) {
+      if (_showSectionTabs && isIncoming) {
         if (openRequestOffers ||
             (matchedIncoming?.isRequestProductOffer ?? false)) {
-          _sectionIndex = 2;
+          _sectionIndex = _indexOfSection(_OrdersSection.requestOffers);
+        } else if (AuthService.instance.isSupplierAccount) {
+          _sectionIndex = _indexOfSection(_OrdersSection.sales);
         } else {
-          _sectionIndex = 0;
+          _sectionIndex = _indexOfSection(_OrdersSection.purchases);
         }
-      } else if (_showSellerTabs && id != null && id > 0) {
-        _sectionIndex = 1;
+      } else if (_showSectionTabs && id != null && id > 0) {
+        _sectionIndex = _indexOfSection(_OrdersSection.purchases);
       }
       _filter = MyOrdersChipFilter.all;
       _highlightOrderId = isIncoming ? null : id;
@@ -334,8 +381,9 @@ class _MyOrdersViewState extends State<MyOrdersView> {
                     ],
                   ),
                 ),
-                if (_showSellerTabs) ...[
+                if (_showSectionTabs) ...[
                   _OrdersSectionTabs(
+                    sections: _availableSections,
                     selectedIndex: _sectionIndex,
                     onSelected: _onSectionSelected,
                   ),
@@ -718,10 +766,12 @@ class _MyOrdersViewState extends State<MyOrdersView> {
 
 class _OrdersSectionTabs extends StatelessWidget {
   const _OrdersSectionTabs({
+    required this.sections,
     required this.selectedIndex,
     required this.onSelected,
   });
 
+  final List<_OrdersSection> sections;
   final int selectedIndex;
   final ValueChanged<int> onSelected;
 
@@ -729,11 +779,19 @@ class _OrdersSectionTabs extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = S.of(context);
     final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
-    final items = [
-      (label: s.incomingOrders, icon: Icons.storefront_outlined),
-      (label: s.purchases, icon: Icons.shopping_bag_outlined),
-      (label: s.incomingRequestOffersTab, icon: Icons.inbox_outlined),
-    ];
+    final items = sections.map((section) {
+      switch (section) {
+        case _OrdersSection.sales:
+          return (label: s.incomingOrders, icon: Icons.storefront_outlined);
+        case _OrdersSection.purchases:
+          return (label: s.purchases, icon: Icons.shopping_bag_outlined);
+        case _OrdersSection.requestOffers:
+          return (
+            label: s.incomingRequestOffersTab,
+            icon: Icons.inbox_outlined,
+          );
+      }
+    }).toList(growable: false);
 
     return Padding(
       padding: EdgeInsets.fromLTRB(12.w, 0, 12.w, 4.h),
@@ -777,7 +835,7 @@ class _OrdersSectionTabs extends StatelessWidget {
                             color: fg,
                             fontFamily: fontFamily,
                             fontSize: 11.5.sp,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
