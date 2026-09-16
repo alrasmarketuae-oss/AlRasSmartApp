@@ -751,7 +751,7 @@
   "unitJar": "برطمان",
   "videoMaxDurationSeconds": "يجب ألا يتجاوز الفيديو 3 دقائق (180 ثانية).",
   "maxProductImagesExceeded": "يمكنك رفع 15 صورة كحد أقصى.",
-  "productImagesRequired": "يرجى إضافة صورة واحدة على الأقل للمنتج قبل النشر.",
+  "productImagesRequired": "يرجى إضافة صورة أو فيديو واحد على الأقل للمنتج قبل النشر.",
   "maxProductVideosExceeded": "يمكنك رفع {maxCount} فيديوهات كحد أقصى.",
   "@maxProductVideosExceeded": {
     "placeholders": {

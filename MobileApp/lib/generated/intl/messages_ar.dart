@@ -1343,7 +1343,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "بمجرد نشرك إعلاناً داخل التطبيق، تصبح صور المنتجات المرتبطة بهذا الإعلان مملوكة للتطبيق والمنصة.",
     ),
     "productImagesRequired": MessageLookupByLibrary.simpleMessage(
-      "يرجى إضافة صورة واحدة على الأقل للمنتج قبل النشر.",
+      "يرجى إضافة صورة أو فيديو واحد على الأقل للمنتج قبل النشر.",
     ),
     "productImagesSectionTitle": MessageLookupByLibrary.simpleMessage(
       "ملكية صور المنتجات واستخدامها",

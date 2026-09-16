@@ -1342,7 +1342,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Once you publish an ad in the app, the product images linked to that ad become owned by the app and the platform.",
     ),
     "productImagesRequired": MessageLookupByLibrary.simpleMessage(
-      "Please add at least one product image before publishing.",
+      "Please add at least one product image or video before publishing.",
     ),
     "productImagesSectionTitle": MessageLookupByLibrary.simpleMessage(
       "Product image ownership and use",

@@ -899,18 +899,14 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     _appendUniquePaths(
       current: state.productImages,
       picked: rawPaths,
-      onUpdate: (paths) {
-        final hasImage = paths.any(
-          (path) => !CreateAdFormMapper.isVideoPath(path),
-        );
-        emit(
-          state.copyWith(
-            productImages: paths,
-            isCompressingMedia: true,
-            mediaSectionInvalid: hasImage ? false : state.mediaSectionInvalid,
-          ),
-        );
-      },
+      onUpdate: (paths) => emit(
+        state.copyWith(
+          productImages: paths,
+          isCompressingMedia: true,
+          // Image or video alone is enough to clear the media required error.
+          mediaSectionInvalid: paths.isEmpty ? state.mediaSectionInvalid : false,
+        ),
+      ),
     );
 
     unawaited(
@@ -950,10 +946,8 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
       return;
     }
 
-    final hasProductImage = state.productImages.any(
-      (path) => !CreateAdFormMapper.isVideoPath(path),
-    );
-    if (!hasProductImage) {
+    // Allow publish with images, video, or both — but not with zero media.
+    if (state.productImages.isEmpty) {
       emit(
         state.copyWith(
           mediaSectionInvalid: true,

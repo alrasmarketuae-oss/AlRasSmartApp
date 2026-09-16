@@ -740,7 +740,7 @@
   "unitJar": "Jar",
   "videoMaxDurationSeconds": "Video must be 3 minutes (180 seconds) or less.",
   "maxProductImagesExceeded": "You can upload at most 15 images.",
-  "productImagesRequired": "Please add at least one product image before publishing.",
+  "productImagesRequired": "Please add at least one product image or video before publishing.",
   "maxProductVideosExceeded": "You can upload at most {maxCount} videos.",
   "@maxProductVideosExceeded": {
     "placeholders": {

@@ -5629,10 +5629,10 @@ class S {
     );
   }
 
-  /// `Please add at least one product image before publishing.`
+  /// `Please add at least one product image or video before publishing.`
   String get productImagesRequired {
     return Intl.message(
-      'Please add at least one product image before publishing.',
+      'Please add at least one product image or video before publishing.',
       name: 'productImagesRequired',
       desc: '',
       args: [],
