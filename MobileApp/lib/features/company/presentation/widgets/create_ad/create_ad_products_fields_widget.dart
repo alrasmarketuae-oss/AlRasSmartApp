@@ -150,7 +150,10 @@ class CreateAdProductsFieldsWidget extends StatelessWidget {
                         state.selectedRetailUnit,
                       ),
                       priceLabel: s.retailPriceLabel,
-                      priceHint: s.enterPrice,
+                      priceHint: CreateAdPriceLabels.enterPricePerUnitHint(
+                        s,
+                        state.selectedRetailUnit,
+                      ),
                       selectedCurrency: CreateAdCurrency.aed,
                       onCurrencyChanged: (_) {},
                       selectedUnit: state.selectedRetailUnit,

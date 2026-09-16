@@ -29,10 +29,9 @@ class CreateAdPriceLabels {
     return '${s.price}/$localizedUnit';
   }
 
+  /// Short field hint, e.g. `Price/kg` or `السعر/كجم` — fits AR/EN without overflow.
   static String enterPricePerUnitHint(S s, String unit) {
-    final localizedUnit = ProductQuantityFormatter.singularUnitLabel(unit, s);
-    if (localizedUnit.isEmpty) return s.enterPricePerUnitGeneric;
-    return s.enterPricePerUnit(localizedUnit);
+    return priceOverSelectedUnitTip(s, unit);
   }
 
   static String targetPricePerUnitLabel(S s, String unit) {
