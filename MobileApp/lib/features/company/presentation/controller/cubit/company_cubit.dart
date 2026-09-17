@@ -341,6 +341,10 @@ class CompanyCubit extends Cubit<CompanyStates> {
       return S.current.pleaseLoginToContinue;
     }
 
+    _statusActionCancelledByUser = false;
+    final actionToken = DioHelper.startOperationCancelToken();
+    _activeStatusActionToken = actionToken;
+
     emit(
       current.copyWith(
         isUpdatingStatus: true,
@@ -349,9 +353,21 @@ class CompanyCubit extends Cubit<CompanyStates> {
       ),
     );
 
-    _statusActionCancelledByUser = false;
-    final actionToken = DioHelper.startOperationCancelToken();
-    _activeStatusActionToken = actionToken;
+    if (_statusActionCancelledByUser || actionToken.isCancelled) {
+      emit(
+        current.copyWith(
+          isUpdatingStatus: false,
+          clearUpdatingOrderId: true,
+          clearErrorMessage: true,
+        ),
+      );
+      DioHelper.endOperationCancelToken(actionToken);
+      if (identical(_activeStatusActionToken, actionToken)) {
+        _activeStatusActionToken = null;
+      }
+      return null;
+    }
+
     try {
       final result = await _updateOrderStatusUseCase(
         UpdateOrderStatusParams(

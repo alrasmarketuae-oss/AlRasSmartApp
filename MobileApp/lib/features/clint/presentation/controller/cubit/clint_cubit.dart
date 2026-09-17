@@ -254,8 +254,8 @@ class ClintCubit extends Cubit<ClintStates> {
     _resetOrderActionUiAfterUserCancel();
   }
 
-  bool _isOrderActionCancelled(CancelToken token) =>
-      _orderActionCancelledByUser || token.isCancelled;
+  bool _isOrderActionCancelled([CancelToken? token]) =>
+      _orderActionCancelledByUser || (token?.isCancelled ?? false);
 
   void _resetOrderActionUiAfterUserCancel() {
     final current = state;
@@ -281,11 +281,23 @@ class ClintCubit extends Cubit<ClintStates> {
     }
   }
 
-  CancelToken _beginOrderAction() {
+  /// Starts a cancelable scope BEFORE showing loading UI so Cancel always has a live token.
+  CancelToken _armOrderAction() {
     _orderActionCancelledByUser = false;
+    return _beginOrderAction();
+  }
+
+  CancelToken _beginOrderAction() {
     final token = DioHelper.startOperationCancelToken();
     _activeOrderActionToken = token;
     return token;
+  }
+
+  /// Reuse the armed token — never replace it mid-submit (that wiped Cancel).
+  CancelToken _requireOrderActionToken() {
+    final existing = _activeOrderActionToken;
+    if (existing != null) return existing;
+    return _beginOrderAction();
   }
 
   void _endOrderAction(CancelToken token) {
@@ -2129,9 +2141,15 @@ class ClintCubit extends Cubit<ClintStates> {
       return S.current.pleaseLoginToContinue;
     }
 
-    final actionToken = _beginOrderAction();
+    final actionToken = _armOrderAction();
     updatingIncomingOrderId = orderId;
     emit(IncomingOrderStatusUpdatingState(orderId));
+    if (_isOrderActionCancelled(actionToken)) {
+      updatingIncomingOrderId = null;
+      emit(IncomingOrderStatusUpdatedState(orderId));
+      _endOrderAction(actionToken);
+      return null;
+    }
 
     try {
       final result = await _updateOrderStatusUseCase(
@@ -2886,7 +2904,13 @@ class ClintCubit extends Cubit<ClintStates> {
       return;
     }
 
+    final actionToken = _armOrderAction();
     emit(form.copyWith(isSubmitting: true));
+    if (_isOrderActionCancelled(actionToken)) {
+      emit(form.copyWith(isSubmitting: false));
+      _endOrderAction(actionToken);
+      return;
+    }
 
     final localImages = <String>[];
     final localVideos = <String>[];
@@ -3094,7 +3118,14 @@ class ClintCubit extends Cubit<ClintStates> {
       );
     }
 
-    final actionToken = _beginOrderAction();
+    if (_isOrderActionCancelled()) {
+      return (orderId: null, error: null, cancelled: true);
+    }
+
+    final actionToken = _requireOrderActionToken();
+    if (_isOrderActionCancelled(actionToken)) {
+      return (orderId: null, error: null, cancelled: true);
+    }
     try {
       final uploadedImages = <String>[...request.imagePaths];
       for (final filePath in localImagePaths) {
@@ -3600,7 +3631,14 @@ class ClintCubit extends Cubit<ClintStates> {
       return;
     }
 
+    final actionToken = _armOrderAction();
     emit(form.copyWith(isSubmitting: true));
+    if (_isOrderActionCancelled(actionToken)) {
+      final latest = _offerOrderFormState ?? form;
+      emit(latest.copyWith(isSubmitting: false));
+      _endOrderAction(actionToken);
+      return;
+    }
 
     final unitName = CreateAdFormMapper.mapUnitName(
       product.unitName.trim().isEmpty ? 'Ton' : product.unitName.trim(),
@@ -4551,6 +4589,7 @@ class ClintCubit extends Cubit<ClintStates> {
   }
 
   Future<void> _confirmCashOrder(CartLoadedState current, String token) async {
+    final actionToken = _armOrderAction();
     emit(
       current.copyWith(
         isConfirming: true,
@@ -4559,8 +4598,12 @@ class ClintCubit extends Cubit<ClintStates> {
         clearInfoMessage: true,
       ),
     );
+    if (_isOrderActionCancelled(actionToken)) {
+      emit(current.copyWith(isConfirming: false));
+      _endOrderAction(actionToken);
+      return;
+    }
 
-    final actionToken = _beginOrderAction();
     try {
       final result = await _confirmCartOrderUseCase(
         ConfirmCartOrderParams(
@@ -4624,6 +4667,7 @@ class ClintCubit extends Cubit<ClintStates> {
     CartLoadedState current,
     String token,
   ) async {
+    final actionToken = _armOrderAction();
     emit(
       current.copyWith(
         isConfirming: true,
@@ -4632,9 +4676,13 @@ class ClintCubit extends Cubit<ClintStates> {
         clearInfoMessage: true,
       ),
     );
+    if (_isOrderActionCancelled(actionToken)) {
+      emit(current.copyWith(isConfirming: false));
+      _endOrderAction(actionToken);
+      return;
+    }
 
     // Step 1: reserve checkout (PendingOrder) — NOT the final split order.
-    final actionToken = _beginOrderAction();
     try {
       final result = await _confirmCartOrderUseCase(
         ConfirmCartOrderParams(
@@ -4991,6 +5039,7 @@ class ClintCubit extends Cubit<ClintStates> {
     List<String> localImagePaths = const [],
     List<String> localVideoPaths = const [],
   }) async {
+    _armOrderAction();
     emit(CreateOrderLoadingState());
 
     final result = await _createOrderWithLocalAssetsInternal(
@@ -5053,7 +5102,14 @@ class ClintCubit extends Cubit<ClintStates> {
       return;
     }
 
+    final actionToken = _armOrderAction();
     emit(form.copyWith(isSubmitting: true));
+    if (_isOrderActionCancelled(actionToken)) {
+      final latest = _bookingOrderFormState ?? form;
+      emit(latest.copyWith(isSubmitting: false));
+      _endOrderAction(actionToken);
+      return;
+    }
 
     final unitName = CreateAdFormMapper.mapUnitName(
       product.unitName.trim().isEmpty ? 'Ton' : product.unitName.trim(),
