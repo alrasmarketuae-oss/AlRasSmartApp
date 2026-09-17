@@ -156,8 +156,16 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
           ? _extractCreatedOrderId(data)
           : null;
 
+      // User may cancel after the socket already delivered 200 — still treat as cancelled.
+      if (DioHelper.isOperationCancelled) {
+        return const Left(CancelledFailure());
+      }
+
       // Order is already persisted — never fail the buyer because cache refresh broke.
       await _invalidateOrderCachesAfterMutation();
+      if (DioHelper.isOperationCancelled) {
+        return const Left(CancelledFailure());
+      }
       if (orderId != null && orderId.isNotEmpty) {
         return Right(orderId);
       }

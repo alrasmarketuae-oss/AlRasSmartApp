@@ -237,25 +237,31 @@ class ClintCubit extends Cubit<ClintStates> {
   int incomingOrdersTotalPages = 0;
   int? updatingIncomingOrderId;
   CancelToken? _activeOrderActionToken;
-  bool _orderActionCancelledByUser = false;
+  int _activeOrderActionId = 0;
 
   bool get hasInFlightOrderAction =>
       _activeOrderActionToken != null && !_activeOrderActionToken!.isCancelled;
 
   /// Aborts the current purchase / offer / accept HTTP work (uploads + API).
   void cancelInFlightOrderAction() {
-    _orderActionCancelledByUser = true;
     DioHelper.cancelOperation();
     final token = _activeOrderActionToken;
     if (token != null && !token.isCancelled) {
       token.cancel('user_cancelled');
     }
-    // Reset loading UI immediately — don't wait for Dio to surface the cancel.
+    // Invalidate this action id so a late 200 can never become UI success.
+    _activeOrderActionId = -1;
     _resetOrderActionUiAfterUserCancel();
   }
 
-  bool _isOrderActionCancelled([CancelToken? token]) =>
-      _orderActionCancelledByUser || (token?.isCancelled ?? false);
+  bool _isOrderActionCancelled([CancelToken? token]) {
+    if (DioHelper.isOperationCancelled) return true;
+    if (_activeOrderActionId <= 0) return true;
+    return DioHelper.operationCancelGate.isCancelledFor(
+      _activeOrderActionId,
+      token ?? _activeOrderActionToken,
+    );
+  }
 
   void _resetOrderActionUiAfterUserCancel() {
     final current = state;
@@ -283,21 +289,19 @@ class ClintCubit extends Cubit<ClintStates> {
 
   /// Starts a cancelable scope BEFORE showing loading UI so Cancel always has a live token.
   CancelToken _armOrderAction() {
-    _orderActionCancelledByUser = false;
-    return _beginOrderAction();
-  }
-
-  CancelToken _beginOrderAction() {
     final token = DioHelper.startOperationCancelToken();
     _activeOrderActionToken = token;
+    _activeOrderActionId = DioHelper.operationCancelGate.actionId;
     return token;
   }
+
+  CancelToken _beginOrderAction() => _armOrderAction();
 
   /// Reuse the armed token — never replace it mid-submit (that wiped Cancel).
   CancelToken _requireOrderActionToken() {
     final existing = _activeOrderActionToken;
     if (existing != null) return existing;
-    return _beginOrderAction();
+    return _armOrderAction();
   }
 
   void _endOrderAction(CancelToken token) {
@@ -2949,7 +2953,7 @@ class ClintCubit extends Cubit<ClintStates> {
       localDocumentPaths: const [],
     );
 
-    if (result.cancelled || _orderActionCancelledByUser) {
+    if (result.cancelled || _isOrderActionCancelled()) {
       emit(form.copyWith(isSubmitting: false));
       return;
     }
@@ -3565,13 +3569,7 @@ class ClintCubit extends Cubit<ClintStates> {
     final unit = product.unitName.trim().isEmpty
         ? 'Ton'
         : product.unitName.trim();
-    final defaultQtyRaw = product.minimumOrderQuantity.trim().isNotEmpty
-        ? product.minimumOrderQuantity.trim()
-        : '1';
-    final defaultQty = ThousandsNumberInput.parseDouble(defaultQtyRaw) ?? 1;
-
-    offerOrderQuantityController.text =
-        ThousandsNumberInput.format(defaultQty, allowDecimal: true);
+    offerOrderQuantityController.text = '0';
     emit(OfferOrderFormState(product: product, selectedUnit: unit));
   }
 
@@ -3658,7 +3656,7 @@ class ClintCubit extends Cubit<ClintStates> {
       ),
     );
 
-    if (result.cancelled || _orderActionCancelledByUser) {
+    if (result.cancelled || _isOrderActionCancelled()) {
       final latest = _offerOrderFormState ?? form;
       emit(latest.copyWith(isSubmitting: false));
       return;
@@ -5132,7 +5130,7 @@ class ClintCubit extends Cubit<ClintStates> {
       ),
     );
 
-    if (result.cancelled || _orderActionCancelledByUser) {
+    if (result.cancelled || _isOrderActionCancelled()) {
       final latest = _bookingOrderFormState ?? form;
       emit(latest.copyWith(isSubmitting: false));
       return;

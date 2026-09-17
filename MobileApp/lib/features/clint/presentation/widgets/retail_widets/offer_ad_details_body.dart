@@ -436,72 +436,67 @@ class _QuantityAndTotalRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  s.quantityTypeManuallyHint,
+                TextFormField(
+                  controller: quantityController,
+                  textAlign: TextAlign.start,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  inputFormatters: [
+                    ThousandsSeparatorInputFormatter(allowDecimal: true),
+                  ],
+                  onChanged: (_) => onQuantityChanged(),
+                  validator: quantityValidator,
                   style: TextStyle(
-                    color: BookingDetailsDesign.muted,
                     fontFamily: fontFamily,
-                    fontSize: 11.sp,
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w700,
+                    color: BookingDetailsDesign.text,
+                    height: 1.2,
                   ),
-                ),
-                SizedBox(height: 10.h),
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 10.w,
-                    vertical: 12.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: BookingDetailsDesign.iconBg,
-                    borderRadius: BorderRadius.circular(10.r),
-                    border: Border.all(color: BookingDetailsDesign.border),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isAr ? 'الكمية المطلوبة' : 'Order Quantity',
-                        style: TextStyle(
-                          color: BookingDetailsDesign.brandSoft,
-                          fontFamily: fontFamily,
-                          fontSize: 11.sp,
-                          fontWeight: FontWeight.w600,
-                        ),
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.white,
+                    isDense: true,
+                    hintText: '0',
+                    hintStyle: TextStyle(
+                      fontFamily: fontFamily,
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                      color: BookingDetailsDesign.muted,
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 14.w,
+                      vertical: 14.h,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.r),
+                      borderSide: BorderSide(
+                        color: BookingDetailsDesign.brandSoft,
+                        width: 1.5,
                       ),
-                      SizedBox(height: 4.h),
-                      TextFormField(
-                        controller: quantityController,
-                        textAlign: TextAlign.start,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        inputFormatters: [
-                          ThousandsSeparatorInputFormatter(allowDecimal: true),
-                        ],
-                        onChanged: (_) => onQuantityChanged(),
-                        validator: quantityValidator,
-                        style: TextStyle(
-                          fontFamily: fontFamily,
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w800,
-                          color: BookingDetailsDesign.text,
-                          height: 1.2,
-                        ),
-                        decoration: InputDecoration(
-                          isDense: true,
-                          border: InputBorder.none,
-                          isCollapsed: true,
-                          hintText: s.enterQuantity,
-                          hintStyle: TextStyle(
-                            fontFamily: fontFamily,
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w500,
-                            color: BookingDetailsDesign.muted,
-                          ),
-                          contentPadding: EdgeInsets.zero,
-                        ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.r),
+                      borderSide: const BorderSide(
+                        color: BookingDetailsDesign.brand,
+                        width: 2,
                       ),
-                    ],
+                    ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.r),
+                      borderSide: const BorderSide(
+                        color: Color(0xFFE53935),
+                        width: 1.5,
+                      ),
+                    ),
+                    focusedErrorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.r),
+                      borderSide: const BorderSide(
+                        color: Color(0xFFE53935),
+                        width: 2,
+                      ),
+                    ),
                   ),
                 ),
                 SizedBox(height: 10.h),

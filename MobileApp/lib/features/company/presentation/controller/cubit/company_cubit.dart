@@ -42,15 +42,15 @@ class CompanyCubit extends Cubit<CompanyStates> {
   final GetMyOffersOnMyRequestsUseCase _getMyOffersOnMyRequestsUseCase;
   final UpdateOrderStatusUseCase _updateOrderStatusUseCase;
   CancelToken? _activeStatusActionToken;
-  bool _statusActionCancelledByUser = false;
+  int _activeStatusActionId = 0;
 
   void cancelInFlightOrderAction() {
-    _statusActionCancelledByUser = true;
     DioHelper.cancelOperation();
     final token = _activeStatusActionToken;
     if (token != null && !token.isCancelled) {
       token.cancel('user_cancelled');
     }
+    _activeStatusActionId = -1;
     final current = state;
     if (current is CompanyAdRequestOffersState && current.isUpdatingStatus) {
       emit(
@@ -61,6 +61,15 @@ class CompanyCubit extends Cubit<CompanyStates> {
         ),
       );
     }
+  }
+
+  bool _isStatusActionCancelled(CancelToken token) {
+    if (DioHelper.isOperationCancelled) return true;
+    if (_activeStatusActionId <= 0) return true;
+    return DioHelper.operationCancelGate.isCancelledFor(
+      _activeStatusActionId,
+      token,
+    );
   }
 
   static CompanyCubit get(context) => BlocProvider.of(context);
@@ -341,9 +350,9 @@ class CompanyCubit extends Cubit<CompanyStates> {
       return S.current.pleaseLoginToContinue;
     }
 
-    _statusActionCancelledByUser = false;
     final actionToken = DioHelper.startOperationCancelToken();
     _activeStatusActionToken = actionToken;
+    _activeStatusActionId = DioHelper.operationCancelGate.actionId;
 
     emit(
       current.copyWith(
@@ -353,7 +362,7 @@ class CompanyCubit extends Cubit<CompanyStates> {
       ),
     );
 
-    if (_statusActionCancelledByUser || actionToken.isCancelled) {
+    if (_isStatusActionCancelled(actionToken)) {
       emit(
         current.copyWith(
           isUpdatingStatus: false,
@@ -377,7 +386,7 @@ class CompanyCubit extends Cubit<CompanyStates> {
         ),
       );
 
-      if (_statusActionCancelledByUser || actionToken.isCancelled) {
+      if (_isStatusActionCancelled(actionToken)) {
         final after = state;
         if (after is CompanyAdRequestOffersState) {
           emit(
@@ -394,7 +403,7 @@ class CompanyCubit extends Cubit<CompanyStates> {
       return result.fold(
         (failure) {
           final cancelled = CancelledFailure.matches(failure) ||
-              _statusActionCancelledByUser;
+              _isStatusActionCancelled(actionToken);
           emit(
             current.copyWith(
               isUpdatingStatus: false,
@@ -406,7 +415,7 @@ class CompanyCubit extends Cubit<CompanyStates> {
           return cancelled ? null : failure.message;
         },
         (_) async {
-          if (_statusActionCancelledByUser || actionToken.isCancelled) {
+          if (_isStatusActionCancelled(actionToken)) {
             final after = state;
             if (after is CompanyAdRequestOffersState) {
               emit(

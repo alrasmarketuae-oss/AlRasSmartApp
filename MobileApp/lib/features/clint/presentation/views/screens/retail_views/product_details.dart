@@ -70,7 +70,7 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
           extra: {'product': widget.product},
         );
       });
-      _quantityController = TextEditingController(text: '1');
+      _quantityController = TextEditingController(text: '0');
       _ownsQuantityController = true;
       return;
     }
@@ -90,13 +90,7 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
       _quantityController = _clintCubit.offerOrderQuantityController;
       _ownsQuantityController = false;
     } else {
-      final defaultQty = widget.product.minimumOrderQuantity.trim().isNotEmpty
-          ? widget.product.minimumOrderQuantity.trim()
-          : '1';
-      final parsedDefault = ThousandsNumberInput.parseDouble(defaultQty) ?? 1;
-      _quantityController = TextEditingController(
-        text: ThousandsNumberInput.format(parsedDefault, allowDecimal: true),
-      );
+      _quantityController = TextEditingController(text: '0');
       _ownsQuantityController = true;
     }
     _recalculateTotal();

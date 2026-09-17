@@ -5,6 +5,7 @@ import 'package:dio/io.dart';
 import 'package:flutter/foundation.dart';
 
 import 'api_constants.dart';
+import 'order_action_cancel_gate.dart';
 import '../helper/cach_helper.dart';
 import '../serveses/cached_constants.dart' as cache;
 
@@ -60,39 +61,34 @@ class DioHelper {
     }
   }
 
-  static CancelToken? _operationCancelToken;
+  /// Shared cancel gate for order / offer / accept / cart confirm HTTP work.
+  static final OrderActionCancelGate operationCancelGate = OrderActionCancelGate();
 
   /// Starts a cancel scope for order/offer/accept HTTP calls. Replaces any prior token.
-  static CancelToken startOperationCancelToken() {
-    final previous = _operationCancelToken;
-    if (previous != null && !previous.isCancelled) {
-      previous.cancel('replaced');
-    }
-    final token = CancelToken();
-    _operationCancelToken = token;
-    return token;
-  }
+  static CancelToken startOperationCancelToken() => operationCancelGate.arm();
 
   static void cancelOperation([String reason = 'cancelled']) {
-    final token = _operationCancelToken;
-    if (token != null && !token.isCancelled) {
-      token.cancel(reason);
-    }
+    operationCancelGate.cancel(reason);
   }
 
   static void endOperationCancelToken(CancelToken? token) {
-    if (identical(_operationCancelToken, token)) {
-      _operationCancelToken = null;
+    if (identical(operationCancelGate.token, token)) {
+      operationCancelGate.clearToken();
     }
   }
 
+  /// True after user cancel until the next [startOperationCancelToken].
+  /// Survives token clear so a late 200 response is still treated as cancelled.
   static bool get isOperationCancelled =>
-      _operationCancelToken?.isCancelled == true;
+      operationCancelGate.cancelledByUser ||
+      operationCancelGate.token?.isCancelled == true;
 
   static bool isCancelError(Object error) {
     if (error is! DioException) return false;
     return error.type == DioExceptionType.cancel || CancelToken.isCancel(error);
   }
+
+  static CancelToken? get _operationCancelToken => operationCancelGate.token;
 
   static Future<Response?>? getData({
     required String url,
