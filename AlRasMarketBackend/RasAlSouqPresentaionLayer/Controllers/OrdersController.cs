@@ -154,6 +154,35 @@ public class OrdersController(
     }
 
     /// <summary>
+    /// Buyer undo when Cancel raced and the app never received the created order id.
+    /// </summary>
+    [HttpPost("client-abort/latest")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> AbortLatestClientCreatedCheckout(CancellationToken cancellationToken)
+    {
+        var userId = GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            await ordersAppService.AbortLatestClientCreatedCheckoutAsync(userId, cancellationToken);
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Creates a direct order for any product type — same body as POST /api/Orders with productId.
     /// </summary>
     [HttpPost("booking")]

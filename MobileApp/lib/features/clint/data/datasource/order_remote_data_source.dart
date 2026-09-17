@@ -135,10 +135,22 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
       final status = response?.statusCode ?? 0;
       print('🔵 [Create Order] Status: $status');
       if (status == 499) {
+        await _abortClientCreatedCheckout(
+          orderId: null,
+          pendingOrderId: null,
+          token: token,
+          alsoAbortLatest: true,
+        );
         return const Left(CancelledFailure());
       }
       if (status < 200 || status >= 300) {
         if (DioHelper.isOperationCancelled) {
+          await _abortClientCreatedCheckout(
+            orderId: null,
+            pendingOrderId: null,
+            token: token,
+            alsoAbortLatest: true,
+          );
           return const Left(CancelledFailure());
         }
         print('🔵 [Create Order] Failed to create order ($status)');
@@ -165,6 +177,7 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
           orderId: orderId,
           pendingOrderId: pendingOrderId,
           token: token,
+          alsoAbortLatest: true,
         );
         return const Left(CancelledFailure());
       }
@@ -176,6 +189,7 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
           orderId: orderId,
           pendingOrderId: pendingOrderId,
           token: token,
+          alsoAbortLatest: true,
         );
         return const Left(CancelledFailure());
       }
@@ -189,7 +203,18 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
       // 2xx without a parseable id — still treat as success so UI does not false-fail.
       return const Right('');
     } on DioException catch (e) {
-      if (DioHelper.isCancelError(e)) {
+      if (DioHelper.isCancelError(e) || DioHelper.isOperationCancelled) {
+        // Fast purchase race: server may have committed while Dio aborted locally.
+        final data = e.response?.data;
+        final map = data is Map<String, dynamic>
+            ? data
+            : (data is Map ? Map<String, dynamic>.from(data) : null);
+        await _abortClientCreatedCheckout(
+          orderId: map == null ? null : _extractCreatedOrderId(map),
+          pendingOrderId: map == null ? null : _extractCreatedPendingOrderId(map),
+          token: token,
+          alsoAbortLatest: true,
+        );
         return const Left(CancelledFailure());
       }
       print('🔵 [Create Order] DioException: ${e.response?.data}');
@@ -201,7 +226,13 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
         ),
       );
     } catch (e) {
-      if (DioHelper.isCancelError(e)) {
+      if (DioHelper.isCancelError(e) || DioHelper.isOperationCancelled) {
+        await _abortClientCreatedCheckout(
+          orderId: null,
+          pendingOrderId: null,
+          token: token,
+          alsoAbortLatest: true,
+        );
         return const Left(CancelledFailure());
       }
       print('🔵 [Create Order] Error: $e');
@@ -680,6 +711,7 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
     required String? orderId,
     required String? pendingOrderId,
     required String token,
+    bool alsoAbortLatest = false,
   }) async {
     // Must not reuse the cancelled operation token or cleanup never reaches the API.
     final abortToken = CancelToken();
@@ -688,6 +720,7 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
       if (parsedOrderId != null && parsedOrderId > 0) {
         await DioHelper.postData(
           url: ApiConstants.orderClientAbortEndPoint(parsedOrderId),
+          data: const <String, dynamic>{},
           token: token,
           cancelToken: abortToken,
         );
@@ -699,12 +732,35 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
       if (pending != null && pending.isNotEmpty) {
         await DioHelper.postData(
           url: ApiConstants.pendingOrderClientAbortEndPoint(pending),
+          data: const <String, dynamic>{},
           token: token,
           cancelToken: abortToken,
         );
+        await ApiCacheStore.instance.invalidateUserOrders();
+        return;
+      }
+
+      if (alsoAbortLatest) {
+        await DioHelper.postData(
+          url: ApiConstants.latestOrderClientAbortEndPoint,
+          data: const <String, dynamic>{},
+          token: token,
+          cancelToken: abortToken,
+        );
+        await ApiCacheStore.instance.invalidateUserOrders();
       }
     } catch (e) {
       print('🔵 [Create Order] Client abort cleanup failed: $e');
+      if (!alsoAbortLatest) return;
+      try {
+        await DioHelper.postData(
+          url: ApiConstants.latestOrderClientAbortEndPoint,
+          data: const <String, dynamic>{},
+          token: token,
+          cancelToken: CancelToken(),
+        );
+        await ApiCacheStore.instance.invalidateUserOrders();
+      } catch (_) {}
     }
   }
 

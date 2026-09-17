@@ -215,6 +215,8 @@ class ApiConstants {
       '/Orders/$orderId/client-abort';
   static String pendingOrderClientAbortEndPoint(String pendingOrderId) =>
       '/Orders/pending/$pendingOrderId/client-abort';
+  static const String latestOrderClientAbortEndPoint =
+      '/Orders/client-abort/latest';
   static String orderReturnEndPoint(int orderId) => '/Orders/$orderId/return';
   static String offerStagingImageUploadEndPoint =
       '/Orders/offer-staging/images/upload';

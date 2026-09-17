@@ -93,6 +93,60 @@ public sealed class OrderDataAccess(IRasAlSouqDbContext dbContext) : IOrderDataA
         await ef.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
+    public async Task<List<long>> GetRecentAbortableOrderIdsForBuyerAsync(
+        Guid fromUserId,
+        DateTime createdAfterUtc,
+        CancellationToken cancellationToken = default)
+    {
+        // Placement statuses only — Ordered (1) and AwaitingSellerApproval (11).
+        const byte ordered = 1;
+        const byte awaitingSeller = 11;
+
+        var latest = await dbContext.Orders.AsNoTracking()
+            .Where(x =>
+                x.FromUserId == fromUserId
+                && x.CreatedAt >= createdAfterUtc
+                && (x.StatusId == ordered || x.StatusId == awaitingSeller))
+            .OrderByDescending(x => x.CreatedAt)
+            .ThenByDescending(x => x.Id)
+            .Select(x => new { x.Id, x.OrderGroupId })
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        if (latest is null)
+        {
+            return [];
+        }
+
+        if (latest.OrderGroupId is Guid groupId)
+        {
+            return await dbContext.Orders.AsNoTracking()
+                .Where(x =>
+                    x.FromUserId == fromUserId
+                    && x.OrderGroupId == groupId
+                    && (x.StatusId == ordered || x.StatusId == awaitingSeller))
+                .Select(x => x.Id)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        return [latest.Id];
+    }
+
+    public Task<Guid?> GetRecentAbortablePendingOrderIdForBuyerAsync(
+        Guid fromUserId,
+        DateTime createdAfterUtc,
+        CancellationToken cancellationToken = default) =>
+        dbContext.PendingOrders.AsNoTracking()
+            .Where(x =>
+                x.FromUserId == fromUserId
+                && x.CreatedAt >= createdAfterUtc
+                && !x.IsPaymentCompleted
+                && x.FinalOrderGroupId == null)
+            .OrderByDescending(x => x.CreatedAt)
+            .Select(x => (Guid?)x.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
     private async Task RemoveRangeAsync<TEntity>(
         IQueryable<TEntity> query,
         CancellationToken cancellationToken)

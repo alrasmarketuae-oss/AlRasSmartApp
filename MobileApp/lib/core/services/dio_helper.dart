@@ -118,7 +118,7 @@ class DioHelper {
   static Future<Response?>? postData({
     required String url,
     Map<String, dynamic>? query,
-    required Object? data, // body: Map or List for JSON
+    Object? data, // body: Map or List for JSON; null = no body (e.g. client-abort)
     String lan = 'en',
     String? token,
     CancelToken? cancelToken,

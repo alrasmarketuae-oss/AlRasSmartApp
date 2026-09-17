@@ -1,16 +1,10 @@
-import 'package:alrasmarket/core/services_locator/services_locator.dart';
-import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
-import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/core/widgets/primary_button.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_states.dart';
-import 'package:alrasmarket/features/clint/data/models/client_address_model.dart';
-import 'package:alrasmarket/features/clint/domain/usecases/address_usecases.dart';
-import 'package:alrasmarket/features/clint/presentation/widgets/add_address_dialog.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/search_header.dart';
 import 'package:alrasmarket/features/company/presentation/controller/cubit/create_ad_cubit.dart';
 import 'package:alrasmarket/features/company/presentation/controller/cubit/create_ad_states.dart';
@@ -40,11 +34,6 @@ class _AddOrderViewState extends State<AddOrderView> {
   final _targetPriceController = TextEditingController();
   final _notesController = TextEditingController();
   NegotiationType _negotiationType = NegotiationType.negotiable;
-  final _getAddressesUseCase = sl<GetClientAddressesUseCase>();
-  List<ClientAddressModel> _addresses = [];
-  String? _selectedAddressId;
-  String? _selectedAddressLabel;
-  bool _isAddressesLoading = false;
   DateTime? _pickupDate;
 
   @override
@@ -54,146 +43,7 @@ class _AddOrderViewState extends State<AddOrderView> {
       if (!mounted) return;
       final cubit = context.read<CreateAdCubit>();
       cubit.setSelectedType(CreateAdType.requests.label);
-      _loadAddresses();
     });
-  }
-
-  Future<void> _loadAddresses() async {
-    final token = AuthService.instance.currentToken;
-    if (token == null || token.isEmpty) return;
-
-    setState(() => _isAddressesLoading = true);
-
-    final result = await _getAddressesUseCase(token: token);
-    if (!mounted) return;
-
-    result.fold(
-      (failure) {
-        setState(() => _isAddressesLoading = false);
-        AppToast.showError(context, failure.message);
-      },
-      (addresses) {
-        setState(() {
-          _addresses = addresses;
-          _isAddressesLoading = false;
-          if (addresses.isEmpty) {
-            _selectedAddressId = null;
-            _selectedAddressLabel = null;
-            return;
-          }
-
-          final stillSelected = addresses.any(
-            (address) => address.addressId == _selectedAddressId,
-          );
-          if (!stillSelected) {
-            _selectedAddressId = addresses.first.addressId;
-            _selectedAddressLabel = addresses.first.label;
-          }
-        });
-      },
-    );
-  }
-
-  Future<void> _showAddAddressDialog() async {
-    final created = await AddAddressDialog.show(context);
-    if (created == true && mounted) {
-      await _loadAddresses();
-    }
-  }
-
-  Widget _buildAddressSelector() {
-    if (_addresses.length > 1) {
-      final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
-      final ids = _addresses.map((address) => address.addressId).toList();
-
-      return DropdownButtonFormField<String>(
-        value: ids.contains(_selectedAddressId) ? _selectedAddressId : null,
-        isExpanded: true,
-        hint: Text(
-          S.of(context).deliveryAddress,
-          style: TextStyle(
-            color: const Color(0xFF333333).withValues(alpha: 0.4),
-            fontFamily: fontFamily,
-            fontSize: 14.sp,
-          ),
-        ),
-        icon: Icon(
-          Icons.keyboard_arrow_down_rounded,
-          color: LightColor.greyTextColor,
-          size: 20.sp,
-        ),
-        dropdownColor: Colors.white,
-        menuMaxHeight: 320.h,
-        style: TextStyle(
-          color: LightColor.greyTextColor,
-          fontFamily: fontFamily,
-          fontSize: 14.sp,
-        ),
-        decoration: InputDecoration(
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8.r),
-            borderSide: BorderSide(
-              color: LightColor.defaultColor,
-              width: 1.5,
-            ),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8.r),
-            borderSide: BorderSide(
-              color: LightColor.defaultColor,
-              width: 1.5,
-            ),
-          ),
-        ),
-        items: _addresses
-            .map(
-              (address) => DropdownMenuItem(
-                value: address.addressId,
-                child: Text(
-                  address.label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            )
-            .toList(),
-        onChanged: (value) {
-          if (value == null) return;
-          final selected = _addresses.firstWhere(
-            (address) => address.addressId == value,
-          );
-          setState(() {
-            _selectedAddressId = selected.addressId;
-            _selectedAddressLabel = selected.label;
-          });
-        },
-      );
-    }
-
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8.r),
-        color: Colors.white,
-        border: Border.all(
-          color: LightColor.defaultColor,
-          width: 1.5,
-        ),
-      ),
-      child: Text(
-        _addresses.first.label,
-        style: TextStyle(
-          color: LightColor.defaultColor,
-          fontSize: 14.sp,
-          fontWeight: FontWeight.normal,
-          height: 1.5,
-        ),
-      ),
-    );
   }
 
   @override
@@ -209,14 +59,6 @@ class _AddOrderViewState extends State<AddOrderView> {
   Future<void> _publishRequest() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    if (_selectedAddressLabel == null || _selectedAddressLabel!.isEmpty) {
-      AppToast.showError(context, S.of(context).selectDeliveryAddress);
-      if (_addresses.isEmpty) {
-        await _showAddAddressDialog();
-      }
-      return;
-    }
-
     await context.read<CreateAdCubit>().submitRequestOrder(
       productName: _productNameController.text,
       specifications: _specificationsController.text,
@@ -225,8 +67,6 @@ class _AddOrderViewState extends State<AddOrderView> {
       targetPrice: _targetPriceController.text,
       negotiationType: _negotiationType,
       additionalNotes: _notesController.text,
-      address: _selectedAddressLabel,
-      addressId: _selectedAddressId,
       requiredDeliveryDate: _pickupDate,
     );
   }
@@ -239,9 +79,6 @@ class _AddOrderViewState extends State<AddOrderView> {
     _notesController.clear();
     setState(() {
       _negotiationType = NegotiationType.negotiable;
-      _selectedAddressId = _addresses.isNotEmpty ? _addresses.first.addressId : null;
-      _selectedAddressLabel =
-          _addresses.isNotEmpty ? _addresses.first.label : null;
       _pickupDate = null;
     });
     _formKey.currentState?.reset();
@@ -711,84 +548,6 @@ class _AddOrderViewState extends State<AddOrderView> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      S.of(context).deliveryAddress,
-                                      style: TextStyle(
-                                        color: LightColor.greyTextColor,
-                                        fontSize: 14.sp,
-                                        fontWeight: FontWeight.normal,
-                                        height: 1.5,
-                                      ),
-                                    ),
-                                    SizedBox(height: 12.h),
-                                    if (_isAddressesLoading)
-                                      Padding(
-                                        padding: EdgeInsets.symmetric(
-                                          vertical: 16.h,
-                                        ),
-                                        child: const Center(
-                                          child: CircularProgressIndicator(),
-                                        ),
-                                      )
-                                    else if (_addresses.isEmpty)
-                                      Padding(
-                                        padding: EdgeInsets.only(bottom: 12.h),
-                                        child: Text(
-                                          S.of(context).noSavedAddresses,
-                                          style: TextStyle(
-                                            color: LightColor.hintColor,
-                                            fontSize: 14.sp,
-                                            height: 1.5,
-                                          ),
-                                        ),
-                                      )
-                                    else
-                                      Padding(
-                                        padding: EdgeInsets.only(bottom: 12.h),
-                                        child: _buildAddressSelector(),
-                                      ),
-                                    InkWell(
-                                      onTap: _showAddAddressDialog,
-                                      borderRadius: BorderRadius.circular(8.r),
-                                      child: Container(
-                                        width: double.infinity,
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 16.w,
-                                          vertical: 8.h,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(
-                                            8.r,
-                                          ),
-                                          border: Border.all(
-                                            color: LightColor.defaultColor,
-                                            width: 2,
-                                          ),
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.add,
-                                              size: 18.sp,
-                                              color: LightColor.defaultColor,
-                                            ),
-                                            SizedBox(width: 8.w),
-                                            Text(
-                                              S.of(context).addNewAddress,
-                                              style: TextStyle(
-                                                color: LightColor.defaultColor,
-                                                fontSize: 16.sp,
-                                                fontWeight: FontWeight.normal,
-                                                height: 1.5,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(height: 20.h),
                                     Text(
                                       S.of(context).pickupDateOptional,
                                       style: TextStyle(

@@ -474,4 +474,42 @@ public partial class OrdersAppService(
             fromUserId);
     }
 
+    public async Task AbortLatestClientCreatedCheckoutAsync(
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(userId, out var fromUserId))
+        {
+            throw new ArgumentException("Invalid authenticated user.");
+        }
+
+        var createdAfter = UtcDateTimeHelper.UtcNow.AddMinutes(-5);
+        var orderIds = await orderData.GetRecentAbortableOrderIdsForBuyerAsync(
+            fromUserId,
+            createdAfter,
+            cancellationToken);
+        if (orderIds.Count > 0)
+        {
+            await orderData.DeleteOrdersForClientAbortAsync(orderIds, cancellationToken);
+            ProductsAppService.InvalidateListingCaches();
+            logger.LogInformation(
+                "Client-abort deleted latest orders [{OrderIds}] for buyer {UserId}",
+                string.Join(',', orderIds),
+                fromUserId);
+        }
+
+        var pendingId = await orderData.GetRecentAbortablePendingOrderIdForBuyerAsync(
+            fromUserId,
+            createdAfter,
+            cancellationToken);
+        if (pendingId is Guid pendingOrderId)
+        {
+            await orderData.DeletePendingOrderForClientAbortAsync(pendingOrderId, cancellationToken);
+            logger.LogInformation(
+                "Client-abort deleted latest pending order {PendingOrderId} for buyer {UserId}",
+                pendingOrderId,
+                fromUserId);
+        }
+    }
+
 }

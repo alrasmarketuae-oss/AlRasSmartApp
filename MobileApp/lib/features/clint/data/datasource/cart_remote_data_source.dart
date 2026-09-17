@@ -194,15 +194,16 @@ class CartRemoteDataSource implements BaseCartRemoteDataSource {
         token: token,
       );
 
-      if (DioHelper.isOperationCancelled) {
-        return const Left(CancelledFailure());
-      }
-
       final status = response?.statusCode ?? 0;
       if (status == 499) {
+        await _abortLatestCheckout(token: token);
         return const Left(CancelledFailure());
       }
       if (status < 200 || status >= 300) {
+        if (DioHelper.isOperationCancelled) {
+          await _abortLatestCheckout(token: token);
+          return const Left(CancelledFailure());
+        }
         return Left(
           ServerFailure(
             _extractMessage(response?.data) ??
@@ -213,13 +214,18 @@ class CartRemoteDataSource implements BaseCartRemoteDataSource {
       }
 
       final data = response?.data;
+      if (DioHelper.isOperationCancelled) {
+        await _abortLatestCheckout(token: token);
+        return const Left(CancelledFailure());
+      }
       if (data is Map<String, dynamic>) {
         return Right(CartOrderResultModel.fromJson(data));
       }
 
       return const Left(ServerFailure('Invalid order response'));
     } on DioException catch (e) {
-      if (DioHelper.isCancelError(e)) {
+      if (DioHelper.isCancelError(e) || DioHelper.isOperationCancelled) {
+        await _abortLatestCheckout(token: token);
         return const Left(CancelledFailure());
       }
       return Left(
@@ -228,10 +234,24 @@ class CartRemoteDataSource implements BaseCartRemoteDataSource {
         ),
       );
     } catch (e) {
-      if (DioHelper.isCancelError(e)) {
+      if (DioHelper.isCancelError(e) || DioHelper.isOperationCancelled) {
+        await _abortLatestCheckout(token: token);
         return const Left(CancelledFailure());
       }
       return Left(NetworkFailure(e.toString()));
+    }
+  }
+
+  Future<void> _abortLatestCheckout({required String token}) async {
+    try {
+      await DioHelper.postData(
+        url: ApiConstants.latestOrderClientAbortEndPoint,
+        data: const <String, dynamic>{},
+        token: token,
+        cancelToken: CancelToken(),
+      );
+    } catch (_) {
+      // Best-effort cleanup after local cancel.
     }
   }
 

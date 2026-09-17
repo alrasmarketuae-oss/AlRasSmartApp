@@ -25,6 +25,13 @@ public interface IOrdersAppService
         Guid pendingOrderId,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Undo the buyer's most recent placement when Dio cancel raced without an order id.
+    /// </summary>
+    Task AbortLatestClientCreatedCheckoutAsync(
+        string userId,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<OrderCancellationReasonDto>> GetCancellationReasonsAsync(
         CancellationToken cancellationToken = default);
     Task<Guid> CreateOrdersFromPendingOrderAsync(Guid pendingOrderId, CancellationToken cancellationToken = default);

@@ -35,6 +35,19 @@ public interface IOrderDataAccess
         Guid pendingOrderId,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Recent buyer orders still in placement status (for late Dio cancel without response body).
+    /// </summary>
+    Task<List<long>> GetRecentAbortableOrderIdsForBuyerAsync(
+        Guid fromUserId,
+        DateTime createdAfterUtc,
+        CancellationToken cancellationToken = default);
+
+    Task<Guid?> GetRecentAbortablePendingOrderIdForBuyerAsync(
+        Guid fromUserId,
+        DateTime createdAfterUtc,
+        CancellationToken cancellationToken = default);
+
     Task<User?> GetUserByIdAsync(Guid userId, bool tracked = true, CancellationToken cancellationToken = default);
     Task<User?> GetUserByIdAsNoTrackingAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<Product?> GetProductForOrderAsync(Guid productId, CancellationToken cancellationToken = default);
