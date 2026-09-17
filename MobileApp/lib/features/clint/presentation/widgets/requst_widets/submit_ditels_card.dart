@@ -1,22 +1,23 @@
 import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/utils/product_quantity_formatter.dart';
-import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
+import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class OrderDetailsCardWidget extends StatelessWidget {
-  const OrderDetailsCardWidget({super.key});
+  const OrderDetailsCardWidget({
+    super.key,
+    required this.product,
+  });
+
+  final MyListingProductModel product;
 
   @override
   Widget build(BuildContext context) {
     final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
-    final product = context.read<ClintCubit>().currentProduct;
     final s = S.of(context);
-
-    if (product == null) return const SizedBox.shrink();
 
     final requestedQty = ProductQuantityFormatter.quantityWithUnit(
       quantityText: product.quantity,
@@ -25,6 +26,7 @@ class OrderDetailsCardWidget extends StatelessWidget {
     );
 
     return Container(
+      key: ValueKey('offer-request-details-${product.productId}'),
       width: double.infinity,
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -66,9 +68,7 @@ class OrderDetailsCardWidget extends StatelessWidget {
             height: 1.5,
           ),
         ),
-        SizedBox(
-          width: 12.w,
-        ), // مسافة أمان صغيرة بين النصين منعاً للتداخل في الشاشات الصغيرة
+        SizedBox(width: 12.w),
         Flexible(
           child: Text(
             value,

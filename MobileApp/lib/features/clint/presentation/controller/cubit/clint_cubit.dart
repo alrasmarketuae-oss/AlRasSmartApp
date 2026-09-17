@@ -2601,6 +2601,7 @@ class ClintCubit extends Cubit<ClintStates> {
   String offerToUserId = '';
   /// Reliable unit for request offers (DropdownFormField initialValue can desync from Cubit).
   String _offerSelectedUnit = 'Kg';
+  String get offerSelectedUnit => _offerSelectedUnit;
 
   final ImagePicker _imagePicker = ImagePicker();
 
@@ -2610,20 +2611,44 @@ class ClintCubit extends Cubit<ClintStates> {
   }
 
   void initProduct(MyListingProductModel product, {String toUserId = ''}) {
+    prepareSubmitOfferProduct(product, toUserId: toUserId);
+    emit(
+      SubmitOfferFormState(
+        product: product,
+        selectedCurrency: _normalizeOfferCurrency(product.currency),
+        selectedUnit: _offerSelectedUnit,
+      ),
+    );
+  }
+
+  /// Binds the Inquiry product and clears shared offer fields without emitting,
+  /// so the first frame cannot still show the previous ad's requested quantity.
+  void prepareSubmitOfferProduct(
+    MyListingProductModel product, {
+    String toUserId = '',
+  }) {
     currentProduct = product;
     offerToUserId = toUserId.isNotEmpty ? toUserId : product.ownerId;
     quantityController.clear();
     priceController.clear();
     notesController.clear();
-    final unit = _mapOfferUnit(product.unitName);
-    _offerSelectedUnit = unit;
-    emit(
-      SubmitOfferFormState(
-        product: product,
-        selectedCurrency: _normalizeOfferCurrency(product.currency),
-        selectedUnit: unit,
-      ),
-    );
+    _offerSelectedUnit = _mapOfferUnit(product.unitName);
+  }
+
+  /// Clears shared offer-form fields so leaving without submit cannot leak
+  /// quantity / product into the next Inquiry offer screen.
+  void resetSubmitOfferForm({String? onlyForProductId}) {
+    if (onlyForProductId != null &&
+        currentProduct != null &&
+        currentProduct!.productId != onlyForProductId) {
+      return;
+    }
+    currentProduct = null;
+    offerToUserId = '';
+    _offerSelectedUnit = 'Kg';
+    quantityController.clear();
+    priceController.clear();
+    notesController.clear();
   }
 
   String _normalizeOfferCurrency(String? currency) {

@@ -4,6 +4,7 @@ import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_s
 import 'package:alrasmarket/features/clint/presentation/widgets/requst_widets/submit_ditels_card.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/requst_widets/submit_offer_button.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/requst_widets/submit_offer_detils_filds.dart';
+import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_product_images_widget.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +12,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class SubmitOfferFormWidget extends StatelessWidget {
-  const SubmitOfferFormWidget({super.key});
+  const SubmitOfferFormWidget({
+    super.key,
+    required this.product,
+  });
+
+  final MyListingProductModel product;
 
   @override
   Widget build(BuildContext context) {
@@ -25,21 +31,20 @@ class SubmitOfferFormWidget extends StatelessWidget {
         children: [
           _buildSectionTitle(S.of(context).orderDetails, fontFamily),
           SizedBox(height: 8.h),
-          const OrderDetailsCardWidget(),
+          OrderDetailsCardWidget(product: product),
           SizedBox(height: 20.h),
-
           _buildSectionTitle(S.of(context).offerDetails, fontFamily),
           SizedBox(height: 8.h),
-          const OfferDetailsFieldsWidget(),
+          OfferDetailsFieldsWidget(product: product),
           SizedBox(height: 20.h),
-
           BlocBuilder<ClintCubit, ClintStates>(
             buildWhen: (previous, current) {
               if (previous is! SubmitOfferFormState ||
                   current is! SubmitOfferFormState) {
                 return true;
               }
-              return previous.productImages != current.productImages;
+              return previous.productImages != current.productImages ||
+                  previous.product.productId != current.product.productId;
             },
             builder: (context, state) {
               final images = state is SubmitOfferFormState
@@ -53,7 +58,6 @@ class SubmitOfferFormWidget extends StatelessWidget {
             },
           ),
           SizedBox(height: 20.h),
-
           Container(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
             decoration: BoxDecoration(
@@ -81,7 +85,6 @@ class SubmitOfferFormWidget extends StatelessWidget {
             ),
           ),
           SizedBox(height: 24.h),
-
           SubmitOfferButtonWidget(
             onPressed: () => context.read<ClintCubit>().submitOfferForm(),
           ),
