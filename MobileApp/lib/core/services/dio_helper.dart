@@ -90,10 +90,8 @@ class DioHelper {
       _operationCancelToken?.isCancelled == true;
 
   static bool isCancelError(Object error) {
-    if (error is DioException) {
-      return error.type == DioExceptionType.cancel || CancelToken.isCancel(error);
-    }
-    return CancelToken.isCancel(error);
+    if (error is! DioException) return false;
+    return error.type == DioExceptionType.cancel || CancelToken.isCancel(error);
   }
 
   static Future<Response?>? getData({

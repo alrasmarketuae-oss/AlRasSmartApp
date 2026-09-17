@@ -16,10 +16,14 @@ import 'package:alrasmarket/core/theme/theme_controller.dart';
 import 'package:alrasmarket/core/utils/status_bar_helper.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations(const [
+    DeviceOrientation.portraitUp,
+  ]);
   configureImagePicker();
   if (!kIsWeb) {
     configureMediaHttpOverrides();
