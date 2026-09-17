@@ -813,12 +813,7 @@ public partial class ProductsAppService(
 
         try
         {
-        //    foreach (var imageId in cascade.ImageIds)
-        //    {
-        //        await productImageVectorIndex.DeleteByProductImageIdAsync(imageId, cancellationToken);
-        //    }
-
-            //await productImageVectorIndex.DeleteByProductIdAsync(productId, cancellationToken);
+            await productImageVectorIndex.DeleteByProductIdAsync(productId, cancellationToken);
         }
         catch (Exception ex)
         {

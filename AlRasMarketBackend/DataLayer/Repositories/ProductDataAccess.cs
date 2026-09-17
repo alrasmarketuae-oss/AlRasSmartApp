@@ -111,6 +111,23 @@ public sealed class ProductDataAccess(
             dbContext.CartItems.RemoveRange(cartItems);
         }
 
+        // Safety net if dependents were not cleared earlier (review locks / translations).
+        var reviewLocks = await dbContext.ProductReviewLocks
+            .Where(x => x.ProductId == productId)
+            .ToListAsync(cancellationToken);
+        if (reviewLocks.Count > 0)
+        {
+            dbContext.ProductReviewLocks.RemoveRange(reviewLocks);
+        }
+
+        var productTranslations = await dbContext.ContentTranslations
+            .Where(x => x.ProductId != null && x.ProductId == productId)
+            .ToListAsync(cancellationToken);
+        if (productTranslations.Count > 0)
+        {
+            dbContext.ContentTranslations.RemoveRange(productTranslations);
+        }
+
         if (product.ProductImages.Count > 0)
         {
             dbContext.ProductImages.RemoveRange(product.ProductImages);
@@ -152,6 +169,9 @@ public sealed class ProductDataAccess(
                 .Select(x => x.VideoPath)
                 .ToListAsync(cancellationToken);
 
+            // Children first — SQL Server blocks order delete when histories/offers remain.
+            await RemoveRangeAsync(dbContext.OrderStatusHistories.Where(x => orderIds.Contains(x.OrderId)), cancellationToken);
+            await RemoveRangeAsync(dbContext.OrderAdminOfferPrices.Where(x => orderIds.Contains(x.OrderId)), cancellationToken);
             await RemoveRangeAsync(dbContext.InternationalShipments.Where(x => orderIds.Contains(x.OrderId)), cancellationToken);
             await RemoveRangeAsync(dbContext.PendingPayments.Where(x => orderIds.Contains(x.OrderId)), cancellationToken);
             await RemoveRangeAsync(dbContext.OrderVideos.Where(x => orderIds.Contains(x.OrderId)), cancellationToken);
@@ -163,6 +183,14 @@ public sealed class ProductDataAccess(
         }
 
         await RemoveRangeAsync(dbContext.PendingOrderItems.Where(x => x.ProductId == productId), cancellationToken);
+
+        // Product-level FKs that are Restrict / NoAction in the live DB (or lack ON DELETE CASCADE).
+        await RemoveRangeAsync(
+            dbContext.ContentTranslations.Where(x => x.ProductId != null && x.ProductId == productId),
+            cancellationToken);
+        await RemoveRangeAsync(dbContext.ProductReviewLocks.Where(x => x.ProductId == productId), cancellationToken);
+        await RemoveRangeAsync(dbContext.CartItems.Where(x => x.ProductId == productId), cancellationToken);
+
         return result;
     }
 

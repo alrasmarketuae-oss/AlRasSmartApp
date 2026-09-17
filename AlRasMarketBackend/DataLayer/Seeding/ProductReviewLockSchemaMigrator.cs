@@ -30,6 +30,10 @@ public static class ProductReviewLockSchemaMigrator
         // Always ensure one active lock per product (fixes concurrent Preview race).
         await SqlSchemaHelper.ExecuteBatchAsync(connection, EnsureUniqueActiveLockIndexBatch, cancellationToken)
             .ConfigureAwait(false);
+
+        // Existing installs created the product FK without ON DELETE CASCADE.
+        await SqlSchemaHelper.ExecuteBatchAsync(connection, EnsureProductFkCascadeBatch, cancellationToken)
+            .ConfigureAwait(false);
     }
 
     private const string CreateTableTemplate = """
@@ -40,7 +44,7 @@ public static class ProductReviewLockSchemaMigrator
             LockedAtUtc DATETIME NOT NULL CONSTRAINT DF_ProductReviewLocks_LockedAtUtc DEFAULT GETUTCDATE(),
             LastHeartbeatUtc DATETIME NOT NULL CONSTRAINT DF_ProductReviewLocks_LastHeartbeatUtc DEFAULT GETUTCDATE(),
             ReleasedAtUtc DATETIME NULL,
-            CONSTRAINT FK_ProductReviewLocks_Product FOREIGN KEY (ProductId) REFERENCES dbo.Products(ProductId),
+            CONSTRAINT FK_ProductReviewLocks_Product FOREIGN KEY (ProductId) REFERENCES dbo.Products(ProductId) ON DELETE CASCADE,
             CONSTRAINT FK_ProductReviewLocks_Agent FOREIGN KEY (AgentUserId) REFERENCES dbo.Users(Id)
         );
 
@@ -87,6 +91,47 @@ public static class ProductReviewLockSchemaMigrator
             CREATE UNIQUE INDEX UX_ProductReviewLocks_Product_Active
                 ON dbo.ProductReviewLocks (ProductId)
                 WHERE ReleasedAtUtc IS NULL;
+        END
+        """;
+
+    private const string EnsureProductFkCascadeBatch = """
+        IF OBJECT_ID(N'dbo.ProductReviewLocks', N'U') IS NOT NULL
+        BEGIN
+            DECLARE @fk sysname =
+            (
+                SELECT TOP (1) fk.name
+                FROM sys.foreign_keys fk
+                INNER JOIN sys.foreign_key_columns fkc ON fkc.constraint_object_id = fk.object_id
+                INNER JOIN sys.columns c ON c.object_id = fkc.parent_object_id AND c.column_id = fkc.parent_column_id
+                WHERE fk.parent_object_id = OBJECT_ID(N'dbo.ProductReviewLocks')
+                  AND fk.referenced_object_id = OBJECT_ID(N'dbo.Products')
+                  AND c.name = N'ProductId'
+            );
+
+            IF @fk IS NOT NULL
+               AND EXISTS (
+                   SELECT 1
+                   FROM sys.foreign_keys
+                   WHERE name = @fk
+                     AND delete_referential_action_desc <> N'CASCADE'
+               )
+            BEGIN
+                DECLARE @dropSql nvarchar(400) =
+                    N'ALTER TABLE dbo.ProductReviewLocks DROP CONSTRAINT [' + REPLACE(@fk, N']', N']]') + N']';
+                EXEC sys.sp_executesql @dropSql;
+
+                IF NOT EXISTS (
+                    SELECT 1
+                    FROM sys.foreign_keys
+                    WHERE name = N'FK_ProductReviewLocks_Product'
+                      AND parent_object_id = OBJECT_ID(N'dbo.ProductReviewLocks')
+                )
+                BEGIN
+                    ALTER TABLE dbo.ProductReviewLocks WITH CHECK
+                    ADD CONSTRAINT FK_ProductReviewLocks_Product
+                        FOREIGN KEY (ProductId) REFERENCES dbo.Products(ProductId) ON DELETE CASCADE;
+                END
+            END
         END
         """;
 }
