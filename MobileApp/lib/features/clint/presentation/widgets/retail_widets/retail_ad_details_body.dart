@@ -391,15 +391,6 @@ class _QuantityAndTotalRow extends StatelessWidget {
   final String? Function(String?) quantityValidator;
   final bool isAr;
 
-  void _step(int delta) {
-    final current =
-        ThousandsNumberInput.parseDouble(quantityController.text) ?? 0;
-    final next = (current + delta).clamp(1, 999999);
-    quantityController.text =
-        ThousandsNumberInput.format(next, allowDecimal: true);
-    onQuantityChanged();
-  }
-
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
@@ -413,74 +404,74 @@ class _QuantityAndTotalRow extends StatelessWidget {
             icon: Icons.inventory_2_outlined,
             fontFamily: fontFamily,
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    _StepButton(
-                      icon: Icons.remove,
-                      onTap: () => _step(-1),
-                    ),
-                    SizedBox(width: 8.w),
-                    Expanded(
-                      child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8.w),
-                        decoration: BoxDecoration(
-                          color: BookingDetailsDesign.iconBg,
-                          borderRadius: BorderRadius.circular(10.r),
-                          border: Border.all(
-                            color: BookingDetailsDesign.brandSoft
-                                .withValues(alpha: 0.45),
-                          ),
-                        ),
-                        child: TextFormField(
-                          controller: quantityController,
-                          textAlign: TextAlign.center,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          inputFormatters: [
-                            ThousandsSeparatorInputFormatter(allowDecimal: true),
-                          ],
-                          onChanged: (_) => onQuantityChanged(),
-                          validator: quantityValidator,
-                          style: TextStyle(
-                            fontFamily: fontFamily,
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w700,
-                            color: BookingDetailsDesign.text,
-                          ),
-                          decoration: InputDecoration(
-                            isDense: true,
-                            border: InputBorder.none,
-                            hintText: s.enterQuantity,
-                            hintStyle: TextStyle(
-                              fontFamily: fontFamily,
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w500,
-                              color: BookingDetailsDesign.muted,
-                            ),
-                            contentPadding:
-                                EdgeInsets.symmetric(vertical: 10.h),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 8.w),
-                    _StepButton(
-                      icon: Icons.add,
-                      onTap: () => _step(1),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 8.h),
                 Text(
                   s.quantityTypeManuallyHint,
-                  textAlign: TextAlign.center,
                   style: TextStyle(
                     color: BookingDetailsDesign.muted,
                     fontFamily: fontFamily,
                     fontSize: 11.sp,
-                    height: 1.35,
+                  ),
+                ),
+                SizedBox(height: 10.h),
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                    vertical: 12.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: BookingDetailsDesign.iconBg,
+                    borderRadius: BorderRadius.circular(10.r),
+                    border: Border.all(color: BookingDetailsDesign.border),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isAr ? 'الكمية المطلوبة' : 'Order Quantity',
+                        style: TextStyle(
+                          color: BookingDetailsDesign.brandSoft,
+                          fontFamily: fontFamily,
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(height: 4.h),
+                      TextFormField(
+                        controller: quantityController,
+                        textAlign: TextAlign.start,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        inputFormatters: [
+                          ThousandsSeparatorInputFormatter(allowDecimal: true),
+                        ],
+                        onChanged: (_) => onQuantityChanged(),
+                        validator: quantityValidator,
+                        style: TextStyle(
+                          fontFamily: fontFamily,
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.w800,
+                          color: BookingDetailsDesign.text,
+                          height: 1.2,
+                        ),
+                        decoration: InputDecoration(
+                          isDense: true,
+                          border: InputBorder.none,
+                          isCollapsed: true,
+                          hintText: s.enterQuantity,
+                          hintStyle: TextStyle(
+                            fontFamily: fontFamily,
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w500,
+                            color: BookingDetailsDesign.muted,
+                          ),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 SizedBox(height: 10.h),
@@ -587,30 +578,6 @@ class _QuantityAndTotalRow extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _StepButton extends StatelessWidget {
-  const _StepButton({required this.icon, required this.onTap});
-
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: const Color(0xFFF3F6FA),
-      borderRadius: BorderRadius.circular(10.r),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10.r),
-        child: SizedBox(
-          width: 36.w,
-          height: 36.w,
-          child: Icon(icon, size: 18.sp, color: BookingDetailsDesign.brand),
-        ),
-      ),
     );
   }
 }
