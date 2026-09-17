@@ -108,7 +108,6 @@ class _OfferProductCardMarketplaceLayoutState
     final detailsFontSize = ProductGridLayout.cardDetailsFontSize(context);
     final priceFontSize = ProductGridLayout.cardPriceFontSize(context) + 1.5.sp;
     final isTablet = ProductGridLayout.isTablet(context);
-    final smallPriceFontSize = isTablet ? 11.5.sp : 11.sp;
 
     final content = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -221,17 +220,18 @@ class _OfferProductCardMarketplaceLayoutState
                             _formatAmount(original),
                             style: TextStyle(
                               fontFamily: fontFamily,
-                              fontSize: smallPriceFontSize,
-                              color: const Color(0xFF565959),
+                              fontSize: priceFontSize * 0.92,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFFDC2626),
                               decoration: TextDecoration.lineThrough,
-                              decorationColor: const Color(0xFF565959),
+                              decorationColor: const Color(0xFFDC2626),
                               height: 1.1,
                             ),
                           ),
                           SizedBox(width: 4.w),
                           CurrencyIcon(
                             currency: currency,
-                            size: smallPriceFontSize,
+                            size: priceFontSize * 0.92,
                             matchTextSize: true,
                           ),
                         ],
@@ -254,7 +254,7 @@ class _OfferProductCardMarketplaceLayoutState
                         fontFamily: fontFamily,
                         fontSize: priceFontSize,
                         fontWeight: FontWeight.w800,
-                        color: const Color(0xFFDC2626),
+                        color: const Color(0xFF619D50),
                         height: 1.1,
                       ),
                       iconSize: priceFontSize,

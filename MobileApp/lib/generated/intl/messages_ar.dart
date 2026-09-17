@@ -507,7 +507,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "commissionOffers": MessageLookupByLibrary.simpleMessage("العروض (Offers)"),
     "commissionPercentValue": m10,
     "commissionRequests": MessageLookupByLibrary.simpleMessage(
-      "استفسار (Inquiry)",
+      "الطلبات (Inquiry)",
     ),
     "commissionRetail": MessageLookupByLibrary.simpleMessage(
       "التجزئة (Retail)",
@@ -530,7 +530,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "إعلانات طلباتي",
     ),
     "companyCustomerRequestsSubtitle": MessageLookupByLibrary.simpleMessage(
-      "عروض الموردين الواردة على إعلانات الاستفسار.",
+      "عروض الموردين الواردة على إعلانات طلباتك.",
     ),
     "companyCustomerRequestsTab": MessageLookupByLibrary.simpleMessage(
       "العروض على طلباتي",
@@ -1460,7 +1460,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "requestedReceiptDate": MessageLookupByLibrary.simpleMessage(
       "تاريخ الاستلام المطلوب",
     ),
-    "requests": MessageLookupByLibrary.simpleMessage("استفسار"),
+    "requests": MessageLookupByLibrary.simpleMessage("طلبات"),
     "requiredDeliveryDate": MessageLookupByLibrary.simpleMessage(
       "تاريخ التسليم المطلوب",
     ),
@@ -1678,9 +1678,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "shippingTimeRange": m33,
     "showAll": MessageLookupByLibrary.simpleMessage("عرض الكل"),
-    "showAllRequests": MessageLookupByLibrary.simpleMessage(
-      "عرض كل الاستفسارات",
-    ),
+    "showAllRequests": MessageLookupByLibrary.simpleMessage("عرض كل الطلبات"),
     "showNumber": MessageLookupByLibrary.simpleMessage("إظهار الرقم"),
     "signInToContinue": MessageLookupByLibrary.simpleMessage(
       "سجل دخولك للمتابعة",

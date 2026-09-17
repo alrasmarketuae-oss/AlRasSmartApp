@@ -4,6 +4,7 @@ import 'package:alrasmarket/core/utils/product_stock.dart';
 import 'package:alrasmarket/core/utils/string_display_format.dart';
 import 'package:alrasmarket/core/utils/relative_time_formatter.dart';
 import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
+import 'package:alrasmarket/core/widgets/animated_discount_price_text.dart';
 import 'package:alrasmarket/core/widgets/product_price_text.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_price_type_label.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/ad_hero_description_text.dart';
@@ -243,21 +244,35 @@ class _OfferAdDetailsCard extends StatelessWidget {
 
     if (ProductPriceFormatter.canShowPrices &&
         ProductPriceFormatter.amount(product).isNotEmpty) {
+      final sale = ProductPriceFormatter.saleAmountValue(product);
+      final original = ProductPriceFormatter.originalAmountValue(product);
+      final animateDiscount = product.isDiscountActive &&
+          original > sale &&
+          sale > 0;
+      final priceStyle = TextStyle(
+        color: BookingDetailsDesign.priceGreen,
+        fontFamily: fontFamily,
+        fontSize: 13.sp,
+        fontWeight: FontWeight.w700,
+      );
       main.add(
         BookingDetailsFactTile(
           icon: Icons.sell_outlined,
           label: CreateAdPriceLabels.offerPricePerUnitLabel(s, unit),
           fontFamily: fontFamily,
-          valueWidget: ProductPriceText.fromProduct(
-            product,
-            amountStyle: TextStyle(
-              color: BookingDetailsDesign.priceGreen,
-              fontFamily: fontFamily,
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w700,
-            ),
-            matchCurrencyToAmount: true,
-          ),
+          valueWidget: animateDiscount
+              ? AnimatedDiscountPriceText(
+                  fromAmount: original,
+                  toAmount: sale,
+                  currency: ProductPriceFormatter.currencyCode(product),
+                  amountStyle: priceStyle,
+                  matchCurrencyToAmount: true,
+                )
+              : ProductPriceText.fromProduct(
+                  product,
+                  amountStyle: priceStyle,
+                  matchCurrencyToAmount: true,
+                ),
         ),
       );
     }

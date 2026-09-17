@@ -2,6 +2,7 @@ import 'package:alrasmarket/core/utils/product_price_formatter.dart';
 import 'package:alrasmarket/core/utils/product_quantity_formatter.dart';
 import 'package:alrasmarket/core/utils/product_stock.dart';
 import 'package:alrasmarket/core/utils/relative_time_formatter.dart';
+import 'package:alrasmarket/core/widgets/animated_discount_price_text.dart';
 import 'package:alrasmarket/core/widgets/product_price_text.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/booking_widets/booking_details_card.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_price_type_label.dart';
@@ -132,19 +133,34 @@ class ProductDetailFactsCard extends StatelessWidget {
 
     if (ProductPriceFormatter.canShowPrices &&
         ProductPriceFormatter.amount(product).isNotEmpty) {
+      final priceStyle = TextStyle(
+        color: const Color(0xFF619D50),
+        fontFamily: fontFamily,
+        fontSize: 15.sp,
+        fontWeight: FontWeight.w700,
+        height: 1.2,
+      );
+      final sale = ProductPriceFormatter.saleAmountValue(product);
+      final original = ProductPriceFormatter.originalAmountValue(product);
+      final animateDiscount = mode == ProductDetailFactsMode.offer &&
+          product.isDiscountActive &&
+          original > sale &&
+          sale > 0;
       addRow(
         label: _priceLabel(s, unit),
-        valueWidget: ProductPriceText.fromProduct(
-          product,
-          amountStyle: TextStyle(
-            color: const Color(0xFF619D50),
-            fontFamily: fontFamily,
-            fontSize: 15.sp,
-            fontWeight: FontWeight.w700,
-            height: 1.2,
-          ),
-          matchCurrencyToAmount: true,
-        ),
+        valueWidget: animateDiscount
+            ? AnimatedDiscountPriceText(
+                fromAmount: original,
+                toAmount: sale,
+                currency: ProductPriceFormatter.currencyCode(product),
+                amountStyle: priceStyle,
+                matchCurrencyToAmount: true,
+              )
+            : ProductPriceText.fromProduct(
+                product,
+                amountStyle: priceStyle,
+                matchCurrencyToAmount: true,
+              ),
       );
     }
 
