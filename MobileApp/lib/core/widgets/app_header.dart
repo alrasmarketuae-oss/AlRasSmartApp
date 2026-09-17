@@ -6,7 +6,6 @@ import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/utils/string_display_format.dart';
 import 'package:alrasmarket/core/widgets/header_notification_bell.dart';
 import 'package:alrasmarket/core/widgets/profile_avatar.dart';
-import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -21,16 +20,13 @@ class AppHeader extends StatelessWidget {
     return value.capitalizeFirst();
   }
 
-  String? _accountSubtitle(BuildContext context, S s) {
+  String? _accountSubtitle() {
+    // Header stays English-facing even when the app locale is Arabic.
     final auth = AuthService.instance;
-    if (auth.isSupplierAccount) return s.supplierAccount;
-    if (auth.isCompanyCustomerAccount) return s.companyCustomerAccount;
-    if (auth.isAdminAccount) {
-      return Localizations.localeOf(context).languageCode == 'ar'
-          ? 'حساب أدمن'
-          : 'Admin account';
-    }
-    if (auth.isPersonalCustomerAccount) return s.personalAccount;
+    if (auth.isSupplierAccount) return 'Supplier account';
+    if (auth.isCompanyCustomerAccount) return 'Company customer account';
+    if (auth.isAdminAccount) return 'Admin account';
+    if (auth.isPersonalCustomerAccount) return 'Personal account';
     return null;
   }
 
@@ -45,18 +41,15 @@ class AppHeader extends StatelessWidget {
     return ValueListenableBuilder<int>(
       valueListenable: AuthService.instance.identityRevision,
       builder: (context, revision, child) {
-        final s = S.of(context);
-        final isArabic = Localizations.localeOf(context).languageCode == 'ar';
         final display = displayName(
           name,
-          fallback: s.alRasMarket,
+          fallback: 'Al Ras Market',
         );
-        final subtitle = _accountSubtitle(context, s);
+        final subtitle = _accountSubtitle();
 
-        // Enforce LTR/RTL from app language so logo + company name flip correctly
-        // even if a parent forced another text direction.
+        // Always English (LTR) layout for logo + company name, even in Arabic app locale.
         return Directionality(
-          textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+          textDirection: TextDirection.ltr,
           child: Row(
             children: [
               InkWell(
