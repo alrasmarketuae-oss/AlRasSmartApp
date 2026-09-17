@@ -10,6 +10,29 @@ public sealed class OrderDataAccess(IRasAlSouqDbContext dbContext) : IOrderDataA
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
         dbContext.SaveChangesAsync(cancellationToken);
 
+    public async Task ExecuteInTransactionAsync(
+        Func<CancellationToken, Task> action,
+        CancellationToken cancellationToken = default)
+    {
+        if (dbContext is not DbContext ef)
+        {
+            throw new InvalidOperationException("Order data access requires an EF Core DbContext.");
+        }
+
+        await using var tx = await ef.Database.BeginTransactionAsync(cancellationToken)
+            .ConfigureAwait(false);
+        try
+        {
+            await action(cancellationToken).ConfigureAwait(false);
+            await tx.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch
+        {
+            await tx.RollbackAsync(cancellationToken).ConfigureAwait(false);
+            throw;
+        }
+    }
+
     public async Task AddOrderAsync(Order order, CancellationToken cancellationToken = default)
     {
         await dbContext.Orders.AddAsync(order, cancellationToken);

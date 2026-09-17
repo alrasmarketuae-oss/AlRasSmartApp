@@ -276,6 +276,11 @@ class _AdRequestOffersViewState extends State<AdRequestOffersView> {
                                     onReject: offer.canReject
                                         ? () => _onReject(offer.orderId)
                                         : null,
+                                    onCancel: isUpdating
+                                        ? () => context
+                                            .read<CompanyCubit>()
+                                            .cancelInFlightOrderAction()
+                                        : null,
                                   );
                                 },
                               ),

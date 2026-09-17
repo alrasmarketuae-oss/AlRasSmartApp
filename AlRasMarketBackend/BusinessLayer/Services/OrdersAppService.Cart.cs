@@ -199,18 +199,22 @@ public partial class OrdersAppService
         }
 
         var orderGroupId = Guid.NewGuid();
-        var createdOrders = await CreateOrderRowsAsync(
-            userId,
-            orderGroupId,
-            null,
-            null,
-            (byte)paymentMethod,
-            itemSnapshots,
-            NormalizeNotes(input.Notes),
-            fulfillment,
-            cancellationToken);
+        List<Order> createdOrders = [];
+        await orderData.ExecuteInTransactionAsync(async ct =>
+        {
+            createdOrders = await CreateOrderRowsAsync(
+                userId,
+                orderGroupId,
+                null,
+                null,
+                (byte)paymentMethod,
+                itemSnapshots,
+                NormalizeNotes(input.Notes),
+                fulfillment,
+                ct);
+            await ClearCartAsync(userId, cart, ct);
+        }, cancellationToken);
 
-        await ClearCartAsync(userId, cart, cancellationToken);
         await NotifyOrderPartiesAsync(createdOrders, cancellationToken);
 
         return new
@@ -268,25 +272,29 @@ public partial class OrdersAppService
             pendingOrder.DeliveryLongitude);
 
         var orderGroupId = Guid.NewGuid();
-        var createdOrders = await CreateOrderRowsAsync(
-            pendingOrder.FromUserId,
-            orderGroupId,
-            pendingOrder.Id,
-            pendingOrder.StripeSessionId,
-            (byte)PaymentMethod.Online,
-            snapshots,
-            pendingOrder.Notes,
-            fulfillment,
-            cancellationToken);
-
-        pendingOrder.FinalOrderGroupId = orderGroupId;
-        await orderData.SaveChangesAsync(cancellationToken);
-
-        var cart = await orderData.GetCartWithItemsAsync(pendingOrder.FromUserId, cancellationToken);
-        if (cart is not null)
+        List<Order> createdOrders = [];
+        await orderData.ExecuteInTransactionAsync(async ct =>
         {
-            await ClearCartAsync(pendingOrder.FromUserId, cart, cancellationToken);
-        }
+            createdOrders = await CreateOrderRowsAsync(
+                pendingOrder.FromUserId,
+                orderGroupId,
+                pendingOrder.Id,
+                pendingOrder.StripeSessionId,
+                (byte)PaymentMethod.Online,
+                snapshots,
+                pendingOrder.Notes,
+                fulfillment,
+                ct);
+
+            pendingOrder.FinalOrderGroupId = orderGroupId;
+            await orderData.SaveChangesAsync(ct);
+
+            var cart = await orderData.GetCartWithItemsAsync(pendingOrder.FromUserId, ct);
+            if (cart is not null)
+            {
+                await ClearCartAsync(pendingOrder.FromUserId, cart, ct);
+            }
+        }, cancellationToken);
 
         await NotifyOrderPartiesAsync(createdOrders, cancellationToken);
 

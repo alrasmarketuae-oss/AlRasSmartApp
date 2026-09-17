@@ -205,7 +205,10 @@ public partial class OrdersAppService
             }
         }
 
-        await orderData.SaveChangesAsync(cancellationToken);
+        // Persist status + stock changes atomically (accept / reject / cancel).
+        await orderData.ExecuteInTransactionAsync(
+            ct => orderData.SaveChangesAsync(ct),
+            cancellationToken);
 
         // Push updated live counts to the admin dashboard so an admin standing on
         // this order's detail page (or a list) sees the status change in real time,

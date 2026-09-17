@@ -2,6 +2,7 @@ import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/widgets/animated_ellipsis_text.dart';
 import 'package:alrasmarket/core/widgets/primary_button.dart';
+import 'package:alrasmarket/core/widgets/primary_button_with_cancel.dart';
 import 'package:alrasmarket/core/widgets/product_price_text.dart';
 import 'package:alrasmarket/features/clint/domain/entities/cart_item_entity.dart';
 import 'package:alrasmarket/features/clint/domain/entities/cart_payment_method.dart';
@@ -322,39 +323,93 @@ class _CartViewState extends State<CartView> {
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _CheckoutBar(
-                        label: isOnline ? s.payWithVisaButton : s.confirmOrder,
-                        loadingLabel: s.sending,
-                        totalAmount: CartItemEntity.formatAmountOnly(
-                          state.cart.totalAed,
-                        ),
-                        isLoading: state.isConfirming,
-                        onPressed:
-                            state.isConfirming ? null : cubit.confirmOrder,
-                      ),
-                      SizedBox(height: 10.h),
-                      OutlinedButton(
-                        onPressed: state.isConfirming
-                            ? null
-                            : () => context.go(AppRoutes.kRetailServiceView),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: CartDesign.brand,
-                          side: BorderSide(
-                            color: CartDesign.brand.withValues(alpha: 0.55),
+                      if (state.isConfirming)
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: _CheckoutBar(
+                                label: isOnline
+                                    ? s.payWithVisaButton
+                                    : s.confirmOrder,
+                                loadingLabel: s.sending,
+                                totalAmount:
+                                    CartItemEntity.formatAmountOnly(
+                                  state.cart.totalAed,
+                                ),
+                                isLoading: true,
+                                onPressed: null,
+                              ),
+                            ),
+                            SizedBox(width: 10.w),
+                            Expanded(
+                              flex: 2,
+                              child: SizedBox(
+                                height: 56.h,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        PrimaryButtonWithCancel.cancelRed,
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(14.r),
+                                    ),
+                                  ),
+                                  onPressed:
+                                      cubit.cancelInFlightOrderAction,
+                                  child: Text(
+                                    s.cancel,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      else ...[
+                        _CheckoutBar(
+                          label: isOnline
+                              ? s.payWithVisaButton
+                              : s.confirmOrder,
+                          loadingLabel: s.sending,
+                          totalAmount: CartItemEntity.formatAmountOnly(
+                            state.cart.totalAed,
                           ),
-                          minimumSize: Size(double.infinity, 48.h),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14.r),
+                          isLoading: false,
+                          onPressed: cubit.confirmOrder,
+                        ),
+                        SizedBox(height: 10.h),
+                        OutlinedButton(
+                          onPressed: () =>
+                              context.go(AppRoutes.kRetailServiceView),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: CartDesign.brand,
+                            side: BorderSide(
+                              color:
+                                  CartDesign.brand.withValues(alpha: 0.55),
+                            ),
+                            minimumSize: Size(double.infinity, 48.h),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14.r),
+                            ),
+                          ),
+                          child: Text(
+                            s.continueShopping,
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
-                        child: Text(
-                          s.continueShopping,
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
+                      ],
                     ],
                   ),
           ),

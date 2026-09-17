@@ -2,6 +2,7 @@ import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/utils/product_quantity_formatter.dart';
 import 'package:alrasmarket/core/utils/relative_time_formatter.dart';
 import 'package:alrasmarket/core/widgets/cached_app_image.dart';
+import 'package:alrasmarket/core/widgets/primary_button_with_cancel.dart';
 import 'package:alrasmarket/core/widgets/product_price_text.dart';
 import 'package:alrasmarket/features/clint/presentation/models/product_media_item.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_media_preview_screen.dart';
@@ -26,6 +27,7 @@ class RequestOfferCard extends StatelessWidget {
     required this.isUpdating,
     this.onAccept,
     this.onReject,
+    this.onCancel,
     this.onTrack,
     this.acceptLabel,
     this.rejectLabel,
@@ -36,6 +38,7 @@ class RequestOfferCard extends StatelessWidget {
   final bool isUpdating;
   final VoidCallback? onAccept;
   final VoidCallback? onReject;
+  final VoidCallback? onCancel;
   final VoidCallback? onTrack;
   final String? acceptLabel;
   final String? rejectLabel;
@@ -325,10 +328,12 @@ class RequestOfferCard extends StatelessWidget {
               acceptLabel: acceptLabel ?? s.acceptOffer,
               rejectLabel: rejectLabel ?? s.rejectOffer,
               sendingLabel: s.sending,
+              cancelLabel: s.cancel,
               fontFamily: fontFamily,
               isUpdating: isUpdating,
               onAccept: onAccept,
               onReject: onReject,
+              onCancel: onCancel,
             ),
           ],
         ],
@@ -710,19 +715,23 @@ class _AcceptRejectActions extends StatefulWidget {
     required this.acceptLabel,
     required this.rejectLabel,
     required this.sendingLabel,
+    required this.cancelLabel,
     required this.fontFamily,
     required this.isUpdating,
     this.onAccept,
     this.onReject,
+    this.onCancel,
   });
 
   final String acceptLabel;
   final String rejectLabel;
   final String sendingLabel;
+  final String cancelLabel;
   final String fontFamily;
   final bool isUpdating;
   final VoidCallback? onAccept;
   final VoidCallback? onReject;
+  final VoidCallback? onCancel;
 
   @override
   State<_AcceptRejectActions> createState() => _AcceptRejectActionsState();
@@ -743,6 +752,59 @@ class _AcceptRejectActionsState extends State<_AcceptRejectActions> {
   @override
   Widget build(BuildContext context) {
     final busy = widget.isUpdating || _pendingAction != 0;
+    final accepting = _pendingAction == 1 ||
+        (widget.isUpdating && _pendingAction != 2 && widget.onAccept != null);
+
+    if (busy && widget.onCancel != null) {
+      return Row(
+        children: [
+          Expanded(
+            flex: 3,
+            child: _ActionChip(
+              label: accepting ? widget.acceptLabel : widget.rejectLabel,
+              loadingLabel: widget.sendingLabel,
+              backgroundColor: accepting
+                  ? RequestOfferCard._actionBlue
+                  : RequestOfferCard._actionRed,
+              fontFamily: widget.fontFamily,
+              isLoading: true,
+              onPressed: null,
+            ),
+          ),
+          SizedBox(width: 10.w),
+          Expanded(
+            flex: 2,
+            child: SizedBox(
+              height: 44.h,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: PrimaryButtonWithCancel.cancelRed,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: EdgeInsets.symmetric(horizontal: 8.w),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                ),
+                onPressed: widget.onCancel,
+                child: Text(
+                  widget.cancelLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontFamily: widget.fontFamily,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     return Row(
       children: [
         if (widget.onAccept != null)
@@ -752,8 +814,7 @@ class _AcceptRejectActionsState extends State<_AcceptRejectActions> {
               loadingLabel: widget.sendingLabel,
               backgroundColor: RequestOfferCard._actionBlue,
               fontFamily: widget.fontFamily,
-              isLoading: _pendingAction == 1 ||
-                  (widget.isUpdating && _pendingAction != 2),
+              isLoading: false,
               onPressed: busy
                   ? null
                   : () {
@@ -771,7 +832,7 @@ class _AcceptRejectActionsState extends State<_AcceptRejectActions> {
               loadingLabel: widget.sendingLabel,
               backgroundColor: RequestOfferCard._actionRed,
               fontFamily: widget.fontFamily,
-              isLoading: _pendingAction == 2,
+              isLoading: false,
               onPressed: busy
                   ? null
                   : () {

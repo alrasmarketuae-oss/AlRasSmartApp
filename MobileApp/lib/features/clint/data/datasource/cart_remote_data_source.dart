@@ -212,6 +212,9 @@ class CartRemoteDataSource implements BaseCartRemoteDataSource {
 
       return const Left(ServerFailure('Invalid order response'));
     } on DioException catch (e) {
+      if (e.type == DioExceptionType.cancel) {
+        return const Left(CancelledFailure());
+      }
       return Left(
         ServerFailure(
           _extractMessage(e.response?.data) ?? e.message ?? 'Network error',

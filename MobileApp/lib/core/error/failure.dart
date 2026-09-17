@@ -19,3 +19,13 @@ class CacheFailure extends Failure {
 class NetworkFailure extends Failure {
   const NetworkFailure(super.message);
 }
+
+/// User aborted an in-flight order/offer/accept request.
+class CancelledFailure extends Failure {
+  const CancelledFailure([super.message = code]);
+
+  static const code = '__CANCELLED__';
+
+  static bool matches(Failure failure) =>
+      failure is CancelledFailure || failure.message == code;
+}

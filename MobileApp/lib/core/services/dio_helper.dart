@@ -60,6 +60,35 @@ class DioHelper {
     }
   }
 
+  static CancelToken? _operationCancelToken;
+
+  /// Starts a cancel scope for order/offer/accept HTTP calls. Replaces any prior token.
+  static CancelToken startOperationCancelToken() {
+    final previous = _operationCancelToken;
+    if (previous != null && !previous.isCancelled) {
+      previous.cancel('replaced');
+    }
+    final token = CancelToken();
+    _operationCancelToken = token;
+    return token;
+  }
+
+  static void cancelOperation([String reason = 'cancelled']) {
+    final token = _operationCancelToken;
+    if (token != null && !token.isCancelled) {
+      token.cancel(reason);
+    }
+  }
+
+  static void endOperationCancelToken(CancelToken? token) {
+    if (identical(_operationCancelToken, token)) {
+      _operationCancelToken = null;
+    }
+  }
+
+  static bool get isOperationCancelled =>
+      _operationCancelToken?.isCancelled == true;
+
   static Future<Response?>? getData({
     required String url,
     Map<String, dynamic>? query,
@@ -67,6 +96,7 @@ class DioHelper {
     String lan = 'ar',
     String? token,
     Duration? receiveTimeout,
+    CancelToken? cancelToken,
   }) async {
     dio!.options.headers = {
       'Content-Type': 'application/json',
@@ -76,6 +106,7 @@ class DioHelper {
       url,
       data: data,
       queryParameters: query,
+      cancelToken: cancelToken ?? _operationCancelToken,
       options: receiveTimeout == null
           ? null
           : Options(receiveTimeout: receiveTimeout),
@@ -89,13 +120,19 @@ class DioHelper {
     required Object? data, // body: Map or List for JSON
     String lan = 'en',
     String? token,
+    CancelToken? cancelToken,
   }) async {
     dio!.options.headers = {
       'Content-Type': 'application/json',
       ..._authHeaders(token: token),
     };
     print("0000post  ${url}");
-    final x = await dio?.post(url, queryParameters: query, data: data);
+    final x = await dio?.post(
+      url,
+      queryParameters: query,
+      data: data,
+      cancelToken: cancelToken ?? _operationCancelToken,
+    );
     print("x: ${x?.data}");
     return x;
   }
@@ -120,12 +157,18 @@ class DioHelper {
     Map<String, dynamic>? query,
     required Object? data,
     String? token,
+    CancelToken? cancelToken,
   }) async {
     dio!.options.headers = {
       'Content-Type': 'application/json',
       ..._authHeaders(token: token),
     };
-    final x = await dio?.patch(url, queryParameters: query, data: data);
+    final x = await dio?.patch(
+      url,
+      queryParameters: query,
+      data: data,
+      cancelToken: cancelToken ?? _operationCancelToken,
+    );
     return x;
   }
 
@@ -161,6 +204,7 @@ class DioHelper {
     required FormData formData,
     String? token,
     ProgressCallback? onSendProgress,
+    CancelToken? cancelToken,
   }) async {
     debugPrint('[Upload] URL: $url');
 
@@ -172,6 +216,7 @@ class DioHelper {
         url,
         data: formData,
         onSendProgress: onSendProgress,
+        cancelToken: cancelToken ?? _operationCancelToken,
         options: Options(
           contentType: 'multipart/form-data',
           sendTimeout: const Duration(minutes: 5),
@@ -180,6 +225,9 @@ class DioHelper {
       );
       return x;
     } on DioException catch (e) {
+      if (e.type == DioExceptionType.cancel) {
+        rethrow;
+      }
       final response = e.response;
       if (response != null) {
         debugPrint('Error uploading file (${response.statusCode}): ${response.data}');

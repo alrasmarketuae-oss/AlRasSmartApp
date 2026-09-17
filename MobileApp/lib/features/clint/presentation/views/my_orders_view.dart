@@ -755,6 +755,9 @@ class _MyOrdersViewState extends State<MyOrdersView> {
               onReject: offer.canReject
                   ? () => onRejectIncoming(offer.orderId)
                   : null,
+              onCancel: isUpdating
+                  ? () => cubit.cancelInFlightOrderAction()
+                  : null,
             ),
           );
         },

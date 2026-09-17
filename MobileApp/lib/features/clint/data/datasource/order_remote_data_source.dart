@@ -159,6 +159,9 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
       // 2xx without a parseable id — still treat as success so UI does not false-fail.
       return const Right('');
     } on DioException catch (e) {
+      if (e.type == DioExceptionType.cancel) {
+        return const Left(CancelledFailure());
+      }
       print('🔵 [Create Order] DioException: ${e.response?.data}');
       print('🔵 [Create Order] DioException: ${e.response?.statusCode}');
       print('🔵 [Create Order] DioException: ${e.response?.statusMessage}');
@@ -477,6 +480,9 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
 
       return const Right(null);
     } on DioException catch (e) {
+      if (e.type == DioExceptionType.cancel) {
+        return const Left(CancelledFailure());
+      }
       return Left(
         ServerFailure(
           _extractMessage(e.response?.data) ?? e.message ?? 'Network error',
@@ -587,6 +593,9 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
       print('🔵 [Upload Photo] Path: $path');
       return Right(path);
     } on DioException catch (e) {
+      if (e.type == DioExceptionType.cancel) {
+        return const Left(CancelledFailure());
+      }
       return Left(
         ServerFailure(
           _extractMessage(e.response?.data) ?? e.message ?? 'Upload failed',

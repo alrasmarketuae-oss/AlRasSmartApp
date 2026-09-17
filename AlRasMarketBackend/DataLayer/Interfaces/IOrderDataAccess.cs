@@ -9,6 +9,10 @@ public interface IOrderDataAccess
 {
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
+    Task ExecuteInTransactionAsync(
+        Func<CancellationToken, Task> action,
+        CancellationToken cancellationToken = default);
+
     Task AddOrderAsync(Order order, CancellationToken cancellationToken = default);
     Task AddPendingOrderAsync(PendingOrder pendingOrder, CancellationToken cancellationToken = default);
     Task AddOrderVideoAsync(OrderVideo orderVideo, CancellationToken cancellationToken = default);

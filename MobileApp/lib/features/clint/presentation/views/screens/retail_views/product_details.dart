@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:alrasmarket/core/widgets/animated_ellipsis_text.dart';
+import 'package:alrasmarket/core/widgets/primary_button_with_cancel.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/core/utils/product_quantity_validator.dart';
 import 'package:alrasmarket/core/utils/product_stock.dart';
@@ -340,69 +341,78 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
                       top: false,
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 12.h),
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: 48.h,
-                          child: ElevatedButton(
-                            onPressed: ctaBusy
-                                ? null
-                                : () {
-                                    if (widget.isOffer) {
-                                      _submitOfferOrder();
-                                      return;
-                                    }
-                                    if (isRetailCart) {
-                                      _addToCart(
-                                        unit == 'Kg' ? 'Kilogram' : unit,
-                                      );
-                                      return;
-                                    }
-                                    _submitOfferOrder();
-                                  },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: BookingDetailsDesign.brand,
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              disabledBackgroundColor: BookingDetailsDesign
-                                  .brand
-                                  .withValues(alpha: 0.55),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12.r),
+                        child: isRetailCart
+                            ? SizedBox(
+                                width: double.infinity,
+                                height: 48.h,
+                                child: ElevatedButton(
+                                  onPressed: ctaBusy
+                                      ? null
+                                      : () => _addToCart(
+                                            unit == 'Kg' ? 'Kilogram' : unit,
+                                          ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        BookingDetailsDesign.brand,
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    disabledBackgroundColor:
+                                        BookingDetailsDesign.brand
+                                            .withValues(alpha: 0.55),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(12.r),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.center,
+                                    children: [
+                                      if (!ctaBusy) ...[
+                                        Icon(
+                                          Icons.shopping_cart_outlined,
+                                          size: 18.sp,
+                                        ),
+                                        SizedBox(width: 8.w),
+                                      ],
+                                      if (ctaBusy)
+                                        AnimatedEllipsisText(
+                                          label: busyLabel,
+                                          style: TextStyle(
+                                            fontFamily: fontFamily,
+                                            fontSize: 15.sp,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      else
+                                        Text(
+                                          idleLabel,
+                                          style: TextStyle(
+                                            fontFamily: fontFamily,
+                                            fontSize: 15.sp,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            : PrimaryButtonWithCancel(
+                                text: idleLabel,
+                                loadingText: busyLabel,
+                                isLoading: isSubmitting,
+                                height: 48.h,
+                                borderRadius: 12,
+                                backgroundColor: BookingDetailsDesign.brand,
+                                onCancel: isSubmitting
+                                    ? () => _clintCubit
+                                        .cancelInFlightOrderAction()
+                                    : null,
+                                onPressed: isSubmitting
+                                    ? null
+                                    : _submitOfferOrder,
                               ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                if (!ctaBusy) ...[
-                                  Icon(
-                                    Icons.shopping_cart_outlined,
-                                    size: 18.sp,
-                                  ),
-                                  SizedBox(width: 8.w),
-                                ],
-                                if (ctaBusy)
-                                  AnimatedEllipsisText(
-                                    label: busyLabel,
-                                    style: TextStyle(
-                                      fontFamily: fontFamily,
-                                      fontSize: 15.sp,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                else
-                                  Text(
-                                    idleLabel,
-                                    style: TextStyle(
-                                      fontFamily: fontFamily,
-                                      fontSize: 15.sp,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
                       ),
                     ),
                 ],

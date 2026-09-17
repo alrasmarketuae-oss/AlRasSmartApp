@@ -292,8 +292,11 @@ public partial class OrdersAppService(
             });
         }
 
-        await orderData.AddOrderAsync(order, cancellationToken);
-        await orderData.SaveChangesAsync(cancellationToken);
+        await orderData.ExecuteInTransactionAsync(async ct =>
+        {
+            await orderData.AddOrderAsync(order, ct);
+            await orderData.SaveChangesAsync(ct);
+        }, cancellationToken);
         await TryTranslateOrderNotesAsync(order.Id, notes, cancellationToken);
         logger.LogInformation(
             "Order {OrderId} created for product {ProductId} with UnitId={UnitId} UnitName={UnitName} (submitted '{SubmittedUnit}')",

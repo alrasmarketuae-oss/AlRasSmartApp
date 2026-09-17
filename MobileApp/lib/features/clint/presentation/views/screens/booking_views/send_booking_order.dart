@@ -4,6 +4,7 @@ import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/core/utils/product_price_formatter.dart';
 import 'package:alrasmarket/core/widgets/app_country_search_field.dart';
+import 'package:alrasmarket/core/widgets/primary_button_with_cancel.dart';
 import 'package:alrasmarket/core/widgets/primary_button.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_states.dart';
@@ -200,10 +201,13 @@ class _SendBookingOrderPage extends StatelessWidget {
                   ),
                   Padding(
                     padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 24.h),
-                    child: PrimaryButton(
+                    child: PrimaryButtonWithCancel(
                       text: s.sendPurchaseOrder,
                       loadingText: s.sending,
                       isLoading: formState.isSubmitting,
+                      onCancel: formState.isSubmitting
+                          ? () => cubit.cancelInFlightOrderAction()
+                          : null,
                       onPressed: formState.isSubmitting
                           ? null
                           : () => cubit.submitBookingOrder(),

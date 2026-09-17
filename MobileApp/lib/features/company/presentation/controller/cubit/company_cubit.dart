@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:alrasmarket/core/error/failure.dart';
+import 'package:alrasmarket/core/services/dio_helper.dart';
 import 'package:alrasmarket/core/serveses/catalog_sync_service.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
@@ -8,6 +10,7 @@ import 'package:alrasmarket/features/company/data/models/request_offer_order_sta
 import 'package:alrasmarket/features/company/domain/usecases/ad_offers_usecases.dart';
 import 'package:alrasmarket/features/company/domain/usecases/create_ad_usecases.dart';
 import 'package:alrasmarket/generated/l10n.dart' show S;
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -38,6 +41,15 @@ class CompanyCubit extends Cubit<CompanyStates> {
   final MarkProductSoldOutUseCase _markProductSoldOutUseCase;
   final GetMyOffersOnMyRequestsUseCase _getMyOffersOnMyRequestsUseCase;
   final UpdateOrderStatusUseCase _updateOrderStatusUseCase;
+  CancelToken? _activeStatusActionToken;
+
+  void cancelInFlightOrderAction() {
+    DioHelper.cancelOperation();
+    final token = _activeStatusActionToken;
+    if (token != null && !token.isCancelled) {
+      token.cancel('user_cancelled');
+    }
+  }
 
   static CompanyCubit get(context) => BlocProvider.of(context);
 
@@ -325,46 +337,57 @@ class CompanyCubit extends Cubit<CompanyStates> {
       ),
     );
 
-    final result = await _updateOrderStatusUseCase(
-      UpdateOrderStatusParams(
-        orderId: orderId,
-        statusId: statusId,
-        token: token,
-      ),
-    );
+    final actionToken = DioHelper.startOperationCancelToken();
+    _activeStatusActionToken = actionToken;
+    try {
+      final result = await _updateOrderStatusUseCase(
+        UpdateOrderStatusParams(
+          orderId: orderId,
+          statusId: statusId,
+          token: token,
+        ),
+      );
 
-    return result.fold(
-      (failure) {
-        emit(
-          current.copyWith(
-            isUpdatingStatus: false,
-            clearUpdatingOrderId: true,
-            errorMessage: failure.message,
-          ),
-        );
-        return failure.message;
-      },
-      (_) async {
-        try {
-          await loadMyRequestOffers(
-            productId: current.productId,
-            productName: current.productName,
+      return result.fold(
+        (failure) {
+          final cancelled = CancelledFailure.matches(failure);
+          emit(
+            current.copyWith(
+              isUpdatingStatus: false,
+              clearUpdatingOrderId: true,
+              errorMessage: cancelled ? null : failure.message,
+              clearErrorMessage: cancelled,
+            ),
           );
-          unawaited(CatalogSyncService.instance.afterAdMutation());
-        } finally {
-          final after = state;
-          if (after is CompanyAdRequestOffersState) {
-            emit(
-              after.copyWith(
-                isUpdatingStatus: false,
-                clearUpdatingOrderId: true,
-              ),
+          return cancelled ? null : failure.message;
+        },
+        (_) async {
+          try {
+            await loadMyRequestOffers(
+              productId: current.productId,
+              productName: current.productName,
             );
+            unawaited(CatalogSyncService.instance.afterAdMutation());
+          } finally {
+            final after = state;
+            if (after is CompanyAdRequestOffersState) {
+              emit(
+                after.copyWith(
+                  isUpdatingStatus: false,
+                  clearUpdatingOrderId: true,
+                ),
+              );
+            }
           }
-        }
-        return null;
-      },
-    );
+          return null;
+        },
+      );
+    } finally {
+      DioHelper.endOperationCancelToken(actionToken);
+      if (identical(_activeStatusActionToken, actionToken)) {
+        _activeStatusActionToken = null;
+      }
+    }
   }
 
   void restoreListingsState() {

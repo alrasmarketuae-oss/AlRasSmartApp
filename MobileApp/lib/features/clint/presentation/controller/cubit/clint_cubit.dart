@@ -236,6 +236,32 @@ class ClintCubit extends Cubit<ClintStates> {
   int incomingOrdersTotalCount = 0;
   int incomingOrdersTotalPages = 0;
   int? updatingIncomingOrderId;
+  CancelToken? _activeOrderActionToken;
+
+  bool get hasInFlightOrderAction =>
+      _activeOrderActionToken != null && !_activeOrderActionToken!.isCancelled;
+
+  /// Aborts the current purchase / offer / accept HTTP work (uploads + API).
+  void cancelInFlightOrderAction() {
+    DioHelper.cancelOperation();
+    final token = _activeOrderActionToken;
+    if (token != null && !token.isCancelled) {
+      token.cancel('user_cancelled');
+    }
+  }
+
+  CancelToken _beginOrderAction() {
+    final token = DioHelper.startOperationCancelToken();
+    _activeOrderActionToken = token;
+    return token;
+  }
+
+  void _endOrderAction(CancelToken token) {
+    DioHelper.endOperationCancelToken(token);
+    if (identical(_activeOrderActionToken, token)) {
+      _activeOrderActionToken = null;
+    }
+  }
 
   StreamSubscription<void>? _userOrdersRealtimeSub;
   bool _ordersRealtimeStarted = false;
@@ -2071,33 +2097,39 @@ class ClintCubit extends Cubit<ClintStates> {
       return S.current.pleaseLoginToContinue;
     }
 
+    final actionToken = _beginOrderAction();
     updatingIncomingOrderId = orderId;
     emit(IncomingOrderStatusUpdatingState(orderId));
 
-    final result = await _updateOrderStatusUseCase(
-      UpdateOrderStatusParams(
-        orderId: orderId,
-        statusId: statusId,
-        token: token,
-      ),
-    );
+    try {
+      final result = await _updateOrderStatusUseCase(
+        UpdateOrderStatusParams(
+          orderId: orderId,
+          statusId: statusId,
+          token: token,
+        ),
+      );
 
-    return result.fold(
-      (failure) {
-        updatingIncomingOrderId = null;
-        emit(IncomingOrderStatusUpdatedState(orderId));
-        return failure.message;
-      },
-      (_) async {
-        try {
-          await fetchIncomingOrders();
-        } finally {
+      return result.fold(
+        (failure) {
           updatingIncomingOrderId = null;
           emit(IncomingOrderStatusUpdatedState(orderId));
-        }
-        return null;
-      },
-    );
+          if (CancelledFailure.matches(failure)) return null;
+          return failure.message;
+        },
+        (_) async {
+          try {
+            await fetchIncomingOrders();
+          } finally {
+            updatingIncomingOrderId = null;
+            emit(IncomingOrderStatusUpdatedState(orderId));
+          }
+          return null;
+        },
+      );
+    } finally {
+      _endOrderAction(actionToken);
+    }
   }
 
   /// GET /api/Orders/{orderId} — refresh a single order for live tracking.
@@ -2850,6 +2882,11 @@ class ClintCubit extends Cubit<ClintStates> {
       localDocumentPaths: const [],
     );
 
+    if (result.cancelled) {
+      emit(form.copyWith(isSubmitting: false));
+      return;
+    }
+
     if (result.orderId != null) {
       unawaited(fetchMyOffers());
       emit(
@@ -2998,7 +3035,7 @@ class ClintCubit extends Cubit<ClintStates> {
         lower.endsWith('.webm');
   }
 
-  Future<({String? orderId, String? error})>
+  Future<({String? orderId, String? error, bool cancelled})>
   _createOrderWithLocalAssetsInternal({
     required CreateOrderRequest request,
     List<String> localImagePaths = const [],
@@ -3007,84 +3044,126 @@ class ClintCubit extends Cubit<ClintStates> {
   }) async {
     final token = AuthService.instance.currentToken;
     if (token == null || token.isEmpty) {
-      return (orderId: null, error: S.current.pleaseLoginToCreateAnOrder);
+      return (
+        orderId: null,
+        error: S.current.pleaseLoginToCreateAnOrder,
+        cancelled: false,
+      );
     }
 
-    final uploadedImages = <String>[...request.imagePaths];
-    for (final filePath in localImagePaths) {
-      final uploadResult = await _uploadOrderImageUseCase(
-        UploadOrderFileParams(
-          productId: request.productId,
-          filePath: filePath,
+    final actionToken = _beginOrderAction();
+    try {
+      final uploadedImages = <String>[...request.imagePaths];
+      for (final filePath in localImagePaths) {
+        if (actionToken.isCancelled) {
+          return (orderId: null, error: null, cancelled: true);
+        }
+        final uploadResult = await _uploadOrderImageUseCase(
+          UploadOrderFileParams(
+            productId: request.productId,
+            filePath: filePath,
+            token: token,
+          ),
+        );
+        final failure = uploadResult.fold<Failure?>((f) => f, (path) {
+          uploadedImages.add(path);
+          return null;
+        });
+        if (failure != null) {
+          if (CancelledFailure.matches(failure)) {
+            return (orderId: null, error: null, cancelled: true);
+          }
+          return (orderId: null, error: failure.message, cancelled: false);
+        }
+      }
+      final uploadedVideos = <String>[...request.videoPaths];
+      for (final filePath in localVideoPaths) {
+        if (actionToken.isCancelled) {
+          return (orderId: null, error: null, cancelled: true);
+        }
+        final uploadResult = await _uploadOrderVideoUseCase(
+          UploadOrderFileParams(
+            productId: request.productId,
+            filePath: filePath,
+            token: token,
+          ),
+        );
+        final failure = uploadResult.fold<Failure?>((f) => f, (path) {
+          uploadedVideos.add(path);
+          return null;
+        });
+        if (failure != null) {
+          if (CancelledFailure.matches(failure)) {
+            return (orderId: null, error: null, cancelled: true);
+          }
+          return (orderId: null, error: failure.message, cancelled: false);
+        }
+      }
+      final uploadedDocuments = <String>[...request.documentPaths];
+      for (final filePath in localDocumentPaths) {
+        if (actionToken.isCancelled) {
+          return (orderId: null, error: null, cancelled: true);
+        }
+        final uploadResult = await _uploadOrderDocumentUseCase(
+          UploadOrderFileParams(
+            productId: request.productId,
+            filePath: filePath,
+            token: token,
+          ),
+        );
+        final failure = uploadResult.fold<Failure?>((f) => f, (path) {
+          uploadedDocuments.add(path);
+          return null;
+        });
+        if (failure != null) {
+          if (CancelledFailure.matches(failure)) {
+            return (orderId: null, error: null, cancelled: true);
+          }
+          return (orderId: null, error: failure.message, cancelled: false);
+        }
+      }
+
+      if (actionToken.isCancelled) {
+        return (orderId: null, error: null, cancelled: true);
+      }
+
+      print('🔵 [Create Order] Uploaded Images: ${uploadedImages.length}');
+      final createResult = await _createOrderUseCase(
+        CreateOrderParams(
+          request: CreateOrderRequest(
+            toUserId: request.toUserId,
+            productId: request.productId,
+            supplierEmail: request.supplierEmail,
+            unitName: CreateAdFormMapper.mapUnitName(request.unitName),
+            quantity: request.quantity,
+            unitPrice: request.unitPrice,
+            totalPrice: request.totalPrice,
+            paymentMethodName: request.paymentMethodName,
+            notes: request.notes,
+            imagePaths: uploadedImages,
+            videoPaths: uploadedVideos,
+            documentPaths: uploadedDocuments,
+            addressLine: request.addressLine,
+            cityName: request.cityName,
+            shippingCostAed: request.shippingCostAed,
+            portName: request.portName,
+          ),
           token: token,
         ),
       );
-      final failure = uploadResult.fold<String?>((f) => f.message, (path) {
-        uploadedImages.add(path);
-        return null;
-      });
-      if (failure != null) return (orderId: null, error: failure);
-    }
-    final uploadedVideos = <String>[...request.videoPaths];
-    for (final filePath in localVideoPaths) {
-      final uploadResult = await _uploadOrderVideoUseCase(
-        UploadOrderFileParams(
-          productId: request.productId,
-          filePath: filePath,
-          token: token,
-        ),
-      );
-      final failure = uploadResult.fold<String?>((f) => f.message, (path) {
-        uploadedVideos.add(path);
-        return null;
-      });
-      if (failure != null) return (orderId: null, error: failure);
-    }
-    final uploadedDocuments = <String>[...request.documentPaths];
-    for (final filePath in localDocumentPaths) {
-      final uploadResult = await _uploadOrderDocumentUseCase(
-        UploadOrderFileParams(
-          productId: request.productId,
-          filePath: filePath,
-          token: token,
-        ),
-      );
-      final failure = uploadResult.fold<String?>((f) => f.message, (path) {
-        uploadedDocuments.add(path);
-        return null;
-      });
-      if (failure != null) return (orderId: null, error: failure);
-    }
 
-    print('🔵 [Create Order] Uploaded Images: ${uploadedImages.length}');
-    final createResult = await _createOrderUseCase(
-      CreateOrderParams(
-        request: CreateOrderRequest(
-          toUserId: request.toUserId,
-          productId: request.productId,
-          supplierEmail: request.supplierEmail,
-          unitName: CreateAdFormMapper.mapUnitName(request.unitName),
-          quantity: request.quantity,
-          unitPrice: request.unitPrice,
-          totalPrice: request.totalPrice,
-          paymentMethodName: request.paymentMethodName,
-          notes: request.notes,
-          imagePaths: uploadedImages,
-          videoPaths: uploadedVideos,
-          documentPaths: uploadedDocuments,
-          addressLine: request.addressLine,
-          cityName: request.cityName,
-          shippingCostAed: request.shippingCostAed,
-          portName: request.portName,
-        ),
-        token: token,
-      ),
-    );
-
-    return createResult.fold(
-      (failure) => (orderId: null, error: failure.message),
-      (orderId) => (orderId: orderId, error: null),
-    );
+      return createResult.fold(
+        (failure) {
+          if (CancelledFailure.matches(failure)) {
+            return (orderId: null, error: null, cancelled: true);
+          }
+          return (orderId: null, error: failure.message, cancelled: false);
+        },
+        (orderId) => (orderId: orderId, error: null, cancelled: false),
+      );
+    } finally {
+      _endOrderAction(actionToken);
+    }
   }
 
   // =========================================================================
@@ -3478,6 +3557,12 @@ class ClintCubit extends Cubit<ClintStates> {
         paymentMethodName: CartPaymentMethod.cash.apiValue,
       ),
     );
+
+    if (result.cancelled) {
+      final latest = _offerOrderFormState ?? form;
+      emit(latest.copyWith(isSubmitting: false));
+      return;
+    }
 
     if (result.orderId != null) {
       emit(OfferOrderSuccessState(result.orderId!));
@@ -4413,39 +4498,53 @@ class ClintCubit extends Cubit<ClintStates> {
       ),
     );
 
-    final result = await _confirmCartOrderUseCase(
-      ConfirmCartOrderParams(
-        token: token,
-        paymentMethod: CartPaymentMethod.cash,
-        shippingCostAed:
-            current.isSelfPickup ? 0 : current.cart.deliveryFeeAed,
-        isSelfPickup: current.isSelfPickup,
-        addressId: current.isSelfPickup ? null : current.selectedAddressId,
-        cityName:
-            current.isSelfPickup ? null : current.selectedEmirateName,
-      ),
-    );
+    final actionToken = _beginOrderAction();
+    try {
+      final result = await _confirmCartOrderUseCase(
+        ConfirmCartOrderParams(
+          token: token,
+          paymentMethod: CartPaymentMethod.cash,
+          shippingCostAed:
+              current.isSelfPickup ? 0 : current.cart.deliveryFeeAed,
+          isSelfPickup: current.isSelfPickup,
+          addressId: current.isSelfPickup ? null : current.selectedAddressId,
+          cityName:
+              current.isSelfPickup ? null : current.selectedEmirateName,
+        ),
+      );
 
-    result.fold(
-      (failure) => emit(
-        current.copyWith(isConfirming: false, errorMessage: failure.message),
-      ),
-      (orderResult) async {
-        emit(
-          current.copyWith(
-            isConfirming: false,
-            cart: const CartEntity(items: []),
-            clearPaymentInfo: true,
-          ),
-        );
-        await loadCart();
-        final orderId = orderResult.firstCreatedOrderId;
-        if (orderId != null) {
-          await fetchMyOrders();
-          await _emitNavigateToTrackOrder(orderId);
-        }
-      },
-    );
+      await result.fold<Future<void>>(
+        (failure) async {
+          if (CancelledFailure.matches(failure)) {
+            emit(current.copyWith(isConfirming: false));
+            return;
+          }
+          emit(
+            current.copyWith(
+              isConfirming: false,
+              errorMessage: failure.message,
+            ),
+          );
+        },
+        (orderResult) async {
+          emit(
+            current.copyWith(
+              isConfirming: false,
+              cart: const CartEntity(items: []),
+              clearPaymentInfo: true,
+            ),
+          );
+          await loadCart();
+          final orderId = orderResult.firstCreatedOrderId;
+          if (orderId != null) {
+            await fetchMyOrders();
+            await _emitNavigateToTrackOrder(orderId);
+          }
+        },
+      );
+    } finally {
+      _endOrderAction(actionToken);
+    }
   }
 
   Future<void> _initiateOnlinePayment(
@@ -4462,83 +4561,100 @@ class ClintCubit extends Cubit<ClintStates> {
     );
 
     // Step 1: reserve checkout (PendingOrder) — NOT the final split order.
-    final result = await _confirmCartOrderUseCase(
-      ConfirmCartOrderParams(
-        token: token,
-        paymentMethod: CartPaymentMethod.online,
-        shippingCostAed:
-            current.isSelfPickup ? 0 : current.cart.deliveryFeeAed,
-        isSelfPickup: current.isSelfPickup,
-        addressId: current.isSelfPickup ? null : current.selectedAddressId,
-        cityName:
-            current.isSelfPickup ? null : current.selectedEmirateName,
-      ),
-    );
+    final actionToken = _beginOrderAction();
+    try {
+      final result = await _confirmCartOrderUseCase(
+        ConfirmCartOrderParams(
+          token: token,
+          paymentMethod: CartPaymentMethod.online,
+          shippingCostAed:
+              current.isSelfPickup ? 0 : current.cart.deliveryFeeAed,
+          isSelfPickup: current.isSelfPickup,
+          addressId: current.isSelfPickup ? null : current.selectedAddressId,
+          cityName:
+              current.isSelfPickup ? null : current.selectedEmirateName,
+        ),
+      );
 
-    await result.fold(
-      (failure) async {
-        emit(
-          current.copyWith(isConfirming: false, errorMessage: failure.message),
-        );
-      },
-      (orderResult) async {
-        if (orderResult.orderGroupId != null &&
-            orderResult.orderGroupId!.isNotEmpty) {
+      await result.fold(
+        (failure) async {
+          if (CancelledFailure.matches(failure)) {
+            emit(current.copyWith(isConfirming: false));
+            return;
+          }
           emit(
-            current.copyWith(
-              isConfirming: false,
-              errorMessage:
-                  'Order was created before payment. Please contact support.',
-            ),
+            current.copyWith(isConfirming: false, errorMessage: failure.message),
           );
-          return;
-        }
-
-        if (!orderResult.isOnlinePending) {
-          emit(
-            current.copyWith(
-              isConfirming: false,
-              errorMessage:
-                  'Could not start online payment. No order was created.',
-            ),
-          );
-          return;
-        }
-
-        // Step 2: Stripe checkout session for the pending order.
-        final checkoutResult = await _createStripeCheckoutUseCase(
-          CreateStripeCheckoutParams(
-            token: token,
-            pendingOrderId: orderResult.pendingOrderId!,
-          ),
-        );
-
-        await checkoutResult.fold(
-          (failure) async {
+        },
+        (orderResult) async {
+          if (actionToken.isCancelled) {
+            emit(current.copyWith(isConfirming: false));
+            return;
+          }
+          if (orderResult.orderGroupId != null &&
+              orderResult.orderGroupId!.isNotEmpty) {
             emit(
               current.copyWith(
                 isConfirming: false,
-                errorMessage: failure.message,
+                errorMessage:
+                    'Order was created before payment. Please contact support.',
               ),
             );
-          },
-          (checkout) async {
+            return;
+          }
+
+          if (!orderResult.isOnlinePending) {
             emit(
               current.copyWith(
                 isConfirming: false,
-                isCheckingPayment: true,
-                paymentSessionId: checkout.sessionId,
-                paymentCheckoutUrl: checkout.checkoutUrl,
-                infoMessage:
-                    'Complete payment in Stripe. Split orders are created only after Stripe confirms payment.',
+                errorMessage:
+                    'Could not start online payment. No order was created.',
               ),
             );
-            _startPaymentPolling();
-            await _openInAppStripeCheckout(checkout.checkoutUrl);
-          },
-        );
-      },
-    );
+            return;
+          }
+
+          // Step 2: Stripe checkout session for the pending order.
+          final checkoutResult = await _createStripeCheckoutUseCase(
+            CreateStripeCheckoutParams(
+              token: token,
+              pendingOrderId: orderResult.pendingOrderId!,
+            ),
+          );
+
+          await checkoutResult.fold(
+            (failure) async {
+              if (CancelledFailure.matches(failure)) {
+                emit(current.copyWith(isConfirming: false));
+                return;
+              }
+              emit(
+                current.copyWith(
+                  isConfirming: false,
+                  errorMessage: failure.message,
+                ),
+              );
+            },
+            (checkout) async {
+              emit(
+                current.copyWith(
+                  isConfirming: false,
+                  isCheckingPayment: true,
+                  paymentSessionId: checkout.sessionId,
+                  paymentCheckoutUrl: checkout.checkoutUrl,
+                  infoMessage:
+                      'Complete payment in Stripe. Split orders are created only after Stripe confirms payment.',
+                ),
+              );
+              _startPaymentPolling();
+              await _openInAppStripeCheckout(checkout.checkoutUrl);
+            },
+          );
+        },
+      );
+    } finally {
+      _endOrderAction(actionToken);
+    }
   }
 
   Future<void> _openInAppStripeCheckout(String checkoutUrl) async {
@@ -4793,6 +4909,10 @@ class ClintCubit extends Cubit<ClintStates> {
       localVideoPaths: localVideoPaths,
     );
 
+    if (result.cancelled) {
+      return null;
+    }
+
     if (result.orderId != null) {
       emit(CreateOrderSuccessState(result.orderId!));
       return result.orderId;
@@ -4865,6 +4985,12 @@ class ClintCubit extends Cubit<ClintStates> {
         portName: requiresPort && portName.isNotEmpty ? portName : null,
       ),
     );
+
+    if (result.cancelled) {
+      final latest = _bookingOrderFormState ?? form;
+      emit(latest.copyWith(isSubmitting: false));
+      return;
+    }
 
     if (result.orderId != null) {
       emit(BookingOrderSuccessState(result.orderId!));
