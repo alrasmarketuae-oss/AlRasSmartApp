@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:alrasmarket/core/services/order_action_cancel_gate.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -66,6 +69,44 @@ void main() {
         ),
       ),
     );
+  });
+
+  test('mid-flight HTTP cancel aborts before server responds', () async {
+    final started = Completer<void>();
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(() async => server.close(force: true));
+
+    server.listen((request) async {
+      started.complete();
+      await Future<void>.delayed(const Duration(seconds: 5));
+      await request.response.close();
+    });
+
+    final token = gate.arm();
+    final dio = Dio(
+      BaseOptions(
+        baseUrl: 'http://${server.address.host}:${server.port}',
+        connectTimeout: const Duration(seconds: 2),
+        receiveTimeout: const Duration(seconds: 10),
+      ),
+    );
+
+    final pending = dio.get<void>('/slow', cancelToken: token);
+    await started.future.timeout(const Duration(seconds: 3));
+    gate.cancel();
+
+    await expectLater(
+      pending,
+      throwsA(
+        isA<DioException>().having(
+          (e) => e.type,
+          'type',
+          DioExceptionType.cancel,
+        ),
+      ),
+    );
+    expect(gate.cancelledByUser, isTrue);
+    expect(token.isCancelled, isTrue);
   });
 
   test('simulated create flow does not treat success after cancel', () async {
