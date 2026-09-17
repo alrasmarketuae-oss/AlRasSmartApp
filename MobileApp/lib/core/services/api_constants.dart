@@ -211,6 +211,10 @@ class ApiConstants {
       '/Orders/getMyOffersOnMyRequests';
   static String orderByIdEndPoint(int orderId) => '/Orders/$orderId';
   static String orderStatusEndPoint(int orderId) => '/Orders/$orderId/status';
+  static String orderClientAbortEndPoint(int orderId) =>
+      '/Orders/$orderId/client-abort';
+  static String pendingOrderClientAbortEndPoint(String pendingOrderId) =>
+      '/Orders/pending/$pendingOrderId/client-abort';
   static String orderReturnEndPoint(int orderId) => '/Orders/$orderId/return';
   static String offerStagingImageUploadEndPoint =
       '/Orders/offer-staging/images/upload';

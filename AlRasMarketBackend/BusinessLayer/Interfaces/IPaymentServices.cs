@@ -8,6 +8,23 @@ public interface IOrdersAppService
     Task<object> PlaceOrderFromCartAsync(PlaceOrderInput input, CancellationToken cancellationToken = default);
     Task<object> PlaceBookingOrderAsync(CreateDirectOrderInput input, CancellationToken cancellationToken = default);
     Task<object> UpdateOrderStatusAsync(UpdateOrderStatusInput input, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Buyer-triggered undo when Flutter cancelled after the create HTTP response already committed.
+    /// </summary>
+    Task AbortClientCreatedOrderAsync(
+        string userId,
+        long orderId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Buyer-triggered undo for an online pending checkout row created then cancelled locally.
+    /// </summary>
+    Task AbortClientCreatedPendingOrderAsync(
+        string userId,
+        Guid pendingOrderId,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<OrderCancellationReasonDto>> GetCancellationReasonsAsync(
         CancellationToken cancellationToken = default);
     Task<Guid> CreateOrdersFromPendingOrderAsync(Guid pendingOrderId, CancellationToken cancellationToken = default);

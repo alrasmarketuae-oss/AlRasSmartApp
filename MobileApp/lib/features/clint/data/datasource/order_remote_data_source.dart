@@ -131,9 +131,6 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
         data: request.toJson(),
         token: token,
       );
-      if (DioHelper.isOperationCancelled) {
-        return const Left(CancelledFailure());
-      }
       print('🔵 [Create Order] Response: $response');
       final status = response?.statusCode ?? 0;
       print('🔵 [Create Order] Status: $status');
@@ -141,6 +138,9 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
         return const Left(CancelledFailure());
       }
       if (status < 200 || status >= 300) {
+        if (DioHelper.isOperationCancelled) {
+          return const Left(CancelledFailure());
+        }
         print('🔵 [Create Order] Failed to create order ($status)');
         return Left(
           ServerFailure(
@@ -155,19 +155,35 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
       final orderId = data is Map<String, dynamic>
           ? _extractCreatedOrderId(data)
           : null;
+      final pendingOrderId = data is Map<String, dynamic>
+          ? _extractCreatedPendingOrderId(data)
+          : null;
 
-      // User may cancel after the socket already delivered 200 — still treat as cancelled.
+      // Late Cancel after 200: undo durable create so UI cancel matches DB.
       if (DioHelper.isOperationCancelled) {
+        await _abortClientCreatedCheckout(
+          orderId: orderId,
+          pendingOrderId: pendingOrderId,
+          token: token,
+        );
         return const Left(CancelledFailure());
       }
 
       // Order is already persisted — never fail the buyer because cache refresh broke.
       await _invalidateOrderCachesAfterMutation();
       if (DioHelper.isOperationCancelled) {
+        await _abortClientCreatedCheckout(
+          orderId: orderId,
+          pendingOrderId: pendingOrderId,
+          token: token,
+        );
         return const Left(CancelledFailure());
       }
       if (orderId != null && orderId.isNotEmpty) {
         return Right(orderId);
+      }
+      if (pendingOrderId != null && pendingOrderId.isNotEmpty) {
+        return Right(pendingOrderId);
       }
 
       // 2xx without a parseable id — still treat as success so UI does not false-fail.
@@ -474,15 +490,14 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
         token: token,
       );
 
-      if (DioHelper.isOperationCancelled) {
-        return const Left(CancelledFailure());
-      }
-
       final status = response?.statusCode ?? 0;
       if (status == 499) {
         return const Left(CancelledFailure());
       }
       if (status < 200 || status >= 300) {
+        if (DioHelper.isOperationCancelled) {
+          return const Left(CancelledFailure());
+        }
         return Left(
           ServerFailure(
             _extractMessage(response?.data) ??
@@ -492,6 +507,7 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
         );
       }
 
+      // 2xx means the server already applied (or compensated) the status change.
       await ApiCacheStore.instance.invalidateUserOrders();
       unawaited(CatalogSyncService.instance.afterAdMutation());
 
@@ -653,6 +669,43 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
         nestedMap?['id']?.toString() ??
         nestedMap?['orderId']?.toString() ??
         nestedMap?['Id']?.toString();
+  }
+
+  String? _extractCreatedPendingOrderId(Map<String, dynamic> data) {
+    return data['pendingOrderId']?.toString() ??
+        data['PendingOrderId']?.toString();
+  }
+
+  Future<void> _abortClientCreatedCheckout({
+    required String? orderId,
+    required String? pendingOrderId,
+    required String token,
+  }) async {
+    // Must not reuse the cancelled operation token or cleanup never reaches the API.
+    final abortToken = CancelToken();
+    try {
+      final parsedOrderId = int.tryParse(orderId ?? '');
+      if (parsedOrderId != null && parsedOrderId > 0) {
+        await DioHelper.postData(
+          url: ApiConstants.orderClientAbortEndPoint(parsedOrderId),
+          token: token,
+          cancelToken: abortToken,
+        );
+        await ApiCacheStore.instance.invalidateUserOrders();
+        return;
+      }
+
+      final pending = pendingOrderId?.trim();
+      if (pending != null && pending.isNotEmpty) {
+        await DioHelper.postData(
+          url: ApiConstants.pendingOrderClientAbortEndPoint(pending),
+          token: token,
+          cancelToken: abortToken,
+        );
+      }
+    } catch (e) {
+      print('🔵 [Create Order] Client abort cleanup failed: $e');
+    }
   }
 
   Future<void> _invalidateOrderCachesAfterMutation() async {

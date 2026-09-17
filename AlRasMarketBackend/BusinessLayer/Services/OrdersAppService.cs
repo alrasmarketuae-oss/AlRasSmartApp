@@ -300,12 +300,10 @@ public partial class OrdersAppService(
             await orderData.SaveChangesAsync(ct);
         }, cancellationToken);
 
-        // Side effects only after a successful commit. If the client aborted earlier,
-        // the transaction rolled back and we never reach here.
-        if (cancellationToken.IsCancellationRequested)
-        {
-            throw new OperationCanceledException(cancellationToken);
-        }
+        // If the client aborted after Commit, undo the durable row then surface 499.
+        await EnsureNotAbortedAfterCommitAsync(
+            cancellationToken,
+            () => orderData.DeleteOrdersForClientAbortAsync([order.Id], CancellationToken.None));
 
         await TryTranslateOrderNotesAsync(order.Id, notes, cancellationToken);
         logger.LogInformation(
@@ -367,10 +365,113 @@ public partial class OrdersAppService(
         {
             await contentTranslationService.UpsertOrderOfferNotesAsync(orderId, notes, cancellationToken);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Order notes translation failed for order {OrderId}", orderId);
         }
+    }
+
+    /// <summary>
+    /// After a successful Commit, RequestAborted may still flip (Dio cancel race).
+    /// Undo durable writes so the client Cancel matches "no order / no status change".
+    /// </summary>
+    private async Task EnsureNotAbortedAfterCommitAsync(
+        CancellationToken cancellationToken,
+        Func<Task> compensateAsync)
+    {
+        if (!cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+
+        try
+        {
+            await compensateAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to compensate committed order work after client abort.");
+        }
+
+        throw new OperationCanceledException(cancellationToken);
+    }
+
+    public async Task AbortClientCreatedOrderAsync(
+        string userId,
+        long orderId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(userId, out var fromUserId))
+        {
+            throw new ArgumentException("Invalid authenticated user.");
+        }
+
+        var order = await orderData.GetOrderByIdTrackedAsync(orderId, cancellationToken)
+            ?? throw new KeyNotFoundException("Order not found.");
+
+        if (order.FromUserId != fromUserId)
+        {
+            throw new UnauthorizedAccessException("Only the buyer can abort this order.");
+        }
+
+        var age = UtcDateTimeHelper.UtcNow - order.CreatedAt.ToUniversalTime();
+        if (age > TimeSpan.FromMinutes(5))
+        {
+            throw new InvalidOperationException("This order can no longer be aborted by client cancel.");
+        }
+
+        // Only fresh placement statuses — not seller/admin workflow progress.
+        if (order.StatusId is not (
+                OrderStatusCodes.Ordered
+                or OrderStatusCodes.AwaitingSellerApproval))
+        {
+            // Graceful no-op when workflow already moved on.
+            return;
+        }
+
+        await orderData.DeleteOrdersForClientAbortAsync([orderId], cancellationToken);
+        ProductsAppService.InvalidateListingCaches();
+        logger.LogInformation("Client-abort deleted order {OrderId} for buyer {UserId}", orderId, fromUserId);
+    }
+
+    public async Task AbortClientCreatedPendingOrderAsync(
+        string userId,
+        Guid pendingOrderId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(userId, out var fromUserId))
+        {
+            throw new ArgumentException("Invalid authenticated user.");
+        }
+
+        var pending = await orderData.GetPendingOrderWithItemsAsync(pendingOrderId, cancellationToken)
+            ?? throw new KeyNotFoundException("Pending order not found.");
+
+        if (pending.FromUserId != fromUserId)
+        {
+            throw new UnauthorizedAccessException("Only the buyer can abort this pending order.");
+        }
+
+        if (pending.IsPaymentCompleted || pending.FinalOrderGroupId.HasValue)
+        {
+            throw new InvalidOperationException("Paid pending orders cannot be aborted by client cancel.");
+        }
+
+        var age = UtcDateTimeHelper.UtcNow - pending.CreatedAt.ToUniversalTime();
+        if (age > TimeSpan.FromMinutes(5))
+        {
+            throw new InvalidOperationException("This pending order can no longer be aborted by client cancel.");
+        }
+
+        await orderData.DeletePendingOrderForClientAbortAsync(pendingOrderId, cancellationToken);
+        logger.LogInformation(
+            "Client-abort deleted pending order {PendingOrderId} for buyer {UserId}",
+            pendingOrderId,
+            fromUserId);
     }
 
 }

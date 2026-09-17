@@ -26,8 +26,11 @@ public sealed class OrderDataAccess(IRasAlSouqDbContext dbContext) : IOrderDataA
         try
         {
             await action(cancellationToken).ConfigureAwait(false);
+            // Decide abort BEFORE starting SQL COMMIT. Once we pass this gate, finish commit
+            // with CancellationToken.None so we never leave an ambiguous half-committed state;
+            // callers compensate if RequestAborted flips after this point.
             cancellationToken.ThrowIfCancellationRequested();
-            await tx.CommitAsync(cancellationToken).ConfigureAwait(false);
+            await tx.CommitAsync(CancellationToken.None).ConfigureAwait(false);
         }
         catch
         {
@@ -42,6 +45,71 @@ public sealed class OrderDataAccess(IRasAlSouqDbContext dbContext) : IOrderDataA
 
             throw;
         }
+    }
+
+    public async Task DeleteOrdersForClientAbortAsync(
+        IReadOnlyList<long> orderIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (orderIds.Count == 0)
+        {
+            return;
+        }
+
+        if (dbContext is not DbContext ef)
+        {
+            throw new InvalidOperationException("Order data access requires an EF Core DbContext.");
+        }
+
+        // Same dependent cleanup order as product hard-delete (FK Restrict / NoAction).
+        await RemoveRangeAsync(dbContext.OrderStatusHistories.Where(x => orderIds.Contains(x.OrderId)), cancellationToken);
+        await RemoveRangeAsync(dbContext.OrderAdminOfferPrices.Where(x => orderIds.Contains(x.OrderId)), cancellationToken);
+        await RemoveRangeAsync(dbContext.InternationalShipments.Where(x => orderIds.Contains(x.OrderId)), cancellationToken);
+        await RemoveRangeAsync(dbContext.PendingPayments.Where(x => orderIds.Contains(x.OrderId)), cancellationToken);
+        await RemoveRangeAsync(dbContext.OrderVideos.Where(x => orderIds.Contains(x.OrderId)), cancellationToken);
+        await RemoveRangeAsync(dbContext.OrderImages.Where(x => orderIds.Contains(x.OrderId)), cancellationToken);
+        await RemoveRangeAsync(
+            dbContext.ContentTranslations.Where(x => x.OrderId != null && orderIds.Contains(x.OrderId.Value)),
+            cancellationToken);
+        await RemoveRangeAsync(dbContext.Orders.Where(x => orderIds.Contains(x.Id)), cancellationToken);
+        await ef.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task DeletePendingOrderForClientAbortAsync(
+        Guid pendingOrderId,
+        CancellationToken cancellationToken = default)
+    {
+        if (dbContext is not DbContext ef)
+        {
+            throw new InvalidOperationException("Order data access requires an EF Core DbContext.");
+        }
+
+        await RemoveRangeAsync(
+            dbContext.PendingOrderItems.Where(x => x.PendingOrderId == pendingOrderId),
+            cancellationToken);
+        await RemoveRangeAsync(
+            dbContext.PendingOrders.Where(x => x.Id == pendingOrderId),
+            cancellationToken);
+        await ef.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task RemoveRangeAsync<TEntity>(
+        IQueryable<TEntity> query,
+        CancellationToken cancellationToken)
+        where TEntity : class
+    {
+        var items = await query.ToListAsync(cancellationToken).ConfigureAwait(false);
+        if (items.Count == 0)
+        {
+            return;
+        }
+
+        if (dbContext is not DbContext efContext)
+        {
+            throw new InvalidOperationException("Database context must support entity removal.");
+        }
+
+        efContext.Set<TEntity>().RemoveRange(items);
     }
 
     public async Task AddOrderAsync(Order order, CancellationToken cancellationToken = default)

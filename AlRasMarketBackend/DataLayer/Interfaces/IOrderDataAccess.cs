@@ -21,6 +21,20 @@ public interface IOrderDataAccess
     void RemoveOrderImage(OrderImage orderImage);
     void RemoveCartItems(IEnumerable<CartItem> cartItems);
 
+    /// <summary>
+    /// Hard-deletes orders (and dependent rows) after a client abort that raced past Commit.
+    /// </summary>
+    Task DeleteOrdersForClientAbortAsync(
+        IReadOnlyList<long> orderIds,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Hard-deletes a pending checkout row after a client abort that raced past Commit.
+    /// </summary>
+    Task DeletePendingOrderForClientAbortAsync(
+        Guid pendingOrderId,
+        CancellationToken cancellationToken = default);
+
     Task<User?> GetUserByIdAsync(Guid userId, bool tracked = true, CancellationToken cancellationToken = default);
     Task<User?> GetUserByIdAsNoTrackingAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<Product?> GetProductForOrderAsync(Guid productId, CancellationToken cancellationToken = default);

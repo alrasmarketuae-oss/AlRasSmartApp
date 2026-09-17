@@ -78,6 +78,82 @@ public class OrdersController(
     }
 
     /// <summary>
+    /// Buyer undo when the mobile app cancelled after create already committed (late Cancel race).
+    /// </summary>
+    [HttpPost("{orderId:long}/client-abort")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> AbortClientCreatedOrder(long orderId, CancellationToken cancellationToken)
+    {
+        var userId = GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            await ordersAppService.AbortClientCreatedOrderAsync(userId, orderId, cancellationToken);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Buyer undo for an online pending checkout created then cancelled locally.
+    /// </summary>
+    [HttpPost("pending/{pendingOrderId:guid}/client-abort")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> AbortClientCreatedPendingOrder(
+        Guid pendingOrderId,
+        CancellationToken cancellationToken)
+    {
+        var userId = GetUserId();
+        if (userId is null)
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            await ordersAppService.AbortClientCreatedPendingOrderAsync(userId, pendingOrderId, cancellationToken);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Creates a direct order for any product type — same body as POST /api/Orders with productId.
     /// </summary>
     [HttpPost("booking")]

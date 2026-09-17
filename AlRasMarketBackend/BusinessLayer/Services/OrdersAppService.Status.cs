@@ -121,6 +121,20 @@ public partial class OrdersAppService
             await orderData.ExecuteInTransactionAsync(
                 ct => orderData.SaveChangesAsync(ct),
                 cancellationToken);
+
+            // Admin pre-approval already committed — do not 499 without undoing.
+            // Revert moderation flags if the client aborted after Commit.
+            await EnsureNotAbortedAfterCommitAsync(
+                cancellationToken,
+                async () =>
+                {
+                    order.IsAdminApproved = false;
+                    order.StatusId = previousStatus;
+                    order.CustomStatusNameEn = null;
+                    order.CustomStatusNameAr = null;
+                    await orderData.SaveChangesAsync(CancellationToken.None);
+                });
+
             ProductsAppService.InvalidateListingCaches();
 
             try
@@ -129,7 +143,7 @@ public partial class OrdersAppService
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
-                throw;
+                // Already compensated above if abort was before notify.
             }
             catch
             {
@@ -156,6 +170,9 @@ public partial class OrdersAppService
             AdminOrderPricingHelper.ApplyChargedCheckoutAmounts(moderationDto, order);
             return moderationDto;
         }
+
+        // Capture pre-mutation state so a post-Commit client abort can fully reverse.
+        var statusRevert = CaptureStatusRevertSnapshot(order);
 
         order.StatusId = input.StatusId;
 
@@ -218,10 +235,9 @@ public partial class OrdersAppService
             ct => orderData.SaveChangesAsync(ct),
             cancellationToken);
 
-        if (cancellationToken.IsCancellationRequested)
-        {
-            throw new OperationCanceledException(cancellationToken);
-        }
+        await EnsureNotAbortedAfterCommitAsync(
+            cancellationToken,
+            () => RestoreStatusAfterClientAbortAsync(order, statusRevert));
 
         // Push updated live counts to the admin dashboard so an admin standing on
         // this order's detail page (or a list) sees the status change in real time,
@@ -232,7 +248,7 @@ public partial class OrdersAppService
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            throw;
+            // Status already committed and not aborted above — do not convert to 499.
         }
         catch
         {
@@ -394,6 +410,75 @@ public partial class OrdersAppService
             logger.LogWarning(ex, "Auto-refund failed for cancelled order {OrderId}. Manual refund may be required.", orderId);
             return successEn;
         }
+    }
+
+    private sealed record OrderStatusRevertSnapshot(
+        byte StatusId,
+        bool IsApproved,
+        bool IsAdminApproved,
+        string? CustomStatusNameEn,
+        string? CustomStatusNameAr,
+        bool StockQuantityDeducted,
+        byte? CancellationReasonId,
+        DateTime? CancelledAt,
+        Guid? CancelledByUserId,
+        string? CancellationNote,
+        long? ProductQuantity,
+        long? ProductRetailQuantity,
+        byte? ProductStatus);
+
+    private static OrderStatusRevertSnapshot CaptureStatusRevertSnapshot(Order order) =>
+        new(
+            order.StatusId,
+            order.IsApproved,
+            order.IsAdminApproved,
+            order.CustomStatusNameEn,
+            order.CustomStatusNameAr,
+            order.StockQuantityDeducted,
+            order.CancellationReasonId,
+            order.CancelledAt,
+            order.CancelledByUserId,
+            order.CancellationNote,
+            order.Product?.Quantity,
+            order.Product?.RetailQuantity,
+            order.Product?.Status);
+
+    private async Task RestoreStatusAfterClientAbortAsync(Order order, OrderStatusRevertSnapshot snapshot)
+    {
+        order.StatusId = snapshot.StatusId;
+        order.IsApproved = snapshot.IsApproved;
+        order.IsAdminApproved = snapshot.IsAdminApproved;
+        order.CustomStatusNameEn = snapshot.CustomStatusNameEn;
+        order.CustomStatusNameAr = snapshot.CustomStatusNameAr;
+        order.StockQuantityDeducted = snapshot.StockQuantityDeducted;
+        order.CancellationReasonId = snapshot.CancellationReasonId;
+        order.CancelledAt = snapshot.CancelledAt;
+        order.CancelledByUserId = snapshot.CancelledByUserId;
+        order.CancellationNote = snapshot.CancellationNote;
+
+        if (order.Product is not null)
+        {
+            if (snapshot.ProductQuantity.HasValue)
+            {
+                order.Product.Quantity = snapshot.ProductQuantity.Value;
+            }
+
+            if (snapshot.ProductRetailQuantity.HasValue)
+            {
+                order.Product.RetailQuantity = snapshot.ProductRetailQuantity.Value;
+            }
+            else
+            {
+                order.Product.RetailQuantity = null;
+            }
+
+            if (snapshot.ProductStatus.HasValue)
+            {
+                order.Product.Status = snapshot.ProductStatus.Value;
+            }
+        }
+
+        await orderData.SaveChangesAsync(CancellationToken.None);
     }
 
 }

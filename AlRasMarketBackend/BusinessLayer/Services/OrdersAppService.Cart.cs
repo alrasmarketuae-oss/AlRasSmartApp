@@ -179,6 +179,10 @@ public partial class OrdersAppService
                 await orderData.SaveChangesAsync(ct);
             }, cancellationToken);
 
+            await EnsureNotAbortedAfterCommitAsync(
+                cancellationToken,
+                () => orderData.DeletePendingOrderForClientAbortAsync(pendingOrder.Id, CancellationToken.None));
+
             return new
             {
                 pendingOrderId = pendingOrder.Id,
@@ -204,6 +208,7 @@ public partial class OrdersAppService
 
         var orderGroupId = Guid.NewGuid();
         List<Order> createdOrders = [];
+        var cartNotes = NormalizeNotes(input.Notes);
         cancellationToken.ThrowIfCancellationRequested();
         await orderData.ExecuteInTransactionAsync(async ct =>
         {
@@ -214,15 +219,24 @@ public partial class OrdersAppService
                 null,
                 (byte)paymentMethod,
                 itemSnapshots,
-                NormalizeNotes(input.Notes),
+                cartNotes,
                 fulfillment,
                 ct);
             await ClearCartAsync(userId, cart, ct);
         }, cancellationToken);
 
-        if (cancellationToken.IsCancellationRequested)
+        await EnsureNotAbortedAfterCommitAsync(
+            cancellationToken,
+            () => orderData.DeleteOrdersForClientAbortAsync(
+                createdOrders.Select(x => x.Id).ToList(),
+                CancellationToken.None));
+
+        if (!string.IsNullOrWhiteSpace(cartNotes))
         {
-            throw new OperationCanceledException(cancellationToken);
+            foreach (var order in createdOrders)
+            {
+                await TryTranslateOrderNotesAsync(order.Id, cartNotes, cancellationToken);
+            }
         }
 
         await NotifyOrderPartiesAsync(createdOrders, cancellationToken);
@@ -307,9 +321,24 @@ public partial class OrdersAppService
             }
         }, cancellationToken);
 
-        if (cancellationToken.IsCancellationRequested)
+        await EnsureNotAbortedAfterCommitAsync(
+            cancellationToken,
+            async () =>
+            {
+                await orderData.DeleteOrdersForClientAbortAsync(
+                    createdOrders.Select(x => x.Id).ToList(),
+                    CancellationToken.None);
+                // Leave PendingOrder unpaid/unfinalized so webhook can retry later if needed.
+                pendingOrder.FinalOrderGroupId = null;
+                await orderData.SaveChangesAsync(CancellationToken.None);
+            });
+
+        if (!string.IsNullOrWhiteSpace(pendingOrder.Notes))
         {
-            throw new OperationCanceledException(cancellationToken);
+            foreach (var order in createdOrders)
+            {
+                await TryTranslateOrderNotesAsync(order.Id, pendingOrder.Notes, cancellationToken);
+            }
         }
 
         await NotifyOrderPartiesAsync(createdOrders, cancellationToken);
@@ -397,13 +426,8 @@ public partial class OrdersAppService
 
         await orderData.SaveChangesAsync(cancellationToken);
 
-        if (!string.IsNullOrWhiteSpace(notes))
-        {
-            foreach (var order in created)
-            {
-                await TryTranslateOrderNotesAsync(order.Id, notes, cancellationToken);
-            }
-        }
+        // Notes translation runs AFTER the outer Commit so Cancel can still roll back
+        // (and so OpenAI latency does not hold the SQL transaction open).
 
         return created;
     }
