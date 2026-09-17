@@ -89,6 +89,13 @@ class DioHelper {
   static bool get isOperationCancelled =>
       _operationCancelToken?.isCancelled == true;
 
+  static bool isCancelError(Object error) {
+    if (error is DioException) {
+      return error.type == DioExceptionType.cancel || CancelToken.isCancel(error);
+    }
+    return CancelToken.isCancel(error);
+  }
+
   static Future<Response?>? getData({
     required String url,
     Map<String, dynamic>? query,
@@ -225,7 +232,7 @@ class DioHelper {
       );
       return x;
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.cancel) {
+      if (DioHelper.isCancelError(e)) {
         rethrow;
       }
       final response = e.response;
@@ -236,6 +243,9 @@ class DioHelper {
       debugPrint('Error uploading file: $e');
       return null;
     } catch (e) {
+      if (DioHelper.isCancelError(e)) {
+        rethrow;
+      }
       debugPrint('Error uploading file: $e');
       return null;
     }

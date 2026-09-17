@@ -172,8 +172,12 @@ public partial class OrdersAppService
                 });
             }
 
-            await orderData.AddPendingOrderAsync(pendingOrder, cancellationToken);
-            await orderData.SaveChangesAsync(cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            await orderData.ExecuteInTransactionAsync(async ct =>
+            {
+                await orderData.AddPendingOrderAsync(pendingOrder, ct);
+                await orderData.SaveChangesAsync(ct);
+            }, cancellationToken);
 
             return new
             {
@@ -200,6 +204,7 @@ public partial class OrdersAppService
 
         var orderGroupId = Guid.NewGuid();
         List<Order> createdOrders = [];
+        cancellationToken.ThrowIfCancellationRequested();
         await orderData.ExecuteInTransactionAsync(async ct =>
         {
             createdOrders = await CreateOrderRowsAsync(
@@ -214,6 +219,11 @@ public partial class OrdersAppService
                 ct);
             await ClearCartAsync(userId, cart, ct);
         }, cancellationToken);
+
+        if (cancellationToken.IsCancellationRequested)
+        {
+            throw new OperationCanceledException(cancellationToken);
+        }
 
         await NotifyOrderPartiesAsync(createdOrders, cancellationToken);
 
@@ -273,6 +283,7 @@ public partial class OrdersAppService
 
         var orderGroupId = Guid.NewGuid();
         List<Order> createdOrders = [];
+        cancellationToken.ThrowIfCancellationRequested();
         await orderData.ExecuteInTransactionAsync(async ct =>
         {
             createdOrders = await CreateOrderRowsAsync(
@@ -295,6 +306,11 @@ public partial class OrdersAppService
                 await ClearCartAsync(pendingOrder.FromUserId, cart, ct);
             }
         }, cancellationToken);
+
+        if (cancellationToken.IsCancellationRequested)
+        {
+            throw new OperationCanceledException(cancellationToken);
+        }
 
         await NotifyOrderPartiesAsync(createdOrders, cancellationToken);
 
@@ -325,6 +341,7 @@ public partial class OrdersAppService
 
         foreach (var (line, index) in lines.Select((line, index) => (line, index)))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             OrderOwnershipRules.EnsureBuyerIsNotOwner(fromUserId, line.ToUserId);
 
             products.TryGetValue(line.ProductId, out var product);

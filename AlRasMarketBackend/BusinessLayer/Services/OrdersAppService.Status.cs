@@ -117,12 +117,19 @@ public partial class OrdersAppService
                 RequestOfferStatusLabels.ApplyAwaitingSeller(order);
             }
 
-            await orderData.SaveChangesAsync(cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            await orderData.ExecuteInTransactionAsync(
+                ct => orderData.SaveChangesAsync(ct),
+                cancellationToken);
             ProductsAppService.InvalidateListingCaches();
 
             try
             {
                 await adminRealtimeNotificationService.BroadcastCountsAsync(cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
             }
             catch
             {
@@ -206,9 +213,15 @@ public partial class OrdersAppService
         }
 
         // Persist status + stock changes atomically (accept / reject / cancel).
+        cancellationToken.ThrowIfCancellationRequested();
         await orderData.ExecuteInTransactionAsync(
             ct => orderData.SaveChangesAsync(ct),
             cancellationToken);
+
+        if (cancellationToken.IsCancellationRequested)
+        {
+            throw new OperationCanceledException(cancellationToken);
+        }
 
         // Push updated live counts to the admin dashboard so an admin standing on
         // this order's detail page (or a list) sees the status change in real time,
@@ -216,6 +229,10 @@ public partial class OrdersAppService
         try
         {
             await adminRealtimeNotificationService.BroadcastCountsAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch
         {

@@ -42,12 +42,24 @@ class CompanyCubit extends Cubit<CompanyStates> {
   final GetMyOffersOnMyRequestsUseCase _getMyOffersOnMyRequestsUseCase;
   final UpdateOrderStatusUseCase _updateOrderStatusUseCase;
   CancelToken? _activeStatusActionToken;
+  bool _statusActionCancelledByUser = false;
 
   void cancelInFlightOrderAction() {
+    _statusActionCancelledByUser = true;
     DioHelper.cancelOperation();
     final token = _activeStatusActionToken;
     if (token != null && !token.isCancelled) {
       token.cancel('user_cancelled');
+    }
+    final current = state;
+    if (current is CompanyAdRequestOffersState && current.isUpdatingStatus) {
+      emit(
+        current.copyWith(
+          isUpdatingStatus: false,
+          clearUpdatingOrderId: true,
+          clearErrorMessage: true,
+        ),
+      );
     }
   }
 
@@ -337,6 +349,7 @@ class CompanyCubit extends Cubit<CompanyStates> {
       ),
     );
 
+    _statusActionCancelledByUser = false;
     final actionToken = DioHelper.startOperationCancelToken();
     _activeStatusActionToken = actionToken;
     try {
@@ -348,9 +361,24 @@ class CompanyCubit extends Cubit<CompanyStates> {
         ),
       );
 
+      if (_statusActionCancelledByUser || actionToken.isCancelled) {
+        final after = state;
+        if (after is CompanyAdRequestOffersState) {
+          emit(
+            after.copyWith(
+              isUpdatingStatus: false,
+              clearUpdatingOrderId: true,
+              clearErrorMessage: true,
+            ),
+          );
+        }
+        return null;
+      }
+
       return result.fold(
         (failure) {
-          final cancelled = CancelledFailure.matches(failure);
+          final cancelled = CancelledFailure.matches(failure) ||
+              _statusActionCancelledByUser;
           emit(
             current.copyWith(
               isUpdatingStatus: false,
@@ -362,6 +390,19 @@ class CompanyCubit extends Cubit<CompanyStates> {
           return cancelled ? null : failure.message;
         },
         (_) async {
+          if (_statusActionCancelledByUser || actionToken.isCancelled) {
+            final after = state;
+            if (after is CompanyAdRequestOffersState) {
+              emit(
+                after.copyWith(
+                  isUpdatingStatus: false,
+                  clearUpdatingOrderId: true,
+                  clearErrorMessage: true,
+                ),
+              );
+            }
+            return null;
+          }
           try {
             await loadMyRequestOffers(
               productId: current.productId,

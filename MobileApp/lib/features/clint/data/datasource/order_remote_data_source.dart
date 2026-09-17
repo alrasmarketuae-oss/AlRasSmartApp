@@ -131,9 +131,15 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
         data: request.toJson(),
         token: token,
       );
+      if (DioHelper.isOperationCancelled) {
+        return const Left(CancelledFailure());
+      }
       print('🔵 [Create Order] Response: $response');
       final status = response?.statusCode ?? 0;
       print('🔵 [Create Order] Status: $status');
+      if (status == 499) {
+        return const Left(CancelledFailure());
+      }
       if (status < 200 || status >= 300) {
         print('🔵 [Create Order] Failed to create order ($status)');
         return Left(
@@ -159,7 +165,7 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
       // 2xx without a parseable id — still treat as success so UI does not false-fail.
       return const Right('');
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.cancel) {
+      if (DioHelper.isCancelError(e)) {
         return const Left(CancelledFailure());
       }
       print('🔵 [Create Order] DioException: ${e.response?.data}');
@@ -171,6 +177,9 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
         ),
       );
     } catch (e) {
+      if (DioHelper.isCancelError(e)) {
+        return const Left(CancelledFailure());
+      }
       print('🔵 [Create Order] Error: $e');
       return Left(NetworkFailure(e.toString()));
     }
@@ -457,7 +466,14 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
         token: token,
       );
 
+      if (DioHelper.isOperationCancelled) {
+        return const Left(CancelledFailure());
+      }
+
       final status = response?.statusCode ?? 0;
+      if (status == 499) {
+        return const Left(CancelledFailure());
+      }
       if (status < 200 || status >= 300) {
         return Left(
           ServerFailure(
@@ -480,7 +496,7 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
 
       return const Right(null);
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.cancel) {
+      if (DioHelper.isCancelError(e)) {
         return const Left(CancelledFailure());
       }
       return Left(
@@ -489,6 +505,9 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
         ),
       );
     } catch (e) {
+      if (DioHelper.isCancelError(e)) {
+        return const Left(CancelledFailure());
+      }
       return Left(NetworkFailure(e.toString()));
     }
   }
@@ -557,6 +576,9 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
   }) async {
     try {
       print('🔵 [Upload Photo] File Path: $filePath');
+      if (DioHelper.isOperationCancelled) {
+        return const Left(CancelledFailure());
+      }
       final file = File(filePath);
       if (!await file.exists()) {
         return const Left(ServerFailure('File not found'));
@@ -568,6 +590,9 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
           filename: file.path.split('/').last,
         ),
       });
+      if (DioHelper.isOperationCancelled) {
+        return const Left(CancelledFailure());
+      }
       print('🔵 [Upload Photo] Form Data:');
       final response = await DioHelper.uploadFile(
         url: endPoint,
@@ -593,7 +618,7 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
       print('🔵 [Upload Photo] Path: $path');
       return Right(path);
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.cancel) {
+      if (DioHelper.isCancelError(e)) {
         return const Left(CancelledFailure());
       }
       return Left(
@@ -602,6 +627,9 @@ class OrderRemoteDataSource implements BaseOrderRemoteDataSource {
         ),
       );
     } catch (e) {
+      if (DioHelper.isCancelError(e)) {
+        return const Left(CancelledFailure());
+      }
       return Left(NetworkFailure(e.toString()));
     }
   }

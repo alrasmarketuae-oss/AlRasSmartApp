@@ -194,7 +194,14 @@ class CartRemoteDataSource implements BaseCartRemoteDataSource {
         token: token,
       );
 
+      if (DioHelper.isOperationCancelled) {
+        return const Left(CancelledFailure());
+      }
+
       final status = response?.statusCode ?? 0;
+      if (status == 499) {
+        return const Left(CancelledFailure());
+      }
       if (status < 200 || status >= 300) {
         return Left(
           ServerFailure(
@@ -212,7 +219,7 @@ class CartRemoteDataSource implements BaseCartRemoteDataSource {
 
       return const Left(ServerFailure('Invalid order response'));
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.cancel) {
+      if (DioHelper.isCancelError(e)) {
         return const Left(CancelledFailure());
       }
       return Left(
@@ -221,6 +228,9 @@ class CartRemoteDataSource implements BaseCartRemoteDataSource {
         ),
       );
     } catch (e) {
+      if (DioHelper.isCancelError(e)) {
+        return const Left(CancelledFailure());
+      }
       return Left(NetworkFailure(e.toString()));
     }
   }

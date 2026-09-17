@@ -237,20 +237,52 @@ class ClintCubit extends Cubit<ClintStates> {
   int incomingOrdersTotalPages = 0;
   int? updatingIncomingOrderId;
   CancelToken? _activeOrderActionToken;
+  bool _orderActionCancelledByUser = false;
 
   bool get hasInFlightOrderAction =>
       _activeOrderActionToken != null && !_activeOrderActionToken!.isCancelled;
 
   /// Aborts the current purchase / offer / accept HTTP work (uploads + API).
   void cancelInFlightOrderAction() {
+    _orderActionCancelledByUser = true;
     DioHelper.cancelOperation();
     final token = _activeOrderActionToken;
     if (token != null && !token.isCancelled) {
       token.cancel('user_cancelled');
     }
+    // Reset loading UI immediately — don't wait for Dio to surface the cancel.
+    _resetOrderActionUiAfterUserCancel();
+  }
+
+  bool _isOrderActionCancelled(CancelToken token) =>
+      _orderActionCancelledByUser || token.isCancelled;
+
+  void _resetOrderActionUiAfterUserCancel() {
+    final current = state;
+    if (current is SubmitOfferFormState && current.isSubmitting) {
+      emit(current.copyWith(isSubmitting: false));
+    } else if (current is BookingOrderFormState && current.isSubmitting) {
+      emit(current.copyWith(isSubmitting: false));
+    } else if (current is OfferOrderFormState && current.isSubmitting) {
+      emit(current.copyWith(isSubmitting: false));
+    } else if (current is CartLoadedState &&
+        (current.isConfirming || current.isCheckingPayment)) {
+      emit(
+        current.copyWith(
+          isConfirming: false,
+          isCheckingPayment: false,
+        ),
+      );
+    }
+    if (updatingIncomingOrderId != null) {
+      final orderId = updatingIncomingOrderId!;
+      updatingIncomingOrderId = null;
+      emit(IncomingOrderStatusUpdatedState(orderId));
+    }
   }
 
   CancelToken _beginOrderAction() {
+    _orderActionCancelledByUser = false;
     final token = DioHelper.startOperationCancelToken();
     _activeOrderActionToken = token;
     return token;
@@ -2110,6 +2142,12 @@ class ClintCubit extends Cubit<ClintStates> {
         ),
       );
 
+      if (_isOrderActionCancelled(actionToken)) {
+        updatingIncomingOrderId = null;
+        emit(IncomingOrderStatusUpdatedState(orderId));
+        return null;
+      }
+
       return result.fold(
         (failure) {
           updatingIncomingOrderId = null;
@@ -2118,6 +2156,11 @@ class ClintCubit extends Cubit<ClintStates> {
           return failure.message;
         },
         (_) async {
+          if (_isOrderActionCancelled(actionToken)) {
+            updatingIncomingOrderId = null;
+            emit(IncomingOrderStatusUpdatedState(orderId));
+            return null;
+          }
           try {
             await fetchIncomingOrders();
           } finally {
@@ -2882,7 +2925,7 @@ class ClintCubit extends Cubit<ClintStates> {
       localDocumentPaths: const [],
     );
 
-    if (result.cancelled) {
+    if (result.cancelled || _orderActionCancelledByUser) {
       emit(form.copyWith(isSubmitting: false));
       return;
     }
@@ -3055,7 +3098,7 @@ class ClintCubit extends Cubit<ClintStates> {
     try {
       final uploadedImages = <String>[...request.imagePaths];
       for (final filePath in localImagePaths) {
-        if (actionToken.isCancelled) {
+        if (_isOrderActionCancelled(actionToken)) {
           return (orderId: null, error: null, cancelled: true);
         }
         final uploadResult = await _uploadOrderImageUseCase(
@@ -3065,6 +3108,9 @@ class ClintCubit extends Cubit<ClintStates> {
             token: token,
           ),
         );
+        if (_isOrderActionCancelled(actionToken)) {
+          return (orderId: null, error: null, cancelled: true);
+        }
         final failure = uploadResult.fold<Failure?>((f) => f, (path) {
           uploadedImages.add(path);
           return null;
@@ -3078,7 +3124,7 @@ class ClintCubit extends Cubit<ClintStates> {
       }
       final uploadedVideos = <String>[...request.videoPaths];
       for (final filePath in localVideoPaths) {
-        if (actionToken.isCancelled) {
+        if (_isOrderActionCancelled(actionToken)) {
           return (orderId: null, error: null, cancelled: true);
         }
         final uploadResult = await _uploadOrderVideoUseCase(
@@ -3088,6 +3134,9 @@ class ClintCubit extends Cubit<ClintStates> {
             token: token,
           ),
         );
+        if (_isOrderActionCancelled(actionToken)) {
+          return (orderId: null, error: null, cancelled: true);
+        }
         final failure = uploadResult.fold<Failure?>((f) => f, (path) {
           uploadedVideos.add(path);
           return null;
@@ -3101,7 +3150,7 @@ class ClintCubit extends Cubit<ClintStates> {
       }
       final uploadedDocuments = <String>[...request.documentPaths];
       for (final filePath in localDocumentPaths) {
-        if (actionToken.isCancelled) {
+        if (_isOrderActionCancelled(actionToken)) {
           return (orderId: null, error: null, cancelled: true);
         }
         final uploadResult = await _uploadOrderDocumentUseCase(
@@ -3111,6 +3160,9 @@ class ClintCubit extends Cubit<ClintStates> {
             token: token,
           ),
         );
+        if (_isOrderActionCancelled(actionToken)) {
+          return (orderId: null, error: null, cancelled: true);
+        }
         final failure = uploadResult.fold<Failure?>((f) => f, (path) {
           uploadedDocuments.add(path);
           return null;
@@ -3123,7 +3175,7 @@ class ClintCubit extends Cubit<ClintStates> {
         }
       }
 
-      if (actionToken.isCancelled) {
+      if (_isOrderActionCancelled(actionToken)) {
         return (orderId: null, error: null, cancelled: true);
       }
 
@@ -3152,14 +3204,24 @@ class ClintCubit extends Cubit<ClintStates> {
         ),
       );
 
+      if (_isOrderActionCancelled(actionToken)) {
+        return (orderId: null, error: null, cancelled: true);
+      }
+
       return createResult.fold(
         (failure) {
-          if (CancelledFailure.matches(failure)) {
+          if (CancelledFailure.matches(failure) ||
+              _isOrderActionCancelled(actionToken)) {
             return (orderId: null, error: null, cancelled: true);
           }
           return (orderId: null, error: failure.message, cancelled: false);
         },
-        (orderId) => (orderId: orderId, error: null, cancelled: false),
+        (orderId) {
+          if (_isOrderActionCancelled(actionToken)) {
+            return (orderId: null, error: null, cancelled: true);
+          }
+          return (orderId: orderId, error: null, cancelled: false);
+        },
       );
     } finally {
       _endOrderAction(actionToken);
@@ -3558,7 +3620,7 @@ class ClintCubit extends Cubit<ClintStates> {
       ),
     );
 
-    if (result.cancelled) {
+    if (result.cancelled || _orderActionCancelledByUser) {
       final latest = _offerOrderFormState ?? form;
       emit(latest.copyWith(isSubmitting: false));
       return;
@@ -4513,9 +4575,16 @@ class ClintCubit extends Cubit<ClintStates> {
         ),
       );
 
+      if (_isOrderActionCancelled(actionToken)) {
+        final latest = _cartLoadedState ?? current;
+        emit(latest.copyWith(isConfirming: false));
+        return;
+      }
+
       await result.fold<Future<void>>(
         (failure) async {
-          if (CancelledFailure.matches(failure)) {
+          if (CancelledFailure.matches(failure) ||
+              _isOrderActionCancelled(actionToken)) {
             emit(current.copyWith(isConfirming: false));
             return;
           }
@@ -4527,6 +4596,10 @@ class ClintCubit extends Cubit<ClintStates> {
           );
         },
         (orderResult) async {
+          if (_isOrderActionCancelled(actionToken)) {
+            emit(current.copyWith(isConfirming: false));
+            return;
+          }
           emit(
             current.copyWith(
               isConfirming: false,
@@ -4576,9 +4649,16 @@ class ClintCubit extends Cubit<ClintStates> {
         ),
       );
 
+      if (_isOrderActionCancelled(actionToken)) {
+        final latest = _cartLoadedState ?? current;
+        emit(latest.copyWith(isConfirming: false));
+        return;
+      }
+
       await result.fold(
         (failure) async {
-          if (CancelledFailure.matches(failure)) {
+          if (CancelledFailure.matches(failure) ||
+              _isOrderActionCancelled(actionToken)) {
             emit(current.copyWith(isConfirming: false));
             return;
           }
@@ -4587,7 +4667,7 @@ class ClintCubit extends Cubit<ClintStates> {
           );
         },
         (orderResult) async {
-          if (actionToken.isCancelled) {
+          if (_isOrderActionCancelled(actionToken)) {
             emit(current.copyWith(isConfirming: false));
             return;
           }
@@ -4622,9 +4702,15 @@ class ClintCubit extends Cubit<ClintStates> {
             ),
           );
 
+          if (_isOrderActionCancelled(actionToken)) {
+            emit(current.copyWith(isConfirming: false));
+            return;
+          }
+
           await checkoutResult.fold(
             (failure) async {
-              if (CancelledFailure.matches(failure)) {
+              if (CancelledFailure.matches(failure) ||
+                  _isOrderActionCancelled(actionToken)) {
                 emit(current.copyWith(isConfirming: false));
                 return;
               }
@@ -4636,6 +4722,10 @@ class ClintCubit extends Cubit<ClintStates> {
               );
             },
             (checkout) async {
+              if (_isOrderActionCancelled(actionToken)) {
+                emit(current.copyWith(isConfirming: false));
+                return;
+              }
               emit(
                 current.copyWith(
                   isConfirming: false,
@@ -4986,7 +5076,7 @@ class ClintCubit extends Cubit<ClintStates> {
       ),
     );
 
-    if (result.cancelled) {
+    if (result.cancelled || _orderActionCancelledByUser) {
       final latest = _bookingOrderFormState ?? form;
       emit(latest.copyWith(isSubmitting: false));
       return;

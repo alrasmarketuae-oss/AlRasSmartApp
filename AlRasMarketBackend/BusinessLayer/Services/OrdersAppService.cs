@@ -292,11 +292,21 @@ public partial class OrdersAppService(
             });
         }
 
+        cancellationToken.ThrowIfCancellationRequested();
+
         await orderData.ExecuteInTransactionAsync(async ct =>
         {
             await orderData.AddOrderAsync(order, ct);
             await orderData.SaveChangesAsync(ct);
         }, cancellationToken);
+
+        // Side effects only after a successful commit. If the client aborted earlier,
+        // the transaction rolled back and we never reach here.
+        if (cancellationToken.IsCancellationRequested)
+        {
+            throw new OperationCanceledException(cancellationToken);
+        }
+
         await TryTranslateOrderNotesAsync(order.Id, notes, cancellationToken);
         logger.LogInformation(
             "Order {OrderId} created for product {ProductId} with UnitId={UnitId} UnitName={UnitName} (submitted '{SubmittedUnit}')",

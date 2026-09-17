@@ -55,6 +55,10 @@ public class OrdersController(
 
             return Ok(cartResult);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return StatusCode(499, new { message = "Request cancelled by client." });
+        }
         catch (ArgumentException ex)
         {
             return BadRequest(new { message = ex.Message });
@@ -92,6 +96,10 @@ public class OrdersController(
         {
             var result = await ordersAppService.PlaceBookingOrderAsync(MapBookingOrder(request, userId), cancellationToken);
             return Ok(result);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return StatusCode(499, new { message = "Request cancelled by client." });
         }
         catch (ArgumentException ex)
         {
@@ -398,6 +406,10 @@ public class OrdersController(
             }, cancellationToken);
 
             return Ok(result);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return StatusCode(499, new { message = "Request cancelled by client." });
         }
         catch (ArgumentException ex)
         {

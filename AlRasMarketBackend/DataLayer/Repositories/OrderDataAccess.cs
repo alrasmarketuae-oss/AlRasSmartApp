@@ -19,16 +19,27 @@ public sealed class OrderDataAccess(IRasAlSouqDbContext dbContext) : IOrderDataA
             throw new InvalidOperationException("Order data access requires an EF Core DbContext.");
         }
 
+        // Client abort (Dio cancel) flows through ASP.NET RequestAborted into cancellationToken.
+        // Keep all DB writes uncommitted until the end so abort can still roll everything back.
         await using var tx = await ef.Database.BeginTransactionAsync(cancellationToken)
             .ConfigureAwait(false);
         try
         {
             await action(cancellationToken).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
             await tx.CommitAsync(cancellationToken).ConfigureAwait(false);
         }
         catch
         {
-            await tx.RollbackAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await tx.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
+            }
+            catch
+            {
+                // Best-effort rollback; original exception is rethrown below.
+            }
+
             throw;
         }
     }
