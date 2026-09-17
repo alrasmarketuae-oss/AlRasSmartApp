@@ -9,6 +9,28 @@ import { useGetUsersQuery } from '../store'
 import { queryViewState } from '../store/queryView'
 import { getRtkErrorMessage } from '../utils/rtkError'
 
+/** Maps UI type filter values to API role / customer flags. */
+function resolveTypeFilter(typeFilter: string): {
+  roleId?: number
+  isCustomer?: boolean
+} {
+  switch (typeFilter) {
+    case '1':
+      return { roleId: 1 }
+    case '2':
+      // Suppliers only (exclude company-customer accounts on role 2).
+      return { roleId: 2, isCustomer: false }
+    case '2c':
+      return { roleId: 2, isCustomer: true }
+    case '3':
+      return { roleId: 3 }
+    case '5':
+      return { roleId: 5 }
+    default:
+      return {}
+  }
+}
+
 export default function UsersPage() {
   const { t } = useAppPreferences()
   const location = useLocation()
@@ -45,18 +67,20 @@ export default function UsersPage() {
                 ? 'rejected'
                 : undefined
 
+    const { roleId, isCustomer } = resolveTypeFilter(appliedFilters.typeFilter)
+
     return {
       page,
       pageSize,
-      roleId: appliedFilters.typeFilter
-        ? Number(appliedFilters.typeFilter)
-        : undefined,
+      roleId,
+      isCustomer,
       search: appliedFilters.tableSearch.trim() || undefined,
       status: statusParam,
       joinedFrom: appliedFilters.joinDate || undefined,
       joinedTo: appliedFilters.joinDate || undefined,
+      pendingProfileEditsOnly: profileEditsOnly || undefined,
     }
-  }, [page, pageSize, appliedFilters])
+  }, [page, pageSize, appliedFilters, profileEditsOnly])
 
   const { data, error, isLoading, isFetching } = useGetUsersQuery(queryParams)
   const { showInitialLoader, showBackgroundUpdate } = queryViewState({
@@ -104,21 +128,18 @@ export default function UsersPage() {
   }, [tableSearch])
 
   function applyInstantFilter(patch: Partial<typeof appliedFilters>) {
-    setAppliedFilters({
+    setAppliedFilters((prev) => ({
+      ...prev,
       tableSearch,
       typeFilter,
       statusFilter,
       joinDate,
       ...patch,
-    })
+    }))
     setPage(1)
   }
 
-  const users = useMemo(() => {
-    const items = data?.items ?? []
-    if (!profileEditsOnly) return items
-    return items.filter((user) => Boolean(user.hasPendingProfileChanges))
-  }, [data?.items, profileEditsOnly])
+  const users = data?.items ?? []
   const totalPages = data?.totalPages ?? 1
 
   return (

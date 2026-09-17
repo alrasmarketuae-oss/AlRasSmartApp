@@ -864,10 +864,10 @@ class S {
     return Intl.message('My Orders', name: 'myOrders', desc: '', args: []);
   }
 
-  /// `Your sales, purchases, and offers on your Request ads.`
+  /// `Your sales, purchases, and offers on your Inquiry ads.`
   String get myOrdersSubtitle {
     return Intl.message(
-      'Your sales, purchases, and offers on your Request ads.',
+      'Your sales, purchases, and offers on your Inquiry ads.',
       name: 'myOrdersSubtitle',
       desc: '',
       args: [],
@@ -879,10 +879,10 @@ class S {
     return Intl.message('My Sales', name: 'incomingOrders', desc: '', args: []);
   }
 
-  /// `Orders received on your non-Request ads.`
+  /// `Orders received on your non-Inquiry ads.`
   String get incomingOrdersSubtitle {
     return Intl.message(
-      'Orders received on your non-Request ads.',
+      'Orders received on your non-Inquiry ads.',
       name: 'incomingOrdersSubtitle',
       desc: '',
       args: [],
@@ -934,10 +934,10 @@ class S {
     );
   }
 
-  /// `Offers received on your Request ads.`
+  /// `Offers received on your Inquiry ads.`
   String get incomingRequestOffersSubtitle {
     return Intl.message(
-      'Offers received on your Request ads.',
+      'Offers received on your Inquiry ads.',
       name: 'incomingRequestOffersSubtitle',
       desc: '',
       args: [],
@@ -984,30 +984,30 @@ class S {
     );
   }
 
-  /// `My Request ads`
+  /// `My Inquiry ads`
   String get companyCustomerRequestAdsHeader {
     return Intl.message(
-      'My Request ads',
+      'My Inquiry ads',
       name: 'companyCustomerRequestAdsHeader',
       desc: '',
       args: [],
     );
   }
 
-  /// `Offers on my requests`
+  /// `Offers on my inquiries`
   String get companyCustomerIncomingOffersHeader {
     return Intl.message(
-      'Offers on my requests',
+      'Offers on my inquiries',
       name: 'companyCustomerIncomingOffersHeader',
       desc: '',
       args: [],
     );
   }
 
-  /// `You have not published any Request ads yet.`
+  /// `You have not published any Inquiry ads yet.`
   String get noRequestAdsYet {
     return Intl.message(
-      'You have not published any Request ads yet.',
+      'You have not published any Inquiry ads yet.',
       name: 'noRequestAdsYet',
       desc: '',
       args: [],

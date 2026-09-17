@@ -25,8 +25,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
 /// Orders tab layout:
-/// - Supplier: Sales + Purchases + Incoming request offers
-/// - Company customer (buyer only): Purchases + Incoming request offers
+/// - Supplier: My Sales + Purchases + Incoming (Inquiry offers)
+/// - Company customer (buyer only): Purchases + Incoming (Inquiry offers)
 /// - Personal customer: Purchases only
 class MyOrdersView extends StatefulWidget {
   const MyOrdersView({super.key});

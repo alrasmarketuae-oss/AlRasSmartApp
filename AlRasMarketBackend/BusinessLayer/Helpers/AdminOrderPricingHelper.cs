@@ -42,9 +42,9 @@ public static class AdminOrderPricingHelper
             return;
         }
 
-        // Buyer/admin order amounts must stay locked to checkout snapshot on the Order.
-        // Never reprice from the live Product listing — that drifts My Orders and stats
-        // whenever the seller later changes RetailPrice / USDPrice.
+        // Customer amounts stay locked to the Order checkout snapshot.
+        // Supplier amounts use the product listing base (USDPrice / RetailPrice) so
+        // quarter-rounding on the customer markup cannot inflate what the seller is owed.
         var presentTypeId = isRetailChannel
             ? ProductTypeCodes.Retail
             : ProductTypeCodes.WholesaleCommissionProductTypeId(product.CategoryId, product.ProductTypeId);
@@ -69,10 +69,17 @@ public static class AdminOrderPricingHelper
                 MidpointRounding.AwayFromZero);
         }
 
-        var supplierUnitPrice = CustomerPriceCalculator.RemovePercentMarkup(
+        // Supplier base must stay the listing price the seller set (USDPrice / RetailPrice).
+        // Do NOT reverse-engineer it from the customer unit: ApplyPercentMarkup rounds up to
+        // the next quarter, so 138 → 139.50 and RemovePercentMarkup would wrongly yield 138.12.
+        var (supplierUnitPrice, supplierTotalPrice) = ResolveSupplierAmountsFromListing(
+            product,
+            order,
+            isRetailChannel,
+            presentTypeId,
+            presentCurrency,
+            usdToAedRate,
             customerUnitPrice,
-            commissionPercent);
-        var supplierTotalPrice = CustomerPriceCalculator.RemovePercentMarkup(
             customerTotalPrice,
             commissionPercent);
         var appProfitAmount = decimal.Round(
@@ -425,6 +432,57 @@ public static class AdminOrderPricingHelper
         (
             CustomerPriceCalculator.ApplyPercentMarkup(supplierUnitPrice, commissionPercent),
             CustomerPriceCalculator.ApplyPercentMarkup(supplierTotalPrice, commissionPercent));
+
+    /// <summary>
+    /// Supplier payout uses the product listing base (no commission, no quarter-round cushion).
+    /// Falls back to inverting the customer markup only when the listing base is missing.
+    /// </summary>
+    private static (decimal SupplierUnitPrice, decimal SupplierTotalPrice) ResolveSupplierAmountsFromListing(
+        Product product,
+        Order order,
+        bool isRetailChannel,
+        byte? presentTypeId,
+        string presentCurrency,
+        decimal usdToAedRate,
+        decimal customerUnitPrice,
+        decimal customerTotalPrice,
+        decimal commissionPercent)
+    {
+        var rawBase = ResolveListingBaseUnitPrice(product, isRetailChannel);
+        if (rawBase > 0)
+        {
+            var presented = ProductPricePresenter.Present(
+                rawBase,
+                presentTypeId,
+                presentCurrency,
+                usdToAedRate);
+            var supplierUnit = decimal.Round(presented.Price, 2, MidpointRounding.AwayFromZero);
+            var qty = order.Quantity > 0 ? order.Quantity : 1m;
+            var supplierTotal = decimal.Round(supplierUnit * qty, 2, MidpointRounding.AwayFromZero);
+            return (supplierUnit, supplierTotal);
+        }
+
+        var fallbackUnit = CustomerPriceCalculator.RemovePercentMarkup(
+            customerUnitPrice,
+            commissionPercent);
+        var fallbackTotal = CustomerPriceCalculator.RemovePercentMarkup(
+            customerTotalPrice,
+            commissionPercent);
+        return (fallbackUnit, fallbackTotal);
+    }
+
+    private static decimal ResolveListingBaseUnitPrice(Product product, bool isRetailChannel)
+    {
+        if (isRetailChannel)
+        {
+            if (product.RetailPrice is > 0)
+            {
+                return product.RetailPrice.Value;
+            }
+        }
+
+        return product.USDPrice > 0 ? product.USDPrice : 0m;
+    }
 
     public static (decimal SupplierUnitPrice, decimal SupplierTotalPrice) ResolveSubmittedOrderAmounts(Order order)
     {

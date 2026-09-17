@@ -144,6 +144,8 @@ export type FetchUsersParams = {
   status?: string
   joinedFrom?: string
   joinedTo?: string
+  isCustomer?: boolean
+  pendingProfileEditsOnly?: boolean
 }
 
 export const adminApi = createApi({
@@ -206,6 +208,9 @@ export const adminApi = createApi({
           status: params.status,
           joinedFrom: params.joinedFrom,
           joinedTo: params.joinedTo,
+          isCustomer: params.isCustomer,
+          pendingProfileEditsOnly:
+            params.pendingProfileEditsOnly === true ? true : undefined,
         },
       }),
       transformResponse: (response: AdminUsersResponse) =>

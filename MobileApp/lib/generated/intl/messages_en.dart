@@ -516,11 +516,11 @@ class MessageLookup extends MessageLookupByLibrary {
       "Company Account",
     ),
     "companyCustomerIncomingOffersHeader": MessageLookupByLibrary.simpleMessage(
-      "Offers on my requests",
+      "Offers on my inquiries",
     ),
     "companyCustomerOrdersTab": MessageLookupByLibrary.simpleMessage("Orders"),
     "companyCustomerRequestAdsHeader": MessageLookupByLibrary.simpleMessage(
-      "My Request ads",
+      "My Inquiry ads",
     ),
     "companyCustomerRequestsSubtitle": MessageLookupByLibrary.simpleMessage(
       "Supplier offers received on your Inquiry ads.",
@@ -928,10 +928,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "incomingOrders": MessageLookupByLibrary.simpleMessage("My Sales"),
     "incomingOrdersSubtitle": MessageLookupByLibrary.simpleMessage(
-      "Orders received on your non-Request ads.",
+      "Orders received on your non-Inquiry ads.",
     ),
     "incomingRequestOffersSubtitle": MessageLookupByLibrary.simpleMessage(
-      "Offers received on your Request ads.",
+      "Offers received on your Inquiry ads.",
     ),
     "incomingRequestOffersTab": MessageLookupByLibrary.simpleMessage(
       "Incoming",
@@ -1045,7 +1045,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "myOrders": MessageLookupByLibrary.simpleMessage("My Orders"),
     "myOrdersSubtitle": MessageLookupByLibrary.simpleMessage(
-      "Your sales, purchases, and offers on your Request ads.",
+      "Your sales, purchases, and offers on your Inquiry ads.",
     ),
     "natureIntermediary": MessageLookupByLibrary.simpleMessage(
       "Merge Spice acts as an intermediary between the supplier and the client, with all sales and purchases conducted through the app.",
@@ -1096,7 +1096,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "noPurchasesYet": MessageLookupByLibrary.simpleMessage("No purchases yet."),
     "noRequestAdsYet": MessageLookupByLibrary.simpleMessage(
-      "You have not published any Request ads yet.",
+      "You have not published any Inquiry ads yet.",
     ),
     "noSavedAddresses": MessageLookupByLibrary.simpleMessage(
       "No saved addresses yet.",

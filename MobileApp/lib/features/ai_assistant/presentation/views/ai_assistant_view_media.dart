@@ -34,7 +34,7 @@ mixin _AiAssistantMediaMixin on _AiAssistantViewStateBase {
         detected != AiAdPlanKind.request) {
       return isAr
           ? 'حساب عميل الشركة غير مخوّل بإنشاء هذا النوع. المسموح لك فقط إعلان طلب (Request).'
-          : 'A company customer account is not authorized for that ad type. You can only create Request ads.';
+          : 'A company customer account is not authorized for that ad type. You can only create Inquiry ads.';
     }
     if (isShipping &&
         detected != null &&

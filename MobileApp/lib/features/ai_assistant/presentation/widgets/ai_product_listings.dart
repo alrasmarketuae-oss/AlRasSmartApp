@@ -1,12 +1,13 @@
 import 'dart:convert';
 
 import 'package:alrasmarket/core/utils/product_grid_layout.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/offer_product_card.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product _card.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-/// Product cards shown under an AI assistant reply (same card as marketplace).
+/// Product cards shown under an AI assistant reply (same cards as marketplace / offers).
 class AiProductListings extends StatelessWidget {
   const AiProductListings({super.key, required this.products});
 
@@ -39,6 +40,22 @@ class AiProductListings extends StatelessWidget {
           map['displayPrice'] ??
           map['DisplayPrice'] ??
           map['Price'];
+      map['description'] = map['description'] ??
+          map['descriptionEn'] ??
+          map['DescriptionEn'] ??
+          map['descriptionAr'] ??
+          map['DescriptionAr'];
+      map['descriptionEn'] =
+          map['descriptionEn'] ?? map['DescriptionEn'] ?? map['description'];
+      map['descriptionAr'] =
+          map['descriptionAr'] ?? map['DescriptionAr'] ?? map['description'];
+      map['createdAt'] = map['createdAt'] ?? map['CreatedAt'];
+      map['discountPercentage'] =
+          map['discountPercentage'] ?? map['DiscountPercentage'];
+      map['discountDays'] = map['discountDays'] ?? map['DiscountDays'];
+      map['productTypeId'] = map['productTypeId'] ?? map['ProductTypeId'];
+      map['productTypeName'] =
+          map['productTypeName'] ?? map['ProductTypeName'];
       map['shipping'] ??= <String, dynamic>{};
       try {
         final product = MyListingProductModel.fromJson(map);
@@ -138,6 +155,20 @@ class AiProductListings extends StatelessWidget {
     return '';
   }
 
+  Widget _cardFor(MyListingProductModel product) {
+    if (product.isOfferProduct) {
+      return OfferProductCard(
+        title: product.productName,
+        product: product,
+      );
+    }
+    return ProductCard(
+      title: product.productName,
+      product: product,
+      preferRetailChannel: product.preferRetailFromSearchListing,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (products.isEmpty) return const SizedBox.shrink();
@@ -153,22 +184,11 @@ class AiProductListings extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: ProductCard(
-                    title: products[i].productName,
-                    product: products[i],
-                    preferRetailChannel: products[i].preferRetailFromSearchListing,
-                  ),
-                ),
+                Expanded(child: _cardFor(products[i])),
                 SizedBox(width: spacing),
                 Expanded(
                   child: i + 1 < products.length
-                      ? ProductCard(
-                          title: products[i + 1].productName,
-                          product: products[i + 1],
-                          preferRetailChannel:
-                              products[i + 1].preferRetailFromSearchListing,
-                        )
+                      ? _cardFor(products[i + 1])
                       : const SizedBox.shrink(),
                 ),
               ],

@@ -71,7 +71,12 @@ public sealed record AiProductListingDto(
     string? ProductTypeName,
     string? SearchListingChannel,
     bool HasRetailPricing = false,
-    IReadOnlyList<string>? Images = null)
+    IReadOnlyList<string>? Images = null,
+    string? DescriptionEn = null,
+    string? DescriptionAr = null,
+    DateTime? CreatedAt = null,
+    byte? DiscountPercentage = null,
+    short? DiscountDays = null)
 {
     /// <summary>
     /// Plain JSON map the Flutter chat parser understands (never anonymous objects).
@@ -79,6 +84,9 @@ public sealed record AiProductListingDto(
     public Dictionary<string, object?> ToChatJson()
     {
         var displayName = string.IsNullOrWhiteSpace(NameEn) ? NameAr : NameEn;
+        var displayDescription = string.IsNullOrWhiteSpace(DescriptionEn)
+            ? DescriptionAr
+            : DescriptionEn;
         return new Dictionary<string, object?>
         {
             ["productId"] = ProductId.ToString("D"),
@@ -87,6 +95,9 @@ public sealed record AiProductListingDto(
             ["productName"] = displayName,
             ["nameEn"] = NameEn,
             ["nameAr"] = NameAr,
+            ["description"] = displayDescription,
+            ["descriptionEn"] = DescriptionEn,
+            ["descriptionAr"] = DescriptionAr,
             ["price"] = Price,
             ["displayPrice"] = Price,
             ["currency"] = Currency,
@@ -100,6 +111,9 @@ public sealed record AiProductListingDto(
             ["productTypeName"] = ProductTypeName,
             ["searchListingChannel"] = SearchListingChannel,
             ["hasRetailPricing"] = HasRetailPricing,
+            ["createdAt"] = CreatedAt?.ToUniversalTime().ToString("o"),
+            ["discountPercentage"] = DiscountPercentage?.ToString(),
+            ["discountDays"] = DiscountDays?.ToString(),
             ["images"] = Images?.ToList() ?? new List<string>()
         };
     }

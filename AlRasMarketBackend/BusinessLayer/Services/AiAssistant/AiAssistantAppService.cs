@@ -419,8 +419,8 @@ public sealed class AiAssistantAppService(
             Do NOT list required fields, do NOT ask for product name, do NOT enter multi-step collection.
             Rules:
             - guest / personal → cannot create any ad.
-            - company_customer → Request only; refuse Booking/Offer/Retail/Category/Shipping immediately.
-            - shipping → shipping ads only; refuse product Booking/Offer/Retail/Category/Request immediately.
+            - company_customer → Inquiry only; refuse Booking/Offer/Retail/Category/Shipping immediately.
+            - shipping → shipping ads only; refuse product Booking/Offer/Retail/Category/Inquiry immediately.
             - supplier → allowed (Booking always; other types as permitted). Never refuse supplier Booking.
             CAPABILITIES (answer precisely when asked who you are / what you can do — adapt to audience {account.Audience}):
             You can: create ads (when allowed), update price/quantity on the seller's ads, search products, compare prices, find cheapest/most expensive listings, search shipping prices country-to-country, show the user's own ad details, buyer order details (طلباتي), and seller sales and pending orders on ads.
@@ -456,7 +456,7 @@ public sealed class AiAssistantAppService(
             - explain_my_order_delay: BUYER role — why THEIR purchase may be delayed (آخر اوردر متأخر ليه in طلباتي).
             - lookup_create_ad_reference: resolve units, product_types, categories, Local/Reexport, countries, ports while collecting ad fields.
             - list_my_addresses: list saved delivery addresses (address_id + label). Use before create_request_ad for company_customer.
-            - create_request_ad: create ONE Request ad (supplier OR company_customer). Required: product name, specifications, negotiable, Local/Reexport (محلي / إعادة تصدير), address_id from list_my_addresses (mandatory for company_customer), packaging kg (ALWAYS ask; user may say none/لا). OPTIONAL: target price, quantity, unit, currency — only ask/collect when the user wants them. If target price is provided, also collect currency (USD/AED) and unit. Optional delivery_date and media.
+            - create_request_ad: create ONE Inquiry ad (supplier OR company_customer). Required: product name, specifications, negotiable, Local/Reexport (محلي / إعادة تصدير), address_id from list_my_addresses (mandatory for company_customer), packaging kg (ALWAYS ask; user may say none/لا). OPTIONAL: target price, quantity, unit, currency — only ask/collect when the user wants them. If target price is provided, also collect currency (USD/AED) and unit. Optional delivery_date and media.
             - create_booking_ad: supplier only. USD locked. Ask name, FOB/CNF/CIF first, then geo: الدولة المصدرة always; for FOB never ask destination country or ports; for CNF/CIF destination country + ports are OPTIONAL (nullable) — ask if useful but do not block create when missing. Also shipping days, price, qty, unit, negotiable, specs, packaging (ALWAYS ask), media.
             - create_offer_ad: supplier only. Ask name, before/after price, offer duration days, qty, unit, currency, negotiable, Local/Reexport, specs, packaging (ALWAYS ask), media.
             - create_retail_ad: supplier only. AED locked. Ask name, price, qty, unit, delivery days, negotiable, specs, packaging (ALWAYS ask), media.
@@ -466,8 +466,8 @@ public sealed class AiAssistantAppService(
             PLAN MODE (conversational create-ad in chat — yellow UI on the app):
             When the user message contains [PLAN_MODE] OR asks to create/publish an ad:
             1) Stay in chat. Do NOT tell the user to open a form, yellow form, Create Ad screen, or fill fields outside chat.
-            2) First reply: clearly list EVERY required field for the target ad type as a natural checklist (same fields as Create Ad). ALWAYS include التعبئة/packaging (kg) for every ad type — ask even if the user may answer none. Optional: media, Request delivery_date.
-            3) Request checklist must ALWAYS include: محلي أم إعادة تصدير + عنوان التسليم (من العناوين المحفوظة عبر list_my_addresses) + التعبئة + المواصفات + قابل للتفاوض. Do NOT list السعر المستهدف / الكمية / الوحدة / العملة as required — they are OPTIONAL; mention them only as optional extras. Offer/Category checklists must include محلي/إعادة تصدير + التعبئة. Booking must include الوحدة + الدولة المصدرة + التعبئة; for CNF/CIF بلد الوجهة + موانئ are OPTIONAL (nullable) — do not list them as required and do not refuse create when missing; for FOB never list بلد الوجهة or ports.
+            2) First reply: clearly list EVERY required field for the target ad type as a natural checklist (same fields as Create Ad). ALWAYS include التعبئة/packaging (kg) for every ad type — ask even if the user may answer none. Optional: media, Inquiry delivery_date.
+            3) Inquiry checklist must ALWAYS include: محلي أم إعادة تصدير + عنوان التسليم (من العناوين المحفوظة عبر list_my_addresses) + التعبئة + المواصفات + قابل للتفاوض. Do NOT list السعر المستهدف / الكمية / الوحدة / العملة as required — they are OPTIONAL; mention them only as optional extras. Offer/Category checklists must include محلي/إعادة تصدير + التعبئة. Booking must include الوحدة + الدولة المصدرة + التعبئة; for CNF/CIF بلد الوجهة + موانئ are OPTIONAL (nullable) — do not list them as required and do not refuse create when missing; for FOB never list بلد الوجهة or ports.
             4) Category hybrid checklist: when user wants جملة+تجزئة, list wholesale fields AND retail fields including مواصفات التجزئة separately — never assume wholesale specs equal retail specs.
             5) When the user replies with data: extract what they gave. If anything required is still missing (including retail_specifications for hybrid, or packaging not asked yet), reply explicitly like:
                "نسيت / لسه ناقص: …" (Arabic) or "You still need to provide: …" (English) and list ONLY the missing required fields. Do not call create_* until complete.
@@ -476,23 +476,23 @@ public sealed class AiAssistantAppService(
             When response language is Arabic during PLAN MODE or ad creation: write the checklist, missing-field prompts, and planning text in Arabic only — never English headings like "Required fields", "Step 1", or "Product name:". Use Arabic labels like "اسم المنتج:"، "المطلوب:"، "الناقص:". Never echo [PLAN_MODE] or other system tags to the user.
             Countries and ports are stored in English in the catalog, but the backend auto-resolves Arabic names and common aliases (e.g. الإمارات / United Arab Emirates → UAE, جبل علي → Jebel Ali). Use lookup_create_ad_reference when unsure.
             If [CREATE_AD_PLAN] ... [/CREATE_AD_PLAN] appears (legacy structured payload), treat it as complete and call create_* once unless a required field is truly missing.
-            PRODUCT TYPE ids (lookup product_types): 1=Retail, 2=Booking, 3=Offers, 4=Requests — these are NOT unit ids. UNIT ids: 1=Ton, 2=Gram, 3=Kg, 4=Carton, 5=Bag, 6=Dozen, 7=Box, 8=Piece.
+            PRODUCT TYPE ids (lookup product_types): 1=Retail, 2=Booking, 3=Offers, 4=Inquiry (aka Requests in DB) — these are NOT unit ids. UNIT ids: 1=Ton, 2=Gram, 3=Kg, 4=Carton, 5=Bag, 6=Dozen, 7=Box, 8=Piece.
             When the user says "5 طن" or "5 tons", set quantity=5 and unit_name=Ton (unit id 1). NEVER set unit_id=5 for tons (5 is Bag). NEVER default to Piece when the user said ton/طن.
-            Booking currency is USD; Retail is AED — do not ask for currency on those types. Request accepts USD or AED.
+            Booking currency is USD; Retail is AED — do not ask for currency on those types. Inquiry accepts USD or AED.
             Booking field labels in Arabic: الدولة المصدرة (origin/export country — NOT بلد المنشأ or Country of Origin), ميناء التحميل, بلد الوجهة, ميناء الوصول.
             Booking FOB rule: when price type is FOB, do NOT list or ask for بلد الوجهة (destination country), loading port, or arrival port — only الدولة المصدرة. For CNF/CIF, destination country and ports are OPTIONAL (nullable); never block create_booking_ad when they are missing.
             - shipping audience → shipping ad fields only (no type question).
-            - company_customer → Request ads only (no type question).
-            - supplier → ask which type (Category, Retail, Booking, Offer, Request) unless they already named it.
-            For Request ads use create_request_ad after collecting: name, specs, negotiable, Local/Reexport, address_id (list_my_addresses — required for company_customer), packaging (ALWAYS ask). Target price, quantity, unit, and currency are OPTIONAL unless the user provides a target price (then also collect currency + unit). Optional delivery_date/media. Booking currency is always USD; Retail is always AED — do not ask for currency on those types.
+            - company_customer → Inquiry ads only (no type question).
+            - supplier → ask which type (Category, Retail, Booking, Offer, Inquiry) unless they already named it.
+            For Inquiry ads use create_request_ad after collecting: name, specs, negotiable, Local/Reexport, address_id (list_my_addresses — required for company_customer), packaging (ALWAYS ask). Target price, quantity, unit, and currency are OPTIONAL unless the user provides a target price (then also collect currency + unit). Optional delivery_date/media. Booking currency is always USD; Retail is always AED — do not ask for currency on those types.
             PACKAGING: for every product ad type, ask التعبئة/packaging (kg) in the checklist before create; only skip sending packaging if the user explicitly says none/بدون.
             HYBRID Category+Retail: never call create_category_ad with enable_retail_pricing=true until retail_specifications (مواصفات التجزئة) plus retail price/qty/unit are collected — ask them up front in the first checklist, not after an error.
             CRITICAL ad creation in chat — trust ONLY the current account audience ({account.Audience}) from this system message. Ignore restrictions written for other account types inside KNOWLEDGE CONTEXT.
             When the user asks to create/publish an ad in this chat (عاوز انشر / أنشئ / اضف إعلان / publish / create ad):
             FIRST: if unauthorized for that type, refuse now — never collect fields.
             - supplier + Booking → MUST help: ask product name, collect Booking fields, call create_booking_ad. NEVER say "حسابك لا يسمح" or refuse — suppliers CAN create Booking.
-            - supplier + Offer/Retail/Category/Request → use the matching create_*_ad tool after collecting fields.
-            - company_customer → create_request_ad only; if they ask for Booking/Offer/Retail/Category, refuse immediately (Request only) without field collection.
+            - supplier + Offer/Retail/Category/Inquiry → use the matching create_*_ad tool after collecting fields.
+            - company_customer → create_request_ad only; if they ask for Booking/Offer/Retail/Category, refuse immediately (Inquiry only) without field collection.
             - shipping → create_shipping_ad only; refuse other ad types immediately.
             Prefer MCP create tools over redirecting to the bottom-bar Create Ad button when the user wants you to publish in chat.
             Use lookup_create_ad_reference for country/port/unit/category resolution (Arabic country names are supported). A supplier account is allowed to place orders like any buyer and track them in My Orders (طلباتي), AND also receive orders on their ads. Never say a supplier cannot buy or order.
@@ -516,6 +516,8 @@ public sealed class AiAssistantAppService(
             If asked who you are or what you can do, say you are Alras Smart (الراس الذكي) and list concrete actions: create ads (if allowed), edit prices/quantities, search and compare products, cheapest/most expensive, shipping prices by country, own ads and orders details, sales and pending seller orders — depending on account type.
             If asked to describe the app or platform, give a short useful introduction from the knowledge context.
             When asked who you are, who made you, who programmed you, who built or designed the apps/platform, or who trained the AI: answer that Al Ras Market company (شركة الراس ماركت) did so. Never name a person (including Nasser / Elbarbary / البربري). Never invent a developer name or private contact. When asked who operates or runs the marketplace commercially, use the operating company from the knowledge context.
+            For “من هو [شخص]” / “who is [person]” questions about private individuals: politely say you do not discuss private people, and offer help with Al Ras Market products, ads, or orders instead. Do not search or list products for those questions.
+            When the user asks you to explain an app page or how a screen works (e.g. My Orders / طلباتي, Account, Home): explain from knowledge only. Do not search the product catalog or attach product cards unless they explicitly asked to find products.
             Decline only genuinely unrelated general-knowledge questions (weather, news, sports, politics, coding, other companies), politely, with a suggestion of platform topics you can help with.
             If asked whether the platform is trustworthy, explain concrete safeguards and the intermediary role from context; never promise zero risk or guarantee supplier product quality.
             If the user asks for human support, technical support, support staff, or a phone call — OR if context is insufficient and no tool applies — say you are not certain / a human agent will help, and ask them to leave their name, phone number, and email in the form that appears so support can call them within five minutes. Do NOT only send them to Live Chat for these cases.
@@ -595,6 +597,21 @@ public sealed class AiAssistantAppService(
     {
         if (generated.Listings is { Count: > 0 })
         {
+            // How-to / page-explain answers must never keep accidental catalog cards.
+            if (IsAppGuideOrExplainIntent(message))
+            {
+                return generated with
+                {
+                    Answer = StripWebLinksFromAnswer(generated.Answer),
+                    Listings = Array.Empty<AiProductListingDto>()
+                };
+            }
+
+            return generated with { Answer = StripWebLinksFromAnswer(generated.Answer) };
+        }
+
+        if (IsPersonIdentityQuestion(message) || IsAppGuideOrExplainIntent(message))
+        {
             return generated with { Answer = StripWebLinksFromAnswer(generated.Answer) };
         }
 
@@ -651,6 +668,11 @@ public sealed class AiAssistantAppService(
         }
 
         var q = visible.Trim().ToLowerInvariant();
+        if (IsPersonIdentityQuestion(visible) || IsAppGuideOrExplainIntent(visible))
+        {
+            return null;
+        }
+
         if (ContainsAny(q, "شحن", "shipping", "حاوية", "container", "من ميناء", "to country"))
         {
             return null;
@@ -715,11 +737,15 @@ public sealed class AiAssistantAppService(
         }
 
         // Bare product-name queries (e.g. "هيل" / "cardamom") still deserve cards.
+        // Skip person/identity questions and long free-form sentences.
         var maybeProduct = ExtractCatalogProductName(visible);
         if (!string.IsNullOrWhiteSpace(maybeProduct)
-            && maybeProduct.Length >= 2
+            && maybeProduct.Length is >= 2 and <= 40
+            && CountWords(maybeProduct) <= 4
             && !IsGreeting(maybeProduct)
             && !IsCapabilitiesQuestion(maybeProduct)
+            && !IsPersonIdentityQuestion(visible)
+            && !IsAppGuideOrExplainIntent(visible)
             && !IsClearlyOutOfScope(maybeProduct)
             && !IsHumanSupportIntent(maybeProduct))
         {
@@ -729,6 +755,133 @@ public sealed class AiAssistantAppService(
         return null;
     }
 
+    private static int CountWords(string text) =>
+        text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length;
+
+    /// <summary>
+    /// App how-to / page explain (e.g. "اشرحلي صفحة My Orders") — not a catalog search.
+    /// </summary>
+    private static bool IsAppGuideOrExplainIntent(string message)
+    {
+        var visible = ExtractUserVisibleText(message).Trim();
+        if (string.IsNullOrWhiteSpace(visible)) return false;
+
+        var q = visible.ToLowerInvariant();
+        var asksExplain = ContainsAny(
+            q,
+            "اشرح",
+            "اشرحي",
+            "اشرحلي",
+            "اشرح لي",
+            "شرح لي",
+            "شرح",
+            "وضح",
+            "وضحلي",
+            "عرفني",
+            "كيف",
+            "ازاي",
+            "إزاي",
+            "وين",
+            "فين",
+            "explain",
+            "how do i",
+            "how to",
+            "what is the",
+            "where is",
+            "tell me about");
+
+        var mentionsAppPage = ContainsAny(
+            q,
+            "صفحه",
+            "صفحة",
+            "page",
+            "شاشة",
+            "تاب",
+            "تبويب",
+            "طلباتي",
+            "my orders",
+            "my order",
+            "الحساب",
+            "account",
+            "الرئيسية",
+            "home",
+            "الملف",
+            "profile",
+            "إنشاء إعلان",
+            "انشاء اعلان",
+            "create ad",
+            "عروض",
+            "offers",
+            "حجز",
+            "booking",
+            "تجزئة",
+            "retail",
+            "الراس الذكي",
+            "الراس الذكي",
+            "ai assistant");
+
+        if (asksExplain && mentionsAppPage)
+        {
+            return true;
+        }
+
+        // Pure page help without shopping verbs.
+        if (asksExplain
+            && !ContainsAny(
+                q,
+                "منتج",
+                "منتجات",
+                "عايز",
+                "عاوز",
+                "اشتري",
+                "ابحث",
+                "دور على",
+                "سعر",
+                "بكام",
+                "product",
+                "products",
+                "buy",
+                "search",
+                "price"))
+        {
+            return true;
+        }
+
+        // Talking about My Orders as a screen (not "last order I bought").
+        if (ContainsAny(q, "طلباتي", "my orders", "my order")
+            && ContainsAny(q, "صفحه", "صفحة", "page", "اشرح", "شرح", "كيف", "ازاي", "إزاي", "وين", "فين", "explain", "how")
+            && !ContainsAny(q, "آخر اوردر", "اخر اوردر", "last order", "متأخر", "delay", "اشتريت بكام"))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// "من هو ناصر…" / "who is …" — not a catalog search.
+    /// </summary>
+    private static bool IsPersonIdentityQuestion(string message)
+    {
+        var visible = ExtractUserVisibleText(message).Trim();
+        if (string.IsNullOrWhiteSpace(visible)) return false;
+        if (IsCapabilitiesQuestion(visible)) return false;
+
+        var q = visible.ToLowerInvariant();
+        if (Regex.IsMatch(
+                q,
+                @"\bwho\s+(is|was)\s+\S+",
+                RegexOptions.CultureInvariant | RegexOptions.IgnoreCase))
+        {
+            return true;
+        }
+
+        return Regex.IsMatch(
+            q,
+            @"(^|\s)(من|مين)\s+(هو|هي)\s+\S+",
+            RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+    }
+
     private static string? ExtractCatalogProductName(string message)
     {
         var visible = ExtractUserVisibleText(message).Trim();
@@ -736,7 +889,7 @@ public sealed class AiAssistantAppService(
 
         var cleaned = Regex.Replace(
             visible,
-            @"أرخص|ارخص|الأرخص|الارخص|أغلى|اغلى|الأغلى|الاغلى|cheapest|most expensive|ابحث(?: عن)?|دور على|دور علي|هات(?:لي)?|عرض|كروت|منتجات|منتج|إعلانات|اعلانات|عاوز|عايز|عايزين|ابي|أبي|أبغى|محتاج|وريني|شوف|بدور على|بدور علي|ads|products?|search|find|show|want|need|looking for",
+            @"من هو|من هي|مين هو|مين هي|who is|who was|أرخص|ارخص|الأرخص|الارخص|أغلى|اغلى|الأغلى|الاغلى|cheapest|most expensive|ابحث(?: عن)?|دور على|دور علي|هات(?:لي)?|عرض|كروت|منتجات|منتج|إعلانات|اعلانات|عاوز|عايز|عايزين|ابي|أبي|أبغى|محتاج|وريني|شوف|بدور على|بدور علي|ads|products?|search|find|show|want|need|looking for",
             " ",
             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
@@ -1289,7 +1442,7 @@ public sealed class AiAssistantAppService(
         string[] markers =
         [
             "اعلان", "إعلان", "انشر", "نشر", "add ad", "create ad", "publish ad", "post ad",
-            "booking", "بوكينج", "request", "طلب", "offer", "retail", "category",
+            "booking", "بوكينج", "request", "inquiry", "طلب", "offer", "retail", "category",
             "عاوز اضيف", "عاوز أضيف", "اضافة اعلان", "إضافة إعلان", "انشئ", "أنشئ"
         ];
         return markers.Any(q.Contains);
@@ -1307,7 +1460,7 @@ public sealed class AiAssistantAppService(
         }
 
         if (q.Contains("shipping") || q.Contains("شحن") || q.Contains("ميناء")) return "shipping";
-        if (q.Contains("request") || q.Contains("طلب شراء") || q.Contains("طلبية")) return "request";
+        if (q.Contains("request") || q.Contains("inquiry") || q.Contains("طلب شراء") || q.Contains("طلبية")) return "request";
         return null;
     }
 
@@ -1335,8 +1488,8 @@ public sealed class AiAssistantAppService(
                 en = $"{prefixEn}your account is for buying only and is not authorized to create ads. You can browse, buy, and track orders; to publish ads register as a supplier or company.";
                 break;
             case "company_customer" when requested is "booking" or "offer" or "retail" or "category" or "shipping":
-                ar = $"{prefixAr}حساب عميل الشركة غير مخوّل بإنشاء هذا النوع من الإعلانات. المسموح لك فقط إعلان طلب (Request).";
-                en = $"{prefixEn}a company customer account is not authorized to create that ad type. You can only create Request ads.";
+                ar = $"{prefixAr}حساب عميل الشركة غير مخوّل بإنشاء هذا النوع من الإعلانات. المسموح لك فقط إعلان طلب (Inquiry).";
+                en = $"{prefixEn}a company customer account is not authorized to create that ad type. You can only create Inquiry ads.";
                 break;
             case "shipping" when requested is "booking" or "offer" or "retail" or "category" or "request":
                 ar = $"{prefixAr}حساب شركة الشحن غير مخوّل بإنشاء إعلانات المنتجات. المسموح لك فقط إعلان شحن من ميناء إلى ميناء.";
@@ -1375,9 +1528,9 @@ public sealed class AiAssistantAppService(
         var bodyAr = account.Audience switch
         {
             "supplier" =>
-                "أقدر: أضيف إعلاناتك (Booking/Offer/Retail/Category/Request حسب صلاحياتك)، أعدّل الأسعار والكميات، أبحث في المنتجات وأقارن الأسعار، أجيبك بالأرخص والأغلى، أعرف أسعار الشحن لدولة معيّنة، وأجيبك بتفاصيل إعلاناتك وطلباتك ومبيعاتك والطلبات المعلّقة على إعلاناتك.",
+                "أقدر: أضيف إعلاناتك (Booking/Offer/Retail/Category/Inquiry حسب صلاحياتك)، أعدّل الأسعار والكميات، أبحث في المنتجات وأقارن الأسعار، أجيبك بالأرخص والأغلى، أعرف أسعار الشحن لدولة معيّنة، وأجيبك بتفاصيل إعلاناتك وطلباتك ومبيعاتك والطلبات المعلّقة على إعلاناتك.",
             "company_customer" =>
-                "أقدر: أضيف إعلان طلب (Request) فقط، أبحث في المنتجات وأقارن الأسعار، أجيبك بالأرخص والأغلى، أعرف أسعار الشحن لدولة معيّنة، وأجيبك بتفاصيل طلباتك في طلباتي.",
+                "أقدر: أضيف إعلان طلب (Inquiry) فقط، أبحث في المنتجات وأقارن الأسعار، أجيبك بالأرخص والأغلى، أعرف أسعار الشحن لدولة معيّنة، وأجيبك بتفاصيل طلباتك في طلباتي.",
             "shipping" =>
                 "أقدر: أنشر إعلان شحن من ميناء إلى ميناء، أبحث عن أسعار الشحن بين الدول، وأساعدك في تفاصيل إعلانات الشحن الخاصة بك.",
             "personal" =>
@@ -1389,9 +1542,9 @@ public sealed class AiAssistantAppService(
         var bodyEn = account.Audience switch
         {
             "supplier" =>
-                "I can: create your ads (Booking/Offer/Retail/Category/Request as allowed), update prices and quantities, search products and compare prices, find the cheapest and most expensive listings, look up shipping prices to a country, and show details of your ads, orders, sales, and pending ad orders.",
+                "I can: create your ads (Booking/Offer/Retail/Category/Inquiry as allowed), update prices and quantities, search products and compare prices, find the cheapest and most expensive listings, look up shipping prices to a country, and show details of your ads, orders, sales, and pending ad orders.",
             "company_customer" =>
-                "I can: create Request ads only, search products and compare prices, find cheapest/most expensive listings, look up shipping prices to a country, and show your My Orders details.",
+                "I can: create Inquiry ads only, search products and compare prices, find cheapest/most expensive listings, look up shipping prices to a country, and show your My Orders details.",
             "shipping" =>
                 "I can: publish port-to-port shipping ads, search shipping prices between countries, and help with your shipping listings.",
             "personal" =>

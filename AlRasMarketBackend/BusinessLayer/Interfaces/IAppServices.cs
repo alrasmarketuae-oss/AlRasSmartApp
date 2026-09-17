@@ -98,7 +98,9 @@ public interface IAdminUsersAppService
         DateTime? joinedFrom,
         DateTime? joinedTo,
         CancellationToken cancellationToken = default,
-        bool companiesOnly = false);
+        bool companiesOnly = false,
+        bool? isCustomer = null,
+        bool pendingProfileEditsOnly = false);
 
     Task<AdminUserDetailDto> GetUserByIdAsync(string userId, CancellationToken cancellationToken = default);
 

@@ -493,7 +493,7 @@ public sealed partial class AiAssistantMcpToolsService(
             {
                 name = "create_request_ad",
                 description =
-                    "Create ONE Request ad (طلب / Request) using the same backend API as mobile Create Ad / Create Order. " +
+                    "Create ONE Inquiry ad (طلب / Inquiry) using the same backend API as mobile Create Ad / Create Order. " +
                     "Allowed audiences: supplier OR company_customer only. " +
                     "Collect required fields first: name, specifications, negotiable, request_type Local/Reexport, packaging (ALWAYS ask). " +
                     "OPTIONAL: target price, quantity, unit_name, currency — omit any the user did not provide. " +
@@ -541,7 +541,7 @@ public sealed partial class AiAssistantMcpToolsService(
                             type = "string",
                             description =
                                 "Saved delivery address GUID from list_my_addresses. " +
-                                "Required for company_customer; recommended for supplier Request ads."
+                                "Required for company_customer; recommended for supplier Inquiry ads."
                         },
                         delivery_date = new
                         {
@@ -1497,6 +1497,14 @@ public sealed partial class AiAssistantMcpToolsService(
     {
         var ids = matches.Select(m => m.ProductId).Distinct().ToList();
         var imagesByProduct = new Dictionary<Guid, IReadOnlyList<string>>();
+        var metaByProduct = new Dictionary<Guid, (
+            string? DescriptionEn,
+            string? DescriptionAr,
+            DateTime CreatedAt,
+            byte? DiscountPercentage,
+            short? DiscountDays,
+            byte? ProductTypeId)>();
+
         if (ids.Count > 0)
         {
             var imageRows = await dbContext.ProductImages.AsNoTracking()
@@ -1515,6 +1523,46 @@ public sealed partial class AiAssistantMcpToolsService(
                         .Where(path => !string.IsNullOrWhiteSpace(path))
                         .Take(5)
                         .ToList());
+
+            var productRows = await dbContext.Products.AsNoTracking()
+                .Where(p => ids.Contains(p.ProductId))
+                .Select(p => new
+                {
+                    p.ProductId,
+                    p.DescriptionEn,
+                    p.CreatedAt,
+                    p.DiscountPercentage,
+                    p.DiscountDays,
+                    p.ProductTypeId
+                })
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            var descriptionArByProduct = await dbContext.ContentTranslations.AsNoTracking()
+                .Where(t =>
+                    t.ProductId != null
+                    && ids.Contains(t.ProductId.Value)
+                    && t.Scope == ContentTranslationScopes.Product
+                    && t.Field == ContentTranslationFields.Description)
+                .Select(t => new { ProductId = t.ProductId!.Value, t.TextAr })
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            var descArMap = descriptionArByProduct
+                .GroupBy(x => x.ProductId)
+                .ToDictionary(g => g.Key, g => g.Select(x => x.TextAr).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)));
+
+            foreach (var row in productRows)
+            {
+                descArMap.TryGetValue(row.ProductId, out var descAr);
+                metaByProduct[row.ProductId] = (
+                    row.DescriptionEn,
+                    descAr,
+                    row.CreatedAt,
+                    row.DiscountPercentage,
+                    row.DiscountDays,
+                    row.ProductTypeId);
+            }
         }
 
         return matches.Select(m =>
@@ -1524,6 +1572,11 @@ public sealed partial class AiAssistantMcpToolsService(
                 ? "retail"
                 : (m.CategoryId is > 0 ? "category" : (string?)null);
             imagesByProduct.TryGetValue(m.ProductId, out var images);
+            metaByProduct.TryGetValue(m.ProductId, out var meta);
+            var typeId = m.ProductTypeId ?? meta.ProductTypeId;
+            var typeName = isRetail
+                ? "Retail"
+                : ResolveProductTypeName(typeId) ?? m.Channel;
             return new AiProductListingDto(
                 m.ProductId,
                 m.ProductCode,
@@ -1536,13 +1589,28 @@ public sealed partial class AiAssistantMcpToolsService(
                 m.Quantity,
                 m.UnitName,
                 m.CategoryId,
-                m.ProductTypeId,
-                isRetail ? "Retail" : null,
+                typeId,
+                typeName,
                 searchChannel,
                 isRetail,
-                images ?? Array.Empty<string>());
+                images ?? Array.Empty<string>(),
+                meta.DescriptionEn,
+                meta.DescriptionAr,
+                meta.CreatedAt == default ? null : UtcDateTimeHelper.AsUtc(meta.CreatedAt),
+                meta.DiscountPercentage,
+                meta.DiscountDays);
         }).ToList();
     }
+
+    private static string? ResolveProductTypeName(byte? productTypeId) =>
+        productTypeId switch
+        {
+            ProductTypeCodes.Retail => "Retail",
+            ProductTypeCodes.Booking => "Booking",
+            ProductTypeCodes.Offers => "Offers",
+            ProductTypeCodes.Requests => "Inquiry",
+            _ => null
+        };
 
     private async Task<string> GetMySalesCountAsync(
         Guid? userId,
@@ -1908,6 +1976,8 @@ public sealed partial class AiAssistantMcpToolsService(
         "عايز", "عاوز", "هات", "هاتي", "جيب", "وريني", "شوف",
         "ايه", "كام", "في", "السوق", "عندكم", "موجود", "موجوده",
         "عايزين", "لي", "لييا", "انا", "من", "علي", "عن",
+        "هو", "هي", "ده", "دي", "هذا", "هذه", "ذلك", "تلك",
+        "who", "is", "was", "are", "what", "which",
         "cheap", "cheapest", "expensive", "lowest", "highest", "most",
         "price", "prices", "product", "products", "ad", "ads",
         "listing", "listings", "show", "find", "get", "want", "need",
@@ -1975,9 +2045,11 @@ public sealed partial class AiAssistantMcpToolsService(
             {
                 best = Math.Max(best, 80);
             }
-            else if (name.Contains(queryNorm, StringComparison.Ordinal))
+            else if (queryNorm.Length >= 3
+                     && name.Contains(queryNorm, StringComparison.Ordinal))
             {
                 // Prefer shorter names for contains (closer to the query).
+                // Require ≥3 chars so tokens like "هو" never match half the catalog.
                 var penalty = Math.Min(30, Math.Abs(name.Length - queryNorm.Length));
                 best = Math.Max(best, 60 - penalty / 3);
             }

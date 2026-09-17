@@ -31,7 +31,7 @@ export default function UsersFilterBar({
   return (
     <div
       dir={dir}
-      className="grid grid-cols-1 gap-3 px-4 py-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-3 xl:grid-cols-[minmax(0,1fr)_repeat(3,minmax(0,140px))_auto]"
+      className="grid grid-cols-1 gap-3 px-4 py-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-3 xl:grid-cols-[minmax(0,1.2fr)_repeat(3,minmax(0,160px))_auto]"
     >
       <div className="w-full sm:col-span-2 xl:col-span-1">
         <input
@@ -70,7 +70,9 @@ export default function UsersFilterBar({
         >
           <option value="">{t('users.allTypes')}</option>
           <option value="3">{t('users.client')}</option>
+          <option value="2c">{t('users.companyCustomer')}</option>
           <option value="2">{t('users.supplier')}</option>
+          <option value="5">{t('users.shippingCompany')}</option>
           <option value="1">{t('users.admin')}</option>
         </select>
       </div>

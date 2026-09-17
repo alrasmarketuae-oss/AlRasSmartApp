@@ -22,6 +22,8 @@ public class AdminUsersController(IAdminUsersAppService adminUsersAppService) : 
         [FromQuery] DateTime? joinedFrom = null,
         [FromQuery] DateTime? joinedTo = null,
         [FromQuery] bool companiesOnly = false,
+        [FromQuery] bool? isCustomer = null,
+        [FromQuery] bool pendingProfileEditsOnly = false,
         CancellationToken cancellationToken = default)
     {
         var result = await adminUsersAppService.GetUsersAsync(
@@ -33,7 +35,9 @@ public class AdminUsersController(IAdminUsersAppService adminUsersAppService) : 
             joinedFrom,
             joinedTo,
             cancellationToken,
-            companiesOnly);
+            companiesOnly,
+            isCustomer,
+            pendingProfileEditsOnly);
         return Ok(result);
     }
 

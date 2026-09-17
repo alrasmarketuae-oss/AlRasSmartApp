@@ -87,11 +87,14 @@ class MyRequestOfferModel {
   final List<String> videoPaths;
   final List<String> documentPaths;
 
-  /// Offers on Requests ads use "Accept Offer"; other ads use "Accept Order".
+  /// Offers on Inquiry ads use "Accept Offer"; other ads use "Accept Order".
   bool get isRequestProductOffer {
     if (productTypeId == 4) return true;
     final type = productTypeNameEn.trim().toLowerCase();
-    return type == 'requests' || type.contains('request');
+    return type == 'requests' ||
+        type == 'inquiry' ||
+        type.contains('request') ||
+        type.contains('inquiry');
   }
 
   String get displayTotalPrice =>

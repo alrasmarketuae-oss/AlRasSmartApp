@@ -21,7 +21,9 @@ public class AdminUsersAppService(
         DateTime? joinedFrom,
         DateTime? joinedTo,
         CancellationToken cancellationToken = default,
-        bool companiesOnly = false)
+        bool companiesOnly = false,
+        bool? isCustomer = null,
+        bool pendingProfileEditsOnly = false)
     {
         page = page < 1 ? 1 : page;
         pageSize = pageSize is < 1 or > 100 ? 20 : pageSize;
@@ -36,6 +38,18 @@ public class AdminUsersAppService(
         else if (roleId.HasValue)
         {
             query = query.Where(x => x.RoleId == roleId.Value);
+            if (roleId.Value == RoleIds.Seller && isCustomer.HasValue)
+            {
+                query = isCustomer.Value
+                    ? query.Where(x => x.IsCustomer == true)
+                    : query.Where(x => x.IsCustomer != true);
+            }
+        }
+
+        if (pendingProfileEditsOnly)
+        {
+            query = query.Where(x =>
+                x.PendingProfileChanges != null && x.PendingProfileChanges != string.Empty);
         }
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -44,7 +58,8 @@ public class AdminUsersAppService(
             query = query.Where(x =>
                 x.FullName.ToLower().Contains(term)
                 || x.Email.ToLower().Contains(term)
-                || (x.CompanyName != null && x.CompanyName.ToLower().Contains(term)));
+                || (x.CompanyName != null && x.CompanyName.ToLower().Contains(term))
+                || (x.PhoneNumber != null && x.PhoneNumber.ToLower().Contains(term)));
         }
 
         if (!string.IsNullOrWhiteSpace(status))
@@ -61,10 +76,13 @@ public class AdminUsersAppService(
                     && !x.IsVerified
                     && !x.IsRejected
                     && (x.PendingProfileChanges == null || x.PendingProfileChanges == string.Empty)),
+                // Match GetUserStatusLabelAr: pending approval for unverified/unapproved
+                // sellers/shipping, or any account with pending profile edits.
                 "pending" or "بانتظار الموافقة" => query.Where(x =>
                     !x.IsRejected
                     && (
-                        ((x.RoleId == RoleIds.Seller || x.RoleId == RoleIds.ShippingCompany) && !x.IsApproved && x.IsVerified)
+                        ((x.RoleId == RoleIds.Seller || x.RoleId == RoleIds.ShippingCompany)
+                            && !x.IsApproved)
                         || (x.PendingProfileChanges != null && x.PendingProfileChanges != string.Empty))),
                 "rejected" or "مرفوض" => query.Where(x => x.IsRejected),
                 "suspended" or "موقوف" => query.Where(x =>
@@ -110,7 +128,8 @@ public class AdminUsersAppService(
                     x.PendingProfileChanges != null && x.PendingProfileChanges != string.Empty,
                 CanApprove = !x.IsRejected
                     && (
-                        ((x.RoleId == RoleIds.Seller || x.RoleId == RoleIds.ShippingCompany) && !x.IsApproved && x.IsVerified)
+                        ((x.RoleId == RoleIds.Seller || x.RoleId == RoleIds.ShippingCompany)
+                            && !x.IsApproved && x.IsVerified)
                         || (x.PendingProfileChanges != null && x.PendingProfileChanges != string.Empty)),
                 StatusLabelAr = AdminMappings.GetUserStatusLabelAr(
                     x.IsActive,

@@ -453,7 +453,9 @@ export const enMessages = {
       approveError: 'Could not approve company account',
       allTypes: 'All types',
       client: 'Client',
+      companyCustomer: 'Company customer',
       supplier: 'Supplier',
+      shippingCompany: 'Shipping company',
       admin: 'Admin',
       allStatuses: 'All statuses',
       complete: 'Complete',
@@ -889,14 +891,14 @@ export const enMessages = {
         commissionPercent:
           'App profit rate by product type (retail, booking, offer, request) or category commission if set — from Settings.',
         supplierUnitPrice:
-          'Base unit price before commission — from the product price stored in the system (USDPrice).',
+          'Exact supplier listing unit price from the product (USDPrice / retail price) — no commission and no quarter-round cushion.',
         customerUnitPrice:
-          'Customer unit price after commission — calculated: supplier price + commission %.',
+          'Customer unit price after commission — calculated: supplier price + commission %, then rounded up to the next quarter.',
         supplierTotalPrice: 'Supplier unit price × quantity — without app commission.',
         customerTotalPrice:
           'Customer unit price × quantity — calculated from product price + commission.',
         appProfitAmount:
-          'Difference between customer total and supplier total — app profit.',
+          'Customer total minus supplier total (commission plus any quarter-rounding cushion).',
         paymentMethod: 'Payment method the customer chose when placing the order.',
         requestOffer: {
           quantity: 'Quantity the supplier will provide in this offer — from the order record.',

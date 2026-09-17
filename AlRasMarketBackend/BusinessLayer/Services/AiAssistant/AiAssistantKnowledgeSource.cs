@@ -62,7 +62,7 @@ internal static class AiAssistantKnowledgeSource
             Answer: I am Alras Smart (الراس الذكي), the official AI agent inside the Al Ras Smart app.
             My English name is Alras Smart. My Arabic name is الراس الذكي.
             Precisely, I can (depending on your account type): create ads, update prices and quantities on multiple ads in the same message when asked, search products and compare prices, fetch the cheapest and most expensive listings, look up shipping prices to a country, fetch details of your ads and orders, and report your sales and pending orders on your ads.
-            What I can do depends on account type: suppliers can create multiple ad types and manage ads and sales; company customers can create Request only; shipping companies create shipping ads only; personal customers buy and track orders and cannot create ads.
+            What I can do depends on account type: suppliers can create multiple ad types and manage ads and sales; company customers can create Inquiry only; shipping companies create shipping ads only; personal customers buy and track orders and cannot create ads.
             If someone tries to create an ad they are not authorized for, I refuse immediately before collecting any fields.
             I am not a human support agent: for individual cases needing human action, use Live Chat from Profile.
             I understand and reply in ANY language the user writes (any Arabic dialect, English, French, Hindi, Urdu, Tagalog, Spanish, and more). Match their message language immediately — never force only Arabic or English.
@@ -105,7 +105,7 @@ internal static class AiAssistantKnowledgeSource
             Answer: start by signing in or creating an account, because most actions require one.
             If you are an individual buyer, create your account with Google or Apple in seconds, then browse retail products on home or search by name or image, add to cart and complete the purchase, and follow your order from My Orders.
             If you are a supplier, complete registration with your trade license and company images and wait for approval, then create listings from the Create Ad button, follow them from the Account page. Suppliers can also buy and place orders like any buyer and track those purchases from My Orders, in addition to incoming orders on their ads.
-            If you are a company buying wholesale, browse the categories, and if you cannot find what you need publish a Request ad from the Create Order page and receive offers.
+            If you are a company buying wholesale, browse the categories, and if you cannot find what you need publish a Inquiry ad from the Create Order page and receive offers.
             If you are a shipping company, add your shipping ad from Home and manage your ads from the same place.
             At any time you can ask me about any step, or use Live Chat for human help.
             """);
@@ -165,14 +165,14 @@ internal static class AiAssistantKnowledgeSource
             Buyers additionally purchase, follow their orders from My Orders, and request returns for eligible cases.
             UAE-based suppliers additionally create almost all ad types. A supplier registered with a non-UAE phone number and located outside the UAE can create Booking ads only. Suppliers manage listings in My Ads, follow bids in My Offers.
             Important: suppliers can also buy products, place orders, and track their purchases from My Orders like any buyer — buying is not limited to customer accounts.
-            Company customers additionally publish Request ads and receive, accept, or reject offers.
+            Company customers additionally publish Inquiry ads and receive, accept, or reject offers.
             Shipping companies add and manage shipping ads only.
             """);
 
         Add(chunks, "platform-overview", "شرح منصة الراس الذكي", "ar", All,
             """
             الراس الذكي منصة سوق إلكترونية تربط الموردين والعملاء الأفراد وعملاء الشركات وشركات الشحن.
-            تعرض المنصة المنتجات داخل الأصناف (Categories)، وتدعم أنواع إعلانات هي: Retail (تجزئة) وBooking (حجز/شحنات) وOffers (عروض بخصم) وRequests (طلبات شراء) وShipping (شحن).
+            تعرض المنصة المنتجات داخل الأصناف (Categories)، وتدعم أنواع إعلانات هي: Retail (تجزئة) وBooking (حجز/شحنات) وOffers (عروض بخصم) وInquiry (طلبات شراء) وShipping (شحن).
             ما يظهر لك وما يمكنك تنفيذه يختلف حسب نوع حسابك.
             توفر المنصة بحثاً نصياً واقتراحات فورية وبحثاً بالصورة، وسلة شراء وطلبات وتتبع حالة الطلب، ودعماً بشرياً عبر Live Chat، ومساعد ذكاء اصطناعي لشرح المنصة وسياساتها.
             تعمل شركة ميرج سبايس لتجارة المواد الغذائية كوسيط لتنظيم العمليات التجارية، وليست مالكة للبضائع المعروضة.
@@ -180,7 +180,7 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "platform-overview", "Al Ras Smart platform overview", "en", All,
             """
             Al Ras Smart is an electronic marketplace connecting suppliers, personal customers, company customers, and shipping companies.
-            It lists products under Categories and supports ad types: Retail, Booking, Offers (discounted), Requests, and Shipping.
+            It lists products under Categories and supports ad types: Retail, Booking, Offers (discounted), Inquiry, and Shipping.
             What you can see and do depends on your account type.
             The platform provides text search, instant suggestions, image search, a cart, orders with status tracking, human Live Chat support, and an AI Assistant for platform knowledge and policies.
             Merge Spice Foodstuff Trading LLC operates as an intermediary that organises the trade process and does not own the listed goods.
@@ -192,7 +192,7 @@ internal static class AiAssistantKnowledgeSource
             الإجابة: تطبيق الراس الذكي منصة B2B ذكية لتجارة المواد الغذائية بالجملة، تربط المشترين والموردين وتجار الجملة وشركات الشحن في منصة واحدة.
             عند فتح التطبيق يظهر في الأعلى شريط إعلاني متحرك لأخبار السوق والمنتجات الجديدة والفرص والعروض المميزة.
             أسفل الشريط خمسة أقسام رئيسية:
-            1) الطلبات Requests: طلبات منتجات ينشرها مشترون أو موردون يبحثون عن بضائع؛ يمكنك متابعة طلباتك أو تقديم عرض إذا كان المطلوب متوفراً لديك.
+            1) الطلبات Inquiry: طلبات منتجات ينشرها مشترون أو موردون يبحثون عن بضائع؛ يمكنك متابعة طلباتك أو تقديم عرض إذا كان المطلوب متوفراً لديك.
             2) العروض Offers: للموردين الذين يريدون بيع بضائع بسرعة أو بأسعار مميزة؛ لاكتشاف عروض الجملة والبضائع المخفضة.
             3) الحجز Booking: منتجات بأسعار حجز للتجارة الدولية؛ المورد ينشر السعر والمنشأ والوجهة وشروط الشحن.
             4) البيع المحلي Retail: بيع المنتجات داخل دولة الإمارات بسعر محلي إضافي.
@@ -202,20 +202,20 @@ internal static class AiAssistantKnowledgeSource
             في أسفل التطبيق شريط التنقل: الصفحة الرئيسية، الحساب، وإنشاء إعلان جديد أو طلب منتج.
             """);
 
-        Add(chunks, "app-walkthrough-home", "Home screen sections: Requests, Offers, Booking, Retail, Shipping", "en", All,
+        Add(chunks, "app-walkthrough-home", "Home screen sections: Inquiry, Offers, Booking, Retail, Shipping", "en", All,
             """
-            Question: explain the app home screen? What are Requests, Offers, Booking, Retail, and Shipping Prices sections?
+            Question: explain the app home screen? What are Inquiry, Offers, Booking, Retail, and Shipping Prices sections?
             Answer: Al Ras Smart is a smart B2B wholesale food trading platform connecting buyers, suppliers, wholesalers, and shipping companies in one place.
             At the top is a scrolling news banner for market news, new products, opportunities, and featured offers.
             Below it are five main sections:
-            1) Requests: product requests posted by buyers or suppliers looking for goods; follow your own requests or submit an offer if you have the product.
+            1) Inquiry: product inquiries posted by buyers or suppliers looking for goods; follow your own inquiries or submit an offer if you have the product.
             2) Offers: for suppliers who want to sell quickly or at special prices; discover wholesale deals and discounted goods.
             3) Booking: products listed at booking prices for international trade; suppliers publish price, origin, destination, and shipping terms.
             4) Retail: sell products inside the UAE with a local retail price.
             5) Shipping Prices: freight rates and updates from shipping companies for import/export planning.
             Then food categories: spices, cardamom, legumes, herbs, rice, dairy, coffee, nuts, seeds, dried fruits, and more.
             Featured Offers appear below the categories.
-            The bottom navigation bar gives Home, Account, and Create Ad / Create Request.
+            The bottom navigation bar gives Home, Account, and Create Ad / Create Inquiry.
             """);
 
         Add(chunks, "app-walkthrough-create-ads", "كيف أنشئ إعلان، حجز، طلب، عرض، التعبئة، النشر والمراجعة", "ar", All,
@@ -238,7 +238,7 @@ internal static class AiAssistantKnowledgeSource
             As a supplier: upload product photos, enter name, quantity, and price, choose local UAE market or re-export, pick ad type Product, Booking, Retail, Request, or Offer, and add specifications.
             For Booking: upload photos, enter price, currency, and unit, choose FOB, CNF, or CIF, set origin country and port, destination country and port, expected shipping days, packing type, and specs.
             If the product is not listed: create a Request — upload a photo or type the name, set negotiable or fixed, local or re-export, packing, and specs; suppliers can submit offers after you publish.
-            Target price, required quantity, unit, and currency are OPTIONAL on Request ads — only collect them when the user wants them.
+            Target price, required quantity, unit, and currency are OPTIONAL on Inquiry ads — only collect them when the user wants them.
             Packing: choose the primary pack type or add multiple packing options when available.
             For Offer: upload photos, enter price before and after discount, currency and unit, local or export, negotiable or not, offer duration in days, packing, and specs.
             Tap Publish; the ad goes to admin review and appears in the app after approval.
@@ -334,7 +334,7 @@ internal static class AiAssistantKnowledgeSource
             المنصة تستخدم عملتين: الدرهم الإماراتي AED والدولار الأمريكي USD.
             إعلانات Retail (التجزئة) تكون بالدرهم AED دائماً ولا يمكن تغييرها، لأن البيع بالتجزئة داخل دولة الإمارات.
             إعلانات Booking تكون بالدولار USD دائماً ولا يمكن تغييرها، لأنها شحنات دولية من ميناء إلى ميناء.
-            باقي الإعلانات مثل منتجات الأصناف وOffers وRequests يمكن للمعلن اختيار AED أو USD، والافتراضي هو AED.
+            باقي الإعلانات مثل منتجات الأصناف وOffers وInquiry يمكن للمعلن اختيار AED أو USD، والافتراضي هو AED.
             عند الشراء تُعرض القيمة للعميل بحسب قناة البيع وسعر التحويل المعتمد في المنصة.
             """);
         Add(chunks, "currency", "Currencies used on the platform", "en", All,
@@ -342,7 +342,7 @@ internal static class AiAssistantKnowledgeSource
             The platform uses two currencies: UAE Dirham (AED) and US Dollar (USD).
             Retail ads are always priced in AED and this cannot be changed, because retail selling happens inside the UAE.
             Booking ads are always priced in USD and this cannot be changed, because they are international port-to-port shipments.
-            Other listings such as category products, Offers, and Requests let the advertiser pick AED or USD, with AED as the default.
+            Other listings such as category products, Offers, and Inquiry let the advertiser pick AED or USD, with AED as the default.
             At checkout the amount is presented according to the sales channel and the platform's applied conversion rate.
             """);
 
@@ -382,7 +382,7 @@ internal static class AiAssistantKnowledgeSource
             There are five user states: Guest (not signed in), Supplier, Personal customer, Company customer, and Shipping company.
             Supplier: a company that sells and lists goods. A UAE-based supplier can create most ad types, while an overseas supplier registered with a non-UAE phone number can create Booking only. Suppliers can also buy from the marketplace and track their purchases in My Orders.
             Personal customer: an individual buyer who purchases retail products and cannot create ads.
-            Company customer: a company that buys wholesale, browses categories and ad types, and can create Request ads only.
+            Company customer: a company that buys wholesale, browses categories and ad types, and can create Inquiry ads only.
             Shipping company: publishes port-to-port shipping services only.
             Each account type sees a different interface and has different permissions.
             """);
@@ -426,8 +426,8 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "ad-types-matrix", "Who can create each ad type", "en", All,
             """
             Ad creation permissions by account type:
-            A UAE-based supplier can create Category listings, Retail ads, Booking ads, discounted Offer ads, and Request ads. A supplier registered with a non-UAE phone number and located outside the UAE can create Booking only; the other creation types are unavailable.
-            Company customer can create Request ads only and cannot create Booking, Retail, Category, or discounted Offer ads.
+            A UAE-based supplier can create Category listings, Retail ads, Booking ads, discounted Offer ads, and Inquiry ads. A supplier registered with a non-UAE phone number and located outside the UAE can create Booking only; the other creation types are unavailable.
+            Company customer can create Inquiry ads only and cannot create Booking, Retail, Category, or discounted Offer ads.
             Personal customer cannot create any ad at all and is a buyer only.
             Shipping company creates shipping ads only (port-to-port with 20ft and 40ft prices) and no other type.
             Guests cannot create anything before signing in.
@@ -468,7 +468,7 @@ internal static class AiAssistantKnowledgeSource
             Use conversational Plan Mode: list required fields, explicitly call out anything still missing in their reply, then call the tool when complete. They may also use Create Ad in the bottom bar manually.
             Overseas supplier with a non-UAE phone: Booking only — say so and do not offer the other types, but Booking is allowed via create_booking_ad in chat.
 
-            Company customer: Request ads only (not Booking, Retail, Category, or discounted Offer).
+            Company customer: Inquiry ads only (not Booking, Retail, Category, or discounted Offer).
             Tell them that and list what a Request needs: product name, specifications, negotiable, Local or Reexport, delivery address from saved addresses (required for company_customer). Target price, quantity, unit, and currency are OPTIONAL unless the user provides a target price (then also collect currency USD/AED and unit). Optional delivery date and images. Publish from Create Order or Alras Smart chat.
 
             Shipping company: shipping ads only from Home (port-to-port with 20ft and 40ft prices).
@@ -525,20 +525,20 @@ internal static class AiAssistantKnowledgeSource
     {
         Add(chunks, "supplier-nav", "واجهة المورد والتنقل بين الصفحات", "ar", ["supplier"],
             """
-            الصفحة الرئيسية للمورد تعرض اسمه في الأعلى ثم شريط البحث والبحث بالصورة، ثم البانرات، ثم أنواع الإعلانات (Booking, Retail, Offers, Shipping, Requests)، ثم الأصناف، ثم المنتجات.
+            الصفحة الرئيسية للمورد تعرض اسمه في الأعلى ثم شريط البحث والبحث بالصورة، ثم البانرات، ثم أنواع الإعلانات (Booking, Retail, Offers, Shipping, Inquiry)، ثم الأصناف، ثم المنتجات.
             منتجات الصفحة الرئيسية هي منتجات الأصناف فقط، أي المنتجات التي لها CategoryId، وليست أنواع الخدمات وحدها.
             البار السفلي للمورد يشمل: الصفحة الرئيسية، إنشاء إعلان، طلباتي (My Orders)، الحساب (Account)، الملف الشخصي (Profile).
             صفحة الحساب تنقسم إلى قسمين: إعلاناتي (My Ads) وعروضي (My Offers).
-            صفحة طلباتي للمورد فيها تبويبان: الواردة (طلبات وعروض واردة على إعلاناتك — تقبل أو ترفض) والمشتريات (الطلبات التي اشتراها المورد كمشتري).
+            صفحة طلباتي للمورد فيها ثلاثة تبويبات: مبيعاتي (My Sales — الطلبات الواردة على إعلاناتك غير Inquiry)، مشترياتي (Purchases — ما اشتراه المورد كمشتري)، والواردة (Incoming — العروض الواردة على إعلانات Inquiry).
             على أيقونة طلباتي في البار السفلي تظهر شارة حمراء بعدد الطلبات الواردة التي بانتظار موافقتك كبائع.
             """);
         Add(chunks, "supplier-nav", "Supplier interface and navigation", "en", ["supplier"],
             """
-            The supplier home shows the account name at the top, then the search bar with image search, banners, ad types (Booking, Retail, Offers, Shipping, Requests), categories, and then products.
+            The supplier home shows the account name at the top, then the search bar with image search, banners, ad types (Booking, Retail, Offers, Shipping, Inquiry), categories, and then products.
             Home products are category products only, meaning items that have a CategoryId, not the service types alone.
             The supplier bottom bar includes: Home, Create Ad, My Orders, Account, and Profile.
             The Account page has two sections: My Ads and My Offers.
-            My Orders for a supplier has two tabs: Incoming (orders and offers received on your ads — accept or reject) and Purchases (orders the supplier placed as a buyer).
+            My Orders for a supplier has three tabs: My Sales (orders received on your non-Inquiry ads), Purchases (orders the supplier placed as a buyer), and Incoming (offers received on your Inquiry ads).
             A red badge on the My Orders icon shows how many incoming orders are awaiting your approval as seller.
             """);
 
@@ -566,18 +566,18 @@ internal static class AiAssistantKnowledgeSource
             الصفحة الرئيسية لعميل الشركة تعرض اسم الشركة في الأعلى ثم شريط البحث والبحث بالصورة، ثم البانرات، ثم أنواع الإعلانات، ثم الأصناف، ثم منتجات الأصناف.
             منتجات الصفحة الرئيسية لعميل الشركة ليست Retail فقط كما في حساب الفرد، بل منتجات الأصناف مثل المورد، لأنه يشتري بالجملة.
             البار السفلي: الصفحة الرئيسية (Home)، وإنشاء طلب (Create Order)، والحساب (Account)، وطلباتي (My Orders)، والملف الشخصي (Profile).
-            صفحة Create Order مخصصة لإنشاء إعلان Request فقط لأنه عملية شراء/طلب بضاعة.
-            صفحة الحساب (Account) لعميل الشركة تعرض إعلاناتي فقط — إعلانات Request التي نشرها، بدون قسم عروضي (My Offers).
-            صفحة طلباتي لعميل الشركة فيها تبويبان: طلباتي (Requests — إعلانات Request التي نشرها + العروض الواردة عليها) والمشتريات (Orders — مشترياتك كمشتري).
+            صفحة Create Order مخصصة لإنشاء إعلان Inquiry فقط لأنه عملية شراء/طلب بضاعة.
+            صفحة الحساب (Account) لعميل الشركة تعرض إعلاناتي فقط — إعلانات Inquiry التي نشرها، بدون قسم عروضي (My Offers).
+            صفحة طلباتي لعميل الشركة فيها تبويبان فقط (لا يبيع على التطبيق): مشترياتي (Purchases — مشترياتك كمشتري) والواردة (Incoming — العروض الواردة على إعلانات Inquiry).
             """);
         Add(chunks, "company-nav", "Company customer interface and navigation", "en", ["company_customer"],
             """
             The company customer home shows the company name at the top, then the search bar with image search, banners, ad types, categories, and category products.
             Home products are not Retail-only as they are for a personal account; they are category products like the supplier home, because this account buys wholesale.
             Bottom bar: Home, Create Order, Account, My Orders, and Profile.
-            Create Order is dedicated to creating Request ads only, since a request is a purchase/sourcing action.
-            The Account page for a company customer shows My Ads only — Request ads they published, with no My Offers section.
-            My Orders for a company customer has two tabs: Requests (Request ads you published plus incoming supplier offers) and Orders (your purchases as a buyer).
+            Create Order is dedicated to creating Inquiry ads only, since an inquiry is a purchase/sourcing action.
+            The Account page for a company customer shows My Ads only — Inquiry ads they published, with no My Offers section.
+            My Orders for a company customer has two tabs only (they do not sell on the app): Purchases (your buyer purchases) and Incoming (offers received on your Inquiry ads).
             """);
 
         Add(chunks, "shipping-nav", "واجهة شركة الشحن والتنقل", "ar", ["shipping"],
@@ -592,7 +592,7 @@ internal static class AiAssistantKnowledgeSource
             A shipping company has only two pages in the bottom bar: Home and Profile.
             Home has no storefront or products; it offers two actions: Add shipping ad and Manage your ads.
             Profile contains support, personal information editing, language selection, and the ad count.
-            A shipping company does not buy products and cannot create Booking, Retail, or Request ads; it has no orders page.
+            A shipping company does not buy products and cannot create Booking, Retail, or Inquiry ads; it has no orders page.
             """);
     }
 
@@ -642,7 +642,7 @@ internal static class AiAssistantKnowledgeSource
             """
             A company customer account is for companies buying wholesale and requires company details at registration such as company name and contact channels; company verification may be requested per platform policy.
             After registration the account passes through Al Ras Smart team review before full activation.
-            Once activated, the company customer can browse categories and wholesale products, create Request ads, and receive offers on them.
+            Once activated, the company customer can browse categories and wholesale products, create Inquiry ads, and receive offers on them.
             """);
 
         Add(chunks, "signup-shipping", "كيف تنشئ شركة الشحن حساباً", "ar", All,
@@ -834,7 +834,7 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "delete-account", "Deleting your account and signing out", "en", SignedIn,
             """
             The sign-out button in Profile ends the current session only and keeps your data; you can sign back in at any time.
-            The delete account button requests removal of your account from the platform.
+            The delete account button Inquiry removal of your account from the platform.
             Deletion is permanent and affects your access to your order history and listings.
             It is carried out subject to legal obligations and after open orders are closed and any dues are settled.
             If you have trouble deleting the account, contact support via Live Chat.
@@ -927,7 +927,7 @@ internal static class AiAssistantKnowledgeSource
             Results can be empty because: the product is not currently listed, the listing is still awaiting review approval, the listing is paused or out of stock, or the search term contains a typo.
             Another important reason: results are filtered by account type, so a personal customer sees retail products only and will not see wholesale listings.
             Try a broader term, switch between Arabic and English, use image search, or browse the categories directly.
-            If you are sourcing wholesale goods that are not listed and your account allows it, publish a Request ad so suppliers can send you offers.
+            If you are sourcing wholesale goods that are not listed and your account allows it, publish a Inquiry ad so suppliers can send you offers.
             """);
     }
 
@@ -942,7 +942,7 @@ internal static class AiAssistantKnowledgeSource
             Retail (تجزئة): بيع بكميات صغيرة داخل دولة الإمارات، السعر بالدرهم، ويمكن للعميل الفردي الشراء منه.
             Booking (حجز/شحنة): عرض شحنة دولية من ميناء إلى ميناء بالدولار مع الدولة المصدرة وميناء التحميل وبلد الوجهة وميناء الوصول ونوع السعر FOB أو CNF أو CIF.
             Offers (عروض): إعلانات عليها نسبة خصم لمدة محددة.
-            Requests (طلبات): إعلان يطلب فيه صاحبه بضاعة غير متوفرة لديه، ويتقدم الآخرون بعروضهم عليه.
+            Inquiry (طلبات): إعلان يطلب فيه صاحبه بضاعة غير متوفرة لديه، ويتقدم الآخرون بعروضهم عليه.
             Shipping (شحن): خدمة شحن تنشرها شركة الشحن من ميناء إلى ميناء بسعر 20ft و40ft ومدة الرحلة.
             بالإضافة إلى ذلك توجد منتجات الأصناف (Categories) وهي المنتجات التي لها CategoryId وتظهر داخل الصنف في الصفحة الرئيسية.
             """);
@@ -951,7 +951,7 @@ internal static class AiAssistantKnowledgeSource
             Retail: small-quantity selling inside the UAE, priced in AED, and purchasable by personal customers.
             Booking: an international port-to-port shipment priced in USD with origin country, loading port, destination country, arrival port, and price type FOB, CNF, or CIF.
             Offers: listings carrying a discount percentage for a limited period.
-            Requests: a listing where the owner asks for goods they do not have, and others submit offers on it.
+            Inquiry: a listing where the owner asks for goods they do not have, and others submit offers on it.
             Shipping: a freight service published by a shipping company from port to port with 20ft and 40ft prices and transit time.
             In addition there are Category products, which are items with a CategoryId shown inside their category on the home page.
             """);
@@ -960,15 +960,15 @@ internal static class AiAssistantKnowledgeSource
             """
             كلمة Offer لها معنيان مختلفان داخل المنصة ويجب عدم الخلط بينهما.
             الأول: إعلان Offer، وهو نوع إعلان يعرض منتجاً عليه نسبة خصم لمدة محددة، ويظهر ضمن قسم Offers في الصفحة الرئيسية.
-            الثاني: تقديم عرض (offer) على إعلان Request، أي أن تتقدم بسعر وكمية لتلبية طلب شركة أخرى تبحث عن بضاعة، وتتم متابعته من قسم عروضي (My Offers).
+            الثاني: تقديم عرض (offer) على إعلان Inquiry، أي أن تتقدم بسعر وكمية لتلبية طلب شركة أخرى تبحث عن بضاعة، وتتم متابعته من قسم عروضي (My Offers).
             الأول عملية بيع بخصم، والثاني عملية مزايدة أو تسعير على طلب شراء.
             """);
         Add(chunks, "offer-meaning", "The two different meanings of Offer", "en", All,
             """
             The word Offer has two distinct meanings on the platform and they must not be confused.
             First: an Offer ad, an ad type showing a product with a discount percentage for a limited period, listed under the Offers section on home.
-            Second: submitting an offer on a Request ad, meaning you propose a price and quantity to fulfil another company's sourcing request, tracked in the My Offers section.
-            The first is a discounted sale; the second is a quotation or bid against a purchase request.
+            Second: submitting an offer on an Inquiry ad, meaning you propose a price and quantity to fulfil another company's sourcing inquiry, tracked in the My Offers section.
+            The first is a discounted sale; the second is a quotation or bid against a purchase inquiry.
             """);
 
         Add(chunks, "listing-details", "ماذا تحتوي صفحة تفاصيل الإعلان", "ar", All,
@@ -1100,14 +1100,14 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "wholesale-flow", "كيف تتم صفقات الجملة", "ar", ["supplier", "company_customer", "public"],
             """
             الدفع الذاتي عبر المنصة مخصص لتجارة التجزئة (Retail).
-            أما طلبات الأنواع الأخرى مثل الجملة وBooking وRequests فتتم متابعتها ومعالجتها بواسطة فريق الراس الذكي، الذي ينسق بين المشتري والمورد ويتابع التحصيل والتسليم.
+            أما طلبات الأنواع الأخرى مثل الجملة وBooking وInquiry فتتم متابعتها ومعالجتها بواسطة فريق الراس الذكي، الذي ينسق بين المشتري والمورد ويتابع التحصيل والتسليم.
             الدفع في تجارة الجملة يتم عبر فريق الراس الذكي.
             يمكنك متابعة حالة الطلب من صفحة طلباتي، والتواصل مع الدعم عبر Live Chat لأي استفسار عن الصفقة.
             """);
         Add(chunks, "wholesale-flow", "How wholesale deals are handled", "en", ["supplier", "company_customer", "public"],
             """
             Self-service payment inside the platform is dedicated to Retail trade.
-            Orders of other types such as wholesale, Booking, and Requests are followed up and processed by the Al Ras Smart team, which coordinates between buyer and supplier and manages collection and delivery.
+            Orders of other types such as wholesale, Booking, and Inquiry are followed up and processed by the Al Ras Smart team, which coordinates between buyer and supplier and manages collection and delivery.
             Wholesale payment runs through the Al Ras Smart team.
             You can still follow the order status from My Orders and contact support via Live Chat with any question about the deal.
             """);
@@ -1123,7 +1123,7 @@ internal static class AiAssistantKnowledgeSource
             """
             تتبع الطلبات متاح لكل حساب يستطيع الشراء: العميل الفردي وعميل الشركة والمورد.
             افتح صفحة طلباتي (My Orders) من البار السفلي.
-            شكل الصفحة يختلف حسب نوع حسابك: العميل الفردي يرى المشتريات فقط (بدون تبويبات)؛ المورد يرى تبويبي الواردة والمشتريات؛ عميل الشركة يرى تبويبي طلباتي (Requests) والمشتريات (Orders).
+            شكل الصفحة يختلف حسب نوع حسابك: العميل الفردي يرى المشتريات فقط (بدون تبويبات)؛ المورد يرى ثلاثة تبويبات مبيعاتي ومشترياتي والواردة؛ عميل الشركة يرى تبويبي مشترياتي والواردة فقط.
             ستجد قائمة بكل طلباتك، ولكل طلب حالته الحالية وتاريخه وتفاصيله.
             اضغط على أي طلب لفتح تفاصيله ورؤية سجل تغير الحالة خطوة بخطوة من لحظة الطلب حتى التسليم.
             يمكنك أيضاً التمييز بين الطلبات المفتوحة الجارية والطلبات المكتملة.
@@ -1134,7 +1134,7 @@ internal static class AiAssistantKnowledgeSource
             """
             Order tracking is available to every account that can buy: personal customers, company customers, and suppliers.
             Open the My Orders page from the bottom bar.
-            The page layout depends on your account type: personal customers see Purchases only (no tabs); suppliers see Incoming and Purchases tabs; company customers see Requests and Orders (Purchases) tabs.
+            The page layout depends on your account type: personal customers see Purchases only (no tabs); suppliers see three tabs — My Sales, Purchases, and Incoming; company customers see Purchases and Incoming only.
             You will see a list of all your orders, each with its current status, date, and details.
             Tap any order to open its details and see the status history step by step from placement to delivery.
             You can also distinguish open, in-progress orders from completed ones.
@@ -1159,8 +1159,9 @@ internal static class AiAssistantKnowledgeSource
 
         Add(chunks, "orders-track-supplier", "تتبع الطلبات والمبيعات للمورد", "ar", ["supplier"],
             """
-            المورد لديه صفحة طلباتي (My Orders) في البار السفلي فيها تبويبان: الواردة (طلبات وعروض واردة على إعلاناتك) والمشتريات (ما اشتراه المورد كمشتري).
-            تابع الطلبات الواردة من تبويب الواردة؛ الطلبات التي تحتاج موافقتك كبائع تظهر بحالة بانتظار موافقة البائع، وفي تطبيق الجوال قد ترى نصاً مختصراً "بانتظار موافقتك".
+            المورد لديه صفحة طلباتي (My Orders) في البار السفلي فيها ثلاثة تبويبات: مبيعاتي (الطلبات الواردة على إعلاناتك غير Inquiry)، مشترياتي (ما اشتراه المورد كمشتري)، والواردة (العروض الواردة على إعلانات Inquiry).
+            تابع طلبات البيع من تبويب مبيعاتي؛ الطلبات التي تحتاج موافقتك كبائع تظهر بحالة بانتظار موافقة البائع، وفي تطبيق الجوال قد ترى نصاً مختصراً "بانتظار موافقتك".
+            تابع عروض Inquiry من تبويب الواردة.
             على أيقونة طلباتي في البار السفلي تظهر شارة حمراء بعدد الطلبات الواردة التي بانتظار موافقتك.
             القائمة تُحدَّث تلقائياً عند تغير حالة أي طلب.
             في الطلبات غير التجزئة قد تحتاج بعض الطلبات موافقة البائع، وتظهر بحالة بانتظار موافقة البائع حتى يقبلها أو يرفضها.
@@ -1168,8 +1169,9 @@ internal static class AiAssistantKnowledgeSource
             """);
         Add(chunks, "orders-track-supplier", "Order and sales tracking for suppliers", "en", ["supplier"],
             """
-            A supplier has a My Orders page in the bottom bar with two tabs: Incoming (orders and offers received on your ads) and Purchases (orders the supplier placed as a buyer).
-            Follow incoming orders from the Incoming tab; orders needing your approval as seller show as Awaiting seller approval, and on the mobile app you may see the shorter label "Awaiting your approval".
+            A supplier has a My Orders page in the bottom bar with three tabs: My Sales (orders received on your non-Inquiry ads), Purchases (orders the supplier placed as a buyer), and Incoming (offers received on your Inquiry ads).
+            Follow sales orders from the My Sales tab; orders needing your approval as seller show as Awaiting seller approval, and on the mobile app you may see the shorter label "Awaiting your approval".
+            Follow Inquiry offers from the Incoming tab.
             A red badge on the My Orders icon shows how many incoming orders are awaiting your approval.
             The list refreshes automatically when any order status changes.
             For non-retail orders, some orders need seller approval and appear as Awaiting seller approval until accepted or rejected.
@@ -1278,18 +1280,18 @@ internal static class AiAssistantKnowledgeSource
             """
             سؤال: وين الطلبات الواردة؟ وين المشتريات؟ كم تبويب في طلباتي؟
             صفحة طلباتي (My Orders) في البار السفلي تعرض محتوى مختلفاً حسب نوع حسابك:
-            العميل الفردي (Personal): قائمة واحدة فقط للمشتريات — كل طلبات Retail التي اشتراها، بدون تبويبات.
-            المورد (Supplier): تبويبان — الواردة (Incoming): الطلبات والعروض الواردة على إعلاناته التي يحتاج قبولها أو رفضها كبائع؛ والمشتريات (Purchases): ما اشتراه المورد كمشتري.
-            عميل الشركة (Company customer): تبويبان — طلباتي (Requests): شبكة إعلانات Request التي نشرها ثم قائمة العروض الواردة من الموردين عليها (قبول/رفض)؛ والمشتريات (Orders): مشترياته كمشتري (Retail أو Booking أو غيرها).
+            العميل الفردي (Personal): قائمة واحدة فقط للمشتريات — كل ما اشتراه كمشتري، بدون تبويبات.
+            المورد (Supplier): ثلاثة تبويبات — مبيعاتي (My Sales): الطلبات الواردة على إعلاناته غير Inquiry؛ مشترياتي (Purchases): ما اشتراه المورد كمشتري؛ الواردة (Incoming): العروض الواردة على إعلانات Inquiry.
+            عميل الشركة (Company customer): تبويبان فقط لأنه لا يبيع على التطبيق — مشترياتي (Purchases): مشترياته كمشتري؛ الواردة (Incoming): العروض الواردة على إعلانات Inquiry. إعلانات Inquiry نفسها تُدار من الحساب → إعلاناتي.
             شركة الشحن ليس لديها صفحة طلباتي.
             """);
         Add(chunks, "my-orders-tabs", "My Orders tabs by account type", "en", Buyers,
             """
             Question: where are incoming orders? where are purchases? how many tabs in My Orders?
             The My Orders page in the bottom bar shows different content by account type:
-            Personal customer: a single Purchases list — all Retail orders they bought, no tabs.
-            Supplier: two tabs — Incoming: orders and offers received on their ads that need accept/reject as seller; Purchases: orders the supplier placed as a buyer.
-            Company customer: two tabs — Requests: a grid of Request ads you published, then incoming supplier offers on them (accept/reject); Orders (Purchases): their buyer purchases (Retail, Booking, etc.).
+            Personal customer: a single Purchases list — everything they bought as a buyer, no tabs.
+            Supplier: three tabs — My Sales: orders received on their non-Inquiry ads; Purchases: orders the supplier placed as a buyer; Incoming: offers received on Inquiry ads.
+            Company customer: two tabs only because they do not sell on the app — Purchases: their buyer purchases; Incoming: offers received on their Inquiry ads. The Inquiry ads themselves are managed from Account → My Ads.
             Shipping companies do not have a My Orders page.
             """);
 
@@ -1315,7 +1317,7 @@ internal static class AiAssistantKnowledgeSource
             سؤال: معنى "بانتظار موافقتك" على الطلب؟
             في تطبيق الجوال، عندما يكون الطلب الوارد على إعلانك في حالة بانتظار موافقة البائع، قد يظهر نص مختصر "بانتظار موافقتك" على بطاقة الطلب.
             هذا يعني أن العميل قدّم الطلب ويُنتظر قبولك أو رفضك كبائع (يخص الطلبات غير التجزئة عادةً).
-            افتح تبويب الواردة في طلباتي لقبول الطلب أو رفضه.
+            افتح تبويب مبيعاتي في طلباتي لقبول الطلب أو رفضه (وعروض Inquiry من تبويب الواردة).
             النص الكامل للحالة في النظام هو "بانتظار موافقة البائع"؛ الاختصار للعرض في الجوال فقط.
             """);
         Add(chunks, "seller-awaiting-label", "Awaiting your approval label for suppliers on mobile", "en", ["supplier"],
@@ -1323,7 +1325,7 @@ internal static class AiAssistantKnowledgeSource
             Question: what does "Awaiting your approval" mean on an order?
             On the mobile app, when an incoming order on your listing is in Awaiting seller approval status, the order card may show the shorter label "Awaiting your approval".
             This means the customer placed the order and your accept or reject decision as seller is pending (usually for non-retail orders).
-            Open the Incoming tab in My Orders to accept or reject the order.
+            Open the My Sales tab in My Orders to accept or reject the order (and Inquiry offers from the Incoming tab).
             The full system status is "Awaiting seller approval"; the shorter label is for mobile display only.
             """);
 
@@ -1346,42 +1348,44 @@ internal static class AiAssistantKnowledgeSource
             In the admin dashboard, printing a Retail delivery sheet shows the full delivery address (city + address line).
             """);
 
-        Add(chunks, "ads-vs-orders-company", "الفرق بين إعلانات Request والطلبات لعميل الشركة", "ar", ["company_customer"],
+        Add(chunks, "ads-vs-orders-company", "الفرق بين إعلانات Inquiry والطلبات لعميل الشركة", "ar", ["company_customer"],
             """
             سؤال: وين إعلاناتي؟ وين طلباتي؟ الفرق بين الحساب وطلباتي؟
-            عميل الشركة ينشر إعلانات Request فقط (طلب بضاعة يريد شراءها بالجملة).
-            صفحة الحساب (Account): إعلاناتي فقط — كل إعلانات Request التي نشرتها؛ لا يوجد قسم عروضي (My Offers) لعميل الشركة.
-            صفحة طلباتي — تبويب طلباتي (Requests): إعلانات Request التي نشرتها (في الأعلى) والعروض الواردة من الموردين عليها (في الأسفل) مع قبولها أو رفضها.
-            صفحة طلباتي — تبويب المشتريات (Orders): الطلبات التي أكملتها كمشتري (شراء Retail أو Booking أو غيره)، وليست إعلانات Request.
-            إذا سألت عن "إعلان Request" فالجواب من الحساب أو تبويب Requests؛ إذا سألت عن "طلب شراء" أو "مشترياتي" فالجواب من تبويب المشتريات.
+            عميل الشركة ينشر إعلانات Inquiry فقط (طلب بضاعة يريد شراءها بالجملة) ولا يبيع على التطبيق.
+            صفحة الحساب (Account): إعلاناتي فقط — كل إعلانات Inquiry التي نشرتها؛ لا يوجد قسم عروضي (My Offers) لعميل الشركة.
+            صفحة طلباتي — تبويب الواردة (Incoming): العروض الواردة من الموردين على إعلانات Inquiry مع قبولها أو رفضها.
+            صفحة طلباتي — تبويب المشتريات (Purchases): الطلبات التي أكملتها كمشتري (شراء Retail أو Booking أو غيره)، وليست إعلانات Inquiry.
+            إذا سألت عن "إعلان Inquiry" فالجواب من الحساب → إعلاناتي؛ إذا سألت عن عروض على طلباتك فالجواب من تبويب الواردة؛ إذا سألت عن "طلب شراء" أو "مشترياتي" فالجواب من تبويب المشتريات.
             """);
-        Add(chunks, "ads-vs-orders-company", "Request ads vs orders for company customers", "en", ["company_customer"],
+        Add(chunks, "ads-vs-orders-company", "Inquiry ads vs orders for company customers", "en", ["company_customer"],
             """
             Question: where are my ads? where are my orders? Account vs My Orders?
-            A company customer publishes Request ads only (wholesale sourcing requests).
-            Account page: My Ads only — every Request ad you published; there is no My Offers section for company customers.
-            My Orders — Requests tab: your published Request ads (at the top) and incoming supplier offers on them (below), with accept/reject actions.
-            My Orders — Orders (Purchases) tab: orders you completed as a buyer (Retail, Booking, etc.), not Request ads.
-            If you ask about a "Request ad" the answer is Account or the Requests tab; if you ask about a "purchase" or "my orders" the answer is the Purchases tab.
+            A company customer publishes Inquiry ads only (wholesale sourcing inquiries) and does not sell on the app.
+            Account page: My Ads only — every Inquiry ad you published; there is no My Offers section for company customers.
+            My Orders — Incoming tab: supplier offers received on your Inquiry ads, with accept/reject actions.
+            My Orders — Purchases tab: orders you completed as a buyer (Retail, Booking, etc.), not Inquiry ads.
+            If you ask about an "Inquiry ad" the answer is Account → My Ads; if you ask about offers on your inquiries the answer is the Incoming tab; if you ask about a "purchase" or "my orders" the answer is the Purchases tab.
             """);
 
         Add(chunks, "ads-vs-orders-supplier", "الفرق بين الإعلانات والطلبات للمورد", "ar", ["supplier"],
             """
             سؤال: وين إعلاناتي؟ وين الطلبات الواردة؟
-            المورد ينشر إعلانات Booking و Retail و Offers و Shipping (لا ينشر Request).
-            صفحة الحساب (Account): إعلاناتي — إعلاناتك المنشورة؛ عروضي — عروضك على إعلانات Request للشركات.
-            صفحة طلباتي — تبويب الواردة: الطلبات والعروض الواردة على إعلاناتك (قبول/رفض كبائع).
+            المورد ينشر إعلانات Booking و Retail و Offers و Shipping و Inquiry.
+            صفحة الحساب (Account): إعلاناتي — إعلاناتك المنشورة؛ عروضي — عروضك على إعلانات Inquiry للآخرين.
+            صفحة طلباتي — تبويب مبيعاتي: الطلبات الواردة على إعلاناتك غير Inquiry (قبول/رفض كبائع).
+            صفحة طلباتي — تبويب الواردة: العروض الواردة على إعلانات Inquiry الخاصة بك.
             صفحة طلباتي — تبويب المشتريات: ما اشتراه المورد كمشتري.
-            تعديل السعر أو الكمية في الإعلان من الحساب → إعلاناتي؛ متابعة طلب وارد على إعلانك من طلباتي → الواردة.
+            تعديل السعر أو الكمية في الإعلان من الحساب → إعلاناتي؛ متابعة طلب بيع وارد من طلباتي → مبيعاتي؛ ومتابعة عروض Inquiry من طلباتي → الواردة.
             """);
         Add(chunks, "ads-vs-orders-supplier", "Ads vs orders for suppliers", "en", ["supplier"],
             """
             Question: where are my ads? where are incoming orders?
-            A supplier publishes Booking, Retail, Offers, and Shipping ads (not Request ads).
-            Account page: My Ads — your published listings; My Offers — your offers on companies' Request ads.
-            My Orders — Incoming tab: orders and offers received on your ads (accept/reject as seller).
+            A supplier publishes Booking, Retail, Offers, Shipping, and Inquiry ads.
+            Account page: My Ads — your published listings; My Offers — your offers on others' Inquiry ads.
+            My Orders — My Sales tab: orders received on your non-Inquiry ads (accept/reject as seller).
+            My Orders — Incoming tab: offers received on your Inquiry ads.
             My Orders — Purchases tab: orders the supplier placed as a buyer.
-            Edit price or quantity from Account → My Ads; follow an incoming order on your listing from My Orders → Incoming.
+            Edit price or quantity from Account → My Ads; follow a sales order from My Orders → My Sales; follow Inquiry offers from My Orders → Incoming.
             """);
     }
 
@@ -1488,9 +1492,9 @@ internal static class AiAssistantKnowledgeSource
             """);
         Add(chunks, "overseas-supplier-ads", "Overseas supplier or non-UAE phone number: which ads are allowed?", "en", ["supplier", "public"],
             """
-            Question: I am a supplier outside the UAE; which ad can I create? My phone number is non-UAE; why are the other ad types missing? Can an international supplier create Retail, Offer, or Request ads?
+            Question: I am a supplier outside the UAE; which ad can I create? My phone number is non-UAE; why are the other ad types missing? Can an international supplier create Retail, Offer, or Inquiry ads?
             Answer: If the supplier account is registered with a non-UAE phone number and the supplier is located outside the UAE, Booking is the only ad type available.
-            This supplier cannot create Category, Retail, discounted Offer, or Request ads, so those creation types are not shown on the Create Ad page.
+            This supplier cannot create Category, Retail, discounted Offer, or Inquiry ads, so those creation types are not shown on the Create Ad page.
             Booking fits international trade and shipments: enter the origin country, loading port, destination country, arrival port, choose FOB, CNF, or CIF, and use USD.
             A UAE-based supplier registered with a UAE phone number can access the other supplier ad types according to the account permissions.
             This restriction applies only to creating ads; it does not prevent an overseas supplier from managing the account, tracking orders and Booking ads, or using support.
@@ -1604,7 +1608,7 @@ internal static class AiAssistantKnowledgeSource
             Set the discount percentage and the discount duration in days.
             Add images, video, and specifications; packaging is optional.
             After approval the ad appears in the Offers section with its discount.
-            Note that Offer here means a discount ad, which is different from submitting an offer on a Request ad.
+            Note that Offer here means a discount ad, which is different from submitting an offer on a Inquiry ad.
             """);
 
         Add(chunks, "ad-media-rules", "قواعد صور وفيديو ومواصفات الإعلان", "ar", ["supplier", "company_customer", "shipping", "public"],
@@ -1655,14 +1659,14 @@ internal static class AiAssistantKnowledgeSource
             """
             قسم إعلاناتي داخل صفحة الحساب يعرض كل الإعلانات التي نشرها المورد.
             يمكنك الفلترة حسب حالة الإعلان: نشط، متوقف، نفد المخزون، تحت المعالجة (قيد المراجعة)، مرفوض.
-            يمكنك أيضاً الفلترة حسب نوع الإعلان مثل Category أو Retail أو Booking أو Offers أو Requests.
+            يمكنك أيضاً الفلترة حسب نوع الإعلان مثل Category أو Retail أو Booking أو Offers أو Inquiry.
             من هنا تفتح أي إعلان لتعديله أو إيقافه أو تفعيله أو تحديث كميته.
             """);
         Add(chunks, "my-ads", "The My Ads section and its filters", "en", ["supplier"],
             """
             The My Ads section inside the Account page lists every ad the supplier published.
             You can filter by listing status: active, paused, out of stock, under review, and rejected.
-            You can also filter by ad type such as Category, Retail, Booking, Offers, or Requests.
+            You can also filter by ad type such as Category, Retail, Booking, Offers, or Inquiry.
             From here you open any listing to edit it, pause or activate it, or update its quantity.
             """);
 
@@ -1810,31 +1814,31 @@ internal static class AiAssistantKnowledgeSource
     }
 
     // ---------------------------------------------------------------------
-    // 13. Requests and offers
+    // 13. Inquiry and offers
     // ---------------------------------------------------------------------
 
     private static void AddRequestsAndOffers(ICollection<AiKnowledgeChunk> chunks)
     {
-        Add(chunks, "request-meaning", "ما هو إعلان Request", "ar", All,
+        Add(chunks, "request-meaning", "ما هو إعلان Inquiry", "ar", All,
             """
-            إعلان Request هو إعلان يطلب فيه صاحبه بضاعة غير متوفرة لديه ويبحث عمن يوفرها.
-            ينشره المورد أو عميل الشركة، ويظهر في قسم Requests.
+            إعلان Inquiry هو إعلان يطلب فيه صاحبه بضاعة غير متوفرة لديه ويبحث عمن يوفرها.
+            ينشره المورد أو عميل الشركة، ويظهر في قسم Inquiry (الطلبات).
             يتقدم الموردون الآخرون بعروضهم (offers) على هذا الطلب بأسعار وكميات.
-            ثم يراجع صاحب الطلب العروض ويقبل الأنسب أو يرفض غيره.
-            بالنسبة لعميل الشركة يعتبر Request عملية شراء، ولذلك هو النوع الوحيد المسموح له بإنشائه.
-            العميل الفردي وشركة الشحن لا ينشئان إعلانات Request.
+            ثم يراجع صاحب الطلب العروض ويقبل الأنسب أو يرفض غيره من صفحة طلباتي → الواردة.
+            بالنسبة لعميل الشركة يعتبر Inquiry عملية شراء، ولذلك هو النوع الوحيد المسموح له بإنشائه.
+            العميل الفردي وشركة الشحن لا ينشئان إعلانات Inquiry.
             """);
-        Add(chunks, "request-meaning", "What a Request ad is", "en", All,
+        Add(chunks, "request-meaning", "What an Inquiry ad is", "en", All,
             """
-            A Request ad is a listing where the owner asks for goods they do not have and looks for someone to supply them.
-            It is published by suppliers or company customers and appears in the Requests section.
-            Other suppliers submit offers on that request with their prices and quantities.
-            The request owner then reviews the offers and accepts the most suitable one or rejects the others.
-            For a company customer a Request is a purchasing action, which is why it is the only type they may create.
-            Personal customers and shipping companies do not create Request ads.
+            An Inquiry ad is a listing where the owner asks for goods they do not have and looks for someone to supply them.
+            It is published by suppliers or company customers and appears in the Inquiry section.
+            Other suppliers submit offers on that inquiry with their prices and quantities.
+            The inquiry owner then reviews the offers and accepts the most suitable one or rejects the others from My Orders → Incoming.
+            For a company customer an Inquiry is a purchasing action, which is why it is the only type they may create.
+            Personal customers and shipping companies do not create Inquiry ads.
             """);
 
-        Add(chunks, "create-request-company", "كيف ينشئ عميل الشركة إعلان Request", "ar", ["company_customer"],
+        Add(chunks, "create-request-company", "كيف ينشئ عميل الشركة إعلان Inquiry", "ar", ["company_customer"],
             """
             من البار السفلي اختر إنشاء طلب (Create Order)، أو انشر من شات الراس الذكي عبر create_request_ad.
             الحقول المطلوبة:
@@ -1842,11 +1846,11 @@ internal static class AiAssistantKnowledgeSource
             نوع التلبية: محلي أو إعادة تصدير (إلزامي)، عنوان التسليم من العناوين المحفوظة (إلزامي — إن لم يوجد عنوان أضفه من الملف الشخصي أولاً).
             اختياري: الكمية والوحدة، السعر المستهدف والعملة (USD أو AED) — إذا أدخل المستخدم سعراً مستهدفاً يُطلب أيضاً العملة والوحدة.
             تاريخ التسليم المطلوب (اختياري)، صور توضيحية (اختياري).
-            بعد اكتمال الحقول انشر الطلب؛ وبعد المراجعة يظهر في قسم Requests ليتقدم الموردون بعروضهم.
-            تابع العروض من صفحة الحساب واقبل العرض المناسب أو ارفضه.
-            حسابك يستطيع إنشاء Request فقط ولا يستطيع إنشاء Booking أو Retail أو Category أو Offer بخصم.
+            بعد اكتمال الحقول انشر الطلب؛ وبعد المراجعة يظهر في قسم Inquiry ليتقدم الموردون بعروضهم.
+            تابع العروض من صفحة طلباتي → الواردة واقبل العرض المناسب أو ارفضه. إعلاناتك نفسها من الحساب → إعلاناتي.
+            حسابك يستطيع إنشاء Inquiry فقط ولا يستطيع إنشاء Booking أو Retail أو Category أو Offer بخصم.
             """);
-        Add(chunks, "create-request-company", "How a company customer creates a Request ad", "en", ["company_customer"],
+        Add(chunks, "create-request-company", "How a company customer creates an Inquiry ad", "en", ["company_customer"],
             """
             From the bottom bar choose Create Order, or publish in Alras Smart chat via create_request_ad.
             Required fields:
@@ -1854,44 +1858,44 @@ internal static class AiAssistantKnowledgeSource
             fulfillment type: Local or Reexport (required), delivery address from saved addresses (required — add one in Profile first if empty).
             Optional: quantity and unit, target price and currency (USD or AED) — if the user provides a target price, also collect currency and unit.
             Required delivery date (optional), reference images (optional).
-            When complete, publish; after review it appears in Requests so suppliers can offer.
-            Follow offers from the Account page and accept or reject.
-            Your account can create Requests only — not Booking, Retail, Category, or discounted Offer.
+            When complete, publish; after review it appears in Inquiry so suppliers can offer.
+            Follow offers from My Orders → Incoming and accept or reject. Manage the ads themselves from Account → My Ads.
+            Your account can create Inquiry ads only — not Booking, Retail, Category, or discounted Offer.
             """);
 
-        Add(chunks, "create-request-supplier", "كيف ينشئ المورد إعلان Request", "ar", ["supplier"],
+        Add(chunks, "create-request-supplier", "كيف ينشئ المورد إعلان Inquiry", "ar", ["supplier"],
             """
-            يستطيع المورد أيضاً نشر إعلان Request عندما يحتاج بضاعة غير متوفرة لديه.
-            افتح إنشاء إعلان واختر نوع Request، أو انشر من الشات عبر create_request_ad.
+            يستطيع المورد أيضاً نشر إعلان Inquiry عندما يحتاج بضاعة غير متوفرة لديه.
+            افتح إنشاء إعلان واختر نوع Inquiry، أو انشر من الشات عبر create_request_ad.
             الحقول المطلوبة: اسم المنتج، المواصفات، قابل للتفاوض، محلي أو إعادة تصدير (إلزامي).
             اختياري: الكمية والوحدة، السعر المستهدف والعملة (إذا أُدخل سعر مستهدف يُطلب العملة والوحدة)، عنوان التسليم من العناوين المحفوظة، تاريخ التسليم، صور.
-            بعد المراجعة يظهر الطلب في قسم Requests ويتقدم الآخرون بعروضهم عليه.
-            تابع العروض من صفحة الحساب واقبل الأنسب.
+            بعد المراجعة يظهر الطلب في قسم Inquiry ويتقدم الآخرون بعروضهم عليه.
+            تابع العروض من صفحة طلباتي → الواردة واقبل الأنسب.
             """);
-        Add(chunks, "create-request-supplier", "How a supplier creates a Request ad", "en", ["supplier"],
+        Add(chunks, "create-request-supplier", "How a supplier creates an Inquiry ad", "en", ["supplier"],
             """
-            A supplier can also publish a Request ad when they need goods they do not stock.
-            Open Create Ad and choose Request, or publish in chat via create_request_ad.
+            A supplier can also publish an Inquiry ad when they need goods they do not stock.
+            Open Create Ad and choose Inquiry, or publish in chat via create_request_ad.
             Required fields: product name, specifications, negotiable, Local or Reexport (required).
             Optional: quantity and unit, target price and currency (if target price is provided, also collect currency and unit), delivery address from saved addresses, delivery date, images.
-            After review the request appears in Requests and others submit offers.
-            Follow offers from the Account page and accept the most suitable one.
+            After review the inquiry appears in Inquiry and others submit offers.
+            Follow offers from My Orders → Incoming and accept the most suitable one.
             """);
 
-        Add(chunks, "submit-offer", "كيف أقدم عرضاً على إعلان Request", "ar", ["supplier", "company_customer"],
+        Add(chunks, "submit-offer", "كيف أقدم عرضاً على إعلان Inquiry", "ar", ["supplier", "company_customer"],
             """
-            افتح قسم Requests وتصفح الطلبات المنشورة، أو ابحث عن البضاعة التي توفرها.
+            افتح قسم Inquiry وتصفح الطلبات المنشورة، أو ابحث عن البضاعة التي توفرها.
             افتح الطلب المناسب واقرأ المواصفات والكمية المطلوبة بدقة.
             قدّم عرضك بالسعر والكمية التي تستطيع توفيرها، وأضف الصور أو المستندات الداعمة إن طُلبت.
             بعد الإرسال ينتقل عرضك إلى حالة قيد الانتظار (Pending) حتى يراجعه صاحب الطلب.
             تابع حالة عرضك من قسم عروضي (My Offers) داخل صفحة الحساب.
             """);
-        Add(chunks, "submit-offer", "How to submit an offer on a Request ad", "en", ["supplier", "company_customer"],
+        Add(chunks, "submit-offer", "How to submit an offer on an Inquiry ad", "en", ["supplier", "company_customer"],
             """
-            Open the Requests section and browse published requests, or search for goods you can supply.
-            Open the relevant request and read the specifications and required quantity carefully.
+            Open the Inquiry section and browse published inquiries, or search for goods you can supply.
+            Open the relevant inquiry and read the specifications and required quantity carefully.
             Submit your offer with the price and quantity you can provide, attaching supporting images or documents if requested.
-            After submission your offer moves to Pending until the request owner reviews it.
+            After submission your offer moves to Pending until the inquiry owner reviews it.
             Follow your offer's status in the My Offers section inside the Account page.
             """);
 
@@ -1906,11 +1910,11 @@ internal static class AiAssistantKnowledgeSource
             """);
         Add(chunks, "my-offers", "The My Offers section and offer statuses", "en", ["supplier", "company_customer"],
             """
-            The My Offers section inside the Account page lets you track every offer you submitted on other companies' Request ads.
+            The My Offers section inside the Account page lets you track every offer you submitted on other companies' Inquiry ads.
             There are three offer statuses:
             Pending: you submitted the offer and the request owner has not decided yet.
             Accepted: the advertiser approved your offer and fulfilment steps begin.
-            Rejected: the advertiser declined the offer, and you can bid on other requests.
+            Rejected: the advertiser declined the offer, and you can bid on other Inquiry.
             You receive notifications when your offer's status changes.
             """);
 
@@ -1924,7 +1928,7 @@ internal static class AiAssistantKnowledgeSource
             """);
         Add(chunks, "manage-offers-received", "Managing offers received on my request", "en", ["supplier", "company_customer"],
             """
-            If you published a Request ad, suppliers will send you offers.
+            If you published a Inquiry ad, suppliers will send you offers.
             Open the Account page and enter the request listing to view the offers submitted on it.
             Compare offers by price, quantity, specifications, and supplier standing.
             Accept the most suitable offer or reject unsuitable ones; the bidder is notified either way.
@@ -2064,7 +2068,7 @@ internal static class AiAssistantKnowledgeSource
             Out-of-scope questions are declined politely with suggested platform topics.
             When asked to create an ad, the assistant applies ONLY your current account type's permissions — never rules meant for other account types.
             Suppliers can create Booking and other types directly in chat via create_booking_ad and related tools; a supplier's Booking request is never refused.
-            Company customers can create Request only via create_request_ad.
+            Company customers can create Inquiry only via create_request_ad.
             Restrictions cover only creating ads, and never block order tracking, search, or support.
             """);
     }
@@ -2150,14 +2154,14 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "retail-vs-wholesale", "الفرق بين الشراء بالتجزئة والشراء بالجملة", "ar", All,
             """
             الشراء بالتجزئة (Retail) يكون بكميات صغيرة داخل دولة الإمارات، بالدرهم AED، ومتاح للعميل الفردي، ويمكن الدفع فيه بالبطاقة إلكترونياً أو عند الاستلام، ويظهر في قسم Retail.
-            الشراء بالجملة يكون بكميات كبيرة من منتجات الأصناف أو عبر Booking أو Requests، ويخص الموردين وعملاء الشركات، وتتم معالجته ومتابعته بواسطة فريق الراس الذكي وليس بالدفع الذاتي.
+            الشراء بالجملة يكون بكميات كبيرة من منتجات الأصناف أو عبر Booking أو Inquiry، ويخص الموردين وعملاء الشركات، وتتم معالجته ومتابعته بواسطة فريق الراس الذكي وليس بالدفع الذاتي.
             العميل الفردي يرى منتجات التجزئة فقط في صفحته الرئيسية، بينما يرى عميل الشركة والمورد منتجات الأصناف وأنواع الإعلانات.
             سياسة الاسترجاع خلال 24 ساعة عمل من الاستلام تطبق على الحالات المؤهلة، ورد الأموال خلال يوم عمل بعد موافقة الدعم.
             """);
         Add(chunks, "retail-vs-wholesale", "The difference between retail and wholesale buying", "en", All,
             """
             Retail buying happens in small quantities inside the UAE, priced in AED, is available to personal customers, supports card payment or cash on delivery, and appears in the Retail section.
-            Wholesale buying happens in large quantities from category products or through Booking and Requests, concerns suppliers and company customers, and is processed and followed up by the Al Ras Smart team rather than self-service payment.
+            Wholesale buying happens in large quantities from category products or through Booking and Inquiry, concerns suppliers and company customers, and is processed and followed up by the Al Ras Smart team rather than self-service payment.
             A personal customer sees retail products only on home, while company customers and suppliers see category products and ad types.
             The returns policy of 24 business hours from receipt applies to eligible cases, with refunds within one business day of support approval.
             """);
@@ -2206,7 +2210,7 @@ internal static class AiAssistantKnowledgeSource
             Official working hours are shown inside the Help and support page in Profile.
             The same page has a button to call the company directly, a button to message support, and a button to send an email.
             Live Chat provides a direct conversation with a human support agent during working hours.
-            Some processes such as listing review and return requests are measured in business days or business hours rather than calendar days.
+            Some processes such as listing review and return Inquiry are measured in business days or business hours rather than calendar days.
             """);
 
         Add(chunks, "banners", "البانرات في الصفحة الرئيسية", "ar", ["supplier", "company_customer", "guest", "public"],
@@ -2322,29 +2326,29 @@ internal static class AiAssistantKnowledgeSource
 
         Add(chunks, "orders-vs-account", "الفرق بين صفحة طلباتي وصفحة الحساب", "ar", ["supplier", "company_customer", "public"],
             """
-            صفحة طلباتي (My Orders) تخص عمليات الشراء والطلبات الواردة حسب نوع حسابك.
-            المورد: تبويب الواردة للطلبات على إعلاناتك، وتبويب المشتريات لما اشتريته أنت.
-            عميل الشركة: تبويب طلباتي (Requests) يعرض إعلانات Request المنشورة والعروض الواردة عليها، وتبويب المشتريات (Orders) لمشترياتك كمشتري.
-            صفحة الحساب (Account) لعميل الشركة: إعلاناتي فقط (Request ads) — بدون قسم عروضي. المورد فقط لديه إعلاناتي وعروضي في الحساب.
+            صفحة طلباتي (My Orders) تخص عمليات الشراء والطلبات والعروض الواردة حسب نوع حسابك.
+            المورد: تبويب مبيعاتي للطلبات على إعلاناتك غير Inquiry، وتبويب الواردة لعروض Inquiry، وتبويب المشتريات لما اشتريته أنت.
+            عميل الشركة: تبويب المشتريات لمشترياتك كمشتري، وتبويب الواردة للعروض على إعلانات Inquiry (بدون تبويب مبيعات لأنه لا يبيع).
+            صفحة الحساب (Account) لعميل الشركة: إعلاناتي فقط (Inquiry ads) — بدون قسم عروضي. المورد فقط لديه إعلاناتي وعروضي في الحساب.
             العميل الفردي لديه صفحة طلباتي فقط (مشتريات بدون تبويبات) لأنه لا ينشر إعلانات.
             إذا كنت تبحث عن حالة شراء Retail أو Booking فافتح تبويب المشتريات في طلباتي (أو طلباتي مباشرة للعميل الفردي).
-            إذا كنت تبحث عن حالة إعلان Request أو عرض سعري فافتح الحساب أو تبويب طلباتي (Requests) لعميل الشركة.
+            إذا كنت تبحث عن حالة إعلان Inquiry فافتح الحساب → إعلاناتي؛ وإذا كنت تبحث عن عروض على Inquiry فافتح تبويب الواردة في طلباتي.
             """);
         Add(chunks, "orders-vs-account", "The difference between My Orders and the Account page", "en", ["supplier", "company_customer", "public"],
             """
-            My Orders covers purchases and incoming orders depending on your account type.
-            Supplier: Incoming tab for orders on your ads, Purchases tab for orders you placed as a buyer.
-            Company customer: Requests tab shows published Request ads and incoming offers on them; Orders (Purchases) tab for your buyer purchases.
-            The Account page for a company customer is My Ads only (Request ads) — no My Offers section. Only suppliers have both My Ads and My Offers on Account.
+            My Orders covers purchases and incoming orders/offers depending on your account type.
+            Supplier: My Sales tab for orders on your non-Inquiry ads, Incoming tab for Inquiry offers, Purchases tab for orders you placed as a buyer.
+            Company customer: Purchases tab for your buyer purchases, Incoming tab for offers on your Inquiry ads (no My Sales tab because they do not sell).
+            The Account page for a company customer is My Ads only (Inquiry ads) — no My Offers section. Only suppliers have both My Ads and My Offers on Account.
             A personal customer has My Orders only (purchases, no tabs) because this account does not publish listings.
             If you need a Retail or Booking purchase status, open the Purchases tab in My Orders (or My Orders directly for personal customers).
-            If you need a Request ad or price-offer status, open Account or the Requests tab in My Orders for company customers.
+            If you need an Inquiry ad status, open Account → My Ads; if you need offers on an Inquiry, open the Incoming tab in My Orders.
             """);
 
         Add(chunks, "supplier-incoming-orders", "كيف يتابع المورد الطلبات الواردة على إعلاناته", "ar", ["supplier"],
             """
             عندما يشتري عميل من أحد إعلاناتك يُنشأ طلب ويصلك إشعار به.
-            تابع الطلبات الواردة من تبويب الواردة في صفحة طلباتي (My Orders)، وليس من صفحة الحساب.
+            تابع طلبات البيع من تبويب مبيعاتي في صفحة طلباتي (My Orders)، وليس من صفحة الحساب؛ وعروض Inquiry من تبويب الواردة.
             في الطلبات غير التجزئة قد يُطلب منك قبول الطلب أو رفضه في مرحلة بانتظار موافقة البائع؛ ستظهر شارة حمراء على أيقونة طلباتي بعدد الطلبات التي بانتظار موافقتك.
             في تطبيق الجوال قد ترى على الطلب الوارد نص "بانتظار موافقتك" بدلاً من النص الكامل للحالة.
             تُحدَّث قائمة الطلبات تلقائياً عند أي تغيير في الحالة.
@@ -2354,7 +2358,7 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "supplier-incoming-orders", "How a supplier follows incoming orders on their listings", "en", ["supplier"],
             """
             When a customer buys from one of your listings an order is created and you receive a notification.
-            Follow incoming orders from the Incoming tab in My Orders, not from the Account page.
+            Follow sales orders from the My Sales tab in My Orders, not from the Account page; follow Inquiry offers from the Incoming tab.
             For non-retail orders you may be asked to accept or reject the order during Awaiting seller approval; a red badge on the My Orders icon shows how many orders need your approval.
             On the mobile app you may see "Awaiting your approval" on an incoming order instead of the full status text.
             The order list refreshes automatically when any status changes.
@@ -2362,21 +2366,21 @@ internal static class AiAssistantKnowledgeSource
             If there is a problem with an incoming order, contact support via Live Chat with the order number.
             """);
 
-        Add(chunks, "request-lifecycle", "دورة حياة إعلان Request", "ar", ["supplier", "company_customer", "public"],
+        Add(chunks, "request-lifecycle", "دورة حياة إعلان Inquiry", "ar", ["supplier", "company_customer", "public"],
             """
-            بعد نشر إعلان Request واعتماده يظهر في قسم Requests ليراه الموردون.
-            يتقدم الموردون بعروضهم، وتتابعها أنت من صفحة الحساب.
+            بعد نشر إعلان Inquiry واعتماده يظهر في قسم Inquiry (الطلبات) ليراه الموردون.
+            يتقدم الموردون بعروضهم، وتتابعها أنت من صفحة طلباتي → الواردة (ومن الحساب لإدارة الإعلان نفسه).
             عندما تقبل عرضاً تبدأ خطوات التنفيذ بالتنسيق مع فريق الراس الذكي، وتُرفض بقية العروض أو تبقى دون قبول.
             إذا اكتملت الكمية المطلوبة أو لم تعد بحاجة للبضاعة، لا يعود الطلب معروضاً للعروض الجديدة.
-            إعلانات Request التي وصلت كميتها إلى صفر لا تظهر في نتائج التصفح والبحث.
+            إعلانات Inquiry التي وصلت كميتها إلى صفر لا تظهر في نتائج التصفح والبحث.
             """);
-        Add(chunks, "request-lifecycle", "The lifecycle of a Request ad", "en", ["supplier", "company_customer", "public"],
+        Add(chunks, "request-lifecycle", "The lifecycle of an Inquiry ad", "en", ["supplier", "company_customer", "public"],
             """
-            After a Request ad is published and approved it appears in the Requests section for suppliers to see.
-            Suppliers submit their offers and you follow them from the Account page.
+            After an Inquiry ad is published and approved it appears in the Inquiry section for suppliers to see.
+            Suppliers submit their offers and you follow them from My Orders → Incoming (and manage the ad itself from Account).
             When you accept an offer, fulfilment begins in coordination with the Al Ras Smart team, and the remaining offers are rejected or left unaccepted.
-            Once the required quantity is met or you no longer need the goods, the request stops taking new offers.
-            Request ads whose quantity has reached zero do not appear in browsing or search results.
+            Once the required quantity is met or you no longer need the goods, the inquiry stops taking new offers.
+            Inquiry ads whose quantity has reached zero do not appear in browsing or search results.
             """);
 
         Add(chunks, "glossary", "مصطلحات المنصة", "ar", All,
@@ -2397,12 +2401,12 @@ internal static class AiAssistantKnowledgeSource
             """
             Supplier: a company that lists and sells goods.
             Personal customer: an individual buyer purchasing at retail.
-            Company customer: a company buying wholesale and publishing Request ads.
+            Company customer: a company buying wholesale and publishing Inquiry ads.
             Shipping company: publishes port-to-port freight services.
             Category: the product classification; a product with a CategoryId appears inside its category.
             Retail: retail selling inside the UAE priced in AED.
             Booking: an international port-to-port shipment priced in USD.
-            Offer: either a discounted ad, or a quotation you submit on a Request ad.
+            Offer: either a discounted ad, or a quotation you submit on a Inquiry ad.
             Request: an ad asking for goods the owner does not have.
             Live Chat: a direct conversation with a human support agent.
             Alras Smart (الراس الذكي): an AI agent that explains the platform and its policies and can run specific tools.
@@ -2471,7 +2475,7 @@ internal static class AiAssistantKnowledgeSource
             """
             Ad creation is restricted by account type.
             A personal customer cannot create any ad, because the account is for buying only.
-            A company customer can create Requests only and cannot create Booking, Retail, Category, or discounted Offer ads.
+            A company customer can create Inquiry ads only and cannot create Booking, Retail, Category, or discounted Offer ads.
             A shipping company can create shipping ads only.
             Supplier is the only account able to create most types.
             If your account type does allow the type you want but you still cannot publish, your account may still be under review; contact support via Live Chat.

@@ -937,10 +937,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "incomingOrders": MessageLookupByLibrary.simpleMessage("مبيعاتي"),
     "incomingOrdersSubtitle": MessageLookupByLibrary.simpleMessage(
-      "الطلبات الواردة على إعلاناتك (غير الطلبات).",
+      "الطلبات الواردة على إعلاناتك (غير Inquiry).",
     ),
     "incomingRequestOffersSubtitle": MessageLookupByLibrary.simpleMessage(
-      "العروض الواردة على إعلاناتك من نوع الطلبات.",
+      "العروض الواردة على إعلاناتك من نوع Inquiry.",
     ),
     "incomingRequestOffersTab": MessageLookupByLibrary.simpleMessage("الواردة"),
     "invalidEmail": MessageLookupByLibrary.simpleMessage(
@@ -1050,7 +1050,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "myOrders": MessageLookupByLibrary.simpleMessage("طلباتي"),
     "myOrdersSubtitle": MessageLookupByLibrary.simpleMessage(
-      "مبيعاتك ومشترياتك والعروض الواردة على طلباتك.",
+      "مبيعاتك ومشترياتك والعروض الواردة على إعلانات Inquiry.",
     ),
     "natureIntermediary": MessageLookupByLibrary.simpleMessage(
       "تعمل شركة ميرج سبايس كوسيط بين المورد والعميل، حيث تتم جميع عمليات البيع والشراء من خلال التطبيق.",
