@@ -5,6 +5,7 @@ import 'package:alrasmarket/core/utils/string_display_format.dart';
 import 'package:alrasmarket/core/utils/relative_time_formatter.dart';
 import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/core/widgets/animated_discount_price_text.dart';
+import 'package:alrasmarket/core/widgets/currency_icon.dart';
 import 'package:alrasmarket/core/widgets/product_price_text.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_price_type_label.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/ad_hero_description_text.dart';
@@ -255,18 +256,55 @@ class _OfferAdDetailsCard extends StatelessWidget {
         fontSize: 13.sp,
         fontWeight: FontWeight.w700,
       );
+      final currency = ProductPriceFormatter.currencyCode(product);
       main.add(
         BookingDetailsFactTile(
           icon: Icons.sell_outlined,
           label: CreateAdPriceLabels.offerPricePerUnitLabel(s, unit),
           fontFamily: fontFamily,
           valueWidget: animateDiscount
-              ? AnimatedDiscountPriceText(
-                  fromAmount: original,
-                  toAmount: sale,
-                  currency: ProductPriceFormatter.currencyCode(product),
-                  amountStyle: priceStyle,
-                  matchCurrencyToAmount: true,
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          ThousandsNumberInput.format(
+                            original,
+                            allowDecimal: true,
+                          ),
+                          style: TextStyle(
+                            fontFamily: fontFamily,
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFFDC2626),
+                            decoration: TextDecoration.lineThrough,
+                            decorationColor: const Color(0xFFDC2626),
+                            height: 1.2,
+                          ),
+                        ),
+                        SizedBox(width: 4.w),
+                        CurrencyIcon(
+                          currency: currency,
+                          size: 13.sp,
+                          matchTextSize: true,
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 4.h),
+                    AnimatedDiscountPriceText(
+                      key: ValueKey(
+                        'offer-price-${product.productId}-$original-$sale',
+                      ),
+                      fromAmount: original,
+                      toAmount: sale,
+                      currency: currency,
+                      amountStyle: priceStyle,
+                      matchCurrencyToAmount: true,
+                    ),
+                  ],
                 )
               : ProductPriceText.fromProduct(
                   product,

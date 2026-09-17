@@ -2,7 +2,9 @@ import 'package:alrasmarket/core/utils/product_price_formatter.dart';
 import 'package:alrasmarket/core/utils/product_quantity_formatter.dart';
 import 'package:alrasmarket/core/utils/product_stock.dart';
 import 'package:alrasmarket/core/utils/relative_time_formatter.dart';
+import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
 import 'package:alrasmarket/core/widgets/animated_discount_price_text.dart';
+import 'package:alrasmarket/core/widgets/currency_icon.dart';
 import 'package:alrasmarket/core/widgets/product_price_text.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/booking_widets/booking_details_card.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_price_type_label.dart';
@@ -146,15 +148,52 @@ class ProductDetailFactsCard extends StatelessWidget {
           product.isDiscountActive &&
           original > sale &&
           sale > 0;
+      final currency = ProductPriceFormatter.currencyCode(product);
       addRow(
         label: _priceLabel(s, unit),
         valueWidget: animateDiscount
-            ? AnimatedDiscountPriceText(
-                fromAmount: original,
-                toAmount: sale,
-                currency: ProductPriceFormatter.currencyCode(product),
-                amountStyle: priceStyle,
-                matchCurrencyToAmount: true,
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        ThousandsNumberInput.format(
+                          original,
+                          allowDecimal: true,
+                        ),
+                        style: TextStyle(
+                          fontFamily: fontFamily,
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFFDC2626),
+                          decoration: TextDecoration.lineThrough,
+                          decorationColor: const Color(0xFFDC2626),
+                          height: 1.2,
+                        ),
+                      ),
+                      SizedBox(width: 4.w),
+                      CurrencyIcon(
+                        currency: currency,
+                        size: 14.sp,
+                        matchTextSize: true,
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 4.h),
+                  AnimatedDiscountPriceText(
+                    key: ValueKey(
+                      'facts-price-${product.productId}-$original-$sale',
+                    ),
+                    fromAmount: original,
+                    toAmount: sale,
+                    currency: currency,
+                    amountStyle: priceStyle,
+                    matchCurrencyToAmount: true,
+                  ),
+                ],
               )
             : ProductPriceText.fromProduct(
                 product,

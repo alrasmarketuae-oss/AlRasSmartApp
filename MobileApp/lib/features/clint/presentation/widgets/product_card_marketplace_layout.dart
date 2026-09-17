@@ -151,49 +151,72 @@ class _ProductCardMarketplaceLayoutState
 
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
 
+    final dealPriceFontSize = priceFontSize + 1.5.sp;
     final child = showDeal
-        ? Row(
+        ? Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment:
+                isAr ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
-              Text(
-                _formatAmount(sale),
-                style: TextStyle(
-                  fontFamily: fontFamily,
-                  fontSize: priceFontSize,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.title(context),
-                  height: 1.15,
-                ),
-              ),
-              SizedBox(width: 4.w),
-              CurrencyIcon(
-                currency: currency,
-                size: priceFontSize * 0.9,
-              ),
-              if (unit.isNotEmpty)
-                Text(
-                  unit.startsWith('/') ? unit : ' $unit',
-                  style: TextStyle(
-                    fontFamily: fontFamily,
-                    fontSize: detailsFontSize,
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.subtitle(context),
-                  ),
-                ),
               if (original > sale) ...[
-                SizedBox(width: 8.w),
-                Text(
-                  _formatAmount(original),
-                  style: TextStyle(
-                    fontFamily: fontFamily,
-                    fontSize: detailsFontSize,
-                    color: const Color(0xFF9CA3AF),
-                    decoration: TextDecoration.lineThrough,
-                    decorationColor: const Color(0xFF9CA3AF),
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      _formatAmount(original),
+                      style: TextStyle(
+                        fontFamily: fontFamily,
+                        fontSize: dealPriceFontSize * 0.92,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFFDC2626),
+                        decoration: TextDecoration.lineThrough,
+                        decorationColor: const Color(0xFFDC2626),
+                        height: 1.1,
+                      ),
+                    ),
+                    SizedBox(width: 4.w),
+                    CurrencyIcon(
+                      currency: currency,
+                      size: dealPriceFontSize * 0.92,
+                      matchTextSize: true,
+                    ),
+                  ],
                 ),
+                SizedBox(height: 3.h),
               ],
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    _formatAmount(sale),
+                    style: TextStyle(
+                      fontFamily: fontFamily,
+                      fontSize: dealPriceFontSize,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF619D50),
+                      height: 1.15,
+                    ),
+                  ),
+                  SizedBox(width: 4.w),
+                  CurrencyIcon(
+                    currency: currency,
+                    size: dealPriceFontSize * 0.9,
+                    matchTextSize: true,
+                  ),
+                  if (unit.isNotEmpty)
+                    Text(
+                      unit.startsWith('/') ? unit : ' $unit',
+                      style: TextStyle(
+                        fontFamily: fontFamily,
+                        fontSize: detailsFontSize,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.subtitle(context),
+                      ),
+                    ),
+                ],
+              ),
             ],
           )
         : ProductPriceText.unitPrice(
