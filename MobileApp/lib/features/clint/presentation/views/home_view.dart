@@ -160,12 +160,15 @@ class _HomeViewState extends State<HomeView> {
                     if (!metrics.hasPixels || !metrics.hasContentDimensions) {
                       return false;
                     }
-                    final itemWidth =
-                        (MediaQuery.sizeOf(context).width - 48.w - 12.w) / 2;
-                    final itemHeight = itemWidth / (157 / 282);
-                    // Prefetch ~12 rows early (~half a page of cards) so the next
-                    // 20 products are usually ready before the user hits the end.
-                    final preloadExtent = 12 * (itemHeight + 12.h);
+                    // Prefetch ~1 screen early so the next page is ready, without
+                    // auto-loading every remaining page (that OOMs / kills the app).
+                    if (cubit.isLoadingHomeProducts ||
+                        cubit.isLoadingMoreHomeProducts ||
+                        !cubit.hasMoreHomeProducts) {
+                      return false;
+                    }
+                    final preloadExtent =
+                        (metrics.viewportDimension * 1.25).clamp(500.0, 1200.0);
                     if (metrics.maxScrollExtent - metrics.pixels <=
                         preloadExtent) {
                       cubit.loadMoreHomeFeed(isPerson: isPersonalCustomer);
@@ -297,11 +300,8 @@ class _HomeViewState extends State<HomeView> {
                                       ),
                                       itemCount: products.length,
                                       itemBuilder: (context, index) {
-                                        cubit.maybeLoadMoreHomeFeed(
-                                          isPerson: isPersonalCustomer,
-                                          visibleIndex: index,
-                                          totalItems: products.length,
-                                        );
+                                        // Do not call load-more here: shrinkWrap
+                                        // builds every cell and was chaining pages.
                                         final product = products[index];
                                         return ProductCard(
                                           title: product.productName.isEmpty

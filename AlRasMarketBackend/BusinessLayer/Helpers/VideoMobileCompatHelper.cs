@@ -190,11 +190,14 @@ public static class VideoMobileCompatHelper
                 }
 
                 var color = await TryGetVideoColorInfoAsync(inputPath, cancellationToken);
+                string? lastError = null;
+
                 var encoded = await TryRunFfmpegAsync(
                     BuildAccurateTrimArgs(inputPath, encodeOutputPath, startSeconds, clipDuration, color),
                     cancellationToken);
-                if (!encoded || !HasOutput(encodeOutputPath))
+                if (!encoded.Ok || !HasOutput(encodeOutputPath))
                 {
+                    lastError = encoded.Stderr;
                     if (File.Exists(encodeOutputPath))
                     {
                         File.Delete(encodeOutputPath);
@@ -211,9 +214,55 @@ public static class VideoMobileCompatHelper
                         cancellationToken);
                 }
 
-                if (!encoded || !HasOutput(encodeOutputPath))
+                if (!encoded.Ok || !HasOutput(encodeOutputPath))
                 {
-                    throw new InvalidOperationException("Video trim failed.");
+                    lastError = encoded.Stderr;
+                    if (File.Exists(encodeOutputPath))
+                    {
+                        File.Delete(encodeOutputPath);
+                    }
+
+                    // Compatible fallback: ignore source color tags, force even dims + yuv420p.
+                    encoded = await TryRunFfmpegAsync(
+                        BuildSimpleAccurateTrimArgs(
+                            inputPath,
+                            encodeOutputPath,
+                            startSeconds,
+                            clipDuration,
+                            includeAudio: true),
+                        cancellationToken);
+                }
+
+                if (!encoded.Ok || !HasOutput(encodeOutputPath))
+                {
+                    lastError = encoded.Stderr;
+                    if (File.Exists(encodeOutputPath))
+                    {
+                        File.Delete(encodeOutputPath);
+                    }
+
+                    // Last resort: video-only (broken/odd audio tracks often fail AAC remux).
+                    encoded = await TryRunFfmpegAsync(
+                        BuildSimpleAccurateTrimArgs(
+                            inputPath,
+                            encodeOutputPath,
+                            startSeconds,
+                            clipDuration,
+                            includeAudio: false),
+                        cancellationToken);
+                }
+
+                if (!encoded.Ok || !HasOutput(encodeOutputPath))
+                {
+                    lastError = encoded.Stderr ?? lastError;
+                    logger?.LogError(
+                        "Video trim failed for {Input} ({Start}-{End}s). ffmpeg: {Stderr}",
+                        inputPath,
+                        startSeconds,
+                        endSeconds,
+                        TruncateError(lastError));
+                    throw new InvalidOperationException(
+                        "Video trim failed." + FormatErrorSuffix(lastError));
                 }
 
                 outputPath = encodeOutputPath;
@@ -435,6 +484,88 @@ public static class VideoMobileCompatHelper
         };
     }
 
+    private static List<string> BuildSimpleAccurateTrimArgs(
+        string inputPath,
+        string outputPath,
+        double startSeconds,
+        double durationSeconds,
+        bool includeAudio)
+    {
+        var args = new List<string>
+        {
+            "-y",
+            "-ss", FormatFfmpegTime(startSeconds),
+            "-i", inputPath,
+            "-t", FormatFfmpegTime(durationSeconds),
+            "-map", "0:v:0",
+            "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p",
+            "-c:v", "libx264",
+            "-preset", "veryfast",
+            "-crf", "23",
+            "-profile:v", "main",
+            "-level", "4.0",
+            "-pix_fmt", "yuv420p",
+        };
+
+        if (includeAudio)
+        {
+            args.Add("-map");
+            args.Add("0:a?");
+            args.Add("-c:a");
+            args.Add("aac");
+            args.Add("-b:a");
+            args.Add("128k");
+            args.Add("-ac");
+            args.Add("2");
+        }
+        else
+        {
+            args.Add("-an");
+        }
+
+        args.Add("-movflags");
+        args.Add("+faststart");
+        args.Add(outputPath);
+        return args;
+    }
+
+    private static string TruncateError(string? stderr)
+    {
+        if (string.IsNullOrWhiteSpace(stderr))
+        {
+            return "(no ffmpeg output)";
+        }
+
+        var text = stderr.Trim();
+        return text.Length > 800 ? text[^800..] : text;
+    }
+
+    private static string FormatErrorSuffix(string? stderr)
+    {
+        if (string.IsNullOrWhiteSpace(stderr))
+        {
+            return string.Empty;
+        }
+
+        // Prefer the last meaningful ffmpeg line for the API client.
+        var lines = stderr
+            .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(l => !string.IsNullOrWhiteSpace(l))
+            .ToList();
+        if (lines.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var detail = lines[^1];
+        if (detail.Length > 220)
+        {
+            detail = detail[^220..];
+        }
+
+        return " " + detail;
+    }
+
     private static async Task<bool> TryCopyTrimAsync(
         string inputPath,
         string outputPath,
@@ -445,7 +576,7 @@ public static class VideoMobileCompatHelper
         var copied = await TryRunFfmpegAsync(
             BuildCopyTrimArgs(inputPath, outputPath, startSeconds, durationSeconds, inputSeek: true),
             cancellationToken);
-        if (copied && HasOutput(outputPath))
+        if (copied.Ok && HasOutput(outputPath))
         {
             return true;
         }
@@ -458,7 +589,7 @@ public static class VideoMobileCompatHelper
         copied = await TryRunFfmpegAsync(
             BuildCopyTrimArgs(inputPath, outputPath, startSeconds, durationSeconds, inputSeek: false),
             cancellationToken);
-        return copied && HasOutput(outputPath);
+        return copied.Ok && HasOutput(outputPath);
     }
 
     /// <summary>
@@ -693,13 +824,10 @@ public static class VideoMobileCompatHelper
         throw new InvalidOperationException($"{failureLabel} failed: {detail}");
     }
 
-    private static async Task<bool> TryRunFfmpegAsync(
+    private static async Task<FfmpegRunResult> TryRunFfmpegAsync(
         IReadOnlyList<string> arguments,
-        CancellationToken cancellationToken)
-    {
-        var result = await RunFfmpegCoreAsync(arguments, cancellationToken);
-        return result.Ok;
-    }
+        CancellationToken cancellationToken) =>
+        await RunFfmpegCoreAsync(arguments, cancellationToken);
 
     private static async Task<FfmpegRunResult> RunFfmpegCoreAsync(
         IReadOnlyList<string> arguments,

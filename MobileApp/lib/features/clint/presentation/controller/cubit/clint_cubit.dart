@@ -654,8 +654,18 @@ class ClintCubit extends Cubit<ClintStates> {
   /// Loads the next home-feed page when the user is near the end of the list.
   Future<void> loadMoreHomeFeed({required bool isPerson}) async {
     if (isPerson || _isPersonalCustomerAccount) {
+      // Guard before any emit — shrinkWrap grids rebuild every child and used
+      // to chain Success→loadMore→Success until Android killed the app.
+      if (isLoadingMoreHomeProducts || isLoadingHomeProducts) return;
+      if (!hasMoreHomeProducts && homeProducts.isNotEmpty) return;
+
+      final bucket = _productsByType[ServiceProductType.retail];
+      if (bucket == null) return;
+      if (bucket.isLoadingMore || bucket.isLoading) return;
+      if (bucket.page >= bucket.totalPages && bucket.items.isNotEmpty) return;
+
+      isLoadingMoreHomeProducts = true;
       if (homeProducts.isNotEmpty) {
-        isLoadingMoreHomeProducts = true;
         emit(FetchHomeProductsLoadingMoreState());
       }
       await fetchProductsByType(
