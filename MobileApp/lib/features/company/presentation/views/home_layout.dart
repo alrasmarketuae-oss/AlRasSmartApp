@@ -31,7 +31,6 @@ class _CompanyHomeLayoutState extends State<CompanyHomeLayout> {
   @override
   void initState() {
     super.initState();
-    NotificationsService.instance.prefetchMine();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final cubit = context.read<ClintCubit>();

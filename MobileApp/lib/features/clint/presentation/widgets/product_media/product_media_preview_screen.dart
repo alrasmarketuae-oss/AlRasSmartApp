@@ -54,15 +54,39 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
   bool _videoFailed = false;
   double _dragOffsetY = 0;
   double _dismissOpacity = 1;
+  int _videoInitGeneration = 0;
+
+  bool get _canLoop => widget.items.length > 1;
+
+  /// Three virtual copies; stay in the middle so swipe can wrap safely.
+  static const int _loopCopies = 3;
+
+  int get _itemCount => widget.items.length;
+
+  int _realIndex(int page) {
+    final count = _itemCount;
+    if (count <= 0) return 0;
+    return ((page % count) + count) % count;
+  }
+
+  int _pageForRealIndex(int realIndex) {
+    if (!_canLoop) return realIndex;
+    return _itemCount + realIndex;
+  }
 
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.initialIndex.clamp(0, widget.items.length - 1);
-    _pageController = PageController(initialPage: _currentIndex);
-    _initVideoForIndex(_currentIndex);
+    final maxIndex = widget.items.isEmpty ? 0 : widget.items.length - 1;
+    _currentIndex =
+        widget.items.isEmpty ? 0 : widget.initialIndex.clamp(0, maxIndex);
+    _pageController =
+        PageController(initialPage: _pageForRealIndex(_currentIndex));
+    if (widget.items.isNotEmpty) {
+      _initVideoForIndex(_currentIndex);
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
+      if (!mounted || widget.items.isEmpty) return;
       _precacheAround(_currentIndex, includeAll: true);
     });
   }
@@ -74,9 +98,11 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
         if (!item.isVideo) urls.add(item.url);
       }
     } else {
+      final count = widget.items.length;
+      if (count == 0) return;
       for (final i in [index - 1, index, index + 1]) {
-        if (i < 0 || i >= widget.items.length) continue;
-        final item = widget.items[i];
+        final wrapped = ((i % count) + count) % count;
+        final item = widget.items[wrapped];
         if (!item.isVideo) urls.add(item.url);
       }
     }
@@ -85,17 +111,20 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
 
   @override
   void dispose() {
+    _videoInitGeneration++;
     _disposeVideoController();
     _pageController.dispose();
     super.dispose();
   }
 
   Future<void> _initVideoForIndex(int index) async {
+    final generation = ++_videoInitGeneration;
     _disposeVideoController();
 
+    if (index < 0 || index >= widget.items.length) return;
     final item = widget.items[index];
     if (!item.isVideo) {
-      if (mounted) {
+      if (mounted && generation == _videoInitGeneration) {
         setState(() {
           _isVideoInitializing = false;
           _videoFailed = false;
@@ -104,21 +133,32 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
       return;
     }
 
-    setState(() {
-      _isVideoInitializing = true;
-      _videoFailed = false;
-    });
+    if (mounted) {
+      setState(() {
+        _isVideoInitializing = true;
+        _videoFailed = false;
+      });
+    }
 
     final controller = await _createVideoController(item.url);
+    if (!mounted || generation != _videoInitGeneration) {
+      await controller.dispose();
+      return;
+    }
     _videoController = controller;
 
     try {
       await controller.initialize();
+      if (!mounted || generation != _videoInitGeneration) {
+        await controller.dispose();
+        if (_videoController == controller) _videoController = null;
+        return;
+      }
       await controller.setLooping(true);
       await controller.setVolume(item.isMuted ? 0 : 1);
       await controller.play();
     } catch (_) {
-      if (mounted) {
+      if (mounted && generation == _videoInitGeneration) {
         setState(() {
           _isVideoInitializing = false;
           _videoFailed = true;
@@ -131,8 +171,9 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
       return;
     }
 
-    if (!mounted || _videoController != controller) {
+    if (!mounted || generation != _videoInitGeneration) {
       await controller.dispose();
+      if (_videoController == controller) _videoController = null;
       return;
     }
 
@@ -163,6 +204,7 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
 
   bool get _shouldShowVideoSeekBar {
     if (_isVideoInitializing || _videoFailed) return false;
+    if (_currentIndex < 0 || _currentIndex >= widget.items.length) return false;
     final item = widget.items[_currentIndex];
     final controller = _videoController;
     return item.isVideo &&
@@ -170,13 +212,28 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
         controller.value.isInitialized;
   }
 
-  void _onPageChanged(int index) {
-    setState(() {
-      _currentIndex = index;
-      _videoFailed = false;
-    });
-    _initVideoForIndex(index);
-    _precacheAround(index);
+  void _onPageChanged(int page) {
+    final index = _realIndex(page);
+    if (index != _currentIndex) {
+      setState(() {
+        _currentIndex = index;
+        _videoFailed = false;
+      });
+      _initVideoForIndex(index);
+      _precacheAround(index);
+    }
+
+    if (!_canLoop) return;
+    final count = _itemCount;
+    // Keep the viewport in the middle copy so the next swipe can wrap again.
+    if (page < count || page >= count * (_loopCopies - 1)) {
+      final target = count + index;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_pageController.hasClients) return;
+        if (_pageController.page?.round() == target) return;
+        _pageController.jumpToPage(target);
+      });
+    }
   }
 
   void _togglePlayPause() {
@@ -188,7 +245,7 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
     } else {
       controller.play();
     }
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   void _close() {
@@ -198,15 +255,7 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
   }
 
   void _goToPrevious() {
-    if (widget.items.length <= 1) return;
-    if (_currentIndex <= 0) {
-      _pageController.animateToPage(
-        widget.items.length - 1,
-        duration: const Duration(milliseconds: 280),
-        curve: Curves.easeOutCubic,
-      );
-      return;
-    }
+    if (!_canLoop || !_pageController.hasClients) return;
     _pageController.previousPage(
       duration: const Duration(milliseconds: 280),
       curve: Curves.easeOutCubic,
@@ -214,15 +263,7 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
   }
 
   void _goToNext() {
-    if (widget.items.length <= 1) return;
-    if (_currentIndex >= widget.items.length - 1) {
-      _pageController.animateToPage(
-        0,
-        duration: const Duration(milliseconds: 280),
-        curve: Curves.easeOutCubic,
-      );
-      return;
-    }
+    if (!_canLoop || !_pageController.hasClients) return;
     _pageController.nextPage(
       duration: const Duration(milliseconds: 280),
       curve: Curves.easeOutCubic,
@@ -252,6 +293,18 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.items.isEmpty) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: SafeArea(
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: _CloseMediaButton(onPressed: _close),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.black.withValues(alpha: _dismissOpacity),
       body: GestureDetector(
@@ -269,13 +322,14 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
                 textDirection: TextDirection.ltr,
                 child: PageView.builder(
                   controller: _pageController,
-                  itemCount: widget.items.length,
+                  itemCount: _canLoop ? _itemCount * _loopCopies : _itemCount,
                   onPageChanged: _onPageChanged,
-                  itemBuilder: (context, index) {
+                  itemBuilder: (context, page) {
+                    final index = _realIndex(page);
                     final item = widget.items[index];
                     if (item.isVideo) {
                       return _VideoPreviewBody(
-                        key: ValueKey(item.url),
+                        key: ValueKey('video-$index-${item.url}'),
                         controller:
                             index == _currentIndex ? _videoController : null,
                         isInitializing:
@@ -288,26 +342,23 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
                       );
                     }
 
-                    return InteractiveViewer(
-                      minScale: 0.8,
-                      maxScale: 4,
-                      child: Center(
-                        child: _isLocalPath(item.url)
-                            ? Image.file(
-                                File(item.url),
-                                fit: BoxFit.contain,
-                                errorBuilder: (_, __, ___) =>
-                                    const SizedBox.shrink(),
-                              )
-                            : CachedAppImage(
-                                imageUrl: item.url,
-                                fit: BoxFit.contain,
-                                darkSkeleton: true,
-                                fadeInDuration: Duration.zero,
-                                // Avoid broken-image flash over ads media.
-                                errorWidget: const SizedBox.shrink(),
-                              ),
-                      ),
+                    return _SwipeFriendlyZoomImage(
+                      key: ValueKey('img-$index-${item.url}'),
+                      child: _isLocalPath(item.url)
+                          ? Image.file(
+                              File(item.url),
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) =>
+                                  const SizedBox.shrink(),
+                            )
+                          : CachedAppImage(
+                              imageUrl: item.url,
+                              fit: BoxFit.contain,
+                              darkSkeleton: true,
+                              fadeInDuration: Duration.zero,
+                              // Avoid broken-image flash over ads media.
+                              errorWidget: const SizedBox.shrink(),
+                            ),
                     );
                   },
                 ),
@@ -383,6 +434,57 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SwipeFriendlyZoomImage extends StatefulWidget {
+  const _SwipeFriendlyZoomImage({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  State<_SwipeFriendlyZoomImage> createState() =>
+      _SwipeFriendlyZoomImageState();
+}
+
+class _SwipeFriendlyZoomImageState extends State<_SwipeFriendlyZoomImage> {
+  final _transform = TransformationController();
+  bool _panEnabled = false;
+
+  @override
+  void dispose() {
+    _transform.dispose();
+    super.dispose();
+  }
+
+  void _syncPanEnabled() {
+    final zoomed = _transform.value.getMaxScaleOnAxis() > 1.05;
+    if (zoomed == _panEnabled) return;
+    setState(() => _panEnabled = zoomed);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // When not zoomed, disable pan so PageView receives horizontal swipes
+    // (including wrap from last → first / first → last).
+    return InteractiveViewer(
+      transformationController: _transform,
+      minScale: 1,
+      maxScale: 4,
+      panEnabled: _panEnabled,
+      scaleEnabled: true,
+      onInteractionUpdate: (_) => _syncPanEnabled(),
+      onInteractionEnd: (_) {
+        // Reset tiny residual zoom so swipe keeps working.
+        if (_transform.value.getMaxScaleOnAxis() <= 1.05) {
+          _transform.value = Matrix4.identity();
+          if (_panEnabled) setState(() => _panEnabled = false);
+        } else {
+          _syncPanEnabled();
+        }
+      },
+      child: Center(child: widget.child),
     );
   }
 }

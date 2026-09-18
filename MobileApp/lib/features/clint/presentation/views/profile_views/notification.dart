@@ -36,17 +36,7 @@ class _NotificationsViewState extends State<NotificationsView> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    final cached = NotificationsService.instance.peekSessionPage1();
-    if (cached != null) {
-      _items = List<AppNotificationModel>.from(cached.items);
-      _page = 1;
-      _hasMore = _items.length < cached.totalCount;
-      _loading = false;
-      _markedAllRead = true;
-      _error = null;
-    } else {
-      _loadNotifications(reset: true);
-    }
+    _loadNotifications(reset: true, forceRefresh: true);
   }
 
   @override

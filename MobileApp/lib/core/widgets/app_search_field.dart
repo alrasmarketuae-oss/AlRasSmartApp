@@ -114,10 +114,19 @@ class _AppSearchFieldState extends State<AppSearchField> {
 
   void _onQueryChanged() {
     widget.onChanged?.call(_controller.text);
+    if (mounted) setState(() {});
     if (_isCatalog && widget.enableSuggestions) {
       _applyPreviewSuggestions();
       unawaited(_refreshSuggestions());
     }
+  }
+
+  void _clearQuery() {
+    _controller.clear();
+    if (!_focusNode.hasFocus) {
+      _focusNode.requestFocus();
+    }
+    if (mounted) setState(() {});
   }
 
   void _onFocusChanged() {
@@ -282,6 +291,7 @@ class _AppSearchFieldState extends State<AppSearchField> {
     final pillRadius = fieldHeight / 2;
     final showBack = widget.showBackButton && _isCatalog;
     final showLens = _isCatalog && widget.showImageSearch;
+    final hasText = _controller.text.trim().isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -313,54 +323,83 @@ class _AppSearchFieldState extends State<AppSearchField> {
               SizedBox(width: 6.w),
             ],
             Expanded(
-              child: SizedBox(
-                height: fieldHeight,
-                child: CustomTextFormField(
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  hintText: _resolveHint(context),
-                  leftIcon: AppAssets.searchIcon,
-                  leftIconSize: isTablet ? 16.h : 18.h,
-                  leftIconColor: AppColors.subtitle(context),
-                  onLeftIconTap: _isCatalog
-                      ? () => _submit(_controller.text.trim())
-                      : null,
+              child: MetaData(
+                metaData: kDismissKeyboardExempt,
+                behavior: HitTestBehavior.deferToChild,
+                child: SizedBox(
                   height: fieldHeight,
-                  borderRadius: pillRadius,
-                  borderWidth: 1,
-                  borderColor: AppColors.inputBorder(context),
-                  fillColor: AppColors.inputFill(context),
-                  unfocusOnTapOutside: false,
-                  textStyle: TextStyle(
-                    fontSize: isTablet ? 12.sp : 14.sp,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.title(context),
+                  child: CustomTextFormField(
+                    controller: _controller,
+                    focusNode: _focusNode,
+                    hintText: _resolveHint(context),
+                    leftIcon: AppAssets.searchIcon,
+                    leftIconSize: isTablet ? 16.h : 18.h,
+                    leftIconColor: AppColors.subtitle(context),
+                    onLeftIconTap: _isCatalog
+                        ? () => _submit(_controller.text.trim())
+                        : null,
+                    height: fieldHeight,
+                    borderRadius: pillRadius,
+                    borderWidth: 1,
+                    borderColor: AppColors.inputBorder(context),
+                    fillColor: AppColors.inputFill(context),
+                    unfocusOnTapOutside: false,
+                    textStyle: TextStyle(
+                      fontSize: isTablet ? 12.sp : 14.sp,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.title(context),
+                    ),
+                    showShadow: false,
+                    hintStyle: TextStyle(
+                      fontSize: isTablet ? 12.sp : 14.sp,
+                      color: AppColors.subtitle(context),
+                      fontWeight: FontWeight.w400,
+                    ),
+                    onSubmitted: _isCatalog ? _submit : null,
+                    keyboardType: TextInputType.text,
+                    suffixIcon: (hasText || showLens)
+                        ? Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (hasText)
+                                IconButton(
+                                  padding: EdgeInsets.zero,
+                                  constraints: BoxConstraints(
+                                    minWidth: 32.w,
+                                    minHeight: fieldHeight,
+                                  ),
+                                  tooltip: MaterialLocalizations.of(context)
+                                      .deleteButtonTooltip,
+                                  onPressed: _clearQuery,
+                                  icon: Icon(
+                                    Icons.close_rounded,
+                                    size: 18.sp,
+                                    color: AppColors.subtitle(context),
+                                  ),
+                                ),
+                              if (showLens)
+                                IconButton(
+                                  padding: EdgeInsets.only(
+                                    right: 8.w,
+                                    left: 4.w,
+                                  ),
+                                  constraints: BoxConstraints(
+                                    minWidth: lensSize + 10,
+                                    minHeight: fieldHeight,
+                                  ),
+                                  tooltip: S.of(context).searchByImage,
+                                  onPressed: _searchByImage,
+                                  icon: Image.asset(
+                                    AppAssets.aiLensSearchIcon,
+                                    width: lensSize,
+                                    height: lensSize,
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                            ],
+                          )
+                        : null,
                   ),
-                  showShadow: false,
-                  hintStyle: TextStyle(
-                    fontSize: isTablet ? 12.sp : 14.sp,
-                    color: AppColors.subtitle(context),
-                    fontWeight: FontWeight.w400,
-                  ),
-                  onSubmitted: _isCatalog ? _submit : null,
-                  keyboardType: TextInputType.text,
-                  suffixIcon: showLens
-                      ? IconButton(
-                          padding: EdgeInsets.only(right: 8.w, left: 4.w),
-                          constraints: BoxConstraints(
-                            minWidth: lensSize + 10,
-                            minHeight: fieldHeight,
-                          ),
-                          tooltip: S.of(context).searchByImage,
-                          onPressed: _searchByImage,
-                          icon: Image.asset(
-                            AppAssets.aiLensSearchIcon,
-                            width: lensSize,
-                            height: lensSize,
-                            fit: BoxFit.contain,
-                          ),
-                        )
-                      : null,
                 ),
               ),
             ),

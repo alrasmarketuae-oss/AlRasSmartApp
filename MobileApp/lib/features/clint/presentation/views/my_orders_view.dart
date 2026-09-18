@@ -15,6 +15,7 @@ import 'package:alrasmarket/features/clint/presentation/helpers/order_list_oldes
 import 'package:alrasmarket/features/clint/presentation/models/my_orders_chip_filter.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/order_card.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/order_list_oldest_header.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/orders_list_skeleton.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/search_header.dart';
 import 'package:alrasmarket/features/company/data/models/my_request_offer_model.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/my_ads/request_offer_card.dart';
@@ -439,7 +440,7 @@ class _MyOrdersViewState extends State<MyOrdersView> {
     final allIncoming = cubit.incomingOrders;
 
     if (cubit.isLoadingIncomingOrders && allIncoming.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const OrdersListSkeleton();
     }
 
     if (cubit.incomingOrdersError != null && allIncoming.isEmpty) {
@@ -518,7 +519,7 @@ class _MyOrdersViewState extends State<MyOrdersView> {
     final visible = _filtered(orders);
 
     if (cubit.isLoadingMyOrders && orders.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const OrdersListSkeleton();
     }
 
     if (cubit.myOrdersError != null && orders.isEmpty) {

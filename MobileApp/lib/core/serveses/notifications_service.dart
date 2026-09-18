@@ -81,6 +81,20 @@ class NotificationsService extends ChangeNotifier {
     int pageSize = 50,
     bool forceRefresh = false,
   }) async {
+    final token = AuthService.instance.currentToken;
+    if (token == null || token.isEmpty) {
+      unreadCount = 0;
+      clearSessionListCache();
+      notifyListeners();
+      return AppNotificationsPageModel(
+        items: const [],
+        totalCount: 0,
+        unreadCount: 0,
+        page: page,
+        pageSize: pageSize,
+      );
+    }
+
     if (page == 1 && !forceRefresh) {
       final cached = peekSessionPage1();
       if (cached != null) return cached;
@@ -89,7 +103,7 @@ class NotificationsService extends ChangeNotifier {
     final response = await DioHelper.getData(
       url: ApiConstants.notificationsMineEndPoint,
       query: {'page': page, 'pageSize': pageSize},
-      token: AuthService.instance.currentToken,
+      token: token,
     );
 
     if (response?.statusCode != 200) {
@@ -157,14 +171,18 @@ class NotificationsService extends ChangeNotifier {
     final token = AuthService.instance.currentToken;
     if (token == null || token.isEmpty || notificationId.isEmpty) return;
 
-    await DioHelper.postData(
-      url: ApiConstants.notificationMarkReadEndPoint(notificationId),
-      data: const {},
-      token: token,
-    );
-    if (unreadCount > 0) {
-      unreadCount -= 1;
-      notifyListeners();
+    try {
+      await DioHelper.postData(
+        url: ApiConstants.notificationMarkReadEndPoint(notificationId),
+        data: const {},
+        token: token,
+      );
+      if (unreadCount > 0) {
+        unreadCount -= 1;
+        notifyListeners();
+      }
+    } catch (_) {
+      // Best-effort; keep last known badge.
     }
   }
 
@@ -172,12 +190,16 @@ class NotificationsService extends ChangeNotifier {
     final token = AuthService.instance.currentToken;
     if (token == null || token.isEmpty) return;
 
-    await DioHelper.postData(
-      url: ApiConstants.notificationsMarkAllReadEndPoint,
-      data: const {},
-      token: token,
-    );
-    unreadCount = 0;
-    notifyListeners();
+    try {
+      await DioHelper.postData(
+        url: ApiConstants.notificationsMarkAllReadEndPoint,
+        data: const {},
+        token: token,
+      );
+      unreadCount = 0;
+      notifyListeners();
+    } catch (_) {
+      // Best-effort; keep last known badge.
+    }
   }
 }

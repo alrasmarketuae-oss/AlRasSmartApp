@@ -68,7 +68,7 @@ class CustomTextFormField extends StatefulWidget {
   final Color? borderColor;
   final double? borderRadius;
   final double? borderWidth;
-  final IconButton? suffixIcon;
+  final Widget? suffixIcon;
   final String? label;
   final Color? rightIconColor;
   final bool showShadow;
@@ -209,6 +209,10 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                           ),
                         )
                       : null),
+        suffixIconConstraints: const BoxConstraints(
+          minWidth: 0,
+          minHeight: 0,
+        ),
 
         border: widget.borderRadius == 0
             ? UnderlineInputBorder(

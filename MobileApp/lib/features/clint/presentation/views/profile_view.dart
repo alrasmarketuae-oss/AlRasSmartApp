@@ -15,6 +15,7 @@ import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_s
 import 'package:alrasmarket/features/company/presentation/controller/cubit/company_cubit.dart';
 import 'package:alrasmarket/features/clint/presentation/views/profile_views/delete_account_dialog.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/search_header.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/profile_page_skeleton.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -283,7 +284,9 @@ class _ProfileViewState extends State<ProfileView> {
                       isSearch: !widget.isTabView,
                     ),
                     Expanded(
-                      child: SingleChildScrollView(
+                      child: isAuthenticated && _loading
+                          ? const ProfilePageSkeleton()
+                          : SingleChildScrollView(
                         padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 100.h),
                           child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,

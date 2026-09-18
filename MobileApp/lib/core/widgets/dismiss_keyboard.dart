@@ -108,6 +108,9 @@ bool _tapTargetsSelectorOrMenu(Offset globalPosition) {
     if (creator is! DebugCreator) continue;
     final widget = creator.element.widget;
 
+    // Keep keyboard open when tapping into (or within) any text input.
+    if (_isTextInputWidget(widget)) return true;
+
     if (_isSelectorWidget(widget)) return true;
 
     if (widget is ListTile) hasMenuListTile = true;
@@ -123,6 +126,20 @@ bool _tapTargetsSelectorOrMenu(Offset globalPosition) {
   if (hasMenuInkWell && hasElevatedMenuSurface) return true;
 
   return false;
+}
+
+bool _isTextInputWidget(Widget widget) {
+  if (widget is EditableText ||
+      widget is TextField ||
+      widget is TextFormField ||
+      widget is InputDecorator) {
+    return true;
+  }
+  final type = widget.runtimeType.toString();
+  return type.contains('TextField') ||
+      type.contains('TextForm') ||
+      type.contains('CustomText') ||
+      type.contains('AppSearch');
 }
 
 bool _isSelectorWidget(Widget widget) {

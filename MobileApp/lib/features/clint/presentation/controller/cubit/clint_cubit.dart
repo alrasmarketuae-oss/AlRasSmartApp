@@ -4245,7 +4245,10 @@ class ClintCubit extends Cubit<ClintStates> {
       await _mutateCartItem(
         cartItemId: cartItemId,
         action: () {
-          final token = AuthService.instance.currentToken!;
+          final token = AuthService.instance.currentToken;
+          if (token == null || token.isEmpty) {
+            throw Exception('Not authenticated');
+          }
           return _removeCartItemUseCase(
             RemoveCartItemParams(token: token, cartItemId: cartItemId),
           );
