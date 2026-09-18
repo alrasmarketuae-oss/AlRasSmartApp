@@ -76,6 +76,7 @@ public class AuthController(
                 LicenseNumber = request.LicenseNumber,
                 FcmToken = request.FcmToken,
                 LicencePath = request.LicencePath??null,
+                ImgPath = request.ImgPath,
                 CompanyImagePaths = request.CompanyImagePaths??null,
                 BirthDate = request.BirthDate,
                 CommercialRegister = request.CommercialRegister,
@@ -630,6 +631,10 @@ public sealed class RegisterCompanyRequest
     /// Licence image/file path.
     /// </summary>
     public string? LicencePath { get; set; } = null;
+    /// <summary>
+    /// Optional profile/logo path uploaded before registration.
+    /// </summary>
+    public string? ImgPath { get; set; }
     /// <summary>
     /// Optional initial company image paths.
     /// </summary>

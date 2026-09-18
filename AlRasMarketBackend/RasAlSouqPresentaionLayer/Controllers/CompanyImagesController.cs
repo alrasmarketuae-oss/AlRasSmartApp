@@ -42,6 +42,34 @@ public class CompanyImagesController(ICompanyImagesAppService companyImagesAppSe
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Uploads a profile/logo image before company registration (saved under images/profiles).
+    /// </summary>
+    [HttpPost("upload-profile")]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    public async Task<IActionResult> UploadProfile(
+        [FromForm] UploadCompanyImageRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var root = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var result = await _companyImagesAppService.UploadProfileLogoAsync(new UploadCompanyImageInput
+            {
+                File = request.File,
+                IsPrimary = true,
+                WebRootPath = root
+            }, cancellationToken);
+
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }
 
 /// <summary>

@@ -4,6 +4,7 @@ import 'package:alrasmarket/core/constants/app_contact.dart';
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/router/where_to_go.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
+import 'package:alrasmarket/core/serveses/pending_profile_image_uploader.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/widgets/auth_header.dart';
 import 'package:alrasmarket/core/widgets/primary_button.dart';
@@ -73,6 +74,7 @@ class _UnderReviewViewState extends State<UnderReviewView> {
           child: BlocListener<AuthCubit, AuthStates>(
             listener: (context, state) {
               if (state is AccountApprovalApprovedState) {
+                unawaited(PendingProfileImageUploader.uploadIfPending());
                 context.go(
                   whereToGo(),
                 );

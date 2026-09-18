@@ -1,3 +1,4 @@
+using BusinessLayer.Constants;
 using BusinessLayer.Dtos;
 using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
@@ -40,11 +41,15 @@ public class AdminDashboardAppService(IRasAlSouqDbContext dbContext) : IAdminDas
         var newUsersLastMonth = await dbContext.Users.CountAsync(
             x => x.CreatedAt >= prevPeriodStart && x.CreatedAt < prevPeriodEndExclusive, cancellationToken);
 
-        var activeSuppliers = await dbContext.Users.CountAsync(x => x.RoleId == 2 && x.IsActive, cancellationToken);
+        // Seller role includes Company Customers (IsCustomer=true) — exclude them from supplier stats.
+        var activeSuppliers = await dbContext.Users.CountAsync(
+            x => x.RoleId == RoleIds.Seller && x.IsCustomer != true && x.IsActive, cancellationToken);
         var newSuppliersThisMonth = await dbContext.Users.CountAsync(
-            x => x.RoleId == 2 && x.CreatedAt >= periodStart && x.CreatedAt < periodEndExclusive, cancellationToken);
+            x => x.RoleId == RoleIds.Seller && x.IsCustomer != true
+                && x.CreatedAt >= periodStart && x.CreatedAt < periodEndExclusive, cancellationToken);
         var newSuppliersLastMonth = await dbContext.Users.CountAsync(
-            x => x.RoleId == 2 && x.CreatedAt >= prevPeriodStart && x.CreatedAt < prevPeriodEndExclusive, cancellationToken);
+            x => x.RoleId == RoleIds.Seller && x.IsCustomer != true
+                && x.CreatedAt >= prevPeriodStart && x.CreatedAt < prevPeriodEndExclusive, cancellationToken);
 
         var visibleOrders = AdminOrderVisibilityHelper.WhereVisibleInAdminDashboard(dbContext.Orders);
 
@@ -142,7 +147,7 @@ public class AdminDashboardAppService(IRasAlSouqDbContext dbContext) : IAdminDas
             .ToListAsync(cancellationToken);
 
         var monthlySupplierSeries = await dbContext.Users
-            .Where(x => x.RoleId == 2 && x.CreatedAt >= yearStart)
+            .Where(x => x.RoleId == RoleIds.Seller && x.IsCustomer != true && x.CreatedAt >= yearStart)
             .GroupBy(x => new { x.CreatedAt.Year, x.CreatedAt.Month })
             .Select(g => new { g.Key.Year, g.Key.Month, Count = g.Count() })
             .ToListAsync(cancellationToken);
@@ -316,7 +321,7 @@ public class AdminDashboardAppService(IRasAlSouqDbContext dbContext) : IAdminDas
         var userActivity = await dbContext.Users
             .OrderByDescending(x => x.CreatedAt)
             .Take(6)
-            .Select(x => new { x.RoleId, x.CreatedAt })
+            .Select(x => new { x.RoleId, x.IsCustomer, x.CreatedAt })
             .ToListAsync(cancellationToken);
 
         var shippingActivity = await dbContext.InternationalShippingPosts
@@ -360,7 +365,11 @@ public class AdminDashboardAppService(IRasAlSouqDbContext dbContext) : IAdminDas
             .Concat(userActivity.Select(x => new AdminActivityItemDto
             {
                 Type = "user",
-                Title = x.RoleId == 2 ? "مستخدم جديد - مورد" : "مستخدم جديد",
+                Title = x.RoleId == RoleIds.Seller && x.IsCustomer != true
+                    ? "مستخدم جديد - مورد"
+                    : x.RoleId == RoleIds.Seller && x.IsCustomer == true
+                        ? "مستخدم جديد - عميل شركة"
+                        : "مستخدم جديد",
                 CreatedAt = x.CreatedAt
             }))
             .Concat(shippingActivity.Select(_ => new AdminActivityItemDto

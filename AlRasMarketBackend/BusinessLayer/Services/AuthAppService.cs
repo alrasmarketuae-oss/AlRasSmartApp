@@ -106,7 +106,10 @@ public class AuthAppService(
             PreferredLanguage = NotificationMessages.NormalizeLanguage(input.PreferredLanguage),
             LicencePath = string.IsNullOrWhiteSpace(input.LicencePath)
                 ? null
-                : WebRootFileHelper.NormalizeStoredPath(input.LicencePath)
+                : WebRootFileHelper.NormalizeStoredPath(input.LicencePath),
+            ImgPath = string.IsNullOrWhiteSpace(input.ImgPath)
+                ? null
+                : WebRootFileHelper.NormalizeStoredPath(input.ImgPath)
         };
 
         await dbContext.Users.AddAsync(user, cancellationToken);

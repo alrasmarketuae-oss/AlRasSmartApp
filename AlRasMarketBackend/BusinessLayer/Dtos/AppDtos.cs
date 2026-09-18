@@ -23,6 +23,8 @@ public sealed class RegisterCompanyInput
     public string? LicenseNumber { get; set; }
     public string? FcmToken { get; set; }
     public string LicencePath { get; set; } = string.Empty;
+    /// <summary>Optional profile/logo path (images/profiles) uploaded before registration.</summary>
+    public string? ImgPath { get; set; }
     public List<string>? CompanyImagePaths { get; set; }
     public DateTime? BirthDate { get; set; }
     public string? CommercialRegister { get; set; }

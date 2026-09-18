@@ -142,7 +142,11 @@ public class AdminUsersAppService(
                 IsVerified = x.IsVerified,
                 IsRejected = x.IsRejected,
                 CreatedAt = UtcDateTimeHelper.AsUtc(x.CreatedAt),
-                ImgPath = x.ImgPath,
+                ImgPath = x.ImgPath
+                    ?? x.CompanyImages
+                        .OrderByDescending(c => c.IsPrimary)
+                        .Select(c => c.ImagePath)
+                        .FirstOrDefault(),
                 CompanyName = x.CompanyName,
                 OrdersCount = dbContext.Orders.Count(o => o.FromUserId == x.Id || o.ToUserId == x.Id),
                 ProductsCount = dbContext.Products.Count(p => p.OwnerId == x.Id),
@@ -220,7 +224,13 @@ public class AdminUsersAppService(
             IsRejected = user.IsRejected,
             RejectionReason = user.RejectionReason,
             CreatedAt = UtcDateTimeHelper.AsUtc(user.CreatedAt),
-            ImgPath = user.ImgPath,
+            ImgPath = !string.IsNullOrWhiteSpace(user.ImgPath)
+                ? user.ImgPath
+                : user.CompanyImages
+                    .OrderByDescending(x => x.IsPrimary)
+                    .ThenBy(x => x.CreatedAt)
+                    .Select(x => x.ImagePath)
+                    .FirstOrDefault(),
             CompanyName = user.CompanyName,
             LicenseNumber = user.LicenseNumber,
             LicencePath = WebRootFileHelper.NormalizeStoredPath(user.LicencePath),

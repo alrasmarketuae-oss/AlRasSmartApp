@@ -38,6 +38,7 @@ abstract class BaseAuthRepository {
   Future<Either<Failure, void>> sendEmailOtp(SendEmailOtpParameters parameters);
   Future<Either<Failure, String>> uploadCompanyLicence(String filePath);
   Future<Either<Failure, String>> uploadCompanyImages(String filePath);
+  Future<Either<Failure, String>> uploadCompanyProfileLogo(String filePath);
   Future<Either<Failure, String>> forgotPasswordRequest({required String email});
   Future<Either<Failure, String>> forgotPasswordReset({
     required String email,

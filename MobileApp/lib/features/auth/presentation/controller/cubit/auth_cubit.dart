@@ -48,6 +48,7 @@ class AuthCubit extends Cubit<AuthStates> {
   final SendEmailOtpUseCase sendEmailOtpUseCase;
   final UploadCommercialLicenseUseCase uploadCommercialLicenseUseCase;
   final UploadSellerIdentityUseCase uploadSellerIdentityUseCase;
+  final UploadCompanyProfileLogoUseCase uploadCompanyProfileLogoUseCase;
   final BaseAuthRepository authRepository;
 
   AuthCubit({
@@ -58,6 +59,7 @@ class AuthCubit extends Cubit<AuthStates> {
     required this.sendEmailOtpUseCase,
     required this.uploadCommercialLicenseUseCase,
     required this.uploadSellerIdentityUseCase,
+    required this.uploadCompanyProfileLogoUseCase,
     required this.authRepository,
   }) : super(AuthInitialState());
 
@@ -499,6 +501,7 @@ class AuthCubit extends Cubit<AuthStates> {
     String landNumber = '',
     String licenseNumber = '',
     String licencePath = '',
+    String imgPath = '',
     List<String> companyImagePaths = const [],
     String? birthDate,
     String commercialRegister = '',
@@ -522,6 +525,7 @@ class AuthCubit extends Cubit<AuthStates> {
         licenseNumber: licenseNumber,
         fcmToken: fcmToken,
         licencePath: licencePath,
+        imgPath: imgPath,
         companyImagePaths: companyImagePaths,
         birthDate: birthDate,
         commercialRegister: commercialRegister,
@@ -844,6 +848,24 @@ class AuthCubit extends Cubit<AuthStates> {
       (fileUrl) {
         print("uploadCompanyImages fileUrl: ${fileUrl}");
         emit(UploadFileSuccessState(fileUrl, 'companyImages'));
+        return fileUrl;
+      },
+    );
+  }
+
+  Future<String?> uploadCompanyProfileLogo(String filePath) async {
+    emit(UploadFileLoadingState('companyProfileLogo'));
+    final result = await uploadCompanyProfileLogoUseCase(
+      UploadFileParameters(filePath: filePath),
+    );
+
+    return result.fold(
+      (failure) {
+        emit(UploadFileErrorState(failure.message, 'companyProfileLogo'));
+        return null;
+      },
+      (fileUrl) {
+        emit(UploadFileSuccessState(fileUrl, 'companyProfileLogo'));
         return fileUrl;
       },
     );

@@ -82,9 +82,7 @@ export function resolveAssetUrl(path: string | null | undefined): string {
   return `${ASSETS_BASE_URL}${normalized}`
 }
 
-/** Profile avatars only — blocks company-images paths from becoming img src. */
+/** Profile/logo avatar URL — allows profile and company media paths. */
 export function resolveProfileAssetUrl(path: string | null | undefined): string {
-  const trimmed = path?.trim()
-  if (!trimmed || isCompanyMediaPath(trimmed)) return ''
-  return resolveAssetUrl(trimmed)
+  return resolveAssetUrl(path)
 }

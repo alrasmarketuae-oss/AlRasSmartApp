@@ -72,6 +72,20 @@ class _CompletRegisterViewState extends State<CompletRegisterView> {
     PendingProfileImageUploader.setPending(path);
   }
 
+  Future<String> _uploadProfileLogoIfNeeded() async {
+    final localPath = widget.registrationData['profileImagePath']?.toString();
+    if (localPath == null || localPath.trim().isEmpty) return '';
+
+    final uploaded = await AuthCubit.get(context).uploadCompanyProfileLogo(localPath);
+    if (uploaded == null || uploaded.isEmpty) {
+      // Keep pending so a later authenticated session can retry.
+      PendingProfileImageUploader.setPending(localPath);
+      return '';
+    }
+    PendingProfileImageUploader.setPending(null);
+    return uploaded;
+  }
+
   Future<void> _onConfirm() async {
     final cubit = AuthCubit.get(context);
 
@@ -100,7 +114,7 @@ class _CompletRegisterViewState extends State<CompletRegisterView> {
       companyImagePaths.add(uploadedCompanyImagePath);
     }
 
-    _queuePendingProfileLogo();
+    final imgPath = await _uploadProfileLogoIfNeeded();
     cubit.registerCompany(
       fullName: widget.registrationData['fullName']?.toString() ?? '',
       companyName: widget.registrationData['companyName']?.toString() ?? '',
@@ -110,6 +124,7 @@ class _CompletRegisterViewState extends State<CompletRegisterView> {
       landNumber: widget.registrationData['landNumber']?.toString() ?? '',
       licenseNumber: widget.registrationData['licenseNumber']?.toString() ?? '',
       licencePath: licencePath,
+      imgPath: imgPath,
       companyImagePaths: companyImagePaths,
 
       commercialRegister:
@@ -120,9 +135,9 @@ class _CompletRegisterViewState extends State<CompletRegisterView> {
     );
   }
 
-  void _registerWithoutFiles() {
+  void _registerWithoutFiles() async {
     final cubit = AuthCubit.get(context);
-    _queuePendingProfileLogo();
+    final imgPath = await _uploadProfileLogoIfNeeded();
     cubit.registerCompany(
       fullName: widget.registrationData['fullName']?.toString() ?? '',
       companyName: widget.registrationData['companyName']?.toString() ?? '',
@@ -132,6 +147,7 @@ class _CompletRegisterViewState extends State<CompletRegisterView> {
       landNumber: widget.registrationData['landNumber']?.toString() ?? '',
       licenseNumber: widget.registrationData['licenseNumber']?.toString() ?? '',
       licencePath: '',
+      imgPath: imgPath,
       companyImagePaths: const [],
       isCustomerCompany: widget.registrationData['isCustomerCompany'] == true,
       commercialRegister:

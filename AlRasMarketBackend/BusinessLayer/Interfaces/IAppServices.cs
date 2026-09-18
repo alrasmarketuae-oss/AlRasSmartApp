@@ -285,6 +285,9 @@ public interface IAdminProductsAppService
 public interface ICompanyImagesAppService
 {
     Task<object> UploadAsync(UploadCompanyImageInput input, CancellationToken cancellationToken = default);
+
+    /// <summary>Anonymous profile/logo upload used during company registration (before auth).</summary>
+    Task<object> UploadProfileLogoAsync(UploadCompanyImageInput input, CancellationToken cancellationToken = default);
 }
 
 public interface INotificationsAppService

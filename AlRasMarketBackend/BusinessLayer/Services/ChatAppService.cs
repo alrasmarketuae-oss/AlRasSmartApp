@@ -785,7 +785,9 @@ public sealed partial class ChatAppService(
                 var isCompanyAccount = !string.IsNullOrWhiteSpace(companyName);
                 companyImageMap.TryGetValue(item.Key, out var companyImagePath);
                 var profileImageUrl = user?.ImgPath;
-                var avatarUrl = profileImageUrl;
+                var avatarUrl = !string.IsNullOrWhiteSpace(profileImageUrl)
+                    ? profileImageUrl
+                    : companyImagePath;
 
                 var lastMsg = item.LastMessage;
                 var lastSeen = user?.LastSeenAtUtc;

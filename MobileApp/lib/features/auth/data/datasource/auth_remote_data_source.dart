@@ -43,6 +43,7 @@ abstract class BaseAuthRemoteDataSource {
   Future<Either<Failure, void>> sendEmailOtp(SendEmailOtpParameters parameters);
   Future<Either<Failure, String>> uploadCompanyLicence(String filePath);
   Future<Either<Failure, String>> uploadCompanyImages(String filePath);
+  Future<Either<Failure, String>> uploadCompanyProfileLogo(String filePath);
   Future<Either<Failure, String>> forgotPasswordRequest({required String email});
   Future<Either<Failure, String>> forgotPasswordReset({
     required String email,
@@ -215,6 +216,7 @@ class AuthRemoteDataSource implements BaseAuthRemoteDataSource {
           'licenseNumber': parameters.licenseNumber,
           'fcmToken': parameters.fcmToken,
           'licencePath': parameters.licencePath,
+          if (parameters.imgPath.trim().isNotEmpty) 'imgPath': parameters.imgPath,
           'companyImagePaths': parameters.companyImagePaths,
           'birthDate': parameters.birthDate,
           'commercialRegister': parameters.commercialRegister,
@@ -583,6 +585,61 @@ class AuthRemoteDataSource implements BaseAuthRemoteDataSource {
         } else if (e.response!.data is String) {
           errorMessage = e.response!.data;
         }
+      } else {
+        errorMessage = e.message ?? errorMessage;
+      }
+      return Left(ServerFailure(errorMessage));
+    } catch (e) {
+      return Left(ServerFailure('An error occurred: ${e.toString()}'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> uploadCompanyProfileLogo(String filePath) async {
+    try {
+      final file = File(filePath);
+      final formData = FormData.fromMap({
+        'File': await MultipartFile.fromFile(
+          file.path,
+          filename: file.path.split('/').last,
+        ),
+      });
+
+      final response = await DioHelper.uploadFile(
+        url: ApiConstants.uploadCompanyProfileLogoEndPoint,
+        formData: formData,
+      );
+
+      if (response?.statusCode == 200 || response?.statusCode == 201) {
+        final data = response!.data;
+        if (data is Map) {
+          final fileUrl =
+              data['imgPath'] ??
+              data['ImgPath'] ??
+              data['imagePath'] ??
+              data['ImagePath'] ??
+              data['path'] ??
+              '';
+          if (fileUrl.toString().isNotEmpty) {
+            return Right(fileUrl.toString());
+          }
+        } else if (data is String) {
+          return Right(data);
+        }
+        return const Left(ServerFailure('Invalid response format'));
+      } else {
+        return Left(
+          ServerFailure(
+            'Upload failed: ${response?.statusMessage ?? 'Unknown error'}',
+          ),
+        );
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Upload failed';
+      if (e.response?.data is Map) {
+        errorMessage = e.response?.data['message']?.toString() ?? errorMessage;
+      } else if (e.response?.data is String) {
+        errorMessage = e.response!.data;
       } else {
         errorMessage = e.message ?? errorMessage;
       }

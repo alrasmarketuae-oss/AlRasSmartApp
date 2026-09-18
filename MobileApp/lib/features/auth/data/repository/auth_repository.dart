@@ -94,6 +94,11 @@ class AuthRepository implements BaseAuthRepository {
   }
 
   @override
+  Future<Either<Failure, String>> uploadCompanyProfileLogo(String filePath) async {
+    return await baseAuthRemoteDataSource.uploadCompanyProfileLogo(filePath);
+  }
+
+  @override
   Future<Either<Failure, String>> forgotPasswordRequest({
     required String email,
   }) async {

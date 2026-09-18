@@ -28,6 +28,18 @@ class UploadSellerIdentityUseCase
   }
 }
 
+class UploadCompanyProfileLogoUseCase
+    extends BaseUseCase<String, UploadFileParameters> {
+  final BaseAuthRepository baseAuthRepository;
+
+  UploadCompanyProfileLogoUseCase(this.baseAuthRepository);
+
+  @override
+  Future<Either<Failure, String>> call(UploadFileParameters parameters) async {
+    return await baseAuthRepository.uploadCompanyProfileLogo(parameters.filePath);
+  }
+}
+
 class UploadFileParameters extends Equatable {
   final String filePath;
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:latlong2/latlong.dart';
 
 class LocationPickerMapView extends StatefulWidget {
@@ -38,12 +39,57 @@ class LocationPickerMapView extends StatefulWidget {
 class _LocationPickerMapViewState extends State<LocationPickerMapView> {
   late final MapController _mapController;
   late LatLng _center;
+  final TextEditingController _searchController = TextEditingController();
+  bool _searching = false;
+  String? _searchError;
 
   @override
   void initState() {
     super.initState();
     _center = widget.initialPosition;
     _mapController = MapController();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _searchPlace() async {
+    final query = _searchController.text.trim();
+    if (query.isEmpty || _searching) return;
+
+    setState(() {
+      _searching = true;
+      _searchError = null;
+    });
+
+    try {
+      final results = await locationFromAddress(query);
+      if (!mounted) return;
+      if (results.isEmpty) {
+        setState(() {
+          _searchError = 'No places found';
+          _searching = false;
+        });
+        return;
+      }
+
+      final first = results.first;
+      final target = LatLng(first.latitude, first.longitude);
+      setState(() {
+        _center = target;
+        _searching = false;
+      });
+      _mapController.move(target, 15);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _searchError = 'Could not find that place';
+        _searching = false;
+      });
+    }
   }
 
   @override
@@ -67,6 +113,59 @@ class _LocationPickerMapViewState extends State<LocationPickerMapView> {
                 userAgentPackageName: 'com.alrasmarket.app',
               ),
             ],
+          ),
+          Positioned(
+            top: 12,
+            left: 12,
+            right: 12,
+            child: Material(
+              elevation: 3,
+              borderRadius: BorderRadius.circular(12),
+              color: Colors.white,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: _searchController,
+                    textInputAction: TextInputAction.search,
+                    onSubmitted: (_) => _searchPlace(),
+                    decoration: InputDecoration(
+                      hintText: 'Search for a place or address',
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.fromLTRB(14, 14, 8, 14),
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _searching
+                          ? const Padding(
+                              padding: EdgeInsets.all(12),
+                              child: SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            )
+                          : IconButton(
+                              icon: const Icon(Icons.arrow_forward),
+                              onPressed: _searchPlace,
+                            ),
+                    ),
+                  ),
+                  if (_searchError != null)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          _searchError!,
+                          style: const TextStyle(
+                            color: Color(0xFFB42318),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
           const Center(
             child: IgnorePointer(

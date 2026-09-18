@@ -30,6 +30,7 @@ class RegisterCompanyParameters extends Equatable {
   final String licenseNumber;
   final String fcmToken;
   final String licencePath;
+  final String imgPath;
   final List<String> companyImagePaths;
   final String? birthDate;
   final String commercialRegister;
@@ -48,6 +49,7 @@ class RegisterCompanyParameters extends Equatable {
     this.licenseNumber = '',
     this.fcmToken = '',
     this.licencePath = '',
+    this.imgPath = '',
     this.companyImagePaths = const [],
     this.birthDate,
     this.commercialRegister = '',
@@ -69,6 +71,7 @@ class RegisterCompanyParameters extends Equatable {
     licenseNumber,
     fcmToken,
     licencePath,
+    imgPath,
     companyImagePaths,
     birthDate,
     commercialRegister,

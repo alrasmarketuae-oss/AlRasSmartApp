@@ -68,6 +68,7 @@ class ServicesLocator {
         sendEmailOtpUseCase: sl(),
         uploadCommercialLicenseUseCase: sl(),
         uploadSellerIdentityUseCase: sl(),
+        uploadCompanyProfileLogoUseCase: sl(),
         authRepository: sl(),
       ),
     );
@@ -80,6 +81,7 @@ class ServicesLocator {
     sl.registerLazySingleton(() => SendEmailOtpUseCase(sl()));
     sl.registerLazySingleton(() => UploadCommercialLicenseUseCase(sl()));
     sl.registerLazySingleton(() => UploadSellerIdentityUseCase(sl()));
+    sl.registerLazySingleton(() => UploadCompanyProfileLogoUseCase(sl()));
 
     //     // Repository
     sl.registerLazySingleton<BaseAuthRepository>(
