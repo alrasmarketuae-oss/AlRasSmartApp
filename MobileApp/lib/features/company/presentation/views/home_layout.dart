@@ -93,7 +93,13 @@ class _CompanyHomeLayoutState extends State<CompanyHomeLayout> {
                   return CompanyBottomNavBar(
                     currentIndex: currentIndex,
                     onTap: (index) {
-                      if (index != 0 && !ensureLoggedIn(context)) return;
+                      // Home + Profile stay open for guests (AI lives on Profile).
+                      const profileTabIndex = 4;
+                      if (index != 0 &&
+                          index != profileTabIndex &&
+                          !ensureLoggedIn(context)) {
+                        return;
+                      }
                       context.read<CompanyCubit>().setTab(index);
                     },
                     context: context,

@@ -6,6 +6,7 @@ import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_s
 import 'package:alrasmarket/features/clint/presentation/widgets/search_header.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/shipping_card.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/shipping_filter_sheet.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/shipping_list_skeleton.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/shipping_search_form.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
@@ -96,12 +97,7 @@ class _ShippingPriceServiceViewState extends State<ShippingPriceServiceView> {
     ClintStates state,
   ) {
     if (state is FetchShippingPostsLoadingState && cubit.shippingPosts.isEmpty) {
-      return [
-        const SliverFillRemaining(
-          hasScrollBody: false,
-          child: Center(child: CircularProgressIndicator()),
-        ),
-      ];
+      return [const ShippingListSkeleton()];
     }
 
     if (state is FetchShippingPostsErrorState && cubit.shippingPosts.isEmpty) {

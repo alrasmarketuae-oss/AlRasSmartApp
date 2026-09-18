@@ -34,11 +34,17 @@ class SensitiveAccessGate {
   }
 
   /// Shows warning → biometric and/or password, then pushes [route] on success.
+  /// Guests skip the gate so they can chat with Al-Ras Agent without signing in.
   static Future<void> openProtectedRoute(
     BuildContext context, {
     required String route,
   }) async {
     if (AppRoutes.shouldSkipPush(context, route)) return;
+
+    if (!AuthService.instance.isAuthenticated) {
+      if (context.mounted) context.push(route);
+      return;
+    }
 
     if (_isUnlocked(route)) {
       if (context.mounted) context.push(route);

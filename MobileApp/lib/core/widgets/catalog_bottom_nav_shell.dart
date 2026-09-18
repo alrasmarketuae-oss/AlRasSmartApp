@@ -39,10 +39,17 @@ class CatalogBottomNavShell extends StatelessWidget {
   }
 
   void _onTap(BuildContext context, int index) {
-    if (index != 0 && !ensureLoggedIn(context)) return;
-
     final auth = AuthService.instance;
-    if (auth.isPersonalCustomerAccount) {
+    final isPerson = auth.isPersonalCustomerAccount;
+    final profileTabIndex = isPerson ? 3 : 4;
+    // Home + Profile stay open for guests (AI lives on Profile).
+    if (index != 0 &&
+        index != profileTabIndex &&
+        !ensureLoggedIn(context)) {
+      return;
+    }
+
+    if (isPerson) {
       final person = sl<PersonCubit>();
       if (!person.isClosed) person.setTab(index);
       if (index == 1) {

@@ -134,12 +134,10 @@ class ShippingCard extends StatelessWidget {
         height: height,
         fit: BoxFit.cover,
         errorWidget: _buildFallbackHeaderImage(height),
-        placeholder: SizedBox(
+        placeholder: Container(
           height: height,
           width: double.infinity,
-          child: const Center(
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
+          color: Colors.grey.shade200,
         ),
       );
     }

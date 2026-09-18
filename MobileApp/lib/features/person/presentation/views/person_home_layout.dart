@@ -86,7 +86,13 @@ class _PersonHomeLayoutState extends State<PersonHomeLayout> {
                   return UserBottomNavBar(
                     currentIndex: currentIndex,
                     onTap: (index) {
-                      if (index != 0 && !ensureLoggedIn(context)) return;
+                      // Home + Profile stay open for guests (AI lives on Profile).
+                      const profileTabIndex = 3;
+                      if (index != 0 &&
+                          index != profileTabIndex &&
+                          !ensureLoggedIn(context)) {
+                        return;
+                      }
                       context.read<PersonCubit>().setTab(index);
                       if (index == 1) {
                         unawaited(context.read<ClintCubit>().loadCart());

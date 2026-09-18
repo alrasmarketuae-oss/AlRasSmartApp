@@ -110,6 +110,19 @@ class _ProfileViewState extends State<ProfileView> {
 
   Future<void> _loadProfile() async {
     final auth = AuthService.instance;
+    if (!auth.isAuthenticated) {
+      if (!mounted) return;
+      setState(() {
+        _name = '';
+        _email = '';
+        _phone = '';
+        _roleLabel = '';
+        _imgPath = null;
+        _loading = false;
+      });
+      return;
+    }
+
     setState(() {
       _name = auth.currentUserName ?? '';
       _email = auth.currentUserEmail ?? '';
@@ -151,6 +164,12 @@ class _ProfileViewState extends State<ProfileView> {
         _loading = false;
       });
     }
+  }
+
+  bool _requireAuth(VoidCallback action) {
+    if (!ensureLoggedIn(context)) return false;
+    action();
+    return true;
   }
 
   bool _shouldShowRoleLabel() {
@@ -247,6 +266,7 @@ class _ProfileViewState extends State<ProfileView> {
         builder: (context, state) {
           final isDeletingAccount =
               context.watch<AuthCubit>().state is DeleteAccountLoadingState;
+          final isAuthenticated = AuthService.instance.isAuthenticated;
           final isSupplier = AuthService.instance.isSupplierAccount;
           final isCompany = AuthService.instance.currentUserIsCompanyAccount;
 
@@ -291,8 +311,9 @@ class _ProfileViewState extends State<ProfileView> {
                                     title: s.liveChat,
                                     subtitle: s.liveChatSubtitle,
                                     assetIcon: AppAssets.profileMessageIcon,
-                                    onTap: () =>
-                                        context.push(AppRoutes.kSupportChatView),
+                                    onTap: () => _requireAuth(
+                                      () => context.push(AppRoutes.kSupportChatView),
+                                    ),
                                                 ),
                                               ),
                                             ],
@@ -304,42 +325,48 @@ class _ProfileViewState extends State<ProfileView> {
                               title: s.cart,
                               subtitle: s.cartSubtitle,
                               icon: Icons.shopping_bag_outlined,
-                              onTap: () => context.push(AppRoutes.kCartView),
+                              onTap: () => _requireAuth(
+                                () => context.push(AppRoutes.kCartView),
+                              ),
                             ),
                             _SettingsTile(
                               title: s.personalInformation,
                               subtitle: s.personalInformationSubtitle,
                               assetIcon: AppAssets.blueProfileIcon,
-                              onTap: _openEditProfile,
+                              onTap: () => _requireAuth(_openEditProfile),
                             ),
                             _SettingsTile(
                               title: s.changePassword,
                               subtitle: s.changePasswordSubtitle,
                               assetIcon: AppAssets.profileLockAltFillIcon,
-                              onTap: () =>
-                                  context.push(AppRoutes.kChangePasswordView),
+                              onTap: () => _requireAuth(
+                                () => context.push(AppRoutes.kChangePasswordView),
+                              ),
                             ),
                             _SettingsTile(
                               title: s.savedAddresses,
                               subtitle: s.savedAddressesSubtitle,
                               assetIcon: AppAssets.profileLocationIcon,
-                              onTap: () =>
-                                  context.push(AppRoutes.kSavedAddressesView),
+                              onTap: () => _requireAuth(
+                                () => context.push(AppRoutes.kSavedAddressesView),
+                              ),
                             ),
                             _SettingsTile(
                               title: s.savedAds,
                               subtitle: s.savedAdsSubtitle,
                               assetIcon: AppAssets.profileAdsIcon,
-                              onTap: () => context.push(AppRoutes.kSavedAdsView),
+                              onTap: () => _requireAuth(
+                                () => context.push(AppRoutes.kSavedAdsView),
+                              ),
                             ),
-                            if (isSupplier || isCompany)
+                            if (isAuthenticated && (isSupplier || isCompany))
                               _SettingsTile(
                                 title: s.myAds,
                                 subtitle: s.myAdsSubtitle,
                                 assetIcon: AppAssets.profileAdsIcon,
                                 onTap: () => context.push(AppRoutes.kMyAdsView),
                               ),
-                            if (isSupplier || isCompany)
+                            if (isAuthenticated && (isSupplier || isCompany))
                               _SettingsTile(
                                 title: AuthService.instance.isCompanyCustomerAccount
                                     ? s.changeTargetPrices
@@ -360,25 +387,26 @@ class _ProfileViewState extends State<ProfileView> {
                             SizedBox(height: 22.h),
                             _SectionTitle(s.settings),
                             SizedBox(height: 12.h),
-                            _SettingsTile(
-                              title: s.notifications,
-                              subtitle: s.notificationsPreferenceSubtitle,
-                              assetIcon: AppAssets.profileNotificationIcon,
-                              trailing: _notificationsBusy
-                                  ? SizedBox(
-                                      width: 22.w,
-                                      height: 22.w,
-                                      child: const CircularProgressIndicator(
-                                        strokeWidth: 2,
+                            if (isAuthenticated)
+                              _SettingsTile(
+                                title: s.notifications,
+                                subtitle: s.notificationsPreferenceSubtitle,
+                                assetIcon: AppAssets.profileNotificationIcon,
+                                trailing: _notificationsBusy
+                                    ? SizedBox(
+                                        width: 22.w,
+                                        height: 22.w,
+                                        child: const CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : Switch.adaptive(
+                                        value: _notificationsOn,
+                                        onChanged: _toggleNotifications,
+                                        activeThumbColor: Colors.white,
+                                        activeTrackColor: _kBlue,
                                       ),
-                                    )
-                                  : Switch.adaptive(
-                                      value: _notificationsOn,
-                                      onChanged: _toggleNotifications,
-                                      activeThumbColor: Colors.white,
-                                      activeTrackColor: _kBlue,
-                                    ),
-                            ),
+                              ),
                             _SettingsTile(
                               title: s.language,
                               subtitle: s.changeLanguageSubtitle,
@@ -393,7 +421,7 @@ class _ProfileViewState extends State<ProfileView> {
                                 AppRoutes.kAiAssistantVoiceSettingsView,
                               ),
                             ),
-                            if (_biometricSupported)
+                            if (isAuthenticated && _biometricSupported)
                               _SettingsTile(
                                 title: s.enableBiometricUnlock,
                                 subtitle: s.faceIdFingerprintSubtitle,
@@ -417,8 +445,11 @@ class _ProfileViewState extends State<ProfileView> {
                               title: s.complaintsSuggestions,
                               subtitle: s.complaintsSuggestionsSubtitle,
                               icon: Icons.feedback_outlined,
-                              onTap: () =>
-                                  context.push(AppRoutes.kComplaintsSuggestionsView),
+                              onTap: () => _requireAuth(
+                                () => context.push(
+                                  AppRoutes.kComplaintsSuggestionsView,
+                                ),
+                              ),
                             ),
                             _SettingsTile(
                               title: s.helpSupport,
@@ -435,22 +466,24 @@ class _ProfileViewState extends State<ProfileView> {
                               onTap: () =>
                                   context.push(AppRoutes.kTermsAndConditions),
                             ),
-                            _SettingsTile(
-                              title: s.deleteAccount,
-                              subtitle: s.deleteAccountSubtitle,
-                              assetIcon: AppAssets.profileTrashIcon,
-                              iconColors: const [_kRed, _kRedDark],
-                                    onTap: isDeletingAccount
-                                        ? null
-                                        : _confirmDeleteAccount,
-                            ),
-                            _SettingsTile(
-                              title: s.logOut,
-                              subtitle: s.logOutSubtitle,
-                              assetIcon: AppAssets.profileLogOutIcon,
-                              iconColors: const [_kRed, _kRedDark],
-                              onTap: _logout,
-                            ),
+                            if (isAuthenticated) ...[
+                              _SettingsTile(
+                                title: s.deleteAccount,
+                                subtitle: s.deleteAccountSubtitle,
+                                assetIcon: AppAssets.profileTrashIcon,
+                                iconColors: const [_kRed, _kRedDark],
+                                      onTap: isDeletingAccount
+                                          ? null
+                                          : _confirmDeleteAccount,
+                              ),
+                              _SettingsTile(
+                                title: s.logOut,
+                                subtitle: s.logOutSubtitle,
+                                assetIcon: AppAssets.profileLogOutIcon,
+                                iconColors: const [_kRed, _kRedDark],
+                                onTap: _logout,
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -472,6 +505,10 @@ class _ProfileViewState extends State<ProfileView> {
 
   Widget _buildProfileCard() {
     final s = S.of(context);
+    final isAuthenticated = AuthService.instance.isAuthenticated;
+    final displayName = !isAuthenticated
+        ? s.signInToContinue
+        : (_loading && _name.isEmpty ? '...' : _name);
 
     return Container(
       padding: EdgeInsets.all(16.w),
@@ -499,7 +536,7 @@ class _ProfileViewState extends State<ProfileView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _loading && _name.isEmpty ? '...' : _name,
+                      displayName,
                       style: TextStyle(
                         fontSize: 17.sp,
                         fontWeight: FontWeight.w700,
@@ -507,7 +544,7 @@ class _ProfileViewState extends State<ProfileView> {
                         height: 1.3,
                       ),
                     ),
-                    if (_shouldShowRoleLabel()) ...[
+                    if (isAuthenticated && _shouldShowRoleLabel()) ...[
                       SizedBox(height: 8.h),
                       Container(
                         padding: EdgeInsets.symmetric(
@@ -528,22 +565,40 @@ class _ProfileViewState extends State<ProfileView> {
                         ),
                       ),
                     ],
-                    SizedBox(height: 12.h),
-                    _ContactLine(
-                      icon: Icons.mail_outline_rounded,
-                      text: _email,
-                    ),
-                    SizedBox(height: 8.h),
-                    _ContactLine(
-                      icon: Icons.phone_outlined,
-                      text: _phone.isNotEmpty ? _phone : '—',
-                    ),
+                    if (isAuthenticated) ...[
+                      SizedBox(height: 12.h),
+                      _ContactLine(
+                        icon: Icons.mail_outline_rounded,
+                        text: _email,
+                      ),
+                      SizedBox(height: 8.h),
+                      _ContactLine(
+                        icon: Icons.phone_outlined,
+                        text: _phone.isNotEmpty ? _phone : '—',
+                      ),
+                    ] else ...[
+                      SizedBox(height: 8.h),
+                      Text(
+                        s.loginRequiredMessage,
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: _kSubtitleColor,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
               SizedBox(width: 12.w),
               GestureDetector(
-                onTap: _openEditProfile,
+                onTap: () {
+                  if (!isAuthenticated) {
+                    context.push(AppRoutes.kLoginView);
+                    return;
+                  }
+                  _openEditProfile();
+                },
                 child: SizedBox(
                   width: 72.w,
                   height: 72.w,
@@ -551,27 +606,28 @@ class _ProfileViewState extends State<ProfileView> {
                     children: [
                       ProfileAvatar(
                         size: 66.w,
-                        imagePath: _imgPath,
-                        fallbackText: _avatarInitial,
+                        imagePath: isAuthenticated ? _imgPath : null,
+                        fallbackText: isAuthenticated ? _avatarInitial : '?',
                       ),
-                      PositionedDirectional(
-                        bottom: 0,
-                        end: 0,
-                        child: Container(
-                          width: 24.w,
-                          height: 24.w,
-                          decoration: BoxDecoration(
-                            color: _kBlue,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                          child: Icon(
-                            Icons.edit,
-                            size: 11.sp,
-                            color: Colors.white,
+                      if (isAuthenticated)
+                        PositionedDirectional(
+                          bottom: 0,
+                          end: 0,
+                          child: Container(
+                            width: 24.w,
+                            height: 24.w,
+                            decoration: BoxDecoration(
+                              color: _kBlue,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                            child: Icon(
+                              Icons.edit,
+                              size: 11.sp,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -582,7 +638,13 @@ class _ProfileViewState extends State<ProfileView> {
           SizedBox(
             height: 46.h,
             child: ElevatedButton.icon(
-              onPressed: _openEditProfile,
+              onPressed: () {
+                if (!isAuthenticated) {
+                  context.push(AppRoutes.kLoginView);
+                  return;
+                }
+                _openEditProfile();
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: _kBlue,
                 foregroundColor: Colors.white,
@@ -591,9 +653,12 @@ class _ProfileViewState extends State<ProfileView> {
                   borderRadius: BorderRadius.circular(12.r),
                 ),
               ),
-              icon: Icon(Icons.edit_outlined, size: 18.sp),
+              icon: Icon(
+                isAuthenticated ? Icons.edit_outlined : Icons.login_rounded,
+                size: 18.sp,
+              ),
               label: Text(
-                s.editProfile,
+                isAuthenticated ? s.editProfile : s.login,
                 style: TextStyle(
                   fontSize: 15.sp,
                   fontWeight: FontWeight.w700,
