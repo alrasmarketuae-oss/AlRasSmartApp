@@ -9,6 +9,7 @@ import 'package:alrasmarket/core/serveses/cached_constants.dart' as cache;
 import 'package:alrasmarket/features/ai_assistant/data/ai_assistant_realtime_service.dart';
 import 'package:alrasmarket/features/ai_assistant/data/ai_assistant_repository.dart';
 import 'package:alrasmarket/features/ai_assistant/presentation/helpers/ai_chat_heuristics.dart';
+import 'package:alrasmarket/features/ai_assistant/presentation/helpers/ai_thinking_narrative.dart';
 import 'package:alrasmarket/features/ai_assistant/presentation/models/ai_chat_message.dart';
 import 'package:alrasmarket/features/ai_assistant/presentation/models/ai_voice_gender.dart';
 import 'package:alrasmarket/features/ai_assistant/presentation/theme/ai_chat_colors.dart';
@@ -71,6 +72,11 @@ abstract class _AiAssistantViewStateBase extends State<AiAssistantView> {
   Future<void>? _connectFuture;
   bool _isThinking = false;
   final List<String> _thinkingSteps = [];
+  List<String> _thinkingNarrative = const [];
+  final List<String> _backendThinkingHints = [];
+  Timer? _thinkingRevealTimer;
+  Timer? _thinkingTickTimer;
+  int _thinkingRevealIndex = 0;
   DateTime? _thinkingStartedAt;
   bool _pendingAdMediaButton = false;
   final List<String> _draftImagePaths = [];
@@ -116,6 +122,7 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
 
   @override
   void dispose() {
+    _stopThinkingReveal();
     // Mark closed before awaiting so an in-flight connect cannot revive the hub.
     unawaited(_voiceAgent?.dispose());
     unawaited(_realtime.close());
@@ -123,6 +130,95 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _stopThinkingReveal() {
+    _thinkingRevealTimer?.cancel();
+    _thinkingRevealTimer = null;
+    _thinkingTickTimer?.cancel();
+    _thinkingTickTimer = null;
+  }
+
+  void _startThinkingNarrative(
+    String query, {
+    required bool isAr,
+    required int seed,
+  }) {
+    _stopThinkingReveal();
+    _thinkingNarrative = AiThinkingNarrative.generate(
+      userQuery: query,
+      isAr: isAr,
+      seed: seed,
+    );
+    _backendThinkingHints.clear();
+    _thinkingRevealIndex = 0;
+    _thinkingSteps
+      ..clear()
+      ..addAll(
+        _thinkingNarrative.isEmpty
+            ? const <String>[]
+            : <String>[_thinkingNarrative.first],
+      );
+    if (_thinkingSteps.isNotEmpty) {
+      _thinkingRevealIndex = 1;
+    }
+
+    _thinkingRevealTimer = Timer.periodic(
+      const Duration(milliseconds: 420),
+      (_) {
+        if (!mounted || !_isThinking) {
+          _stopThinkingReveal();
+          return;
+        }
+        final planned = AiThinkingNarrative.mergeBackendHints(
+          narrative: _thinkingNarrative,
+          backendSteps: _backendThinkingHints,
+          isAr: isAr,
+        );
+        if (_thinkingRevealIndex >= planned.length) return;
+        setState(() {
+          final next = planned[_thinkingRevealIndex];
+          if (_thinkingSteps.isEmpty || _thinkingSteps.last != next) {
+            _thinkingSteps.add(next);
+          }
+          _thinkingRevealIndex++;
+        });
+        _scrollToEnd();
+      },
+    );
+
+    _thinkingTickTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted && _isThinking) setState(() {});
+    });
+  }
+
+  List<String> _finalizeThinkingSteps({required bool isAr}) {
+    final planned = AiThinkingNarrative.mergeBackendHints(
+      narrative: _thinkingNarrative,
+      backendSteps: _backendThinkingHints,
+      isAr: isAr,
+    );
+    final out = <String>[];
+    for (final line in _thinkingSteps) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty) continue;
+      if (out.isEmpty || out.last != trimmed) out.add(trimmed);
+    }
+    for (final line in planned) {
+      if (out.length >= 10) break;
+      if (!out.contains(line)) out.add(line);
+    }
+    final done = isAr
+        ? S.of(context).aiAgentActivityCompleted
+        : S.of(context).aiAgentActivityCompleted;
+    if (out.isNotEmpty && out.last != done) {
+      if (out.length >= 10) {
+        out[out.length - 1] = done;
+      } else {
+        out.add(done);
+      }
+    }
+    return out;
   }
 
   String _previewForReply(AiChatMessage? message) {
@@ -257,7 +353,8 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
       apiText = buffer.toString();
     }
 
-    // Live activity starts immediately; steps come from aiThinkingStep (mapped in UI).
+    // Live cinematic thinking starts immediately with a rich locale narrative.
+    final responseId = ++_nextResponseId;
     setState(() {
       _messages.add(AiChatMessage(
         text: visibleText,
@@ -268,18 +365,22 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
       _replyTo = null;
       _isThinking = true;
       _thinkingStartedAt = DateTime.now();
-      _thinkingSteps.clear();
+      _inFlightResponseId = responseId;
+      _questionForResponse[responseId] = visibleText;
       _draftImagePaths.clear();
       _draftVideoPath = null;
       _draftVideoDurationSeconds = null;
     });
+    _startThinkingNarrative(
+      visibleText,
+      isAr: isAr,
+      seed: responseId * 9973 ^ visibleText.hashCode,
+    );
+    if (mounted) setState(() {});
     _scrollToEnd();
 
     try {
       final language = isAr ? 'ar' : 'en';
-      final responseId = ++_nextResponseId;
-      _inFlightResponseId = responseId;
-      _questionForResponse[responseId] = visibleText;
       await (_connectFuture ??= _connect());
       await _realtime.ask(message: apiText, language: language);
     } catch (_) {
@@ -307,18 +408,16 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
       },
       onThinkingStep: (step) {
         if (!mounted) return;
+        final trimmed = step.trim();
+        if (trimmed.isEmpty) return;
         setState(() {
           _isThinking = true;
           _thinkingStartedAt ??= DateTime.now();
-          final trimmed = step.trim();
-          if (trimmed.isEmpty) return;
-          if (_thinkingSteps.isEmpty) {
-            _thinkingSteps.add(trimmed);
-          } else if (_thinkingSteps.last != trimmed) {
-            _thinkingSteps.add(trimmed);
-            // Keep a short live trail; history panel dedupes to friendly labels.
-            while (_thinkingSteps.length > 8) {
-              _thinkingSteps.removeAt(0);
+          if (_backendThinkingHints.isEmpty ||
+              _backendThinkingHints.last != trimmed) {
+            _backendThinkingHints.add(trimmed);
+            while (_backendThinkingHints.length > 6) {
+              _backendThinkingHints.removeAt(0);
             }
           }
         });
@@ -327,15 +426,16 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
       onResponseStarted: () {
         if (!mounted) return;
         final responseId = _inFlightResponseId;
+        final isAr = Localizations.localeOf(context).languageCode == 'ar';
         setState(() {
-          final activitySnap = List<String>.from(_thinkingSteps);
-          if (activitySnap.isNotEmpty) {
-            activitySnap.add('✓ done');
-          }
+          final activitySnap = _finalizeThinkingSteps(isAr: isAr);
           final durationMs = _thinkingStartedAt == null
               ? null
               : DateTime.now().difference(_thinkingStartedAt!).inMilliseconds;
+          _stopThinkingReveal();
           _thinkingSteps.clear();
+          _thinkingNarrative = const [];
+          _backendThinkingHints.clear();
           _thinkingStartedAt = null;
           _isThinking = false;
           final existing = responseId == null
@@ -383,11 +483,16 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
       onDelta: (value) {
         if (!mounted) return;
         setState(() {
-          if (_isThinking || _thinkingSteps.isNotEmpty) {
+          if (_isThinking ||
+              _thinkingSteps.isNotEmpty ||
+              _thinkingNarrative.isNotEmpty) {
             _commitActivityToInFlightMessage();
           }
           _isThinking = false;
+          _stopThinkingReveal();
           _thinkingSteps.clear();
+          _thinkingNarrative = const [];
+          _backendThinkingHints.clear();
           _thinkingStartedAt = null;
           final responseId = _inFlightResponseId;
           final byId = responseId == null
@@ -455,11 +560,16 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
             .toList(growable: false);
         var needsListingHydrate = false;
         setState(() {
-          if (_isThinking || _thinkingSteps.isNotEmpty) {
+          if (_isThinking ||
+              _thinkingSteps.isNotEmpty ||
+              _thinkingNarrative.isNotEmpty) {
             _commitActivityToInFlightMessage();
           }
           _isThinking = false;
+          _stopThinkingReveal();
           _thinkingSteps.clear();
+          _thinkingNarrative = const [];
+          _backendThinkingHints.clear();
           _thinkingStartedAt = null;
           _inFlightResponseId = null;
           var targetIndex = responseId == null
@@ -565,12 +675,18 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
 
   /// Moves live activity steps onto the in-flight assistant bubble (collapsed later).
   void _commitActivityToInFlightMessage() {
-    if (_thinkingSteps.isEmpty && _thinkingStartedAt == null) return;
+    if (_thinkingSteps.isEmpty &&
+        _thinkingNarrative.isEmpty &&
+        _thinkingStartedAt == null) {
+      return;
+    }
     final responseId = _inFlightResponseId;
-    final snap = List<String>.from(_thinkingSteps);
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    final snap = _finalizeThinkingSteps(isAr: isAr);
     final durationMs = _thinkingStartedAt == null
         ? null
         : DateTime.now().difference(_thinkingStartedAt!).inMilliseconds;
+    _stopThinkingReveal();
 
     var targetIndex = responseId == null
         ? -1
@@ -891,7 +1007,10 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
       _isThinking = false;
       _thinkingStartedAt = null;
       _inFlightResponseId = null;
+      _stopThinkingReveal();
       _thinkingSteps.clear();
+      _thinkingNarrative = const [];
+      _backendThinkingHints.clear();
       final targetIndex = responseId == null
           ? _messages.lastIndexWhere((m) => !m.isUser)
           : _messages.lastIndexWhere(
@@ -1042,6 +1161,7 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
                         index == _messages.length) {
                       return AiAgentActivityBubble(
                         steps: List<String>.from(_thinkingSteps),
+                        narrative: List<String>.from(_thinkingNarrative),
                         startedAt: _thinkingStartedAt,
                         colors: colors,
                       );

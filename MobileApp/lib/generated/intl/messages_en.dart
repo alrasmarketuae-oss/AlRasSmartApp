@@ -288,7 +288,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Speak with me using your voice",
     ),
     "aiAssistantThinking": MessageLookupByLibrary.simpleMessage("Thinking…"),
-    "aiAgentActivityTitle": MessageLookupByLibrary.simpleMessage("Activity"),
+    "aiAgentActivityTitle": MessageLookupByLibrary.simpleMessage("Thinking"),
     "aiAgentActivityWorking":
         MessageLookupByLibrary.simpleMessage("⚡ Working on it…"),
     "aiAgentActivitySearching":
@@ -306,7 +306,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "aiAgentActivityStillWorking":
         MessageLookupByLibrary.simpleMessage("⏳ Still working on it…"),
     "aiAgentActivityCompleted": MessageLookupByLibrary.simpleMessage(
-      "✓ Found what you\'re looking for…",
+      "Ready — opening the answer…",
     ),
     "aiAgentActivityError": MessageLookupByLibrary.simpleMessage(
       "Something went wrong. Please try again.",

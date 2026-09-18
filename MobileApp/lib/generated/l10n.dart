@@ -7511,10 +7511,10 @@ class S {
     );
   }
 
-  /// `Activity`
+  /// `Thinking`
   String get aiAgentActivityTitle {
     return Intl.message(
-      'Activity',
+      'Thinking',
       name: 'aiAgentActivityTitle',
       desc: '',
       args: [],
@@ -7601,10 +7601,10 @@ class S {
     );
   }
 
-  /// `✓ Found what you're looking for…`
+  /// `Ready — opening the answer…`
   String get aiAgentActivityCompleted {
     return Intl.message(
-      '✓ Found what you\'re looking for…',
+      'Ready — opening the answer…',
       name: 'aiAgentActivityCompleted',
       desc: '',
       args: [],

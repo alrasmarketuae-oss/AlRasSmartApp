@@ -289,7 +289,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "تكلم معي بصوتك",
     ),
     "aiAssistantThinking": MessageLookupByLibrary.simpleMessage("يفكر…"),
-    "aiAgentActivityTitle": MessageLookupByLibrary.simpleMessage("النشاط"),
+    "aiAgentActivityTitle": MessageLookupByLibrary.simpleMessage("التفكير"),
     "aiAgentActivityWorking":
         MessageLookupByLibrary.simpleMessage("⚡ جارٍ العمل…"),
     "aiAgentActivitySearching":
@@ -307,7 +307,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "aiAgentActivityStillWorking":
         MessageLookupByLibrary.simpleMessage("⏳ لسه شغال عليها…"),
     "aiAgentActivityCompleted":
-        MessageLookupByLibrary.simpleMessage("✓ لقينا اللي بتدور عليه…"),
+        MessageLookupByLibrary.simpleMessage("جاهز — بفتح الرد دلوقتي…"),
     "aiAgentActivityError":
         MessageLookupByLibrary.simpleMessage("حصل خطأ. حاول مرة أخرى."),
     "aiAssistantTitle": MessageLookupByLibrary.simpleMessage("Al-Ras Agent"),
