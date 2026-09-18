@@ -8,6 +8,7 @@ import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/features/clint/data/models/client_address_model.dart';
 import 'package:alrasmarket/features/clint/domain/usecases/address_usecases.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/add_address_dialog.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/saved_addresses_list_skeleton.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/search_header.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
@@ -149,13 +150,7 @@ class _SavedAddressesViewState extends State<SavedAddressesView> {
 
   Widget _buildBody() {
     if (_loading) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          SizedBox(height: 120.h),
-          const Center(child: CircularProgressIndicator()),
-        ],
-      );
+      return const SavedAddressesListSkeleton();
     }
 
     if (_error != null) {

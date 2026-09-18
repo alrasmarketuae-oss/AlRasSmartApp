@@ -151,6 +151,10 @@ class ClintCubit extends Cubit<ClintStates> {
   static const int homeFeedPageSize = 20;
   static const int homeFeedLoadMoreThreshold = 10;
 
+  /// After the first page loads, fetch the next page once so scroll rarely waits.
+  bool _homeInitialPrefetchDone = false;
+  bool _searchInitialPrefetchDone = false;
+
   List<MyListingProductModel> homeProducts = [];
   bool isLoadingHomeProducts = false;
   bool isLoadingMoreHomeProducts = false;
@@ -611,6 +615,7 @@ class ClintCubit extends Cubit<ClintStates> {
     homeProductsTotalPages = 1;
     isLoadingHomeProducts = false;
     isLoadingMoreHomeProducts = false;
+    _homeInitialPrefetchDone = false;
     _lastHomeFeedCompletedAt = null;
     final retailBucket = _productsByType[ServiceProductType.retail];
     if (retailBucket != null) {
@@ -663,6 +668,23 @@ class ClintCubit extends Cubit<ClintStates> {
     await fetchHomeProducts(loadMore: true);
   }
 
+  /// Prefetch the next page once after the initial home page (one page ahead).
+  void _queueInitialHomePrefetch({required bool isPerson}) {
+    if (_homeInitialPrefetchDone) return;
+    if (!hasMoreHomeProducts) return;
+    if (isLoadingHomeProducts || isLoadingMoreHomeProducts) return;
+    _homeInitialPrefetchDone = true;
+    unawaited(loadMoreHomeFeed(isPerson: isPerson));
+  }
+
+  void _queueInitialSearchPrefetch() {
+    if (_searchInitialPrefetchDone) return;
+    if (!hasMoreSearchResults) return;
+    if (isLoadingSearch || isLoadingMoreSearch) return;
+    _searchInitialPrefetchDone = true;
+    unawaited(loadMoreProductSearch());
+  }
+
   void maybeLoadMoreHomeFeed({
     required bool isPerson,
     required int visibleIndex,
@@ -698,6 +720,7 @@ class ClintCubit extends Cubit<ClintStates> {
     searchTotalCount = 0;
     searchCategoryId = null;
     isLoadingMoreSearch = false;
+    _searchInitialPrefetchDone = false;
     emit(ProductSearchLoadingState(query: trimmed));
 
     try {
@@ -740,6 +763,7 @@ class ClintCubit extends Cubit<ClintStates> {
         ),
       );
       unawaited(_persistTextSearchHistory(trimmed, products));
+      _queueInitialSearchPrefetch();
     } catch (e) {
       if (requestGeneration != _productSearchFetchGeneration) return;
       productSearchResults = [];
@@ -880,6 +904,8 @@ class ClintCubit extends Cubit<ClintStates> {
           products: products,
         ),
       );
+      _searchInitialPrefetchDone = false;
+      _queueInitialSearchPrefetch();
     } catch (e) {
       if (requestGeneration != _productSearchFetchGeneration) return;
       productSearchResults = [];
@@ -1490,6 +1516,10 @@ class ClintCubit extends Cubit<ClintStates> {
       isLoadingMoreHomeProducts = false;
       await ProductListCache.save(cacheKey: cacheKey, rawData: data);
       emit(FetchHomeProductsSuccessState(List.from(homeProducts)));
+      if (!isAppend) {
+        _homeInitialPrefetchDone = false;
+        _queueInitialHomePrefetch(isPerson: false);
+      }
     } catch (e) {
       if (requestGeneration != _homeProductsFetchGeneration) return;
 
@@ -1719,6 +1749,8 @@ class ClintCubit extends Cubit<ClintStates> {
             emit(FetchHomeProductsSuccessState(const []));
           }
         }
+        _homeInitialPrefetchDone = false;
+        _queueInitialHomePrefetch(isPerson: true);
       }
       return;
     }

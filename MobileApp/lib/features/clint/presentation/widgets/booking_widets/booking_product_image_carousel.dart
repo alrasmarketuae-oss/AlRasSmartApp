@@ -5,6 +5,7 @@ import 'package:alrasmarket/features/clint/presentation/models/product_media_ite
 import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_media_preview_screen.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_video_play_mark.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_sold_out_stamp_overlay.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:video_player/video_player.dart';
@@ -31,6 +32,8 @@ class _BookingProductImageCarouselState
   bool get _onlyVideo =>
       widget.mediaItems.length == 1 && widget.mediaItems.first.isVideo;
 
+  bool get _canLoop => widget.mediaItems.length > 1;
+
   @override
   void initState() {
     super.initState();
@@ -44,6 +47,7 @@ class _BookingProductImageCarouselState
   void didUpdateWidget(covariant BookingProductImageCarousel oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.mediaItems != widget.mediaItems) {
+      _currentIndex = 0;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         _precacheAround(_currentIndex, includeAll: true);
@@ -58,9 +62,11 @@ class _BookingProductImageCarouselState
         if (!item.isVideo) urls.add(item.url);
       }
     } else {
+      final count = widget.mediaItems.length;
+      if (count == 0) return;
       for (final i in [index - 1, index, index + 1]) {
-        if (i < 0 || i >= widget.mediaItems.length) continue;
-        final item = widget.mediaItems[i];
+        final wrapped = ((i % count) + count) % count;
+        final item = widget.mediaItems[wrapped];
         if (!item.isVideo) urls.add(item.url);
       }
     }
@@ -82,13 +88,9 @@ class _BookingProductImageCarouselState
               width: double.infinity,
               child: widget.mediaItems.isEmpty
                   ? Image.asset(AppAssets.bannerImage2, fit: BoxFit.cover)
-                  : PageView.builder(
+                  : CarouselSlider.builder(
                       itemCount: widget.mediaItems.length,
-                      onPageChanged: (index) {
-                        setState(() => _currentIndex = index);
-                        _precacheAround(index);
-                      },
-                      itemBuilder: (_, index) {
+                      itemBuilder: (_, index, __) {
                         final item = widget.mediaItems[index];
                         return GestureDetector(
                           onTap: () => ProductMediaPreviewScreen.open(
@@ -97,12 +99,33 @@ class _BookingProductImageCarouselState
                             initialIndex: index,
                           ),
                           behavior: HitTestBehavior.opaque,
-                          child: _MediaSlide(
-                            item: item,
-                            autoPlay: _onlyVideo && index == 0,
+                          child: SizedBox.expand(
+                            child: _MediaSlide(
+                              item: item,
+                              autoPlay: _onlyVideo && index == 0,
+                            ),
                           ),
                         );
                       },
+                      options: CarouselOptions(
+                        height: 188.h,
+                        viewportFraction: 1,
+                        initialPage: 0,
+                        enableInfiniteScroll: _canLoop,
+                        autoPlay: _canLoop,
+                        autoPlayInterval: const Duration(seconds: 3),
+                        autoPlayAnimationDuration:
+                            const Duration(milliseconds: 450),
+                        autoPlayCurve: Curves.easeOutCubic,
+                        pauseAutoPlayOnTouch: true,
+                        pauseAutoPlayOnManualNavigate: true,
+                        enlargeCenterPage: false,
+                        scrollDirection: Axis.horizontal,
+                        onPageChanged: (index, _) {
+                          setState(() => _currentIndex = index);
+                          _precacheAround(index);
+                        },
+                      ),
                     ),
             ),
             if (widget.mediaItems.length > 1)

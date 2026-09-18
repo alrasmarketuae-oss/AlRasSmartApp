@@ -163,7 +163,9 @@ class _HomeViewState extends State<HomeView> {
                     final itemWidth =
                         (MediaQuery.sizeOf(context).width - 48.w - 12.w) / 2;
                     final itemHeight = itemWidth / (157 / 282);
-                    final preloadExtent = 5 * (itemHeight + 12.h);
+                    // Prefetch ~12 rows early (~half a page of cards) so the next
+                    // 20 products are usually ready before the user hits the end.
+                    final preloadExtent = 12 * (itemHeight + 12.h);
                     if (metrics.maxScrollExtent - metrics.pixels <=
                         preloadExtent) {
                       cubit.loadMoreHomeFeed(isPerson: isPersonalCustomer);
@@ -295,6 +297,11 @@ class _HomeViewState extends State<HomeView> {
                                       ),
                                       itemCount: products.length,
                                       itemBuilder: (context, index) {
+                                        cubit.maybeLoadMoreHomeFeed(
+                                          isPerson: isPersonalCustomer,
+                                          visibleIndex: index,
+                                          totalItems: products.length,
+                                        );
                                         final product = products[index];
                                         return ProductCard(
                                           title: product.productName.isEmpty
@@ -311,12 +318,7 @@ class _HomeViewState extends State<HomeView> {
                                         padding: EdgeInsets.symmetric(
                                           vertical: 16.h,
                                         ),
-                                        child: const Center(
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2.5,
-                                            color: Color(0xFF3A7DC5),
-                                          ),
-                                        ),
+                                        child: const _HomeProductsGridShimmer(),
                                       ),
                                   ],
                                 ],

@@ -24,8 +24,8 @@ class NotificationsService extends ChangeNotifier {
         userId != _sessionUserId) {
       return false;
     }
-    // New notification arrived (badge > 0) → skip cache and hit the API.
-    if (unreadCount > 0) return false;
+    // Prefetched / recently fetched page-1 is always usable so the list
+    // opens instantly even when the unread badge is > 0.
     return true;
   }
 
@@ -129,14 +129,27 @@ class NotificationsService extends ChangeNotifier {
       final map = Map<String, dynamic>.from(response!.data as Map);
       final next =
           int.tryParse(map['unreadCount']?.toString() ?? '') ?? unreadCount;
+      final previous = unreadCount;
       unreadCount = next;
-      // Drop stale list when something new arrives.
-      if (next > 0) {
+      // Only drop list cache when unread grew (new push arrived).
+      if (next > previous) {
         clearSessionListCache();
       }
       notifyListeners();
     } catch (_) {
       // keep last known count
+    }
+  }
+
+  /// Warm page-1 list + unread badge so NotificationsView opens instantly.
+  Future<void> prefetchMine({int pageSize = 20}) async {
+    final token = AuthService.instance.currentToken;
+    if (token == null || token.isEmpty) return;
+    try {
+      await fetchMine(page: 1, pageSize: pageSize);
+    } catch (_) {
+      // Best-effort; badge-only refresh as fallback.
+      await refreshUnreadCount();
     }
   }
 

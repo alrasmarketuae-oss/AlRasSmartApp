@@ -198,7 +198,15 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
   }
 
   void _goToPrevious() {
-    if (_currentIndex <= 0) return;
+    if (widget.items.length <= 1) return;
+    if (_currentIndex <= 0) {
+      _pageController.animateToPage(
+        widget.items.length - 1,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+      );
+      return;
+    }
     _pageController.previousPage(
       duration: const Duration(milliseconds: 280),
       curve: Curves.easeOutCubic,
@@ -206,7 +214,15 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
   }
 
   void _goToNext() {
-    if (_currentIndex >= widget.items.length - 1) return;
+    if (widget.items.length <= 1) return;
+    if (_currentIndex >= widget.items.length - 1) {
+      _pageController.animateToPage(
+        0,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+      );
+      return;
+    }
     _pageController.nextPage(
       duration: const Duration(milliseconds: 280),
       curve: Curves.easeOutCubic,
@@ -336,7 +352,7 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
                           padding: EdgeInsets.only(left: 8.w),
                           child: _NavMediaButton(
                             icon: Icons.chevron_left_rounded,
-                            enabled: _currentIndex > 0,
+                            enabled: widget.items.length > 1,
                             onPressed: _goToPrevious,
                           ),
                         ),
@@ -347,7 +363,7 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
                           padding: EdgeInsets.only(right: 8.w),
                           child: _NavMediaButton(
                             icon: Icons.chevron_right_rounded,
-                            enabled: _currentIndex < widget.items.length - 1,
+                            enabled: widget.items.length > 1,
                             onPressed: _goToNext,
                           ),
                         ),

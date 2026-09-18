@@ -221,8 +221,12 @@ class _ProductSearchResultsViewState extends State<ProductSearchResultsView> {
                                 !metrics.hasContentDimensions) {
                               return false;
                             }
+                            // Prefetch next page well before the bottom (~1.5 screens).
+                            final preloadExtent =
+                                (metrics.viewportDimension * 1.5)
+                                    .clamp(800.0, 2000.0);
                             if (metrics.maxScrollExtent - metrics.pixels <=
-                                480) {
+                                preloadExtent) {
                               cubit.loadMoreProductSearch();
                             }
                             return false;
@@ -243,6 +247,9 @@ class _ProductSearchResultsViewState extends State<ProductSearchResultsView> {
                           ),
                           itemCount: products.length,
                           itemBuilder: (context, index) {
+                            if (index >= products.length - 10) {
+                              cubit.loadMoreProductSearch();
+                            }
                             final product = products[index];
                             return ProductCard(
                               title: product.productName,
