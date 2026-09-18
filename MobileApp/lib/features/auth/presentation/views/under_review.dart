@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:alrasmarket/core/constants/app_contact.dart';
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/router/where_to_go.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
@@ -24,9 +25,6 @@ class UnderReviewView extends StatefulWidget {
 }
 
 class _UnderReviewViewState extends State<UnderReviewView> {
-  static const String _supportPhoneDisplay = '+971 50 123 4567';
-  static const String _supportPhoneDial = '+971501234567';
-
   Timer? _pollTimer;
 
   @override
@@ -56,65 +54,8 @@ class _UnderReviewViewState extends State<UnderReviewView> {
     });
   }
 
-  Future<void> _showContactSupportOptions() async {
-    final s = S.of(context);
-    await showModalBottomSheet<void>(
-      context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
-      ),
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 20.h),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  s.contactSupport,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF111827),
-                  ),
-                ),
-                SizedBox(height: 16.h),
-                ListTile(
-                  leading: const Icon(
-                    Icons.chat_bubble_outline,
-                    color: Color(0xFF3A7DC5),
-                  ),
-                  title: Text(s.liveChat),
-                  subtitle: Text(s.chatWithTheSupportTeamNow),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    context.push(AppRoutes.kSupportChatView);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(
-                    Icons.phone_outlined,
-                    color: Color(0xFF619D50),
-                  ),
-                  title: Text(s.phoneCall),
-                  subtitle: const Text(_supportPhoneDisplay),
-                  onTap: () async {
-                    Navigator.of(sheetContext).pop();
-                    await _callSupport();
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Future<void> _callSupport() async {
-    final uri = Uri(scheme: 'tel', path: _supportPhoneDial);
+    final uri = Uri(scheme: 'tel', path: AppContact.supportPhoneTel);
     final opened = await launchUrl(uri);
     if (!opened && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -183,7 +124,7 @@ class _UnderReviewViewState extends State<UnderReviewView> {
                             borderRadius: BorderRadius.circular(8.r),
                           ),
                         ),
-                        onPressed: _showContactSupportOptions,
+                        onPressed: _callSupport,
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -197,12 +138,15 @@ class _UnderReviewViewState extends State<UnderReviewView> {
                               ),
                             ),
                             SizedBox(width: 8.w),
-                            Text(
-                              S.of(context).contactSupport,
-                              style: TextStyle(
-                                fontSize: 16.sp,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                            Flexible(
+                              child: Text(
+                                '${S.of(context).contactSupport} · ${AppContact.supportPhoneDisplay}',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 15.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ],
