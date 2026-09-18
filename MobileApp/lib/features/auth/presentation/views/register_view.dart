@@ -320,6 +320,7 @@ class _RegisterViewState extends State<RegisterView> {
           'taxNumber': _taxNumberController.text.trim(),
           'website': _websiteController.text.trim(),
           'isCustomerCompany': _isCustomerCompany,
+          'profileImagePath': _profileImagePath,
         },
       );
       return;
@@ -705,8 +706,8 @@ class _RegisterViewState extends State<RegisterView> {
   @override
   Widget build(BuildContext context) {
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
-    final showPhoto =
-        !widget.isSupplierCompany && !_isCustomerCompany;
+    // Person, company client, and supplier all get a profile/logo picker.
+    const showPhoto = true;
 
     return Scaffold(
       backgroundColor: _kBg,

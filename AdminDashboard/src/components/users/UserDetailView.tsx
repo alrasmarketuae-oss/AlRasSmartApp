@@ -245,19 +245,14 @@ export default function UserDetailView({
   const extraAddresses = (user.addresses ?? []).filter(
     (item) => item.addressId !== primaryAddress?.addressId,
   )
-  const primaryLogo =
-    user.companyImages.find((image) => image.isPrimary) ?? user.companyImages[0]
-  const logoHref = primaryLogo
-    ? resolveAssetUrl(primaryLogo.imagePath)
-    : user.imgPath
-      ? resolveAssetUrl(user.imgPath)
-      : null
+  // Match mobile app: logo = User.ImgPath only; site photos = CompanyImages.
+  const logoHref = user.imgPath ? resolveAssetUrl(user.imgPath) : null
   const licenceHref = user.licencePath ? resolveAssetUrl(user.licencePath) : null
   const licenceIsImage = Boolean(user.licencePath && isImagePath(user.licencePath))
   const previewImages = [
     licenceIsImage && licenceHref ? licenceHref : null,
+    logoHref,
     ...user.companyImages.map((image) => resolveAssetUrl(image.imagePath)),
-    user.companyImages.length === 0 && logoHref ? logoHref : null,
   ].filter((url, index, list): url is string => Boolean(url) && list.indexOf(url) === index)
 
   function openPreview(url: string | null | undefined) {
@@ -539,7 +534,7 @@ export default function UserDetailView({
               icon={InfoFieldIcons.document}
               iconClass={ICON_BLUE}
             />
-   
+
             {isSupplier ? (
               <ProfileFieldRow
                 icon={InfoFieldIcons.document}
@@ -552,57 +547,59 @@ export default function UserDetailView({
               label={t('users.taxNumber')}
               value={user.taxNumber?.trim() || '—'}
             />
-            {isSupplier ? (
-              <>
-                <DocumentFileRow
-                  label={t('users.licenceFile')}
-                  href={licenceHref}
-                  icon={<PdfFileIcon />}
-                  emptyLabel={t('users.noLicence')}
-                  onPreview={licenceIsImage ? () => openPreview(licenceHref) : undefined}
-                />
-                <DocumentFileRow
-                  label={t('users.licenseImage')}
-                  href={licenceIsImage ? licenceHref : null}
-                  icon={InfoFieldIcons.photo}
-                  emptyLabel={t('users.noLicence')}
-                  onPreview={licenceIsImage ? () => openPreview(licenceHref) : undefined}
-                />
-              </>
-            ) : null}
+
+            {/* App model: trade license image (LicencePath) */}
+            <DocumentFileRow
+              label={t('users.licenseImage')}
+              href={licenceHref}
+              icon={licenceIsImage ? InfoFieldIcons.photo : <PdfFileIcon />}
+              emptyLabel={t('users.noLicence')}
+              onPreview={licenceIsImage ? () => openPreview(licenceHref) : undefined}
+            />
+
+            {/* App model: profile/company logo (User.ImgPath) */}
             <DocumentFileRow
               label={t('users.companyLogo')}
               href={logoHref}
               icon={InfoFieldIcons.photo}
-              emptyLabel={t('users.noCompanyPhotos')}
+              emptyLabel={t('users.noCompanyLogo')}
               onPreview={logoHref ? () => openPreview(logoHref) : undefined}
             />
-            {user.companyImages.length > 0 ? (
-              <div className="mt-4 grid grid-cols-3 gap-2">
-                {user.companyImages.map((image) => {
-                  const url = resolveAssetUrl(image.imagePath)
-                  return (
-                    <button
-                      key={image.id}
-                      type="button"
-                      onClick={() => openPreview(url)}
-                      className="group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-600"
-                    >
-                      <img
-                        src={url}
-                        alt=""
-                        className="aspect-[4/3] w-full object-cover transition group-hover:scale-105"
-                      />
-                      {image.isPrimary ? (
-                        <span className="absolute bottom-1.5 start-1.5 rounded-full bg-[#3B7FC7] px-2 py-0.5 text-[10px] font-bold text-white">
-                          {t('users.primaryPhoto')}
-                        </span>
-                      ) : null}
-                    </button>
-                  )
-                })}
-              </div>
-            ) : null}
+
+            {/* App model: company site photos (CompanyImages) */}
+            <div className="mt-4">
+              <p className="admin-text-muted mb-2 text-xs font-semibold uppercase tracking-wide">
+                {t('users.companyPhotos')}
+              </p>
+              {user.companyImages.length > 0 ? (
+                <div className="grid grid-cols-3 gap-2">
+                  {user.companyImages.map((image) => {
+                    const url = resolveAssetUrl(image.imagePath)
+                    return (
+                      <button
+                        key={image.id}
+                        type="button"
+                        onClick={() => openPreview(url)}
+                        className="group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-600"
+                      >
+                        <img
+                          src={url}
+                          alt=""
+                          className="aspect-[4/3] w-full object-cover transition group-hover:scale-105"
+                        />
+                        {image.isPrimary ? (
+                          <span className="absolute bottom-1.5 start-1.5 rounded-full bg-[#3B7FC7] px-2 py-0.5 text-[10px] font-bold text-white">
+                            {t('users.primaryPhoto')}
+                          </span>
+                        ) : null}
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : (
+                <p className="admin-text-muted text-sm">{t('users.noCompanyPhotos')}</p>
+              )}
+            </div>
           </section>
         ) : null}
       </div>

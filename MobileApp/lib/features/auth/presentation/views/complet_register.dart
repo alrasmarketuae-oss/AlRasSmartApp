@@ -7,6 +7,7 @@ import 'package:alrasmarket/core/widgets/auth_header.dart';
 import 'package:alrasmarket/core/widgets/primary_button.dart';
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
+import 'package:alrasmarket/core/serveses/pending_profile_image_uploader.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_cubit.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_states.dart';
@@ -66,6 +67,11 @@ class _CompletRegisterViewState extends State<CompletRegisterView> {
     });
   }
 
+  void _queuePendingProfileLogo() {
+    final path = widget.registrationData['profileImagePath']?.toString();
+    PendingProfileImageUploader.setPending(path);
+  }
+
   Future<void> _onConfirm() async {
     final cubit = AuthCubit.get(context);
 
@@ -94,6 +100,7 @@ class _CompletRegisterViewState extends State<CompletRegisterView> {
       companyImagePaths.add(uploadedCompanyImagePath);
     }
 
+    _queuePendingProfileLogo();
     cubit.registerCompany(
       fullName: widget.registrationData['fullName']?.toString() ?? '',
       companyName: widget.registrationData['companyName']?.toString() ?? '',
@@ -115,6 +122,7 @@ class _CompletRegisterViewState extends State<CompletRegisterView> {
 
   void _registerWithoutFiles() {
     final cubit = AuthCubit.get(context);
+    _queuePendingProfileLogo();
     cubit.registerCompany(
       fullName: widget.registrationData['fullName']?.toString() ?? '',
       companyName: widget.registrationData['companyName']?.toString() ?? '',
