@@ -289,6 +289,27 @@ class MessageLookup extends MessageLookupByLibrary {
       "تكلم معي بصوتك",
     ),
     "aiAssistantThinking": MessageLookupByLibrary.simpleMessage("يفكر…"),
+    "aiAgentActivityTitle": MessageLookupByLibrary.simpleMessage("النشاط"),
+    "aiAgentActivityWorking":
+        MessageLookupByLibrary.simpleMessage("⚡ جارٍ العمل…"),
+    "aiAgentActivitySearching":
+        MessageLookupByLibrary.simpleMessage("🔎 جارٍ البحث عن المنتجات…"),
+    "aiAgentActivityCheckingPrice":
+        MessageLookupByLibrary.simpleMessage("💰 جارٍ التحقق من الأسعار…"),
+    "aiAgentActivityCheckingAvailability":
+        MessageLookupByLibrary.simpleMessage("📦 جارٍ التحقق من التوفر…"),
+    "aiAgentActivityProcessingOrder":
+        MessageLookupByLibrary.simpleMessage("🛒 جارٍ معالجة طلبك…"),
+    "aiAgentActivityPreparing":
+        MessageLookupByLibrary.simpleMessage("🛒 جارٍ تجهيز طلبك…"),
+    "aiAgentActivityUploadingMedia":
+        MessageLookupByLibrary.simpleMessage("📤 جارٍ رفع الوسائط…"),
+    "aiAgentActivityStillWorking":
+        MessageLookupByLibrary.simpleMessage("⏳ لسه شغال عليها…"),
+    "aiAgentActivityCompleted":
+        MessageLookupByLibrary.simpleMessage("✓ لقينا اللي بتدور عليه…"),
+    "aiAgentActivityError":
+        MessageLookupByLibrary.simpleMessage("حصل خطأ. حاول مرة أخرى."),
     "aiAssistantTitle": MessageLookupByLibrary.simpleMessage("Al-Ras Agent"),
     "aiAssistantUnsupportedLanguage": MessageLookupByLibrary.simpleMessage(
       "ندعم العربية والإنجليزية حالياً. ترجمنا سؤالك للفهم إن أمكن، وسنرد بإحدى اللغتين المدعومتين.",

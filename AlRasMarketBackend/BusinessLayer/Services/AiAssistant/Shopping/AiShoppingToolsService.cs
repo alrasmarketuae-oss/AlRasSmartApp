@@ -508,15 +508,79 @@ public sealed class AiShoppingToolsService(
                 }
 
                 var name = el.TryGetProperty("name", out var n) ? n.GetString() : null;
+                name ??= el.TryGetProperty("nameEn", out var ne) ? ne.GetString() : null;
+                name ??= el.TryGetProperty("productName", out var pn) ? pn.GetString() : null;
+                var nameAr = el.TryGetProperty("nameAr", out var na) ? na.GetString() : null;
                 var price = el.TryGetProperty("price", out var pr) && pr.TryGetDecimal(out var pd) ? pd : 0m;
+                if (price == 0m
+                    && el.TryGetProperty("displayPrice", out var dpr)
+                    && dpr.TryGetDecimal(out var dpd))
+                {
+                    price = dpd;
+                }
+
                 var currency = el.TryGetProperty("currency", out var c) ? c.GetString() : null;
                 var qty = el.TryGetProperty("quantity", out var q) && q.TryGetInt64(out var ql) ? ql : 0;
                 var unit = el.TryGetProperty("unitName", out var u) ? u.GetString() : null;
+                var descriptionEn = el.TryGetProperty("descriptionEn", out var de) ? de.GetString() : null;
+                descriptionEn ??= el.TryGetProperty("description", out var d) ? d.GetString() : null;
+                var descriptionAr = el.TryGetProperty("descriptionAr", out var da) ? da.GetString() : null;
+                byte? productTypeId = el.TryGetProperty("productTypeId", out var pti) && pti.TryGetByte(out var ptiv)
+                    ? ptiv
+                    : null;
+                var productTypeName = el.TryGetProperty("productTypeName", out var ptn) ? ptn.GetString() : null;
+                byte? requestTypeId = el.TryGetProperty("requestTypeId", out var rti) && rti.TryGetByte(out var rtiv)
+                    ? rtiv
+                    : null;
+                var requestTypeName = el.TryGetProperty("requestTypeName", out var rtn) ? rtn.GetString() : null;
+                byte? bookingPriceTypeId = el.TryGetProperty("bookingPriceTypeId", out var bti) && bti.TryGetByte(out var btiv)
+                    ? btiv
+                    : null;
+                var bookingPriceTypeName = el.TryGetProperty("bookingPriceTypeName", out var btn)
+                    ? btn.GetString()
+                    : null;
+                var shippingDescriptionEn = el.TryGetProperty("shippingDescriptionEn", out var sde)
+                    ? sde.GetString()
+                    : null;
+                DateTime? createdAt = null;
+                if (el.TryGetProperty("createdAt", out var ca) && ca.ValueKind == JsonValueKind.String
+                    && DateTime.TryParse(ca.GetString(), out var parsedCreatedAt))
+                {
+                    createdAt = parsedCreatedAt;
+                }
+
+                byte? discountPercentage = el.TryGetProperty("discountPercentage", out var dp)
+                    && dp.TryGetByte(out var dpv)
+                        ? dpv
+                        : null;
+                short? discountDays = el.TryGetProperty("discountDays", out var dd) && dd.TryGetInt16(out var ddv)
+                    ? ddv
+                    : null;
+
+                var images = new List<string>();
+                if (el.TryGetProperty("images", out var imgs) && imgs.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var img in imgs.EnumerateArray())
+                    {
+                        if (img.ValueKind == JsonValueKind.String
+                            && !string.IsNullOrWhiteSpace(img.GetString()))
+                        {
+                            images.Add(img.GetString()!.Trim());
+                        }
+                    }
+                }
+                else if (el.TryGetProperty("image", out var oneImg)
+                    && oneImg.ValueKind == JsonValueKind.String
+                    && !string.IsNullOrWhiteSpace(oneImg.GetString()))
+                {
+                    images.Add(oneImg.GetString()!.Trim());
+                }
+
                 list.Add(new AiProductListingDto(
                     productId,
                     null,
                     name,
-                    null,
+                    nameAr,
                     price,
                     currency,
                     null,
@@ -524,11 +588,21 @@ public sealed class AiShoppingToolsService(
                     qty,
                     unit,
                     null,
-                    null,
-                    null,
+                    productTypeId,
+                    productTypeName,
                     el.TryGetProperty("searchListingChannel", out var ch) ? ch.GetString() : null,
-                    false,
-                    null));
+                    el.TryGetProperty("hasRetailPricing", out var hrp) && hrp.ValueKind == JsonValueKind.True,
+                    images.Count == 0 ? null : images,
+                    descriptionEn,
+                    descriptionAr,
+                    createdAt,
+                    discountPercentage,
+                    discountDays,
+                    requestTypeId,
+                    requestTypeName,
+                    bookingPriceTypeId,
+                    bookingPriceTypeName,
+                    shippingDescriptionEn));
             }
 
             return list.Count == 0 ? null : list;

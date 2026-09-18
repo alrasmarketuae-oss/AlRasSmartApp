@@ -4,6 +4,7 @@ import 'package:alrasmarket/features/clint/presentation/widgets/search_header.da
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:shimmer/shimmer.dart';
 
 class AiAssistantVoiceSettingsView extends StatefulWidget {
   const AiAssistantVoiceSettingsView({super.key});
@@ -50,7 +51,7 @@ class _AiAssistantVoiceSettingsViewState
           SearchHeader(title: s.aiAssistantVoiceSetting, isSearch: false),
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator())
+                ? const _VoiceSettingsSkeleton()
                 : ListView(
                     padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 24.h),
                     children: [
@@ -169,6 +170,111 @@ class _VoiceOptionCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _VoiceSettingsSkeleton extends StatelessWidget {
+  const _VoiceSettingsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final base = Colors.grey.shade300;
+    final highlight = Colors.grey.shade100;
+
+    return ListView(
+      padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 24.h),
+      children: [
+        Shimmer.fromColors(
+          baseColor: base,
+          highlightColor: highlight,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: 12.h,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: base,
+                  borderRadius: BorderRadius.circular(4.r),
+                ),
+              ),
+              SizedBox(height: 8.h),
+              FractionallySizedBox(
+                widthFactor: 0.7,
+                alignment: AlignmentDirectional.centerStart,
+                child: Container(
+                  height: 12.h,
+                  decoration: BoxDecoration(
+                    color: base,
+                    borderRadius: BorderRadius.circular(4.r),
+                  ),
+                ),
+              ),
+              SizedBox(height: 16.h),
+              _skeletonCard(base),
+              SizedBox(height: 12.h),
+              _skeletonCard(base),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _skeletonCard(Color base) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40.w,
+            height: 40.w,
+            decoration: BoxDecoration(
+              color: base,
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  height: 14.h,
+                  width: 120.w,
+                  decoration: BoxDecoration(
+                    color: base,
+                    borderRadius: BorderRadius.circular(4.r),
+                  ),
+                ),
+                SizedBox(height: 6.h),
+                Container(
+                  height: 12.h,
+                  width: 160.w,
+                  decoration: BoxDecoration(
+                    color: base,
+                    borderRadius: BorderRadius.circular(4.r),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: 22.w,
+            height: 22.w,
+            decoration: BoxDecoration(
+              color: base,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ],
       ),
     );
   }

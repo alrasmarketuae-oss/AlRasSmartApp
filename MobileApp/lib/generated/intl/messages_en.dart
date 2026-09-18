@@ -288,6 +288,29 @@ class MessageLookup extends MessageLookupByLibrary {
       "Speak with me using your voice",
     ),
     "aiAssistantThinking": MessageLookupByLibrary.simpleMessage("Thinking…"),
+    "aiAgentActivityTitle": MessageLookupByLibrary.simpleMessage("Activity"),
+    "aiAgentActivityWorking":
+        MessageLookupByLibrary.simpleMessage("⚡ Working on it…"),
+    "aiAgentActivitySearching":
+        MessageLookupByLibrary.simpleMessage("🔎 Searching for products…"),
+    "aiAgentActivityCheckingPrice":
+        MessageLookupByLibrary.simpleMessage("💰 Checking prices…"),
+    "aiAgentActivityCheckingAvailability":
+        MessageLookupByLibrary.simpleMessage("📦 Checking availability…"),
+    "aiAgentActivityProcessingOrder":
+        MessageLookupByLibrary.simpleMessage("🛒 Processing your order…"),
+    "aiAgentActivityPreparing":
+        MessageLookupByLibrary.simpleMessage("🛒 Preparing your request…"),
+    "aiAgentActivityUploadingMedia":
+        MessageLookupByLibrary.simpleMessage("📤 Uploading media…"),
+    "aiAgentActivityStillWorking":
+        MessageLookupByLibrary.simpleMessage("⏳ Still working on it…"),
+    "aiAgentActivityCompleted": MessageLookupByLibrary.simpleMessage(
+      "✓ Found what you\'re looking for…",
+    ),
+    "aiAgentActivityError": MessageLookupByLibrary.simpleMessage(
+      "Something went wrong. Please try again.",
+    ),
     "aiAssistantTitle": MessageLookupByLibrary.simpleMessage("Al-Ras Agent"),
     "aiAssistantUnsupportedLanguage": MessageLookupByLibrary.simpleMessage(
       "We currently support Arabic and English. We may translate your question internally to understand it, then reply in a supported language.",

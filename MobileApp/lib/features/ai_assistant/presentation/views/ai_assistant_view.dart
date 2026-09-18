@@ -257,8 +257,7 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
       apiText = buffer.toString();
     }
 
-    // Do not seed fake "thinking" copy here. Steps come only from backend MCP
-    // tool calls (aiThinkingStep). Ordinary Q&A shows a spinner with no steps.
+    // Live activity starts immediately; steps come from aiThinkingStep (mapped in UI).
     setState(() {
       _messages.add(AiChatMessage(
         text: visibleText,
@@ -299,7 +298,8 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
             _isThinking = true;
             _thinkingStartedAt ??= DateTime.now();
           } else {
-            // Always close the live thinking UI when the server says thinking is done.
+            // Snapshot activity onto the reply bubble before hiding live status.
+            _commitActivityToInFlightMessage();
             _isThinking = false;
           }
         });
@@ -310,15 +310,14 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
         setState(() {
           _isThinking = true;
           _thinkingStartedAt ??= DateTime.now();
-          // Stream as continuous prose â€” replace last unfinished clause instead of stacking "steps".
           final trimmed = step.trim();
           if (trimmed.isEmpty) return;
           if (_thinkingSteps.isEmpty) {
             _thinkingSteps.add(trimmed);
           } else if (_thinkingSteps.last != trimmed) {
             _thinkingSteps.add(trimmed);
-            // Keep the live bubble short so it feels like speech, not a checklist.
-            while (_thinkingSteps.length > 3) {
+            // Keep a short live trail; history panel dedupes to friendly labels.
+            while (_thinkingSteps.length > 8) {
               _thinkingSteps.removeAt(0);
             }
           }
@@ -329,6 +328,13 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
         if (!mounted) return;
         final responseId = _inFlightResponseId;
         setState(() {
+          final activitySnap = List<String>.from(_thinkingSteps);
+          if (activitySnap.isNotEmpty) {
+            activitySnap.add('✓ done');
+          }
+          final durationMs = _thinkingStartedAt == null
+              ? null
+              : DateTime.now().difference(_thinkingStartedAt!).inMilliseconds;
           _thinkingSteps.clear();
           _thinkingStartedAt = null;
           _isThinking = false;
@@ -340,12 +346,16 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
           if (existing >= 0) {
             // Cards may have created the bubble first — keep listings.
             final prev = _messages[existing];
+            final mergedSteps = prev.thinkingSteps.isNotEmpty
+                ? List<String>.from(prev.thinkingSteps)
+                : activitySnap;
             _messages[existing] = AiChatMessage(
               text: prev.text,
               isUser: false,
-              thinkingSteps: List<String>.from(prev.thinkingSteps),
-              thinkingDurationMs: prev.thinkingDurationMs,
-              showMediaUpload: _pendingAdMediaButton || _planMode || prev.showMediaUpload,
+              thinkingSteps: mergedSteps,
+              thinkingDurationMs: prev.thinkingDurationMs ?? durationMs,
+              showMediaUpload:
+                  _pendingAdMediaButton || _planMode || prev.showMediaUpload,
               showSupportCallbackForm: prev.showSupportCallbackForm,
               supportQuestion: prev.supportQuestion,
               responseId: prev.responseId ?? responseId,
@@ -357,7 +367,8 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
               AiChatMessage(
                 text: '',
                 isUser: false,
-                thinkingSteps: const [],
+                thinkingSteps: activitySnap,
+                thinkingDurationMs: durationMs,
                 showMediaUpload: _pendingAdMediaButton || _planMode,
                 responseId: responseId,
               ),
@@ -372,8 +383,12 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
       onDelta: (value) {
         if (!mounted) return;
         setState(() {
+          if (_isThinking || _thinkingSteps.isNotEmpty) {
+            _commitActivityToInFlightMessage();
+          }
           _isThinking = false;
           _thinkingSteps.clear();
+          _thinkingStartedAt = null;
           final responseId = _inFlightResponseId;
           final byId = responseId == null
               ? -1
@@ -404,8 +419,6 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
         _attachListingsToInFlightReply(parsed);
       },
       onCompleted: (answer, {required offerSupportCallback, listings, thinkingSteps}) {
-        // ignore: unused_element_parameter â€” live prose only; final reply is the streamed answer.
-        final _ = thinkingSteps;
         if (!mounted) return;
         final isAr = Localizations.localeOf(context).languageCode == 'ar';
         var finalAnswer = answer;
@@ -436,8 +449,15 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
             looksLikeSupportCallbackCue(finalAnswer) ||
             looksLikeTemporaryAssistantFailure(finalAnswer);
         final parsedListings = AiProductListings.parse(listings);
+        final serverSteps = (thinkingSteps ?? const <String>[])
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList(growable: false);
         var needsListingHydrate = false;
         setState(() {
+          if (_isThinking || _thinkingSteps.isNotEmpty) {
+            _commitActivityToInFlightMessage();
+          }
           _isThinking = false;
           _thinkingSteps.clear();
           _thinkingStartedAt = null;
@@ -465,7 +485,9 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
                     looksLikeTemporaryAssistantFailure(target.text))) {
               target.text = finalAnswer;
             }
-            target.thinkingSteps.clear();
+            final keptSteps = target.thinkingSteps.isNotEmpty
+                ? List<String>.from(target.thinkingSteps)
+                : List<String>.from(serverSteps);
             final nextListings = parsedListings.isNotEmpty
                 ? List<MyListingProductModel>.from(parsedListings)
                 : List<MyListingProductModel>.from(target.listings);
@@ -473,7 +495,7 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
             _messages[targetIndex] = AiChatMessage(
               text: target.text,
               isUser: false,
-              thinkingSteps: List<String>.from(target.thinkingSteps),
+              thinkingSteps: keptSteps,
               thinkingDurationMs: target.thinkingDurationMs,
               showMediaUpload: target.showMediaUpload,
               showSupportCallbackForm: shouldShowForm,
@@ -494,7 +516,7 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
                         ? 'اكتب اسمك ورقم تليفونك وبريدك الإلكتروني، وهيتم الاتصال بيك خلال خمس دقايق.'
                         : 'Please leave your name, phone, and email — we\'ll call you within five minutes.'),
                 isUser: false,
-                thinkingSteps: const [],
+                thinkingSteps: List<String>.from(serverSteps),
                 showSupportCallbackForm: shouldShowForm,
                 supportQuestion: supportQuestion,
                 responseId: responseId,
@@ -538,6 +560,74 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
           unawaited(_onAssistantSpeechFinished());
         }
       },
+    );
+  }
+
+  /// Moves live activity steps onto the in-flight assistant bubble (collapsed later).
+  void _commitActivityToInFlightMessage() {
+    if (_thinkingSteps.isEmpty && _thinkingStartedAt == null) return;
+    final responseId = _inFlightResponseId;
+    final snap = List<String>.from(_thinkingSteps);
+    final durationMs = _thinkingStartedAt == null
+        ? null
+        : DateTime.now().difference(_thinkingStartedAt!).inMilliseconds;
+
+    var targetIndex = responseId == null
+        ? -1
+        : _messages.lastIndexWhere(
+            (m) => !m.isUser && m.responseId == responseId,
+          );
+    if (targetIndex < 0) {
+      final lastUser = _messages.lastIndexWhere((m) => m.isUser);
+      for (var i = _messages.length - 1; i > lastUser; i--) {
+        if (!_messages[i].isUser) {
+          targetIndex = i;
+          break;
+        }
+      }
+    }
+
+    if (targetIndex >= 0) {
+      final prev = _messages[targetIndex];
+      if (prev.thinkingSteps.isEmpty && snap.isNotEmpty) {
+        _messages[targetIndex] = AiChatMessage(
+          text: prev.text,
+          isUser: false,
+          thinkingSteps: snap,
+          thinkingDurationMs: prev.thinkingDurationMs ?? durationMs,
+          showMediaUpload: prev.showMediaUpload,
+          showSupportCallbackForm: prev.showSupportCallbackForm,
+          supportQuestion: prev.supportQuestion,
+          responseId: prev.responseId ?? responseId,
+          replyPreview: prev.replyPreview,
+          listings: List<MyListingProductModel>.from(prev.listings),
+        );
+      } else if (prev.thinkingDurationMs == null && durationMs != null) {
+        _messages[targetIndex] = AiChatMessage(
+          text: prev.text,
+          isUser: false,
+          thinkingSteps: List<String>.from(prev.thinkingSteps),
+          thinkingDurationMs: durationMs,
+          showMediaUpload: prev.showMediaUpload,
+          showSupportCallbackForm: prev.showSupportCallbackForm,
+          supportQuestion: prev.supportQuestion,
+          responseId: prev.responseId ?? responseId,
+          replyPreview: prev.replyPreview,
+          listings: List<MyListingProductModel>.from(prev.listings),
+        );
+      }
+      return;
+    }
+
+    if (snap.isEmpty) return;
+    _messages.add(
+      AiChatMessage(
+        text: '',
+        isUser: false,
+        thinkingSteps: snap,
+        thinkingDurationMs: durationMs,
+        responseId: responseId,
+      ),
     );
   }
 
@@ -780,11 +870,17 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
 
   void _showConnectionError({String? message}) {
     if (!mounted || _shouldIgnoreAssistantError()) return;
-    final isAr = Localizations.localeOf(context).languageCode == 'ar';
     final responseId = _inFlightResponseId;
-    final display = (message != null && message.trim().isNotEmpty)
-        ? message.trim()
-        : DioUserFacingMessage.highDemand(isAr: isAr);
+    final raw = message?.trim() ?? '';
+    final looksTechnical = raw.contains('{') ||
+        raw.contains('Exception') ||
+        raw.contains('http://') ||
+        raw.contains('https://') ||
+        raw.toLowerCase().contains('stack') ||
+        raw.toLowerCase().contains('signalr');
+    final display = (!looksTechnical && raw.isNotEmpty)
+        ? raw
+        : S.of(context).aiAgentActivityError;
     final supportQuestion = responseId == null
         ? null
         : _questionForResponse[responseId];
@@ -793,6 +889,7 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
         looksLikeTemporaryAssistantFailure(display);
     setState(() {
       _isThinking = false;
+      _thinkingStartedAt = null;
       _inFlightResponseId = null;
       _thinkingSteps.clear();
       final targetIndex = responseId == null
@@ -943,7 +1040,7 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
                     if (_isThinking &&
                         !_voiceConversationMode &&
                         index == _messages.length) {
-                      return AiThinkingBubble(
+                      return AiAgentActivityBubble(
                         steps: List<String>.from(_thinkingSteps),
                         startedAt: _thinkingStartedAt,
                         colors: colors,

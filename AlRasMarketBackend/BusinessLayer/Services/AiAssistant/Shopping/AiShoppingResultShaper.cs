@@ -236,18 +236,46 @@ public static class AiShoppingResultShaper
         }
 
         var price = PickDecimal(item, "price", "Price", "displayPrice", "DisplayPrice", "priceAed", "PriceAed");
+        var description = Clip(
+            PickString(item, "descriptionEn", "DescriptionEn", "description", "Description", "descriptionAr", "DescriptionAr"),
+            maxTextChars);
+        var images = new List<string>();
+        var firstImage = FirstImage(item);
+        if (!string.IsNullOrWhiteSpace(firstImage))
+        {
+            images.Add(firstImage);
+        }
+
         return new Dictionary<string, object?>
         {
             ["productId"] = productId,
             ["name"] = Clip(
                 PickString(item, "productName", "ProductName", "nameEn", "NameEn", "name", "Name", "nameAr", "NameAr"),
                 maxTextChars),
+            ["nameEn"] = Clip(PickString(item, "nameEn", "NameEn", "productName", "ProductName"), maxTextChars),
+            ["nameAr"] = Clip(PickString(item, "nameAr", "NameAr"), maxTextChars),
+            ["description"] = description,
+            ["descriptionEn"] = Clip(PickString(item, "descriptionEn", "DescriptionEn", "description", "Description"), maxTextChars),
+            ["descriptionAr"] = Clip(PickString(item, "descriptionAr", "DescriptionAr"), maxTextChars),
             ["price"] = price,
+            ["displayPrice"] = price,
             ["currency"] = PickString(item, "currency", "Currency") ?? "AED",
             ["quantity"] = Pick(item, "quantity", "Quantity"),
             ["unitName"] = Clip(PickString(item, "unitName", "UnitName"), 40),
+            ["productTypeId"] = Pick(item, "productTypeId", "ProductTypeId"),
+            ["productTypeName"] = Clip(PickString(item, "productTypeName", "ProductTypeName"), 40),
+            ["requestTypeId"] = Pick(item, "requestTypeId", "RequestTypeId"),
+            ["requestTypeName"] = Clip(PickString(item, "requestTypeName", "RequestTypeName"), 40),
+            ["bookingPriceTypeId"] = Pick(item, "bookingPriceTypeId", "BookingPriceTypeId"),
+            ["bookingPriceTypeName"] = Clip(PickString(item, "bookingPriceTypeName", "BookingPriceTypeName"), 40),
+            ["shippingDescriptionEn"] = Clip(PickString(item, "shippingDescriptionEn", "ShippingDescriptionEn"), 80),
+            ["createdAt"] = Pick(item, "createdAt", "CreatedAt"),
+            ["discountPercentage"] = Pick(item, "discountPercentage", "DiscountPercentage"),
+            ["discountDays"] = Pick(item, "discountDays", "DiscountDays"),
             ["searchListingChannel"] = PickString(item, "searchListingChannel", "SearchListingChannel"),
-            ["image"] = FirstImage(item)
+            ["hasRetailPricing"] = Pick(item, "hasRetailPricing", "HasRetailPricing") ?? false,
+            ["image"] = firstImage,
+            ["images"] = images
         };
     }
 

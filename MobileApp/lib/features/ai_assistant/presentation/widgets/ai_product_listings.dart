@@ -56,7 +56,23 @@ class AiProductListings extends StatelessWidget {
       map['productTypeId'] = map['productTypeId'] ?? map['ProductTypeId'];
       map['productTypeName'] =
           map['productTypeName'] ?? map['ProductTypeName'];
+      map['requestTypeId'] = map['requestTypeId'] ?? map['RequestTypeId'];
+      map['requestTypeName'] =
+          map['requestTypeName'] ?? map['RequestTypeName'];
+      map['bookingPriceTypeId'] =
+          map['bookingPriceTypeId'] ?? map['BookingPriceTypeId'];
+      map['bookingPriceTypeName'] =
+          map['bookingPriceTypeName'] ?? map['BookingPriceTypeName'];
+      map['shippingDescriptionEn'] =
+          map['shippingDescriptionEn'] ?? map['ShippingDescriptionEn'];
       map['shipping'] ??= <String, dynamic>{};
+      final shipping = map['shipping'];
+      if (shipping is Map &&
+          (shipping['descriptionEn'] == null ||
+              shipping['descriptionEn'].toString().trim().isEmpty) &&
+          map['shippingDescriptionEn'] != null) {
+        shipping['descriptionEn'] = map['shippingDescriptionEn'];
+      }
       try {
         final product = MyListingProductModel.fromJson(map);
         if (product.productId.trim().isEmpty) continue;

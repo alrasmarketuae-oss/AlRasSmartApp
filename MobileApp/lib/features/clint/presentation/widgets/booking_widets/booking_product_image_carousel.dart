@@ -32,6 +32,42 @@ class _BookingProductImageCarouselState
       widget.mediaItems.length == 1 && widget.mediaItems.first.isVideo;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _precacheAround(_currentIndex, includeAll: true);
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant BookingProductImageCarousel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.mediaItems != widget.mediaItems) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _precacheAround(_currentIndex, includeAll: true);
+      });
+    }
+  }
+
+  void _precacheAround(int index, {bool includeAll = false}) {
+    final urls = <String?>[];
+    if (includeAll) {
+      for (final item in widget.mediaItems) {
+        if (!item.isVideo) urls.add(item.url);
+      }
+    } else {
+      for (final i in [index - 1, index, index + 1]) {
+        if (i < 0 || i >= widget.mediaItems.length) continue;
+        final item = widget.mediaItems[i];
+        if (!item.isVideo) urls.add(item.url);
+      }
+    }
+    CachedAppImage.precacheUrls(context, urls);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final count =
         widget.mediaItems.isEmpty ? 1 : widget.mediaItems.length;
@@ -48,8 +84,10 @@ class _BookingProductImageCarouselState
                   ? Image.asset(AppAssets.bannerImage2, fit: BoxFit.cover)
                   : PageView.builder(
                       itemCount: widget.mediaItems.length,
-                      onPageChanged: (index) =>
-                          setState(() => _currentIndex = index),
+                      onPageChanged: (index) {
+                        setState(() => _currentIndex = index);
+                        _precacheAround(index);
+                      },
                       itemBuilder: (_, index) {
                         final item = widget.mediaItems[index];
                         return GestureDetector(
@@ -175,6 +213,7 @@ class _MediaSlideState extends State<_MediaSlide> {
       return CachedAppImage(
         imageUrl: widget.item.url,
         fit: BoxFit.cover,
+        fadeInDuration: Duration.zero,
         errorWidget: Image.asset(AppAssets.bannerImage2, fit: BoxFit.cover),
       );
     }

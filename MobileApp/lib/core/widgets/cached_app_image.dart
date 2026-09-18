@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
 /// Network image with disk + memory cache (CDN URLs).
+///
+/// Loading uses a skeleton shimmer (never a spinner). Already-cached images
+/// paint immediately; call [precacheUrls] to warm neighbors ahead of swipe.
 class CachedAppImage extends StatelessWidget {
   const CachedAppImage({
     super.key,
@@ -15,6 +18,8 @@ class CachedAppImage extends StatelessWidget {
     this.borderRadius,
     this.placeholder,
     this.errorWidget,
+    this.darkSkeleton = false,
+    this.fadeInDuration = const Duration(milliseconds: 120),
   });
 
   final String? imageUrl;
@@ -26,6 +31,12 @@ class CachedAppImage extends StatelessWidget {
   final Widget? placeholder;
   final Widget? errorWidget;
 
+  /// Use darker shimmer for fullscreen / dark media viewers.
+  final bool darkSkeleton;
+
+  /// Keep short; zero feels abrupt when decoding from disk.
+  final Duration fadeInDuration;
+
   static const _imageHeaders = <String, String>{
     'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
     'User-Agent':
@@ -33,6 +44,57 @@ class CachedAppImage extends StatelessWidget {
         '(KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36 '
         'AlRasMarket/1.0',
   };
+
+  /// Warm disk + memory cache for upcoming carousel / gallery slides.
+  static Future<void> precacheUrls(
+    BuildContext context,
+    Iterable<String?> urls, {
+    int maxConcurrent = 3,
+  }) async {
+    final unique = <String>{};
+    for (final raw in urls) {
+      final url = raw?.trim();
+      if (url == null || url.isEmpty) continue;
+      if (url.startsWith('file:') || url.startsWith('/data/')) continue;
+      if (!(url.startsWith('http://') || url.startsWith('https://'))) continue;
+      unique.add(url);
+    }
+    if (unique.isEmpty || !context.mounted) return;
+
+    final pending = unique.toList();
+    var index = 0;
+
+    Future<void> worker() async {
+      while (true) {
+        if (index >= pending.length) return;
+        final i = index++;
+        final url = pending[i];
+        try {
+          await AppMediaCacheManager.instance.downloadFile(
+            url,
+            authHeaders: _imageHeaders,
+          );
+          if (!context.mounted) return;
+          await precacheImage(
+            CachedNetworkImageProvider(
+              url,
+              cacheManager: AppMediaCacheManager.instance,
+              headers: _imageHeaders,
+            ),
+            context,
+          );
+        } catch (_) {
+          // Best-effort preload; failures are ignored.
+        }
+      }
+    }
+
+    final workers = List.generate(
+      maxConcurrent.clamp(1, pending.length),
+      (_) => worker(),
+    );
+    await Future.wait(workers);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,10 +111,12 @@ class CachedAppImage extends StatelessWidget {
       alignment: alignment,
       width: width,
       height: height,
-      fadeInDuration: const Duration(milliseconds: 200),
+      fadeInDuration: fadeInDuration,
+      fadeOutDuration: Duration.zero,
       memCacheWidth:
           width != null && width!.isFinite ? (width! * 3).round() : null,
-      placeholder: (_, __) => placeholder ?? _defaultPlaceholder(),
+      placeholder: (_, __) =>
+          placeholder ?? _defaultPlaceholder(dark: darkSkeleton),
       errorWidget: (_, __, ___) => errorWidget ?? _defaultError(),
     );
 
@@ -62,14 +126,18 @@ class CachedAppImage extends StatelessWidget {
     return image;
   }
 
-  Widget _defaultPlaceholder() {
+  Widget _defaultPlaceholder({required bool dark}) {
+    final base = dark ? const Color(0xFF374151) : const Color(0xFFE5E7EB);
+    final highlight = dark ? const Color(0xFF4B5563) : const Color(0xFFF9FAFB);
+    final fill = dark ? const Color(0xFF1F2937) : Colors.white;
+
     return Shimmer.fromColors(
-      baseColor: const Color(0xFFE5E7EB),
-      highlightColor: const Color(0xFFF9FAFB),
+      baseColor: base,
+      highlightColor: highlight,
       child: Container(
         width: width,
         height: height,
-        color: Colors.white,
+        color: fill,
       ),
     );
   }

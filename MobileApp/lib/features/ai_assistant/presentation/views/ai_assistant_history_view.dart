@@ -1,6 +1,7 @@
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/features/ai_assistant/data/ai_assistant_repository.dart';
+import 'package:alrasmarket/features/ai_assistant/presentation/widgets/ai_assistant_history_list_skeleton.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -237,9 +238,7 @@ class _AiAssistantHistoryViewState extends State<AiAssistantHistoryView> {
           ),
           Expanded(
             child: _loading
-                ? const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
-                  )
+                ? const AiAssistantHistoryListSkeleton()
                 : _error != null
                     ? _EmptyState(
                         icon: Icons.wifi_off_rounded,

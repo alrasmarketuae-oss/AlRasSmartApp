@@ -5,6 +5,8 @@ import 'package:alrasmarket/features/ai_assistant/presentation/models/ai_chat_me
 import 'package:alrasmarket/features/ai_assistant/presentation/theme/ai_chat_colors.dart';
 import 'package:alrasmarket/features/ai_assistant/presentation/widgets/ai_product_listings.dart';
 import 'package:alrasmarket/features/ai_assistant/presentation/widgets/ai_support_callback_form.dart';
+import 'package:alrasmarket/features/ai_assistant/presentation/widgets/ai_thinking_widgets.dart';
+import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -170,17 +172,14 @@ class AiMessageBubble extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (!isUser && message.thinkingSteps.isNotEmpty) ...[
-              // Legacy history may still have stored thinking; show as plain prose only.
               Padding(
                 padding: EdgeInsets.only(bottom: 8.h),
-                child: Text(
-                  message.thinkingSteps.join(' '),
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    height: 1.45,
-                    fontWeight: FontWeight.w400,
-                    color: colors.mutedText,
-                  ),
+                child: AiThinkingTrace(
+                  steps: List<String>.from(message.thinkingSteps),
+                  title: S.of(context).aiAgentActivityTitle,
+                  colors: colors,
+                  initiallyExpanded: false,
+                  durationMs: message.thinkingDurationMs,
                 ),
               ),
             ],

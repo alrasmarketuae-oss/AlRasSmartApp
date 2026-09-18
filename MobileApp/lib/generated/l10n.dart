@@ -7511,6 +7511,116 @@ class S {
     );
   }
 
+  /// `Activity`
+  String get aiAgentActivityTitle {
+    return Intl.message(
+      'Activity',
+      name: 'aiAgentActivityTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `⚡ Working on it…`
+  String get aiAgentActivityWorking {
+    return Intl.message(
+      '⚡ Working on it…',
+      name: 'aiAgentActivityWorking',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `🔎 Searching for products…`
+  String get aiAgentActivitySearching {
+    return Intl.message(
+      '🔎 Searching for products…',
+      name: 'aiAgentActivitySearching',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `💰 Checking prices…`
+  String get aiAgentActivityCheckingPrice {
+    return Intl.message(
+      '💰 Checking prices…',
+      name: 'aiAgentActivityCheckingPrice',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `📦 Checking availability…`
+  String get aiAgentActivityCheckingAvailability {
+    return Intl.message(
+      '📦 Checking availability…',
+      name: 'aiAgentActivityCheckingAvailability',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `🛒 Processing your order…`
+  String get aiAgentActivityProcessingOrder {
+    return Intl.message(
+      '🛒 Processing your order…',
+      name: 'aiAgentActivityProcessingOrder',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `🛒 Preparing your request…`
+  String get aiAgentActivityPreparing {
+    return Intl.message(
+      '🛒 Preparing your request…',
+      name: 'aiAgentActivityPreparing',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `📤 Uploading media…`
+  String get aiAgentActivityUploadingMedia {
+    return Intl.message(
+      '📤 Uploading media…',
+      name: 'aiAgentActivityUploadingMedia',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `⏳ Still working on it…`
+  String get aiAgentActivityStillWorking {
+    return Intl.message(
+      '⏳ Still working on it…',
+      name: 'aiAgentActivityStillWorking',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `✓ Found what you're looking for…`
+  String get aiAgentActivityCompleted {
+    return Intl.message(
+      '✓ Found what you\'re looking for…',
+      name: 'aiAgentActivityCompleted',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Something went wrong. Please try again.`
+  String get aiAgentActivityError {
+    return Intl.message(
+      'Something went wrong. Please try again.',
+      name: 'aiAgentActivityError',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Listening… speak now`
   String get aiAssistantListening {
     return Intl.message(

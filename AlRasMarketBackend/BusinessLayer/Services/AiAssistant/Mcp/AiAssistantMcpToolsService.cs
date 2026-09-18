@@ -1503,7 +1503,12 @@ public sealed partial class AiAssistantMcpToolsService(
             DateTime CreatedAt,
             byte? DiscountPercentage,
             short? DiscountDays,
-            byte? ProductTypeId)>();
+            byte? ProductTypeId,
+            byte? RequestTypeId,
+            string? RequestTypeName,
+            byte? BookingPriceTypeId,
+            string? BookingPriceTypeName,
+            string? ShippingDescriptionEn)>();
 
         if (ids.Count > 0)
         {
@@ -1533,7 +1538,12 @@ public sealed partial class AiAssistantMcpToolsService(
                     p.CreatedAt,
                     p.DiscountPercentage,
                     p.DiscountDays,
-                    p.ProductTypeId
+                    p.ProductTypeId,
+                    p.RequestTypeId,
+                    RequestTypeName = p.RequestType != null ? p.RequestType.NameEn : null,
+                    p.BookingPriceTypeId,
+                    BookingPriceTypeName = p.BookingPriceType != null ? p.BookingPriceType.NameEn : null,
+                    p.ShippingDescriptionEn
                 })
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
@@ -1561,7 +1571,12 @@ public sealed partial class AiAssistantMcpToolsService(
                     row.CreatedAt,
                     row.DiscountPercentage,
                     row.DiscountDays,
-                    row.ProductTypeId);
+                    row.ProductTypeId,
+                    row.RequestTypeId,
+                    row.RequestTypeName,
+                    row.BookingPriceTypeId,
+                    row.BookingPriceTypeName,
+                    row.ShippingDescriptionEn);
             }
         }
 
@@ -1598,7 +1613,12 @@ public sealed partial class AiAssistantMcpToolsService(
                 meta.DescriptionAr,
                 meta.CreatedAt == default ? null : UtcDateTimeHelper.AsUtc(meta.CreatedAt),
                 meta.DiscountPercentage,
-                meta.DiscountDays);
+                meta.DiscountDays,
+                meta.RequestTypeId,
+                meta.RequestTypeName,
+                meta.BookingPriceTypeId,
+                meta.BookingPriceTypeName,
+                meta.ShippingDescriptionEn);
         }).ToList();
     }
 

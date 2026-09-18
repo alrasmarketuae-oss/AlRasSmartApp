@@ -61,6 +61,26 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
     _currentIndex = widget.initialIndex.clamp(0, widget.items.length - 1);
     _pageController = PageController(initialPage: _currentIndex);
     _initVideoForIndex(_currentIndex);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _precacheAround(_currentIndex, includeAll: true);
+    });
+  }
+
+  void _precacheAround(int index, {bool includeAll = false}) {
+    final urls = <String?>[];
+    if (includeAll) {
+      for (final item in widget.items) {
+        if (!item.isVideo) urls.add(item.url);
+      }
+    } else {
+      for (final i in [index - 1, index, index + 1]) {
+        if (i < 0 || i >= widget.items.length) continue;
+        final item = widget.items[i];
+        if (!item.isVideo) urls.add(item.url);
+      }
+    }
+    CachedAppImage.precacheUrls(context, urls);
   }
 
   @override
@@ -156,6 +176,7 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
       _videoFailed = false;
     });
     _initVideoForIndex(index);
+    _precacheAround(index);
   }
 
   void _togglePlayPause() {
@@ -265,17 +286,10 @@ class _ProductMediaPreviewScreenState extends State<ProductMediaPreviewScreen> {
                             : CachedAppImage(
                                 imageUrl: item.url,
                                 fit: BoxFit.contain,
-                                placeholder: const Center(
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                // Never flash a broken-image icon over ads media.
-                                errorWidget: const Center(
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white54,
-                                  ),
-                                ),
+                                darkSkeleton: true,
+                                fadeInDuration: Duration.zero,
+                                // Avoid broken-image flash over ads media.
+                                errorWidget: const SizedBox.shrink(),
                               ),
                       ),
                     );

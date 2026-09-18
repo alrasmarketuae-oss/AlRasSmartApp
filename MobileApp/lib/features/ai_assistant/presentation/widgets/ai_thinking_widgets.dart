@@ -1,10 +1,13 @@
+import 'dart:async';
+
 import 'package:alrasmarket/core/theme/colors.dart';
-import 'package:alrasmarket/features/ai_assistant/presentation/helpers/ai_chat_heuristics.dart';
+import 'package:alrasmarket/features/ai_assistant/presentation/helpers/ai_agent_activity_mapper.dart';
 import 'package:alrasmarket/features/ai_assistant/presentation/theme/ai_chat_colors.dart';
 import 'package:alrasmarket/features/ai_assistant/presentation/widgets/ai_message_bubble.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+/// Collapsed activity history above a finished assistant reply (expand via arrow).
 class AiThinkingTrace extends StatefulWidget {
   const AiThinkingTrace({
     super.key,
@@ -31,8 +34,20 @@ class _AiThinkingTraceState extends State<AiThinkingTrace> {
   late bool _expanded = widget.initiallyExpanded;
 
   @override
+  void didUpdateWidget(covariant AiThinkingTrace oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initiallyExpanded != widget.initiallyExpanded &&
+        widget.initiallyExpanded) {
+      _expanded = true;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (widget.steps.isEmpty) return const SizedBox.shrink();
+    final friendly =
+        AiAgentActivityMapper.friendlyHistory(context, widget.steps);
+    if (friendly.isEmpty) return const SizedBox.shrink();
+
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
     final durationLabel = widget.durationMs == null
         ? null
@@ -54,17 +69,21 @@ class _AiThinkingTraceState extends State<AiThinkingTrace> {
                 Icon(
                   _expanded
                       ? Icons.expand_more_rounded
-                      : Icons.chevron_right_rounded,
+                      : (isAr
+                          ? Icons.chevron_left_rounded
+                          : Icons.chevron_right_rounded),
                   size: 16.sp,
                   color: widget.colors.mutedText,
                 ),
                 SizedBox(width: 2.w),
-                Text(
-                  widget.title,
-                  style: TextStyle(
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w400,
-                    color: widget.colors.mutedText,
+                Flexible(
+                  child: Text(
+                    widget.title,
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w500,
+                      color: widget.colors.mutedText,
+                    ),
                   ),
                 ),
                 if (durationLabel != null) ...[
@@ -79,21 +98,17 @@ class _AiThinkingTraceState extends State<AiThinkingTrace> {
                 ],
                 if (widget.live) ...[
                   SizedBox(width: 6.w),
-                  SizedBox(
-                    width: 12.w,
-                    height: 12.w,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: LightColor.defaultColor.withValues(alpha: 0.8),
-                    ),
+                  _PulseDot(
+                    color: LightColor.defaultColor.withValues(alpha: 0.85),
                   ),
                 ],
               ],
             ),
           ),
         ),
-        if (_expanded)
-          Container(
+        AnimatedCrossFade(
+          firstChild: const SizedBox(width: double.infinity, height: 0),
+          secondChild: Container(
             width: double.infinity,
             margin: EdgeInsetsDirectional.only(start: 4.w, top: 4.h),
             padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
@@ -105,33 +120,38 @@ class _AiThinkingTraceState extends State<AiThinkingTrace> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                for (var i = 0; i < widget.steps.length; i++)
+                for (var i = 0; i < friendly.length; i++)
                   Padding(
-                    padding: EdgeInsets.only(bottom: 6.h),
+                    padding: EdgeInsets.only(
+                      bottom: i == friendly.length - 1 ? 0 : 6.h,
+                    ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Padding(
-                          padding: EdgeInsetsDirectional.only(top: 2.h, end: 6.w),
-                          child: widget.live && i == widget.steps.length - 1
-                              ? SizedBox(
-                                  width: 12.w,
-                                  height: 12.w,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 1.8,
-                                    color: LightColor.defaultColor.withValues(alpha: 0.85),
-                                  ),
+                          padding:
+                              EdgeInsetsDirectional.only(top: 2.h, end: 6.w),
+                          child: widget.live && i == friendly.length - 1
+                              ? _PulseDot(
+                                  color: LightColor.defaultColor
+                                      .withValues(alpha: 0.85),
                                 )
                               : Icon(
                                   Icons.check_circle_outline,
                                   size: 13.sp,
-                                  color: widget.colors.pathCode.withValues(alpha: 0.9),
+                                  color: widget.colors.pathCode
+                                      .withValues(alpha: 0.9),
                                 ),
                         ),
                         Expanded(
-                          child: AiThinkingStepText(
-                            step: widget.steps[i],
-                            colors: widget.colors,
+                          child: Text(
+                            friendly[i],
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              height: 1.35,
+                              fontWeight: FontWeight.w400,
+                              color: widget.colors.thinkingText,
+                            ),
                           ),
                         ),
                       ],
@@ -140,88 +160,19 @@ class _AiThinkingTraceState extends State<AiThinkingTrace> {
               ],
             ),
           ),
+          crossFadeState:
+              _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          duration: const Duration(milliseconds: 220),
+          sizeCurve: Curves.easeOutCubic,
+        ),
       ],
     );
   }
 }
 
-class AiThinkingStepText extends StatelessWidget {
-  const AiThinkingStepText({super.key, required this.step, required this.colors});
-
-  final String step;
-  final AiChatColors colors;
-
-  @override
-  Widget build(BuildContext context) {
-    final lines = step.split('\n');
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (final line in lines)
-          AiThinkingLineText(line: line, colors: colors),
-      ],
-    );
-  }
-}
-
-class AiThinkingLineText extends StatelessWidget {
-  const AiThinkingLineText({super.key, required this.line, required this.colors});
-
-  final String line;
-  final AiChatColors colors;
-
-  static final RegExp _pathLine = RegExp(
-    r'(product-(?:images|videos)/[^\s]+)',
-    caseSensitive: false,
-  );
-
-  @override
-  Widget build(BuildContext context) {
-    final match = _pathLine.firstMatch(line);
-    if (match == null) {
-      return Text(
-        line,
-        style: TextStyle(
-          fontSize: 10.5.sp,
-          height: 1.35,
-          fontWeight: FontWeight.w400,
-          color: colors.thinkingText,
-          fontStyle: FontStyle.italic,
-        ),
-      );
-    }
-
-    final start = match.start;
-    final end = match.end;
-    return Text.rich(
-      TextSpan(
-        style: TextStyle(
-          fontSize: 10.5.sp,
-          height: 1.35,
-          fontWeight: FontWeight.w400,
-          color: colors.thinkingText,
-          fontStyle: FontStyle.italic,
-        ),
-        children: [
-          if (start > 0) TextSpan(text: line.substring(0, start)),
-          TextSpan(
-            text: line.substring(start, end),
-            style: TextStyle(
-              color: colors.pathCode,
-              fontFamily: 'monospace',
-              fontStyle: FontStyle.normal,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          if (end < line.length) TextSpan(text: line.substring(end)),
-        ],
-      ),
-    );
-  }
-}
-
-class AiThinkingBubble extends StatefulWidget {
-  const AiThinkingBubble({
+/// Live agent activity status while a request is in flight.
+class AiAgentActivityBubble extends StatefulWidget {
+  const AiAgentActivityBubble({
     super.key,
     required this.steps,
     required this.colors,
@@ -233,30 +184,86 @@ class AiThinkingBubble extends StatefulWidget {
   final DateTime? startedAt;
 
   @override
-  State<AiThinkingBubble> createState() => _AiThinkingBubbleState();
+  State<AiAgentActivityBubble> createState() => _AiAgentActivityBubbleState();
 }
 
-class _AiThinkingBubbleState extends State<AiThinkingBubble>
+class _AiAgentActivityBubbleState extends State<AiAgentActivityBubble>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
+  late final AnimationController _pulse;
+  Timer? _stillWorkingTimer;
+  AiAgentActivityKind _kind = AiAgentActivityKind.processing;
+  bool _showingStillWorking = false;
+  String? _lastRawStep;
+
+  static const _stillWorkingAfter = Duration(seconds: 8);
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    _pulse = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat();
+      duration: const Duration(milliseconds: 1100),
+    )..repeat(reverse: true);
+    _applySteps(widget.steps);
+    _armStillWorkingTimer();
+  }
+
+  @override
+  void didUpdateWidget(covariant AiAgentActivityBubble oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_listEquals(oldWidget.steps, widget.steps)) {
+      _applySteps(widget.steps);
+      _armStillWorkingTimer();
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _stillWorkingTimer?.cancel();
+    _pulse.dispose();
     super.dispose();
+  }
+
+  void _applySteps(List<String> steps) {
+    if (steps.isEmpty) {
+      _kind = AiAgentActivityKind.processing;
+      _showingStillWorking = false;
+      _lastRawStep = null;
+      return;
+    }
+    final latest = steps.last;
+    if (latest == _lastRawStep && _showingStillWorking) return;
+    final classified = AiAgentActivityMapper.classify(latest) ??
+        AiAgentActivityKind.processing;
+    _kind = classified;
+    _showingStillWorking = false;
+    _lastRawStep = latest;
+  }
+
+  void _armStillWorkingTimer() {
+    _stillWorkingTimer?.cancel();
+    _stillWorkingTimer = Timer(_stillWorkingAfter, () {
+      if (!mounted || _showingStillWorking) return;
+      setState(() {
+        _showingStillWorking = true;
+        _kind = AiAgentActivityKind.stillWorking;
+      });
+    });
+  }
+
+  bool _listEquals(List<String> a, List<String> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 
   @override
   Widget build(BuildContext context) {
+    final label = AiAgentActivityMapper.labelFor(context, _kind);
+
     return Padding(
       padding: EdgeInsets.only(bottom: 12.h),
       child: Row(
@@ -266,7 +273,7 @@ class _AiThinkingBubbleState extends State<AiThinkingBubble>
           SizedBox(width: 8.w),
           Flexible(
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
               decoration: BoxDecoration(
                 color: widget.colors.assistantBubbleBg,
                 borderRadius: BorderRadiusDirectional.only(
@@ -277,59 +284,80 @@ class _AiThinkingBubbleState extends State<AiThinkingBubble>
                 ),
                 border: Border.all(color: widget.colors.assistantBorder),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (widget.steps.isEmpty)
-                    AnimatedBuilder(
-                      animation: _controller,
-                      builder: (context, _) {
-                        return Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: List.generate(3, (i) {
-                            final t = (_controller.value + i * 0.2) % 1.0;
-                            final opacity =
-                                0.3 +
-                                (0.7 *
-                                        (1 - (t - 0.5).abs() * 2)
-                                            .clamp(0.0, 1.0));
-                            return Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 2.w),
-                              child: Opacity(
-                                opacity: opacity,
-                                child: Container(
-                                  width: 6.w,
-                                  height: 6.w,
-                                  decoration: const BoxDecoration(
-                                    color: LightColor.defaultColor,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ),
-                            );
-                          }),
+                  FadeTransition(
+                    opacity: Tween<double>(begin: 0.45, end: 1).animate(
+                      CurvedAnimation(parent: _pulse, curve: Curves.easeInOut),
+                    ),
+                    child: Container(
+                      width: 8.w,
+                      height: 8.w,
+                      decoration: const BoxDecoration(
+                        color: LightColor.defaultColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 10.w),
+                  Flexible(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 280),
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
+                      transitionBuilder: (child, animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(0, 0.12),
+                              end: Offset.zero,
+                            ).animate(animation),
+                            child: child,
+                          ),
                         );
                       },
-                    )
-                  else
-                    Directionality(
-                      textDirection:
-                          detectAiTextDirection(widget.steps.join(' ')),
                       child: Text(
-                        widget.steps.join(' '),
+                        label,
+                        key: ValueKey(label),
                         style: TextStyle(
                           color: widget.colors.thinkingText,
                           fontSize: 13.sp,
-                          height: 1.45,
-                          fontWeight: FontWeight.w400,
+                          height: 1.35,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
+                  ),
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Backward-compatible alias for existing call sites.
+typedef AiThinkingBubble = AiAgentActivityBubble;
+
+class _PulseDot extends StatelessWidget {
+  const _PulseDot({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 12.w,
+      height: 12.w,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+        ),
       ),
     );
   }

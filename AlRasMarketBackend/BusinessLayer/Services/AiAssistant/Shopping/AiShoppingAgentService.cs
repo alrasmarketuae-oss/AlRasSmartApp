@@ -181,7 +181,7 @@ public sealed class AiShoppingAgentService(
                     if (onThinkingStep is not null)
                     {
                         await onThinkingStep(
-                                isAr ? $"بنفّذ {call.Name}…" : $"Running {call.Name}…",
+                                DescribeShoppingTool(call.Name, isAr),
                                 turnCts.Token)
                             .ConfigureAwait(false);
                     }
@@ -331,6 +331,25 @@ public sealed class AiShoppingAgentService(
         }
 
         return "low";
+    }
+
+    private static string DescribeShoppingTool(string toolName, bool isAr)
+    {
+        var name = (toolName ?? string.Empty).Trim();
+        return name switch
+        {
+            "SearchProducts" or "GetProductAlternatives" =>
+                isAr ? "بدوّر على المنتجات…" : "Searching for products…",
+            "GetProductDetails" or "GetOffers" =>
+                isAr ? "بشوف الأسعار والتفاصيل…" : "Checking prices…",
+            "GetCart" or "AddToCart" or "UpdateCartQuantity" or "RemoveFromCart" =>
+                isAr ? "بجهّز طلبك…" : "Preparing your request…",
+            "GetMyOrders" or "GetOrderDetails" =>
+                isAr ? "براجع طلباتك…" : "Processing your order…",
+            "GetCategories" =>
+                isAr ? "براجع التصنيفات…" : "Working on it…",
+            _ => isAr ? "جارٍ العمل…" : "Working on it…"
+        };
     }
 
     private static AiAssistantAnswer Temporary(bool isAr, string en, string ar) =>

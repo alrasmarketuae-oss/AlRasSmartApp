@@ -117,23 +117,6 @@ public sealed class AiAssistantMcpToolLoop(
                 // Echo the assistant tool_calls message, then append each tool result.
                 messages.Add(JsonSerializer.Deserialize<object>(msg.GetRawText())!);
 
-                if (onThinkingStep is not null
-                    && msg.TryGetProperty("content", out var thinkEl))
-                {
-                    var thinkText = thinkEl.ValueKind == JsonValueKind.String
-                        ? thinkEl.GetString()
-                        : null;
-                    if (!string.IsNullOrWhiteSpace(thinkText))
-                    {
-                        foreach (var rawLine in thinkText.Split('\n', StringSplitOptions.RemoveEmptyEntries))
-                        {
-                            var line = rawLine.Trim().TrimStart('-', '*', '\u2022', '\u2013').Trim();
-                            if (line.Length == 0) continue;
-                            await onThinkingStep(line, cancellationToken).ConfigureAwait(false);
-                        }
-                    }
-                }
-
                 foreach (var tc in toolCalls.EnumerateArray())
                 {
                     var id = tc.GetProperty("id").GetString() ?? Guid.NewGuid().ToString("N");
@@ -351,12 +334,27 @@ public sealed class AiAssistantMcpToolLoop(
             }
         }
 
+        var descriptionEn = GetJsonString(el, "descriptionEn")
+            ?? GetJsonString(el, "description");
+        var descriptionAr = GetJsonString(el, "descriptionAr");
+        var createdAtRaw = GetJsonString(el, "createdAt");
+        DateTime? createdAt = null;
+        if (!string.IsNullOrWhiteSpace(createdAtRaw)
+            && DateTime.TryParse(
+                createdAtRaw,
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.RoundtripKind,
+                out var parsedCreatedAt))
+        {
+            createdAt = parsedCreatedAt;
+        }
+
         return new AiProductListingDto(
             productId,
             GetJsonString(el, "productCode"),
-            GetJsonString(el, "nameEn"),
+            GetJsonString(el, "nameEn") ?? GetJsonString(el, "productName") ?? GetJsonString(el, "name"),
             GetJsonString(el, "nameAr"),
-            GetJsonDecimal(el, "price") ?? 0,
+            GetJsonDecimal(el, "price") ?? GetJsonDecimal(el, "displayPrice") ?? 0,
             GetJsonString(el, "currency"),
             GetJsonDecimal(el, "usdPrice") ?? GetJsonDecimal(el, "priceUsd"),
             GetJsonDecimal(el, "priceAed"),
@@ -367,7 +365,17 @@ public sealed class AiAssistantMcpToolLoop(
             GetJsonString(el, "productTypeName"),
             GetJsonString(el, "searchListingChannel"),
             GetJsonBool(el, "hasRetailPricing"),
-            images);
+            images,
+            descriptionEn,
+            descriptionAr,
+            createdAt,
+            GetJsonByte(el, "discountPercentage"),
+            GetJsonInt16(el, "discountDays"),
+            GetJsonByte(el, "requestTypeId"),
+            GetJsonString(el, "requestTypeName"),
+            GetJsonByte(el, "bookingPriceTypeId"),
+            GetJsonString(el, "bookingPriceTypeName"),
+            GetJsonString(el, "shippingDescriptionEn"));
     }
 
     private static bool TryGetPropertyIgnoreCase(JsonElement el, string name, out JsonElement value)
@@ -441,6 +449,13 @@ public sealed class AiAssistantMcpToolLoop(
         return n is null ? null : (byte)n.Value;
     }
 
+    private static short? GetJsonInt16(JsonElement el, string name)
+    {
+        var n = GetJsonInt64(el, name);
+        if (n is < short.MinValue or > short.MaxValue) return null;
+        return n is null ? null : (short)n.Value;
+    }
+
     private static bool GetJsonBool(JsonElement el, string name)
     {
         if (!TryGetPropertyIgnoreCase(el, name, out var value)) return false;
@@ -484,9 +499,9 @@ public sealed class AiAssistantMcpToolLoop(
             "get_my_sales_count" => "بشوف مبيعاتك والطلبات على إعلاناتك…",
             "get_last_order_on_my_ads" => "بجيب آخر طلب على إعلاناتك…",
             "explain_order_delay_on_my_ads" => "براجع تأخير طلب على الإعلان…",
-            "find_cheapest_product" => "بدوّر على أرخص سعر…",
-            "find_most_expensive_product" => "بدوّر على أعلى سعر…",
-            "search_products" => "بدوّر في الإعلانات…",
+            "find_cheapest_product" => "بشوف أرخص الأسعار…",
+            "find_most_expensive_product" => "بشوف أعلى الأسعار…",
+            "search_products" => "بدوّر على المنتجات…",
             "list_my_ads" => "بجيب قائمة إعلاناتك…",
             "get_my_last_ad" => "بجيب آخر إعلان نزلته…",
             "get_my_first_ad" => "بجيب أول إعلان نزلته…",
@@ -515,9 +530,9 @@ public sealed class AiAssistantMcpToolLoop(
             "get_my_sales_count" => "Checking sales on your ads…",
             "get_last_order_on_my_ads" => "Fetching the latest order on your ads…",
             "explain_order_delay_on_my_ads" => "Checking a delay on an ad order…",
-            "find_cheapest_product" => "Looking for the lowest price…",
-            "find_most_expensive_product" => "Looking for the highest price…",
-            "search_products" => "Searching listings…",
+            "find_cheapest_product" => "Checking prices…",
+            "find_most_expensive_product" => "Checking prices…",
+            "search_products" => "Searching for products…",
             "list_my_ads" => "Loading your ads…",
             "get_my_last_ad" => "Fetching your newest ad…",
             "get_my_first_ad" => "Fetching your oldest ad…",
@@ -545,27 +560,17 @@ public sealed class AiAssistantMcpToolLoop(
             if (doc.RootElement.TryGetProperty("ok", out var ok)
                 && ok.ValueKind == JsonValueKind.False)
             {
-                var err = doc.RootElement.TryGetProperty("error", out var e)
-                    ? e.GetString()
-                    : null;
-                if (isArabic)
-                {
-                    return string.IsNullOrWhiteSpace(err)
-                        ? $"الأداة {toolName} رجّعت خطأ."
-                        : $"الأداة {toolName}: {err}";
-                }
-
-                return string.IsNullOrWhiteSpace(err)
-                    ? $"Tool {toolName} returned an error."
-                    : $"Tool {toolName}: {err}";
+                return isArabic
+                    ? "محتاجين نراجع الطلب تاني…"
+                    : "Need another look at that…";
             }
 
             if (doc.RootElement.TryGetProperty("found", out var found)
                 && found.ValueKind == JsonValueKind.False)
             {
                 return isArabic
-                    ? $"الأداة {toolName}: مفيش بيانات مطابقة."
-                    : $"Tool {toolName}: no matching data.";
+                    ? "مفيش نتائج مطابقة دلوقتي…"
+                    : "No matching results right now…";
             }
         }
         catch (JsonException)

@@ -76,10 +76,16 @@ public sealed record AiProductListingDto(
     string? DescriptionAr = null,
     DateTime? CreatedAt = null,
     byte? DiscountPercentage = null,
-    short? DiscountDays = null)
+    short? DiscountDays = null,
+    byte? RequestTypeId = null,
+    string? RequestTypeName = null,
+    byte? BookingPriceTypeId = null,
+    string? BookingPriceTypeName = null,
+    string? ShippingDescriptionEn = null)
 {
     /// <summary>
     /// Plain JSON map the Flutter chat parser understands (never anonymous objects).
+    /// Matches home ProductCard fields (specs + price type).
     /// </summary>
     public Dictionary<string, object?> ToChatJson()
     {
@@ -114,6 +120,11 @@ public sealed record AiProductListingDto(
             ["createdAt"] = CreatedAt?.ToUniversalTime().ToString("o"),
             ["discountPercentage"] = DiscountPercentage?.ToString(),
             ["discountDays"] = DiscountDays?.ToString(),
+            ["requestTypeId"] = RequestTypeId,
+            ["requestTypeName"] = RequestTypeName,
+            ["bookingPriceTypeId"] = BookingPriceTypeId,
+            ["bookingPriceTypeName"] = BookingPriceTypeName,
+            ["shippingDescriptionEn"] = ShippingDescriptionEn,
             ["images"] = Images?.ToList() ?? new List<string>()
         };
     }
