@@ -115,6 +115,9 @@ class _CompletRegisterViewState extends State<CompletRegisterView> {
     }
 
     final imgPath = await _uploadProfileLogoIfNeeded();
+    final isCustomerCompany =
+        widget.registrationData['isCustomerCompany'] == true &&
+        widget.registrationData['isSupplierCompany'] != true;
     cubit.registerCompany(
       fullName: widget.registrationData['fullName']?.toString() ?? '',
       companyName: widget.registrationData['companyName']?.toString() ?? '',
@@ -126,18 +129,20 @@ class _CompletRegisterViewState extends State<CompletRegisterView> {
       licencePath: licencePath,
       imgPath: imgPath,
       companyImagePaths: companyImagePaths,
-
       commercialRegister:
           widget.registrationData['commercialRegister']?.toString() ?? '',
       taxNumber: widget.registrationData['taxNumber']?.toString() ?? '',
       website: widget.registrationData['website']?.toString() ?? '',
-      isCustomerCompany: widget.registrationData['isCustomerCompany'] == true ,
+      isCustomerCompany: isCustomerCompany,
     );
   }
 
-  void _registerWithoutFiles() async {
+  Future<void> _registerWithoutFiles() async {
     final cubit = AuthCubit.get(context);
     final imgPath = await _uploadProfileLogoIfNeeded();
+    final isCustomerCompany =
+        widget.registrationData['isCustomerCompany'] == true &&
+        widget.registrationData['isSupplierCompany'] != true;
     cubit.registerCompany(
       fullName: widget.registrationData['fullName']?.toString() ?? '',
       companyName: widget.registrationData['companyName']?.toString() ?? '',
@@ -149,7 +154,7 @@ class _CompletRegisterViewState extends State<CompletRegisterView> {
       licencePath: '',
       imgPath: imgPath,
       companyImagePaths: const [],
-      isCustomerCompany: widget.registrationData['isCustomerCompany'] == true,
+      isCustomerCompany: isCustomerCompany,
       commercialRegister:
           widget.registrationData['commercialRegister']?.toString() ?? '',
       taxNumber: widget.registrationData['taxNumber']?.toString() ?? '',

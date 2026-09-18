@@ -51,6 +51,18 @@ class _RegisterViewState extends State<RegisterView> {
   CreateAddressRequest? _pendingAddress;
   String? _profileImagePath;
 
+  /// Supplier signup must never register as Company Customer.
+  bool get _registersAsCustomerCompany =>
+      !widget.isSupplierCompany && _isCustomerCompany;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isSupplierCompany) {
+      _isCustomerCompany = false;
+    }
+  }
+
   @override
   void dispose() {
     _companyNameController.dispose();
@@ -319,7 +331,8 @@ class _RegisterViewState extends State<RegisterView> {
           'commercialRegister': '',
           'taxNumber': _taxNumberController.text.trim(),
           'website': _websiteController.text.trim(),
-          'isCustomerCompany': _isCustomerCompany,
+          'isCustomerCompany': _registersAsCustomerCompany,
+          'isSupplierCompany': widget.isSupplierCompany,
           'profileImagePath': _profileImagePath,
         },
       );
