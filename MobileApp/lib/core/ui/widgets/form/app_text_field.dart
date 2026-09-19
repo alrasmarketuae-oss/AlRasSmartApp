@@ -1,3 +1,4 @@
+import 'package:alrasmarket/core/widgets/dismiss_keyboard.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -111,7 +112,10 @@ class _AppTextFieldState extends State<AppTextField> {
     final theme = Theme.of(context);
     final isRTL = Directionality.of(context) == TextDirection.rtl;
 
-    return TextFormField(
+    return MetaData(
+      metaData: kDismissKeyboardExempt,
+      behavior: HitTestBehavior.deferToChild,
+      child: TextFormField(
       controller: widget.controller,
       focusNode: _focusNode,
       obscureText: widget.isPassword
@@ -122,6 +126,7 @@ class _AppTextFieldState extends State<AppTextField> {
       onChanged: widget.onChanged,
       onTap: widget.onTap,
       onFieldSubmitted: widget.onSubmitted,
+      onTapOutside: (_) {},
       enabled: widget.enabled,
       readOnly: widget.readOnly,
       maxLines: widget.maxLines,
@@ -167,6 +172,7 @@ class _AppTextFieldState extends State<AppTextField> {
         errorStyle: TextStyle(fontSize: 12.sp, color: Colors.red),
         counterText: widget.maxLength != null ? null : '',
       ),
+    ),
     );
   }
 

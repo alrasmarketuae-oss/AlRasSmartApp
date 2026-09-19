@@ -5,6 +5,7 @@ import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/widgets/custom_circular_progress_indicator.dart';
+import 'package:alrasmarket/core/widgets/dismiss_keyboard.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_cubit.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_states.dart';
 import 'package:alrasmarket/features/auth/presentation/widgets/biometric_enrollment_prompt.dart';
@@ -495,7 +496,10 @@ class _AuthField extends StatelessWidget {
 
     return Directionality(
       textDirection: TextDirection.ltr,
-      child: Container(
+      child: MetaData(
+        metaData: kDismissKeyboardExempt,
+        behavior: HitTestBehavior.deferToChild,
+        child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12.r),
@@ -513,6 +517,7 @@ class _AuthField extends StatelessWidget {
                 obscureText: obscureText,
                 keyboardType: keyboardType,
                 validator: validator,
+                onTapOutside: (_) {},
                 textAlign: isArabic ? TextAlign.right : TextAlign.left,
                 textDirection: isArabic
                     ? TextDirection.rtl
@@ -543,6 +548,7 @@ class _AuthField extends StatelessWidget {
               SizedBox(width: 14.w),
           ],
         ),
+      ),
       ),
     );
   }

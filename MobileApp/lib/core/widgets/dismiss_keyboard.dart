@@ -2,14 +2,16 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
-/// Marker for scrollable suggestion / dropdown menus that must not dismiss
-/// the keyboard (or close via unfocus) when the user scrolls them.
+/// Marker for fields / menus that must not dismiss the keyboard on tap.
+///
+/// Wrap text fields (and scrollable suggestion overlays) with:
+/// `MetaData(metaData: kDismissKeyboardExempt, behavior: HitTestBehavior.deferToChild, child: …)`
 const Object kDismissKeyboardExempt = Object();
 
 /// Closes the software keyboard when the user taps outside the focused field.
 ///
-/// Scrolls and drags do not dismiss. Menus wrapped in
-/// [MetaData] with [kDismissKeyboardExempt] are ignored.
+/// Scrolls and drags do not dismiss. Works in release builds (does not rely on
+/// [DebugCreator], which is null outside debug mode).
 class DismissKeyboard extends StatefulWidget {
   const DismissKeyboard({super.key, required this.child});
 
@@ -74,20 +76,13 @@ void _dismissIfTapOutsideFocusedField(Offset globalPosition) {
   final focus = FocusManager.instance.primaryFocus;
   if (focus == null || !focus.hasFocus) return;
 
-  if (_tapTargetsSelectorOrMenu(globalPosition)) return;
-
-  final renderObject = focus.context?.findRenderObject();
-  if (renderObject is RenderBox && renderObject.hasSize) {
-    final origin = renderObject.localToGlobal(Offset.zero);
-    if ((origin & renderObject.size).contains(globalPosition)) {
-      return;
-    }
-  }
+  // Tap landed on a text field, selector, exempt menu, or the focused box.
+  if (_tapShouldKeepKeyboard(globalPosition, focus)) return;
 
   focus.unfocus();
 }
 
-bool _tapTargetsSelectorOrMenu(Offset globalPosition) {
+bool _tapShouldKeepKeyboard(Offset globalPosition, FocusNode focus) {
   final result = HitTestResult();
   WidgetsBinding.instance.hitTest(result, globalPosition);
 
@@ -98,25 +93,28 @@ bool _tapTargetsSelectorOrMenu(Offset globalPosition) {
   for (final entry in result.path) {
     final target = entry.target;
 
+    // Explicit exempt wrappers (CustomTextFormField, search, dropdowns…).
     if (target is RenderMetaData &&
         identical(target.metaData, kDismissKeyboardExempt)) {
       return true;
     }
 
+    // Release-safe: editable text render objects (no DebugCreator needed).
+    if (target is RenderEditable) return true;
+
     if (target is! RenderObject) continue;
+
+    // Debug / profile: widget-type checks when available.
     final creator = target.debugCreator;
-    if (creator is! DebugCreator) continue;
-    final widget = creator.element.widget;
-
-    // Keep keyboard open when tapping into (or within) any text input.
-    if (_isTextInputWidget(widget)) return true;
-
-    if (_isSelectorWidget(widget)) return true;
-
-    if (widget is ListTile) hasMenuListTile = true;
-    if (widget is InkWell) hasMenuInkWell = true;
-    if (widget is Material && widget.elevation > 0) {
-      hasElevatedMenuSurface = true;
+    if (creator is DebugCreator) {
+      final widget = creator.element.widget;
+      if (_isTextInputWidget(widget)) return true;
+      if (_isSelectorWidget(widget)) return true;
+      if (widget is ListTile) hasMenuListTile = true;
+      if (widget is InkWell) hasMenuInkWell = true;
+      if (widget is Material && widget.elevation > 0) {
+        hasElevatedMenuSurface = true;
+      }
     }
   }
 
@@ -125,6 +123,25 @@ bool _tapTargetsSelectorOrMenu(Offset globalPosition) {
   if (hasMenuListTile) return true;
   if (hasMenuInkWell && hasElevatedMenuSurface) return true;
 
+  // Keep keyboard if tap is inside the focused field (or its decorator box).
+  if (_tapInsideFocusedField(globalPosition, focus)) return true;
+
+  return false;
+}
+
+bool _tapInsideFocusedField(Offset globalPosition, FocusNode focus) {
+  RenderObject? current = focus.context?.findRenderObject();
+  var depth = 0;
+  while (current != null && depth < 8) {
+    if (current is RenderBox && current.hasSize) {
+      final origin = current.localToGlobal(Offset.zero);
+      if ((origin & current.size).contains(globalPosition)) {
+        return true;
+      }
+    }
+    current = current.parent;
+    depth++;
+  }
   return false;
 }
 
@@ -139,7 +156,8 @@ bool _isTextInputWidget(Widget widget) {
   return type.contains('TextField') ||
       type.contains('TextForm') ||
       type.contains('CustomText') ||
-      type.contains('AppSearch');
+      type.contains('AppSearch') ||
+      type.contains('AppText');
 }
 
 bool _isSelectorWidget(Widget widget) {

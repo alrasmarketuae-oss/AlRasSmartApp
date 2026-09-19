@@ -1,3 +1,4 @@
+import 'package:alrasmarket/core/widgets/dismiss_keyboard.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -22,7 +23,8 @@ class CustomTextFormField extends StatefulWidget {
     this.onChanged,
     this.onSubmitted,
     this.onTap,
-    this.unfocusOnTapOutside = true,
+    /// Outside-tap dismiss is owned by [DismissKeyboard] app-wide.
+    this.unfocusOnTapOutside = false,
     this.enabled = true,
     this.maxLines = 1,
     this.fillColor,
@@ -279,8 +281,16 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
             child: textField,
           );
 
+    // Prevent the app-wide DismissKeyboard from unfocusing this field on the
+    // same tap that opens it (critical in release where debugCreator is null).
+    final dismissSafeField = MetaData(
+      metaData: kDismissKeyboardExempt,
+      behavior: HitTestBehavior.deferToChild,
+      child: wrappedField,
+    );
+
     if (widget.label == null || widget.label!.isEmpty) {
-      return wrappedField;
+      return dismissSafeField;
     }
 
     return Column(
@@ -322,7 +332,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
             ),
           ),
         SizedBox(height: 8.h),
-        wrappedField,
+        dismissSafeField,
       ],
     );
   }
