@@ -17,7 +17,6 @@ import {
   IconGrid,
   IconOrders,
   IconSettings,
-  IconShipping,
   IconUsers,
   IconBell,
   IconActivity,
@@ -64,7 +63,6 @@ const navItems: NavItem[] = [
   },
   { to: '/categories', labelKey: 'nav.categories', icon: IconCategories, permission: PERMISSIONS.categoriesManage },
   { to: '/banners', labelKey: 'nav.banners', icon: IconBanner, permission: PERMISSIONS.bannersManage },
-  { to: '/shipping', labelKey: 'nav.shipping', icon: IconShipping, countKey: 'shipping', badgeTone: 'sky', permission: PERMISSIONS.shippingView },
   { to: '/chat', labelKey: 'nav.chat', icon: IconChat, countKey: 'chat', badgeTone: 'red', permission: PERMISSIONS.chatAccess },
   { to: '/ai-conversations', labelKey: 'nav.aiConversations', icon: IconChat, permission: PERMISSIONS.chatAccess },
   {

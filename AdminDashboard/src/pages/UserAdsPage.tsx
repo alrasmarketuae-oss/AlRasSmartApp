@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import AdsFilterBar from '../components/ads/AdsFilterBar'
 import AdsTable from '../components/ads/AdsTable'
@@ -53,6 +53,14 @@ export default function UserAdsPage() {
     isLoading: userLoading,
   } = useGetAdminUserDetailQuery(userId, { skip: !userId })
 
+  const isShippingCompany = user?.roleId === 5
+
+  useEffect(() => {
+    if (isShippingCompany && userId) {
+      navigate(`/shipping/${userId}`, { replace: true })
+    }
+  }, [isShippingCompany, userId, navigate])
+
   const queryParams = useMemo((): AdminProductsFilters => {
     const createdOnValue = appliedFilters.createdOn.trim()
     const typeId = appliedFilters.productTypeId
@@ -76,7 +84,9 @@ export default function UserAdsPage() {
     error: productsError,
     isLoading,
     isFetching,
-  } = useGetAdminProductsQuery(queryParams, { skip: !userId })
+  } = useGetAdminProductsQuery(queryParams, {
+    skip: !userId || isShippingCompany,
+  })
   const { showInitialLoader, showBackgroundUpdate } = queryViewState({
     isLoading: isLoading || userLoading,
     isFetching,

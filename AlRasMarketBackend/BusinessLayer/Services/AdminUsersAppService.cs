@@ -128,8 +128,7 @@ public class AdminUsersAppService(
                     x.PendingProfileChanges != null && x.PendingProfileChanges != string.Empty,
                 CanApprove = !x.IsRejected
                     && (
-                        ((x.RoleId == RoleIds.Seller || x.RoleId == RoleIds.ShippingCompany)
-                            && !x.IsApproved && x.IsVerified)
+                        (x.RoleId == RoleIds.Seller && !x.IsApproved && x.IsVerified)
                         || (x.PendingProfileChanges != null && x.PendingProfileChanges != string.Empty)),
                 StatusLabelAr = AdminMappings.GetUserStatusLabelAr(
                     x.IsActive,
@@ -235,6 +234,56 @@ public class AdminUsersAppService(
             })
             .ToList();
 
+        // For shipping companies: also surface who revealed THIS company's number
+        // (admins often open the company from Users, not only Shipping).
+        List<AdminShippingPhoneRevealViewerDto> revealsByViewer = [];
+        var inboundRevealCount = 0;
+        if (user.RoleId == RoleIds.ShippingCompany)
+        {
+            var inboundRows = await dbContext.ShippingPhoneReveals
+                .AsNoTracking()
+                .Where(x => x.ShippingCompanyUserId == user.Id)
+                .GroupBy(x => x.ViewerUserId)
+                .Select(g => new
+                {
+                    ViewerUserId = g.Key,
+                    RevealCount = g.Count()
+                })
+                .OrderByDescending(x => x.RevealCount)
+                .Take(50)
+                .ToListAsync(cancellationToken);
+
+            inboundRevealCount = inboundRows.Sum(x => x.RevealCount);
+            var viewerIds = inboundRows.Select(x => x.ViewerUserId).ToList();
+            var viewers = viewerIds.Count == 0
+                ? []
+                : await dbContext.Users
+                    .AsNoTracking()
+                    .Where(x => viewerIds.Contains(x.Id))
+                    .Select(x => new { x.Id, x.FullName, x.CompanyName, x.Email, x.PhoneNumber })
+                    .ToListAsync(cancellationToken);
+            var viewerById = viewers.ToDictionary(x => x.Id);
+            revealsByViewer = inboundRows
+                .Select(x =>
+                {
+                    viewerById.TryGetValue(x.ViewerUserId, out var viewer);
+                    var name = viewer is null
+                        ? "—"
+                        : (!string.IsNullOrWhiteSpace(viewer.CompanyName)
+                            ? viewer.CompanyName!
+                            : viewer.FullName);
+                    return new AdminShippingPhoneRevealViewerDto
+                    {
+                        ViewerUserId = x.ViewerUserId,
+                        ViewerName = name,
+                        ViewerEmail = viewer?.Email,
+                        ViewerPhone = viewer?.PhoneNumber,
+                        RevealCount = x.RevealCount
+                    };
+                })
+                .ToList();
+        }
+
         var dto = new AdminUserDetailDto
         {
             Id = user.Id,
@@ -309,11 +358,14 @@ public class AdminUsersAppService(
                 .ToList(),
             OrdersCount = ordersCount,
             ProductsCount = productsCount,
-            ShippingPhoneRevealCount = revealRows.Sum(x => x.RevealCount),
+            ShippingPhoneRevealCount = user.RoleId == RoleIds.ShippingCompany
+                ? inboundRevealCount
+                : revealRows.Sum(x => x.RevealCount),
             ShippingPhoneRevealsByCompany = revealsByCompany,
+            ShippingPhoneRevealsByViewer = revealsByViewer,
             CanApprove = !user.IsRejected
                 && (
-                    ((user.RoleId == RoleIds.Seller || user.RoleId == RoleIds.ShippingCompany) && !user.IsApproved && user.IsVerified)
+                    (user.RoleId == RoleIds.Seller && !user.IsApproved && user.IsVerified)
                     || !string.IsNullOrWhiteSpace(user.PendingProfileChanges)),
             CanDeactivate = user.RoleId != RoleIds.Admin,
             CanDelete = user.RoleId != RoleIds.Admin

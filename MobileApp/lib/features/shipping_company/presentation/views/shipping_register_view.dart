@@ -25,6 +25,7 @@ class ShippingRegisterView extends StatefulWidget {
 class _ShippingRegisterViewState extends State<ShippingRegisterView> {
   final _formKey = GlobalKey<FormState>();
   final _companyNameController = TextEditingController();
+  final _ownerNameController = TextEditingController();
   final _commercialRegisterController = TextEditingController();
   final _taxNumberController = TextEditingController();
   final _websiteController = TextEditingController();
@@ -39,6 +40,7 @@ class _ShippingRegisterViewState extends State<ShippingRegisterView> {
   @override
   void dispose() {
     _companyNameController.dispose();
+    _ownerNameController.dispose();
     _commercialRegisterController.dispose();
     _taxNumberController.dispose();
     _websiteController.dispose();
@@ -64,6 +66,7 @@ class _ShippingRegisterViewState extends State<ShippingRegisterView> {
 
     AuthCubit.get(context).registerShippingCompany(
       companyName: _companyNameController.text.trim(),
+      fullName: _ownerNameController.text.trim(),
       email: _emailController.text.trim(),
       password: _passwordController.text.trim(),
       phoneNumber: '$_selectedCountryCode ${_phoneController.text.trim()}',
@@ -141,6 +144,20 @@ class _ShippingRegisterViewState extends State<ShippingRegisterView> {
                       controller: _companyNameController,
                       label: s.shippingCompanyName,
                       hintText: s.enterShippingCompanyName,
+                      validator: (v) =>
+                          v == null || v.trim().isEmpty ? s.thisFieldIsRequired : null,
+                    ),
+                    SizedBox(height: 16.h),
+                    CustomTextFormField(
+                      controller: _ownerNameController,
+                      label: Localizations.localeOf(context).languageCode
+                              .startsWith('ar')
+                          ? 'اسم المالك'
+                          : 'Owner name',
+                      hintText: Localizations.localeOf(context).languageCode
+                              .startsWith('ar')
+                          ? 'ادخل اسم المالك'
+                          : 'Enter owner name',
                       validator: (v) =>
                           v == null || v.trim().isEmpty ? s.thisFieldIsRequired : null,
                     ),

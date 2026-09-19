@@ -5,7 +5,6 @@ import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import {
   formatJoinDate,
   getStatusBadgeClass,
-  getTypeBadgeClass,
 } from '../../utils/userStatus'
 import {
   isUnknownLabel,
@@ -227,7 +226,11 @@ export default function UserDetailView({
           ? locale === 'ar'
             ? 'عميل شخصي'
             : 'Personal customer'
-          : typeLabel || '—'
+          : user.roleId === 5
+            ? locale === 'ar'
+              ? 'شركة شحن'
+              : 'Shipping company'
+            : typeLabel || '—'
   const pending = user.pendingProfileChanges
   const hasPendingChanges = Boolean(
     pending &&
@@ -325,7 +328,10 @@ export default function UserDetailView({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2.5">
               {showCompanyDocs ? (
-                <Link to={`/users/${user.id}/ads`} className="min-w-0 hover:opacity-90">
+                <Link
+                  to={isShippingCompany ? `/shipping/${user.id}` : `/users/${user.id}/ads`}
+                  className="min-w-0 hover:opacity-90"
+                >
                   <BilingualNameLines
                     nameEn={user.companyNameEn}
                     nameAr={user.companyNameAr}
@@ -352,7 +358,32 @@ export default function UserDetailView({
             </div>
           </div>
 
-          <div className="space-y-1.5 text-sm">
+          <div className="flex flex-col items-end gap-3">
+            {isShippingCompany ? (
+              <div className="flex flex-wrap justify-end gap-2">
+                <Link
+                  to={`/shipping/${user.id}`}
+                  className="keep-white inline-flex items-center gap-2 rounded-xl bg-[#3B7FC7] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#2f6ab0]"
+                >
+                  {t('users.viewShippingAds')}
+                </Link>
+                <Link
+                  to={`/shipping/${user.id}?edit=1`}
+                  className={`${outlineBtn} border-[#3B7FC7]/40 text-[#3B7FC7] hover:bg-[#eff6ff] dark:border-[#3B7FC7]/50 dark:hover:bg-slate-800`}
+                >
+                  {t('users.editShippingAds')}
+                </Link>
+              </div>
+            ) : isSupplier ? (
+              <Link
+                to={`/users/${user.id}/ads`}
+                className="keep-white inline-flex items-center gap-2 rounded-xl bg-[#3B7FC7] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#2f6ab0]"
+              >
+                {t('users.viewCompanyAds')}
+              </Link>
+            ) : null}
+
+            <div className="space-y-1.5 text-sm">
             {user.phoneNumber?.trim() ? (
               <div className="flex items-center justify-end gap-2">
                 <span className={`flex h-7 w-7 items-center justify-center rounded-lg ${ICON_BLUE}`}>
@@ -381,6 +412,7 @@ export default function UserDetailView({
                 </a>
               </div>
             ) : null}
+            </div>
           </div>
         </div>
 
@@ -413,6 +445,33 @@ export default function UserDetailView({
         </div>
       </section>
 
+        {isShippingCompany ? (
+          <section className="admin-card rounded-2xl p-5 shadow-sm sm:p-6">
+            <IconInfoSectionTitle
+              title={t('users.shippingAdsSectionTitle')}
+              icon={InfoFieldIcons.clipboard}
+              iconClass={ICON_BLUE}
+            />
+            <p className="admin-text-muted mb-4 text-end text-sm">
+              {t('users.shippingAdsSectionHint')}
+            </p>
+            <div className="flex flex-wrap justify-end gap-3">
+              <Link
+                to={`/shipping/${user.id}`}
+                className="keep-white inline-flex items-center gap-2 rounded-xl bg-[#3B7FC7] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#2f6ab0]"
+              >
+                {t('users.viewShippingAds')}
+              </Link>
+              <Link
+                to={`/shipping/${user.id}?edit=1`}
+                className={`${outlineBtn} border-[#3B7FC7]/40 text-[#3B7FC7] hover:bg-[#eff6ff] dark:border-[#3B7FC7]/50 dark:hover:bg-slate-800`}
+              >
+                {t('users.editShippingAds')}
+              </Link>
+            </div>
+          </section>
+        ) : null}
+
       <div className={`grid grid-cols-1 gap-5 ${showCompanyDocs ? 'xl:grid-cols-2' : ''}`}>
         <section className="admin-card rounded-2xl p-5 shadow-sm sm:p-6">
           <IconInfoSectionTitle
@@ -426,7 +485,10 @@ export default function UserDetailView({
               label={t('users.company')}
               value={
                 showCompanyDocs ? (
-                  <Link to={`/users/${user.id}/ads`} className="font-semibold text-[#3B7FC7] hover:underline">
+                  <Link
+                    to={isShippingCompany ? `/shipping/${user.id}` : `/users/${user.id}/ads`}
+                    className="font-semibold text-[#3B7FC7] hover:underline"
+                  >
                     <BilingualNameLines
                       nameEn={user.companyNameEn}
                       nameAr={user.companyNameAr}
@@ -449,30 +511,6 @@ export default function UserDetailView({
                   primaryClassName="font-semibold"
                   secondaryClassName="admin-text-muted text-xs mt-0.5"
                 />
-              }
-            />
-            <ProfileFieldRow
-              icon={InfoFieldIcons.briefcase}
-              label={t('users.accountType')}
-              value={
-                <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${getTypeBadgeClass(user.typeLabelAr)}`}>
-                  {customerKindLabel}
-                </span>
-              }
-            />
-            <ProfileFieldRow
-              icon={InfoFieldIcons.tag}
-              label={t('users.type')}
-              value={
-                isUnknownLabel(user.typeLabelAr) ? (
-                  '—'
-                ) : (
-                  <span
-                    className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${getTypeBadgeClass(user.typeLabelAr)}`}
-                  >
-                    {typeLabel}
-                  </span>
-                )
               }
             />
             <ProfileFieldRow
@@ -718,10 +756,19 @@ export default function UserDetailView({
 
       <section className="admin-card rounded-2xl p-5 shadow-sm sm:p-6">
         <IconInfoSectionTitle
-          title={t('users.shippingPhoneRevealsTitle')}
+          title={
+            isShippingCompany
+              ? t('users.shippingPhoneRevealsCompanyTitle')
+              : t('users.shippingPhoneRevealsTitle')
+          }
           icon={InfoFieldIcons.phone}
           iconClass={ICON_BLUE}
         />
+        {isShippingCompany ? (
+          <p className="admin-text-muted mb-3 text-end text-xs">
+            {t('users.shippingPhoneRevealsCompanyHint')}
+          </p>
+        ) : null}
         <div className="mb-4 flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-900/50">
           <span className="text-2xl font-bold text-[#3B7FC7]">
             {user.shippingPhoneRevealCount}
@@ -730,7 +777,46 @@ export default function UserDetailView({
             {t('users.shippingPhoneRevealsTotal')}
           </span>
         </div>
-        {user.shippingPhoneRevealsByCompany.length === 0 ? (
+        {isShippingCompany ? (
+          user.shippingPhoneRevealsByViewer.length === 0 ? (
+            <p className="admin-text-subtle py-4 text-center text-sm">
+              {t('users.shippingPhoneRevealsEmpty')}
+            </p>
+          ) : (
+            <div className="space-y-2">
+              <p className="admin-text-muted mb-2 text-end text-xs font-medium">
+                {t('users.shippingPhoneRevealsViewers')}
+              </p>
+              {user.shippingPhoneRevealsByViewer.map((row) => (
+                <div
+                  key={row.viewerUserId}
+                  className="flex items-center justify-between gap-3 border-b border-slate-100 py-3 last:border-b-0 dark:border-slate-800"
+                >
+                  <span className="shrink-0 rounded-full bg-[#eef4fb] px-3 py-1 text-sm font-bold text-[#3B7FC7] dark:bg-slate-800">
+                    {t('users.shippingPhoneRevealsTimes').replace(
+                      '{count}',
+                      String(row.revealCount),
+                    )}
+                  </span>
+                  <div className="min-w-0 flex-1 text-end">
+                    <p className="admin-text truncate text-sm font-semibold">
+                      {row.viewerName}
+                    </p>
+                    {row.viewerPhone ? (
+                      <p className="admin-text-muted truncate text-xs" dir="ltr">
+                        {row.viewerPhone}
+                      </p>
+                    ) : row.viewerEmail ? (
+                      <p className="admin-text-muted truncate text-xs" dir="ltr">
+                        {row.viewerEmail}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        ) : user.shippingPhoneRevealsByCompany.length === 0 ? (
           <p className="admin-text-subtle py-4 text-center text-sm">
             {t('users.shippingPhoneRevealsEmpty')}
           </p>

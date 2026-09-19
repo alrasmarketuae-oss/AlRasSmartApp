@@ -40,6 +40,7 @@ class AuthRepository implements BaseAuthRepository {
   @override
   Future<Either<Failure, User>> registerShippingCompany({
     required String companyName,
+    required String fullName,
     required String email,
     required String password,
     required String phoneNumber,
@@ -52,6 +53,7 @@ class AuthRepository implements BaseAuthRepository {
   }) {
     return baseAuthRemoteDataSource.registerShippingCompany(
       companyName: companyName,
+      fullName: fullName,
       email: email,
       password: password,
       phoneNumber: phoneNumber,

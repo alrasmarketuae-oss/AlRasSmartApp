@@ -13,11 +13,12 @@ type ShippingProviderDetailViewProps = {
   isUpdating: boolean
   isDeleting: boolean
   isModeratingPost?: boolean
+  moderatingPostId?: number | null
   onEdit: () => void
   onDelete: () => void
   onToggleActive: () => void
-  onApprovePost?: () => void
-  onRejectPost?: () => void
+  onApprovePost?: (postId: number) => void
+  onRejectPost?: (postId: number) => void
   onQuickAction: (action: 'notify' | 'update' | 'block') => void
 }
 
@@ -97,6 +98,7 @@ export default function ShippingProviderDetailView({
   isUpdating,
   isDeleting,
   isModeratingPost = false,
+  moderatingPostId = null,
   onEdit,
   onDelete,
   onToggleActive,
@@ -106,18 +108,38 @@ export default function ShippingProviderDetailView({
 }: ShippingProviderDetailViewProps) {
   const { t, locale } = useAppPreferences()
 
-  const fromCountry =
-    locale === 'ar'
-      ? provider.fromCountryNameAr || provider.fromCountryName
-      : provider.fromCountryName
-  const toCountry =
-    locale === 'ar'
-      ? provider.toCountryNameAr || provider.toCountryName
-      : provider.toCountryName
-  const routeSummary =
-    locale === 'ar'
-      ? provider.routeSummaryAr || provider.routeSummary
-      : provider.routeSummary
+  const posts = provider.posts?.length
+    ? provider.posts
+    : provider.latestPostId
+      ? [
+          {
+            id: provider.latestPostId,
+            fromCountryName: provider.fromCountryName,
+            fromCountryNameAr: provider.fromCountryNameAr,
+            fromPortName: provider.fromPortName,
+            fromPortUnLocode: provider.fromPortUnLocode,
+            toCountryName: provider.toCountryName,
+            toCountryNameAr: provider.toCountryNameAr,
+            toPortName: provider.toPortName,
+            toPortUnLocode: provider.toPortUnLocode,
+            routeSummary: provider.routeSummary,
+            routeSummaryAr: provider.routeSummaryAr,
+            container20ftPriceUsd: provider.container20ftPriceUsd,
+            container40ftPriceUsd: provider.container40ftPriceUsd,
+            container20ftPriceFormatted: provider.container20ftPriceFormatted,
+            container40ftPriceFormatted: provider.container40ftPriceFormatted,
+            phoneNumber: provider.phoneNumber,
+            details: null,
+            minDurationDays: null,
+            maxDurationDays: null,
+            status: provider.postStatus,
+            statusLabelAr: provider.postStatusLabelAr,
+            isApproved: provider.isPostApproved,
+            canApprove: provider.canApprovePost,
+            createdAt: provider.registrationDate,
+          },
+        ]
+      : []
 
   return (
     <div className="space-y-6">
@@ -177,6 +199,15 @@ export default function ShippingProviderDetailView({
             <InfoRow
               icon={
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                </svg>
+              }
+              label={t('users.fullName')}
+              value={provider.fullName?.trim() || '—'}
+            />
+            <InfoRow
+              icon={
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15A2.25 2.25 0 0 1 2.25 17.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
                 </svg>
               }
@@ -200,6 +231,15 @@ export default function ShippingProviderDetailView({
               }
               label={t('users.landLine')}
               value={<span dir="ltr">{provider.landNumber?.trim() || '—'}</span>}
+            />
+            <InfoRow
+              icon={
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418" />
+                </svg>
+              }
+              label={t('users.website')}
+              value={provider.website?.trim() || '—'}
             />
             <InfoRow
               icon={
@@ -239,63 +279,109 @@ export default function ShippingProviderDetailView({
             />
           </Card>
 
-          <Card title={t('shippingPage.routeSection')}>
-            {routeSummary ? (
-              <div className="space-y-4">
-                <p className="rounded-2xl bg-gradient-to-r from-[#3B7FC7]/10 to-[#619d51]/10 px-4 py-3 text-center text-sm font-bold text-[#3B7FC7] dark:text-[#7eb8ff]">
-                  {routeSummary}
-                </p>
-                <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
-                  <RouteEndpoint
-                    label={t('shippingPage.routeFromLabel')}
-                    country={fromCountry}
-                    port={provider.fromPortName}
-                    unLocode={provider.fromPortUnLocode}
-                  />
-                  <div className="hidden text-center text-2xl text-[#619d51] sm:block" aria-hidden>
-                    →
-                  </div>
-                  <RouteEndpoint
-                    label={t('shippingPage.routeToLabel')}
-                    country={toCountry}
-                    port={provider.toPortName}
-                    unLocode={provider.toPortUnLocode}
-                  />
-                </div>
-              </div>
+          <Card title={t('shippingPage.companyAdsTitle')}>
+            {posts.length === 0 ? (
+              <p className="admin-text-subtle py-4 text-center text-sm">
+                {t('shippingPage.noCompanyAds')}
+              </p>
             ) : (
-              <p className="admin-text-subtle py-4 text-center text-sm">{t('shippingPage.routeNotSet')}</p>
+              <div className="space-y-4">
+                <p className="admin-text-muted text-end text-xs">
+                  {t('shippingPage.companyAdsCount').replace('{count}', String(posts.length))}
+                </p>
+                {posts.map((post) => {
+                  const postFromCountry =
+                    locale === 'ar'
+                      ? post.fromCountryNameAr || post.fromCountryName
+                      : post.fromCountryName
+                  const postToCountry =
+                    locale === 'ar'
+                      ? post.toCountryNameAr || post.toCountryName
+                      : post.toCountryName
+                  const postRoute =
+                    locale === 'ar' ? post.routeSummaryAr || post.routeSummary : post.routeSummary
+                  const busy = isModeratingPost && moderatingPostId === post.id
+
+                  return (
+                    <div
+                      key={post.id}
+                      className="admin-border rounded-2xl border p-4 dark:border-slate-700"
+                    >
+                      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                        <span className="rounded-full bg-[#eef4fb] px-3 py-1 text-xs font-semibold text-[#3B7FC7] dark:bg-slate-800">
+                          {post.statusLabelAr || t('shippingPage.postStatus')}
+                        </span>
+                        <span className="admin-text-muted text-xs" dir="ltr">
+                          #{post.id}
+                        </span>
+                      </div>
+                      {postRoute ? (
+                        <p className="mb-3 rounded-xl bg-gradient-to-r from-[#3B7FC7]/10 to-[#619d51]/10 px-3 py-2 text-center text-sm font-bold text-[#3B7FC7] dark:text-[#7eb8ff]">
+                          {postRoute}
+                        </p>
+                      ) : null}
+                      <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+                        <RouteEndpoint
+                          label={t('shippingPage.routeFromLabel')}
+                          country={postFromCountry}
+                          port={post.fromPortName}
+                          unLocode={post.fromPortUnLocode}
+                        />
+                        <div className="hidden text-center text-2xl text-[#619d51] sm:block" aria-hidden>
+                          →
+                        </div>
+                        <RouteEndpoint
+                          label={t('shippingPage.routeToLabel')}
+                          country={postToCountry}
+                          port={post.toPortName}
+                          unLocode={post.toPortUnLocode}
+                        />
+                      </div>
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                        <p className="admin-text text-sm">
+                          <span className="admin-text-muted">{t('shippingPage.price20ft')}: </span>
+                          {post.container20ftPriceFormatted || '—'}
+                        </p>
+                        <p className="admin-text text-sm">
+                          <span className="admin-text-muted">{t('shippingPage.price40ft')}: </span>
+                          {post.container40ftPriceFormatted || '—'}
+                        </p>
+                        {post.phoneNumber ? (
+                          <p className="admin-text text-sm sm:col-span-2" dir="ltr">
+                            <span className="admin-text-muted">{t('shippingPage.mobile')}: </span>
+                            {post.phoneNumber}
+                          </p>
+                        ) : null}
+                        {post.details?.trim() ? (
+                          <p className="admin-text-muted text-sm sm:col-span-2">{post.details}</p>
+                        ) : null}
+                      </div>
+                      {post.canApprove ? (
+                        <div className="mt-4 flex flex-wrap justify-end gap-2">
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => onApprovePost?.(post.id)}
+                            className="keep-white rounded-xl bg-[#619d51] px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
+                          >
+                            {t('shippingPage.approveShippingAd')}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => onRejectPost?.(post.id)}
+                            className="rounded-xl border-2 border-red-300 bg-white px-4 py-2 text-sm font-bold text-red-700 disabled:opacity-60 dark:border-red-800 dark:bg-slate-900 dark:text-red-300"
+                          >
+                            {t('shippingPage.rejectShippingAd')}
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  )
+                })}
+              </div>
             )}
           </Card>
-
-          {provider.canApprovePost ? (
-            <section className="admin-card border-2 border-amber-300 bg-amber-50/80 p-5 dark:border-amber-700 dark:bg-amber-950/30">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="text-right">
-                  <p className="admin-text text-base font-bold">{t('shippingPage.postStatus')}</p>
-                  <p className="admin-text-muted mt-1 text-sm">{provider.postStatusLabelAr}</p>
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    disabled={isModeratingPost}
-                    onClick={onApprovePost}
-                    className="keep-white rounded-xl bg-[#619d51] px-5 py-2.5 text-sm font-bold text-white disabled:opacity-60"
-                  >
-                    {t('shippingPage.approveShippingAd')}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isModeratingPost}
-                    onClick={onRejectPost}
-                    className="rounded-xl border-2 border-red-300 bg-white px-5 py-2.5 text-sm font-bold text-red-700 disabled:opacity-60 dark:border-red-800 dark:bg-slate-900 dark:text-red-300"
-                  >
-                    {t('shippingPage.rejectShippingAd')}
-                  </button>
-                </div>
-              </div>
-            </section>
-          ) : null}
 
           <Card title={t('shippingPage.shipmentLog')}>
             {provider.shipments.length === 0 ? (
@@ -428,6 +514,11 @@ export default function ShippingProviderDetailView({
           </Card>
 
           <Card title={t('shippingPage.statsTitle')}>
+            <StatRow
+              label={t('shippingPage.phoneRevealsTotal')}
+              value={provider.phoneRevealCount}
+              valueClassName="text-[#3B7FC7]"
+            />
             <StatRow
               label={t('shippingPage.totalShipments')}
               value={provider.stats.totalShipments}

@@ -19,6 +19,7 @@ abstract class BaseAuthRepository {
   );
   Future<Either<Failure, User>> registerShippingCompany({
     required String companyName,
+    required String fullName,
     required String email,
     required String password,
     required String phoneNumber,

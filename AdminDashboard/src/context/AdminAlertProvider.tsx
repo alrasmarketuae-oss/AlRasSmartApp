@@ -143,20 +143,9 @@ function buildAlertFromRealtime(
         actionLabel: t('alerts.openAdEdits'),
         dismissLabel: t('alerts.dismiss'),
       }
-    case 'newShippingAd': {
-      const providerId = alert.secondaryName ?? ''
-      return {
-        id: `shipping-ad-${alert.referenceId ?? Date.now()}`,
-        type: 'newShippingAd',
-        title: t('alerts.newShippingAdTitle'),
-        body: t('alerts.newShippingAdBody', {
-          name: alert.displayName ?? '—',
-        }),
-        href: providerId ? `/shipping/${providerId}` : '/shipping',
-        actionLabel: t('alerts.openShipping'),
-        dismissLabel: t('alerts.dismiss'),
-      }
-    }
+    case 'newShippingAd':
+      // Shipping ads auto-approve — do not toast admins.
+      return null
     case 'newOrder':
       return {
         id: `order-${alert.referenceId ?? Date.now()}`,

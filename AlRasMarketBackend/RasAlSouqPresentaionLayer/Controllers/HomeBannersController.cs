@@ -183,7 +183,7 @@ public class HomeBannersController(IHomeBannersAppService homeBannersAppService,
 public sealed class CreateHomeBannerRequest
 {
     public IFormFile? File { get; set; }
-    public string LinkUrl { get; set; } = string.Empty;
+    public string? LinkUrl { get; set; }
     public short DisplayOrder { get; set; }
 }
 

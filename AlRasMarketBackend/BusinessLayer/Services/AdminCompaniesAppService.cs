@@ -26,7 +26,7 @@ public class AdminCompaniesAppService(
             .Where(x =>
                 !x.IsRejected
                 && (
-                    ((x.RoleId == RoleIds.Seller || x.RoleId == RoleIds.ShippingCompany) && !x.IsApproved && x.IsVerified)
+                    (x.RoleId == RoleIds.Seller && !x.IsApproved && x.IsVerified)
                     || (x.PendingProfileChanges != null && x.PendingProfileChanges != string.Empty)))
             .Select(x => new
             {

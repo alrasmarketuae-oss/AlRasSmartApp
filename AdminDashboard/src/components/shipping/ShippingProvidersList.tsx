@@ -48,6 +48,10 @@ export default function ShippingProvidersList({
               {provider.totalShipments}{' '}
               {locale === 'ar' ? 'شحنة' : 'shipments'}
             </span>
+            <span className="admin-text-muted text-sm">
+              {provider.phoneRevealCount}{' '}
+              {locale === 'ar' ? 'عرض رقم' : 'phone reveals'}
+            </span>
             <Link
               to={`/shipping/${provider.id}?edit=1`}
               className="admin-btn-ghost text-xs font-semibold"

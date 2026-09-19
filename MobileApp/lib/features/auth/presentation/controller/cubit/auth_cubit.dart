@@ -549,6 +549,7 @@ class AuthCubit extends Cubit<AuthStates> {
 
   Future<void> registerShippingCompany({
     required String companyName,
+    required String fullName,
     required String email,
     required String password,
     required String phoneNumber,
@@ -561,6 +562,7 @@ class AuthCubit extends Cubit<AuthStates> {
     final fcmToken = await _getFcmToken();
     final result = await authRepository.registerShippingCompany(
       companyName: companyName,
+      fullName: fullName,
       email: email,
       password: password,
       phoneNumber: phoneNumber,

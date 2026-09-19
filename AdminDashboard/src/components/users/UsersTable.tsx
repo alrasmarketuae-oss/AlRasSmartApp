@@ -41,6 +41,10 @@ function isCompanyAccount(user: AdminUser): boolean {
   return user.roleId === 2 || user.roleId === 5
 }
 
+function companyAdsPath(user: AdminUser): string {
+  return user.roleId === 5 ? `/shipping/${user.id}` : `/users/${user.id}/ads`
+}
+
 function companyCellLabel(user: AdminUser, locale: 'ar' | 'en'): string {
   const companyName = user.companyName?.trim()
   if (companyName) return companyName
@@ -66,7 +70,7 @@ function UserNameCell({
   if (isCompanyAccount(user)) {
     return (
       <Link
-        to={`/users/${user.id}/ads`}
+        to={companyAdsPath(user)}
         state={listReturnState}
         className="block min-w-0 text-[#3B7FC7] transition hover:text-[#2f6ab0] hover:underline"
       >
@@ -105,7 +109,7 @@ function CompanyNameCell({
 
   return (
     <Link
-      to={`/users/${user.id}/ads`}
+      to={companyAdsPath(user)}
       state={listReturnState}
       className="block min-w-0 font-medium text-[#3B7FC7] transition hover:text-[#2f6ab0] hover:underline"
     >
@@ -197,7 +201,7 @@ function UserMobileCard({
           <div className="min-w-0 text-start">
             {isCompanyAccount(user) ? (
               <Link
-                to={`/users/${user.id}/ads`}
+                to={companyAdsPath(user)}
                 state={listReturnState}
                 className="block min-w-0 text-[#3B7FC7] hover:underline"
               >

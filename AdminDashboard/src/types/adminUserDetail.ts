@@ -33,6 +33,14 @@ export type AdminShippingPhoneRevealCompany = {
   revealCount: number
 }
 
+export type AdminShippingPhoneRevealViewer = {
+  viewerUserId: string
+  viewerName: string
+  viewerEmail: string | null
+  viewerPhone: string | null
+  revealCount: number
+}
+
 export type AdminUserDetail = {
   id: string
   fullName: string
@@ -68,6 +76,7 @@ export type AdminUserDetail = {
   productsCount: number
   shippingPhoneRevealCount: number
   shippingPhoneRevealsByCompany: AdminShippingPhoneRevealCompany[]
+  shippingPhoneRevealsByViewer: AdminShippingPhoneRevealViewer[]
   canApprove: boolean
   canDeactivate: boolean
   canDelete: boolean

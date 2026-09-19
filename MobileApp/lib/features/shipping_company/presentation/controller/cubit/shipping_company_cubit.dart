@@ -48,17 +48,22 @@ class ShippingCompanyCubit extends Cubit<ShippingCompanyStates> {
 
   Future<bool> saveProfile({
     required String companyName,
+    required String fullName,
     required String phoneNumber,
+    required String landNumber,
     required String commercialRegister,
     required String taxNumber,
+    required String website,
   }) async {
     emit(ShippingCompanyActionLoadingState(tabIndex, dashboard: dashboard));
     final result = await repository.updateProfile({
       'companyName': companyName,
-      'fullName': companyName,
+      'fullName': fullName,
       'phoneNumber': phoneNumber,
+      'landNumber': landNumber,
       'commercialRegister': commercialRegister,
       'taxNumber': taxNumber,
+      'website': website,
     });
 
     return result.fold(
@@ -67,7 +72,7 @@ class ShippingCompanyCubit extends Cubit<ShippingCompanyStates> {
         return false;
       },
       (profile) async {
-        await authService.updateProfileData(fullName: companyName);
+        await authService.updateProfileData(fullName: fullName);
         authService.phone = phoneNumber;
         await loadDashboard(force: true);
         return true;

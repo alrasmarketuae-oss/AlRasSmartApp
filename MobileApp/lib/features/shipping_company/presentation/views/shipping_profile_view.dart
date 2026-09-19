@@ -4,6 +4,7 @@ import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/services/sensitive_access_gate.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
+import 'package:alrasmarket/features/shipping_company/data/models/shipping_company_post_model.dart';
 import 'package:alrasmarket/features/shipping_company/presentation/controller/cubit/shipping_company_cubit.dart';
 import 'package:alrasmarket/features/shipping_company/presentation/controller/cubit/shipping_company_states.dart';
 import 'package:alrasmarket/features/shipping_company/presentation/widgets/shipping_company_widgets.dart';
@@ -22,8 +23,11 @@ class ShippingProfileView extends StatefulWidget {
 
 class _ShippingProfileViewState extends State<ShippingProfileView> {
   final _companyName = TextEditingController();
+  final _ownerName = TextEditingController();
   final _email = TextEditingController();
   final _phone = TextEditingController();
+  final _landline = TextEditingController();
+  final _website = TextEditingController();
   final _commercialRegister = TextEditingController();
   final _taxNumber = TextEditingController();
   bool _initialized = false;
@@ -31,8 +35,11 @@ class _ShippingProfileViewState extends State<ShippingProfileView> {
   @override
   void dispose() {
     _companyName.dispose();
+    _ownerName.dispose();
     _email.dispose();
     _phone.dispose();
+    _landline.dispose();
+    _website.dispose();
     _commercialRegister.dispose();
     _taxNumber.dispose();
     super.dispose();
@@ -40,21 +47,31 @@ class _ShippingProfileViewState extends State<ShippingProfileView> {
 
   void _fillFromDashboard(ShippingCompanyLoadedState state) {
     if (_initialized) return;
-    _companyName.text = state.dashboard.companyName;
-    _email.text = state.dashboard.email;
-    _phone.text = state.dashboard.phoneNumber;
-    _commercialRegister.text = state.dashboard.commercialRegister;
-    _taxNumber.text = state.dashboard.taxNumber;
+    _applyDashboard(state.dashboard);
     _initialized = true;
+  }
+
+  void _applyDashboard(ShippingCompanyDashboardModel dashboard) {
+    _companyName.text = dashboard.companyName;
+    _ownerName.text = dashboard.fullName;
+    _email.text = dashboard.email;
+    _phone.text = dashboard.phoneNumber;
+    _landline.text = dashboard.landNumber;
+    _website.text = dashboard.website;
+    _commercialRegister.text = dashboard.commercialRegister;
+    _taxNumber.text = dashboard.taxNumber;
   }
 
   Future<void> _save() async {
     final s = S.of(context);
     final ok = await context.read<ShippingCompanyCubit>().saveProfile(
           companyName: _companyName.text.trim(),
+          fullName: _ownerName.text.trim(),
           phoneNumber: _phone.text.trim(),
+          landNumber: _landline.text.trim(),
           commercialRegister: _commercialRegister.text.trim(),
           taxNumber: _taxNumber.text.trim(),
+          website: _website.text.trim(),
         );
     if (ok && mounted) {
       AppToast.showSuccess(context, s.savedSuccessfully);
@@ -70,6 +87,7 @@ class _ShippingProfileViewState extends State<ShippingProfileView> {
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
+    final isAr = Localizations.localeOf(context).languageCode.startsWith('ar');
 
     return BlocBuilder<ShippingCompanyCubit, ShippingCompanyStates>(
       builder: (context, state) {
@@ -80,11 +98,7 @@ class _ShippingProfileViewState extends State<ShippingProfileView> {
         if (state is ShippingCompanyLoadedState) {
           _fillFromDashboard(state);
         } else if (!_initialized && dashboard != null) {
-          _companyName.text = dashboard.companyName;
-          _email.text = dashboard.email;
-          _phone.text = dashboard.phoneNumber;
-          _commercialRegister.text = dashboard.commercialRegister;
-          _taxNumber.text = dashboard.taxNumber;
+          _applyDashboard(dashboard);
           _initialized = true;
         }
 
@@ -125,6 +139,10 @@ class _ShippingProfileViewState extends State<ShippingProfileView> {
                 controller: _companyName,
               ),
               ShippingProfileField(
+                label: isAr ? 'اسم المالك' : 'Owner name',
+                controller: _ownerName,
+              ),
+              ShippingProfileField(
                 label: s.email,
                 controller: _email,
                 readOnly: true,
@@ -134,6 +152,16 @@ class _ShippingProfileViewState extends State<ShippingProfileView> {
                 label: s.phoneNumber,
                 controller: _phone,
                 keyboardType: TextInputType.phone,
+              ),
+              ShippingProfileField(
+                label: s.landlinePhone,
+                controller: _landline,
+                keyboardType: TextInputType.phone,
+              ),
+              ShippingProfileField(
+                label: s.website,
+                controller: _website,
+                keyboardType: TextInputType.url,
               ),
               ShippingProfileField(
                 label: s.commercialRegister,
@@ -150,60 +178,31 @@ class _ShippingProfileViewState extends State<ShippingProfileView> {
                 loading: loading,
                 onPressed: _save,
               ),
-              SizedBox(height: 24.h),
-              Align(
-                alignment: AlignmentDirectional.centerStart,
+              SizedBox(height: 12.h),
+              TextButton(
+                onPressed: () async {
+                  final allowed =
+                      await SensitiveAccessGate.ensureUnlocked(context);
+                  if (!allowed || !context.mounted) return;
+                  context.push(AppRoutes.kChangePasswordView);
+                },
                 child: Text(
-                  s.settings,
+                  s.changePassword,
                   style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.title(context),
+                    color: AppColors.primary(context),
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-              SizedBox(height: 12.h),
-              ShippingSettingsTile(
-                icon: Icons.auto_awesome_rounded,
-                label: s.aiAssistantTitle,
-                onTap: () {
-                  SensitiveAccessGate.openProtectedRoute(
-                    context,
-                    route: AppRoutes.kAiAssistantView,
-                  );
-                },
-              ),
-              SizedBox(height: 10.h),
-              ShippingSettingsTile(
-                icon: Icons.forum_outlined,
-                label: s.liveChat,
-                onTap: () => context.push(AppRoutes.kSupportChatView),
-              ),
-              SizedBox(height: 10.h),
-              ShippingSettingsTile(
-                icon: Icons.privacy_tip_outlined,
-                label: s.policyAndPrivacy,
-                onTap: () => context.push(AppRoutes.kTermsAndConditions),
-              ),
-              SizedBox(height: 10.h),
-              ShippingSettingsTile(
-                icon: Icons.language_outlined,
-                label: s.language,
-                onTap: () => context.push(AppRoutes.kLanguageView),
-              ),
-              SizedBox(height: 10.h),
-              ShippingSettingsTile(
-                icon: Icons.record_voice_over_rounded,
-                label: s.aiAssistantVoiceSetting,
-                onTap: () =>
-                    context.push(AppRoutes.kAiAssistantVoiceSettingsView),
-              ),
-              SizedBox(height: 10.h),
-              ShippingSettingsTile(
-                icon: Icons.logout,
-                label: s.logOut,
-                isDestructive: true,
-                onTap: _logout,
+              TextButton(
+                onPressed: _logout,
+                child: Text(
+                  s.logout,
+                  style: TextStyle(
+                    color: Colors.red.shade600,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ],
           ),

@@ -81,6 +81,13 @@ public class AdminShippingAppService(
             .Select(g => new { ProviderUserId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.ProviderUserId, x => x.Count, cancellationToken);
 
+        var phoneRevealCounts = await dbContext.ShippingPhoneReveals
+            .AsNoTracking()
+            .Where(x => userIds.Contains(x.ShippingCompanyUserId))
+            .GroupBy(x => x.ShippingCompanyUserId)
+            .Select(g => new { ProviderUserId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.ProviderUserId, x => x.Count, cancellationToken);
+
         var cities = await GetCityNamesByUserIdsAsync(userIds, cancellationToken);
 
         var items = users.Select(user =>
@@ -100,6 +107,7 @@ public class AdminShippingAppService(
                 CityName = cities.GetValueOrDefault(user.Id),
                 IsActive = user.IsActive,
                 TotalShipments = shipmentCounts.GetValueOrDefault(user.Id),
+                PhoneRevealCount = phoneRevealCounts.GetValueOrDefault(user.Id),
                 PostCount = postCounts.GetValueOrDefault(user.Id),
                 RegistrationDate = user.CreatedAt,
                 FromCountryName = route?.FromCountryName ?? string.Empty,
@@ -132,7 +140,7 @@ public class AdminShippingAppService(
         var user = await dbContext.Users.FindAsync([userId], cancellationToken)
             ?? throw new KeyNotFoundException("Shipping provider not found.");
 
-        var latestPost = await dbContext.InternationalShippingPosts
+        var allPosts = await dbContext.InternationalShippingPosts
             .AsNoTracking()
             .Include(x => x.FromCountry)
             .Include(x => x.FromPort)
@@ -140,8 +148,9 @@ public class AdminShippingAppService(
             .Include(x => x.ToPort)
             .Where(x => x.PublisherUserId == userId)
             .OrderByDescending(x => x.CreatedAt)
-            .FirstOrDefaultAsync(cancellationToken);
+            .ToListAsync(cancellationToken);
 
+        var latestPost = allPosts.FirstOrDefault();
         if (latestPost is null)
         {
             throw new KeyNotFoundException("Shipping provider not found.");
@@ -219,6 +228,38 @@ public class AdminShippingAppService(
             })
             .ToList();
 
+        var posts = allPosts.Select(post =>
+        {
+            var postRoute = AdminShippingRouteHelper.Resolve(post, staticReferenceCache);
+            return new AdminShippingPostItemDto
+            {
+                Id = post.Id,
+                FromCountryName = postRoute.FromCountryName,
+                FromCountryNameAr = postRoute.FromCountryNameAr,
+                FromPortName = postRoute.FromPortName,
+                FromPortUnLocode = postRoute.FromPortUnLocode,
+                ToCountryName = postRoute.ToCountryName,
+                ToCountryNameAr = postRoute.ToCountryNameAr,
+                ToPortName = postRoute.ToPortName,
+                ToPortUnLocode = postRoute.ToPortUnLocode,
+                RouteSummary = postRoute.RouteSummaryEn,
+                RouteSummaryAr = postRoute.RouteSummaryAr,
+                Container20ftPriceUsd = post.Container20ftPriceUsd,
+                Container40ftPriceUsd = post.Container40ftPriceUsd,
+                Container20ftPriceFormatted = FormatUsd(post.Container20ftPriceUsd),
+                Container40ftPriceFormatted = FormatUsd(post.Container40ftPriceUsd),
+                PhoneNumber = post.PhoneNumber,
+                Details = post.Details,
+                MinDurationDays = post.MinDurationDays,
+                MaxDurationDays = post.MaxDurationDays,
+                Status = post.Status,
+                StatusLabelAr = AdminMappings.GetProductStatusLabelAr(post.Status, post.IsApproved),
+                IsApproved = post.IsApproved,
+                CanApprove = ProductStatusCodes.IsPendingReview(post.Status, post.IsApproved),
+                CreatedAt = post.CreatedAt
+            };
+        }).ToList();
+
         return new AdminShippingProviderDetailDto
         {
             Id = user.Id,
@@ -230,6 +271,7 @@ public class AdminShippingAppService(
             LandNumber = user.LandNumber,
             CommercialRegister = user.CommercialRegister,
             TaxNumber = user.TaxNumber,
+            Website = user.Website,
             CityName = cityName,
             FromCountryId = route.FromCountryId,
             FromPortId = route.FromPortId,
@@ -262,7 +304,8 @@ public class AdminShippingAppService(
             Stats = stats,
             PhoneRevealCount = phoneRevealRows.Sum(x => x.RevealCount),
             PhoneRevealsByViewer = phoneRevealsByViewer,
-            Shipments = shipments
+            Shipments = shipments,
+            Posts = posts
         };
     }
 
@@ -346,6 +389,7 @@ public class AdminShippingAppService(
             RoleId = RoleIds.ShippingCompany,
             LoginProviderName = "Local",
             IsActive = true,
+            IsApproved = true,
             IsVerified = true,
             PhoneNumber = input.PhoneNumber.Trim(),
             CreatedAt = DateTime.UtcNow

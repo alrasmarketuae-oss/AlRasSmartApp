@@ -1416,7 +1416,8 @@ export const adminApi = createApi({
         const token = getAuthToken()
         const form = new FormData()
         form.append('File', file)
-        form.append('LinkUrl', linkUrl?.trim() ?? '')
+        const trimmedLink = linkUrl?.trim() ?? ''
+        if (trimmedLink) form.append('LinkUrl', trimmedLink)
         form.append('DisplayOrder', String(displayOrder))
 
         try {

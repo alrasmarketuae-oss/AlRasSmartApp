@@ -134,6 +134,7 @@ public class AuthController(
             var result = await _authAppService.RegisterShippingCompanyAsync(new BusinessLayer.Dtos.RegisterShippingCompanyInput
             {
                 CompanyName = request.CompanyName,
+                FullName = request.FullName,
                 Email = request.Email,
                 Password = request.Password,
                 PhoneNumber = request.PhoneNumber,
@@ -698,6 +699,7 @@ public sealed class RegisterCompanyAddressRequest
 public sealed class RegisterShippingCompanyRequest
 {
     public string CompanyName { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
     public string PhoneNumber { get; set; } = string.Empty;

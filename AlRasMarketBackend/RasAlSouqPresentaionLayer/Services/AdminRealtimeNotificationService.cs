@@ -34,7 +34,7 @@ public class AdminRealtimeNotificationService(
             .AsNoTracking()
             .CountAsync(x =>
                 !x.IsRejected
-                && (x.RoleId == RoleIds.Seller || x.RoleId == RoleIds.ShippingCompany)
+                && x.RoleId == RoleIds.Seller
                 && !x.IsApproved,
                 cancellationToken);
 
@@ -82,10 +82,8 @@ public class AdminRealtimeNotificationService(
                         || x.PendingProductChanges.Contains("\"isApproved\":true"))),
                 cancellationToken);
 
-        var pendingShippingAds = await dbContext.InternationalShippingPosts
-            .AsNoTracking()
-            .CountAsync(x =>
-                !x.IsApproved && x.Status != ProductStatusCodes.Rejected, cancellationToken);
+        // Shipping ads auto-approve on create/update — never surface a review badge.
+        var pendingShippingAds = 0;
 
         // New catalog orders start as AwaitingSellerApproval; also surface returns for admin.
         var pendingOrderBase = AdminOrderVisibilityHelper.WhereVisibleInAdminDashboard(

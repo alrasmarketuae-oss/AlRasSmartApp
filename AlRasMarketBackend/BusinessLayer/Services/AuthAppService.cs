@@ -200,6 +200,11 @@ public class AuthAppService(
             throw new ArgumentException("Company name is required.");
         }
 
+        if (string.IsNullOrWhiteSpace(input.FullName))
+        {
+            throw new ArgumentException("Owner name is required.");
+        }
+
         if (string.IsNullOrWhiteSpace(input.PhoneNumber))
         {
             throw new ArgumentException("Phone number is required.");
@@ -213,17 +218,18 @@ public class AuthAppService(
             cancellationToken);
 
         var companyName = input.CompanyName.Trim();
+        var ownerName = input.FullName.Trim();
         var user = new User
         {
             Id = Guid.NewGuid(),
-            FullName = companyName,
+            FullName = ownerName,
             CompanyName = companyName,
             Email = email,
             HashedPassword = passwordHasher.HashPassword(input.Password),
             RoleId = RoleIds.ShippingCompany,
             LoginProviderName = "Local",
-            IsActive = false,
-            IsApproved = false,
+            IsActive = true,
+            IsApproved = true,
             IsVerified = false,
             PhoneNumber = input.PhoneNumber.Trim(),
             LandNumber = string.IsNullOrWhiteSpace(input.LandNumber)
@@ -248,8 +254,7 @@ public class AuthAppService(
             user.CompanyName,
             user.PreferredLanguage);
         await SendRegistrationOtpOrRollbackAsync(user.Id, email, cancellationToken);
-        await adminRealtimeNotificationService.NotifyNewUserAsync(user, cancellationToken);
-        return ("Shipping company account created and pending admin approval. OTP has been sent to your email.", user.Id.ToString(), user.ImgPath);
+        return ("Shipping company account created. OTP has been sent to your email.", user.Id.ToString(), user.ImgPath);
     }
 
     public async Task<object> LoginAsync(LoginDtos.LoginRequest request, CancellationToken cancellationToken = default)

@@ -29,6 +29,7 @@ export default function ShippingDetailPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [isEditing, setIsEditing] = useState(false)
+  const [moderatingPostId, setModeratingPostId] = useState<number | null>(null)
 
   const { data: provider, error, isLoading } = useGetShippingProviderDetailQuery(providerId, {
     skip: !providerId,
@@ -103,7 +104,7 @@ export default function ShippingDetailPage() {
 
     try {
       await deleteProvider(provider.id).unwrap()
-      navigate('/shipping', {
+      navigate('/users', {
         replace: true,
         state: { shippingMessage: t('shippingPage.deleteSuccess') },
       })
@@ -112,30 +113,36 @@ export default function ShippingDetailPage() {
     }
   }
 
-  async function handleApprovePost() {
-    if (!provider?.latestPostId) return
+  async function handleApprovePost(postId: number) {
+    if (!postId) return
     setActionError(null)
     setSuccessMessage(null)
+    setModeratingPostId(postId)
     try {
-      await approveShippingPost(provider.latestPostId).unwrap()
+      await approveShippingPost(postId).unwrap()
       setSuccessMessage(t('shippingPage.approveShippingAdSuccess'))
     } catch (err) {
       setActionError(getRtkErrorMessage(err as never, t('shippingPage.actionError')))
+    } finally {
+      setModeratingPostId(null)
     }
   }
 
-  async function handleRejectPost() {
-    if (!provider?.latestPostId) return
+  async function handleRejectPost(postId: number) {
+    if (!postId) return
     const confirmed = window.confirm(t('shippingPage.rejectShippingAdConfirm'))
     if (!confirmed) return
     const reason = window.prompt(t('shippingPage.rejectReasonOptional')) ?? ''
     setActionError(null)
     setSuccessMessage(null)
+    setModeratingPostId(postId)
     try {
-      await rejectShippingPost({ postId: provider.latestPostId, reason }).unwrap()
+      await rejectShippingPost({ postId, reason }).unwrap()
       setSuccessMessage(t('shippingPage.rejectShippingAdSuccess'))
     } catch (err) {
       setActionError(getRtkErrorMessage(err as never, t('shippingPage.actionError')))
+    } finally {
+      setModeratingPostId(null)
     }
   }
 
@@ -163,10 +170,10 @@ export default function ShippingDetailPage() {
   return (
     <div className="space-y-6">
       <Link
-        to="/shipping"
+        to={`/users/${providerId}`}
         className="admin-text-muted inline-flex items-center gap-2 text-sm font-semibold transition hover:text-[#3B7FC7]"
       >
-        ← {t('shippingPage.backToList')}
+        ← {t('users.title')}
       </Link>
 
       {successMessage ? (
@@ -182,10 +189,10 @@ export default function ShippingDetailPage() {
             {getRtkErrorMessage(error as never, t('shippingPage.loadError'))}
           </p>
           <Link
-            to="/shipping"
+            to={`/users/${providerId}`}
             className="keep-white mt-4 inline-block rounded-xl bg-[#3B7FC7] px-5 py-2.5 text-sm font-semibold text-white"
           >
-            {t('shippingPage.backToList')}
+            {t('users.title')}
           </Link>
         </div>
       ) : isEditing ? (
@@ -219,11 +226,12 @@ export default function ShippingDetailPage() {
           isUpdating={isUpdatingActive}
           isDeleting={isDeleting}
           isModeratingPost={isApprovingPost || isRejectingPost}
+          moderatingPostId={moderatingPostId}
           onEdit={() => handleQuickAction('update')}
           onDelete={() => void handleDeleteProvider()}
           onToggleActive={() => void handleToggleActive()}
-          onApprovePost={() => void handleApprovePost()}
-          onRejectPost={() => void handleRejectPost()}
+          onApprovePost={(postId) => void handleApprovePost(postId)}
+          onRejectPost={(postId) => void handleRejectPost(postId)}
           onQuickAction={handleQuickAction}
         />
       )}

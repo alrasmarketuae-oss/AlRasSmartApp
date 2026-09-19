@@ -12,8 +12,7 @@ namespace BusinessLayer.Services;
 public class ShippingCompanyAppService(
     IRasAlSouqDbContext dbContext,
     IGeoReferenceCache geoReferenceCache,
-    IMemoryCache cache,
-    IAdminRealtimeNotificationService adminRealtimeNotificationService) : IShippingCompanyAppService
+    IMemoryCache cache) : IShippingCompanyAppService
 {
     public async Task<object> GetDashboardAsync(string userId, CancellationToken cancellationToken = default)
     {
@@ -24,9 +23,11 @@ public class ShippingCompanyAppService(
         return new
         {
             companyName = user.CompanyName ?? user.FullName,
+            fullName = user.FullName,
             imgPath = user.ImgPath,
             email = user.Email,
             phoneNumber = user.PhoneNumber,
+            landNumber = user.LandNumber,
             commercialRegister = user.CommercialRegister,
             taxNumber = user.TaxNumber,
             website = user.Website,
@@ -85,12 +86,6 @@ public class ShippingCompanyAppService(
         await dbContext.SaveChangesAsync(cancellationToken);
         InvalidateSearchCache();
 
-        await adminRealtimeNotificationService.NotifyNewShippingPostAsync(
-            entity,
-            user.CompanyName ?? user.FullName,
-            user.Id.ToString(),
-            cancellationToken);
-
         return MapPost(entity, route);
     }
 
@@ -146,12 +141,6 @@ public class ShippingCompanyAppService(
 
         await dbContext.SaveChangesAsync(cancellationToken);
         InvalidateSearchCache();
-
-        await adminRealtimeNotificationService.NotifyNewShippingPostAsync(
-            post,
-            user.CompanyName ?? user.FullName,
-            user.Id.ToString(),
-            cancellationToken);
 
         return MapPost(post, route);
     }

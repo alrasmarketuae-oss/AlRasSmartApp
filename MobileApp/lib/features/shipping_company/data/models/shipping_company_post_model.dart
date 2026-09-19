@@ -142,20 +142,26 @@ class ShippingCompanyStatsModel {
 class ShippingCompanyDashboardModel {
   const ShippingCompanyDashboardModel({
     required this.companyName,
+    required this.fullName,
     required this.email,
     required this.phoneNumber,
+    required this.landNumber,
     required this.commercialRegister,
     required this.taxNumber,
+    required this.website,
     required this.stats,
     required this.posts,
     this.imgPath,
   });
 
   final String companyName;
+  final String fullName;
   final String email;
   final String phoneNumber;
+  final String landNumber;
   final String commercialRegister;
   final String taxNumber;
+  final String website;
   final String? imgPath;
   final ShippingCompanyStatsModel stats;
   final List<ShippingCompanyPostModel> posts;
@@ -164,10 +170,13 @@ class ShippingCompanyDashboardModel {
     final postsRaw = json['posts'];
     return ShippingCompanyDashboardModel(
       companyName: json['companyName']?.toString() ?? '',
+      fullName: json['fullName']?.toString() ?? '',
       email: json['email']?.toString() ?? '',
       phoneNumber: json['phoneNumber']?.toString() ?? '',
+      landNumber: json['landNumber']?.toString() ?? '',
       commercialRegister: json['commercialRegister']?.toString() ?? '',
       taxNumber: json['taxNumber']?.toString() ?? '',
+      website: json['website']?.toString() ?? '',
       imgPath: _resolveAssetUrl(json['imgPath']),
       stats: ShippingCompanyStatsModel.fromJson(
         json['stats'] as Map<String, dynamic>? ?? const {},

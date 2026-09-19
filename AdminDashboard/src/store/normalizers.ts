@@ -1154,6 +1154,7 @@ type RawShippingProvider = AdminShippingProvider & {
   CityName?: string | null
   IsActive?: boolean
   TotalShipments?: number
+  PhoneRevealCount?: number
   PostCount?: number
   RegistrationDate?: string
   FromCountryName?: string
@@ -1168,6 +1169,7 @@ type RawShippingDetail = AdminShippingProviderDetail & {
   LandNumber?: string | null
   CommercialRegister?: string | null
   TaxNumber?: string | null
+  Website?: string | null
   FromCountryId?: number
   FromPortId?: number
   ToCountryId?: number
@@ -1191,6 +1193,7 @@ type RawShippingDetail = AdminShippingProviderDetail & {
   PhoneRevealCount?: number
   PhoneRevealsByViewer?: Record<string, unknown>[]
   Shipments?: RawShipmentLogItem[]
+  Posts?: Record<string, unknown>[]
   LatestPostId?: number
   PostStatus?: number
   PostStatusLabelAr?: string
@@ -1247,6 +1250,7 @@ export function normalizeShippingProvider(raw: RawShippingProvider): AdminShippi
     cityName: raw.cityName ?? raw.CityName ?? null,
     isActive: raw.isActive ?? raw.IsActive ?? false,
     totalShipments: raw.totalShipments ?? raw.TotalShipments ?? 0,
+    phoneRevealCount: raw.phoneRevealCount ?? raw.PhoneRevealCount ?? 0,
     postCount: raw.postCount ?? raw.PostCount ?? 0,
     registrationDate: raw.registrationDate ?? raw.RegistrationDate ?? '',
     fromCountryName: raw.fromCountryName ?? raw.FromCountryName ?? '',
@@ -1267,6 +1271,7 @@ export function normalizeShippingProviderDetail(
     landNumber: raw.landNumber ?? raw.LandNumber ?? null,
     commercialRegister: raw.commercialRegister ?? raw.CommercialRegister ?? null,
     taxNumber: raw.taxNumber ?? raw.TaxNumber ?? null,
+    website: raw.website ?? raw.Website ?? null,
     fromCountryId: raw.fromCountryId ?? raw.FromCountryId ?? 0,
     fromPortId: raw.fromPortId ?? raw.FromPortId ?? 0,
     toCountryId: raw.toCountryId ?? raw.ToCountryId ?? 0,
@@ -1299,6 +1304,52 @@ export function normalizeShippingProviderDetail(
     shipments: (raw.shipments ?? raw.Shipments ?? []).map((item) =>
       normalizeShipmentLogItem(item),
     ),
+    posts: (raw.posts ?? raw.Posts ?? []).map((item: Record<string, unknown>) => ({
+      id: Number(item.id ?? item.Id ?? 0),
+      fromCountryName: String(item.fromCountryName ?? item.FromCountryName ?? ''),
+      fromCountryNameAr: (item.fromCountryNameAr ?? item.FromCountryNameAr ?? null) as
+        | string
+        | null,
+      fromPortName: String(item.fromPortName ?? item.FromPortName ?? ''),
+      fromPortUnLocode: (item.fromPortUnLocode ?? item.FromPortUnLocode ?? null) as
+        | string
+        | null,
+      toCountryName: String(item.toCountryName ?? item.ToCountryName ?? ''),
+      toCountryNameAr: (item.toCountryNameAr ?? item.ToCountryNameAr ?? null) as string | null,
+      toPortName: String(item.toPortName ?? item.ToPortName ?? ''),
+      toPortUnLocode: (item.toPortUnLocode ?? item.ToPortUnLocode ?? null) as string | null,
+      routeSummary: String(item.routeSummary ?? item.RouteSummary ?? ''),
+      routeSummaryAr: String(item.routeSummaryAr ?? item.RouteSummaryAr ?? ''),
+      container20ftPriceUsd:
+        item.container20ftPriceUsd != null || item.Container20ftPriceUsd != null
+          ? Number(item.container20ftPriceUsd ?? item.Container20ftPriceUsd)
+          : null,
+      container40ftPriceUsd:
+        item.container40ftPriceUsd != null || item.Container40ftPriceUsd != null
+          ? Number(item.container40ftPriceUsd ?? item.Container40ftPriceUsd)
+          : null,
+      container20ftPriceFormatted: String(
+        item.container20ftPriceFormatted ?? item.Container20ftPriceFormatted ?? '',
+      ),
+      container40ftPriceFormatted: String(
+        item.container40ftPriceFormatted ?? item.Container40ftPriceFormatted ?? '',
+      ),
+      phoneNumber: (item.phoneNumber ?? item.PhoneNumber ?? null) as string | null,
+      details: (item.details ?? item.Details ?? null) as string | null,
+      minDurationDays:
+        item.minDurationDays != null || item.MinDurationDays != null
+          ? Number(item.minDurationDays ?? item.MinDurationDays)
+          : null,
+      maxDurationDays:
+        item.maxDurationDays != null || item.MaxDurationDays != null
+          ? Number(item.maxDurationDays ?? item.MaxDurationDays)
+          : null,
+      status: Number(item.status ?? item.Status ?? 0),
+      statusLabelAr: String(item.statusLabelAr ?? item.StatusLabelAr ?? ''),
+      isApproved: Boolean(item.isApproved ?? item.IsApproved ?? false),
+      canApprove: Boolean(item.canApprove ?? item.CanApprove ?? false),
+      createdAt: String(item.createdAt ?? item.CreatedAt ?? ''),
+    })),
     latestPostId: raw.latestPostId ?? raw.LatestPostId ?? 0,
     postStatus: raw.postStatus ?? raw.PostStatus ?? 0,
     postStatusLabelAr: raw.postStatusLabelAr ?? raw.PostStatusLabelAr ?? '',
@@ -1403,6 +1454,7 @@ type RawUserDetail = AdminUserDetail & {
   ProductsCount?: number
   ShippingPhoneRevealCount?: number
   ShippingPhoneRevealsByCompany?: Record<string, unknown>[]
+  ShippingPhoneRevealsByViewer?: Record<string, unknown>[]
   CanApprove?: boolean
   IsCustomer?: boolean
   isCustomer?: boolean
@@ -1536,6 +1588,17 @@ export function normalizeUserDetail(raw: RawUserDetail): AdminUserDetail {
     ).map((item: Record<string, unknown>) => ({
       companyUserId: String(item.companyUserId ?? item.CompanyUserId ?? ''),
       companyName: String(item.companyName ?? item.CompanyName ?? '—'),
+      revealCount: Number(item.revealCount ?? item.RevealCount ?? 0),
+    })),
+    shippingPhoneRevealsByViewer: (
+      raw.shippingPhoneRevealsByViewer ??
+      raw.ShippingPhoneRevealsByViewer ??
+      []
+    ).map((item: Record<string, unknown>) => ({
+      viewerUserId: String(item.viewerUserId ?? item.ViewerUserId ?? ''),
+      viewerName: String(item.viewerName ?? item.ViewerName ?? '—'),
+      viewerEmail: (item.viewerEmail ?? item.ViewerEmail ?? null) as string | null,
+      viewerPhone: (item.viewerPhone ?? item.ViewerPhone ?? null) as string | null,
       revealCount: Number(item.revealCount ?? item.RevealCount ?? 0),
     })),
     canApprove:

@@ -25,6 +25,7 @@ export type AdminShippingProvider = {
   cityName: string | null
   isActive: boolean
   totalShipments: number
+  phoneRevealCount: number
   postCount: number
   registrationDate: string
   fromCountryName: string
@@ -42,11 +43,39 @@ export type AdminShippingPhoneRevealViewer = {
   revealCount: number
 }
 
+export type AdminShippingPostItem = {
+  id: number
+  fromCountryName: string
+  fromCountryNameAr: string | null
+  fromPortName: string
+  fromPortUnLocode: string | null
+  toCountryName: string
+  toCountryNameAr: string | null
+  toPortName: string
+  toPortUnLocode: string | null
+  routeSummary: string
+  routeSummaryAr: string
+  container20ftPriceUsd: number | null
+  container40ftPriceUsd: number | null
+  container20ftPriceFormatted: string
+  container40ftPriceFormatted: string
+  phoneNumber: string | null
+  details: string | null
+  minDurationDays: number | null
+  maxDurationDays: number | null
+  status: number
+  statusLabelAr: string
+  isApproved: boolean
+  canApprove: boolean
+  createdAt: string
+}
+
 export type AdminShippingProviderDetail = AdminShippingProvider & {
   fullName: string
   landNumber: string | null
   commercialRegister: string | null
   taxNumber: string | null
+  website: string | null
   fromCountryId: number
   fromPortId: number
   toCountryId: number
@@ -65,6 +94,7 @@ export type AdminShippingProviderDetail = AdminShippingProvider & {
   phoneRevealCount: number
   phoneRevealsByViewer: AdminShippingPhoneRevealViewer[]
   shipments: AdminShipmentLogItem[]
+  posts: AdminShippingPostItem[]
   latestPostId: number
   postStatus: number
   postStatusLabelAr: string

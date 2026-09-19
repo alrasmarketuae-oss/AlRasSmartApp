@@ -182,6 +182,8 @@ public sealed class AdminUserDetailDto
     public int ProductsCount { get; set; }
     public int ShippingPhoneRevealCount { get; set; }
     public IReadOnlyList<AdminShippingPhoneRevealCompanyDto> ShippingPhoneRevealsByCompany { get; set; } = [];
+    /// <summary>Who revealed this user's shipping number (populated for shipping companies).</summary>
+    public IReadOnlyList<AdminShippingPhoneRevealViewerDto> ShippingPhoneRevealsByViewer { get; set; } = [];
     public bool IsCustomer { get; set; }
     public bool CanApprove { get; set; }
     public bool CanDeactivate { get; set; }
@@ -630,6 +632,7 @@ public sealed class AdminShippingProviderListItemDto
     public string? CityName { get; set; }
     public bool IsActive { get; set; }
     public int TotalShipments { get; set; }
+    public int PhoneRevealCount { get; set; }
     public int PostCount { get; set; }
     public DateTime RegistrationDate { get; set; }
     public string FromCountryName { get; set; } = string.Empty;
@@ -649,6 +652,7 @@ public sealed class AdminShippingProviderDetailDto
     public string? LandNumber { get; set; }
     public string? CommercialRegister { get; set; }
     public string? TaxNumber { get; set; }
+    public string? Website { get; set; }
     public string? CityName { get; set; }
     public decimal? Container20ftPriceUsd { get; set; }
     public decimal? Container40ftPriceUsd { get; set; }
@@ -681,6 +685,35 @@ public sealed class AdminShippingProviderDetailDto
     public string PostStatusLabelAr { get; set; } = string.Empty;
     public bool IsPostApproved { get; set; }
     public bool CanApprovePost { get; set; }
+    public IReadOnlyList<AdminShippingPostItemDto> Posts { get; set; } = [];
+}
+
+public sealed class AdminShippingPostItemDto
+{
+    public long Id { get; set; }
+    public string FromCountryName { get; set; } = string.Empty;
+    public string? FromCountryNameAr { get; set; }
+    public string FromPortName { get; set; } = string.Empty;
+    public string? FromPortUnLocode { get; set; }
+    public string ToCountryName { get; set; } = string.Empty;
+    public string? ToCountryNameAr { get; set; }
+    public string ToPortName { get; set; } = string.Empty;
+    public string? ToPortUnLocode { get; set; }
+    public string RouteSummary { get; set; } = string.Empty;
+    public string RouteSummaryAr { get; set; } = string.Empty;
+    public decimal? Container20ftPriceUsd { get; set; }
+    public decimal? Container40ftPriceUsd { get; set; }
+    public string Container20ftPriceFormatted { get; set; } = string.Empty;
+    public string Container40ftPriceFormatted { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; }
+    public string? Details { get; set; }
+    public int? MinDurationDays { get; set; }
+    public int? MaxDurationDays { get; set; }
+    public byte Status { get; set; }
+    public string StatusLabelAr { get; set; } = string.Empty;
+    public bool IsApproved { get; set; }
+    public bool CanApprove { get; set; }
+    public DateTime CreatedAt { get; set; }
 }
 
 public sealed class AdminShippingStatsDto

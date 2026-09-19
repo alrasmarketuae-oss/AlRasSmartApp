@@ -12,5 +12,5 @@ public static class RoleIds
 
     /// <summary>In-memory checks only — do not use inside EF LINQ queries.</summary>
     public static bool RequiresAdminApproval(byte roleId) =>
-        roleId is Seller or ShippingCompany;
+        roleId is Seller;
 }

@@ -184,11 +184,16 @@ export default function BannersPage() {
             ) : null}
 
             <label className="mt-4 block">
-              <span className="admin-text-muted text-sm font-medium">{t('banners.linkUrl')}</span>
+              <span className="admin-text-muted text-sm font-medium">
+                {t('banners.linkUrl')}
+              </span>
               <input
+                type="text"
+                inputMode="url"
+                autoComplete="off"
                 value={linkUrl}
                 onChange={(e) => setLinkUrl(e.target.value)}
-                placeholder="https://"
+                placeholder={t('banners.linkPlaceholder')}
                 className="admin-input mt-1 w-full px-3 py-2 text-sm"
               />
               <span className="admin-text-subtle mt-1 block text-xs">{t('banners.linkOptional')}</span>
