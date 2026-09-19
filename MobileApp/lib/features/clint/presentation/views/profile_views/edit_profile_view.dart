@@ -1,6 +1,7 @@
 import 'package:alrasmarket/core/constants/country_dial_codes.dart';
 import 'package:alrasmarket/core/media/image_compressor.dart';
 import 'package:alrasmarket/core/media/image_source_picker.dart';
+import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/serveses/profile_service.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
@@ -12,6 +13,7 @@ import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/widgets/costomtextform.dart';
 import 'package:alrasmarket/features/auth/presentation/views/widgets/contry_code.dart';
 import 'package:alrasmarket/generated/l10n.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -45,8 +47,13 @@ class _EditProfileViewState extends State<EditProfileView> {
   bool _saving = false;
   bool _isCompany = false;
   bool _uploadingImage = false;
+  bool _uploadingLicence = false;
+  bool _uploadingCompanyImage = false;
+  int? _deletingCompanyImageId;
   bool _hasPendingProfileChanges = false;
   String? _profileImagePath;
+  String? _licencePath;
+  List<CompanyProfileImage> _companyImages = const [];
 
   @override
   void initState() {
@@ -76,8 +83,10 @@ class _EditProfileViewState extends State<EditProfileView> {
       _landlineController.text = parsedLand.$2;
       _websiteController.text = profile.website ?? '';
       _licenseController.text = (profile.licenseNumber ?? '').trim();
-      _isCompany = profile.isCompanyAccount;
+      _isCompany = profile.isCompanyAccount || profile.isShippingCompanyAccount;
       _profileImagePath = profile.imgPath;
+      _licencePath = profile.licencePath;
+      _companyImages = List<CompanyProfileImage>.from(profile.companyImages);
       _hasPendingProfileChanges = profile.hasPendingProfileChanges;
     } catch (_) {}
 
@@ -198,6 +207,444 @@ class _EditProfileViewState extends State<EditProfileView> {
     }
   }
 
+  bool get _isArabic =>
+      Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
+
+  bool _isPdfPath(String? path) {
+    final lower = (path ?? '').toLowerCase();
+    return lower.endsWith('.pdf');
+  }
+
+  String _fileNameFromPath(String? path) {
+    final value = (path ?? '').trim();
+    if (value.isEmpty) return '';
+    final parts = value.replaceAll('\\', '/').split('/');
+    return parts.isEmpty ? value : parts.last;
+  }
+
+  Future<void> _pickAndUploadLicence() async {
+    if (_uploadingLicence) return;
+    final result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['pdf', 'jpg', 'jpeg', 'png', 'webp'],
+      withData: false,
+    );
+    if (!mounted) return;
+    final path = result?.files.singleOrNull?.path;
+    if (path == null || path.isEmpty) return;
+
+    setState(() => _uploadingLicence = true);
+    try {
+      final updated = await ProfileService.instance.uploadMyCompanyLicence(path);
+      if (!mounted) return;
+      setState(() {
+        _licencePath = updated.licencePath;
+        _companyImages = List<CompanyProfileImage>.from(updated.companyImages);
+      });
+      AppToast.showSuccess(
+        context,
+        _isArabic ? 'تم تحديث ملف الرخصة' : 'Trade licence updated',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.showError(context, e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _uploadingLicence = false);
+    }
+  }
+
+  Future<void> _pickAndUploadCompanyImages() async {
+    if (_uploadingCompanyImage) return;
+    final source = await showImageSourceSheet(context);
+    if (!mounted || source == null) return;
+
+    final picker = ImagePicker();
+    final List<String> paths = [];
+    if (source == ImageSource.gallery) {
+      final images = await picker.pickMultiImage(imageQuality: 85);
+      if (images.isEmpty) return;
+      paths.addAll(images.map((e) => e.path));
+    } else {
+      final image = await picker.pickImage(source: source, imageQuality: 85);
+      if (image == null) return;
+      paths.add(image.path);
+    }
+    if (!mounted || paths.isEmpty) return;
+
+    setState(() => _uploadingCompanyImage = true);
+    try {
+      UserProfile? updated;
+      for (final rawPath in paths) {
+        final compressed =
+            await ImageCompressor.compressIfNeeded(rawPath) ?? rawPath;
+        updated =
+            await ProfileService.instance.uploadMyCompanyImage(compressed);
+      }
+      if (!mounted || updated == null) return;
+      setState(() {
+        _licencePath = updated!.licencePath;
+        _companyImages = List<CompanyProfileImage>.from(updated.companyImages);
+      });
+      AppToast.showSuccess(
+        context,
+        _isArabic ? 'تم إضافة صور الشركة' : 'Company photos added',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.showError(context, e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _uploadingCompanyImage = false);
+    }
+  }
+
+  Future<void> _deleteCompanyImage(CompanyProfileImage image) async {
+    if (_deletingCompanyImageId != null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(_isArabic ? 'حذف الصورة' : 'Delete photo'),
+        content: Text(
+          _isArabic
+              ? 'هل تريد حذف صورة الشركة هذه؟'
+              : 'Delete this company site photo?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(_isArabic ? 'إلغاء' : 'Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              _isArabic ? 'حذف' : 'Delete',
+              style: const TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _deletingCompanyImageId = image.id);
+    try {
+      final updated =
+          await ProfileService.instance.deleteMyCompanyImage(image.id);
+      if (!mounted) return;
+      setState(() {
+        _licencePath = updated.licencePath;
+        _companyImages = List<CompanyProfileImage>.from(updated.companyImages);
+      });
+      AppToast.showSuccess(
+        context,
+        _isArabic ? 'تم حذف الصورة' : 'Photo deleted',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.showError(context, e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _deletingCompanyImageId = null);
+    }
+  }
+
+  Widget _buildLicenceSection() {
+    final s = S.of(context);
+    final url = ApiConstants.resolveMediaUrl(_licencePath);
+    final hasLicence = (_licencePath ?? '').trim().isNotEmpty;
+    final isPdf = _isPdfPath(_licencePath);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          s.uploadTradeLicense,
+          style: TextStyle(
+            color: const Color.fromRGBO(51, 51, 51, 1),
+            fontSize: 16.sp,
+            fontWeight: FontWeight.normal,
+            height: 1.5,
+          ),
+        ),
+        SizedBox(height: 12.h),
+        InkWell(
+          onTap: _uploadingLicence ? null : _pickAndUploadLicence,
+          borderRadius: BorderRadius.circular(12.r),
+          child: Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(14.w),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: const Color(0xFFE8EDF4)),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color.fromRGBO(0, 0, 0, 0.08),
+                  blurRadius: 2,
+                ),
+              ],
+            ),
+            child: _uploadingLicence
+                ? SizedBox(
+                    height: 90.h,
+                    child: const Center(child: CircularProgressIndicator()),
+                  )
+                : hasLicence
+                    ? Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8.r),
+                            child: isPdf || url.isEmpty
+                                ? Container(
+                                    width: 72.w,
+                                    height: 72.h,
+                                    color: const Color(0xFFF5F5F5),
+                                    child: Icon(
+                                      Icons.picture_as_pdf,
+                                      color: LightColor.defaultColor,
+                                      size: 32.sp,
+                                    ),
+                                  )
+                                : CachedAppImage(
+                                    key: ValueKey(url),
+                                    imageUrl: url,
+                                    width: 72.w,
+                                    height: 72.h,
+                                    fit: BoxFit.cover,
+                                    errorWidget: Container(
+                                      width: 72.w,
+                                      height: 72.h,
+                                      color: const Color(0xFFF5F5F5),
+                                      child: Icon(
+                                        Icons.description_outlined,
+                                        color: LightColor.defaultColor,
+                                        size: 28.sp,
+                                      ),
+                                    ),
+                                  ),
+                          ),
+                          SizedBox(width: 12.w),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _fileNameFromPath(_licencePath),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 13.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF333333),
+                                  ),
+                                ),
+                                SizedBox(height: 6.h),
+                                Text(
+                                  _isArabic
+                                      ? 'اضغط لاستبدال الملف (يُحذف القديم)'
+                                      : 'Tap to replace (old file is deleted)',
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    color: LightColor.hintColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(
+                            Icons.upload_file_outlined,
+                            color: LightColor.defaultColor,
+                            size: 22.sp,
+                          ),
+                        ],
+                      )
+                    : Column(
+                        children: [
+                          SvgPicture.asset(
+                            AppAssets.uploadIcon,
+                            width: 24.w,
+                            height: 24.h,
+                          ),
+                          SizedBox(height: 10.h),
+                          Text(
+                            s.dragDropOrTapToUpload,
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF4A4A4A),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: 4.h),
+                          Text(
+                            s.pdfJpgPngMax10Mb,
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: LightColor.hintColor,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCompanyImagesSection() {
+    final s = S.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              s.uploadCompanySiteImages,
+              style: TextStyle(
+                color: const Color.fromRGBO(51, 51, 51, 1),
+                fontSize: 16.sp,
+                fontWeight: FontWeight.normal,
+                height: 1.5,
+              ),
+            ),
+            Text(
+              s.optional,
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: LightColor.hintColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 12.h),
+        if (_companyImages.isNotEmpty) ...[
+          SizedBox(
+            height: 110.h,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _companyImages.length,
+              separatorBuilder: (_, _) => SizedBox(width: 10.w),
+              itemBuilder: (context, index) {
+                final image = _companyImages[index];
+                final url = ApiConstants.resolveMediaUrl(image.imagePath);
+                final deleting = _deletingCompanyImageId == image.id;
+                return Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10.r),
+                      child: CachedAppImage(
+                        key: ValueKey('${image.id}-$url'),
+                        imageUrl: url,
+                        width: 110.w,
+                        height: 110.h,
+                        fit: BoxFit.cover,
+                        errorWidget: Container(
+                          width: 110.w,
+                          height: 110.h,
+                          color: const Color(0xFFF5F5F5),
+                          child: Icon(
+                            Icons.image_not_supported_outlined,
+                            color: LightColor.hintColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 6.h,
+                      right: 6.w,
+                      child: InkWell(
+                        onTap: deleting ? null : () => _deleteCompanyImage(image),
+                        child: Container(
+                          width: 28.w,
+                          height: 28.h,
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(20.r),
+                          ),
+                          child: Center(
+                            child: deleting
+                                ? SizedBox(
+                                    width: 12.w,
+                                    height: 12.h,
+                                    child: const CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : Icon(
+                                    Icons.close,
+                                    color: Colors.white,
+                                    size: 16.sp,
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+          SizedBox(height: 12.h),
+        ],
+        InkWell(
+          onTap: _uploadingCompanyImage ? null : _pickAndUploadCompanyImages,
+          borderRadius: BorderRadius.circular(12.r),
+          child: Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 18.h),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: const Color(0xFFE8EDF4)),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color.fromRGBO(0, 0, 0, 0.08),
+                  blurRadius: 2,
+                ),
+              ],
+            ),
+            child: _uploadingCompanyImage
+                ? SizedBox(
+                    height: 48.h,
+                    child: const Center(child: CircularProgressIndicator()),
+                  )
+                : Column(
+                    children: [
+                      SvgPicture.asset(
+                        AppAssets.uploadIcon,
+                        width: 24.w,
+                        height: 24.h,
+                      ),
+                      SizedBox(height: 10.h),
+                      Text(
+                        s.dragDropOrTapToUpload,
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF4A4A4A),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        _isArabic
+                            ? 'إضافة صور جديدة أو حذف الحالية'
+                            : 'Add new photos or remove existing ones',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: LightColor.hintColor,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+
   (String, String) _splitPhone(String raw) {
     final value = raw.trim();
     if (value.isEmpty) return (_selectedCountryCode, '');
@@ -223,7 +670,7 @@ class _EditProfileViewState extends State<EditProfileView> {
   Widget _buildProfileImage() {
     return ValueListenableBuilder<int>(
       valueListenable: AuthService.instance.profileImageRevision,
-      builder: (context, _, __) {
+      builder: (context, _, _) {
         final url = profileImageUrlFromPath(_profileImagePath);
         return Container(
           width: 100.w,
@@ -621,6 +1068,10 @@ class _EditProfileViewState extends State<EditProfileView> {
                               label: S.of(context).website,
                               controller: _websiteController,
                             ),
+                            SizedBox(height: 20.h),
+                            _buildLicenceSection(),
+                            SizedBox(height: 20.h),
+                            _buildCompanyImagesSection(),
                           ],
                           SizedBox(height: 16.h),
                           Container(
@@ -637,11 +1088,11 @@ class _EditProfileViewState extends State<EditProfileView> {
                                           .toLowerCase() ==
                                       'ar'
                                   ? (_hasPendingProfileChanges
-                                      ? 'حسابك تحت المراجعة حاليًا للتعديلات المرسلة. يمكنك متابعة استخدام التطبيق والبيانات الحالية حتى موافقة الأدمن.'
-                                      : 'ملاحظة: عند الضغط على تحديث، سيصبح التعديل تحت المراجعة لحين موافقة الأدمن، وستبقى البيانات الحالية فعالة.')
+                                      ? 'حسابك تحت المراجعة حاليًا للتعديلات المرسلة. يمكنك متابعة استخدام التطبيق والبيانات الحالية حتى موافقة الأدمن. تحديث الرخصة وصور الشركة يُطبَّق فورًا.'
+                                      : 'ملاحظة: عند الضغط على تحديث، ستُراجع بيانات النص من الأدمن. تحديث ملف الرخصة وصور الشركة يُطبَّق فورًا ويحذف الملفات السابقة.')
                                   : (_hasPendingProfileChanges
-                                      ? 'Your account changes are under review. You can keep using the app with the current data until admin approval.'
-                                      : 'Note: pressing update will send changes for admin review. Current data stays active until approval.'),
+                                      ? 'Your account changes are under review. You can keep using the app with the current data until admin approval. Licence and company photos update immediately.'
+                                      : 'Note: pressing update sends text changes for admin review. Licence file and company photos update immediately and replace previous files.'),
                               style: TextStyle(
                                 fontSize: 13.sp,
                                 height: 1.45,

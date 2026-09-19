@@ -107,12 +107,12 @@ class RecordingView extends StatelessWidget {
                               accent: _shippingOrange,
                               tint: const Color(0xFFFFF6EE),
                               icon: Icons.directions_boat_rounded,
-                              title: s.shippingCompany,
+                              title: s.shippingCompanyRegister,
                               subtitle: isAr
                                   ? 'شحن سريع وآمن داخل وخارج الدولة'
                                   : s.shippingCompanySubtitle,
                               onTap: () =>
-                                  context.push(AppRoutes.kShippingLoginView),
+                                  context.push(AppRoutes.kShippingRegisterView),
                             ),
                             SizedBox(height: 18.h),
                             _LoginButton(

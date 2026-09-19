@@ -8,6 +8,32 @@ import 'package:alrasmarket/core/services/dio_helper.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:dio/dio.dart';
 
+class CompanyProfileImage {
+  final int id;
+  final String imagePath;
+  final bool isPrimary;
+
+  const CompanyProfileImage({
+    required this.id,
+    required this.imagePath,
+    this.isPrimary = false,
+  });
+
+  factory CompanyProfileImage.fromJson(Map<String, dynamic> json) {
+    return CompanyProfileImage(
+      id: int.tryParse((json['id'] ?? json['Id'] ?? '0').toString()) ?? 0,
+      imagePath: (json['imagePath'] ?? json['ImagePath'] ?? '').toString(),
+      isPrimary: json['isPrimary'] == true || json['IsPrimary'] == true,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'imagePath': imagePath,
+        'isPrimary': isPrimary,
+      };
+}
+
 class UserProfile {
   final String fullName;
   final String email;
@@ -18,10 +44,13 @@ class UserProfile {
   final String? landNumber;
   final String? website;
   final String? licenseNumber;
+  final String? licencePath;
+  final List<CompanyProfileImage> companyImages;
   final String? imgPath;
   final DateTime? birthDate;
   final String roleName;
   final bool isCompanyAccount;
+  final bool isShippingCompanyAccount;
   final bool isRejected;
   final String? rejectionReason;
   final bool hasPendingProfileChanges;
@@ -42,10 +71,13 @@ class UserProfile {
     this.landNumber,
     this.website,
     this.licenseNumber,
+    this.licencePath,
+    this.companyImages = const [],
     this.imgPath,
     this.birthDate,
     required this.roleName,
     required this.isCompanyAccount,
+    this.isShippingCompanyAccount = false,
     this.isRejected = false,
     this.rejectionReason,
     this.hasPendingProfileChanges = false,
@@ -64,6 +96,18 @@ class UserProfile {
     final notificationsRaw =
         json['isNotificationsOn'] ?? json['IsNotificationsOn'];
 
+    final rawImages = json['companyImages'] ?? json['CompanyImages'];
+    final companyImages = <CompanyProfileImage>[];
+    if (rawImages is List) {
+      for (final item in rawImages) {
+        if (item is Map) {
+          companyImages.add(
+            CompanyProfileImage.fromJson(Map<String, dynamic>.from(item)),
+          );
+        }
+      }
+    }
+
     return UserProfile(
       fullName: (json['fullName'] ?? json['FullName'] ?? '').toString(),
       email: (json['email'] ?? json['Email'] ?? '').toString(),
@@ -76,11 +120,15 @@ class UserProfile {
       website: (json['website'] ?? json['Website'])?.toString(),
       licenseNumber:
           (json['licenseNumber'] ?? json['LicenseNumber'])?.toString(),
+      licencePath: (json['licencePath'] ?? json['LicencePath'])?.toString(),
+      companyImages: companyImages,
       imgPath: (json['imgPath'] ?? json['ImgPath'])?.toString(),
       birthDate: birth,
       roleName: (json['roleName'] ?? json['RoleName'] ?? '').toString(),
       isCompanyAccount:
           json['isCompanyAccount'] == true || json['IsCompanyAccount'] == true,
+      isShippingCompanyAccount: json['isShippingCompanyAccount'] == true ||
+          json['IsShippingCompanyAccount'] == true,
       isRejected: json['isRejected'] == true || json['IsRejected'] == true,
       rejectionReason:
           (json['rejectionReason'] ?? json['RejectionReason'])?.toString(),
@@ -105,10 +153,13 @@ class UserProfile {
     'landNumber': landNumber,
     'website': website,
     'licenseNumber': licenseNumber,
+    'licencePath': licencePath,
+    'companyImages': companyImages.map((e) => e.toJson()).toList(),
     'imgPath': imgPath,
     'birthDate': birthDate?.toIso8601String(),
     'roleName': roleName,
     'isCompanyAccount': isCompanyAccount,
+    'isShippingCompanyAccount': isShippingCompanyAccount,
     'isRejected': isRejected,
     'rejectionReason': rejectionReason,
     'hasPendingProfileChanges': hasPendingProfileChanges,
@@ -213,15 +264,7 @@ class ProfileService {
       throw Exception('Invalid profile response');
     }
     final profile = UserProfile.fromJson(data);
-    final userId = AuthService.instance.currentUserID;
-    if (userId != null && userId.isNotEmpty) {
-      await ApiCacheStore.instance.write(
-        ApiCacheKeys.userProfile(userId),
-        data,
-        ApiCacheTtl.profile,
-      );
-    }
-    await _syncAuthFromProfile(profile);
+    await _cacheAndSync(profile, data);
     return profile;
   }
 
@@ -258,6 +301,54 @@ class ProfileService {
   }
 
   Future<UserProfile> uploadMyProfileImage(String filePath) async {
+    return _uploadMultipart(
+      url: ApiConstants.userProfileImageEndPoint,
+      filePath: filePath,
+      method: 'PUT',
+    );
+  }
+
+  Future<UserProfile> uploadMyCompanyLicence(String filePath) async {
+    return _uploadMultipart(
+      url: ApiConstants.userCompanyLicenceEndPoint,
+      filePath: filePath,
+      method: 'PUT',
+    );
+  }
+
+  Future<UserProfile> uploadMyCompanyImage(String filePath) async {
+    return _uploadMultipart(
+      url: ApiConstants.userCompanyImagesEndPoint,
+      filePath: filePath,
+      method: 'POST',
+    );
+  }
+
+  Future<UserProfile> deleteMyCompanyImage(int companyImageId) async {
+    final response = await DioHelper.deleteData(
+      url: ApiConstants.userCompanyImageByIdEndPoint(companyImageId),
+      token: AuthService.instance.currentToken,
+    );
+    if (response?.statusCode != 200) {
+      final message = response?.data is Map
+          ? response?.data['message']?.toString()
+          : null;
+      throw Exception(message ?? 'Failed to delete company image');
+    }
+    final data = response?.data;
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Invalid profile response');
+    }
+    final profile = UserProfile.fromJson(data);
+    await _cacheAndSync(profile, data);
+    return profile;
+  }
+
+  Future<UserProfile> _uploadMultipart({
+    required String url,
+    required String filePath,
+    required String method,
+  }) async {
     final file = File(filePath);
     final formData = FormData.fromMap({
       'File': await MultipartFile.fromFile(
@@ -265,22 +356,33 @@ class ProfileService {
         filename: file.path.split(Platform.pathSeparator).last,
       ),
     });
-    final response = await DioHelper.putUpload(
-      url: ApiConstants.userProfileImageEndPoint,
-      formData: formData,
-      token: AuthService.instance.currentToken,
-    );
+    final response = method == 'POST'
+        ? await DioHelper.uploadFile(
+            url: url,
+            formData: formData,
+            token: AuthService.instance.currentToken,
+          )
+        : await DioHelper.putUpload(
+            url: url,
+            formData: formData,
+            token: AuthService.instance.currentToken,
+          );
     if (response?.statusCode != 200) {
       final message = response?.data is Map
           ? response?.data['message']?.toString()
           : null;
-      throw Exception(message ?? 'Failed to upload profile image');
+      throw Exception(message ?? 'Failed to upload file');
     }
     final data = response?.data;
     if (data is! Map<String, dynamic>) {
       throw Exception('Invalid profile response');
     }
     final profile = UserProfile.fromJson(data);
+    await _cacheAndSync(profile, data);
+    return profile;
+  }
+
+  Future<void> _cacheAndSync(UserProfile profile, Map<String, dynamic> data) async {
     final userId = AuthService.instance.currentUserID;
     if (userId != null && userId.isNotEmpty) {
       await ApiCacheStore.instance.write(
@@ -290,7 +392,6 @@ class ProfileService {
       );
     }
     await _syncAuthFromProfile(profile);
-    return profile;
   }
 
   void _ensureNotRejected(UserProfile profile) {

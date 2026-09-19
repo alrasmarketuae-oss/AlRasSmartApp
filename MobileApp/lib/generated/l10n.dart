@@ -4769,30 +4769,30 @@ class S {
     return Intl.message('Show price?', name: 'showPrice', desc: '', args: []);
   }
 
-  /// `If you turn this off, the price will disappear from the product card and an Ask for price button will appear. Tapping it sends the full product details to admin live chat.`
+  /// `If you turn this off, the price will disappear from the product card and an Ask For Price button will appear. Tapping it sends the full product details to admin live chat.`
   String get showPriceHint {
     return Intl.message(
-      'If you turn this off, the price will disappear from the product card and an Ask for price button will appear. Tapping it sends the full product details to admin live chat.',
+      'If you turn this off, the price will disappear from the product card and an Ask For Price button will appear. Tapping it sends the full product details to admin live chat.',
       name: 'showPriceHint',
       desc: '',
       args: [],
     );
   }
 
-  /// `Ask for price`
+  /// `Ask For Price`
   String get askForPrice {
     return Intl.message(
-      'Ask for price',
+      'Ask For Price',
       name: 'askForPrice',
       desc: '',
       args: [],
     );
   }
 
-  /// `Ask for price — product details:`
+  /// `Ask For Price — product details:`
   String get askForPriceChatIntro {
     return Intl.message(
-      'Ask for price — product details:',
+      'Ask For Price — product details:',
       name: 'askForPriceChatIntro',
       desc: '',
       args: [],

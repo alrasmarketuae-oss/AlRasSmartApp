@@ -407,7 +407,7 @@ class _ProductCardMarketplaceLayoutState
               fontFamily: fontFamily,
               fontSize: priceFontSize,
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF3A7DC5),
+              color: AppColors.title(context),
               height: 1.15,
             ),
           ),

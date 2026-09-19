@@ -67,6 +67,18 @@ public interface IProfileAppService
         string userId,
         UploadProfileImageInput input,
         CancellationToken cancellationToken = default);
+    Task<object> UploadMyCompanyLicenceAsync(
+        string userId,
+        UploadProfileImageInput input,
+        CancellationToken cancellationToken = default);
+    Task<object> UploadMyCompanyImageAsync(
+        string userId,
+        UploadProfileImageInput input,
+        CancellationToken cancellationToken = default);
+    Task<object> DeleteMyCompanyImageAsync(
+        string userId,
+        long companyImageId,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed class UpdateProfileInput

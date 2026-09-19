@@ -365,9 +365,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "appWord": MessageLookupByLibrary.simpleMessage("App"),
     "approved": MessageLookupByLibrary.simpleMessage("Approved"),
     "arabicLabel": MessageLookupByLibrary.simpleMessage("Arabic"),
-    "askForPrice": MessageLookupByLibrary.simpleMessage("Ask for price"),
+    "askForPrice": MessageLookupByLibrary.simpleMessage("Ask For Price"),
     "askForPriceChatIntro": MessageLookupByLibrary.simpleMessage(
-      "Ask for price — product details:",
+      "Ask For Price — product details:",
     ),
     "availableQuantity": MessageLookupByLibrary.simpleMessage(
       "Available Quantity",
@@ -1726,7 +1726,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "showNumber": MessageLookupByLibrary.simpleMessage("Show number"),
     "showPrice": MessageLookupByLibrary.simpleMessage("Show price?"),
     "showPriceHint": MessageLookupByLibrary.simpleMessage(
-      "If you turn this off, the price will disappear from the product card and an Ask for price button will appear. Tapping it sends the full product details to admin live chat.",
+      "If you turn this off, the price will disappear from the product card and an Ask For Price button will appear. Tapping it sends the full product details to admin live chat.",
     ),
     "signInToContinue": MessageLookupByLibrary.simpleMessage(
       "Sign in to continue",

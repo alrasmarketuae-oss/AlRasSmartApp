@@ -2,6 +2,7 @@ using BusinessLayer.Constants;
 using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using DataLayer.Interfaces;
+using DataLayer.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace BusinessLayer.Services;
@@ -11,6 +12,9 @@ public class ProfileAppService(
     IAdminRealtimeNotificationService adminRealtimeNotificationService,
     IMediaStorageService mediaStorage) : IProfileAppService
 {
+    private const string CompanyLicencesFolder = "company-licences";
+    private const string CompanyImagesFolder = "company-images";
+
     public async Task<object> GetMyProfileAsync(string userId, CancellationToken cancellationToken = default)
     {
         if (!Guid.TryParse(userId, out var parsedUserId))
@@ -21,6 +25,7 @@ public class ProfileAppService(
         var user = await dbContext.Users
             .AsNoTracking()
             .Include(x => x.Role)
+            .Include(x => x.CompanyImages)
             .FirstOrDefaultAsync(x => x.Id == parsedUserId, cancellationToken)
             ?? throw new KeyNotFoundException("User not found.");
 
@@ -39,6 +44,7 @@ public class ProfileAppService(
 
         var user = await dbContext.Users
             .Include(x => x.Role)
+            .Include(x => x.CompanyImages)
             .FirstOrDefaultAsync(x => x.Id == parsedUserId, cancellationToken)
             ?? throw new KeyNotFoundException("User not found.");
 
@@ -186,6 +192,7 @@ public class ProfileAppService(
 
         var user = await dbContext.Users
             .Include(x => x.Role)
+            .Include(x => x.CompanyImages)
             .FirstOrDefaultAsync(x => x.Id == parsedUserId, cancellationToken)
             ?? throw new KeyNotFoundException("User not found.");
 
@@ -207,13 +214,171 @@ public class ProfileAppService(
         return await MapProfileAsync(user, cancellationToken);
     }
 
+    public async Task<object> UploadMyCompanyLicenceAsync(
+        string userId,
+        UploadProfileImageInput input,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(userId, out var parsedUserId))
+        {
+            throw new ArgumentException("Invalid user id.");
+        }
+
+        if (input.File is null || input.File.Length == 0)
+        {
+            throw new ArgumentException("File is required.");
+        }
+
+        var user = await dbContext.Users
+            .Include(x => x.Role)
+            .Include(x => x.CompanyImages)
+            .FirstOrDefaultAsync(x => x.Id == parsedUserId, cancellationToken)
+            ?? throw new KeyNotFoundException("User not found.");
+
+        EnsureCompanyAccount(user);
+
+        var extension = Path.GetExtension(input.File.FileName);
+        if (string.IsNullOrWhiteSpace(extension))
+        {
+            extension = ".jpg";
+        }
+
+        var previousPath = user.LicencePath;
+        var fileName = $"licence-{parsedUserId:N}-{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
+        user.LicencePath = await mediaStorage.SaveFormFileAsync(
+            input.File,
+            CompanyLicencesFolder,
+            fileName,
+            cancellationToken: cancellationToken);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(previousPath)
+            && !string.Equals(previousPath, user.LicencePath, StringComparison.OrdinalIgnoreCase))
+        {
+            await mediaStorage.DeleteAsync(previousPath, cancellationToken);
+        }
+
+        return await MapProfileAsync(user, cancellationToken);
+    }
+
+    public async Task<object> UploadMyCompanyImageAsync(
+        string userId,
+        UploadProfileImageInput input,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(userId, out var parsedUserId))
+        {
+            throw new ArgumentException("Invalid user id.");
+        }
+
+        if (input.File is null || input.File.Length == 0)
+        {
+            throw new ArgumentException("File is required.");
+        }
+
+        var user = await dbContext.Users
+            .Include(x => x.Role)
+            .Include(x => x.CompanyImages)
+            .FirstOrDefaultAsync(x => x.Id == parsedUserId, cancellationToken)
+            ?? throw new KeyNotFoundException("User not found.");
+
+        EnsureCompanyAccount(user);
+
+        var fileName = $"company-{parsedUserId:N}-{Guid.NewGuid():N}.jpg";
+        var imagePath = await mediaStorage.SaveCompressedJpegAsync(
+            input.File,
+            CompanyImagesFolder,
+            fileName,
+            cancellationToken: cancellationToken);
+
+        var isPrimary = user.CompanyImages.Count == 0;
+        dbContext.CompanyImages.Add(new CompanyImage
+        {
+            UserId = parsedUserId,
+            ImagePath = imagePath,
+            IsPrimary = isPrimary,
+            CreatedAt = DateTime.UtcNow
+        });
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        // Reload collection for mapping.
+        await dbContext.Entry(user).Collection(x => x.CompanyImages).LoadAsync(cancellationToken);
+
+        return await MapProfileAsync(user, cancellationToken);
+    }
+
+    public async Task<object> DeleteMyCompanyImageAsync(
+        string userId,
+        long companyImageId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(userId, out var parsedUserId))
+        {
+            throw new ArgumentException("Invalid user id.");
+        }
+
+        var user = await dbContext.Users
+            .Include(x => x.Role)
+            .Include(x => x.CompanyImages)
+            .FirstOrDefaultAsync(x => x.Id == parsedUserId, cancellationToken)
+            ?? throw new KeyNotFoundException("User not found.");
+
+        EnsureCompanyAccount(user);
+
+        var image = user.CompanyImages.FirstOrDefault(x => x.Id == companyImageId)
+            ?? throw new KeyNotFoundException("Company image not found.");
+
+        var pathToDelete = image.ImagePath;
+        var wasPrimary = image.IsPrimary;
+        dbContext.CompanyImages.Remove(image);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        if (wasPrimary)
+        {
+            var nextPrimary = await dbContext.CompanyImages
+                .Where(x => x.UserId == parsedUserId)
+                .OrderBy(x => x.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (nextPrimary is not null)
+            {
+                nextPrimary.IsPrimary = true;
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
+        }
+
+        await mediaStorage.DeleteAsync(pathToDelete, cancellationToken);
+
+        await dbContext.Entry(user).Collection(x => x.CompanyImages).LoadAsync(cancellationToken);
+        return await MapProfileAsync(user, cancellationToken);
+    }
+
+    private static void EnsureCompanyAccount(User user)
+    {
+        if (user.RoleId is not (RoleIds.Seller or RoleIds.ShippingCompany))
+        {
+            throw new ArgumentException("Only company accounts can manage licence and company images.");
+        }
+    }
+
     private Task<object> MapProfileAsync(
-        DataLayer.Models.User user,
+        User user,
         CancellationToken cancellationToken)
     {
         _ = cancellationToken;
         var pending = PendingCompanyProfileChangeHelper.TryParse(user.PendingProfileChanges);
         var isCompanyAccount = user.RoleId == RoleIds.Seller;
+        var companyImages = (user.CompanyImages ?? [])
+            .OrderByDescending(x => x.IsPrimary)
+            .ThenBy(x => x.Id)
+            .Select(x => new
+            {
+                id = x.Id,
+                imagePath = x.ImagePath,
+                isPrimary = x.IsPrimary
+            })
+            .ToList();
 
         return Task.FromResult<object>(new
         {
@@ -231,6 +396,8 @@ public class ProfileAppService(
             taxNumber = user.TaxNumber,
             website = user.Website,
             licenseNumber = user.LicenseNumber,
+            licencePath = user.LicencePath,
+            companyImages,
             isCompanyAccount = isCompanyAccount,
             isShippingCompanyAccount = user.RoleId == RoleIds.ShippingCompany,
             isCustomer = user.IsCustomer ?? false,
