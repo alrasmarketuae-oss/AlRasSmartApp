@@ -303,8 +303,10 @@ public class ProfileAppService(
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        // Reload collection for mapping.
-        await dbContext.Entry(user).Collection(x => x.CompanyImages).LoadAsync(cancellationToken);
+        user = await dbContext.Users
+            .Include(x => x.Role)
+            .Include(x => x.CompanyImages)
+            .FirstAsync(x => x.Id == parsedUserId, cancellationToken);
 
         return await MapProfileAsync(user, cancellationToken);
     }
@@ -350,7 +352,11 @@ public class ProfileAppService(
 
         await mediaStorage.DeleteAsync(pathToDelete, cancellationToken);
 
-        await dbContext.Entry(user).Collection(x => x.CompanyImages).LoadAsync(cancellationToken);
+        user = await dbContext.Users
+            .Include(x => x.Role)
+            .Include(x => x.CompanyImages)
+            .FirstAsync(x => x.Id == parsedUserId, cancellationToken);
+
         return await MapProfileAsync(user, cancellationToken);
     }
 
