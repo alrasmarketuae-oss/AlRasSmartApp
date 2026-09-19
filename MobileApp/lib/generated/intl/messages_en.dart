@@ -1724,9 +1724,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "Show all inquiries",
     ),
     "showNumber": MessageLookupByLibrary.simpleMessage("Show number"),
-    "showPrice": MessageLookupByLibrary.simpleMessage("Show price?"),
+    "showPrice": MessageLookupByLibrary.simpleMessage("Hide price?"),
     "showPriceHint": MessageLookupByLibrary.simpleMessage(
-      "If you turn this off, the price will disappear from the product card and an Ask for price button will appear. Tapping it sends the full product details to admin live chat.",
+      "When this is On, the price disappears from the product card and an Ask for price button appears. Tapping it sends the full product details to admin live chat. Default is Off (price shown).",
     ),
     "signInToContinue": MessageLookupByLibrary.simpleMessage(
       "Sign in to continue",

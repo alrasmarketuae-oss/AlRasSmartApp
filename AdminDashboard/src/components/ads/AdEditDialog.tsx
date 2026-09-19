@@ -427,11 +427,11 @@ export default function AdEditDialog({
             >
               <select
                 className={inputClass}
-                value={showPrice ? 'yes' : 'no'}
-                onChange={(e) => setShowPrice(e.target.value === 'yes')}
+                value={showPrice ? 'off' : 'on'}
+                onChange={(e) => setShowPrice(e.target.value !== 'on')}
               >
-                <option value="yes">{t('ads.showPriceYes')}</option>
-                <option value="no">{t('ads.showPriceNo')}</option>
+                <option value="off">{t('ads.showPriceNo')}</option>
+                <option value="on">{t('ads.showPriceYes')}</option>
               </select>
             </Field>
           ) : null}

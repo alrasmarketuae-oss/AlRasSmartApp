@@ -131,12 +131,14 @@ class CreateAdShowPriceToggle extends StatelessWidget {
     required this.onChanged,
   });
 
+  /// True when price should be visible (hide-price switch Off).
   final bool value;
   final ValueChanged<bool> onChanged;
 
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
+    final hidePrice = !value;
     return Row(
       children: [
         Expanded(
@@ -171,8 +173,9 @@ class CreateAdShowPriceToggle extends StatelessWidget {
           ),
         ),
         Switch.adaptive(
-          value: value,
-          onChanged: onChanged,
+          // Off by default = show price. On = hide price / ask for price.
+          value: hidePrice,
+          onChanged: (hide) => onChanged(!hide),
         ),
       ],
     );

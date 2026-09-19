@@ -1715,9 +1715,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "showAll": MessageLookupByLibrary.simpleMessage("عرض الكل"),
     "showAllRequests": MessageLookupByLibrary.simpleMessage("عرض كل الطلبات"),
     "showNumber": MessageLookupByLibrary.simpleMessage("إظهار الرقم"),
-    "showPrice": MessageLookupByLibrary.simpleMessage("إظهار السعر؟"),
+    "showPrice": MessageLookupByLibrary.simpleMessage("إخفاء السعر؟"),
     "showPriceHint": MessageLookupByLibrary.simpleMessage(
-      "عند إيقاف إظهار السعر، يختفي السعر من بطاقة المنتج ويظهر زر Ask for price. عند الضغط عليه تُرسل تفاصيل المنتج كاملة إلى الشات المباشر للأدمن.",
+      "عند التفعيل يختفي السعر من بطاقة المنتج ويظهر زر Ask for price. عند الضغط عليه تُرسل تفاصيل المنتج كاملة إلى الشات المباشر للأدمن. الافتراضي إيقاف (السعر ظاهر).",
     ),
     "signInToContinue": MessageLookupByLibrary.simpleMessage(
       "سجل دخولك للمتابعة",
