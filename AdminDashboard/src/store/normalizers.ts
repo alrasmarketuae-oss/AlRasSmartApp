@@ -160,6 +160,7 @@ type RawProduct = AdminProduct & {
   PriceFormatted?: string
   Quantity?: number
   Negotiable?: boolean | null
+  ShowPrice?: boolean | null
   CategoryName?: string
   CategoryId?: number | null
   categoryId?: number | null

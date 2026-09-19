@@ -531,6 +531,8 @@ await using (var scope = app.Services.CreateAsyncScope())
     await ProductRetailPricingSchemaMigrator.EnsureAsync(db);
     await ProductRetailChannelDetailsSchemaMigrator.EnsureAsync(db);
     await ProductRetailCodeSchemaMigrator.EnsureAsync(db);
+    // ShowPrice is mapped on Product; add before EF Products queries and usp_* recreate.
+    await ProductShowPriceSchemaMigrator.EnsureAsync(db);
     await ProductCodeSchemaMigrator.EnsureAsync(db);
     await ProductStoredProceduresSchemaMigrator.EnsureAsync(db);
     await OrderSchemaMigrator.EnsureAsync(db);
@@ -549,7 +551,6 @@ await using (var scope = app.Services.CreateAsyncScope())
     await ChatSchemaMigrator.EnsureAsync(db);
     await AiConversationSchemaMigrator.EnsureAsync(db);
     await ProductOfferDurationSchemaMigrator.EnsureAsync(db);
-    await ProductShowPriceSchemaMigrator.EnsureAsync(db);
     await ProductCreatedLanguageSchemaMigrator.EnsureAsync(db);
     await ProductVideoSchemaMigrator.EnsureAsync(db);
     await RequestTypeSchemaMigrator.EnsureAsync(db);
