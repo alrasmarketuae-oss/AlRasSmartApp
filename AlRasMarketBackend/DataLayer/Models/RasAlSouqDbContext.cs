@@ -499,6 +499,12 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.Property(x => x.DiscountDays).HasColumnType("smallint");
             entity.Property(x => x.IsFeatured).HasDefaultValue(false);
             entity.Property(x => x.IsReadyForAdminReview).HasDefaultValue(true);
+            // Column may briefly be nullable after a partial deploy; never throw on NULL.
+            entity.Property(x => x.ShowPrice)
+                .HasDefaultValue(true)
+                .HasConversion(
+                    model => (bool?)model,
+                    store => store ?? true);
             entity.Property(x => x.PendingProductChanges).HasColumnType("nvarchar(max)");
             entity.Property(x => x.ViewsCount).HasDefaultValue(0L);
             entity.HasOne(x => x.Category).WithMany(x => x.Products).HasForeignKey(x => x.CategoryId);
