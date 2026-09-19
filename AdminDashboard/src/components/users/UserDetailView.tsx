@@ -546,7 +546,12 @@ export default function UserDetailView({
             <ProfileFieldRow
               icon={InfoFieldIcons.document}
               label={t('users.commercialRegister')}
-              value={user.commercialRegister?.trim() || '—'}
+              value={(() => {
+                const license = (user.licenseNumber ?? '').trim()
+                const commercial = (user.commercialRegister ?? '').trim()
+                if (!commercial || commercial === license) return '—'
+                return commercial
+              })()}
             />
             <ProfileFieldRow
               icon={InfoFieldIcons.document}
@@ -752,7 +757,12 @@ export default function UserDetailView({
             />
             <PendingChangeRow
               label={t('users.commercialRegister')}
-              currentValue={user.commercialRegister}
+              currentValue={(() => {
+                const license = (user.licenseNumber ?? '').trim()
+                const commercial = (user.commercialRegister ?? '').trim()
+                if (!commercial || commercial === license) return null
+                return commercial
+              })()}
               proposedValue={pending.commercialRegister}
               currentLabel={t('users.currentValue')}
               proposedLabel={t('users.proposedValue')}

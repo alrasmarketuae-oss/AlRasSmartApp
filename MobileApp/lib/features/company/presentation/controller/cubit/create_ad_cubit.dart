@@ -892,7 +892,22 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
   }
 
   Future<void> pickProductImages(BuildContext context) async {
-    final rawPaths = await _pickGalleryImagesAndVideos();
+    final choice = await _showPickSourceSheet(
+      context,
+      includeFiles: false,
+      includeRecordVideo: true,
+    );
+    if (!context.mounted || choice == null) return;
+
+    // Let the bottom sheet finish dismissing before opening the system picker.
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    if (!context.mounted) return;
+
+    final rawPaths = await _pickPathsRaw(
+      context: context,
+      choice: choice,
+      documentMode: false,
+    );
     if (!context.mounted || rawPaths.isEmpty) return;
 
     // Show gallery paths immediately so thumbnails appear without waiting.
@@ -1800,7 +1815,9 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
   Future<String?> _showPickSourceSheet(
     BuildContext context, {
     required bool includeFiles,
+    bool includeRecordVideo = false,
   }) {
+    final isAr = Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
     return showModalBottomSheet<String>(
       context: context,
       builder: (context) {
@@ -1810,18 +1827,24 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
             children: [
               ListTile(
                 leading: const Icon(Icons.photo_library_outlined),
-                title: const Text('Gallery'),
+                title: Text(isAr ? 'المعرض' : 'Gallery'),
                 onTap: () => Navigator.pop(context, 'gallery'),
               ),
               ListTile(
                 leading: const Icon(Icons.camera_alt_outlined),
-                title: const Text('Camera'),
+                title: Text(isAr ? 'الكاميرا (صورة)' : 'Camera (photo)'),
                 onTap: () => Navigator.pop(context, 'camera'),
               ),
+              if (includeRecordVideo)
+                ListTile(
+                  leading: const Icon(Icons.videocam_outlined),
+                  title: Text(isAr ? 'تصوير فيديو' : 'Record video'),
+                  onTap: () => Navigator.pop(context, 'record_video'),
+                ),
               if (includeFiles)
                 ListTile(
                   leading: const Icon(Icons.folder_outlined),
-                  title: const Text('Files'),
+                  title: Text(isAr ? 'ملفات' : 'Files'),
                   onTap: () => Navigator.pop(context, 'files'),
                 ),
             ],
@@ -1839,11 +1862,21 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     final pickedPaths = <String>[];
 
     if (choice == 'gallery') {
-      final images = await _imagePicker.pickMultiImage();
-      pickedPaths.addAll(images.map((image) => image.path).whereType<String>());
+      if (documentMode) {
+        final images = await _imagePicker.pickMultiImage();
+        pickedPaths.addAll(
+          images.map((image) => image.path).whereType<String>(),
+        );
+      } else {
+        // Product media: gallery images + videos in one picker.
+        pickedPaths.addAll(await _pickGalleryImagesAndVideos());
+      }
     } else if (choice == 'camera') {
       final image = await _imagePicker.pickImage(source: ImageSource.camera);
       if (image?.path != null) pickedPaths.add(image!.path);
+    } else if (choice == 'record_video') {
+      final video = await _imagePicker.pickVideo(source: ImageSource.camera);
+      if (video?.path != null) pickedPaths.add(video!.path);
     } else if (choice == 'files') {
       final result = await FilePicker.pickFiles(
         allowMultiple: true,

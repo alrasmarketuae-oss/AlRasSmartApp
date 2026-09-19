@@ -1350,6 +1350,7 @@ type RawUserDetail = AdminUserDetail & {
   LicencePath?: string | null
   CommercialRegister?: string | null
   TaxNumber?: string | null
+  Website?: string | null
   PendingProfileChanges?: {
     companyName?: string | null
     CompanyName?: string | null
@@ -1357,6 +1358,8 @@ type RawUserDetail = AdminUserDetail & {
     CommercialRegister?: string | null
     taxNumber?: string | null
     TaxNumber?: string | null
+    website?: string | null
+    Website?: string | null
     landNumber?: string | null
     LandNumber?: string | null
     fullName?: string | null
@@ -1371,6 +1374,8 @@ type RawUserDetail = AdminUserDetail & {
     CommercialRegister?: string | null
     taxNumber?: string | null
     TaxNumber?: string | null
+    website?: string | null
+    Website?: string | null
     landNumber?: string | null
     LandNumber?: string | null
     fullName?: string | null

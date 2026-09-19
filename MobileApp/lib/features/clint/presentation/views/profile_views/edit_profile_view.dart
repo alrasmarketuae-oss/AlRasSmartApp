@@ -71,13 +71,18 @@ class _EditProfileViewState extends State<EditProfileView> {
       _selectedCountryCode = parsedPhone.$1;
       _phoneController.text = parsedPhone.$2;
       _companyController.text = profile.companyName ?? '';
-      _commercialController.text = profile.commercialRegister ?? '';
+      final license = (profile.licenseNumber ?? '').trim();
+      final commercial = (profile.commercialRegister ?? '').trim();
+      // Avoid showing the same number twice when older signups copied license
+      // into commercial register by mistake.
+      _commercialController.text =
+          commercial.isNotEmpty && commercial != license ? commercial : '';
       _taxController.text = profile.taxNumber ?? '';
       final parsedLand = _splitPhone(profile.landNumber ?? '');
       _selectedLandlineCountryCode = parsedLand.$1;
       _landlineController.text = parsedLand.$2;
       _websiteController.text = profile.website ?? '';
-      _licenseController.text = profile.licenseNumber ?? '';
+      _licenseController.text = license;
       _isCompany = profile.isCompanyAccount;
       _profileImagePath = profile.imgPath;
       _hasPendingProfileChanges = profile.hasPendingProfileChanges;
