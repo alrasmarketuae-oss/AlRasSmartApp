@@ -56,6 +56,7 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
     public DbSet<InternalDomesticShippingConfig> InternalDomesticShippingConfigs => Set<InternalDomesticShippingConfig>();
     public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
     public DbSet<MissedProductSearch> MissedProductSearches => Set<MissedProductSearch>();
+    public DbSet<ShippingPhoneReveal> ShippingPhoneReveals => Set<ShippingPhoneReveal>();
     public DbSet<SupportCallbackRequest> SupportCallbackRequests => Set<SupportCallbackRequest>();
     public DbSet<UserFeedbackSubmission> UserFeedbackSubmissions => Set<UserFeedbackSubmission>();
     public DbSet<ClipReferenceImage> ClipReferenceImages => Set<ClipReferenceImage>();
@@ -162,6 +163,28 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.HasIndex(x => x.CreatedAtUtc);
             entity.HasIndex(x => x.QueryText);
             entity.HasIndex(x => new { x.UserId, x.CreatedAtUtc });
+        });
+
+        modelBuilder.Entity<ShippingPhoneReveal>(entity =>
+        {
+            entity.ToTable("ShippingPhoneReveals");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.CreatedAtUtc).HasColumnType("datetime2");
+            entity.HasOne(x => x.ViewerUser)
+                .WithMany()
+                .HasForeignKey(x => x.ViewerUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.ShippingCompanyUser)
+                .WithMany()
+                .HasForeignKey(x => x.ShippingCompanyUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Post)
+                .WithMany()
+                .HasForeignKey(x => x.PostId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(x => new { x.ViewerUserId, x.CreatedAtUtc });
+            entity.HasIndex(x => new { x.ShippingCompanyUserId, x.CreatedAtUtc });
+            entity.HasIndex(x => x.PostId);
         });
 
         modelBuilder.Entity<SupportCallbackRequest>(entity =>

@@ -341,6 +341,51 @@ export default function ShippingProviderDetailView({
               </div>
             )}
           </Card>
+
+          <Card title={t('shippingPage.phoneRevealsTitle')}>
+            <div className="mb-4 flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-900/50">
+              <span className="text-2xl font-bold text-[#3B7FC7]">
+                {provider.phoneRevealCount}
+              </span>
+              <span className="admin-text-muted text-sm">
+                {t('shippingPage.phoneRevealsTotal')}
+              </span>
+            </div>
+            {provider.phoneRevealsByViewer.length === 0 ? (
+              <p className="admin-text-subtle py-6 text-center text-sm">
+                {t('shippingPage.phoneRevealsEmpty')}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                <p className="admin-text-muted mb-2 text-end text-xs font-medium">
+                  {t('shippingPage.phoneRevealsViewers')}
+                </p>
+                {provider.phoneRevealsByViewer.map((row) => (
+                  <div
+                    key={row.viewerUserId}
+                    className="admin-border flex items-start justify-between gap-3 border-b py-3 last:border-b-0"
+                  >
+                    <span className="shrink-0 rounded-full bg-[#eef4fb] px-3 py-1 text-sm font-bold text-[#3B7FC7] dark:bg-slate-800">
+                      {t('shippingPage.phoneRevealsTimes').replace(
+                        '{count}',
+                        String(row.revealCount),
+                      )}
+                    </span>
+                    <div className="min-w-0 flex-1 text-right">
+                      <p className="admin-text truncate text-sm font-semibold">
+                        {row.viewerName}
+                      </p>
+                      {row.viewerPhone?.trim() ? (
+                        <p className="admin-text-muted mt-0.5 text-xs" dir="ltr">
+                          {row.viewerPhone}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
         </div>
 
         <div className="order-1 space-y-6 xl:order-none">

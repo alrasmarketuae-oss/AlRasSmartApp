@@ -418,6 +418,7 @@ public interface IInternationalShippingAppService
     Task<object> CreatePostAsync(CreateInternationalShippingPostInput input, CancellationToken cancellationToken = default);
     Task<object> SearchAsync(SearchInternationalShippingInput input, CancellationToken cancellationToken = default);
     Task<object> GetPortsByCountryNameAsync(string countryName, CancellationToken cancellationToken = default);
+    Task<object> RevealPhoneAsync(string viewerUserId, long postId, CancellationToken cancellationToken = default);
 }
 
 public interface IShippingCompanyAppService

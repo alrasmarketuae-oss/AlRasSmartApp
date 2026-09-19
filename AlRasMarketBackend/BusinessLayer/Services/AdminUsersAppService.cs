@@ -200,6 +200,41 @@ public class AdminUsersAppService(
             p => p.OwnerId == user.Id,
             cancellationToken);
 
+        var revealRows = await dbContext.ShippingPhoneReveals
+            .AsNoTracking()
+            .Where(x => x.ViewerUserId == user.Id)
+            .GroupBy(x => x.ShippingCompanyUserId)
+            .Select(g => new
+            {
+                CompanyUserId = g.Key,
+                RevealCount = g.Count()
+            })
+            .OrderByDescending(x => x.RevealCount)
+            .ToListAsync(cancellationToken);
+
+        var companyIds = revealRows.Select(x => x.CompanyUserId).ToList();
+        var companyUsers = companyIds.Count == 0
+            ? []
+            : await dbContext.Users
+                .AsNoTracking()
+                .Where(x => companyIds.Contains(x.Id))
+                .Select(x => new { x.Id, x.CompanyName, x.FullName })
+                .ToListAsync(cancellationToken);
+        var companyNameById = companyUsers.ToDictionary(
+            x => x.Id,
+            x => string.IsNullOrWhiteSpace(x.CompanyName) ? x.FullName : x.CompanyName!);
+
+        var revealsByCompany = revealRows
+            .Select(x => new AdminShippingPhoneRevealCompanyDto
+            {
+                CompanyUserId = x.CompanyUserId,
+                CompanyName = companyNameById.TryGetValue(x.CompanyUserId, out var name)
+                    ? name
+                    : "—",
+                RevealCount = x.RevealCount
+            })
+            .ToList();
+
         var dto = new AdminUserDetailDto
         {
             Id = user.Id,
@@ -274,6 +309,8 @@ public class AdminUsersAppService(
                 .ToList(),
             OrdersCount = ordersCount,
             ProductsCount = productsCount,
+            ShippingPhoneRevealCount = revealRows.Sum(x => x.RevealCount),
+            ShippingPhoneRevealsByCompany = revealsByCompany,
             CanApprove = !user.IsRejected
                 && (
                     ((user.RoleId == RoleIds.Seller || user.RoleId == RoleIds.ShippingCompany) && !user.IsApproved && user.IsVerified)

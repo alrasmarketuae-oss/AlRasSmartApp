@@ -1188,6 +1188,8 @@ type RawShippingDetail = AdminShippingProviderDetail & {
   Container40ftPriceFormatted?: string
   RegistrationLinkSent?: boolean
   Stats?: RawShippingStats
+  PhoneRevealCount?: number
+  PhoneRevealsByViewer?: Record<string, unknown>[]
   Shipments?: RawShipmentLogItem[]
   LatestPostId?: number
   PostStatus?: number
@@ -1282,6 +1284,18 @@ export function normalizeShippingProviderDetail(
       raw.container40ftPriceFormatted ?? raw.Container40ftPriceFormatted ?? '',
     registrationLinkSent: raw.registrationLinkSent ?? raw.RegistrationLinkSent ?? false,
     stats: normalizeShippingStats(raw.stats ?? raw.Stats ?? {}),
+    phoneRevealCount: raw.phoneRevealCount ?? raw.PhoneRevealCount ?? 0,
+    phoneRevealsByViewer: (
+      raw.phoneRevealsByViewer ??
+      raw.PhoneRevealsByViewer ??
+      []
+    ).map((item: Record<string, unknown>) => ({
+      viewerUserId: String(item.viewerUserId ?? item.ViewerUserId ?? ''),
+      viewerName: String(item.viewerName ?? item.ViewerName ?? '—'),
+      viewerEmail: (item.viewerEmail ?? item.ViewerEmail ?? null) as string | null,
+      viewerPhone: (item.viewerPhone ?? item.ViewerPhone ?? null) as string | null,
+      revealCount: Number(item.revealCount ?? item.RevealCount ?? 0),
+    })),
     shipments: (raw.shipments ?? raw.Shipments ?? []).map((item) =>
       normalizeShipmentLogItem(item),
     ),
@@ -1387,6 +1401,8 @@ type RawUserDetail = AdminUserDetail & {
   Addresses?: Record<string, unknown>[]
   OrdersCount?: number
   ProductsCount?: number
+  ShippingPhoneRevealCount?: number
+  ShippingPhoneRevealsByCompany?: Record<string, unknown>[]
   CanApprove?: boolean
   IsCustomer?: boolean
   isCustomer?: boolean
@@ -1511,6 +1527,17 @@ export function normalizeUserDetail(raw: RawUserDetail): AdminUserDetail {
     })),
     ordersCount: raw.ordersCount ?? raw.OrdersCount ?? 0,
     productsCount: raw.productsCount ?? raw.ProductsCount ?? 0,
+    shippingPhoneRevealCount:
+      raw.shippingPhoneRevealCount ?? raw.ShippingPhoneRevealCount ?? 0,
+    shippingPhoneRevealsByCompany: (
+      raw.shippingPhoneRevealsByCompany ??
+      raw.ShippingPhoneRevealsByCompany ??
+      []
+    ).map((item: Record<string, unknown>) => ({
+      companyUserId: String(item.companyUserId ?? item.CompanyUserId ?? ''),
+      companyName: String(item.companyName ?? item.CompanyName ?? '—'),
+      revealCount: Number(item.revealCount ?? item.RevealCount ?? 0),
+    })),
     canApprove:
       raw.canApprove ??
       raw.CanApprove ??

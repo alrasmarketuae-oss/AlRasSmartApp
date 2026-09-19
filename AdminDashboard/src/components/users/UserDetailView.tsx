@@ -716,6 +716,49 @@ export default function UserDetailView({
         ) : null}
       </section>
 
+      <section className="admin-card rounded-2xl p-5 shadow-sm sm:p-6">
+        <IconInfoSectionTitle
+          title={t('users.shippingPhoneRevealsTitle')}
+          icon={InfoFieldIcons.phone}
+          iconClass={ICON_BLUE}
+        />
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-900/50">
+          <span className="text-2xl font-bold text-[#3B7FC7]">
+            {user.shippingPhoneRevealCount}
+          </span>
+          <span className="admin-text-muted text-sm">
+            {t('users.shippingPhoneRevealsTotal')}
+          </span>
+        </div>
+        {user.shippingPhoneRevealsByCompany.length === 0 ? (
+          <p className="admin-text-subtle py-4 text-center text-sm">
+            {t('users.shippingPhoneRevealsEmpty')}
+          </p>
+        ) : (
+          <div className="space-y-2">
+            <p className="admin-text-muted mb-2 text-end text-xs font-medium">
+              {t('users.shippingPhoneRevealsCompanies')}
+            </p>
+            {user.shippingPhoneRevealsByCompany.map((row) => (
+              <div
+                key={row.companyUserId}
+                className="flex items-center justify-between gap-3 border-b border-slate-100 py-3 last:border-b-0 dark:border-slate-800"
+              >
+                <span className="shrink-0 rounded-full bg-[#eef4fb] px-3 py-1 text-sm font-bold text-[#3B7FC7] dark:bg-slate-800">
+                  {t('users.shippingPhoneRevealsTimes').replace(
+                    '{count}',
+                    String(row.revealCount),
+                  )}
+                </span>
+                <span className="admin-text min-w-0 flex-1 truncate text-end text-sm font-semibold">
+                  {row.companyName}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
       {hasPendingChanges && pending ? (
         <section className="admin-card rounded-2xl p-5 shadow-sm sm:p-6">
           <h2 className="admin-text mb-5 text-start text-lg font-bold">

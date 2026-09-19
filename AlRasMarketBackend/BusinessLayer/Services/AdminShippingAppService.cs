@@ -176,6 +176,49 @@ public class AdminShippingAppService(
             })
             .ToListAsync(cancellationToken);
 
+        var phoneRevealRows = await dbContext.ShippingPhoneReveals
+            .AsNoTracking()
+            .Where(x => x.ShippingCompanyUserId == userId)
+            .GroupBy(x => x.ViewerUserId)
+            .Select(g => new
+            {
+                ViewerUserId = g.Key,
+                RevealCount = g.Count()
+            })
+            .OrderByDescending(x => x.RevealCount)
+            .Take(50)
+            .ToListAsync(cancellationToken);
+
+        var viewerIds = phoneRevealRows.Select(x => x.ViewerUserId).ToList();
+        var viewers = viewerIds.Count == 0
+            ? []
+            : await dbContext.Users
+                .AsNoTracking()
+                .Where(x => viewerIds.Contains(x.Id))
+                .Select(x => new { x.Id, x.FullName, x.CompanyName, x.Email, x.PhoneNumber })
+                .ToListAsync(cancellationToken);
+        var viewerById = viewers.ToDictionary(x => x.Id);
+
+        var phoneRevealsByViewer = phoneRevealRows
+            .Select(x =>
+            {
+                viewerById.TryGetValue(x.ViewerUserId, out var viewer);
+                var name = viewer is null
+                    ? "—"
+                    : (!string.IsNullOrWhiteSpace(viewer.CompanyName)
+                        ? viewer.CompanyName!
+                        : viewer.FullName);
+                return new AdminShippingPhoneRevealViewerDto
+                {
+                    ViewerUserId = x.ViewerUserId,
+                    ViewerName = name,
+                    ViewerEmail = viewer?.Email,
+                    ViewerPhone = viewer?.PhoneNumber,
+                    RevealCount = x.RevealCount
+                };
+            })
+            .ToList();
+
         return new AdminShippingProviderDetailDto
         {
             Id = user.Id,
@@ -217,6 +260,8 @@ public class AdminShippingAppService(
             RegistrationLinkSent = user.IsVerified,
             RegistrationDate = user.CreatedAt,
             Stats = stats,
+            PhoneRevealCount = phoneRevealRows.Sum(x => x.RevealCount),
+            PhoneRevealsByViewer = phoneRevealsByViewer,
             Shipments = shipments
         };
     }

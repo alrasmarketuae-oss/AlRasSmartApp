@@ -89,6 +89,41 @@ public class InternationalShippingController(IInternationalShippingAppService in
 
         return Ok(result);
     }
+
+    /// <summary>
+    /// Records that the authenticated user revealed a shipping ad phone number.
+    /// </summary>
+    [HttpPost("posts/{postId:long}/reveal-phone")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RevealPhone(long postId, CancellationToken cancellationToken = default)
+    {
+        var userId = User.FindFirst("EntityId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            var result = await internationalShippingAppService.RevealPhoneAsync(
+                userId,
+                postId,
+                cancellationToken);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
 }
 
 public sealed class CreateInternationalShippingPostRequest

@@ -100,6 +100,8 @@ class ApiConstants {
 
   static String internationalShippingSearchEndPoint =
       '/InternationalShipping/search';
+  static String internationalShippingRevealPhoneEndPoint(int postId) =>
+      '/InternationalShipping/posts/$postId/reveal-phone';
 
   static String shippingCompanyDashboardEndPoint = '/ShippingCompany/dashboard';
   static String shippingCompanyPostsEndPoint = '/ShippingCompany/posts';

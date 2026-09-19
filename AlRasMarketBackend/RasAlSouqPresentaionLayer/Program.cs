@@ -558,6 +558,7 @@ await using (var scope = app.Services.CreateAsyncScope())
     await ProductReviewLockSchemaMigrator.EnsureAsync(db);
     await AdminAuditLogSchemaMigrator.EnsureAsync(db);
     await MissedProductSearchSchemaMigrator.EnsureAsync(db);
+    await ShippingPhoneRevealSchemaMigrator.EnsureAsync(db);
     await SupportCallbackRequestSchemaMigrator.EnsureAsync(db);
     await UserFeedbackSubmissionSchemaMigrator.EnsureAsync(db);
     await ClipReferenceImageSchemaMigrator.EnsureAsync(db);

@@ -34,6 +34,14 @@ export type AdminShippingProvider = {
   routeSummary: string
 }
 
+export type AdminShippingPhoneRevealViewer = {
+  viewerUserId: string
+  viewerName: string
+  viewerEmail: string | null
+  viewerPhone: string | null
+  revealCount: number
+}
+
 export type AdminShippingProviderDetail = AdminShippingProvider & {
   fullName: string
   landNumber: string | null
@@ -54,6 +62,8 @@ export type AdminShippingProviderDetail = AdminShippingProvider & {
   container40ftPriceFormatted: string
   registrationLinkSent: boolean
   stats: AdminShippingStats
+  phoneRevealCount: number
+  phoneRevealsByViewer: AdminShippingPhoneRevealViewer[]
   shipments: AdminShipmentLogItem[]
   latestPostId: number
   postStatus: number

@@ -27,6 +27,12 @@ export type PendingCompanyProfileChanges = {
   phoneNumber: string | null
 }
 
+export type AdminShippingPhoneRevealCompany = {
+  companyUserId: string
+  companyName: string
+  revealCount: number
+}
+
 export type AdminUserDetail = {
   id: string
   fullName: string
@@ -60,6 +66,8 @@ export type AdminUserDetail = {
   addresses: AdminUserAddress[]
   ordersCount: number
   productsCount: number
+  shippingPhoneRevealCount: number
+  shippingPhoneRevealsByCompany: AdminShippingPhoneRevealCompany[]
   canApprove: boolean
   canDeactivate: boolean
   canDelete: boolean

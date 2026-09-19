@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/router/app_router.dart';
+import 'package:alrasmarket/core/services/shipping_phone_reveal_service.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/features/clint/data/models/international_shipping_post_model.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
@@ -182,6 +183,9 @@ class _ShippingPriceServiceViewState extends State<ShippingPriceServiceView> {
           ? null
           : () async {
               setState(() => _revealedPhonePostIds.add(post.id));
+              // Fire-and-forget analytics; never block dialing.
+              // ignore: unawaited_futures
+              ShippingPhoneRevealService.trackReveal(post.id);
               final uri = Uri(scheme: 'tel', path: post.phoneNumber);
               if (await canLaunchUrl(uri)) {
                 await launchUrl(uri);

@@ -180,10 +180,28 @@ public sealed class AdminUserDetailDto
     public IReadOnlyList<AdminUserAddressDto> Addresses { get; set; } = [];
     public int OrdersCount { get; set; }
     public int ProductsCount { get; set; }
+    public int ShippingPhoneRevealCount { get; set; }
+    public IReadOnlyList<AdminShippingPhoneRevealCompanyDto> ShippingPhoneRevealsByCompany { get; set; } = [];
     public bool IsCustomer { get; set; }
     public bool CanApprove { get; set; }
     public bool CanDeactivate { get; set; }
     public bool CanDelete { get; set; }
+}
+
+public sealed class AdminShippingPhoneRevealCompanyDto
+{
+    public Guid CompanyUserId { get; set; }
+    public string CompanyName { get; set; } = string.Empty;
+    public int RevealCount { get; set; }
+}
+
+public sealed class AdminShippingPhoneRevealViewerDto
+{
+    public Guid ViewerUserId { get; set; }
+    public string ViewerName { get; set; } = string.Empty;
+    public string? ViewerEmail { get; set; }
+    public string? ViewerPhone { get; set; }
+    public int RevealCount { get; set; }
 }
 
 public sealed class AdminUserAddressDto
@@ -640,6 +658,8 @@ public sealed class AdminShippingProviderDetailDto
     public bool RegistrationLinkSent { get; set; }
     public DateTime RegistrationDate { get; set; }
     public AdminShippingStatsDto Stats { get; set; } = new();
+    public int PhoneRevealCount { get; set; }
+    public IReadOnlyList<AdminShippingPhoneRevealViewerDto> PhoneRevealsByViewer { get; set; } = [];
     public IReadOnlyList<AdminShipmentLogItemDto> Shipments { get; set; } = [];
     public string FullName { get; set; } = string.Empty;
     public short FromCountryId { get; set; }

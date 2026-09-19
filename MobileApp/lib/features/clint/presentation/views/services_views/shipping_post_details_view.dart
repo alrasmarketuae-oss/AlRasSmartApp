@@ -1,5 +1,6 @@
 import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
+import 'package:alrasmarket/core/services/shipping_phone_reveal_service.dart';
 import 'package:alrasmarket/features/clint/data/models/international_shipping_post_model.dart';
 import 'package:alrasmarket/features/clint/presentation/views/services_views/shipping_price_service_view.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/booking_widets/booking_details_design.dart';
@@ -26,6 +27,9 @@ class _ShippingPostDetailsViewState extends State<ShippingPostDetailsView> {
     final phone = widget.post.phoneNumber.trim();
     if (phone.isEmpty) return;
     setState(() => _showPhone = true);
+    // Fire-and-forget analytics; never block dialing.
+    // ignore: unawaited_futures
+    ShippingPhoneRevealService.trackReveal(widget.post.id);
     final uri = Uri(scheme: 'tel', path: phone);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);

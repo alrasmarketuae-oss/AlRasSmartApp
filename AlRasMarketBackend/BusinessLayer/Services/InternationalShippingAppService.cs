@@ -267,6 +267,45 @@ public class InternationalShippingAppService(
         return GetPortsByCountryNameCoreAsync(countryName, cancellationToken);
     }
 
+    public async Task<object> RevealPhoneAsync(
+        string viewerUserId,
+        long postId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(viewerUserId, out var viewerId))
+        {
+            throw new ArgumentException("Invalid viewer user id.");
+        }
+
+        if (postId <= 0)
+        {
+            throw new ArgumentException("Invalid shipping post id.");
+        }
+
+        var post = await dbContext.InternationalShippingPosts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == postId, cancellationToken)
+            ?? throw new KeyNotFoundException("Shipping post not found.");
+
+        // Do not count a company revealing its own ad number.
+        if (post.PublisherUserId == viewerId)
+        {
+            return new { tracked = false, reason = "own_post" };
+        }
+
+        dbContext.ShippingPhoneReveals.Add(new ShippingPhoneReveal
+        {
+            Id = Guid.NewGuid(),
+            ViewerUserId = viewerId,
+            ShippingCompanyUserId = post.PublisherUserId,
+            PostId = post.Id,
+            CreatedAtUtc = DateTime.UtcNow
+        });
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new { tracked = true };
+    }
+
     private async Task<object> GetPortsByCountryNameCoreAsync(string countryName, CancellationToken cancellationToken)
     {
         await geoReferenceCache.EnsureLoadedAsync(cancellationToken);
