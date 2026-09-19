@@ -36,6 +36,7 @@ class RegisterView extends StatefulWidget {
 class _RegisterViewState extends State<RegisterView> {
   final _formKey = GlobalKey<FormState>();
   final _companyNameController = TextEditingController();
+  final _ownerNameController = TextEditingController();
   final _licenseNumberController = TextEditingController();
   final _addressController = TextEditingController();
   final _taxNumberController = TextEditingController();
@@ -66,6 +67,7 @@ class _RegisterViewState extends State<RegisterView> {
   @override
   void dispose() {
     _companyNameController.dispose();
+    _ownerNameController.dispose();
     _licenseNumberController.dispose();
     _addressController.dispose();
     _taxNumberController.dispose();
@@ -320,7 +322,7 @@ class _RegisterViewState extends State<RegisterView> {
         AppRoutes.kCompletRegisterView,
         extra: {
           'isCompany': true,
-          'fullName': _companyNameController.text.trim(),
+          'fullName': _ownerNameController.text.trim(),
           'companyName': _companyNameController.text.trim(),
           'email': _emailController.text.trim(),
           'password': _passwordController.text.trim(),
@@ -804,24 +806,47 @@ class _RegisterViewState extends State<RegisterView> {
                       ),
                       SizedBox(height: 18.h),
                     ],
-                    _iconField(
-                      controller: _companyNameController,
-                      label: widget.isSupplierCompany || _isCustomerCompany
-                          ? S.of(context).companyName
-                          : S.of(context).fullName,
-                      hintText: widget.isSupplierCompany || _isCustomerCompany
-                          ? S.of(context).enterCompanyName
-                          : S.of(context).enterFullName,
-                      icon: widget.isSupplierCompany || _isCustomerCompany
-                          ? Icons.apartment_outlined
-                          : Icons.person_outline_rounded,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return S.of(context).thisFieldIsRequired;
-                        }
-                        return null;
-                      },
-                    ),
+                    if (widget.isSupplierCompany || _isCustomerCompany) ...[
+                      _iconField(
+                        controller: _companyNameController,
+                        label: S.of(context).companyName,
+                        hintText: S.of(context).enterCompanyName,
+                        icon: Icons.apartment_outlined,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return S.of(context).thisFieldIsRequired;
+                          }
+                          return null;
+                        },
+                      ),
+                      SizedBox(height: 14.h),
+                      _iconField(
+                        controller: _ownerNameController,
+                        label: isAr ? 'اسم المالك' : 'Owner name',
+                        hintText: isAr
+                            ? 'ادخل اسم المالك'
+                            : 'Enter owner name',
+                        icon: Icons.person_outline_rounded,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return S.of(context).thisFieldIsRequired;
+                          }
+                          return null;
+                        },
+                      ),
+                    ] else
+                      _iconField(
+                        controller: _companyNameController,
+                        label: S.of(context).fullName,
+                        hintText: S.of(context).enterFullName,
+                        icon: Icons.person_outline_rounded,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return S.of(context).thisFieldIsRequired;
+                          }
+                          return null;
+                        },
+                      ),
                     SizedBox(height: 14.h),
                     _buildCompanyLocationAndTaxSection(
                       isArabic: isAr,
