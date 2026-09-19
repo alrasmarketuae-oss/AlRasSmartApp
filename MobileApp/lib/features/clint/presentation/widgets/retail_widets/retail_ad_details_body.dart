@@ -270,7 +270,7 @@ class _RetailAdDetailsCard extends StatelessWidget {
     final main = <Widget>[];
     final meta = <Widget>[];
 
-    if (ProductPriceFormatter.canShowPrices &&
+    if (ProductPriceFormatter.canShowProductPrice(product) &&
         ProductPriceFormatter.amount(product).isNotEmpty) {
       main.add(
         BookingDetailsFactTile(
@@ -505,25 +505,25 @@ class _QuantityAndTotalRow extends StatelessWidget {
             ),
           ),
         ),
-        SizedBox(width: 10.w),
-        Expanded(
-          child: BookingDetailsSectionCard(
-            title: s.total,
-            icon: Icons.payments_outlined,
-            fontFamily: fontFamily,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  s.pricePerUnitTimesQuantity,
-                  style: TextStyle(
-                    color: BookingDetailsDesign.muted,
-                    fontFamily: fontFamily,
-                    fontSize: 11.sp,
+        if (ProductPriceFormatter.canShowProductPrice(product)) ...[
+          SizedBox(width: 10.w),
+          Expanded(
+            child: BookingDetailsSectionCard(
+              title: s.total,
+              icon: Icons.payments_outlined,
+              fontFamily: fontFamily,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    s.pricePerUnitTimesQuantity,
+                    style: TextStyle(
+                      color: BookingDetailsDesign.muted,
+                      fontFamily: fontFamily,
+                      fontSize: 11.sp,
+                    ),
                   ),
-                ),
-                SizedBox(height: 10.h),
-                if (ProductPriceFormatter.canShowPrices)
+                  SizedBox(height: 10.h),
                   Container(
                     width: double.infinity,
                     padding: EdgeInsets.symmetric(
@@ -559,19 +559,12 @@ class _QuantityAndTotalRow extends StatelessWidget {
                         ),
                       ],
                     ),
-                  )
-                else
-                  Text(
-                    '—',
-                    style: TextStyle(
-                      fontFamily: fontFamily,
-                      color: BookingDetailsDesign.muted,
-                    ),
                   ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
+        ],
       ],
     );
   }

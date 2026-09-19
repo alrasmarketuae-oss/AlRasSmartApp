@@ -275,7 +275,16 @@ export function normalizeProduct(raw: RawProduct): AdminProduct {
       null,
     showPrice: (() => {
       const value = raw.showPrice ?? raw.ShowPrice
-      return value == null ? true : Boolean(value)
+      if (value == null) return true
+      if (typeof value === 'boolean') return value
+      const normalized = String(value).trim().toLowerCase()
+      if (normalized === 'false' || normalized === '0' || normalized === 'no') {
+        return false
+      }
+      if (normalized === 'true' || normalized === '1' || normalized === 'yes') {
+        return true
+      }
+      return Boolean(value)
     })(),
     categoryName: raw.categoryName ?? raw.CategoryName ?? '—',
     categoryId: (() => {

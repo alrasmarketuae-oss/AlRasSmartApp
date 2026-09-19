@@ -93,7 +93,10 @@ public static class AiShoppingResultShaper
             return """{"ok":false,"error":"not_found","priceAvailable":false}""";
         }
 
-        card["priceAvailable"] = card.ContainsKey("price") && card["price"] is not null;
+        card["priceAvailable"] = card.TryGetValue("showPrice", out var showPriceFlag)
+            && showPriceFlag is true
+            && card.ContainsKey("price")
+            && card["price"] is not null;
         return JsonSerializer.Serialize(new { ok = true, item = card }, JsonOptions);
     }
 
@@ -236,6 +239,11 @@ public static class AiShoppingResultShaper
         }
 
         var price = PickDecimal(item, "price", "Price", "displayPrice", "DisplayPrice", "priceAed", "PriceAed");
+        var showPrice = PickBool(item, "showPrice", "ShowPrice") ?? true;
+        if (!showPrice)
+        {
+            price = null;
+        }
         var description = Clip(
             PickString(item, "descriptionEn", "DescriptionEn", "description", "Description", "descriptionAr", "DescriptionAr"),
             maxTextChars);
@@ -259,6 +267,8 @@ public static class AiShoppingResultShaper
             ["descriptionAr"] = Clip(PickString(item, "descriptionAr", "DescriptionAr"), maxTextChars),
             ["price"] = price,
             ["displayPrice"] = price,
+            ["showPrice"] = showPrice,
+            ["priceAvailable"] = showPrice && price is not null,
             ["currency"] = PickString(item, "currency", "Currency") ?? "AED",
             ["quantity"] = Pick(item, "quantity", "Quantity"),
             ["unitName"] = Clip(PickString(item, "unitName", "UnitName"), 40),
@@ -423,6 +433,26 @@ public static class AiShoppingResultShaper
             long l => l,
             string s when decimal.TryParse(s, out var parsed) => parsed,
             JsonElement el when el.TryGetDecimal(out var d) => d,
+            _ => null
+        };
+    }
+
+    private static bool? PickBool(Dictionary<string, object?> map, params string[] keys)
+    {
+        var value = Pick(map, keys);
+        return value switch
+        {
+            null => null,
+            bool b => b,
+            string s when bool.TryParse(s, out var parsed) => parsed,
+            string s when s == "1" => true,
+            string s when s == "0" => false,
+            int i => i != 0,
+            long l => l != 0,
+            JsonElement el when el.ValueKind == JsonValueKind.True => true,
+            JsonElement el when el.ValueKind == JsonValueKind.False => false,
+            JsonElement el when el.ValueKind == JsonValueKind.String
+                && bool.TryParse(el.GetString(), out var parsed) => parsed,
             _ => null
         };
     }

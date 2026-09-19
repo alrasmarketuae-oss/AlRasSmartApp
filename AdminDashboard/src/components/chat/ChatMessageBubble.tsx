@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import { formatChatRelativeTime } from '../../utils/formatChatRelativeTime'
 import { resolveAssetUrl } from '../../lib/assets'
+import { useGetAdminProductDetailQuery } from '../../store'
 import type { GalleryMediaItem } from '../ui/ImageGallery'
 import VoiceAudioPlayer from './VoiceAudioPlayer'
 import {
@@ -12,6 +14,36 @@ import {
   type ChatMessage,
 } from '../../types/chat'
 import { IconDocument, IconMapPin, IconMic } from '../icons'
+
+const ASK_FOR_PRICE_MARKER = /ASK_FOR_PRICE_PRODUCT:\s*([0-9a-fA-F-]{36})/
+const PRODUCT_ID_LINE = /(?:^|\n)\s*Product ID:\s*([0-9a-fA-F-]{36})/i
+const IMAGE_LINE = /(?:^|\n)\s*Image:\s*(.+)(?:\n|$)/i
+const PRODUCT_NAME_LINE = /(?:^|\n)\s*(?:Product Name|اسم المنتج|اسم الإعلان)\s*[:：]\s*(.+)(?:\n|$)/i
+const PRODUCT_CODE_LINE = /(?:^|\n)\s*(?:Product Code|كود المنتج)\s*[:：]\s*(.+)(?:\n|$)/i
+
+type AskForPricePayload = {
+  productId: string
+  imagePath: string | null
+  productName: string | null
+  productCode: string | null
+}
+
+function parseAskForPriceContent(content: string): AskForPricePayload | null {
+  const markerMatch = content.match(ASK_FOR_PRICE_MARKER)
+  const idMatch = markerMatch ?? content.match(PRODUCT_ID_LINE)
+  if (!idMatch?.[1]) return null
+
+  const imageMatch = content.match(IMAGE_LINE)
+  const nameMatch = content.match(PRODUCT_NAME_LINE)
+  const codeMatch = content.match(PRODUCT_CODE_LINE)
+
+  return {
+    productId: idMatch[1].trim(),
+    imagePath: imageMatch?.[1]?.trim() || null,
+    productName: nameMatch?.[1]?.trim() || null,
+    productCode: codeMatch?.[1]?.trim() || null,
+  }
+}
 
 type ChatMessageBubbleProps = {
   message: ChatMessage
@@ -142,13 +174,123 @@ function MessageBody({ message, isMine, onOpenMedia }: ChatMessageBubbleProps) {
         </a>
       )
     }
-    default:
+    default: {
+      const askForPrice = parseAskForPriceContent(message.content)
+      if (askForPrice) {
+        return <AskForPriceProductCard payload={askForPrice} isMine={isMine} />
+      }
       return (
         <p className="notranslate whitespace-pre-wrap break-words text-sm leading-relaxed" translate="no">
           {message.content}
         </p>
       )
+    }
   }
+}
+
+function AskForPriceProductCard({
+  payload,
+  isMine,
+}: {
+  payload: AskForPricePayload
+  isMine: boolean
+}) {
+  const { t } = useAppPreferences()
+  const { data: product, isLoading, isError } = useGetAdminProductDetailQuery(
+    payload.productId,
+    { skip: !payload.productId },
+  )
+
+  const title = useMemo(() => {
+    return (
+      product?.name?.trim() ||
+      payload.productName?.trim() ||
+      t('chat.askForPriceTitle')
+    )
+  }, [payload.productName, product?.name, t])
+
+  const code = payload.productCode?.trim() || null
+
+  const imageUrl = useMemo(() => {
+    const path =
+      product?.primaryImagePath?.trim() ||
+      product?.imagePaths?.[0]?.trim() ||
+      payload.imagePath?.trim() ||
+      null
+    return path ? resolveAssetUrl(path) : null
+  }, [payload.imagePath, product?.imagePaths, product?.primaryImagePath])
+
+  const href = `/ads/${payload.productId}`
+
+  return (
+    <Link
+      to={href}
+      className={`group block overflow-hidden rounded-xl border text-start transition hover:opacity-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+        isMine
+          ? 'border-white/35 bg-white/15 focus-visible:outline-white'
+          : 'border-slate-200 bg-white focus-visible:outline-[#3B7FC7] dark:border-slate-600 dark:bg-slate-900'
+      }`}
+      title={t('chat.askForPriceOpenAd')}
+    >
+      <div className="flex gap-2.5 p-2 sm:gap-3 sm:p-2.5">
+        <div
+          className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg sm:h-20 sm:w-20 ${
+            isMine ? 'bg-white/20' : 'bg-slate-100 dark:bg-slate-800'
+          }`}
+        >
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt=""
+              className="h-full w-full object-cover transition duration-200 group-hover:scale-[1.03]"
+            />
+          ) : (
+            <div
+              className={`flex h-full w-full items-center justify-center text-[11px] font-semibold ${
+                isMine ? 'text-white/70' : 'text-slate-400'
+              }`}
+            >
+              {isLoading ? '…' : '!'}
+            </div>
+          )}
+        </div>
+        <div className="min-w-0 flex-1 py-0.5">
+          <p
+            className={`text-[10px] font-bold uppercase tracking-wide ${
+              isMine ? 'text-white/75' : 'text-[#3B7FC7]'
+            }`}
+          >
+            {t('chat.askForPriceTitle')}
+          </p>
+          <p
+            className={`notranslate mt-0.5 line-clamp-2 text-sm font-semibold leading-snug ${
+              isMine ? 'text-white' : 'text-slate-800 dark:text-slate-100'
+            }`}
+            translate="no"
+          >
+            {isLoading && !payload.productName ? t('chat.askForPriceLoading') : title}
+          </p>
+          {code ? (
+            <p
+              className={`notranslate mt-0.5 truncate text-[11px] ${
+                isMine ? 'text-white/70' : 'text-slate-500 dark:text-slate-400'
+              }`}
+              translate="no"
+            >
+              {code}
+            </p>
+          ) : null}
+          <p
+            className={`mt-1.5 text-[11px] font-semibold underline-offset-2 group-hover:underline ${
+              isMine ? 'text-white/90' : 'text-[#3B7FC7]'
+            }`}
+          >
+            {isError ? title : t('chat.askForPriceOpenAd')} →
+          </p>
+        </div>
+      </div>
+    </Link>
+  )
 }
 
 function mediaSource(path: string, message: ChatMessage): string {

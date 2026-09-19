@@ -145,7 +145,7 @@ class _ProductCardMarketplaceLayoutState
     required double original,
     required String unit,
   }) {
-    if (!ProductPriceFormatter.canShowPrices) {
+    if (!ProductPriceFormatter.canShowProductPrice(widget.product)) {
       return const SizedBox.shrink();
     }
 

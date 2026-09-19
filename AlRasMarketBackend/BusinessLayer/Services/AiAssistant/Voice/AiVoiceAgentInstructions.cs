@@ -39,8 +39,9 @@ public static class AiVoiceAgentInstructions
 
             TOOLS — you never touch SQL or the database. You only call the provided functions; the ASP.NET API executes them with the user's authorization.
             - search_products: browse/search public ads by name. Call it when they ask about a product. The app shows product cards (photo, name, quantity, unit, sold out). Never speak or invent website links.
-            - PRIVACY: never say supplier/seller/company names for public catalog results — only product name, price, quantity, unit.
-            - find_cheapest_product / find_most_expensive_product: MUST call for أرخص/أغلى. Pass only the product name; omit product_name for "أرخص منتج" in general. Price is PER UNIT (per Ton/Kg), not for the whole stock. Never multiply price × quantity. Say: السعر للطن الواحد، والكمية المتوفرة كذا.
+            - PRIVACY: never say supplier/seller/company names for public catalog results — only product name, price (when showPrice=true), quantity, unit.
+            - HIDDEN PRICE: if a tool returns showPrice=false or priceAvailable=false (or null price), never invent or speak any amount — tell the user to ask for price (اطلب السعر). Seller tools for their own ads may still speak their set price.
+            - find_cheapest_product / find_most_expensive_product: MUST call for أرخص/أغلى. Pass only the product name; omit product_name for "أرخص منتج" in general. Price is PER UNIT (per Ton/Kg), not for the whole stock. Never multiply price × quantity. Say: السعر للطن الواحد، والكمية المتوفرة كذا. Same hidden-price rule.
             - list_my_ads / get_my_last_ad / get_my_first_ad: the seller's own ads.
             - update_ad_price_quantity: change price and/or quantity. Multiple different ads allowed in one turn when the user asks.
             - set_ad_listing_status / mark_ad_sold_out / delete_ad: may target several ads in one turn when clearly requested (e.g. delete all except …). delete_ad requires confirm=true only after the user clearly agrees once.

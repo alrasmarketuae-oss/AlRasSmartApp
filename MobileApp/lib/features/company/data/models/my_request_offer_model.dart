@@ -24,6 +24,7 @@ class MyRequestOfferModel {
     required this.currency,
     required this.unitPriceFormatted,
     required this.totalPriceFormatted,
+    this.showPrice = true,
     required this.statusId,
     required this.statusName,
     this.statusAr = '',
@@ -66,6 +67,8 @@ class MyRequestOfferModel {
   final String currency;
   final String unitPriceFormatted;
   final String totalPriceFormatted;
+  /// When false, supplier My Sales hides unit/total (mirrors Products.ShowPrice).
+  final bool showPrice;
   final int statusId;
   final String statusName;
   final String statusAr;
@@ -96,6 +99,11 @@ class MyRequestOfferModel {
         type.contains('request') ||
         type.contains('inquiry');
   }
+
+  /// Sales cards hide listing prices when the ad has Hide price On.
+  /// Inquiry offer bids always show (negotiation amounts, not listing price).
+  bool get shouldShowPriceOnSalesCard =>
+      isRequestProductOffer || showPrice;
 
   String get displayTotalPrice =>
       totalPriceFormatted.isNotEmpty ? totalPriceFormatted : totalPrice.toString();
@@ -359,6 +367,8 @@ class MyRequestOfferModel {
       totalPriceFormatted: json['totalPriceFormatted']?.toString() ??
           json['TotalPriceFormatted']?.toString() ??
           '',
+      showPrice: _toBool(json['showPrice'] ?? json['ShowPrice'],
+          defaultValue: true),
       statusId: int.tryParse(json['statusId']?.toString() ??
               json['StatusId']?.toString() ??
               '') ??
@@ -422,6 +432,15 @@ class MyRequestOfferModel {
 
   static double _toDouble(dynamic value) =>
       ThousandsNumberInput.parseDoubleOrZero(value);
+
+  static bool _toBool(dynamic value, {required bool defaultValue}) {
+    if (value == null) return defaultValue;
+    if (value is bool) return value;
+    final text = value.toString().trim().toLowerCase();
+    if (text == 'true' || text == '1') return true;
+    if (text == 'false' || text == '0') return false;
+    return defaultValue;
+  }
 
   static String? resolveAssetUrl(String path) {
     final url = ApiConstants.resolveMediaUrl(path);

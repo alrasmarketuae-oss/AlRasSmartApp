@@ -43,7 +43,7 @@ public partial class ProductsAppService(
     private const string SearchProductsCachePrefix = "products:search:v16:";
     private static readonly TimeSpan SearchCardCacheTtl = TimeSpan.FromMinutes(10);
     private const string ProductByCodeCachePrefix = "products:by-code:v5:";
-    private const string ProductByIdCachePrefix = "products:by-id:v10:";
+    private const string ProductByIdCachePrefix = "products:by-id:v11:";
 
     private int AllProductsCacheVersion => productCacheVersions.Get(ProductCacheVersions.All);
     private int FeaturedProductsCacheVersion => productCacheVersions.Get(ProductCacheVersions.Featured);

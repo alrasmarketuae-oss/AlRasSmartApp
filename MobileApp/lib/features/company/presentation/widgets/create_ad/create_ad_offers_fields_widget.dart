@@ -3,7 +3,6 @@ import 'package:alrasmarket/features/company/presentation/controller/cubit/creat
 import 'package:alrasmarket/features/company/presentation/helpers/create_ad_price_labels.dart';
 import 'package:alrasmarket/features/company/presentation/models/negotiation_type.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_offers_pricing_row_section.dart';
-import 'package:alrasmarket/features/company/presentation/widgets/create_ad/create_ad_price_negotiation_section.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/create_ad/negotiation_type_radio_widget.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/create_ad/request_fulfillment_radio_widget.dart';
 import 'package:alrasmarket/generated/l10n.dart';
@@ -61,17 +60,6 @@ class CreateAdOffersFieldsWidget extends StatelessWidget {
         NegotiationTypeRadioWidget(
           selectedType: selectedNegotiationType,
           onChanged: onNegotiationChanged,
-        ),
-        SizedBox(height: 10.h),
-        BlocBuilder<CreateAdCubit, CreateAdFormState>(
-          buildWhen: (previous, current) =>
-              previous.showPrice != current.showPrice,
-          builder: (context, state) {
-            return CreateAdShowPriceToggle(
-              value: state.showPrice,
-              onChanged: cubit.setShowPrice,
-            );
-          },
         ),
         SizedBox(height: 10.h),
         BlocBuilder<CreateAdCubit, CreateAdFormState>(

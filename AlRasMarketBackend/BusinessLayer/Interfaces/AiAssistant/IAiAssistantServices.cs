@@ -81,7 +81,8 @@ public sealed record AiProductListingDto(
     string? RequestTypeName = null,
     byte? BookingPriceTypeId = null,
     string? BookingPriceTypeName = null,
-    string? ShippingDescriptionEn = null)
+    string? ShippingDescriptionEn = null,
+    bool ShowPrice = true)
 {
     /// <summary>
     /// Plain JSON map the Flutter chat parser understands (never anonymous objects).
@@ -93,6 +94,7 @@ public sealed record AiProductListingDto(
         var displayDescription = string.IsNullOrWhiteSpace(DescriptionEn)
             ? DescriptionAr
             : DescriptionEn;
+        var priceVisible = ShowPrice;
         return new Dictionary<string, object?>
         {
             ["productId"] = ProductId.ToString("D"),
@@ -104,12 +106,14 @@ public sealed record AiProductListingDto(
             ["description"] = displayDescription,
             ["descriptionEn"] = DescriptionEn,
             ["descriptionAr"] = DescriptionAr,
-            ["price"] = Price,
-            ["displayPrice"] = Price,
+            ["price"] = priceVisible ? Price : null,
+            ["displayPrice"] = priceVisible ? Price : null,
             ["currency"] = Currency,
-            ["usdPrice"] = UsdPrice,
-            ["priceUsd"] = UsdPrice,
-            ["priceAed"] = PriceAed,
+            ["usdPrice"] = priceVisible ? UsdPrice : null,
+            ["priceUsd"] = priceVisible ? UsdPrice : null,
+            ["priceAed"] = priceVisible ? PriceAed : null,
+            ["showPrice"] = priceVisible,
+            ["priceAvailable"] = priceVisible,
             ["quantity"] = Quantity,
             ["unitName"] = UnitName,
             ["categoryId"] = CategoryId,

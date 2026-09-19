@@ -237,7 +237,7 @@ class _BookingAdDetailsGrid extends StatelessWidget {
       );
     }
 
-    if (ProductPriceFormatter.canShowPrices &&
+    if (ProductPriceFormatter.canShowProductPrice(product) &&
         ProductPriceFormatter.amount(product).isNotEmpty) {
       main.add(
         BookingDetailsFactTile(

@@ -59,8 +59,10 @@ class RequestOfferCard extends StatelessWidget {
         offer.localizedSpecifications(isArabic: isArabic).trim();
     final unitPriceAmount = _unitPriceAmount();
     final totalPriceAmount = _totalPriceAmount();
-    final hasUnitPrice = unitPriceAmount.isNotEmpty;
-    final hasTotalPrice = totalPriceAmount.isNotEmpty;
+    final allowPrice = offer.shouldShowPriceOnSalesCard;
+    final hasUnitPrice = allowPrice && unitPriceAmount.isNotEmpty;
+    final hasTotalPrice = allowPrice && totalPriceAmount.isNotEmpty;
+    final showHiddenPricePlaceholder = !allowPrice;
     final currency = _resolvedCurrency();
     final unitPriceLabel = CreateAdPriceLabels.pricePerUnitLabel(
       s,
@@ -206,9 +208,32 @@ class RequestOfferCard extends StatelessWidget {
                         ],
                       ),
                     if ((deliveryText.isNotEmpty || quantityText.isNotEmpty) &&
-                        (hasUnitPrice || hasTotalPrice))
+                        (hasUnitPrice ||
+                            hasTotalPrice ||
+                            showHiddenPricePlaceholder))
                       SizedBox(height: 14.h),
-                    if (hasUnitPrice || hasTotalPrice)
+                    if (showHiddenPricePlaceholder)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _MetricColumn(
+                              label: unitPriceLabel,
+                              value: '—',
+                              fontFamily: fontFamily,
+                            ),
+                          ),
+                          SizedBox(width: 20.w),
+                          Expanded(
+                            child: _MetricColumn(
+                              label: s.total,
+                              value: '—',
+                              fontFamily: fontFamily,
+                            ),
+                          ),
+                        ],
+                      )
+                    else if (hasUnitPrice || hasTotalPrice)
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

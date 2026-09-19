@@ -1300,6 +1300,7 @@ public sealed partial class AiAssistantMcpToolsService(
                     p.IsApproved,
                     p.CategoryId,
                     p.ProductTypeId,
+                    p.ShowPrice,
                     SellerCompany = p.Owner != null ? p.Owner.CompanyName : null
                 })
             .ToListAsync(cancellationToken)
@@ -1345,7 +1346,8 @@ public sealed partial class AiAssistantMcpToolsService(
                     r.CategoryId,
                     r.ProductTypeId,
                     r.SellerCompany,
-                    Channel: "wholesale"));
+                    Channel: "wholesale",
+                    ShowPrice: r.ShowPrice));
             }
 
             if (!hideRetailAndRequests
@@ -1390,7 +1392,8 @@ public sealed partial class AiAssistantMcpToolsService(
                     r.CategoryId,
                     ProductTypeCodes.Retail,
                     r.SellerCompany,
-                    Channel: "retail"));
+                    Channel: "retail",
+                    ShowPrice: r.ShowPrice));
             }
         }
 
@@ -1407,20 +1410,25 @@ public sealed partial class AiAssistantMcpToolsService(
             ? publicRows.Select(x => x with { Score = 100 })
             : RankByName(productName!, publicRows).Where(x => x.Score >= 50);
 
+        // Cheapest / most expensive must not rank by a hidden listing price.
+        var pricedForSort = rankedQuery.Where(x => x.ShowPrice);
         var ranked = sort switch
         {
-            ProductMatchSort.MostExpensive => rankedQuery
+            ProductMatchSort.MostExpensive =>
+                (pricedForSort.Any() ? pricedForSort : rankedQuery)
                 .OrderByDescending(x => x.CustomerPrice)
                 .ThenByDescending(x => x.Score)
                 .ThenBy(x => x.NameEn)
                 .ToList(),
-            ProductMatchSort.Cheapest => rankedQuery
+            ProductMatchSort.Cheapest =>
+                (pricedForSort.Any() ? pricedForSort : rankedQuery)
                 .OrderBy(x => x.CustomerPrice)
                 .ThenByDescending(x => x.Score)
                 .ThenBy(x => x.NameEn)
                 .ToList(),
             _ => rankedQuery
                 .OrderByDescending(x => x.Score)
+                .ThenBy(x => x.ShowPrice ? 0 : 1)
                 .ThenBy(x => x.CustomerPrice)
                 .ThenBy(x => x.NameEn)
                 .ToList()
@@ -1457,7 +1465,8 @@ public sealed partial class AiAssistantMcpToolsService(
                 "CRITICAL: customerPrice / unitPrice is the price of ONE unit (unitName), NOT the price of the whole stock. " +
                 "Example: unitPrice=160000, currency=USD, unitName=Ton, availableQuantity=50 means 160000 USD per Ton, and 50 Tons are in stock — NOT 160000 for 50 tons. " +
                 "NEVER multiply unitPrice by availableQuantity. NEVER say the listing costs unitPrice for the full stock. " +
-                "PRIVACY: Never mention supplier, seller, or company names — only product name, price, quantity, and unit. " +
+                "HIDDEN PRICE: if showPrice=false or priceAvailable=false, do NOT invent, guess, or speak any amount — tell the user to ask for price (اطلب السعر). " +
+                "PRIVACY: Never mention supplier, seller, or company names — only product name, price (when showPrice=true), quantity, and unit. " +
                 "Spoken answer: one short sentence only. NEVER output URLs or markdown links. " +
                 "The app shows ProductCard widgets with photo, name, available quantity, unit, and sold-out stamp. Never invent prices. Never say grams unless unitName is Gram."
         });
@@ -1466,6 +1475,35 @@ public sealed partial class AiAssistantMcpToolsService(
     private static object ToUnitPricePayload(NameCandidate m)
     {
         var unit = string.IsNullOrWhiteSpace(m.UnitName) ? "unit" : m.UnitName.Trim();
+        if (!m.ShowPrice)
+        {
+            return new
+            {
+                productId = m.ProductId,
+                productCode = m.ProductCode,
+                channel = m.Channel,
+                nameEn = m.NameEn,
+                nameAr = m.NameAr,
+                unitPrice = (decimal?)null,
+                customerPrice = (decimal?)null,
+                price = (decimal?)null,
+                priceIsPerUnit = true,
+                pricePer = unit,
+                currency = m.CustomerCurrency,
+                priceUsd = (decimal?)null,
+                priceAed = (decimal?)null,
+                showPrice = false,
+                priceAvailable = false,
+                availableQuantity = m.Quantity,
+                quantity = m.Quantity,
+                unitName = m.UnitName,
+                availableStockDisplay = FormatQuantity(m.Quantity, m.UnitName),
+                matchScore = m.Score,
+                howToSay =
+                    $"Price is hidden for this listing. Tell the user to ask for price (اطلب السعر). Do not invent or guess any amount. Available stock {FormatQuantity(m.Quantity, m.UnitName)}. Never name the seller."
+            };
+        }
+
         return new
         {
             productId = m.ProductId,
@@ -1481,6 +1519,8 @@ public sealed partial class AiAssistantMcpToolsService(
             currency = m.CustomerCurrency,
             priceUsd = m.CustomerPriceUsd,
             priceAed = m.CustomerPriceAed,
+            showPrice = true,
+            priceAvailable = true,
             availableQuantity = m.Quantity,
             quantity = m.Quantity,
             unitName = m.UnitName,
@@ -1597,10 +1637,10 @@ public sealed partial class AiAssistantMcpToolsService(
                 m.ProductCode,
                 m.NameEn,
                 m.NameAr,
-                m.CustomerPrice,
+                m.ShowPrice ? m.CustomerPrice : 0,
                 m.CustomerCurrency,
-                m.CustomerPriceUsd,
-                m.CustomerPriceAed,
+                m.ShowPrice ? m.CustomerPriceUsd : null,
+                m.ShowPrice ? m.CustomerPriceAed : null,
                 m.Quantity,
                 m.UnitName,
                 m.CategoryId,
@@ -1618,7 +1658,8 @@ public sealed partial class AiAssistantMcpToolsService(
                 meta.RequestTypeName,
                 meta.BookingPriceTypeId,
                 meta.BookingPriceTypeName,
-                meta.ShippingDescriptionEn);
+                meta.ShippingDescriptionEn,
+                m.ShowPrice);
         }).ToList();
     }
 
@@ -2306,6 +2347,7 @@ public sealed partial class AiAssistantMcpToolsService(
         byte? ProductTypeId,
         string? SellerCompany,
         string? Channel = null,
+        bool ShowPrice = true,
         int Score = 0);
 
     private sealed record OwnerCatalogAd(

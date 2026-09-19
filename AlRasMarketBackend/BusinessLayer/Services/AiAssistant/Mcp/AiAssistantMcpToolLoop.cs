@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using BusinessLayer.Interfaces;
@@ -375,7 +375,8 @@ public sealed class AiAssistantMcpToolLoop(
             GetJsonString(el, "requestTypeName"),
             GetJsonByte(el, "bookingPriceTypeId"),
             GetJsonString(el, "bookingPriceTypeName"),
-            GetJsonString(el, "shippingDescriptionEn"));
+            GetJsonString(el, "shippingDescriptionEn"),
+            GetJsonBool(el, "showPrice", defaultValue: true));
     }
 
     private static bool TryGetPropertyIgnoreCase(JsonElement el, string name, out JsonElement value)
@@ -456,15 +457,15 @@ public sealed class AiAssistantMcpToolLoop(
         return n is null ? null : (short)n.Value;
     }
 
-    private static bool GetJsonBool(JsonElement el, string name)
+    private static bool GetJsonBool(JsonElement el, string name, bool defaultValue = false)
     {
-        if (!TryGetPropertyIgnoreCase(el, name, out var value)) return false;
+        if (!TryGetPropertyIgnoreCase(el, name, out var value)) return defaultValue;
         return value.ValueKind switch
         {
             JsonValueKind.True => true,
             JsonValueKind.False => false,
             JsonValueKind.String when bool.TryParse(value.GetString(), out var b) => b,
-            _ => false
+            _ => defaultValue
         };
     }
 

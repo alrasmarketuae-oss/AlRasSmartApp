@@ -181,7 +181,9 @@ class _SendBookingOrderPage extends StatelessWidget {
                             hintText: s.addAnySpecialInstructionsHere,
                           ),
                           if (cubit.bookingYourOffer != null &&
-                              ProductPriceFormatter.canShowPrices) ...[
+                              ProductPriceFormatter.canShowProductPrice(
+                                formState.product,
+                              )) ...[
                             SizedBox(height: 20.h),
                             _sectionTitle(s.yourOffer, fontFamily),
                             SizedBox(height: 8.h),

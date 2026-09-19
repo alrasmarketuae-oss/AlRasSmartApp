@@ -284,15 +284,21 @@ class _MetricsRow extends StatelessWidget {
     final priceType = ProductPriceTypeLabel.fromProduct(product, isAr: isAr);
     final qty = _quantityValue(s);
 
+    final showPrice = ProductPriceFormatter.canShowProductPrice(product) &&
+        ProductPriceFormatter.amount(product).isNotEmpty;
+
     // Always 4 equal cards — order matches design: price, qty, type, negotiable.
     final cards = <Widget>[
       _MetricCard(
         fontFamily: fontFamily,
-        label: CreateAdPriceLabels.pricePerUnitLabel(s, unit),
-        icon: Icons.sell_outlined,
-        iconColor: BookingDetailsDesign.priceGreen,
-        valueChild: ProductPriceFormatter.canShowProductPrice(product) &&
-                ProductPriceFormatter.amount(product).isNotEmpty
+        label: showPrice
+            ? CreateAdPriceLabels.pricePerUnitLabel(s, unit)
+            : s.askForPrice,
+        icon: showPrice ? Icons.sell_outlined : Icons.help_outline,
+        iconColor: showPrice
+            ? BookingDetailsDesign.priceGreen
+            : BookingDetailsDesign.brand,
+        valueChild: showPrice
             ? ProductPriceText.fromProduct(
                 product,
                 amountStyle: TextStyle(
@@ -304,10 +310,7 @@ class _MetricsRow extends StatelessWidget {
                 matchCurrencyToAmount: true,
               )
             : null,
-        value: ProductPriceFormatter.canShowProductPrice(product) &&
-                ProductPriceFormatter.amount(product).isNotEmpty
-            ? null
-            : '—',
+        value: showPrice ? null : '—',
       ),
       _MetricCard(
         fontFamily: fontFamily,

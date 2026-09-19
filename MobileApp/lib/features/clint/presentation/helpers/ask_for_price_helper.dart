@@ -9,14 +9,24 @@ import 'package:go_router/go_router.dart';
 class AskForPriceHelper {
   AskForPriceHelper._();
 
+  /// Machine-readable marker parsed by the admin dashboard chat bubble.
+  static const String productMarkerPrefix = 'ASK_FOR_PRICE_PRODUCT:';
+
   static String buildMessage(MyListingProductModel product, S s) {
+    final imagePath =
+        product.images.isNotEmpty ? product.images.first.trim() : '';
+
     final buffer = StringBuffer()
       ..writeln(s.askForPriceChatIntro)
+      ..writeln('$productMarkerPrefix${product.productId}')
       ..writeln()
       ..writeln('${s.productName}: ${product.productName}')
       ..writeln('${s.productCode}: ${product.productCode}')
       ..writeln('Product ID: ${product.productId}');
 
+    if (imagePath.isNotEmpty) {
+      buffer.writeln('Image: $imagePath');
+    }
     if (product.categoryName.trim().isNotEmpty) {
       buffer.writeln('${s.category}: ${product.categoryName}');
     }

@@ -289,17 +289,22 @@ class _MetricsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
+    final showPrice = ProductPriceFormatter.canShowProductPrice(product) &&
+        ProductPriceFormatter.amount(product).isNotEmpty;
     final qty = _quantityValue(s);
     final priceTypeLabel = isAr ? 'نوع سعر البوكينج' : 'Booking Price Type';
 
     final cards = <Widget>[
       _MetricCard(
         fontFamily: fontFamily,
-        label: CreateAdPriceLabels.pricePerUnitLabel(s, unit),
-        icon: Icons.sell_outlined,
-        iconColor: BookingDetailsDesign.priceGreen,
-        valueChild: ProductPriceFormatter.canShowPrices &&
-                ProductPriceFormatter.amount(product).isNotEmpty
+        label: showPrice
+            ? CreateAdPriceLabels.pricePerUnitLabel(s, unit)
+            : s.askForPrice,
+        icon: showPrice ? Icons.sell_outlined : Icons.help_outline,
+        iconColor: showPrice
+            ? BookingDetailsDesign.priceGreen
+            : BookingDetailsDesign.brand,
+        valueChild: showPrice
             ? ProductPriceText.fromProduct(
                 product,
                 amountStyle: TextStyle(
@@ -311,10 +316,7 @@ class _MetricsRow extends StatelessWidget {
                 matchCurrencyToAmount: true,
               )
             : null,
-        value: ProductPriceFormatter.canShowPrices &&
-                ProductPriceFormatter.amount(product).isNotEmpty
-            ? null
-            : '—',
+        value: showPrice ? null : '—',
       ),
       _MetricCard(
         fontFamily: fontFamily,
@@ -483,7 +485,7 @@ class _AdDetailsCard extends StatelessWidget {
       );
     }
 
-    if (ProductPriceFormatter.canShowPrices &&
+    if (ProductPriceFormatter.canShowProductPrice(product) &&
         ProductPriceFormatter.amount(product).isNotEmpty) {
       main.add(
         BookingDetailsFactTile(

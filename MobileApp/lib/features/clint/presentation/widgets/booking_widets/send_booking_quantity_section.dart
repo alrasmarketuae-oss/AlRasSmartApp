@@ -36,7 +36,7 @@ class SendBookingQuantitySection extends StatelessWidget {
     final quantity =
         ThousandsNumberInput.parseDouble(quantityController.text) ?? 0;
     final total = unitPrice * quantity;
-    final showPrices = ProductPriceFormatter.canShowPrices;
+    final showPrices = ProductPriceFormatter.canShowProductPrice(product);
 
     return Container(
       width: double.infinity,

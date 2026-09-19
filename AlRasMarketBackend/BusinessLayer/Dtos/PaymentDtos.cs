@@ -159,6 +159,10 @@ public sealed class MyRequestOfferDto
     public string Currency { get; set; } = "AED";
     public string UnitPriceFormatted { get; set; } = string.Empty;
     public string TotalPriceFormatted { get; set; } = string.Empty;
+    /// <summary>
+    /// Mirrors Products.ShowPrice. When false, supplier My Sales UI hides unit/total prices.
+    /// </summary>
+    public bool ShowPrice { get; set; } = true;
     public byte StatusId { get; set; }
     public string StatusName { get; set; } = string.Empty;
     public string StatusAr { get; set; } = string.Empty;

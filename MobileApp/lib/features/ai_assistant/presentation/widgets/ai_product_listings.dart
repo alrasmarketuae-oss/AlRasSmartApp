@@ -40,6 +40,20 @@ class AiProductListings extends StatelessWidget {
           map['displayPrice'] ??
           map['DisplayPrice'] ??
           map['Price'];
+      final showPriceRaw = map['showPrice'] ?? map['ShowPrice'];
+      final showPrice = showPriceRaw == null
+          ? true
+          : showPriceRaw == true ||
+              showPriceRaw.toString().trim().toLowerCase() == 'true' ||
+              showPriceRaw.toString().trim() == '1';
+      map['showPrice'] = showPrice;
+      if (!showPrice) {
+        map['price'] = null;
+        map['displayPrice'] = null;
+        map['usdPrice'] = null;
+        map['priceUsd'] = null;
+        map['priceAed'] = null;
+      }
       map['description'] = map['description'] ??
           map['descriptionEn'] ??
           map['DescriptionEn'] ??

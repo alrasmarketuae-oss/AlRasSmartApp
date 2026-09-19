@@ -55,6 +55,7 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
   late final TextEditingController _quantityController;
   late final ClintCubit _clintCubit;
   late final bool _ownsQuantityController;
+  late MyListingProductModel _product;
   double _total = 0;
   bool _isAddingToCart = false;
 
@@ -62,13 +63,14 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
   void initState() {
     super.initState();
     _clintCubit = sl<ClintCubit>();
+    _product = widget.product;
 
-    if (widget.product.isRequestProduct) {
+    if (_product.isRequestProduct) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         context.pushReplacement(
           AppRoutes.kRequestDetailsView,
-          extra: {'product': widget.product},
+          extra: {'product': _product},
         );
       });
       _quantityController = TextEditingController(text: '0');
@@ -79,15 +81,15 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
     // Fire-and-forget: count a buyer opening this product details screen.
     unawaited(
       ProductViewService.trackProductView(
-        widget.product.productId,
-        product: widget.product,
+        _product.productId,
+        product: _product,
       ),
     );
 
-    widget.isOffer = widget.isOffer && widget.product.isOfferProduct;
+    widget.isOffer = widget.isOffer && _product.isOfferProduct;
 
     if (widget.isOffer) {
-      _clintCubit.initOfferOrder(widget.product);
+      _clintCubit.initOfferOrder(_product);
       _quantityController = _clintCubit.offerOrderQuantityController;
       _ownsQuantityController = false;
     } else {
@@ -95,6 +97,24 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
       _ownsQuantityController = true;
     }
     _recalculateTotal();
+    unawaited(_refreshFromApi());
+  }
+
+  Future<void> _refreshFromApi() async {
+    final id = widget.product.productId.trim();
+    if (id.isEmpty) return;
+
+    final fresh = await ProductDetailsOpener.fetchPublicProductById(
+      id,
+      asRetail: widget.preferRetailChannel,
+    );
+    if (!mounted || fresh == null) return;
+
+    setState(() {
+      _product = fresh;
+      widget.isOffer = widget.isOffer && fresh.isOfferProduct;
+      _recalculateTotal();
+    });
   }
 
   @override

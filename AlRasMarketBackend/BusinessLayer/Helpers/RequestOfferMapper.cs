@@ -60,6 +60,7 @@ public static class RequestOfferMapper
             Currency = currency,
             UnitPriceFormatted = $"{unitPrice:0.00} {currency}",
             TotalPriceFormatted = $"{totalPrice:0.00} {currency}",
+            ShowPrice = product.ShowPrice,
             StatusId = order.StatusId,
             StatusName = RequestOfferStatusLabels.ResolveNameEn(order),
             StatusAr = RequestOfferStatusLabels.ResolveNameAr(order),

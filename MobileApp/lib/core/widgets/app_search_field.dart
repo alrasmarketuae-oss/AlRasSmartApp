@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:alrasmarket/core/router/where_to_go.dart';
 import 'package:alrasmarket/core/search/app_search_actions.dart';
+import 'package:alrasmarket/core/search/search_history_entry.dart';
+import 'package:alrasmarket/core/search/user_search_history_service.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/serveses/product_search_index_service.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
@@ -70,6 +72,10 @@ class _AppSearchFieldState extends State<AppSearchField> {
   List<String> _suggestions = [];
   bool _showSuggestions = false;
   bool _pickingSuggestion = false;
+  bool _showingRecent = false;
+  int _recentLoadToken = 0;
+
+  static const int _maxRecentVisible = 10;
 
   bool get _isCatalog => widget.mode == AppSearchMode.catalog;
 
@@ -127,40 +133,97 @@ class _AppSearchFieldState extends State<AppSearchField> {
       _focusNode.requestFocus();
     }
     if (mounted) setState(() {});
+    if (_isCatalog && widget.enableSuggestions) {
+      unawaited(_showRecentSearches());
+    }
   }
 
   void _onFocusChanged() {
     if (!_focusNode.hasFocus) {
       Future<void>.delayed(const Duration(milliseconds: 160), () {
         if (!mounted || _pickingSuggestion || _focusNode.hasFocus) return;
-        setState(() => _showSuggestions = false);
+        setState(() {
+          _showSuggestions = false;
+          _showingRecent = false;
+        });
       });
       return;
     }
     if (_isCatalog && widget.enableSuggestions) {
-      unawaited(_refreshSuggestions());
+      if (_controller.text.trim().isEmpty) {
+        unawaited(_showRecentSearches());
+      } else {
+        unawaited(_refreshSuggestions());
+      }
     }
   }
 
   void _applyPreviewSuggestions() {
     final query = _controller.text.trim();
     if (query.isEmpty) {
-      if (_showSuggestions || _suggestions.isNotEmpty) {
-        setState(() {
-          _suggestions = const [];
-          _showSuggestions = false;
-        });
-      }
+      unawaited(_showRecentSearches());
       return;
     }
+
+    // Invalidate any in-flight recent-history load once the user types.
+    _recentLoadToken++;
 
     final items =
         ProductSearchIndexService.instance.preview(query).toList();
     if (!mounted) return;
-    if (items.isEmpty) return;
+    if (items.isEmpty) {
+      setState(() {
+        _showingRecent = false;
+        if (_suggestions.isNotEmpty) _suggestions = const [];
+        _showSuggestions = false;
+      });
+      return;
+    }
     setState(() {
       _suggestions = items;
+      _showingRecent = false;
       _showSuggestions = _focusNode.hasFocus;
+    });
+  }
+
+  Future<void> _showRecentSearches() async {
+    if (!_isCatalog || !widget.enableSuggestions) return;
+    if (!_focusNode.hasFocus) return;
+    if (_controller.text.trim().isNotEmpty) return;
+
+    final token = ++_recentLoadToken;
+    final entries = await UserSearchHistoryService.instance.loadEntries();
+    if (!mounted || token != _recentLoadToken) return;
+    if (!_focusNode.hasFocus || _controller.text.trim().isNotEmpty) return;
+
+    final labels = <String>[];
+    final seen = <String>{};
+    for (final entry in entries) {
+      if (entry.type == SearchHistoryType.image) continue;
+      final text = (entry.query != null && entry.query!.trim().isNotEmpty)
+          ? entry.query!.trim()
+          : entry.label.trim();
+      if (text.isEmpty) continue;
+      final key = text.toLowerCase();
+      if (!seen.add(key)) continue;
+      labels.add(text);
+      if (labels.length >= _maxRecentVisible) break;
+    }
+
+    setState(() {
+      _suggestions = labels;
+      _showingRecent = labels.isNotEmpty;
+      _showSuggestions = labels.isNotEmpty;
+    });
+  }
+
+  Future<void> _clearRecentSearches() async {
+    await UserSearchHistoryService.instance.clearAll();
+    if (!mounted) return;
+    setState(() {
+      _suggestions = const [];
+      _showingRecent = false;
+      _showSuggestions = false;
     });
   }
 
@@ -169,20 +232,17 @@ class _AppSearchFieldState extends State<AppSearchField> {
 
     final query = _controller.text;
     if (query.trim().isEmpty) {
-      if (_showSuggestions || _suggestions.isNotEmpty) {
-        setState(() {
-          _suggestions = const [];
-          _showSuggestions = false;
-        });
-      }
+      await _showRecentSearches();
       return;
     }
 
+    _recentLoadToken++;
     final items =
         await ProductSearchIndexService.instance.suggestRemote(query);
     if (!mounted || _controller.text != query) return;
     setState(() {
       _suggestions = items;
+      _showingRecent = false;
       _showSuggestions = _focusNode.hasFocus && items.isNotEmpty;
     });
   }
@@ -423,51 +483,90 @@ class _AppSearchFieldState extends State<AppSearchField> {
                   ),
                 ],
               ),
-              constraints: BoxConstraints(maxHeight: 220.h),
-              child: ListView.separated(
-                padding: EdgeInsets.symmetric(vertical: 4.h),
-                shrinkWrap: true,
-                itemCount: _suggestions.length,
-                separatorBuilder: (_, _) => Divider(
-                  height: 1,
-                  color: LightColor.greyTextColor.withValues(alpha: 0.15),
-                ),
-                itemBuilder: (context, index) {
-                  final option = _suggestions[index];
-                  return InkWell(
-                    onTap: () {
-                      _pickingSuggestion = true;
-                      _pickSuggestion(option);
-                    },
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12.w,
-                        vertical: 10.h,
-                      ),
+              constraints: BoxConstraints(maxHeight: 260.h),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_showingRecent)
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(12.w, 8.h, 4.w, 4.h),
                       child: Row(
                         children: [
-                          Icon(
-                            Icons.search,
-                            size: 16.sp,
-                            color: LightColor.defaultColor,
-                          ),
-                          SizedBox(width: 8.w),
                           Expanded(
                             child: Text(
-                              option,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
+                              S.of(context).searchHistory,
                               style: TextStyle(
-                                fontSize: 14.sp,
-                                color: AppColors.title(context),
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.subtitle(context),
                               ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => unawaited(_clearRecentSearches()),
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.symmetric(horizontal: 8.w),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Text(
+                              S.of(context).clearAll,
+                              style: TextStyle(fontSize: 12.sp),
                             ),
                           ),
                         ],
                       ),
                     ),
-                  );
-                },
+                  Flexible(
+                    child: ListView.separated(
+                      padding: EdgeInsets.symmetric(vertical: 4.h),
+                      shrinkWrap: true,
+                      itemCount: _suggestions.length,
+                      separatorBuilder: (_, _) => Divider(
+                        height: 1,
+                        color: LightColor.greyTextColor.withValues(alpha: 0.15),
+                      ),
+                      itemBuilder: (context, index) {
+                        final option = _suggestions[index];
+                        return InkWell(
+                          onTap: () {
+                            _pickingSuggestion = true;
+                            _pickSuggestion(option);
+                          },
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 12.w,
+                              vertical: 10.h,
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _showingRecent
+                                      ? Icons.history_rounded
+                                      : Icons.search,
+                                  size: 16.sp,
+                                  color: LightColor.defaultColor,
+                                ),
+                                SizedBox(width: 8.w),
+                                Expanded(
+                                  child: Text(
+                                    option,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 14.sp,
+                                      color: AppColors.title(context),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
