@@ -328,7 +328,7 @@ class _RegisterViewState extends State<RegisterView> {
           'landNumber':
               '$_selectedOtherCountryCode ${_landlinePhoneController.text.trim()}',
           'licenseNumber': _licenseNumberController.text.trim(),
-          'commercialRegister': '',
+          'commercialRegister': _licenseNumberController.text.trim(),
           'taxNumber': _taxNumberController.text.trim(),
           'website': _websiteController.text.trim(),
           'isCustomerCompany': _registersAsCustomerCompany,

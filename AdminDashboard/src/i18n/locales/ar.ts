@@ -478,6 +478,7 @@ export const arMessages = {
       licenseNumber: 'رقم الرخصة',
       commercialRegister: 'السجل التجاري',
       taxNumber: 'الرقم الضريبي',
+      website: 'الموقع الإلكتروني',
       verifiedSupplier: 'مورد موثّق',
       primaryAddress: 'العنوان الرئيسي',
       postalCode: 'الرمز البريدي',

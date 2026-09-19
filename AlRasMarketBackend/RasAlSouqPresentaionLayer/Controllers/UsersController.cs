@@ -54,6 +54,7 @@ public class UsersController(IProfileAppService profileAppService) : ControllerB
                     CompanyName = request.CompanyName,
                     CommercialRegister = request.CommercialRegister,
                     TaxNumber = request.TaxNumber,
+                    Website = request.Website,
                     LandNumber = request.LandNumber
                 },
                 cancellationToken);
@@ -124,6 +125,7 @@ public sealed class UpdateProfileRequest
     public string? CompanyName { get; set; }
     public string? CommercialRegister { get; set; }
     public string? TaxNumber { get; set; }
+    public string? Website { get; set; }
     public string? LandNumber { get; set; }
 }
 

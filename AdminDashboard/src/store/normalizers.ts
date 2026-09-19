@@ -1448,6 +1448,7 @@ export function normalizeUserDetail(raw: RawUserDetail): AdminUserDetail {
     licencePath: raw.licencePath ?? raw.LicencePath ?? null,
     commercialRegister: raw.commercialRegister ?? raw.CommercialRegister ?? null,
     taxNumber: raw.taxNumber ?? raw.TaxNumber ?? null,
+    website: raw.website ?? raw.Website ?? null,
     pendingProfileChanges: (() => {
       const pending = raw.pendingProfileChanges ?? raw.PendingProfileChanges
       if (!pending) return null
@@ -1455,6 +1456,7 @@ export function normalizeUserDetail(raw: RawUserDetail): AdminUserDetail {
       const commercialRegister =
         pending.commercialRegister ?? pending.CommercialRegister ?? null
       const taxNumber = pending.taxNumber ?? pending.TaxNumber ?? null
+      const website = pending.website ?? pending.Website ?? null
       const landNumber = pending.landNumber ?? pending.LandNumber ?? null
       const fullName = pending.fullName ?? pending.FullName ?? null
       const phoneNumber = pending.phoneNumber ?? pending.PhoneNumber ?? null
@@ -1462,6 +1464,7 @@ export function normalizeUserDetail(raw: RawUserDetail): AdminUserDetail {
         companyName == null &&
         commercialRegister == null &&
         taxNumber == null &&
+        website == null &&
         landNumber == null &&
         fullName == null &&
         phoneNumber == null
@@ -1472,6 +1475,7 @@ export function normalizeUserDetail(raw: RawUserDetail): AdminUserDetail {
         companyName,
         commercialRegister,
         taxNumber,
+        website,
         landNumber,
         fullName,
         phoneNumber,

@@ -37,7 +37,11 @@ class _EditProfileViewState extends State<EditProfileView> {
   final _companyController = TextEditingController();
   final _commercialController = TextEditingController();
   final _taxController = TextEditingController();
+  final _landlineController = TextEditingController();
+  final _websiteController = TextEditingController();
+  final _licenseController = TextEditingController();
   String _selectedCountryCode = '+971';
+  String _selectedLandlineCountryCode = '+971';
   bool _loading = true;
   bool _saving = false;
   bool _isCompany = false;
@@ -69,6 +73,11 @@ class _EditProfileViewState extends State<EditProfileView> {
       _companyController.text = profile.companyName ?? '';
       _commercialController.text = profile.commercialRegister ?? '';
       _taxController.text = profile.taxNumber ?? '';
+      final parsedLand = _splitPhone(profile.landNumber ?? '');
+      _selectedLandlineCountryCode = parsedLand.$1;
+      _landlineController.text = parsedLand.$2;
+      _websiteController.text = profile.website ?? '';
+      _licenseController.text = profile.licenseNumber ?? '';
       _isCompany = profile.isCompanyAccount;
       _profileImagePath = profile.imgPath;
       _hasPendingProfileChanges = profile.hasPendingProfileChanges;
@@ -92,6 +101,12 @@ class _EditProfileViewState extends State<EditProfileView> {
         if (_isCompany) 'companyName': _companyController.text.trim(),
         if (_isCompany) 'commercialRegister': _commercialController.text.trim(),
         if (_isCompany) 'taxNumber': _taxController.text.trim(),
+        if (_isCompany)
+          'landNumber': _composePhone(
+            _selectedLandlineCountryCode,
+            _landlineController.text.trim(),
+          ),
+        if (_isCompany) 'website': _websiteController.text.trim(),
       });
       if (!mounted) return;
       final isAr =
@@ -330,6 +345,75 @@ class _EditProfileViewState extends State<EditProfileView> {
     );
   }
 
+  Widget _buildLandlineRow() {
+    final s = S.of(context);
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
+    final labelStyle = TextStyle(
+      fontSize: 14.sp,
+      color: const Color(0xFF333333),
+      fontWeight: FontWeight.w600,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: Text(
+                  s.countryCode,
+                  textAlign: isRtl ? TextAlign.right : TextAlign.left,
+                  style: labelStyle,
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                flex: 3,
+                child: Text(
+                  s.landlinePhone,
+                  textAlign: isRtl ? TextAlign.right : TextAlign.left,
+                  style: labelStyle,
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: 8.h),
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 2,
+                child: CountryCodeField(
+                  label: s.countryCode,
+                  showLabel: false,
+                  value: _selectedLandlineCountryCode,
+                  onChanged: (value) {
+                    setState(() => _selectedLandlineCountryCode = value);
+                  },
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                flex: 3,
+                child: CustomTextFormField(
+                  controller: _landlineController,
+                  hintText: 'XX XXX XXXX',
+                  keyboardType: TextInputType.phone,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -338,6 +422,9 @@ class _EditProfileViewState extends State<EditProfileView> {
     _companyController.dispose();
     _commercialController.dispose();
     _taxController.dispose();
+    _landlineController.dispose();
+    _websiteController.dispose();
+    _licenseController.dispose();
     super.dispose();
   }
 
@@ -522,6 +609,12 @@ class _EditProfileViewState extends State<EditProfileView> {
                             ),
                             SizedBox(height: 20.h),
                             _profileField(
+                              label: S.of(context).tradeLicenseNumber,
+                              controller: _licenseController,
+                              readOnly: true,
+                            ),
+                            SizedBox(height: 20.h),
+                            _profileField(
                               label: S.of(context).commercialRegistration,
                               controller: _commercialController,
                             ),
@@ -529,6 +622,13 @@ class _EditProfileViewState extends State<EditProfileView> {
                             _profileField(
                               label: S.of(context).taxNumber,
                               controller: _taxController,
+                            ),
+                            SizedBox(height: 20.h),
+                            _buildLandlineRow(),
+                            SizedBox(height: 20.h),
+                            _profileField(
+                              label: S.of(context).website,
+                              controller: _websiteController,
                             ),
                           ],
                           SizedBox(height: 16.h),

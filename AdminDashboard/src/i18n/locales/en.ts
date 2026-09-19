@@ -479,6 +479,7 @@ export const enMessages = {
       licenseNumber: 'License number',
       commercialRegister: 'Commercial register',
       taxNumber: 'Tax number',
+      website: 'Website',
       verifiedSupplier: 'Verified Supplier',
       primaryAddress: 'Primary address',
       postalCode: 'Postal code',

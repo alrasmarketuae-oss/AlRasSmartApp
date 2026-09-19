@@ -234,6 +234,7 @@ export default function UserDetailView({
       (pending.companyName != null ||
         pending.commercialRegister != null ||
         pending.taxNumber != null ||
+        pending.website != null ||
         pending.landNumber != null ||
         pending.fullName != null ||
         pending.phoneNumber != null),
@@ -544,8 +545,36 @@ export default function UserDetailView({
             ) : null}
             <ProfileFieldRow
               icon={InfoFieldIcons.document}
+              label={t('users.commercialRegister')}
+              value={user.commercialRegister?.trim() || '—'}
+            />
+            <ProfileFieldRow
+              icon={InfoFieldIcons.document}
               label={t('users.taxNumber')}
               value={user.taxNumber?.trim() || '—'}
+            />
+            <ProfileFieldRow
+              icon={InfoFieldIcons.mail}
+              label={t('users.website')}
+              value={
+                user.website?.trim() ? (
+                  <a
+                    href={
+                      /^https?:\/\//i.test(user.website.trim())
+                        ? user.website.trim()
+                        : `https://${user.website.trim()}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-[#3B7FC7] hover:underline"
+                    dir="ltr"
+                  >
+                    {user.website.trim()}
+                  </a>
+                ) : (
+                  '—'
+                )
+              }
             />
 
             {/* App model: trade license image (LicencePath) */}
@@ -734,6 +763,14 @@ export default function UserDetailView({
               proposedValue={pending.taxNumber}
               currentLabel={t('users.currentValue')}
               proposedLabel={t('users.proposedValue')}
+            />
+            <PendingChangeRow
+              label={t('users.website')}
+              currentValue={user.website}
+              proposedValue={pending.website}
+              currentLabel={t('users.currentValue')}
+              proposedLabel={t('users.proposedValue')}
+              ltr
             />
             <PendingChangeRow
               label={t('users.landLine')}

@@ -21,6 +21,7 @@ export type PendingCompanyProfileChanges = {
   companyName: string | null
   commercialRegister: string | null
   taxNumber: string | null
+  website: string | null
   landNumber: string | null
   fullName: string | null
   phoneNumber: string | null
@@ -53,6 +54,7 @@ export type AdminUserDetail = {
   licencePath: string | null
   commercialRegister: string | null
   taxNumber: string | null
+  website: string | null
   pendingProfileChanges: PendingCompanyProfileChanges | null
   companyImages: AdminUserCompanyImage[]
   addresses: AdminUserAddress[]

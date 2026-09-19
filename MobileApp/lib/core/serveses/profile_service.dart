@@ -16,6 +16,8 @@ class UserProfile {
   final String? commercialRegister;
   final String? taxNumber;
   final String? landNumber;
+  final String? website;
+  final String? licenseNumber;
   final String? imgPath;
   final DateTime? birthDate;
   final String roleName;
@@ -38,6 +40,8 @@ class UserProfile {
     this.commercialRegister,
     this.taxNumber,
     this.landNumber,
+    this.website,
+    this.licenseNumber,
     this.imgPath,
     this.birthDate,
     required this.roleName,
@@ -69,6 +73,9 @@ class UserProfile {
           (json['commercialRegister'] ?? json['CommercialRegister'])?.toString(),
       taxNumber: (json['taxNumber'] ?? json['TaxNumber'])?.toString(),
       landNumber: (json['landNumber'] ?? json['LandNumber'])?.toString(),
+      website: (json['website'] ?? json['Website'])?.toString(),
+      licenseNumber:
+          (json['licenseNumber'] ?? json['LicenseNumber'])?.toString(),
       imgPath: (json['imgPath'] ?? json['ImgPath'])?.toString(),
       birthDate: birth,
       roleName: (json['roleName'] ?? json['RoleName'] ?? '').toString(),
@@ -96,6 +103,8 @@ class UserProfile {
     'commercialRegister': commercialRegister,
     'taxNumber': taxNumber,
     'landNumber': landNumber,
+    'website': website,
+    'licenseNumber': licenseNumber,
     'imgPath': imgPath,
     'birthDate': birthDate?.toIso8601String(),
     'roleName': roleName,
