@@ -87,9 +87,7 @@ public class InternationalShippingAppService(
             MinDurationDays = input.MinDurationDays,
             MaxDurationDays = input.MaxDurationDays,
             Details = string.IsNullOrWhiteSpace(input.Details) ? null : input.Details.Trim(),
-            Status = publisher.RoleId == RoleIds.ShippingCompany
-                ? ProductStatusCodes.UnderReview
-                : ProductStatusCodes.Active,
+            Status = ProductStatusCodes.Active,
             IsApproved = true
         };
 

@@ -77,8 +77,8 @@ public class ShippingCompanyAppService(
             MinDurationDays = input.MinDurationDays,
             MaxDurationDays = input.MaxDurationDays,
             Details = string.IsNullOrWhiteSpace(input.Details) ? null : input.Details.Trim(),
-            Status = ProductStatusCodes.UnderReview,
-            IsApproved = false
+            Status = ProductStatusCodes.Active,
+            IsApproved = true
         };
 
         await dbContext.InternationalShippingPosts.AddAsync(entity, cancellationToken);
@@ -141,8 +141,8 @@ public class ShippingCompanyAppService(
         post.MinDurationDays = input.MinDurationDays;
         post.MaxDurationDays = input.MaxDurationDays;
         post.Details = string.IsNullOrWhiteSpace(input.Details) ? null : input.Details.Trim();
-        post.Status = ProductStatusCodes.UnderReview;
-        post.IsApproved = false;
+        post.Status = ProductStatusCodes.Active;
+        post.IsApproved = true;
 
         await dbContext.SaveChangesAsync(cancellationToken);
         InvalidateSearchCache();
