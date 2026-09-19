@@ -15,6 +15,7 @@ import 'package:alrasmarket/features/clint/domain/entities/cart_entity.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_cubit.dart';
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_states.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/ask_for_price_helper.dart';
+import 'package:alrasmarket/features/clint/presentation/helpers/product_details_opener.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_navigation_helper.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_ownership_helper.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/booking_widets/booking_details_app_bar.dart';
