@@ -19,7 +19,12 @@ function replyPreviewFor(
 ): string | null {
   if (!message) return null
   if (message.isDeleted) return t('chat.deletedMessage')
-  if (message.messageType === 1) return message.content.slice(0, 80)
+  if (message.messageType === 1) {
+    if (/ASK_FOR_PRICE_PRODUCT:|ask\s*for\s*price|طلب\s*سعر|اطلب\s*السعر/i.test(message.content)) {
+      return t('chat.askForPriceTitle')
+    }
+    return message.content.slice(0, 80)
+  }
   return messageTypeLabel(message.messageType)
 }
 

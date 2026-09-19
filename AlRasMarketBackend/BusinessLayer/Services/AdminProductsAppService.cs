@@ -1343,7 +1343,10 @@ public class AdminProductsAppService(
             BookingPriceTypeId = hasBookingPriceTypeName ? null : product.BookingPriceTypeId,
             BookingPriceTypeName = request.BookingPriceTypeName,
             Negotiable = request.Negotiable ?? product.Negotiable,
-            ShowPrice = request.ShowPrice ?? product.ShowPrice,
+            ShowPrice = product.ProductTypeId == ProductTypeCodes.Offers
+                || string.Equals(resolvedProductTypeName, "Offers", StringComparison.OrdinalIgnoreCase)
+                ? true
+                : (request.ShowPrice ?? product.ShowPrice),
             Packaging = resolvedPackaging,
             PackagingDetails = resolvedPackagingDetails,
             ShippingDuration = string.IsNullOrWhiteSpace(request.ShippingDuration)

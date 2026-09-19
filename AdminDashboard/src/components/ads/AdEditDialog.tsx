@@ -227,7 +227,7 @@ export default function AdEditDialog({
       productTypeName: '',
       unitName: unitName.trim(),
       negotiable,
-      showPrice,
+      showPrice: offers ? true : showPrice,
     }
 
     // Packing: free-text "Other packing" wins over the numeric kg value.
@@ -408,7 +408,7 @@ export default function AdEditDialog({
             </Field>
           ) : null}
 
-          {!booking && (hasCategory || offers) ? (
+          {!booking && hasCategory && !offers ? (
             <Field
               label={
                 <span className="inline-flex items-center gap-1.5">
@@ -427,11 +427,11 @@ export default function AdEditDialog({
             >
               <select
                 className={inputClass}
-                value={showPrice ? 'off' : 'on'}
-                onChange={(e) => setShowPrice(e.target.value !== 'on')}
+                value={showPrice ? 'yes' : 'no'}
+                onChange={(e) => setShowPrice(e.target.value === 'yes')}
               >
-                <option value="off">{t('ads.showPriceNo')}</option>
-                <option value="on">{t('ads.showPriceYes')}</option>
+                <option value="yes">{t('ads.showPriceYes')}</option>
+                <option value="no">{t('ads.showPriceNo')}</option>
               </select>
             </Field>
           ) : null}

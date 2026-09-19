@@ -98,7 +98,10 @@ class _OfferProductCardMarketplaceLayoutState
     final details = soldOut ? s.soldOut : product.description.trim();
     final discount = product.discountPercentValue;
     final showDeal =
-        _dealActive && discount > 0 && ProductPriceFormatter.saleAmountValue(product) > 0;
+        _dealActive &&
+        discount > 0 &&
+        product.shouldShowPrice &&
+        ProductPriceFormatter.saleAmountValue(product) > 0;
     final showTimer = showDeal && product.discountDaysValue > 0;
     final currency = ProductPriceFormatter.currencyCode(product);
     final sale = ProductPriceFormatter.saleAmountValue(product);
@@ -264,6 +267,26 @@ class _OfferProductCardMarketplaceLayoutState
                   ),
                 ),
               ],
+            ),
+          )
+        else if (!product.shouldShowPrice)
+          SizedBox(
+            height: ProductGridLayout.offerPriceBlockHeight(context),
+            width: double.infinity,
+            child: Align(
+              alignment: isAr ? Alignment.bottomRight : Alignment.bottomLeft,
+              child: Text(
+                s.askForPrice,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: fontFamily,
+                  fontSize: priceFontSize,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF3A7DC5),
+                  height: 1.1,
+                ),
+              ),
             ),
           ),
         SizedBox(

@@ -113,6 +113,9 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
     setState(() {
       _product = fresh;
       widget.isOffer = widget.isOffer && fresh.isOfferProduct;
+      if (widget.isOffer) {
+        _clintCubit.initOfferOrder(fresh);
+      }
       _recalculateTotal();
     });
   }
@@ -140,7 +143,7 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
       }
 
       await _clintCubit.addProductToCart(
-        productId: widget.product.productId,
+        productId: _product.productId,
         quantity: quantity,
         unitName: unit,
       );
@@ -180,12 +183,12 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
   }
 
   double _availableProductQuantity() {
-    return ProductStock.parseQuantity(widget.product.quantity) ?? 0;
+    return ProductStock.parseQuantity(_product.quantity) ?? 0;
   }
 
   double _cartQuantityForProduct(CartEntity cart) {
     return cart.items
-        .where((item) => item.productId == widget.product.productId)
+        .where((item) => item.productId == _product.productId)
         .fold(0.0, (sum, item) => sum + item.quantity);
   }
 
@@ -228,7 +231,7 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
     );
     setState(() {
       _total = RetailDetailsMapper.unitPrice(
-            widget.product,
+            _product,
             preferRetail: preferRetail && !widget.isOffer,
           ) *
           quantity;
@@ -250,7 +253,7 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
   Widget build(BuildContext context) {
     final s = S.of(context);
     final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
-    final unit = widget.product
+    final unit = _product
         .unitNameForChannel(preferRetail: !widget.isOffer)
         .trim();
 
@@ -286,11 +289,11 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
                 .resolvePreferRetailChannel(widget.preferRetailChannel);
             final isRetailCart = !widget.isOffer &&
                 (preferRetail
-                    ? widget.product.isRetailFeedProduct
-                    : widget.product.isPureRetailProduct);
-            final soldOut = ProductStock.isSoldOut(widget.product);
+                    ? _product.isRetailFeedProduct
+                    : _product.isPureRetailProduct);
+            final soldOut = ProductStock.isSoldOut(_product);
             final isOwnAd =
-                ProductOwnershipHelper.isOwnedByCurrentUser(widget.product);
+                ProductOwnershipHelper.isOwnedByCurrentUser(_product);
             final ctaBusy = isRetailCart ? _isAddingToCart : isSubmitting;
             final idleLabel = widget.isOffer
                 ? s.purchaseOrder
@@ -300,7 +303,7 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
 
             return Scaffold(
               backgroundColor: BookingDetailsDesign.pageBg,
-              appBar: BookingDetailsAppBar(product: widget.product),
+              appBar: BookingDetailsAppBar(product: _product),
               body: Column(
                 children: [
                   Expanded(
@@ -315,7 +318,7 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
                           ],
                           if (widget.isOffer)
                             OfferAdDetailsBody(
-                              product: widget.product,
+                              product: _product,
                               fontFamily: fontFamily,
                               quantityController: _quantityController,
                               quantityFormKey: _quantityFormKey,
@@ -326,12 +329,12 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
                                       .validateRetailOrderQuantity(
                                 rawValue: value,
                                 s: s,
-                                product: widget.product,
+                                product: _product,
                               ),
                             )
                           else
                             RetailAdDetailsBody(
-                              product: widget.product,
+                              product: _product,
                               fontFamily: fontFamily,
                               quantityController: _quantityController,
                               quantityFormKey: _quantityFormKey,
@@ -342,7 +345,7 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
                                       .validateRetailOrderQuantity(
                                 rawValue: value,
                                 s: s,
-                                product: widget.product,
+                                product: _product,
                               ),
                             ),
                         ],
@@ -431,7 +434,7 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
                                         : _submitOfferOrder,
                                   );
 
-                            if (widget.product.shouldShowPrice) {
+                            if (_product.shouldShowPrice) {
                               return buyButton;
                             }
 
@@ -445,7 +448,7 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
                                         AskForPriceHelper
                                             .openSupportChatWithProduct(
                                           context: context,
-                                          product: widget.product,
+                                          product: _product,
                                         );
                                       },
                                       style: OutlinedButton.styleFrom(

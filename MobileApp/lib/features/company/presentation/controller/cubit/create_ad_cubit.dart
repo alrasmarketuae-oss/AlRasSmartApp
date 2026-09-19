@@ -229,8 +229,9 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     final isRetail = type == CreateAdType.retail.label;
     final isBooking = type == CreateAdType.booking.label;
     final isCategory = type == CreateAdType.categories.label;
+    final isOffers = type == CreateAdType.offers.label;
     final supportsPriceType = type == CreateAdType.requests.label ||
-        type == CreateAdType.offers.label ||
+        isOffers ||
         isCategory;
     if (!isCategory) {
       retailPriceController.clear();
@@ -244,6 +245,8 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
             : isRetail
                 ? CreateAdCurrency.aed
                 : CreateAdCurrency.aed,
+        // Offers always show price publicly.
+        showPrice: isOffers ? true : state.showPrice,
         clearRequestFulfillmentType: !supportsPriceType,
         clearBookingPriceType: !isBooking,
         clearSelectedCategory: !isCategory,
@@ -505,7 +508,7 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
         negotiationType: product.isNegotiable
             ? NegotiationType.negotiable
             : NegotiationType.nonNegotiable,
-        showPrice: product.showPrice,
+        showPrice: isOffers ? true : product.showPrice,
         requestFulfillmentType: requestFulfillment,
         bookingPriceType: bookingPriceType,
         requiredDeliveryDate: requiredDeliveryDate,

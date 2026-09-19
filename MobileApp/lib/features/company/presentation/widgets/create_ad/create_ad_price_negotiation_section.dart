@@ -118,10 +118,8 @@ class CreateAdPriceNegotiationSection extends StatelessWidget {
 
 bool _shouldShowPriceToggle(String? selectedType) {
   final type = (selectedType ?? '').trim().toLowerCase();
-  return type.contains('categor') ||
-      type.contains('فئة') ||
-      type.contains('offer') ||
-      type.contains('عرض');
+  // Offers always show price — toggle is Categories only.
+  return type.contains('categor') || type.contains('فئة');
 }
 
 class CreateAdShowPriceToggle extends StatelessWidget {
@@ -131,14 +129,13 @@ class CreateAdShowPriceToggle extends StatelessWidget {
     required this.onChanged,
   });
 
-  /// True when price should be visible (hide-price switch Off).
+  /// True when price should be visible on the product card.
   final bool value;
   final ValueChanged<bool> onChanged;
 
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
-    final hidePrice = !value;
     return Row(
       children: [
         Expanded(
@@ -173,9 +170,8 @@ class CreateAdShowPriceToggle extends StatelessWidget {
           ),
         ),
         Switch.adaptive(
-          // Off by default = show price. On = hide price / ask for price.
-          value: hidePrice,
-          onChanged: (hide) => onChanged(!hide),
+          value: value,
+          onChanged: onChanged,
         ),
       ],
     );

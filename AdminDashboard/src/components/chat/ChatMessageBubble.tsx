@@ -15,11 +15,14 @@ import {
 } from '../../types/chat'
 import { IconDocument, IconMapPin, IconMic } from '../icons'
 
-const ASK_FOR_PRICE_MARKER = /ASK_FOR_PRICE_PRODUCT:\s*([0-9a-fA-F-]{36})/
+const ASK_FOR_PRICE_MARKER = /ASK_FOR_PRICE_PRODUCT:\s*([0-9a-fA-F-]{36})/i
 const PRODUCT_ID_LINE = /(?:^|\n)\s*Product ID:\s*([0-9a-fA-F-]{36})/i
+const ANY_UUID = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/
 const IMAGE_LINE = /(?:^|\n)\s*Image:\s*(.+)(?:\n|$)/i
-const PRODUCT_NAME_LINE = /(?:^|\n)\s*(?:Product Name|اسم المنتج|اسم الإعلان)\s*[:：]\s*(.+)(?:\n|$)/i
+const PRODUCT_NAME_LINE =
+  /(?:^|\n)\s*(?:Product Name|اسم المنتج|اسم الإعلان)\s*[:：]\s*(.+)(?:\n|$)/i
 const PRODUCT_CODE_LINE = /(?:^|\n)\s*(?:Product Code|كود المنتج)\s*[:：]\s*(.+)(?:\n|$)/i
+const ASK_FOR_PRICE_HINT = /ask\s*for\s*price|طلب\s*سعر|اطلب\s*السعر/i
 
 type AskForPricePayload = {
   productId: string
@@ -29,16 +32,27 @@ type AskForPricePayload = {
 }
 
 function parseAskForPriceContent(content: string): AskForPricePayload | null {
-  const markerMatch = content.match(ASK_FOR_PRICE_MARKER)
-  const idMatch = markerMatch ?? content.match(PRODUCT_ID_LINE)
-  if (!idMatch?.[1]) return null
+  const text = content?.trim() ?? ''
+  if (!text) return null
 
-  const imageMatch = content.match(IMAGE_LINE)
-  const nameMatch = content.match(PRODUCT_NAME_LINE)
-  const codeMatch = content.match(PRODUCT_CODE_LINE)
+  const markerMatch = text.match(ASK_FOR_PRICE_MARKER)
+  const idLineMatch = text.match(PRODUCT_ID_LINE)
+  const hintMatch = ASK_FOR_PRICE_HINT.test(text)
+  const uuidMatch = text.match(ANY_UUID)
+
+  const productId =
+    markerMatch?.[1]?.trim() ||
+    idLineMatch?.[1]?.trim() ||
+    (hintMatch ? uuidMatch?.[0]?.trim() : undefined)
+
+  if (!productId) return null
+
+  const imageMatch = text.match(IMAGE_LINE)
+  const nameMatch = text.match(PRODUCT_NAME_LINE)
+  const codeMatch = text.match(PRODUCT_CODE_LINE)
 
   return {
-    productId: idMatch[1].trim(),
+    productId,
     imagePath: imageMatch?.[1]?.trim() || null,
     productName: nameMatch?.[1]?.trim() || null,
     productCode: codeMatch?.[1]?.trim() || null,
@@ -197,7 +211,7 @@ function AskForPriceProductCard({
 }) {
   const { t } = useAppPreferences()
   const { data: product, isLoading, isError } = useGetAdminProductDetailQuery(
-    payload.productId,
+    { productId: payload.productId },
     { skip: !payload.productId },
   )
 

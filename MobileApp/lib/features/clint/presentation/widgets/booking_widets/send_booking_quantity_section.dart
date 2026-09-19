@@ -140,6 +140,26 @@ class SendBookingQuantitySection extends StatelessWidget {
               ),
             ),
           ],
+          if (!showPrices) ...[
+            SizedBox(height: 12.h),
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF3F4F6),
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              child: Text(
+                s.askForPrice,
+                style: TextStyle(
+                  color: AppColors.title(context).withValues(alpha: 0.75),
+                  fontFamily: fontFamily,
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
           if (showPrices) ...[
             SizedBox(height: 12.h),
             Row(

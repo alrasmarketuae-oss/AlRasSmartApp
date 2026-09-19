@@ -54,6 +54,16 @@ public static class ProductShowPriceSchemaMigrator
                     ALTER COLUMN ShowPrice BIT NOT NULL;
                 END
             END
+
+            -- Offers (ProductTypeId = 3) always show price publicly.
+            IF COL_LENGTH(N'dbo.Products', N'ShowPrice') IS NOT NULL
+               AND COL_LENGTH(N'dbo.Products', N'ProductTypeId') IS NOT NULL
+            BEGIN
+                UPDATE dbo.Products
+                SET ShowPrice = 1
+                WHERE ProductTypeId = 3
+                  AND ShowPrice = 0;
+            END
             """,
             cancellationToken).ConfigureAwait(false);
     }

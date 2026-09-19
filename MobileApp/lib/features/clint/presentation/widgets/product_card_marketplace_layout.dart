@@ -277,6 +277,7 @@ class _ProductCardMarketplaceLayoutState
     final showDeal = _offerMode &&
         _dealActive &&
         discount > 0 &&
+        widget.product.shouldShowPrice &&
         ProductPriceFormatter.saleAmountValue(widget.product) > 0;
     final currency = ProductPriceFormatter.currencyCode(widget.product);
     final sale = ProductPriceFormatter.saleAmountValue(widget.product);
@@ -373,6 +374,8 @@ class _ProductCardMarketplaceLayoutState
     final showPriceOnCard = ProductPriceFormatter.canShowProductPrice(widget.product) &&
         (!widget.product.isRequestProduct ||
             ProductPriceFormatter.amountValue(widget.product) > 0);
+    final showAskForPrice =
+        !widget.product.shouldShowPrice && !widget.product.isRequestProduct;
     final showReconfirm =
         widget.showSubjectToReconfirm && !widget.product.isRequestProduct;
 
@@ -394,9 +397,24 @@ class _ProductCardMarketplaceLayoutState
             sale: sale,
             original: original,
             unit: unit,
+          )
+        else if (showAskForPrice)
+          Text(
+            S.of(context).askForPrice,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: fontFamily,
+              fontSize: priceFontSize,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF3A7DC5),
+              height: 1.15,
+            ),
           ),
         if (quantityWithUnit.isNotEmpty) ...[
-          SizedBox(height: showPriceOnCard ? 6.h : 8.h),
+          SizedBox(
+            height: (showPriceOnCard || showAskForPrice) ? 6.h : 8.h,
+          ),
           Text(
             quantityWithUnit,
             maxLines: 1,
