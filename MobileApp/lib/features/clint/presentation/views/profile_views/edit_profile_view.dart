@@ -35,7 +35,6 @@ class _EditProfileViewState extends State<EditProfileView> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _companyController = TextEditingController();
-  final _commercialController = TextEditingController();
   final _taxController = TextEditingController();
   final _landlineController = TextEditingController();
   final _websiteController = TextEditingController();
@@ -71,18 +70,12 @@ class _EditProfileViewState extends State<EditProfileView> {
       _selectedCountryCode = parsedPhone.$1;
       _phoneController.text = parsedPhone.$2;
       _companyController.text = profile.companyName ?? '';
-      final license = (profile.licenseNumber ?? '').trim();
-      final commercial = (profile.commercialRegister ?? '').trim();
-      // Avoid showing the same number twice when older signups copied license
-      // into commercial register by mistake.
-      _commercialController.text =
-          commercial.isNotEmpty && commercial != license ? commercial : '';
       _taxController.text = profile.taxNumber ?? '';
       final parsedLand = _splitPhone(profile.landNumber ?? '');
       _selectedLandlineCountryCode = parsedLand.$1;
       _landlineController.text = parsedLand.$2;
       _websiteController.text = profile.website ?? '';
-      _licenseController.text = license;
+      _licenseController.text = (profile.licenseNumber ?? '').trim();
       _isCompany = profile.isCompanyAccount;
       _profileImagePath = profile.imgPath;
       _hasPendingProfileChanges = profile.hasPendingProfileChanges;
@@ -104,7 +97,6 @@ class _EditProfileViewState extends State<EditProfileView> {
         'fullName': _nameController.text.trim(),
         'phoneNumber': fullPhone,
         if (_isCompany) 'companyName': _companyController.text.trim(),
-        if (_isCompany) 'commercialRegister': _commercialController.text.trim(),
         if (_isCompany) 'taxNumber': _taxController.text.trim(),
         if (_isCompany)
           'landNumber': _composePhone(
@@ -425,7 +417,6 @@ class _EditProfileViewState extends State<EditProfileView> {
     _emailController.dispose();
     _phoneController.dispose();
     _companyController.dispose();
-    _commercialController.dispose();
     _taxController.dispose();
     _landlineController.dispose();
     _websiteController.dispose();
@@ -617,11 +608,6 @@ class _EditProfileViewState extends State<EditProfileView> {
                               label: S.of(context).tradeLicenseNumber,
                               controller: _licenseController,
                               readOnly: true,
-                            ),
-                            SizedBox(height: 20.h),
-                            _profileField(
-                              label: S.of(context).commercialRegistration,
-                              controller: _commercialController,
                             ),
                             SizedBox(height: 20.h),
                             _profileField(

@@ -37,7 +37,6 @@ class _RegisterViewState extends State<RegisterView> {
   final _formKey = GlobalKey<FormState>();
   final _companyNameController = TextEditingController();
   final _licenseNumberController = TextEditingController();
-  final _commercialRegisterController = TextEditingController();
   final _addressController = TextEditingController();
   final _taxNumberController = TextEditingController();
   final _websiteController = TextEditingController();
@@ -68,7 +67,6 @@ class _RegisterViewState extends State<RegisterView> {
   void dispose() {
     _companyNameController.dispose();
     _licenseNumberController.dispose();
-    _commercialRegisterController.dispose();
     _addressController.dispose();
     _taxNumberController.dispose();
     _websiteController.dispose();
@@ -233,13 +231,6 @@ class _RegisterViewState extends State<RegisterView> {
       icon: Icons.badge_outlined,
     );
 
-    final commercialRegisterField = _iconField(
-      controller: _commercialRegisterController,
-      label: s.commercialRegistration,
-      hintText: s.commercialRegistration,
-      icon: Icons.assignment_outlined,
-    );
-
     final taxField = _iconField(
       controller: _taxNumberController,
       label: s.taxNumber,
@@ -282,8 +273,6 @@ class _RegisterViewState extends State<RegisterView> {
         ] else
           locationPicker,
         if (includeCompanyDocs) ...[
-          SizedBox(height: 14.h),
-          commercialRegisterField,
           SizedBox(height: 14.h),
           taxField,
           SizedBox(height: 14.h),
@@ -339,7 +328,7 @@ class _RegisterViewState extends State<RegisterView> {
           'landNumber':
               '$_selectedOtherCountryCode ${_landlinePhoneController.text.trim()}',
           'licenseNumber': _licenseNumberController.text.trim(),
-          'commercialRegister': _commercialRegisterController.text.trim(),
+          'commercialRegister': '',
           'taxNumber': _taxNumberController.text.trim(),
           'website': _websiteController.text.trim(),
           'isCustomerCompany': _registersAsCustomerCompany,

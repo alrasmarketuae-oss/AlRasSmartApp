@@ -232,7 +232,6 @@ export default function UserDetailView({
   const hasPendingChanges = Boolean(
     pending &&
       (pending.companyName != null ||
-        pending.commercialRegister != null ||
         pending.taxNumber != null ||
         pending.website != null ||
         pending.landNumber != null ||
@@ -545,16 +544,6 @@ export default function UserDetailView({
             ) : null}
             <ProfileFieldRow
               icon={InfoFieldIcons.document}
-              label={t('users.commercialRegister')}
-              value={(() => {
-                const license = (user.licenseNumber ?? '').trim()
-                const commercial = (user.commercialRegister ?? '').trim()
-                if (!commercial || commercial === license) return '—'
-                return commercial
-              })()}
-            />
-            <ProfileFieldRow
-              icon={InfoFieldIcons.document}
               label={t('users.taxNumber')}
               value={user.taxNumber?.trim() || '—'}
             />
@@ -752,18 +741,6 @@ export default function UserDetailView({
               label={t('users.company')}
               currentValue={user.companyName}
               proposedValue={pending.companyName}
-              currentLabel={t('users.currentValue')}
-              proposedLabel={t('users.proposedValue')}
-            />
-            <PendingChangeRow
-              label={t('users.commercialRegister')}
-              currentValue={(() => {
-                const license = (user.licenseNumber ?? '').trim()
-                const commercial = (user.commercialRegister ?? '').trim()
-                if (!commercial || commercial === license) return null
-                return commercial
-              })()}
-              proposedValue={pending.commercialRegister}
               currentLabel={t('users.currentValue')}
               proposedLabel={t('users.proposedValue')}
             />
