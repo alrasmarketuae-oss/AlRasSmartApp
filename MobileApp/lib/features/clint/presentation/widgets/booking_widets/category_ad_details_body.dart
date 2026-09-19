@@ -291,7 +291,7 @@ class _MetricsRow extends StatelessWidget {
         label: CreateAdPriceLabels.pricePerUnitLabel(s, unit),
         icon: Icons.sell_outlined,
         iconColor: BookingDetailsDesign.priceGreen,
-        valueChild: ProductPriceFormatter.canShowPrices &&
+        valueChild: ProductPriceFormatter.canShowProductPrice(product) &&
                 ProductPriceFormatter.amount(product).isNotEmpty
             ? ProductPriceText.fromProduct(
                 product,
@@ -304,7 +304,7 @@ class _MetricsRow extends StatelessWidget {
                 matchCurrencyToAmount: true,
               )
             : null,
-        value: ProductPriceFormatter.canShowPrices &&
+        value: ProductPriceFormatter.canShowProductPrice(product) &&
                 ProductPriceFormatter.amount(product).isNotEmpty
             ? null
             : '—',
@@ -500,7 +500,7 @@ class _AdDetailsCard extends StatelessWidget {
       );
     }
 
-    if (ProductPriceFormatter.canShowPrices &&
+    if (ProductPriceFormatter.canShowProductPrice(product) &&
         ProductPriceFormatter.amount(product).isNotEmpty) {
       main.add(
         BookingDetailsFactTile(

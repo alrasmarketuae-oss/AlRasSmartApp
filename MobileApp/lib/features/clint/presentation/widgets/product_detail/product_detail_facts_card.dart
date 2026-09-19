@@ -133,7 +133,7 @@ class ProductDetailFactsCard extends StatelessWidget {
         addRow(label: s.availableQuantity, value: _quantityValue(s));
     }
 
-    if (ProductPriceFormatter.canShowPrices &&
+    if (ProductPriceFormatter.canShowProductPrice(product) &&
         ProductPriceFormatter.amount(product).isNotEmpty) {
       final priceStyle = TextStyle(
         color: const Color(0xFF619D50),

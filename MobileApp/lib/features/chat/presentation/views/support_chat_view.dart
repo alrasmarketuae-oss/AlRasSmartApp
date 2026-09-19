@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
@@ -34,7 +36,10 @@ class _SessionEndItem extends _ThreadItem {
 }
 
 class SupportChatView extends StatefulWidget {
-  const SupportChatView({super.key});
+  const SupportChatView({super.key, this.initialMessage});
+
+  /// Optional message auto-sent once support chat is ready (e.g. Ask for price).
+  final String? initialMessage;
 
   @override
   State<SupportChatView> createState() => _SupportChatViewState();
@@ -47,6 +52,7 @@ class _SupportChatViewState extends State<SupportChatView> {
   double? _scrollExtentBeforeOlderLoad;
   double? _scrollOffsetBeforeOlderLoad;
   bool _wasLoadingOlder = false;
+  bool _didSendInitialMessage = false;
 
   @override
   void dispose() {
@@ -138,6 +144,17 @@ class _SupportChatViewState extends State<SupportChatView> {
         ..startSupportChat(adminUserId: ApiConstants.supportAdminUserId),
       child: BlocConsumer<ChatCubit, ChatState>(
         listener: (context, state) {
+          final initial = widget.initialMessage?.trim();
+          if (!_didSendInitialMessage &&
+              initial != null &&
+              initial.isNotEmpty &&
+              (state is ChatMessagesLoaded || state is ChatConnectionState)) {
+            _didSendInitialMessage = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              unawaited(ChatCubit.get(context).sendTextMessage(initial));
+            });
+          }
           if (state is ChatLoadingOlder) {
             _wasLoadingOlder = true;
             if (_scrollController.hasClients) {

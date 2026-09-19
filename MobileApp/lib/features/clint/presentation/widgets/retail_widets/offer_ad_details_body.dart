@@ -243,7 +243,7 @@ class _OfferAdDetailsCard extends StatelessWidget {
     final main = <Widget>[];
     final meta = <Widget>[];
 
-    if (ProductPriceFormatter.canShowPrices &&
+    if (ProductPriceFormatter.canShowProductPrice(product) &&
         ProductPriceFormatter.amount(product).isNotEmpty) {
       final sale = ProductPriceFormatter.saleAmountValue(product);
       final original = ProductPriceFormatter.originalAmountValue(product);
@@ -553,7 +553,7 @@ class _QuantityAndTotalRow extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 10.h),
-                if (ProductPriceFormatter.canShowPrices)
+                if (ProductPriceFormatter.canShowProductPrice(product))
                   Container(
                     width: double.infinity,
                     padding: EdgeInsets.symmetric(

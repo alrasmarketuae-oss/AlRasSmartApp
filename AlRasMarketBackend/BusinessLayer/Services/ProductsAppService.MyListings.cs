@@ -210,6 +210,7 @@ public partial class ProductsAppService
             Packaging = x.Packaging,
             PackagingDetails = x.PackagingDetails ?? string.Empty,
             Negotiable = ToYesNoText(x.Negotiable),
+            ShowPrice = ToYesNoText(x.ShowPrice),
             IsFeatured = ToYesNoText(x.IsFeatured),
             ViewsCount = x.ViewsCount.ToString(),
             VideoPath = videoPaths.FirstOrDefault() ?? string.Empty,

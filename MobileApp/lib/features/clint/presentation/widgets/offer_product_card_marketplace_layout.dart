@@ -197,7 +197,7 @@ class _OfferProductCardMarketplaceLayoutState
           ),
         ),
         if (widget.fillHeight) const Spacer(),
-        if (ProductPriceFormatter.canShowPrices)
+        if (ProductPriceFormatter.canShowProductPrice(product))
           SizedBox(
             height: ProductGridLayout.offerPriceBlockHeight(context),
             width: double.infinity,

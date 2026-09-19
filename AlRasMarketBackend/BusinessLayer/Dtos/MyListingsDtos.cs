@@ -90,6 +90,7 @@ public sealed class MyProductListingDto
     public byte? Packaging { get; set; }
     public string PackagingDetails { get; set; } = string.Empty;
     public string Negotiable { get; set; } = string.Empty;
+    public string ShowPrice { get; set; } = string.Empty;
     public string IsFeatured { get; set; } = string.Empty;
     public string ViewsCount { get; set; } = string.Empty;
     public string VideoPath { get; set; } = string.Empty;

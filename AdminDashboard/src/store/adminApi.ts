@@ -21,7 +21,7 @@ import type {
   SendAdminNotificationPayload,
 } from '../types/adminNotification'
 import type { AdminShippingFilters, AdminShippingProvider, AdminShippingProviderDetail } from '../types/adminShipping'
-import type { ShippingProviderPayload } from '../types/adminShippingCreate'
+import type { ShippingProviderPayload, ShippingPostPayload } from '../types/adminShippingCreate'
 import type { Category } from '../types/category'
 import type { HomeBanner } from '../types/banner'
 import type {
@@ -378,6 +378,7 @@ export const adminApi = createApi({
           unitName: body.unitName,
           supplierNotesEn: body.supplierNotesEn,
           negotiable: body.negotiable,
+          showPrice: body.showPrice,
           packaging: body.packaging,
           packagingDetails: body.packagingDetails,
           shippingDuration: body.shippingDuration,
@@ -1135,6 +1136,34 @@ export const adminApi = createApi({
           toPortName: body.toPortName,
           container20ftPriceUsd: body.container20ftPriceUsd,
           container40ftPriceUsd: body.container40ftPriceUsd,
+        },
+      }),
+      transformResponse: (raw: AdminShippingProviderDetail) =>
+        normalizeShippingProviderDetail(raw),
+      invalidatesTags: (_result, _error, { providerId }) => [
+        { type: 'Shipping', id: providerId },
+        { type: 'Shipping', id: 'LIST' },
+      ],
+    }),
+
+    updateShippingPost: builder.mutation<
+      AdminShippingProviderDetail,
+      { postId: number; providerId: string } & ShippingPostPayload
+    >({
+      query: ({ postId, providerId: _providerId, ...body }) => ({
+        url: `/api/admin/shipping/posts/${postId}`,
+        method: 'PUT',
+        body: {
+          fromCountryName: body.fromCountryName,
+          fromPortName: body.fromPortName,
+          toCountryName: body.toCountryName,
+          toPortName: body.toPortName,
+          phoneNumber: body.phoneNumber,
+          container20ftPriceUsd: body.container20ftPriceUsd,
+          container40ftPriceUsd: body.container40ftPriceUsd,
+          details: body.details,
+          minDurationDays: body.minDurationDays,
+          maxDurationDays: body.maxDurationDays,
         },
       }),
       transformResponse: (raw: AdminShippingProviderDetail) =>
@@ -2311,6 +2340,7 @@ export const {
   useSetShippingProviderActiveMutation,
   useCreateShippingProviderMutation,
   useUpdateShippingProviderMutation,
+  useUpdateShippingPostMutation,
   useDeleteShippingProviderMutation,
   useApproveShippingPostMutation,
   useRejectShippingPostMutation,

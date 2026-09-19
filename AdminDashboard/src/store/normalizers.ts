@@ -272,6 +272,10 @@ export function normalizeProduct(raw: RawProduct): AdminProduct {
       raw.negotiable ??
       raw.Negotiable ??
       null,
+    showPrice: (() => {
+      const value = raw.showPrice ?? raw.ShowPrice
+      return value == null ? true : Boolean(value)
+    })(),
     categoryName: raw.categoryName ?? raw.CategoryName ?? '—',
     categoryId: (() => {
       const value = raw.categoryId ?? raw.CategoryId

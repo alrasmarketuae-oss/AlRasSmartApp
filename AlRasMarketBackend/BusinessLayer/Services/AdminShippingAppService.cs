@@ -565,6 +565,99 @@ public class AdminShippingAppService(
         return await GetProviderDetailAsync(providerUserId, cancellationToken);
     }
 
+    public async Task<object> UpdatePostAsync(
+        long postId,
+        AdminUpdateShippingPostInput input,
+        CancellationToken cancellationToken = default)
+    {
+        if (postId <= 0)
+        {
+            throw new ArgumentException("Invalid shipping post id.");
+        }
+
+        if (string.IsNullOrWhiteSpace(input.FromCountryName) ||
+            string.IsNullOrWhiteSpace(input.FromPortName) ||
+            string.IsNullOrWhiteSpace(input.ToCountryName) ||
+            string.IsNullOrWhiteSpace(input.ToPortName) ||
+            string.IsNullOrWhiteSpace(input.PhoneNumber))
+        {
+            throw new ArgumentException("From/To country, from/to port and phone number are required.");
+        }
+
+        input.Container20ftPriceUsd =
+            CustomerPriceCalculator.NormalizeOptionalContainerPrice(input.Container20ftPriceUsd);
+        input.Container40ftPriceUsd =
+            CustomerPriceCalculator.NormalizeOptionalContainerPrice(input.Container40ftPriceUsd);
+
+        if (input.MinDurationDays is <= 0)
+        {
+            throw new ArgumentException("Minimum shipping duration days must be greater than zero when provided.");
+        }
+
+        if (input.MaxDurationDays is <= 0)
+        {
+            throw new ArgumentException("Maximum shipping duration days must be greater than zero when provided.");
+        }
+
+        if (input.MinDurationDays.HasValue
+            && input.MaxDurationDays.HasValue
+            && input.MinDurationDays > input.MaxDurationDays)
+        {
+            throw new ArgumentException("Minimum duration cannot exceed maximum duration.");
+        }
+
+        var post = await dbContext.InternationalShippingPosts
+            .FirstOrDefaultAsync(x => x.Id == postId, cancellationToken)
+            ?? throw new KeyNotFoundException("Shipping post not found.");
+
+        await staticReferenceCache.EnsureLoadedAsync(cancellationToken);
+
+        var fromCountry = staticReferenceCache.FindCountryByEnglishName(input.FromCountryName.Trim())
+            ?? throw new KeyNotFoundException($"From country '{input.FromCountryName}' was not found.");
+
+        var toCountry = staticReferenceCache.FindCountryByEnglishName(input.ToCountryName.Trim())
+            ?? throw new KeyNotFoundException($"To country '{input.ToCountryName}' was not found.");
+
+        var fromPort = staticReferenceCache.FindPortByEnglishName(input.FromPortName.Trim(), fromCountry.Id)
+            ?? throw new KeyNotFoundException($"From port '{input.FromPortName}' was not found for country '{input.FromCountryName}'.");
+
+        var toPort = staticReferenceCache.FindPortByEnglishName(input.ToPortName.Trim(), toCountry.Id)
+            ?? throw new KeyNotFoundException($"To port '{input.ToPortName}' was not found for country '{input.ToCountryName}'.");
+
+        post.FromCountryId = fromCountry.Id;
+        post.FromPortId = fromPort.Id;
+        post.ToCountryId = toCountry.Id;
+        post.ToPortId = toPort.Id;
+        post.PhoneNumber = input.PhoneNumber.Trim();
+        post.Container20ftPriceUsd = input.Container20ftPriceUsd;
+        post.Container40ftPriceUsd = input.Container40ftPriceUsd;
+        post.PriceUsd = CustomerPriceCalculator.ResolveShippingListPrice(
+            post.Container20ftPriceUsd,
+            post.Container40ftPriceUsd);
+        post.MinDurationDays = input.MinDurationDays;
+        post.MaxDurationDays = input.MaxDurationDays;
+        post.Details = string.IsNullOrWhiteSpace(input.Details) ? null : input.Details.Trim();
+        post.Status = ProductStatusCodes.Active;
+        post.IsApproved = true;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        await auditLogAppService.WriteAsync(
+            AdminAuditActions.ShippingProviderUpdate,
+            AdminAuditEntityTypes.Shipping,
+            post.PublisherUserId.ToString("D"),
+            $"Updated shipping post #{post.Id}",
+            new
+            {
+                postId = post.Id,
+                fromCountry = input.FromCountryName,
+                toCountry = input.ToCountryName
+            },
+            cancellationToken);
+
+        return await GetProviderDetailAsync(post.PublisherUserId.ToString("D"), cancellationToken);
+    }
+
     public async Task<object> UploadProviderImageAsync(
         AdminUploadShippingProviderImageInput input,
         CancellationToken cancellationToken = default)

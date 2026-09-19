@@ -57,6 +57,10 @@ public class Product
     public Guid? AddressId { get; set; }
     public int? MaximumOrderQuantity { get; set; }
     public bool? Negotiable { get; set; }
+    /// <summary>
+    /// When false, public product cards/details hide the price and show Ask for price.
+    /// </summary>
+    public bool ShowPrice { get; set; } = true;
     public bool IsFeatured { get; set; }
     public long ViewsCount { get; set; }
 

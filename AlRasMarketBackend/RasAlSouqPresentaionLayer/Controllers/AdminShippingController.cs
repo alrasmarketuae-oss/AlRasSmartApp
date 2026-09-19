@@ -198,6 +198,42 @@ public class AdminShippingController(
         }
     }
 
+    [HttpPut("posts/{postId:long}")]
+    public async Task<IActionResult> UpdatePost(
+        long postId,
+        [FromBody] UpdateShippingPostRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var result = await adminShippingAppService.UpdatePostAsync(
+                postId,
+                new AdminUpdateShippingPostInput
+                {
+                    FromCountryName = request.FromCountryName,
+                    FromPortName = request.FromPortName,
+                    ToCountryName = request.ToCountryName,
+                    ToPortName = request.ToPortName,
+                    PhoneNumber = request.PhoneNumber,
+                    Container20ftPriceUsd = request.Container20ftPriceUsd,
+                    Container40ftPriceUsd = request.Container40ftPriceUsd,
+                    Details = request.Details,
+                    MinDurationDays = request.MinDurationDays,
+                    MaxDurationDays = request.MaxDurationDays
+                },
+                cancellationToken);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpPost("posts/{postId:long}/approve")]
     public async Task<IActionResult> ApprovePost(long postId, CancellationToken cancellationToken = default)
     {
@@ -277,6 +313,20 @@ public sealed class UpdateShippingProviderRequest
     public string ToPortName { get; set; } = string.Empty;
     public decimal? Container20ftPriceUsd { get; set; }
     public decimal? Container40ftPriceUsd { get; set; }
+}
+
+public sealed class UpdateShippingPostRequest
+{
+    public string FromCountryName { get; set; } = string.Empty;
+    public string FromPortName { get; set; } = string.Empty;
+    public string ToCountryName { get; set; } = string.Empty;
+    public string ToPortName { get; set; } = string.Empty;
+    public string PhoneNumber { get; set; } = string.Empty;
+    public decimal? Container20ftPriceUsd { get; set; }
+    public decimal? Container40ftPriceUsd { get; set; }
+    public string? Details { get; set; }
+    public int? MinDurationDays { get; set; }
+    public int? MaxDurationDays { get; set; }
 }
 
 public sealed class UploadShippingProviderImageRequest

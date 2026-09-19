@@ -212,6 +212,37 @@ class MessageLookup extends MessageLookupByLibrary {
     "agreeToTermsPrefix": MessageLookupByLibrary.simpleMessage(
       "I agree to the ",
     ),
+    "aiAgentActivityCheckingAvailability": MessageLookupByLibrary.simpleMessage(
+      "📦 Checking availability…",
+    ),
+    "aiAgentActivityCheckingPrice": MessageLookupByLibrary.simpleMessage(
+      "💰 Checking prices…",
+    ),
+    "aiAgentActivityCompleted": MessageLookupByLibrary.simpleMessage(
+      "Ready — opening the answer…",
+    ),
+    "aiAgentActivityError": MessageLookupByLibrary.simpleMessage(
+      "Something went wrong. Please try again.",
+    ),
+    "aiAgentActivityPreparing": MessageLookupByLibrary.simpleMessage(
+      "🛒 Preparing your request…",
+    ),
+    "aiAgentActivityProcessingOrder": MessageLookupByLibrary.simpleMessage(
+      "🛒 Processing your order…",
+    ),
+    "aiAgentActivitySearching": MessageLookupByLibrary.simpleMessage(
+      "🔎 Searching for products…",
+    ),
+    "aiAgentActivityStillWorking": MessageLookupByLibrary.simpleMessage(
+      "⏳ Still working on it…",
+    ),
+    "aiAgentActivityTitle": MessageLookupByLibrary.simpleMessage("Thinking"),
+    "aiAgentActivityUploadingMedia": MessageLookupByLibrary.simpleMessage(
+      "📤 Uploading media…",
+    ),
+    "aiAgentActivityWorking": MessageLookupByLibrary.simpleMessage(
+      "⚡ Working on it…",
+    ),
     "aiAssistantCancelReply": MessageLookupByLibrary.simpleMessage(
       "Cancel reply",
     ),
@@ -288,29 +319,6 @@ class MessageLookup extends MessageLookupByLibrary {
       "Speak with me using your voice",
     ),
     "aiAssistantThinking": MessageLookupByLibrary.simpleMessage("Thinking…"),
-    "aiAgentActivityTitle": MessageLookupByLibrary.simpleMessage("Thinking"),
-    "aiAgentActivityWorking":
-        MessageLookupByLibrary.simpleMessage("⚡ Working on it…"),
-    "aiAgentActivitySearching":
-        MessageLookupByLibrary.simpleMessage("🔎 Searching for products…"),
-    "aiAgentActivityCheckingPrice":
-        MessageLookupByLibrary.simpleMessage("💰 Checking prices…"),
-    "aiAgentActivityCheckingAvailability":
-        MessageLookupByLibrary.simpleMessage("📦 Checking availability…"),
-    "aiAgentActivityProcessingOrder":
-        MessageLookupByLibrary.simpleMessage("🛒 Processing your order…"),
-    "aiAgentActivityPreparing":
-        MessageLookupByLibrary.simpleMessage("🛒 Preparing your request…"),
-    "aiAgentActivityUploadingMedia":
-        MessageLookupByLibrary.simpleMessage("📤 Uploading media…"),
-    "aiAgentActivityStillWorking":
-        MessageLookupByLibrary.simpleMessage("⏳ Still working on it…"),
-    "aiAgentActivityCompleted": MessageLookupByLibrary.simpleMessage(
-      "Ready — opening the answer…",
-    ),
-    "aiAgentActivityError": MessageLookupByLibrary.simpleMessage(
-      "Something went wrong. Please try again.",
-    ),
     "aiAssistantTitle": MessageLookupByLibrary.simpleMessage("Al-Ras Agent"),
     "aiAssistantUnsupportedLanguage": MessageLookupByLibrary.simpleMessage(
       "We currently support Arabic and English. We may translate your question internally to understand it, then reply in a supported language.",
@@ -357,6 +365,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "appWord": MessageLookupByLibrary.simpleMessage("App"),
     "approved": MessageLookupByLibrary.simpleMessage("Approved"),
     "arabicLabel": MessageLookupByLibrary.simpleMessage("Arabic"),
+    "askForPrice": MessageLookupByLibrary.simpleMessage("Ask for price"),
+    "askForPriceChatIntro": MessageLookupByLibrary.simpleMessage(
+      "Ask for price — product details:",
+    ),
     "availableQuantity": MessageLookupByLibrary.simpleMessage(
       "Available Quantity",
     ),
@@ -1712,6 +1724,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "Show all inquiries",
     ),
     "showNumber": MessageLookupByLibrary.simpleMessage("Show number"),
+    "showPrice": MessageLookupByLibrary.simpleMessage("Show price?"),
+    "showPriceHint": MessageLookupByLibrary.simpleMessage(
+      "If you turn this off, the price will disappear from the product card and an Ask for price button will appear. Tapping it sends the full product details to admin live chat.",
+    ),
     "signInToContinue": MessageLookupByLibrary.simpleMessage(
       "Sign in to continue",
     ),

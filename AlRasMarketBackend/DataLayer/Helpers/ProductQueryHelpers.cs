@@ -86,6 +86,7 @@ public static class ProductQueryHelpers
             RetailPackagingDetails = x.RetailPackagingDetails,
             RetailDescriptionEn = x.RetailDescriptionEn,
             Negotiable = x.Negotiable,
+            ShowPrice = x.ShowPrice,
             IsFeatured = x.IsFeatured,
             ViewsCount = x.ViewsCount,
             VideoPath = x.VideoPath,

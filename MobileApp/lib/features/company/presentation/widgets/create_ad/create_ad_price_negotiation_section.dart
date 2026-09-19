@@ -43,7 +43,8 @@ class CreateAdPriceNegotiationSection extends StatelessWidget {
           previous.formRevision != current.formRevision ||
           previous.selectedCurrency != current.selectedCurrency ||
           previous.selectedType != current.selectedType ||
-          previous.selectedUnit != current.selectedUnit,
+          previous.selectedUnit != current.selectedUnit ||
+          previous.showPrice != current.showPrice,
       builder: (context, state) {
         final s = S.of(context);
         final isRetail = state.selectedType == CreateAdType.retail.label;
@@ -101,9 +102,79 @@ class CreateAdPriceNegotiationSection extends StatelessWidget {
                 fromBuyer: fromBuyer,
               ),
             ],
+            if (_shouldShowPriceToggle(state.selectedType)) ...[
+              SizedBox(height: 12.h),
+              CreateAdShowPriceToggle(
+                value: state.showPrice,
+                onChanged: cubit.setShowPrice,
+              ),
+            ],
           ],
         );
       },
+    );
+  }
+}
+
+bool _shouldShowPriceToggle(String? selectedType) {
+  final type = (selectedType ?? '').trim().toLowerCase();
+  return type.contains('categor') ||
+      type.contains('فئة') ||
+      type.contains('offer') ||
+      type.contains('عرض');
+}
+
+class CreateAdShowPriceToggle extends StatelessWidget {
+  const CreateAdShowPriceToggle({
+    super.key,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            s.showPrice,
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        IconButton(
+          tooltip: s.showPriceHint,
+          onPressed: () {
+            showDialog<void>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                content: Text(s.showPriceHint),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: Text(s.gotIt),
+                  ),
+                ],
+              ),
+            );
+          },
+          icon: Icon(
+            Icons.error_outline,
+            color: Colors.amber.shade700,
+            size: 22.sp,
+          ),
+        ),
+        Switch.adaptive(
+          value: value,
+          onChanged: onChanged,
+        ),
+      ],
     );
   }
 }

@@ -309,6 +309,7 @@ public partial class ProductsAppService
             DiscountDays = discountDays,
             offerDuration = x.OfferDuration ?? string.Empty,
             x.Negotiable,
+            x.ShowPrice,
             x.IsFeatured,
             videoPath,
             videoPaths = videoPath is null ? Array.Empty<string>() : new[] { videoPath },

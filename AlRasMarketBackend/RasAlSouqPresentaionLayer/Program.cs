@@ -549,6 +549,7 @@ await using (var scope = app.Services.CreateAsyncScope())
     await ChatSchemaMigrator.EnsureAsync(db);
     await AiConversationSchemaMigrator.EnsureAsync(db);
     await ProductOfferDurationSchemaMigrator.EnsureAsync(db);
+    await ProductShowPriceSchemaMigrator.EnsureAsync(db);
     await ProductCreatedLanguageSchemaMigrator.EnsureAsync(db);
     await ProductVideoSchemaMigrator.EnsureAsync(db);
     await RequestTypeSchemaMigrator.EnsureAsync(db);

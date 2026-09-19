@@ -370,7 +370,7 @@ class _ProductCardMarketplaceLayoutState
           )
         : const SizedBox.shrink();
 
-    final showPriceOnCard = ProductPriceFormatter.canShowPrices &&
+    final showPriceOnCard = ProductPriceFormatter.canShowProductPrice(widget.product) &&
         (!widget.product.isRequestProduct ||
             ProductPriceFormatter.amountValue(widget.product) > 0);
     final showReconfirm =

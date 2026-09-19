@@ -46,6 +46,7 @@ BEGIN
         p.RetailPackagingDetails,
         p.RetailDescriptionEn,
         p.Negotiable,
+        p.ShowPrice,
         p.IsFeatured,
         p.ViewsCount,
         p.VideoPath,

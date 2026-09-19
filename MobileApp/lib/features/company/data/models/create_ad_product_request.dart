@@ -19,6 +19,7 @@ class CreateAdProductRequest {
     this.descriptionEn,
     this.categoryId,
     this.negotiable,
+    this.showPrice,
     this.discountPercentage,
     this.discountDays,
     this.supplierNotesEn,
@@ -61,6 +62,7 @@ class CreateAdProductRequest {
   final String? descriptionEn;
   final int? categoryId;
   final bool? negotiable;
+  final bool? showPrice;
   final int? discountPercentage;
   final int? discountDays;
   final String? supplierNotesEn;
@@ -106,6 +108,7 @@ class CreateAdProductRequest {
         'descriptionEn': descriptionEn,
         'categoryId': categoryId,
         'negotiable': negotiable,
+        'showPrice': showPrice,
         'discountPercentage': discountPercentage,
         'discountDays': discountDays,
         'supplierNotesEn': supplierNotesEn,
@@ -145,6 +148,7 @@ class CreateAdProductRequest {
       descriptionEn: json['descriptionEn'] as String?,
       categoryId: (json['categoryId'] as num?)?.toInt(),
       negotiable: json['negotiable'] as bool?,
+      showPrice: json['showPrice'] as bool?,
       discountPercentage: (json['discountPercentage'] as num?)?.toInt(),
       discountDays: (json['discountDays'] as num?)?.toInt(),
       supplierNotesEn: json['supplierNotesEn'] as String?,
@@ -183,6 +187,7 @@ class CreateAdProductRequest {
     String? descriptionEn,
     int? categoryId,
     bool? negotiable,
+    bool? showPrice,
     int? discountPercentage,
     int? discountDays,
     String? supplierNotesEn,
@@ -226,6 +231,7 @@ class CreateAdProductRequest {
       descriptionEn: descriptionEn ?? this.descriptionEn,
       categoryId: categoryId ?? this.categoryId,
       negotiable: negotiable ?? this.negotiable,
+      showPrice: showPrice ?? this.showPrice,
       discountPercentage: discountPercentage ?? this.discountPercentage,
       discountDays: discountDays ?? this.discountDays,
       supplierNotesEn: supplierNotesEn ?? this.supplierNotesEn,
@@ -270,6 +276,7 @@ class CreateAdProductRequest {
         'Quantity': quantity?.toString() ?? '',
         'UnitName': unitName ?? '',
         'Negotiable': (negotiable ?? false).toString(),
+        'ShowPrice': (showPrice ?? true).toString(),
         'DescriptionEn': descriptionEn ?? '',
       };
 
@@ -350,6 +357,7 @@ class CreateAdProductRequest {
       'ProductTypeName': productTypeName ?? '',
       'UnitName': unitName ?? '',
       'Negotiable': (negotiable ?? false).toString(),
+      'ShowPrice': (showPrice ?? true).toString(),
     };
 
     if (createdLanguage != null && createdLanguage!.trim().isNotEmpty) {

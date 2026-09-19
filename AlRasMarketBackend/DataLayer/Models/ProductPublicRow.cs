@@ -29,6 +29,7 @@ public sealed class ProductPublicRow
     public string? RetailPackagingDetails { get; set; }
     public string? RetailDescriptionEn { get; set; }
     public bool? Negotiable { get; set; }
+    public bool ShowPrice { get; set; } = true;
     public bool IsFeatured { get; set; }
     public long ViewsCount { get; set; }
     public string? VideoPath { get; set; }

@@ -352,7 +352,7 @@ export default function UserDetailView({
               {showVerifiedBadge ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-[#eff6ff] px-2.5 py-1 text-xs font-bold text-[#3B7FC7]">
                   <span className="flex h-4 w-4 items-center justify-center">{InfoFieldIcons.check}</span>
-                  {t('users.verifiedSupplier')}
+                  {t(isShippingCompany ? 'users.verifiedShipper' : 'users.verifiedSupplier')}
                 </span>
               ) : null}
             </div>

@@ -173,6 +173,7 @@ public interface IAdminShippingAppService
     Task<object> SetProviderActiveAsync(string providerUserId, bool isActive, CancellationToken cancellationToken = default);
     Task<object> CreateProviderAsync(AdminCreateShippingProviderInput input, CancellationToken cancellationToken = default);
     Task<object> UpdateProviderAsync(string providerUserId, AdminUpdateShippingProviderInput input, CancellationToken cancellationToken = default);
+    Task<object> UpdatePostAsync(long postId, AdminUpdateShippingPostInput input, CancellationToken cancellationToken = default);
     Task<object> UploadProviderImageAsync(AdminUploadShippingProviderImageInput input, CancellationToken cancellationToken = default);
     Task<object> DeleteProviderAsync(string providerUserId, CancellationToken cancellationToken = default);
     Task<string> ApprovePostAsync(long postId, CancellationToken cancellationToken = default);

@@ -213,6 +213,37 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "afterDiscount": MessageLookupByLibrary.simpleMessage("بعد الخصم"),
     "agreeToTermsPrefix": MessageLookupByLibrary.simpleMessage("أوافق على "),
+    "aiAgentActivityCheckingAvailability": MessageLookupByLibrary.simpleMessage(
+      "📦 جارٍ التحقق من التوفر…",
+    ),
+    "aiAgentActivityCheckingPrice": MessageLookupByLibrary.simpleMessage(
+      "💰 جارٍ التحقق من الأسعار…",
+    ),
+    "aiAgentActivityCompleted": MessageLookupByLibrary.simpleMessage(
+      "جاهز — بفتح الرد دلوقتي…",
+    ),
+    "aiAgentActivityError": MessageLookupByLibrary.simpleMessage(
+      "حصل خطأ. حاول مرة أخرى.",
+    ),
+    "aiAgentActivityPreparing": MessageLookupByLibrary.simpleMessage(
+      "🛒 جارٍ تجهيز طلبك…",
+    ),
+    "aiAgentActivityProcessingOrder": MessageLookupByLibrary.simpleMessage(
+      "🛒 جارٍ معالجة طلبك…",
+    ),
+    "aiAgentActivitySearching": MessageLookupByLibrary.simpleMessage(
+      "🔎 جارٍ البحث عن المنتجات…",
+    ),
+    "aiAgentActivityStillWorking": MessageLookupByLibrary.simpleMessage(
+      "⏳ لسه شغال عليها…",
+    ),
+    "aiAgentActivityTitle": MessageLookupByLibrary.simpleMessage("التفكير"),
+    "aiAgentActivityUploadingMedia": MessageLookupByLibrary.simpleMessage(
+      "📤 جارٍ رفع الوسائط…",
+    ),
+    "aiAgentActivityWorking": MessageLookupByLibrary.simpleMessage(
+      "⚡ جارٍ العمل…",
+    ),
     "aiAssistantCancelReply": MessageLookupByLibrary.simpleMessage(
       "إلغاء الرد",
     ),
@@ -289,27 +320,6 @@ class MessageLookup extends MessageLookupByLibrary {
       "تكلم معي بصوتك",
     ),
     "aiAssistantThinking": MessageLookupByLibrary.simpleMessage("يفكر…"),
-    "aiAgentActivityTitle": MessageLookupByLibrary.simpleMessage("التفكير"),
-    "aiAgentActivityWorking":
-        MessageLookupByLibrary.simpleMessage("⚡ جارٍ العمل…"),
-    "aiAgentActivitySearching":
-        MessageLookupByLibrary.simpleMessage("🔎 جارٍ البحث عن المنتجات…"),
-    "aiAgentActivityCheckingPrice":
-        MessageLookupByLibrary.simpleMessage("💰 جارٍ التحقق من الأسعار…"),
-    "aiAgentActivityCheckingAvailability":
-        MessageLookupByLibrary.simpleMessage("📦 جارٍ التحقق من التوفر…"),
-    "aiAgentActivityProcessingOrder":
-        MessageLookupByLibrary.simpleMessage("🛒 جارٍ معالجة طلبك…"),
-    "aiAgentActivityPreparing":
-        MessageLookupByLibrary.simpleMessage("🛒 جارٍ تجهيز طلبك…"),
-    "aiAgentActivityUploadingMedia":
-        MessageLookupByLibrary.simpleMessage("📤 جارٍ رفع الوسائط…"),
-    "aiAgentActivityStillWorking":
-        MessageLookupByLibrary.simpleMessage("⏳ لسه شغال عليها…"),
-    "aiAgentActivityCompleted":
-        MessageLookupByLibrary.simpleMessage("جاهز — بفتح الرد دلوقتي…"),
-    "aiAgentActivityError":
-        MessageLookupByLibrary.simpleMessage("حصل خطأ. حاول مرة أخرى."),
     "aiAssistantTitle": MessageLookupByLibrary.simpleMessage("Al-Ras Agent"),
     "aiAssistantUnsupportedLanguage": MessageLookupByLibrary.simpleMessage(
       "ندعم العربية والإنجليزية حالياً. ترجمنا سؤالك للفهم إن أمكن، وسنرد بإحدى اللغتين المدعومتين.",
@@ -356,6 +366,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "appWord": MessageLookupByLibrary.simpleMessage("تطبيق"),
     "approved": MessageLookupByLibrary.simpleMessage("تم الموافقة "),
     "arabicLabel": MessageLookupByLibrary.simpleMessage("العربية"),
+    "askForPrice": MessageLookupByLibrary.simpleMessage("اطلب السعر"),
+    "askForPriceChatIntro": MessageLookupByLibrary.simpleMessage(
+      "طلب سعر — تفاصيل المنتج:",
+    ),
     "availableQuantity": MessageLookupByLibrary.simpleMessage("الكمية المتاحة"),
     "awaitingAdminApproval": MessageLookupByLibrary.simpleMessage(
       "بانتظار موافقة التطبيق",
@@ -1701,6 +1715,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "showAll": MessageLookupByLibrary.simpleMessage("عرض الكل"),
     "showAllRequests": MessageLookupByLibrary.simpleMessage("عرض كل الطلبات"),
     "showNumber": MessageLookupByLibrary.simpleMessage("إظهار الرقم"),
+    "showPrice": MessageLookupByLibrary.simpleMessage("إظهار السعر؟"),
+    "showPriceHint": MessageLookupByLibrary.simpleMessage(
+      "عند إيقاف إظهار السعر، يختفي السعر من بطاقة المنتج ويظهر زر Ask for price. عند الضغط عليه تُرسل تفاصيل المنتج كاملة إلى الشات المباشر للأدمن.",
+    ),
     "signInToContinue": MessageLookupByLibrary.simpleMessage(
       "سجل دخولك للمتابعة",
     ),

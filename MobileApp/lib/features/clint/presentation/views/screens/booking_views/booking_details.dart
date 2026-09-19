@@ -4,6 +4,7 @@ import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/services/product_view_service.dart';
 import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/utils/product_stock.dart';
+import 'package:alrasmarket/features/clint/presentation/helpers/ask_for_price_helper.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_details_opener.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_ownership_helper.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/booking_widets/booking_ad_details_body.dart';
@@ -103,35 +104,102 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
               top: false,
               child: Padding(
                 padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 12.h),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 48.h,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      context.push(
-                        AppRoutes.kSendBookingOrderView,
-                        extra: {'product': _product},
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: BookingDetailsDesign.brand,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r),
+                child: !_product.shouldShowPrice
+                    ? Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 48.h,
+                              child: OutlinedButton(
+                                onPressed: () {
+                                  AskForPriceHelper.openSupportChatWithProduct(
+                                    context: context,
+                                    product: _product,
+                                  );
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: BookingDetailsDesign.brand,
+                                  side: BorderSide(
+                                    color: BookingDetailsDesign.brand,
+                                    width: 1.5,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12.r),
+                                  ),
+                                ),
+                                child: Text(
+                                  s.askForPrice,
+                                  style: TextStyle(
+                                    fontFamily: fontFamily,
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 10.w),
+                          Expanded(
+                            child: SizedBox(
+                              height: 48.h,
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  context.push(
+                                    AppRoutes.kSendBookingOrderView,
+                                    extra: {'product': _product},
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: BookingDetailsDesign.brand,
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12.r),
+                                  ),
+                                ),
+                                icon: Icon(Icons.shopping_cart_outlined, size: 18.sp),
+                                label: Text(
+                                  s.purchaseOrder,
+                                  style: TextStyle(
+                                    fontFamily: fontFamily,
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : SizedBox(
+                        width: double.infinity,
+                        height: 48.h,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            context.push(
+                              AppRoutes.kSendBookingOrderView,
+                              extra: {'product': _product},
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: BookingDetailsDesign.brand,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                          ),
+                          icon: Icon(Icons.shopping_cart_outlined, size: 18.sp),
+                          label: Text(
+                            s.purchaseOrder,
+                            style: TextStyle(
+                              fontFamily: fontFamily,
+                              fontSize: 15.sp,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                    icon: Icon(Icons.shopping_cart_outlined, size: 18.sp),
-                    label: Text(
-                      s.purchaseOrder,
-                      style: TextStyle(
-                        fontFamily: fontFamily,
-                        fontSize: 15.sp,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
               ),
             ),
         ],

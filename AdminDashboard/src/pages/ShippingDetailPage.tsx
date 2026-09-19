@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import ShippingProviderForm from '../components/shipping/ShippingProviderForm'
+import ShippingPostEditForm from '../components/shipping/ShippingPostEditForm'
 import ShippingProviderDetailView from '../components/shipping/ShippingProviderDetailView'
 import { useAppPreferences } from '../context/AppPreferencesProvider'
 import {
@@ -9,10 +10,11 @@ import {
   useGetShippingProviderDetailQuery,
   useRejectShippingPostMutation,
   useSetShippingProviderActiveMutation,
+  useUpdateShippingPostMutation,
   useUpdateShippingProviderMutation,
   useUploadShippingProviderImageMutation,
 } from '../store'
-import type { ShippingProviderPayload } from '../types/adminShippingCreate'
+import type { ShippingPostPayload, ShippingProviderPayload } from '../types/adminShippingCreate'
 import { getRtkErrorMessage } from '../utils/rtkError'
 
 function mapDeleteError(message: string, t: (key: string) => string) {
@@ -29,6 +31,7 @@ export default function ShippingDetailPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [isEditing, setIsEditing] = useState(false)
+  const [editingPostId, setEditingPostId] = useState<number | null>(null)
   const [moderatingPostId, setModeratingPostId] = useState<number | null>(null)
 
   const { data: provider, error, isLoading } = useGetShippingProviderDetailQuery(providerId, {
@@ -37,6 +40,7 @@ export default function ShippingDetailPage() {
 
   const [setProviderActive, { isLoading: isUpdatingActive }] = useSetShippingProviderActiveMutation()
   const [updateProvider, { isLoading: isSaving }] = useUpdateShippingProviderMutation()
+  const [updatePost, { isLoading: isSavingPost }] = useUpdateShippingPostMutation()
   const [uploadProviderImage] = useUploadShippingProviderImageMutation()
   const [deleteProvider, { isLoading: isDeleting }] = useDeleteShippingProviderMutation()
   const [approveShippingPost, { isLoading: isApprovingPost }] = useApproveShippingPostMutation()
@@ -45,6 +49,7 @@ export default function ShippingDetailPage() {
   useEffect(() => {
     if (searchParams.get('edit') !== '1') return
     setIsEditing(true)
+    setEditingPostId(null)
     const next = new URLSearchParams(searchParams)
     next.delete('edit')
     setSearchParams(next, { replace: true })
@@ -90,6 +95,25 @@ export default function ShippingDetailPage() {
       setSuccessMessage(t('shippingPage.updateSuccess'))
     } catch (err) {
       setActionError(getRtkErrorMessage(err as never, t('shippingPage.updateError')))
+    }
+  }
+
+  async function handleUpdatePost(payload: ShippingPostPayload) {
+    if (!provider || !editingPostId) return
+
+    setActionError(null)
+    setSuccessMessage(null)
+
+    try {
+      await updatePost({
+        postId: editingPostId,
+        providerId: provider.id,
+        ...payload,
+      }).unwrap()
+      setEditingPostId(null)
+      setSuccessMessage(t('shippingPage.updateAdSuccess'))
+    } catch (err) {
+      setActionError(getRtkErrorMessage(err as never, t('shippingPage.updateAdError')))
     }
   }
 
@@ -150,6 +174,7 @@ export default function ShippingDetailPage() {
     if (action === 'update') {
       setActionError(null)
       setSuccessMessage(null)
+      setEditingPostId(null)
       setIsEditing(true)
       return
     }
@@ -166,6 +191,26 @@ export default function ShippingDetailPage() {
     navigate('/shipping', { replace: true })
     return null
   }
+
+  const editingPost =
+    editingPostId && provider
+      ? provider.posts.find((p) => p.id === editingPostId) ??
+        (provider.latestPostId === editingPostId
+          ? {
+              id: provider.latestPostId,
+              fromCountryName: provider.fromCountryName,
+              fromPortName: provider.fromPortName,
+              toCountryName: provider.toCountryName,
+              toPortName: provider.toPortName,
+              container20ftPriceUsd: provider.container20ftPriceUsd,
+              container40ftPriceUsd: provider.container40ftPriceUsd,
+              phoneNumber: provider.phoneNumber,
+              details: null as string | null,
+              minDurationDays: null as number | null,
+              maxDurationDays: null as number | null,
+            }
+          : null)
+      : null
 
   return (
     <div className="space-y-6">
@@ -220,6 +265,29 @@ export default function ShippingDetailPage() {
             onSubmit={handleUpdateProvider}
           />
         </div>
+      ) : editingPost ? (
+        <div className="admin-card">
+          <ShippingPostEditForm
+            initialValues={{
+              fromCountryName: editingPost.fromCountryName,
+              fromPortName: editingPost.fromPortName,
+              toCountryName: editingPost.toCountryName,
+              toPortName: editingPost.toPortName,
+              phoneNumber: editingPost.phoneNumber ?? provider.phoneNumber ?? '',
+              container20ftPriceUsd: editingPost.container20ftPriceUsd,
+              container40ftPriceUsd: editingPost.container40ftPriceUsd,
+              details: editingPost.details,
+              minDurationDays: editingPost.minDurationDays,
+              maxDurationDays: editingPost.maxDurationDays,
+            }}
+            submitting={isSavingPost}
+            onCancel={() => {
+              setEditingPostId(null)
+              setActionError(null)
+            }}
+            onSubmit={handleUpdatePost}
+          />
+        </div>
       ) : (
         <ShippingProviderDetailView
           provider={provider}
@@ -228,6 +296,12 @@ export default function ShippingDetailPage() {
           isModeratingPost={isApprovingPost || isRejectingPost}
           moderatingPostId={moderatingPostId}
           onEdit={() => handleQuickAction('update')}
+          onEditPost={(postId) => {
+            setIsEditing(false)
+            setEditingPostId(postId)
+            setActionError(null)
+            setSuccessMessage(null)
+          }}
           onDelete={() => void handleDeleteProvider()}
           onToggleActive={() => void handleToggleActive()}
           onApprovePost={(postId) => void handleApprovePost(postId)}

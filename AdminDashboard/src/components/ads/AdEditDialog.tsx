@@ -61,13 +61,13 @@ function Field({
   children,
   hint,
 }: {
-  label: string
+  label: ReactNode
   children: ReactNode
   hint?: string
 }) {
   return (
     <label className="block text-start">
-      <span className="admin-text-subtle text-[11px] font-semibold uppercase tracking-wide">
+      <span className="admin-text-subtle inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide">
         {label}
       </span>
       <div className="mt-1">{children}</div>
@@ -107,6 +107,7 @@ export default function AdEditDialog({
   const [unitName, setUnitName] = useState('')
   const [quantity, setQuantity] = useState('')
   const [negotiable, setNegotiable] = useState(false)
+  const [showPrice, setShowPrice] = useState(true)
   const [packingOther, setPackingOther] = useState(false)
   const [packagingKg, setPackagingKg] = useState('')
   const [packagingDetails, setPackagingDetails] = useState('')
@@ -149,6 +150,7 @@ export default function AdEditDialog({
     setUnitName(product.unitName ?? '')
     setQuantity(product.quantity != null ? String(product.quantity) : '')
     setNegotiable(product.negotiable === true)
+    setShowPrice(product.showPrice !== false)
 
     const details = product.packagingDetails?.trim() ?? ''
     setPackingOther(details.length > 0)
@@ -225,6 +227,7 @@ export default function AdEditDialog({
       productTypeName: '',
       unitName: unitName.trim(),
       negotiable,
+      showPrice,
     }
 
     // Packing: free-text "Other packing" wins over the numeric kg value.
@@ -401,6 +404,34 @@ export default function AdEditDialog({
               >
                 <option value="yes">{t('ads.negotiableYes')}</option>
                 <option value="no">{t('ads.negotiableNo')}</option>
+              </select>
+            </Field>
+          ) : null}
+
+          {!booking && (hasCategory || offers) ? (
+            <Field
+              label={
+                <span className="inline-flex items-center gap-1.5">
+                  {t('ads.showPrice')}
+                  <button
+                    type="button"
+                    title={t('ads.showPriceHint')}
+                    aria-label={t('ads.showPriceHint')}
+                    className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-700 hover:bg-amber-200 dark:bg-amber-950/50 dark:text-amber-300"
+                    onClick={() => window.alert(t('ads.showPriceHint'))}
+                  >
+                    !
+                  </button>
+                </span>
+              }
+            >
+              <select
+                className={inputClass}
+                value={showPrice ? 'yes' : 'no'}
+                onChange={(e) => setShowPrice(e.target.value === 'yes')}
+              >
+                <option value="yes">{t('ads.showPriceYes')}</option>
+                <option value="no">{t('ads.showPriceNo')}</option>
               </select>
             </Field>
           ) : null}

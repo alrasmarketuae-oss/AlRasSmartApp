@@ -779,6 +779,7 @@ public class ProductsController(
             Packaging = form.Packaging,
             PackagingDetails = form.PackagingDetails,
             Negotiable = form.Negotiable,
+            ShowPrice = form.ShowPrice,
             ProductVideoFile = form.ProductVideoFile,
             VideoDurationSeconds = form.VideoDurationSeconds,
             ShippingDuration = form.ShippingDuration,
@@ -833,6 +834,7 @@ public class ProductsController(
             Packaging = request.Packaging,
             PackagingDetails = request.PackagingDetails,
             Negotiable = request.Negotiable,
+            ShowPrice = request.ShowPrice,
             ProductVideoFile = request.ProductVideoFile,
             VideoDurationSeconds = request.VideoDurationSeconds,
             ShippingDuration = request.ShippingDuration,
@@ -1161,6 +1163,7 @@ public sealed class CreateProductRequest
     public byte? Packaging { get; set; }
     public string? PackagingDetails { get; set; }
     public bool? Negotiable { get; set; }
+    public bool? ShowPrice { get; set; }
     public string? Currency { get; set; }
     public IFormFile? ProductVideoFile { get; set; }
     public byte? VideoDurationSeconds { get; set; }

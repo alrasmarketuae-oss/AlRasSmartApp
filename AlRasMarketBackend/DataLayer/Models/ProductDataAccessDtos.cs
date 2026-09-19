@@ -96,6 +96,7 @@ public sealed class OwnerListingRow
     public byte? Packaging { get; set; }
     public string? PackagingDetails { get; set; }
     public bool? Negotiable { get; set; }
+    public bool ShowPrice { get; set; } = true;
     public bool IsFeatured { get; set; }
     public long ViewsCount { get; set; }
     public string? VideoPath { get; set; }

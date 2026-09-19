@@ -435,8 +435,15 @@ abstract class AppRoutes {
       ),
       GoRoute(
         path: kSupportChatView,
-        builder: (context, state) =>
-            AdminAccountPage.wrap(const SupportChatView()),
+        builder: (context, state) {
+          final extra = state.extra;
+          final initialMessage = extra is Map
+              ? extra['initialMessage']?.toString()
+              : null;
+          return AdminAccountPage.wrap(
+            SupportChatView(initialMessage: initialMessage),
+          );
+        },
       ),
       GoRoute(
         path: kAiAssistantView,

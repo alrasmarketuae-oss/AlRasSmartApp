@@ -505,6 +505,7 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
         negotiationType: product.isNegotiable
             ? NegotiationType.negotiable
             : NegotiationType.nonNegotiable,
+        showPrice: product.showPrice,
         requestFulfillmentType: requestFulfillment,
         bookingPriceType: bookingPriceType,
         requiredDeliveryDate: requiredDeliveryDate,
@@ -680,6 +681,10 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
 
   void setNegotiationType(NegotiationType type) {
     emit(state.copyWith(negotiationType: type));
+  }
+
+  void setShowPrice(bool value) {
+    emit(state.copyWith(showPrice: value));
   }
 
   Future<void> setOriginCountry(String? country) async {

@@ -7,6 +7,8 @@ export type AdminProduct = {
   priceFormatted: string
   quantity: number
   negotiable: boolean | null
+  /** When false, public UI hides price and shows Ask for price. Default true. */
+  showPrice: boolean
   categoryName: string
   categoryId?: number | null
   productTypeId?: number | null
@@ -132,6 +134,7 @@ export type AdminUpdateProductPayload = {
    * For geo fields an explicit empty string means "clear" (e.g. booking ad switched to FOB).
    */
   negotiable?: boolean | null
+  showPrice?: boolean | null
   packaging?: number | null
   packagingDetails?: string | null
   shippingDuration?: string | null

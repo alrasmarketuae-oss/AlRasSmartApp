@@ -9,6 +9,9 @@ import 'package:alrasmarket/generated/l10n.dart';
 class ProductPriceFormatter {
   static bool get canShowPrices => AuthService.instance.isAuthenticated;
 
+  static bool canShowProductPrice(MyListingProductModel product) =>
+      canShowPrices && product.shouldShowPrice;
+
   static bool _isOwner(MyListingProductModel product) =>
       ProductOwnershipHelper.isOwnedByCurrentUser(product);
 

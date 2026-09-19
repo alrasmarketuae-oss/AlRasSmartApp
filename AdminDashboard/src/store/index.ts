@@ -60,6 +60,7 @@ export {
   useSetShippingProviderActiveMutation,
   useCreateShippingProviderMutation,
   useUpdateShippingProviderMutation,
+  useUpdateShippingPostMutation,
   useDeleteShippingProviderMutation,
   useApproveShippingPostMutation,
   useRejectShippingPostMutation,

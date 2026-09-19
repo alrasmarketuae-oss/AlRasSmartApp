@@ -260,6 +260,8 @@ public class CreateProductInput
     public byte? Packaging { get; set; }
     public string? PackagingDetails { get; set; }
     public bool? Negotiable { get; set; }
+    /// <summary>When false, hide price publicly and show Ask for price.</summary>
+    public bool? ShowPrice { get; set; }
     public IFormFile? ProductVideoFile { get; set; }
     public byte? VideoDurationSeconds { get; set; }
     public string? ShippingDuration { get; set; }
@@ -330,6 +332,8 @@ public sealed class AdminUpdateProductRequest
     // (which omits them) keeps working: null => leave unchanged. For geo fields an
     // explicit empty string means "clear" (e.g. switching a booking ad to FOB).
     public bool? Negotiable { get; set; }
+    /// <summary>When false, hide price publicly and show Ask for price.</summary>
+    public bool? ShowPrice { get; set; }
     public byte? Packaging { get; set; }
     public string? PackagingDetails { get; set; }
     public string? ShippingDuration { get; set; }

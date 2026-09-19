@@ -4764,6 +4764,41 @@ class S {
     );
   }
 
+  /// `Show price?`
+  String get showPrice {
+    return Intl.message('Show price?', name: 'showPrice', desc: '', args: []);
+  }
+
+  /// `If you turn this off, the price will disappear from the product card and an Ask for price button will appear. Tapping it sends the full product details to admin live chat.`
+  String get showPriceHint {
+    return Intl.message(
+      'If you turn this off, the price will disappear from the product card and an Ask for price button will appear. Tapping it sends the full product details to admin live chat.',
+      name: 'showPriceHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Ask for price`
+  String get askForPrice {
+    return Intl.message(
+      'Ask for price',
+      name: 'askForPrice',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Ask for price — product details:`
+  String get askForPriceChatIntro {
+    return Intl.message(
+      'Ask for price — product details:',
+      name: 'askForPriceChatIntro',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Offer Price`
   String get offerPrice {
     return Intl.message('Offer Price', name: 'offerPrice', desc: '', args: []);

@@ -2582,6 +2582,7 @@ class ClintCubit extends Cubit<ClintStates> {
       'status': json['status'] ?? json['statusName'] ?? '',
       'approvalStatus': json['approvalStatus'] ?? '',
       'negotiable': _normalizeBooleanToYesNo(json['negotiable']),
+      'showPrice': json['showPrice'] ?? json['ShowPrice'] ?? true,
       'isFeatured': _normalizeBooleanToYesNo(json['isFeatured']),
       'viewsCount': json['viewsCount'] ?? '',
       'images': json['images'] ?? const [],

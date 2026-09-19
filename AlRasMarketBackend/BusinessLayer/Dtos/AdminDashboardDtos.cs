@@ -492,6 +492,7 @@ public class AdminProductListItemDto
     public string PriceFormatted { get; set; } = string.Empty;
     public long Quantity { get; set; }
     public bool? Negotiable { get; set; }
+    public bool ShowPrice { get; set; } = true;
     public string CategoryName { get; set; } = string.Empty;
     public byte? CategoryId { get; set; }
     public byte? ProductTypeId { get; set; }
@@ -766,6 +767,20 @@ public sealed class AdminUpdateShippingProviderInput
     public string ToPortName { get; set; } = string.Empty;
     public decimal? Container20ftPriceUsd { get; set; }
     public decimal? Container40ftPriceUsd { get; set; }
+}
+
+public sealed class AdminUpdateShippingPostInput
+{
+    public string FromCountryName { get; set; } = string.Empty;
+    public string FromPortName { get; set; } = string.Empty;
+    public string ToCountryName { get; set; } = string.Empty;
+    public string ToPortName { get; set; } = string.Empty;
+    public string PhoneNumber { get; set; } = string.Empty;
+    public decimal? Container20ftPriceUsd { get; set; }
+    public decimal? Container40ftPriceUsd { get; set; }
+    public string? Details { get; set; }
+    public int? MinDurationDays { get; set; }
+    public int? MaxDurationDays { get; set; }
 }
 
 public sealed class AdminUploadShippingProviderImageInput

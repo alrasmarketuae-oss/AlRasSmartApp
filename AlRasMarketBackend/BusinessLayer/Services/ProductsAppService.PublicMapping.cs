@@ -342,6 +342,7 @@ public partial class ProductsAppService
                 retailPackaging = includeRetail ? x.RetailPackaging : null,
                 retailPackagingDetails = includeRetail ? x.RetailPackagingDetails : null,
                 x.Negotiable,
+                x.ShowPrice,
                 x.IsFeatured,
                 x.ViewsCount,
                 videos = videos.Select(v => new

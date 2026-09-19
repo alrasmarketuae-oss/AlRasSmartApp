@@ -428,6 +428,7 @@ public partial class ProductsAppService
             && existing.MaximumOrderQuantity == nextMaximumOrderQuantity
             && TextEquals(existing.ShippingDescriptionEn, nextShippingDescription)
             && BoolEquals(existing.Negotiable, input.Negotiable)
+            && (!input.ShowPrice.HasValue || existing.ShowPrice == input.ShowPrice.Value)
             && TextEquals(existing.VideoPath, newVideoPath)
             && DurationFieldEquals(existing.ShippingDuration, nextShippingDuration)
             && (DurationFieldEquals(existing.OfferDuration, nextOfferDuration)

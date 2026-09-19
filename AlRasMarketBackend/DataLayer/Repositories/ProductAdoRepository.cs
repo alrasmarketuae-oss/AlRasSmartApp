@@ -38,6 +38,7 @@ public sealed class ProductAdoRepository(
         public string? RetailPackagingDetails { get; set; }
         public string? RetailDescriptionEn { get; set; }
         public bool? Negotiable { get; set; }
+        public bool ShowPrice { get; set; } = true;
         public bool IsFeatured { get; set; }
         public long ViewsCount { get; set; }
         public string? VideoPath { get; set; }
@@ -116,6 +117,7 @@ public sealed class ProductAdoRepository(
         AddParameter(command, "@Packaging", DbType.Byte, product.Packaging);
         AddParameter(command, "@PackagingDetails", DbType.String, product.PackagingDetails);
         AddParameter(command, "@Negotiable", DbType.Boolean, product.Negotiable);
+        AddParameter(command, "@ShowPrice", DbType.Boolean, product.ShowPrice);
         AddParameter(command, "@VideoPath", DbType.String, product.VideoPath);
         AddParameter(command, "@VideoDurationSeconds", DbType.Byte, product.VideoDurationSeconds);
         AddParameter(command, "@ShippingDuration", DbType.String, product.ShippingDuration);
@@ -253,6 +255,9 @@ public sealed class ProductAdoRepository(
             RetailPackagingDetails = GetNullableString(reader, reader.GetOrdinal("RetailPackagingDetails")),
             RetailDescriptionEn = GetNullableString(reader, reader.GetOrdinal("RetailDescriptionEn")),
             Negotiable = reader.IsDBNull(reader.GetOrdinal("Negotiable")) ? null : reader.GetBoolean(reader.GetOrdinal("Negotiable")),
+            ShowPrice = reader.IsDBNull(reader.GetOrdinal("ShowPrice"))
+                ? true
+                : reader.GetBoolean(reader.GetOrdinal("ShowPrice")),
             IsFeatured = reader.GetBoolean(reader.GetOrdinal("IsFeatured")),
             ViewsCount = reader.GetInt64(reader.GetOrdinal("ViewsCount")),
             VideoPath = GetNullableString(reader, reader.GetOrdinal("VideoPath")),

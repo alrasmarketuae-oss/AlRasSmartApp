@@ -18,6 +18,7 @@ class CreateAdFormState extends Equatable {
     this.retailOtherPacking = false,
     this.selectedCurrency = CreateAdCurrency.aed,
     this.negotiationType = NegotiationType.negotiable,
+    this.showPrice = true,
     this.requestFulfillmentType,
     this.bookingPriceType,
     this.productImages = const [],
@@ -65,6 +66,7 @@ class CreateAdFormState extends Equatable {
   final bool retailOtherPacking;
   final String selectedCurrency;
   final NegotiationType negotiationType;
+  final bool showPrice;
   final RequestFulfillmentType? requestFulfillmentType;
   final BookingPriceType? bookingPriceType;
   final List<String> productImages;
@@ -114,6 +116,7 @@ class CreateAdFormState extends Equatable {
     bool? retailOtherPacking,
     String? selectedCurrency,
     NegotiationType? negotiationType,
+    bool? showPrice,
     RequestFulfillmentType? requestFulfillmentType,
     bool clearRequestFulfillmentType = false,
     BookingPriceType? bookingPriceType,
@@ -179,6 +182,7 @@ class CreateAdFormState extends Equatable {
       retailOtherPacking: retailOtherPacking ?? this.retailOtherPacking,
       selectedCurrency: selectedCurrency ?? this.selectedCurrency,
       negotiationType: negotiationType ?? this.negotiationType,
+      showPrice: showPrice ?? this.showPrice,
       requestFulfillmentType: clearRequestFulfillmentType
           ? null
           : (requestFulfillmentType ?? this.requestFulfillmentType),
@@ -249,6 +253,7 @@ class CreateAdFormState extends Equatable {
         retailOtherPacking,
         selectedCurrency,
         negotiationType,
+        showPrice,
         requestFulfillmentType,
         bookingPriceType,
         productImages,

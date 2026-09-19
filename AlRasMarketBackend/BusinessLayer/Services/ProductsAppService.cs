@@ -169,6 +169,7 @@ public partial class ProductsAppService(
                 ? null
                 : input.PackagingDetails.Trim(),
             Negotiable = input.Negotiable,
+            ShowPrice = input.ShowPrice ?? true,
             VideoPath = videoPath,
             VideoDurationSeconds = input.ProductVideoFile is not null
                 ? input.VideoDurationSeconds
@@ -503,6 +504,10 @@ public partial class ProductsAppService(
             product.SupplierNotesEn = input.SupplierNotesEn;
         }
         product.Negotiable = input.Negotiable ?? product.Negotiable ?? false;
+        if (input.ShowPrice.HasValue)
+        {
+            product.ShowPrice = input.ShowPrice.Value;
+        }
         var previousVideoPath = product.VideoPath;
         product.VideoPath = videoPath;
         product.VideoDurationSeconds = input.ProductVideoFile is not null

@@ -62,6 +62,7 @@ class MyListingProductModel {
     this.isListingSoldOut = false,
     required this.approvalStatus,
     required this.negotiable,
+    this.showPrice = true,
     required this.isFeatured,
     required this.viewsCount,
     required this.images,
@@ -231,6 +232,8 @@ class MyListingProductModel {
   final bool isListingSoldOut;
   final String approvalStatus;
   final String negotiable;
+  /// When false, hide price on cards/details and show Ask for price.
+  final bool showPrice;
   final String isFeatured;
   final String viewsCount;
   final List<String> images;
@@ -294,6 +297,7 @@ class MyListingProductModel {
   }
 
   bool get isNegotiable => _parseBoolFlag(negotiable);
+  bool get shouldShowPrice => showPrice;
 
   bool get isCreatedInArabic =>
       createdLanguage.trim().toLowerCase().startsWith('ar');
@@ -488,6 +492,7 @@ class MyListingProductModel {
       status: '',
       approvalStatus: '',
       negotiable: '',
+      showPrice: true,
       isFeatured: '',
       viewsCount: '',
       images: const [],
@@ -690,6 +695,9 @@ class MyListingProductModel {
       negotiable: _parseBoolFlag(json['negotiable'] ?? json['Negotiable'])
           ? 'Yes'
           : 'No',
+      showPrice: json.containsKey('showPrice') || json.containsKey('ShowPrice')
+          ? _parseBoolFlag(json['showPrice'] ?? json['ShowPrice'])
+          : true,
       isFeatured: _parseBoolFlag(json['isFeatured'] ?? json['IsFeatured'])
           ? 'Yes'
           : 'No',

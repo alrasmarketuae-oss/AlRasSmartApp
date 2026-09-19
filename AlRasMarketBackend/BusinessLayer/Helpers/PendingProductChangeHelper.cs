@@ -38,6 +38,7 @@ public sealed class PendingProductEditSnapshot
     public string? OfferDuration { get; set; }
     public Guid? AddressId { get; set; }
     public bool? Negotiable { get; set; }
+    public bool ShowPrice { get; set; } = true;
     public decimal? RetailPrice { get; set; }
     public byte? RetailUnitId { get; set; }
     public long? RetailQuantity { get; set; }
@@ -124,6 +125,7 @@ public static class PendingProductChangeHelper
             OfferDuration = product.OfferDuration,
             AddressId = product.AddressId,
             Negotiable = product.Negotiable,
+            ShowPrice = product.ShowPrice,
             RetailPrice = product.RetailPrice,
             RetailUnitId = product.RetailUnitId,
             RetailQuantity = product.RetailQuantity,
@@ -179,6 +181,7 @@ public static class PendingProductChangeHelper
         product.OfferDuration = snapshot.OfferDuration;
         product.AddressId = snapshot.AddressId;
         product.Negotiable = snapshot.Negotiable;
+        product.ShowPrice = snapshot.ShowPrice;
         product.RetailPrice = snapshot.RetailPrice;
         product.RetailUnitId = snapshot.RetailUnitId;
         product.RetailQuantity = snapshot.RetailQuantity;

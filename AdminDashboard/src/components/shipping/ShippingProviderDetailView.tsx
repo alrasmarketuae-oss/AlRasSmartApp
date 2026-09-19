@@ -15,6 +15,7 @@ type ShippingProviderDetailViewProps = {
   isModeratingPost?: boolean
   moderatingPostId?: number | null
   onEdit: () => void
+  onEditPost?: (postId: number) => void
   onDelete: () => void
   onToggleActive: () => void
   onApprovePost?: (postId: number) => void
@@ -73,26 +74,6 @@ function formatPortLabel(portName: string, unLocode: string | null | undefined):
   return unLocode ? `${portName} (${unLocode})` : portName
 }
 
-function RouteEndpoint({
-  country,
-  port,
-  unLocode,
-  label,
-}: {
-  country: string
-  port: string
-  unLocode?: string | null
-  label: string
-}) {
-  return (
-    <div className="rounded-2xl border border-[#3B7FC7]/15 bg-[#f8fbff] p-4 dark:border-slate-700 dark:bg-slate-900/60">
-      <p className="admin-text-subtle mb-2 text-xs font-semibold">{label}</p>
-      <p className="admin-text text-sm font-bold">{country || '—'}</p>
-      <p className="admin-text-muted mt-1 text-sm">{formatPortLabel(port, unLocode)}</p>
-    </div>
-  )
-}
-
 export default function ShippingProviderDetailView({
   provider,
   isUpdating,
@@ -100,6 +81,7 @@ export default function ShippingProviderDetailView({
   isModeratingPost = false,
   moderatingPostId = null,
   onEdit,
+  onEditPost,
   onDelete,
   onToggleActive,
   onApprovePost,
@@ -146,7 +128,12 @@ export default function ShippingProviderDetailView({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex min-w-0 items-center gap-4">
           <CompanyLogo provider={provider} />
-          <h1 className="admin-text text-2xl font-bold">{provider.companyName}</h1>
+          <div className="min-w-0 text-right">
+            <h1 className="admin-text text-2xl font-bold">{provider.companyName}</h1>
+            {provider.fullName?.trim() ? (
+              <p className="admin-text-muted mt-1 text-sm">{provider.fullName}</p>
+            ) : null}
+          </div>
         </div>
         <div className="flex flex-wrap gap-3">
           <button
@@ -157,7 +144,7 @@ export default function ShippingProviderDetailView({
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z" />
             </svg>
-            {t('shippingPage.edit')}
+            {t('shippingPage.editCompany')}
           </button>
           <button
             type="button"
@@ -186,6 +173,122 @@ export default function ShippingProviderDetailView({
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_minmax(280px,320px)]">
         <div className="order-2 space-y-6 xl:order-none">
+          <Card title={t('shippingPage.companyAdsTitle')}>
+            {posts.length === 0 ? (
+              <p className="admin-text-subtle py-4 text-center text-sm">
+                {t('shippingPage.noCompanyAds')}
+              </p>
+            ) : (
+              <div className="space-y-3">
+                <p className="admin-text-muted text-end text-xs">
+                  {t('shippingPage.companyAdsCount').replace('{count}', String(posts.length))}
+                </p>
+                {posts.map((post) => {
+                  const postFromCountry =
+                    locale === 'ar'
+                      ? post.fromCountryNameAr || post.fromCountryName
+                      : post.fromCountryName
+                  const postToCountry =
+                    locale === 'ar'
+                      ? post.toCountryNameAr || post.toCountryName
+                      : post.toCountryName
+                  const postRoute =
+                    locale === 'ar' ? post.routeSummaryAr || post.routeSummary : post.routeSummary
+                  const busy = isModeratingPost && moderatingPostId === post.id
+                  const durationLabel =
+                    post.minDurationDays || post.maxDurationDays
+                      ? [
+                          post.minDurationDays ?? '—',
+                          post.maxDurationDays ?? '—',
+                        ].join(' – ')
+                      : null
+
+                  return (
+                    <div
+                      key={post.id}
+                      className="rounded-xl border border-slate-200/80 bg-slate-50/60 px-4 py-3.5 dark:border-slate-700 dark:bg-slate-900/40"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1 text-right">
+                          <div className="mb-1.5 flex flex-wrap items-center justify-end gap-2">
+                            <span className="rounded-md bg-white px-2 py-0.5 text-[11px] font-semibold text-[#3B7FC7] ring-1 ring-[#3B7FC7]/20 dark:bg-slate-800">
+                              {post.statusLabelAr || t('shippingPage.postStatus')}
+                            </span>
+                            <span className="admin-text-muted text-[11px]" dir="ltr">
+                              #{post.id}
+                            </span>
+                          </div>
+                          <p className="admin-text text-sm font-bold leading-snug">
+                            {postRoute ||
+                              `${postFromCountry} · ${formatPortLabel(post.fromPortName, post.fromPortUnLocode)} → ${postToCountry} · ${formatPortLabel(post.toPortName, post.toPortUnLocode)}`}
+                          </p>
+                          <div className="admin-text-muted mt-2 flex flex-wrap justify-end gap-x-4 gap-y-1 text-xs">
+                            <span>
+                              {t('shippingPage.price20ft')}:{' '}
+                              <span className="admin-text font-semibold">
+                                {post.container20ftPriceFormatted || '—'}
+                              </span>
+                            </span>
+                            <span>
+                              {t('shippingPage.price40ft')}:{' '}
+                              <span className="admin-text font-semibold">
+                                {post.container40ftPriceFormatted || '—'}
+                              </span>
+                            </span>
+                            {post.phoneNumber ? (
+                              <span dir="ltr">
+                                {t('shippingPage.mobile')}: {post.phoneNumber}
+                              </span>
+                            ) : null}
+                            {durationLabel ? (
+                              <span>
+                                {t('shippingPage.durationDays')}: {durationLabel}
+                              </span>
+                            ) : null}
+                          </div>
+                          {post.details?.trim() ? (
+                            <p className="admin-text-muted mt-2 line-clamp-2 text-xs">
+                              {post.details}
+                            </p>
+                          ) : null}
+                        </div>
+                        <div className="flex shrink-0 flex-wrap justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => onEditPost?.(post.id)}
+                            className="keep-white rounded-lg bg-[#3B7FC7] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#2f6ab0]"
+                          >
+                            {t('shippingPage.editAd')}
+                          </button>
+                          {post.canApprove ? (
+                            <>
+                              <button
+                                type="button"
+                                disabled={busy}
+                                onClick={() => onApprovePost?.(post.id)}
+                                className="keep-white rounded-lg bg-[#619d51] px-3.5 py-2 text-xs font-bold text-white disabled:opacity-60"
+                              >
+                                {t('shippingPage.approveShippingAd')}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={busy}
+                                onClick={() => onRejectPost?.(post.id)}
+                                className="rounded-lg border border-red-300 bg-white px-3.5 py-2 text-xs font-bold text-red-700 disabled:opacity-60 dark:border-red-800 dark:bg-slate-900 dark:text-red-300"
+                              >
+                                {t('shippingPage.rejectShippingAd')}
+                              </button>
+                            </>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </Card>
+
           <Card title={t('shippingPage.basicInfo')}>
             <InfoRow
               icon={
@@ -259,128 +362,6 @@ export default function ShippingProviderDetailView({
               label={t('users.taxNumber')}
               value={provider.taxNumber?.trim() || '—'}
             />
-            <InfoRow
-              icon={
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10.5 11.25h3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
-                </svg>
-              }
-              label={t('shippingPage.price20ft')}
-              value={provider.container20ftPriceFormatted || `$${provider.container20ftPriceUsd}`}
-            />
-            <InfoRow
-              icon={
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10.5 11.25h3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
-                </svg>
-              }
-              label={t('shippingPage.price40ft')}
-              value={provider.container40ftPriceFormatted || `$${provider.container40ftPriceUsd}`}
-            />
-          </Card>
-
-          <Card title={t('shippingPage.companyAdsTitle')}>
-            {posts.length === 0 ? (
-              <p className="admin-text-subtle py-4 text-center text-sm">
-                {t('shippingPage.noCompanyAds')}
-              </p>
-            ) : (
-              <div className="space-y-4">
-                <p className="admin-text-muted text-end text-xs">
-                  {t('shippingPage.companyAdsCount').replace('{count}', String(posts.length))}
-                </p>
-                {posts.map((post) => {
-                  const postFromCountry =
-                    locale === 'ar'
-                      ? post.fromCountryNameAr || post.fromCountryName
-                      : post.fromCountryName
-                  const postToCountry =
-                    locale === 'ar'
-                      ? post.toCountryNameAr || post.toCountryName
-                      : post.toCountryName
-                  const postRoute =
-                    locale === 'ar' ? post.routeSummaryAr || post.routeSummary : post.routeSummary
-                  const busy = isModeratingPost && moderatingPostId === post.id
-
-                  return (
-                    <div
-                      key={post.id}
-                      className="admin-border rounded-2xl border p-4 dark:border-slate-700"
-                    >
-                      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                        <span className="rounded-full bg-[#eef4fb] px-3 py-1 text-xs font-semibold text-[#3B7FC7] dark:bg-slate-800">
-                          {post.statusLabelAr || t('shippingPage.postStatus')}
-                        </span>
-                        <span className="admin-text-muted text-xs" dir="ltr">
-                          #{post.id}
-                        </span>
-                      </div>
-                      {postRoute ? (
-                        <p className="mb-3 rounded-xl bg-gradient-to-r from-[#3B7FC7]/10 to-[#619d51]/10 px-3 py-2 text-center text-sm font-bold text-[#3B7FC7] dark:text-[#7eb8ff]">
-                          {postRoute}
-                        </p>
-                      ) : null}
-                      <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
-                        <RouteEndpoint
-                          label={t('shippingPage.routeFromLabel')}
-                          country={postFromCountry}
-                          port={post.fromPortName}
-                          unLocode={post.fromPortUnLocode}
-                        />
-                        <div className="hidden text-center text-2xl text-[#619d51] sm:block" aria-hidden>
-                          →
-                        </div>
-                        <RouteEndpoint
-                          label={t('shippingPage.routeToLabel')}
-                          country={postToCountry}
-                          port={post.toPortName}
-                          unLocode={post.toPortUnLocode}
-                        />
-                      </div>
-                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                        <p className="admin-text text-sm">
-                          <span className="admin-text-muted">{t('shippingPage.price20ft')}: </span>
-                          {post.container20ftPriceFormatted || '—'}
-                        </p>
-                        <p className="admin-text text-sm">
-                          <span className="admin-text-muted">{t('shippingPage.price40ft')}: </span>
-                          {post.container40ftPriceFormatted || '—'}
-                        </p>
-                        {post.phoneNumber ? (
-                          <p className="admin-text text-sm sm:col-span-2" dir="ltr">
-                            <span className="admin-text-muted">{t('shippingPage.mobile')}: </span>
-                            {post.phoneNumber}
-                          </p>
-                        ) : null}
-                        {post.details?.trim() ? (
-                          <p className="admin-text-muted text-sm sm:col-span-2">{post.details}</p>
-                        ) : null}
-                      </div>
-                      {post.canApprove ? (
-                        <div className="mt-4 flex flex-wrap justify-end gap-2">
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() => onApprovePost?.(post.id)}
-                            className="keep-white rounded-xl bg-[#619d51] px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
-                          >
-                            {t('shippingPage.approveShippingAd')}
-                          </button>
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() => onRejectPost?.(post.id)}
-                            className="rounded-xl border-2 border-red-300 bg-white px-4 py-2 text-sm font-bold text-red-700 disabled:opacity-60 dark:border-red-800 dark:bg-slate-900 dark:text-red-300"
-                          >
-                            {t('shippingPage.rejectShippingAd')}
-                          </button>
-                        </div>
-                      ) : null}
-                    </div>
-                  )
-                })}
-              </div>
-            )}
           </Card>
 
           <Card title={t('shippingPage.shipmentLog')}>
