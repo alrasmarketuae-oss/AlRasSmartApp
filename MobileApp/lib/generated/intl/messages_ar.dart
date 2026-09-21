@@ -366,9 +366,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "appWord": MessageLookupByLibrary.simpleMessage("تطبيق"),
     "approved": MessageLookupByLibrary.simpleMessage("تم الموافقة "),
     "arabicLabel": MessageLookupByLibrary.simpleMessage("العربية"),
-    "askForPrice": MessageLookupByLibrary.simpleMessage("اطلب السعر"),
+    "askForPrice": MessageLookupByLibrary.simpleMessage("اسأل عن السعر"),
     "askForPriceChatIntro": MessageLookupByLibrary.simpleMessage(
-      "طلب سعر — تفاصيل المنتج:",
+      "اسأل عن السعر — تفاصيل المنتج:",
     ),
     "availableQuantity": MessageLookupByLibrary.simpleMessage("الكمية المتاحة"),
     "awaitingAdminApproval": MessageLookupByLibrary.simpleMessage(

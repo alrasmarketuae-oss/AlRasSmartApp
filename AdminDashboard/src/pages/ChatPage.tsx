@@ -548,10 +548,10 @@ export default function ChatPage() {
   )
 
   const markOptimisticFailed = useCallback((optimisticId: string, intoSecondary = false) => {
-    const apply = (prev: ChatMessage[]) =>
+    const apply = (prev: ChatMessage[]): ChatMessage[] =>
       prev.map((message) =>
         message.messageId === optimisticId
-          ? { ...message, deliveryStatus: 'failed', relativeTime: t('chat.failed') }
+          ? { ...message, deliveryStatus: 'failed' as const, relativeTime: t('chat.failed') }
           : message,
       )
     if (intoSecondary) {

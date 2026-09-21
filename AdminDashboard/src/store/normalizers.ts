@@ -1469,6 +1469,12 @@ type RawUserDetail = AdminUserDetail & {
     FullName?: string | null
     phoneNumber?: string | null
     PhoneNumber?: string | null
+    licencePath?: string | null
+    LicencePath?: string | null
+    companyImagesChanged?: boolean
+    CompanyImagesChanged?: boolean
+    companyImagePaths?: string[] | null
+    CompanyImagePaths?: string[] | null
   } | null
   pendingProfileChanges?: {
     companyName?: string | null
@@ -1485,6 +1491,12 @@ type RawUserDetail = AdminUserDetail & {
     FullName?: string | null
     phoneNumber?: string | null
     PhoneNumber?: string | null
+    licencePath?: string | null
+    LicencePath?: string | null
+    companyImagesChanged?: boolean
+    CompanyImagesChanged?: boolean
+    companyImagePaths?: string[] | null
+    CompanyImagePaths?: string[] | null
   } | null
   CompanyImages?: RawUserCompanyImage[]
   Addresses?: Record<string, unknown>[]
