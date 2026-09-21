@@ -60,6 +60,8 @@ export type AdminOrder = {
   categoryId?: number | null
   primaryImagePath: string | null
   unitName: string
+  /** Request-ad unit (may differ from offer/order unitName). */
+  requestedUnitName?: string | null
   statusId: number
   statusName: string
   statusLabelAr: string

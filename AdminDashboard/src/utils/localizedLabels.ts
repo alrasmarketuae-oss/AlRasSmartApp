@@ -1,10 +1,16 @@
 import type { Locale } from '../i18n/messages'
 
 const TYPE_LABELS: Record<string, string> = {
-  مورد: 'Supplier',
-  عميل: 'Customer',
+  'حساب مورد': 'Supplier Account',
+  'حساب شركة': 'Company Account',
+  'حساب شخصي': 'Personal Account',
+  'حساب شركة شحن': 'Shipping Company Account',
   مدير: 'Admin',
-  'شركة شحن': 'Shipping company',
+  // Legacy API labels (pre-rename)
+  مورد: 'Supplier Account',
+  عميل: 'Personal Account',
+  'شركة شحن': 'Shipping Company Account',
+  مشتري: 'Personal Account',
 }
 
 const STATUS_LABELS: Record<string, string> = {

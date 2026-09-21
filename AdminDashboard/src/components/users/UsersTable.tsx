@@ -26,13 +26,16 @@ function CellText({ children }: { children: React.ReactNode }) {
 
 function customerKindLabel(user: AdminUser, locale: 'ar' | 'en'): string {
   if (user.roleId === 2 && !user.isCustomer) {
-    return locale === 'ar' ? 'مورد' : 'Supplier'
+    return locale === 'ar' ? 'حساب مورد' : 'Supplier Account'
   }
   if (user.roleId === 2 && user.isCustomer) {
-    return locale === 'ar' ? 'عميل شركة' : 'Company customer'
+    return locale === 'ar' ? 'حساب شركة' : 'Company Account'
   }
   if (user.roleId === 3) {
-    return locale === 'ar' ? 'عميل شخصي' : 'Personal customer'
+    return locale === 'ar' ? 'حساب شخصي' : 'Personal Account'
+  }
+  if (user.roleId === 5) {
+    return locale === 'ar' ? 'حساب شركة شحن' : 'Shipping Company Account'
   }
   return '—'
 }

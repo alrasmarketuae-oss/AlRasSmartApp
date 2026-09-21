@@ -326,6 +326,13 @@ public sealed class AdminOrderListItemDto
     /// Other types: same as <see cref="Quantity"/> (order line).
     /// </summary>
     public decimal RequestedQuantity { get; set; }
+    /// <summary>
+    /// Unit of the request ad quantity (product/request unit). May differ from
+    /// <see cref="UnitName"/> when the supplier offered in another unit.
+    /// </summary>
+    public string? RequestedUnitName { get; set; }
+    public string? RequestedUnitNameEn { get; set; }
+    public string? RequestedUnitNameAr { get; set; }
     /// <summary>Current product catalog quantity (stock for retail/offers; required qty for requests).</summary>
     public long? ProductAvailableQuantity { get; set; }
     /// <summary>Views count of the related product/ad.</summary>

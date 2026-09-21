@@ -71,6 +71,27 @@ export function resolveRequiredQuantity(order: {
   return resolveOrderedQuantity(order)
 }
 
+/** Unit of the request-ad required quantity (may differ from offer unit). */
+export function resolveRequiredUnitName(order: {
+  requestedUnitName?: string | null
+  unitName?: string | null
+}): string {
+  const requested = order.requestedUnitName?.trim()
+  if (requested) return requested
+  return order.unitName?.trim() || ''
+}
+
+/** True when offered unit and request-ad unit are the same (safe to compute extra qty). */
+export function unitsMatchForExtraQuantity(order: {
+  requestedUnitName?: string | null
+  unitName?: string | null
+}): boolean {
+  const offered = order.unitName?.trim().toLowerCase()
+  const requested = resolveRequiredUnitName(order).trim().toLowerCase()
+  if (!offered || !requested) return true
+  return offered === requested
+}
+
 /** Supplier-offered quantity on a request (order line). */
 export function resolveOfferedQuantity(order: {
   quantity?: number | null

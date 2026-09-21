@@ -9,8 +9,16 @@ import 'package:alrasmarket/generated/l10n.dart';
 class ProductPriceFormatter {
   static bool get canShowPrices => AuthService.instance.isAuthenticated;
 
-  static bool canShowProductPrice(MyListingProductModel product) =>
-      canShowPrices && product.shouldShowPrice;
+  /// When [preferRetail] and the product has retail pricing, the wholesale
+  /// `showPrice` / ask-for-price flag is ignored so retail stays visible.
+  static bool canShowProductPrice(
+    MyListingProductModel product, {
+    bool preferRetail = false,
+  }) {
+    if (!canShowPrices) return false;
+    if (preferRetail && product.hasRetailPricing) return true;
+    return product.shouldShowPrice;
+  }
 
   static bool _isOwner(MyListingProductModel product) =>
       ProductOwnershipHelper.isOwnedByCurrentUser(product);

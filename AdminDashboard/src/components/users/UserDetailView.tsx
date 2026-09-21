@@ -216,20 +216,20 @@ export default function UserDetailView({
   const customerKindLabel =
     user.roleId === 2 && !user.isCustomer
       ? locale === 'ar'
-        ? 'مورد'
-        : 'Supplier'
+        ? 'حساب مورد'
+        : 'Supplier Account'
       : user.roleId === 2 && user.isCustomer
         ? locale === 'ar'
-          ? 'عميل شركة'
-          : 'Company customer'
+          ? 'حساب شركة'
+          : 'Company Account'
         : user.roleId === 3
           ? locale === 'ar'
-            ? 'عميل شخصي'
-            : 'Personal customer'
+            ? 'حساب شخصي'
+            : 'Personal Account'
           : user.roleId === 5
             ? locale === 'ar'
-              ? 'شركة شحن'
-              : 'Shipping company'
+              ? 'حساب شركة شحن'
+              : 'Shipping Company Account'
             : typeLabel || '—'
   const pending = user.pendingProfileChanges
   const hasPendingChanges = Boolean(

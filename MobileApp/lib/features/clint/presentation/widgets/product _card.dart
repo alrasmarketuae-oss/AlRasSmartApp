@@ -90,6 +90,7 @@ class ProductCard extends StatelessWidget {
                     title: title,
                     fillHeight: true,
                     theme: theme,
+                    preferRetailChannel: useRetailChannel,
                   ),
                 ),
               ),

@@ -2,12 +2,16 @@ import { formatUtcDate } from './formatTimeAgo'
 
 export function getTypeBadgeClass(typeLabel: string): string {
   switch (typeLabel) {
+    case 'حساب مورد':
     case 'مورد':
       return 'bg-blue-50 text-blue-600'
+    case 'حساب شخصي':
+    case 'حساب شركة':
     case 'عميل':
       return 'bg-emerald-50 text-emerald-600'
     case 'مدير':
       return 'bg-violet-50 text-violet-600'
+    case 'حساب شركة شحن':
     case 'شركة شحن':
       return 'bg-cyan-50 text-cyan-700'
     default:

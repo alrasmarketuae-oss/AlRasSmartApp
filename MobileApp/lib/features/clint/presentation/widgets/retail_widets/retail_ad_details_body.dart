@@ -270,8 +270,11 @@ class _RetailAdDetailsCard extends StatelessWidget {
     final main = <Widget>[];
     final meta = <Widget>[];
 
-    if (ProductPriceFormatter.canShowProductPrice(product) &&
-        ProductPriceFormatter.amount(product).isNotEmpty) {
+    if (ProductPriceFormatter.canShowProductPrice(
+          product,
+          preferRetail: true,
+        ) &&
+        ProductPriceFormatter.amount(product, preferRetail: true).isNotEmpty) {
       main.add(
         BookingDetailsFactTile(
           icon: Icons.sell_outlined,
@@ -279,6 +282,7 @@ class _RetailAdDetailsCard extends StatelessWidget {
           fontFamily: fontFamily,
           valueWidget: ProductPriceText.fromProduct(
             product,
+            preferRetail: true,
             amountStyle: TextStyle(
               color: BookingDetailsDesign.priceGreen,
               fontFamily: fontFamily,
@@ -505,7 +509,10 @@ class _QuantityAndTotalRow extends StatelessWidget {
             ),
           ),
         ),
-        if (ProductPriceFormatter.canShowProductPrice(product)) ...[
+        if (ProductPriceFormatter.canShowProductPrice(
+          product,
+          preferRetail: true,
+        )) ...[
           SizedBox(width: 10.w),
           Expanded(
             child: BookingDetailsSectionCard(

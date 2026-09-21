@@ -39,6 +39,7 @@ import {
   resolveOrderedQuantity,
   resolveOfferedQuantity,
   resolveRequiredQuantity,
+  resolveRequiredUnitName,
 } from '../../utils/ordersDisplay'
 import { getOrderStatusLabel, getOrderStatusStyle } from '../../utils/orderStatus'
 import { formatUtcDateTime } from '../../utils/formatTimeAgo'
@@ -1052,7 +1053,10 @@ export default function OrderDetailView({
                           label={t('orders.requiredQuantity')}
                           icon={InfoFieldIcons.calendar}
                           iconClass="bg-sky-50 text-sky-600"
-                          value={formatOrderQuantityWithUnit(requiredQuantity, order.unitName)}
+                          value={formatOrderQuantityWithUnit(
+                            requiredQuantity,
+                            resolveRequiredUnitName(order),
+                          )}
                         />
                       ) : (
                         <IconInfoField

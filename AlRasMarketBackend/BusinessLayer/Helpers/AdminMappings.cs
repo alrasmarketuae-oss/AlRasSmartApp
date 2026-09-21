@@ -22,26 +22,26 @@ public static class AdminMappings
 
     public static string GetRoleLabelAr(byte roleId, bool? isCustomer = null) =>
         IsCustomerCompanyAccount(roleId, isCustomer)
-            ? "عميل"
+            ? "حساب شركة"
             : roleId switch
             {
                 1 => "مدير",
-                2 => "مورد",
-                3 => "مشتري",
-                5 => "شركة شحن",
+                2 => "حساب مورد",
+                3 => "حساب شخصي",
+                5 => "حساب شركة شحن",
                 _ => "غير معروف"
             };
 
-    /// <summary>تسمية النوع كما في واجهة المستخدمين (مورد / عميل).</summary>
+    /// <summary>Account type labels — same wording as the mobile profile account type.</summary>
     public static string GetUserTypeLabelAr(byte roleId, bool? isCustomer = null) =>
         IsCustomerCompanyAccount(roleId, isCustomer)
-            ? "عميل"
+            ? "حساب شركة"
             : roleId switch
             {
-                2 => "مورد",
-                3 => "عميل",
+                2 => "حساب مورد",
+                3 => "حساب شخصي",
                 1 => "مدير",
-                5 => "شركة شحن",
+                5 => "حساب شركة شحن",
                 _ => "غير معروف"
             };
 

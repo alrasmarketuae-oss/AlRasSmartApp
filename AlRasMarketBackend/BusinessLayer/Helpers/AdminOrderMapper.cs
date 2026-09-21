@@ -160,6 +160,9 @@ public static class AdminOrderMapper
             RequestedQuantity = isRequestOffer && product is { Quantity: > 0 }
                 ? product.Quantity
                 : x.Quantity,
+            RequestedUnitName = ResolveRequestedUnitName(product),
+            RequestedUnitNameEn = ResolveRequestedUnitName(product),
+            RequestedUnitNameAr = CatalogLocalizationHelper.UnitNameAr(ResolveRequestedUnitName(product)),
             ProductAvailableQuantity = product?.Quantity,
             ProductViewsCount = product?.ViewsCount ?? 0,
             PaymentMethod = x.PaymentMethod,
@@ -488,6 +491,22 @@ public static class AdminOrderMapper
 
         // Unknown unit id and nav not loaded — do not invent the product/request unit.
         return "—";
+    }
+
+    /// <summary>Unit of the request/product ad quantity (independent of Offer.Unit).</summary>
+    public static string? ResolveRequestedUnitName(Product? product)
+    {
+        if (!string.IsNullOrWhiteSpace(product?.Unit?.UnitNameEn))
+        {
+            return product!.Unit!.UnitNameEn;
+        }
+
+        if (product?.UnitId is byte unitId)
+        {
+            return FallbackUnitNameById(unitId);
+        }
+
+        return null;
     }
 
     /// <summary>Seed Units table ids (RasAlSouqDbContext) — used when Order.Unit nav is not loaded.</summary>

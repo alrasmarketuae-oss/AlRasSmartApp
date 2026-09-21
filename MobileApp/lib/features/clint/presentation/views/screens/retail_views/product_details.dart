@@ -435,7 +435,12 @@ class _RetailProductDetailsViewState extends State<RetailProductDetailsView> {
                                         : _submitOfferOrder,
                                   );
 
-                            if (_product.shouldShowPrice) {
+                            final showRetailPrice =
+                                ProductPriceFormatter.canShowProductPrice(
+                              _product,
+                              preferRetail: preferRetail && !widget.isOffer,
+                            );
+                            if (showRetailPrice) {
                               return buyButton;
                             }
 

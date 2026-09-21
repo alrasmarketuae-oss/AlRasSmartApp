@@ -17,6 +17,7 @@ import {
   formatOrderQuantityWithUnit,
   resolveOfferedQuantity,
   resolveRequiredQuantity,
+  resolveRequiredUnitName,
 } from '../../utils/ordersDisplay'
 import { getOrderStatusLabel, getOrderStatusStyle } from '../../utils/orderStatus'
 import {
@@ -248,7 +249,7 @@ export default function OrdersTable({
                       <td className="admin-text px-4 py-3.5 text-start text-sm sm:px-5">
                         {formatOrderQuantityWithUnit(
                           resolveRequiredQuantity(order),
-                          order.unitName,
+                          resolveRequiredUnitName(order),
                         )}
                       </td>
                       <td className="admin-text px-4 py-3.5 text-start text-sm font-semibold sm:px-5">

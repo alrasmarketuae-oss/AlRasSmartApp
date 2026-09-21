@@ -47,6 +47,8 @@ import {
   formatOrderQuantityWithUnit,
   resolveOfferedQuantity,
   resolveRequiredQuantity,
+  resolveRequiredUnitName,
+  unitsMatchForExtraQuantity,
 } from '../../utils/ordersDisplay'
 import { getOrderStatusLabel, getOrderStatusStyle } from '../../utils/orderStatus'
 import { formatRelativeTime } from '../../utils/timeAgo'
@@ -266,7 +268,11 @@ export default function RequestOfferDetailView({
 
   const requiredQuantity = resolveRequiredQuantity(order)
   const offeredQuantity = resolveOfferedQuantity(order)
-  const extraQuantity = Math.max(0, offeredQuantity - requiredQuantity)
+  const requiredUnitName = resolveRequiredUnitName(order)
+  const canShowExtraQuantity = unitsMatchForExtraQuantity(order)
+  const extraQuantity = canShowExtraQuantity
+    ? Math.max(0, offeredQuantity - requiredQuantity)
+    : 0
 
   const supplierUnitPrice =
     order.supplierUnitPriceFormatted?.trim() ||
@@ -959,7 +965,7 @@ export default function RequestOfferDetailView({
                     />
                     <SummaryRow
                       label={t('reqsOffers.requiredQuantity')}
-                      value={formatOrderQuantityWithUnit(requiredQuantity, order.unitName)}
+                      value={formatOrderQuantityWithUnit(requiredQuantity, requiredUnitName)}
                     />
                     <SummaryRow
                       label={t('reqsOffers.extraQuantity')}
@@ -1369,7 +1375,7 @@ export default function RequestOfferDetailView({
                 <div className="flex justify-between gap-2">
                   <dt className="admin-text-muted">{t('reqsOffers.requiredQuantity')}</dt>
                   <dd className="admin-text font-semibold">
-                    {formatOrderQuantityWithUnit(requiredQuantity, order.unitName)}
+                    {formatOrderQuantityWithUnit(requiredQuantity, requiredUnitName)}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-2">

@@ -51,7 +51,9 @@ class ProductPriceText extends StatelessWidget {
         product,
         preferRetail: preferRetail,
       ),
-      currency: ProductPriceFormatter.currencyCode(product),
+      currency: preferRetail && product.hasRetailPricing
+          ? ProductPriceFormatter.retailCurrencyCode(product)
+          : ProductPriceFormatter.currencyCode(product),
       unitProduct: withUnit ? product : null,
       preferRetail: preferRetail,
       withUnit: withUnit,

@@ -103,14 +103,16 @@ export function normalizeUser(raw: RawUser): AdminUser {
       raw.typeLabelAr ||
       raw.TypeLabelAr ||
       (isCustomerCompanyAccount(roleId, isCustomer)
-        ? 'عميل'
+        ? 'حساب شركة'
         : roleId === 2
-          ? 'مورد'
+          ? 'حساب مورد'
           : roleId === 3
-            ? 'عميل'
-            : roleId === 1
-              ? 'مدير'
-              : '—'),
+            ? 'حساب شخصي'
+            : roleId === 5
+              ? 'حساب شركة شحن'
+              : roleId === 1
+                ? 'مدير'
+                : '—'),
     statusLabelAr:
       raw.statusLabelAr ||
       raw.StatusLabelAr ||
@@ -953,6 +955,15 @@ export function normalizeOrder(raw: RawOrder): AdminOrder {
     categoryId: raw.categoryId ?? (raw as { CategoryId?: number | null }).CategoryId ?? null,
     primaryImagePath: raw.primaryImagePath ?? raw.PrimaryImagePath ?? null,
     unitName: raw.unitName ?? raw.UnitName ?? '—',
+    requestedUnitName: (() => {
+      const value =
+        (raw as { requestedUnitName?: string | null; RequestedUnitName?: string | null })
+          .requestedUnitName ??
+        (raw as { RequestedUnitName?: string | null }).RequestedUnitName ??
+        null
+      const text = typeof value === 'string' ? value.trim() : ''
+      return text || null
+    })(),
     statusId: raw.statusId ?? raw.StatusId ?? 0,
     statusName: raw.statusName ?? raw.StatusName ?? '',
     statusLabelAr: raw.statusLabelAr ?? raw.StatusLabelAr ?? '',
@@ -1538,14 +1549,16 @@ export function normalizeUserDetail(raw: RawUserDetail): AdminUserDetail {
       raw.typeLabelAr ||
       raw.TypeLabelAr ||
       (isCustomerCompanyAccount(roleId, isCustomer)
-        ? 'عميل'
+        ? 'حساب شركة'
         : roleId === 2
-          ? 'مورد'
+          ? 'حساب مورد'
           : roleId === 3
-            ? 'عميل'
-            : roleId === 1
-              ? 'مدير'
-              : '—'),
+            ? 'حساب شخصي'
+            : roleId === 5
+              ? 'حساب شركة شحن'
+              : roleId === 1
+                ? 'مدير'
+                : '—'),
     statusLabelAr:
       raw.statusLabelAr ||
       raw.StatusLabelAr ||

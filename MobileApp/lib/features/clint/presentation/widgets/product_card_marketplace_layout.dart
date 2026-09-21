@@ -30,6 +30,7 @@ class ProductCardMarketplaceLayout extends StatefulWidget {
     this.theme,
     this.showOfferExtras = false,
     this.showSubjectToReconfirm = true,
+    this.preferRetailChannel = false,
   });
 
   final MyListingProductModel product;
@@ -38,6 +39,10 @@ class ProductCardMarketplaceLayout extends StatefulWidget {
   final ProductCardTheme? theme;
   final bool showOfferExtras;
   final bool showSubjectToReconfirm;
+
+  /// Retail feed / personal cart: show retail price even when wholesale
+  /// `showPrice` is false (Ask for price applies to category/wholesale only).
+  final bool preferRetailChannel;
 
   @override
   State<ProductCardMarketplaceLayout> createState() =>
@@ -145,7 +150,10 @@ class _ProductCardMarketplaceLayoutState
     required double original,
     required String unit,
   }) {
-    if (!ProductPriceFormatter.canShowProductPrice(widget.product)) {
+    if (!ProductPriceFormatter.canShowProductPrice(
+      widget.product,
+      preferRetail: widget.preferRetailChannel,
+    )) {
       return const SizedBox.shrink();
     }
 
@@ -231,6 +239,7 @@ class _ProductCardMarketplaceLayoutState
             iconSize: priceFontSize,
             matchCurrencyToAmount: true,
             scaleToFit: true,
+            preferRetail: widget.preferRetailChannel,
           );
 
     return SizedBox(
@@ -273,17 +282,22 @@ class _ProductCardMarketplaceLayoutState
         (ProductPriceTypeLabel.appliesTo(widget.product) &&
             priceTypeLabel.isNotEmpty);
 
+    final preferRetail = widget.preferRetailChannel;
     final discount = widget.product.discountPercentValue;
     final showDeal = _offerMode &&
         _dealActive &&
         discount > 0 &&
-        widget.product.shouldShowPrice &&
+        ProductPriceFormatter.canShowProductPrice(
+          widget.product,
+          preferRetail: preferRetail,
+        ) &&
         ProductPriceFormatter.saleAmountValue(widget.product) > 0;
     final currency = ProductPriceFormatter.currencyCode(widget.product);
     final sale = ProductPriceFormatter.saleAmountValue(widget.product);
     final original = ProductPriceFormatter.originalAmountValue(widget.product);
     final unit = ProductPriceFormatter.unitSuffix(
       widget.product,
+      preferRetail: preferRetail,
       s: S.of(context),
     );
 
@@ -371,11 +385,19 @@ class _ProductCardMarketplaceLayoutState
           )
         : const SizedBox.shrink();
 
-    final showPriceOnCard = ProductPriceFormatter.canShowProductPrice(widget.product) &&
+    final showPriceOnCard = ProductPriceFormatter.canShowProductPrice(
+          widget.product,
+          preferRetail: preferRetail,
+        ) &&
         (!widget.product.isRequestProduct ||
-            ProductPriceFormatter.amountValue(widget.product) > 0);
-    final showAskForPrice =
-        !widget.product.shouldShowPrice && !widget.product.isRequestProduct;
+            ProductPriceFormatter.amountValue(
+                  widget.product,
+                  preferRetail: preferRetail,
+                ) >
+                0);
+    final showAskForPrice = !widget.product.isRequestProduct &&
+        !(preferRetail && widget.product.hasRetailPricing) &&
+        !widget.product.shouldShowPrice;
     final showReconfirm =
         widget.showSubjectToReconfirm && !widget.product.isRequestProduct;
 
