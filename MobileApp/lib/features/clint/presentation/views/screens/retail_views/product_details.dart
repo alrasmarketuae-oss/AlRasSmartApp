@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:alrasmarket/core/widgets/animated_ellipsis_text.dart';
 import 'package:alrasmarket/core/widgets/primary_button_with_cancel.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
+import 'package:alrasmarket/core/utils/product_price_formatter.dart';
 import 'package:alrasmarket/core/utils/product_quantity_validator.dart';
 import 'package:alrasmarket/core/utils/product_stock.dart';
 import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';

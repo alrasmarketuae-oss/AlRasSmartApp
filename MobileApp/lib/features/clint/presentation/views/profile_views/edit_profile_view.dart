@@ -292,7 +292,8 @@ class _EditProfileViewState extends State<EditProfileView> {
             await ProfileService.instance.uploadMyCompanyImage(compressed);
       }
       if (!mounted || updated == null) return;
-      setState(() => _applyProfileMedia(updated));
+      final profile = updated;
+      setState(() => _applyProfileMedia(profile));
       AppToast.showSuccess(
         context,
         _isArabic
