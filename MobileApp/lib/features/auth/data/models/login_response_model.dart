@@ -110,7 +110,8 @@ class LoginResponseModel {
     final isVerified = _boolFromJson(json['isVerified'] ?? json['IsVerified']);
     final isCustomer = _boolFromJson(json['isCustomer'] ?? json['IsCustomer']);
 
-    if ((id == null || id.isEmpty) && token != null && token.isNotEmpty) {
+    // Always enrich from JWT when present — body often omits RoleId.
+    if (token != null && token.isNotEmpty) {
       try {
         final payload = _decodeJwtPayload(token);
         id ??= _stringFromJson(payload['sub'] ?? payload['EntityId']);
@@ -126,7 +127,11 @@ class LoginResponseModel {
       }
     }
 
-    jwtRoleId ??= roleName?.toLowerCase() == 'admin' ? '1' : null;
+    jwtRoleId ??= _resolveRoleId(
+      roleName: roleName,
+      isCompanyAccount: isCompanyAccount,
+      isShippingCompanyAccount: isShippingCompanyAccount,
+    );
 
     final isRejected = _boolFromJson(json['isRejected'] ?? json['IsRejected']);
     final rejectionReason = _stringFromJson(
@@ -176,6 +181,22 @@ class LoginResponseModel {
     if (v == null) return null;
     final s = v.toString();
     return s.isEmpty ? null : s;
+  }
+
+  /// Backend RoleIds: Admin=1, Seller=2, Buyer=3, ShippingCompany=5.
+  static String? _resolveRoleId({
+    required String? roleName,
+    required bool? isCompanyAccount,
+    required bool? isShippingCompanyAccount,
+  }) {
+    final role = (roleName ?? '').trim().toLowerCase();
+    if (role == 'admin') return '1';
+    if (role == 'shippingcompany' || isShippingCompanyAccount == true) {
+      return '5';
+    }
+    if (role == 'seller' || isCompanyAccount == true) return '2';
+    if (role == 'buyer') return '3';
+    return null;
   }
 
   static bool? _boolFromJson(dynamic v) {

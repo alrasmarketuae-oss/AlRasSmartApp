@@ -30,7 +30,13 @@ String whereToGo() {
   }
 
   final role = (roleName ?? '').trim().toLowerCase();
-  if (role == 'admin' || roleId == '1') {
+  final isAdminRole =
+      role == 'admin' ||
+      (roleId == '1' &&
+          isCompanyAccount != true &&
+          isShippingCompanyAccount != true &&
+          isCustomer != true);
+  if (isAdminRole) {
     return AppRoutes.kAdminHomeView;
   }
 

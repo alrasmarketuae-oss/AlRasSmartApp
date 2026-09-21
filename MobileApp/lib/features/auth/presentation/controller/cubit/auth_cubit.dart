@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:alrasmarket/core/serveses/pending_profile_image_uploader.dart';
 import 'package:alrasmarket/core/serveses/cached_constants.dart';
 import 'package:alrasmarket/core/router/where_to_go.dart';
@@ -30,6 +31,7 @@ import '../../../domain/usecases/register_company_usecase.dart';
 import '../../../domain/usecases/send_email_otp_usecase.dart';
 import '../../../domain/usecases/upload_file_usecase.dart';
 import '../../../domain/usecases/verify_email_otp_usecase.dart';
+import '../../../data/models/account_approval_status_model.dart';
 import '../../../data/models/login_response_model.dart';
 
 /// Google Sign-In: Web client ID from Firebase (google-services.json client_type 3)
@@ -609,7 +611,7 @@ class AuthCubit extends Cubit<AuthStates> {
         userEmail: loginResponse.email ?? email,
         fullName: loginResponse.fullName,
         userRole: loginResponse.role,
-        userRoleId: AuthService.instance.currentUserRoleId ?? '',
+        userRoleId: loginResponse.roleId ?? '',
         companyWaiting: pending,
         approved: loginResponse.isApproved,
         isCustomerAcount: loginResponse.isCustomer,
@@ -641,7 +643,7 @@ class AuthCubit extends Cubit<AuthStates> {
         await AuthService.instance.saveAuthData(
           personId: status.id ?? AuthService.instance.currentUserID ?? '',
           authToken: token,
-          userRoleId: AuthService.instance.currentUserRoleId ?? '',
+          userRoleId: _roleIdFromApprovalStatus(status),
           userEmail: status.email ?? email,
           fullName: status.name ?? AuthService.instance.currentUserName,
           userRole: status.roleName ?? AuthService.instance.currentUserRoleName,
@@ -658,6 +660,32 @@ class AuthCubit extends Cubit<AuthStates> {
         emit(const AccountApprovalApprovedState());
       }
     });
+  }
+
+  static String _roleIdFromApprovalStatus(AccountApprovalStatusModel status) {
+    final role = (status.roleName ?? '').trim().toLowerCase();
+    if (role == 'admin') return '1';
+    if (role == 'shippingcompany' || status.isShippingCompanyAccount) {
+      return '5';
+    }
+    if (role == 'seller' || status.isCompanyAccount) return '2';
+    if (role == 'buyer') return '3';
+    // Prefer fresh token claim over any leftover cached role id.
+    final token = status.token;
+    if (token != null && token.isNotEmpty) {
+      try {
+        final parts = token.split('.');
+        if (parts.length == 3) {
+          final normalized = base64Url.normalize(parts[1]);
+          final payload =
+              json.decode(utf8.decode(base64Url.decode(normalized)))
+                  as Map<String, dynamic>;
+          final fromJwt = payload['roleId']?.toString();
+          if (fromJwt != null && fromJwt.isNotEmpty) return fromJwt;
+        }
+      } catch (_) {}
+    }
+    return '';
   }
 
   static bool isPendingApprovalMessage(String message) {

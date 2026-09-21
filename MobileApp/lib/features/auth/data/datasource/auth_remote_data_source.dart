@@ -148,7 +148,7 @@ class AuthRemoteDataSource implements BaseAuthRemoteDataSource {
         AuthService.instance.saveAuthData(
           personId: '',
           authToken: '',
-          userRoleId: '1',
+          userRoleId: '3',
           userEmail: parameters.email,
           fullName: parameters.fullName,
           userRole: 'Buyer',

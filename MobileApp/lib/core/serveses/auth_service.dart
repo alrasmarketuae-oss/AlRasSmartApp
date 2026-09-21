@@ -108,8 +108,15 @@ class AuthService {
   bool get isAdminAccount {
     if (!isAuthenticated) return false;
     final role = (currentUserRoleName ?? '').trim().toLowerCase();
+    if (role == 'admin') return true;
     final id = (currentUserRoleId ?? '').trim();
-    return role == 'admin' || id == '1';
+    // Never treat company/customer sessions as admin just because of a stale roleId.
+    if (isCompanyAccount == true ||
+        isShippingCompanyAccount == true ||
+        currentUserIsCustomer) {
+      return false;
+    }
+    return id == '1';
   }
 
   /// Initialize authentication service - loads cached data
