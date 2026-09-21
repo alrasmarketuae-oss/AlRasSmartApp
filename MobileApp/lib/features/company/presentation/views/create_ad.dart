@@ -98,7 +98,10 @@ class _CreateAdPage extends StatelessWidget {
               body: SafeArea(
                 child: Column(
                   children: [
-                    CreateAdHeaderWidget(showBack: state.isEditMode),
+                    CreateAdHeaderWidget(
+                      // Always show; SearchHeader flips the chevron for ar/en.
+                      showBack: true,
+                    ),
                     Expanded(
                       child: SingleChildScrollView(
                         padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, bottomPad),

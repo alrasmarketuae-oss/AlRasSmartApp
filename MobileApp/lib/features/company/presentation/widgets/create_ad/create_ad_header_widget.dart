@@ -4,10 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class CreateAdHeaderWidget extends StatelessWidget {
-  const CreateAdHeaderWidget({super.key, this.showBack = false});
+  const CreateAdHeaderWidget({super.key, this.showBack = true});
 
-  /// Shown when the form was pushed (editing an ad) instead of hosted as the
-  /// company home tab, where there is nothing to go back to.
+  /// Back chevron; [SearchHeader] mirrors it for Arabic vs English.
   final bool showBack;
 
   @override

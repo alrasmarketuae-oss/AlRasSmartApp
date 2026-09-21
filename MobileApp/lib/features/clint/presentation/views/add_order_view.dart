@@ -154,7 +154,7 @@ class _AddOrderViewState extends State<AddOrderView> {
               children: [
                 SearchHeader(
                   title: S.of(context).createOrder,
-                  isBackButton: false,
+                  isBackButton: true,
                 ),
                 Expanded(
                   child: SingleChildScrollView(

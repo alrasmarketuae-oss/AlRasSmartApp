@@ -44,12 +44,13 @@ class SearchHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final topInset = MediaQuery.paddingOf(context).top;
     final topPad = topInset > 0 ? topInset + 8.h : 12.h;
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final textDirection = Directionality.of(context);
+    final isRtl = textDirection == TextDirection.rtl;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(16.w, topPad, 16.w, 0),
       child: Directionality(
-        textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+        textDirection: textDirection,
         child: Column(
           children: [
             Row(
@@ -63,7 +64,8 @@ class SearchHeader extends StatelessWidget {
                     tooltip:
                         MaterialLocalizations.of(context).backButtonTooltip,
                     icon: Icon(
-                      isArabic
+                      // Point toward the "start" edge: ← in LTR, → in RTL.
+                      isRtl
                           ? Icons.arrow_forward_ios_rounded
                           : Icons.arrow_back_ios_new_rounded,
                       size: 18.sp,
