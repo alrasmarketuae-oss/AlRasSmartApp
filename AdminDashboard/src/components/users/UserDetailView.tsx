@@ -239,7 +239,9 @@ export default function UserDetailView({
         pending.website != null ||
         pending.landNumber != null ||
         pending.fullName != null ||
-        pending.phoneNumber != null),
+        pending.phoneNumber != null ||
+        pending.licencePath != null ||
+        pending.companyImagesChanged),
   )
 
   const companyTitle =
@@ -252,10 +254,23 @@ export default function UserDetailView({
   const logoHref = user.imgPath ? resolveAssetUrl(user.imgPath) : null
   const licenceHref = user.licencePath ? resolveAssetUrl(user.licencePath) : null
   const licenceIsImage = Boolean(user.licencePath && isImagePath(user.licencePath))
+  const pendingLicenceHref =
+    pending?.licencePath != null && pending.licencePath.trim()
+      ? resolveAssetUrl(pending.licencePath)
+      : null
+  const pendingLicenceIsImage = Boolean(
+    pending?.licencePath && isImagePath(pending.licencePath),
+  )
+  const proposedCompanyImageUrls =
+    pending?.companyImagesChanged
+      ? pending.companyImagePaths.map((path) => resolveAssetUrl(path)).filter(Boolean)
+      : []
   const previewImages = [
     licenceIsImage && licenceHref ? licenceHref : null,
+    pendingLicenceIsImage && pendingLicenceHref ? pendingLicenceHref : null,
     logoHref,
     ...user.companyImages.map((image) => resolveAssetUrl(image.imagePath)),
+    ...proposedCompanyImageUrls,
   ].filter((url, index, list): url is string => Boolean(url) && list.indexOf(url) === index)
 
   function openPreview(url: string | null | undefined) {
@@ -896,6 +911,141 @@ export default function UserDetailView({
               proposedLabel={t('users.proposedValue')}
               ltr
             />
+            {pending.licencePath != null ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/50 dark:bg-amber-950/20">
+                <p className="admin-text mb-3 text-sm font-bold">
+                  {t('users.licenceFile')}
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <p className="admin-text-muted mb-2 text-xs font-semibold uppercase tracking-wide">
+                      {t('users.currentValue')}
+                    </p>
+                    {licenceHref ? (
+                      licenceIsImage ? (
+                        <button
+                          type="button"
+                          onClick={() => openPreview(licenceHref)}
+                          className="block overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700"
+                        >
+                          <img
+                            src={licenceHref}
+                            alt=""
+                            className="h-36 w-full object-cover"
+                          />
+                        </button>
+                      ) : (
+                        <a
+                          href={licenceHref}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm font-semibold text-[#3B7FC7] underline"
+                        >
+                          {t('users.openLicence')}
+                        </a>
+                      )
+                    ) : (
+                      <p className="admin-text-subtle text-sm">—</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                      {t('users.proposedValue')}
+                    </p>
+                    {pendingLicenceHref ? (
+                      pendingLicenceIsImage ? (
+                        <button
+                          type="button"
+                          onClick={() => openPreview(pendingLicenceHref)}
+                          className="block overflow-hidden rounded-lg border-2 border-amber-300 dark:border-amber-700"
+                        >
+                          <img
+                            src={pendingLicenceHref}
+                            alt=""
+                            className="h-36 w-full object-cover"
+                          />
+                        </button>
+                      ) : (
+                        <a
+                          href={pendingLicenceHref}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm font-semibold text-amber-700 underline dark:text-amber-300"
+                        >
+                          {t('users.openLicence')}
+                        </a>
+                      )
+                    ) : (
+                      <p className="admin-text-subtle text-sm">—</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+            {pending.companyImagesChanged ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/50 dark:bg-amber-950/20">
+                <p className="admin-text mb-3 text-sm font-bold">
+                  {t('users.companyPhotos')}
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <p className="admin-text-muted mb-2 text-xs font-semibold uppercase tracking-wide">
+                      {t('users.currentValue')}
+                    </p>
+                    {user.companyImages.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {user.companyImages.map((image) => {
+                          const url = resolveAssetUrl(image.imagePath)
+                          return (
+                            <button
+                              key={image.id}
+                              type="button"
+                              onClick={() => openPreview(url)}
+                              className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700"
+                            >
+                              <img
+                                src={url}
+                                alt=""
+                                className="h-20 w-20 object-cover"
+                              />
+                            </button>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <p className="admin-text-subtle text-sm">—</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                      {t('users.proposedValue')}
+                    </p>
+                    {proposedCompanyImageUrls.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {proposedCompanyImageUrls.map((url) => (
+                          <button
+                            key={url}
+                            type="button"
+                            onClick={() => openPreview(url)}
+                            className="overflow-hidden rounded-lg border-2 border-amber-300 dark:border-amber-700"
+                          >
+                            <img
+                              src={url}
+                              alt=""
+                              className="h-20 w-20 object-cover"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="admin-text-subtle text-sm">
+                        {t('users.proposedImagesRemoved')}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
         </section>
       ) : null}

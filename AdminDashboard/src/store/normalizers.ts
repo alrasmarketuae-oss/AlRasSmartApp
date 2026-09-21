@@ -1547,6 +1547,17 @@ export function normalizeUserDetail(raw: RawUserDetail): AdminUserDetail {
       const landNumber = pending.landNumber ?? pending.LandNumber ?? null
       const fullName = pending.fullName ?? pending.FullName ?? null
       const phoneNumber = pending.phoneNumber ?? pending.PhoneNumber ?? null
+      const licencePath = pending.licencePath ?? pending.LicencePath ?? null
+      const companyImagesChanged =
+        pending.companyImagesChanged === true ||
+        pending.CompanyImagesChanged === true
+      const companyImagePathsRaw =
+        pending.companyImagePaths ?? pending.CompanyImagePaths ?? []
+      const companyImagePaths = Array.isArray(companyImagePathsRaw)
+        ? companyImagePathsRaw
+            .map((item: unknown) => String(item ?? '').trim())
+            .filter(Boolean)
+        : []
       if (
         companyName == null &&
         commercialRegister == null &&
@@ -1554,7 +1565,9 @@ export function normalizeUserDetail(raw: RawUserDetail): AdminUserDetail {
         website == null &&
         landNumber == null &&
         fullName == null &&
-        phoneNumber == null
+        phoneNumber == null &&
+        licencePath == null &&
+        !companyImagesChanged
       ) {
         return null
       }
@@ -1566,6 +1579,9 @@ export function normalizeUserDetail(raw: RawUserDetail): AdminUserDetail {
         landNumber,
         fullName,
         phoneNumber,
+        licencePath,
+        companyImagesChanged,
+        companyImagePaths,
       }
     })(),
     companyImages: (raw.companyImages ?? raw.CompanyImages ?? []).map((image: RawUserCompanyImage) => ({

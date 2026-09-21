@@ -1,9 +1,8 @@
 import 'package:alrasmarket/core/router/app_router.dart';
-import 'package:alrasmarket/core/widgets/login_required_sheet.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
-import 'package:alrasmarket/core/services/sensitive_access_gate.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
+import 'package:alrasmarket/core/widgets/login_required_sheet.dart';
 import 'package:alrasmarket/features/shipping_company/data/models/shipping_company_post_model.dart';
 import 'package:alrasmarket/features/shipping_company/presentation/controller/cubit/shipping_company_cubit.dart';
 import 'package:alrasmarket/features/shipping_company/presentation/controller/cubit/shipping_company_states.dart';
@@ -180,16 +179,11 @@ class _ShippingProfileViewState extends State<ShippingProfileView> {
               ),
               SizedBox(height: 12.h),
               TextButton(
-                onPressed: () async {
-                  final allowed =
-                      await SensitiveAccessGate.ensureUnlocked(context);
-                  if (!allowed || !context.mounted) return;
-                  context.push(AppRoutes.kChangePasswordView);
-                },
+                onPressed: () => context.push(AppRoutes.kChangePasswordView),
                 child: Text(
                   s.changePassword,
                   style: TextStyle(
-                    color: AppColors.primary(context),
+                    color: LightColor.defaultColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

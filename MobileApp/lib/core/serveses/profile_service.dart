@@ -34,6 +34,41 @@ class CompanyProfileImage {
       };
 }
 
+class PendingProfileChanges {
+  final String? licencePath;
+  final bool companyImagesChanged;
+  final List<String> companyImagePaths;
+
+  const PendingProfileChanges({
+    this.licencePath,
+    this.companyImagesChanged = false,
+    this.companyImagePaths = const [],
+  });
+
+  factory PendingProfileChanges.fromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return const PendingProfileChanges();
+    }
+    final rawPaths = json['companyImagePaths'] ?? json['CompanyImagePaths'];
+    final paths = <String>[];
+    if (rawPaths is List) {
+      for (final item in rawPaths) {
+        final path = item?.toString().trim() ?? '';
+        if (path.isNotEmpty) paths.add(path);
+      }
+    }
+    return PendingProfileChanges(
+      licencePath: (json['licencePath'] ?? json['LicencePath'])?.toString(),
+      companyImagesChanged: json['companyImagesChanged'] == true ||
+          json['CompanyImagesChanged'] == true,
+      companyImagePaths: paths,
+    );
+  }
+
+  bool get hasMediaChanges =>
+      licencePath != null || companyImagesChanged;
+}
+
 class UserProfile {
   final String fullName;
   final String email;
@@ -54,6 +89,7 @@ class UserProfile {
   final bool isRejected;
   final String? rejectionReason;
   final bool hasPendingProfileChanges;
+  final PendingProfileChanges? pendingProfileChanges;
 
   /// False for Google/Apple accounts that never set a local password.
   /// Null when the response predates the field (e.g. a stale cache entry).
@@ -81,6 +117,7 @@ class UserProfile {
     this.isRejected = false,
     this.rejectionReason,
     this.hasPendingProfileChanges = false,
+    this.pendingProfileChanges,
     this.hasPassword,
     this.loginProviderName,
     this.isNotificationsOn = true,
@@ -136,6 +173,16 @@ class UserProfile {
           json['hasPendingProfileChanges'] == true ||
           json['HasPendingProfileChanges'] == true ||
           (json['pendingProfileChanges'] ?? json['PendingProfileChanges']) != null,
+      pendingProfileChanges: () {
+        final raw =
+            json['pendingProfileChanges'] ?? json['PendingProfileChanges'];
+        if (raw is Map) {
+          return PendingProfileChanges.fromJson(
+            Map<String, dynamic>.from(raw),
+          );
+        }
+        return null;
+      }(),
       hasPassword: (json['hasPassword'] ?? json['HasPassword']) as bool?,
       loginProviderName:
           (json['loginProviderName'] ?? json['LoginProviderName'])?.toString(),
@@ -334,6 +381,27 @@ class ProfileService {
           ? response?.data['message']?.toString()
           : null;
       throw Exception(message ?? 'Failed to delete company image');
+    }
+    final data = response?.data;
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Invalid profile response');
+    }
+    final profile = UserProfile.fromJson(data);
+    await _cacheAndSync(profile, data);
+    return profile;
+  }
+
+  Future<UserProfile> deleteMyPendingCompanyImage(String imagePath) async {
+    final response = await DioHelper.deleteData(
+      url: ApiConstants.userPendingCompanyImageEndPoint,
+      query: {'path': imagePath},
+      token: AuthService.instance.currentToken,
+    );
+    if (response?.statusCode != 200) {
+      final message = response?.data is Map
+          ? response?.data['message']?.toString()
+          : null;
+      throw Exception(message ?? 'Failed to delete pending company image');
     }
     final data = response?.data;
     if (data is! Map<String, dynamic>) {

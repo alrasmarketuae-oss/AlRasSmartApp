@@ -17,6 +17,7 @@ public class AdminCompaniesAppService(
     IAdminRealtimeNotificationService adminRealtimeNotificationService,
     IAdminAuditLogAppService auditLogAppService,
     IAccountDeletionAppService accountDeletionAppService,
+    IMediaStorageService mediaStorage,
     ILogger<AdminCompaniesAppService> logger) : IAdminCompaniesAppService
 {
     public async Task<object> GetPendingCompaniesAsync(CancellationToken cancellationToken = default)
@@ -64,7 +65,7 @@ public class AdminCompaniesAppService(
 
         var oldName = company.FullName;
         var pendingSnapshot = company.PendingProfileChanges;
-        ApplyPendingCompanyProfileChanges(company);
+        await ApplyPendingCompanyProfileChangesAsync(company, cancellationToken);
         var newName = company.FullName;
 
         company.IsActive = true;
@@ -191,6 +192,7 @@ public class AdminCompaniesAppService(
         }
 
         var company = await dbContext.Users
+            .Include(x => x.CompanyImages)
             .FirstOrDefaultAsync(
                 x => x.Id == companyId,
                 cancellationToken)
@@ -207,6 +209,11 @@ public class AdminCompaniesAppService(
         var isPendingProfileEdit = !string.IsNullOrWhiteSpace(company.PendingProfileChanges);
         var companyName = company.FullName;
         var pendingSnapshot = company.PendingProfileChanges;
+
+        if (isPendingProfileEdit)
+        {
+            await DiscardPendingMediaAsync(company, cancellationToken);
+        }
 
         // Profile-edit rejection: keep live company fields and restore previous approval.
         company.PendingProfileChanges = null;
@@ -465,9 +472,108 @@ public class AdminCompaniesAppService(
         return string.IsNullOrWhiteSpace(truncated) ? null : truncated;
     }
 
-    private static void ApplyPendingCompanyProfileChanges(User company)
+    private async Task ApplyPendingCompanyProfileChangesAsync(
+        User company,
+        CancellationToken cancellationToken)
     {
         var pending = PendingCompanyProfileChangeHelper.TryParse(company.PendingProfileChanges);
         PendingCompanyProfileChangeHelper.ApplyToUser(company, pending);
+        if (pending is null)
+        {
+            return;
+        }
+
+        if (pending.LicencePath is not null)
+        {
+            var previousLicence = company.LicencePath;
+            company.LicencePath = string.IsNullOrWhiteSpace(pending.LicencePath)
+                ? null
+                : pending.LicencePath.Trim();
+
+            if (!string.IsNullOrWhiteSpace(previousLicence)
+                && !string.Equals(previousLicence, company.LicencePath, StringComparison.OrdinalIgnoreCase))
+            {
+                await mediaStorage.DeleteAsync(previousLicence, cancellationToken);
+            }
+        }
+
+        if (pending.CompanyImagesChanged != true)
+        {
+            return;
+        }
+
+        var proposed = (pending.CompanyImagePaths ?? [])
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var existing = (company.CompanyImages ?? []).ToList();
+        var proposedSet = proposed.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var image in existing)
+        {
+            if (proposedSet.Contains(image.ImagePath))
+            {
+                continue;
+            }
+
+            dbContext.CompanyImages.Remove(image);
+            await mediaStorage.DeleteAsync(image.ImagePath, cancellationToken);
+        }
+
+        var remainingPaths = (company.CompanyImages ?? [])
+            .Select(x => x.ImagePath)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var hasPrimary = (company.CompanyImages ?? []).Any(x => x.IsPrimary && proposedSet.Contains(x.ImagePath));
+        for (var i = 0; i < proposed.Count; i++)
+        {
+            var path = proposed[i];
+            if (remainingPaths.Contains(path))
+            {
+                continue;
+            }
+
+            dbContext.CompanyImages.Add(new CompanyImage
+            {
+                UserId = company.Id,
+                ImagePath = path,
+                IsPrimary = !hasPrimary && i == 0,
+                CreatedAt = DateTime.UtcNow
+            });
+            if (!hasPrimary && i == 0)
+            {
+                hasPrimary = true;
+            }
+        }
+
+        if (!hasPrimary && proposed.Count > 0)
+        {
+            var firstKept = (company.CompanyImages ?? [])
+                .FirstOrDefault(x => proposedSet.Contains(x.ImagePath));
+            if (firstKept is not null)
+            {
+                firstKept.IsPrimary = true;
+            }
+        }
+    }
+
+    private async Task DiscardPendingMediaAsync(
+        User company,
+        CancellationToken cancellationToken)
+    {
+        var pending = PendingCompanyProfileChangeHelper.TryParse(company.PendingProfileChanges);
+        var livePaths = (company.CompanyImages ?? [])
+            .Select(x => x.ImagePath)
+            .Where(x => !string.IsNullOrWhiteSpace(x));
+
+        foreach (var path in PendingCompanyProfileChangeHelper.GetOrphanPendingMediaPaths(
+                     pending,
+                     company.LicencePath,
+                     livePaths))
+        {
+            await mediaStorage.DeleteAsync(path, cancellationToken);
+        }
     }
 }

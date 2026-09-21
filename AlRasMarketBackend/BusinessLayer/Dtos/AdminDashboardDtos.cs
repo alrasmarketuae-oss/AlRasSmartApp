@@ -231,6 +231,9 @@ public sealed class PendingCompanyProfileChangeDto
     public string? LandNumber { get; set; }
     public string? FullName { get; set; }
     public string? PhoneNumber { get; set; }
+    public string? LicencePath { get; set; }
+    public bool? CompanyImagesChanged { get; set; }
+    public IReadOnlyList<string> CompanyImagePaths { get; set; } = [];
 }
 
 public sealed class AdminOrderStatsDto

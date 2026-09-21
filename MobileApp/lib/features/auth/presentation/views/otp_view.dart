@@ -129,7 +129,12 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
         body: BlocConsumer<AuthCubit, AuthStates>(
           listener: (context, state) async {
             if (state is VerifyOtpSuccessState) {
-              AppToast.showSuccess(context, 'ُEmail verficated successfully');
+              AppToast.showSuccess(
+                context,
+                Localizations.localeOf(context).languageCode.startsWith('ar')
+                    ? 'تم التحقق بنجاح'
+                    : 'Verified successfully',
+              );
               await promptBiometricEnrollmentIfNeeded(context);
               if (!context.mounted) return;
               AuthCubit.navigateAfterAuthSuccess(context, state.loginResponse);
@@ -141,7 +146,12 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
               }
               AppToast.showError(context, state.message);
             } else if (state is ResendOtpSuccessState) {
-              AppToast.showSuccess(context, 'OTP SENT SUCCESFULLY');
+              AppToast.showSuccess(
+                context,
+                Localizations.localeOf(context).languageCode.startsWith('ar')
+                    ? 'تم إرسال رمز التحقق عبر SMS'
+                    : 'Verification code sent by SMS',
+              );
             } else if (state is ResendOtpErrorState) {
               AppToast.showError(context, state.message);
             }
@@ -190,6 +200,17 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                           ),
                         ),
                       ],
+                    ),
+                    SizedBox(height: 8.h),
+                    Text(
+                      Localizations.localeOf(context).languageCode.startsWith('ar')
+                          ? 'أدخل الرمز المرسل عبر SMS إلى رقم هاتفك'
+                          : 'Enter the code sent by SMS to your phone number',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        color: LightColor.greyTextColor,
+                      ),
                     ),
                     SizedBox(height: 24.h),
                     Directionality(

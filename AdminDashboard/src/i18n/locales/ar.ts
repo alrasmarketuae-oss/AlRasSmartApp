@@ -515,6 +515,7 @@ export const arMessages = {
       profileEditBadge: 'تعديل بيانات',
       currentValue: 'الحالي',
       proposedValue: 'المقترح',
+      proposedImagesRemoved: 'سيتم حذف كل صور الشركة',
       reject: 'رفض',
       rejecting: 'جاري الرفض...',
       rejectSuccess: 'تم رفض الحساب وإرسال إشعار للمستخدم — وتم حذف التسجيل ليتمكن من التسجيل مجدداً',

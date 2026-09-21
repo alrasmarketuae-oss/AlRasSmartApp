@@ -396,7 +396,10 @@ public class AdminUsersAppService(
             Website = pending.Website,
             LandNumber = pending.LandNumber,
             FullName = pending.FullName,
-            PhoneNumber = pending.PhoneNumber
+            PhoneNumber = pending.PhoneNumber,
+            LicencePath = pending.LicencePath,
+            CompanyImagesChanged = pending.CompanyImagesChanged,
+            CompanyImagePaths = pending.CompanyImagePaths ?? []
         };
     }
 

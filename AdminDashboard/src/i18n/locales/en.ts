@@ -517,6 +517,7 @@ export const enMessages = {
       profileEditBadge: 'Profile edit',
       currentValue: 'Current',
       proposedValue: 'Proposed',
+      proposedImagesRemoved: 'All company photos will be removed',
       reject: 'Reject',
       rejecting: 'Rejecting...',
       rejectSuccess: 'Account rejected and user notified — registration removed so they can sign up again',

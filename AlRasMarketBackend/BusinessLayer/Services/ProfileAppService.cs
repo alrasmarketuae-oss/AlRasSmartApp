@@ -12,8 +12,8 @@ public class ProfileAppService(
     IAdminRealtimeNotificationService adminRealtimeNotificationService,
     IMediaStorageService mediaStorage) : IProfileAppService
 {
-    private const string CompanyLicencesFolder = "company-licences";
-    private const string CompanyImagesFolder = "company-images";
+    private const string PendingCompanyLicencesFolder = "company-licences/pending";
+    private const string PendingCompanyImagesFolder = "company-images/pending";
 
     public async Task<object> GetMyProfileAsync(string userId, CancellationToken cancellationToken = default)
     {
@@ -243,21 +243,32 @@ public class ProfileAppService(
             extension = ".jpg";
         }
 
-        var previousPath = user.LicencePath;
+        var pending = PendingCompanyProfileChangeHelper.TryParse(user.PendingProfileChanges)
+            ?? new PendingCompanyProfileChange();
+
+        // Drop previous pending licence file if it was never approved.
+        if (!string.IsNullOrWhiteSpace(pending.LicencePath)
+            && !string.Equals(pending.LicencePath, user.LicencePath, StringComparison.OrdinalIgnoreCase))
+        {
+            await mediaStorage.DeleteAsync(pending.LicencePath, cancellationToken);
+        }
+
         var fileName = $"licence-{parsedUserId:N}-{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
-        user.LicencePath = await mediaStorage.SaveFormFileAsync(
+        pending.LicencePath = await mediaStorage.SaveFormFileAsync(
             input.File,
-            CompanyLicencesFolder,
+            PendingCompanyLicencesFolder,
             fileName,
             cancellationToken: cancellationToken);
 
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        if (!string.IsNullOrWhiteSpace(previousPath)
-            && !string.Equals(previousPath, user.LicencePath, StringComparison.OrdinalIgnoreCase))
+        user.PendingProfileChanges = PendingCompanyProfileChangeHelper.Serialize(pending);
+        user.IsRejected = false;
+        if (string.Equals(user.RejectionReason, "PROFILE_UPDATE_PENDING", StringComparison.OrdinalIgnoreCase))
         {
-            await mediaStorage.DeleteAsync(previousPath, cancellationToken);
+            user.RejectionReason = null;
         }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await adminRealtimeNotificationService.NotifyProfileEditAsync(user, cancellationToken);
 
         return await MapProfileAsync(user, cancellationToken);
     }
@@ -285,28 +296,40 @@ public class ProfileAppService(
 
         EnsureCompanyAccount(user);
 
+        var pending = PendingCompanyProfileChangeHelper.TryParse(user.PendingProfileChanges)
+            ?? new PendingCompanyProfileChange();
+
+        var livePaths = (user.CompanyImages ?? [])
+            .OrderByDescending(x => x.IsPrimary)
+            .ThenBy(x => x.Id)
+            .Select(x => x.ImagePath)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToList();
+
+        var proposed = PendingCompanyProfileChangeHelper.ResolveProposedCompanyImagePaths(
+            pending,
+            livePaths);
+
         var fileName = $"company-{parsedUserId:N}-{Guid.NewGuid():N}.jpg";
         var imagePath = await mediaStorage.SaveCompressedJpegAsync(
             input.File,
-            CompanyImagesFolder,
+            PendingCompanyImagesFolder,
             fileName,
             cancellationToken: cancellationToken);
 
-        var isPrimary = user.CompanyImages.Count == 0;
-        dbContext.CompanyImages.Add(new CompanyImage
+        proposed.Add(imagePath);
+        pending.CompanyImagesChanged = true;
+        pending.CompanyImagePaths = proposed;
+
+        user.PendingProfileChanges = PendingCompanyProfileChangeHelper.Serialize(pending);
+        user.IsRejected = false;
+        if (string.Equals(user.RejectionReason, "PROFILE_UPDATE_PENDING", StringComparison.OrdinalIgnoreCase))
         {
-            UserId = parsedUserId,
-            ImagePath = imagePath,
-            IsPrimary = isPrimary,
-            CreatedAt = DateTime.UtcNow
-        });
+            user.RejectionReason = null;
+        }
 
         await dbContext.SaveChangesAsync(cancellationToken);
-
-        user = await dbContext.Users
-            .Include(x => x.Role)
-            .Include(x => x.CompanyImages)
-            .FirstAsync(x => x.Id == parsedUserId, cancellationToken);
+        await adminRealtimeNotificationService.NotifyProfileEditAsync(user, cancellationToken);
 
         return await MapProfileAsync(user, cancellationToken);
     }
@@ -329,33 +352,127 @@ public class ProfileAppService(
 
         EnsureCompanyAccount(user);
 
-        var image = user.CompanyImages.FirstOrDefault(x => x.Id == companyImageId)
-            ?? throw new KeyNotFoundException("Company image not found.");
+        var pending = PendingCompanyProfileChangeHelper.TryParse(user.PendingProfileChanges)
+            ?? new PendingCompanyProfileChange();
 
-        var pathToDelete = image.ImagePath;
-        var wasPrimary = image.IsPrimary;
-        dbContext.CompanyImages.Remove(image);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        var livePaths = (user.CompanyImages ?? [])
+            .OrderByDescending(x => x.IsPrimary)
+            .ThenBy(x => x.Id)
+            .Select(x => x.ImagePath)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToList();
 
-        if (wasPrimary)
+        var proposed = PendingCompanyProfileChangeHelper.ResolveProposedCompanyImagePaths(
+            pending,
+            livePaths);
+
+        var liveImage = user.CompanyImages.FirstOrDefault(x => x.Id == companyImageId);
+        string? pathToRemove = liveImage?.ImagePath;
+
+        // Allow removing a newly uploaded pending path by matching virtual negative ids
+        // is not used; mobile sends live ids only. If path not found in live, try by index in pending.
+        if (string.IsNullOrWhiteSpace(pathToRemove))
         {
-            var nextPrimary = await dbContext.CompanyImages
-                .Where(x => x.UserId == parsedUserId)
-                .OrderBy(x => x.Id)
-                .FirstOrDefaultAsync(cancellationToken);
-            if (nextPrimary is not null)
-            {
-                nextPrimary.IsPrimary = true;
-                await dbContext.SaveChangesAsync(cancellationToken);
-            }
+            throw new KeyNotFoundException("Company image not found.");
         }
 
-        await mediaStorage.DeleteAsync(pathToDelete, cancellationToken);
+        var removedPendingOnly = !livePaths.Contains(pathToRemove, StringComparer.OrdinalIgnoreCase)
+            && proposed.Contains(pathToRemove, StringComparer.OrdinalIgnoreCase);
 
-        user = await dbContext.Users
+        proposed.RemoveAll(x => string.Equals(x, pathToRemove, StringComparison.OrdinalIgnoreCase));
+
+        if (removedPendingOnly)
+        {
+            await mediaStorage.DeleteAsync(pathToRemove, cancellationToken);
+        }
+
+        pending.CompanyImagesChanged = true;
+        pending.CompanyImagePaths = proposed;
+
+        user.PendingProfileChanges = PendingCompanyProfileChangeHelper.Serialize(pending);
+        user.IsRejected = false;
+        if (string.Equals(user.RejectionReason, "PROFILE_UPDATE_PENDING", StringComparison.OrdinalIgnoreCase))
+        {
+            user.RejectionReason = null;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await adminRealtimeNotificationService.NotifyProfileEditAsync(user, cancellationToken);
+
+        return await MapProfileAsync(user, cancellationToken);
+    }
+
+    /// <summary>
+    /// Stages removal of a pending (not-yet-approved) company image by path.
+    /// </summary>
+    public async Task<object> DeleteMyPendingCompanyImageByPathAsync(
+        string userId,
+        string imagePath,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(userId, out var parsedUserId))
+        {
+            throw new ArgumentException("Invalid user id.");
+        }
+
+        if (string.IsNullOrWhiteSpace(imagePath))
+        {
+            throw new ArgumentException("Image path is required.");
+        }
+
+        var user = await dbContext.Users
             .Include(x => x.Role)
             .Include(x => x.CompanyImages)
-            .FirstAsync(x => x.Id == parsedUserId, cancellationToken);
+            .FirstOrDefaultAsync(x => x.Id == parsedUserId, cancellationToken)
+            ?? throw new KeyNotFoundException("User not found.");
+
+        EnsureCompanyAccount(user);
+
+        var pending = PendingCompanyProfileChangeHelper.TryParse(user.PendingProfileChanges)
+            ?? new PendingCompanyProfileChange();
+
+        var livePaths = (user.CompanyImages ?? [])
+            .Select(x => x.ImagePath)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToList();
+
+        var proposed = PendingCompanyProfileChangeHelper.ResolveProposedCompanyImagePaths(
+            pending,
+            livePaths);
+
+        var target = imagePath.Trim();
+        if (!proposed.Any(x => string.Equals(x, target, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new KeyNotFoundException("Pending company image not found.");
+        }
+
+        proposed.RemoveAll(x => string.Equals(x, target, StringComparison.OrdinalIgnoreCase));
+
+        if (!livePaths.Contains(target, StringComparer.OrdinalIgnoreCase))
+        {
+            await mediaStorage.DeleteAsync(target, cancellationToken);
+        }
+
+        pending.CompanyImagesChanged = true;
+        pending.CompanyImagePaths = proposed;
+        if (!pending.HasAnyChange)
+        {
+            user.PendingProfileChanges = null;
+        }
+        else
+        {
+            user.PendingProfileChanges = PendingCompanyProfileChangeHelper.Serialize(pending);
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        if (user.PendingProfileChanges is not null)
+        {
+            await adminRealtimeNotificationService.NotifyProfileEditAsync(user, cancellationToken);
+        }
+        else
+        {
+            await adminRealtimeNotificationService.BroadcastCountsAsync(cancellationToken);
+        }
 
         return await MapProfileAsync(user, cancellationToken);
     }

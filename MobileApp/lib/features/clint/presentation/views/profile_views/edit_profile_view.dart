@@ -53,7 +53,21 @@ class _EditProfileViewState extends State<EditProfileView> {
   bool _hasPendingProfileChanges = false;
   String? _profileImagePath;
   String? _licencePath;
+  String? _pendingLicencePath;
+  bool _pendingCompanyImagesChanged = false;
+  List<String> _pendingCompanyImagePaths = const [];
   List<CompanyProfileImage> _companyImages = const [];
+
+  void _applyProfileMedia(UserProfile profile) {
+    _licencePath = profile.licencePath;
+    _companyImages = List<CompanyProfileImage>.from(profile.companyImages);
+    _hasPendingProfileChanges = profile.hasPendingProfileChanges;
+    final pending = profile.pendingProfileChanges;
+    _pendingLicencePath = pending?.licencePath;
+    _pendingCompanyImagesChanged = pending?.companyImagesChanged == true;
+    _pendingCompanyImagePaths =
+        List<String>.from(pending?.companyImagePaths ?? const []);
+  }
 
   @override
   void initState() {
@@ -85,9 +99,7 @@ class _EditProfileViewState extends State<EditProfileView> {
       _licenseController.text = (profile.licenseNumber ?? '').trim();
       _isCompany = profile.isCompanyAccount || profile.isShippingCompanyAccount;
       _profileImagePath = profile.imgPath;
-      _licencePath = profile.licencePath;
-      _companyImages = List<CompanyProfileImage>.from(profile.companyImages);
-      _hasPendingProfileChanges = profile.hasPendingProfileChanges;
+      _applyProfileMedia(profile);
     } catch (_) {}
 
     if (mounted) {
@@ -237,13 +249,12 @@ class _EditProfileViewState extends State<EditProfileView> {
     try {
       final updated = await ProfileService.instance.uploadMyCompanyLicence(path);
       if (!mounted) return;
-      setState(() {
-        _licencePath = updated.licencePath;
-        _companyImages = List<CompanyProfileImage>.from(updated.companyImages);
-      });
+      setState(() => _applyProfileMedia(updated));
       AppToast.showSuccess(
         context,
-        _isArabic ? 'تم تحديث ملف الرخصة' : 'Trade licence updated',
+        _isArabic
+            ? 'تم إرسال الرخصة للمراجعة. الصورة الحالية تبقى حتى موافقة الأدمن.'
+            : 'Licence submitted for review. Current file stays until admin approval.',
       );
     } catch (e) {
       if (!mounted) return;
@@ -281,13 +292,12 @@ class _EditProfileViewState extends State<EditProfileView> {
             await ProfileService.instance.uploadMyCompanyImage(compressed);
       }
       if (!mounted || updated == null) return;
-      setState(() {
-        _licencePath = updated!.licencePath;
-        _companyImages = List<CompanyProfileImage>.from(updated.companyImages);
-      });
+      setState(() => _applyProfileMedia(updated));
       AppToast.showSuccess(
         context,
-        _isArabic ? 'تم إضافة صور الشركة' : 'Company photos added',
+        _isArabic
+            ? 'تم إرسال صور الشركة للمراجعة حتى موافقة الأدمن.'
+            : 'Company photos submitted for admin review.',
       );
     } catch (e) {
       if (!mounted) return;
@@ -305,8 +315,8 @@ class _EditProfileViewState extends State<EditProfileView> {
         title: Text(_isArabic ? 'حذف الصورة' : 'Delete photo'),
         content: Text(
           _isArabic
-              ? 'هل تريد حذف صورة الشركة هذه؟'
-              : 'Delete this company site photo?',
+              ? 'سيتم إرسال طلب حذف هذه الصورة للأدمن للموافقة.'
+              : 'A delete request will be sent for admin approval.',
         ),
         actions: [
           TextButton(
@@ -330,19 +340,35 @@ class _EditProfileViewState extends State<EditProfileView> {
       final updated =
           await ProfileService.instance.deleteMyCompanyImage(image.id);
       if (!mounted) return;
-      setState(() {
-        _licencePath = updated.licencePath;
-        _companyImages = List<CompanyProfileImage>.from(updated.companyImages);
-      });
+      setState(() => _applyProfileMedia(updated));
       AppToast.showSuccess(
         context,
-        _isArabic ? 'تم حذف الصورة' : 'Photo deleted',
+        _isArabic
+            ? 'تم إرسال طلب الحذف للمراجعة'
+            : 'Delete request submitted for review',
       );
     } catch (e) {
       if (!mounted) return;
       AppToast.showError(context, e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _deletingCompanyImageId = null);
+    }
+  }
+
+  Future<void> _deletePendingCompanyImage(String path) async {
+    if (_uploadingCompanyImage) return;
+    try {
+      final updated =
+          await ProfileService.instance.deleteMyPendingCompanyImage(path);
+      if (!mounted) return;
+      setState(() => _applyProfileMedia(updated));
+      AppToast.showSuccess(
+        context,
+        _isArabic ? 'تم إلغاء الصورة المعلّقة' : 'Pending photo cancelled',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.showError(context, e.toString().replaceFirst('Exception: ', ''));
     }
   }
 
@@ -439,8 +465,8 @@ class _EditProfileViewState extends State<EditProfileView> {
                                 SizedBox(height: 6.h),
                                 Text(
                                   _isArabic
-                                      ? 'اضغط لاستبدال الملف (يُحذف القديم)'
-                                      : 'Tap to replace (old file is deleted)',
+                                      ? 'اضغط لإرسال رخصة جديدة للمراجعة'
+                                      : 'Tap to submit a new licence for review',
                                   style: TextStyle(
                                     fontSize: 12.sp,
                                     color: LightColor.hintColor,
@@ -486,6 +512,28 @@ class _EditProfileViewState extends State<EditProfileView> {
                       ),
           ),
         ),
+        if ((_pendingLicencePath ?? '').trim().isNotEmpty) ...[
+          SizedBox(height: 10.h),
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(12.w),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFAEB),
+              borderRadius: BorderRadius.circular(10.r),
+              border: Border.all(color: const Color(0xFFFEDF89)),
+            ),
+            child: Text(
+              _isArabic
+                  ? 'رخصة جديدة بانتظار موافقة الأدمن'
+                  : 'New licence pending admin approval',
+              style: TextStyle(
+                fontSize: 12.sp,
+                color: const Color(0xFFB54708),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -585,6 +633,79 @@ class _EditProfileViewState extends State<EditProfileView> {
               },
             ),
           ),
+          SizedBox(height: 12.h),
+        ],
+        if (_pendingCompanyImagesChanged) ...[
+          Text(
+            _isArabic
+                ? 'صور مقترحة بانتظار موافقة الأدمن'
+                : 'Proposed photos pending admin approval',
+            style: TextStyle(
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFFB54708),
+            ),
+          ),
+          SizedBox(height: 8.h),
+          if (_pendingCompanyImagePaths.isEmpty)
+            Text(
+              _isArabic
+                  ? 'سيتم حذف كل صور الشركة بعد الموافقة'
+                  : 'All company photos will be removed after approval',
+              style: TextStyle(fontSize: 12.sp, color: LightColor.hintColor),
+            )
+          else
+            SizedBox(
+              height: 110.h,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _pendingCompanyImagePaths.length,
+                separatorBuilder: (_, _) => SizedBox(width: 10.w),
+                itemBuilder: (context, index) {
+                  final path = _pendingCompanyImagePaths[index];
+                  final url = ApiConstants.resolveMediaUrl(path);
+                  final isNew = !_companyImages.any(
+                    (img) =>
+                        img.imagePath.toLowerCase() == path.toLowerCase(),
+                  );
+                  return Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10.r),
+                        child: CachedAppImage(
+                          key: ValueKey('pending-$path'),
+                          imageUrl: url,
+                          width: 110.w,
+                          height: 110.h,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      if (isNew)
+                        Positioned(
+                          top: 6.h,
+                          right: 6.w,
+                          child: InkWell(
+                            onTap: () => _deletePendingCompanyImage(path),
+                            child: Container(
+                              width: 28.w,
+                              height: 28.h,
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                borderRadius: BorderRadius.circular(20.r),
+                              ),
+                              child: Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: 16.sp,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ),
           SizedBox(height: 12.h),
         ],
         InkWell(
@@ -1088,11 +1209,11 @@ class _EditProfileViewState extends State<EditProfileView> {
                                           .toLowerCase() ==
                                       'ar'
                                   ? (_hasPendingProfileChanges
-                                      ? 'حسابك تحت المراجعة حاليًا للتعديلات المرسلة. يمكنك متابعة استخدام التطبيق والبيانات الحالية حتى موافقة الأدمن. تحديث الرخصة وصور الشركة يُطبَّق فورًا.'
-                                      : 'ملاحظة: عند الضغط على تحديث، ستُراجع بيانات النص من الأدمن. تحديث ملف الرخصة وصور الشركة يُطبَّق فورًا ويحذف الملفات السابقة.')
+                                      ? 'حسابك تحت المراجعة حاليًا للتعديلات المرسلة (نص/رخصة/صور). البيانات الحالية تبقى حتى موافقة الأدمن.'
+                                      : 'ملاحظة: تعديل النص أو الرخصة أو صور الشركة يُرسل للمراجعة، وتبقى الملفات الحالية حتى موافقة الأدمن.')
                                   : (_hasPendingProfileChanges
-                                      ? 'Your account changes are under review. You can keep using the app with the current data until admin approval. Licence and company photos update immediately.'
-                                      : 'Note: pressing update sends text changes for admin review. Licence file and company photos update immediately and replace previous files.'),
+                                      ? 'Your account changes (text/licence/photos) are under review. Current data stays until admin approval.'
+                                      : 'Note: text, licence, and company photo changes are sent for admin review. Current files stay active until approval.'),
                               style: TextStyle(
                                 fontSize: 13.sp,
                                 height: 1.45,

@@ -190,6 +190,35 @@ public class UsersController(IProfileAppService profileAppService) : ControllerB
         }
     }
 
+    [HttpDelete("me/company-images/pending")]
+    public async Task<IActionResult> DeleteMyPendingCompanyImage(
+        [FromQuery] string path,
+        CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        if (userId is null)
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var profile = await profileAppService.DeleteMyPendingCompanyImageByPathAsync(
+                userId,
+                path,
+                cancellationToken);
+            return Ok(profile);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
     [HttpDelete("me/company-images/{companyImageId:long}")]
     public async Task<IActionResult> DeleteMyCompanyImage(
         long companyImageId,

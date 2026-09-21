@@ -25,6 +25,9 @@ export type PendingCompanyProfileChanges = {
   landNumber: string | null
   fullName: string | null
   phoneNumber: string | null
+  licencePath: string | null
+  companyImagesChanged: boolean
+  companyImagePaths: string[]
 }
 
 export type AdminShippingPhoneRevealCompany = {

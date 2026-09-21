@@ -146,6 +146,8 @@ class ApiConstants {
   static String userProfileImageEndPoint = '/users/me/image';
   static String userCompanyLicenceEndPoint = '/users/me/licence';
   static String userCompanyImagesEndPoint = '/users/me/company-images';
+  static String userPendingCompanyImageEndPoint =
+      '/users/me/company-images/pending';
   static String userCompanyImageByIdEndPoint(int id) =>
       '/users/me/company-images/$id';
   static String userPreferredLanguageEndPoint = '/UserPreferences/language';

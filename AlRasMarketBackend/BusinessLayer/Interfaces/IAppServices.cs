@@ -79,6 +79,10 @@ public interface IProfileAppService
         string userId,
         long companyImageId,
         CancellationToken cancellationToken = default);
+    Task<object> DeleteMyPendingCompanyImageByPathAsync(
+        string userId,
+        string imagePath,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed class UpdateProfileInput

@@ -18,6 +18,23 @@ public sealed class PendingCompanyProfileChange
     public string? Website { get; set; }
     public string? LandNumber { get; set; }
 
+    /// <summary>
+    /// Proposed trade-licence file path. Null = unchanged.
+    /// Empty string = clear licence (not used by mobile currently).
+    /// </summary>
+    public string? LicencePath { get; set; }
+
+    /// <summary>
+    /// When true, <see cref="CompanyImagePaths"/> is the full proposed gallery.
+    /// </summary>
+    public bool? CompanyImagesChanged { get; set; }
+
+    /// <summary>
+    /// Full proposed company site-image paths (kept live paths + new pending uploads).
+    /// Empty list means remove all company images after approval.
+    /// </summary>
+    public List<string>? CompanyImagePaths { get; set; }
+
     [JsonIgnore]
     public bool HasAnyChange =>
         FullName is not null
@@ -26,7 +43,9 @@ public sealed class PendingCompanyProfileChange
         || CommercialRegister is not null
         || TaxNumber is not null
         || Website is not null
-        || LandNumber is not null;
+        || LandNumber is not null
+        || LicencePath is not null
+        || CompanyImagesChanged == true;
 }
 
 public static class PendingCompanyProfileChangeHelper
@@ -116,5 +135,67 @@ public static class PendingCompanyProfileChangeHelper
                 ? null
                 : pending.LandNumber.Trim();
         }
+    }
+
+    /// <summary>
+    /// Media paths that exist only in the pending payload (not currently live).
+    /// Safe to delete on reject or when replaced by a newer pending upload.
+    /// </summary>
+    public static IReadOnlyList<string> GetOrphanPendingMediaPaths(
+        PendingCompanyProfileChange? pending,
+        string? liveLicencePath,
+        IEnumerable<string> liveCompanyImagePaths)
+    {
+        if (pending is null)
+        {
+            return [];
+        }
+
+        var liveImages = new HashSet<string>(
+            liveCompanyImagePaths.Where(x => !string.IsNullOrWhiteSpace(x)),
+            StringComparer.OrdinalIgnoreCase);
+        var orphans = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(pending.LicencePath)
+            && !string.Equals(pending.LicencePath, liveLicencePath, StringComparison.OrdinalIgnoreCase))
+        {
+            orphans.Add(pending.LicencePath);
+        }
+
+        if (pending.CompanyImagesChanged == true && pending.CompanyImagePaths is not null)
+        {
+            foreach (var path in pending.CompanyImagePaths)
+            {
+                if (string.IsNullOrWhiteSpace(path))
+                {
+                    continue;
+                }
+
+                if (!liveImages.Contains(path))
+                {
+                    orphans.Add(path);
+                }
+            }
+        }
+
+        return orphans;
+    }
+
+    public static List<string> ResolveProposedCompanyImagePaths(
+        PendingCompanyProfileChange? pending,
+        IEnumerable<string> liveCompanyImagePaths)
+    {
+        if (pending?.CompanyImagesChanged == true)
+        {
+            return (pending.CompanyImagePaths ?? [])
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        return liveCompanyImagePaths
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 }

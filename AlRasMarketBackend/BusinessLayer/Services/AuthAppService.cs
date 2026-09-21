@@ -771,7 +771,7 @@ public class AuthAppService(
             logger.LogError(ex, "Failed to send register OTP for email {Email}", email);
             await RollbackFailedRegistrationAsync(userId, email, cancellationToken);
             throw new ArgumentException(
-                "Failed to send verification email. Please check the email address and try again.");
+                "Failed to send verification SMS. Please check the phone number and try again.");
         }
     }
 
