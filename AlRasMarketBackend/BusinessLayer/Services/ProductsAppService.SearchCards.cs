@@ -32,7 +32,15 @@ public partial class ProductsAppService
         {
             if (ProductTypeCodes.IsHybridDualListing(product.CategoryId, product.ProductTypeId))
             {
-                if (IncludeRetailHybridCard(catalogAudience))
+                var hasRetailStock = ProductTypeCodes.HasRetailStockConfigured(
+                    product.CategoryId,
+                    product.ProductTypeId,
+                    product.RetailPrice,
+                    product.RetailUnitId);
+
+                // Only emit a retail channel card when retail price/unit exist;
+                // otherwise personal search would show wholesale pricing as "retail".
+                if (hasRetailStock && IncludeRetailHybridCard(catalogAudience))
                 {
                     projections.Add((product, ProjectRetail: true, Channel: "retail"));
                 }
@@ -105,7 +113,7 @@ public partial class ProductsAppService
     }
 
     private string SearchCardCacheKey(Guid productId, string channel) =>
-        $"products:search-card:v17:v{SearchProductsCacheVersion}:{productId:D}:{channel}";
+        $"products:search-card:v18:v{SearchProductsCacheVersion}:{productId:D}:{channel}";
 
     private async Task<Dictionary<(Guid ProductId, string Channel), object>> BuildSearchCardsFromSqlAsync(
         IReadOnlyList<ProductPublicRow> products,
@@ -165,7 +173,15 @@ public partial class ProductsAppService
 
             if (ProductTypeCodes.IsHybridDualListing(x.CategoryId, x.ProductTypeId))
             {
-                AddCard(projectRetail: true, channel: "retail");
+                if (ProductTypeCodes.HasRetailStockConfigured(
+                        x.CategoryId,
+                        x.ProductTypeId,
+                        x.RetailPrice,
+                        x.RetailUnitId))
+                {
+                    AddCard(projectRetail: true, channel: "retail");
+                }
+
                 AddCard(projectRetail: false, channel: "category");
             }
             else

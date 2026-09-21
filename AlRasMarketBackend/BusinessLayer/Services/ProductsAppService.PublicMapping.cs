@@ -111,14 +111,20 @@ public partial class ProductsAppService
 
         var categoryLookup = await productData.GetCategoriesByIdsAsync(categoryIds, cancellationToken);
 
-        // Search/image: hybrid (CategoryId + ProductTypeId) → retail card + category card.
+        // Search/image: hybrid (CategoryId + Retail type + retail stock) → retail + category cards.
         var projections = new List<(ProductPublicRow Row, bool ProjectRetail, bool IncludeRetail, string? Channel)>();
         foreach (var product in products)
         {
             if (expandHybridSearchChannels
                 && ProductTypeCodes.IsHybridDualListing(product.CategoryId, product.ProductTypeId))
             {
-                if (IncludeRetailHybridCard(catalogAudience))
+                var hasRetailStock = ProductTypeCodes.HasRetailStockConfigured(
+                    product.CategoryId,
+                    product.ProductTypeId,
+                    product.RetailPrice,
+                    product.RetailUnitId);
+
+                if (hasRetailStock && IncludeRetailHybridCard(catalogAudience))
                 {
                     projections.Add((product, ProjectRetail: true, IncludeRetail: true, Channel: "retail"));
                 }
@@ -132,6 +138,11 @@ public partial class ProductsAppService
             {
                 var channel = projectRetailAsPrimary
                     && ProductTypeCodes.IsHybridDualListing(product.CategoryId, product.ProductTypeId)
+                    && ProductTypeCodes.HasRetailStockConfigured(
+                        product.CategoryId,
+                        product.ProductTypeId,
+                        product.RetailPrice,
+                        product.RetailUnitId)
                         ? "retail"
                         : null;
                 projections.Add((product, projectRetailAsPrimary, includeRetailFields, channel));

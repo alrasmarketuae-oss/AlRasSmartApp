@@ -22,11 +22,12 @@ public static class ProductTypeCodes
         && (!productTypeId.HasValue || productTypeId == Retail);
 
     /// <summary>
-    /// Hybrid listing: both CategoryId and ProductTypeId are set (typically Retail dual-list).
-    /// Search should surface these as two cards — retail channel + category channel.
+    /// Hybrid listing: category catalog dual-listed as Retail with retail fields.
+    /// Search surfaces these as two cards — retail channel + category channel —
+    /// only when ProductTypeId is Retail (not Booking/Offers/Requests).
     /// </summary>
     public static bool IsHybridDualListing(byte? categoryId, byte? productTypeId) =>
-        categoryId is > 0 && productTypeId.HasValue;
+        categoryId is > 0 && IsRetail(productTypeId);
 
     /// <summary>
     /// Company-customer app surfaces: Categories, Offers, Booking (not Retail or Requests).
@@ -52,8 +53,9 @@ public static class ProductTypeCodes
     }
 
     /// <summary>
-    /// Personal-customer search: Retail only (pure retail + hybrid retail channel).
-    /// Hides Booking, Offers, Requests, and wholesale/category-only listings.
+    /// Personal-customer search: pure retail + hybrid retail only when retail
+    /// price/unit are configured. Hides Booking, Offers, Requests, and
+    /// wholesale/category-only (or hybrid without retail fields).
     /// </summary>
     public static bool IsHiddenFromPersonalCustomerCatalog(
         byte? categoryId,
@@ -62,14 +64,10 @@ public static class ProductTypeCodes
         byte? retailUnitId = null,
         string? listingChannel = null)
     {
+        // Never show wholesale/category channel to personal buyers.
         if (string.Equals(listingChannel, "category", StringComparison.OrdinalIgnoreCase))
         {
             return true;
-        }
-
-        if (string.Equals(listingChannel, "retail", StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
         }
 
         if (IsBooking(productTypeId) || IsOffers(productTypeId) || IsRequests(productTypeId))
@@ -77,18 +75,13 @@ public static class ProductTypeCodes
             return true;
         }
 
-        // Pure retail feed.
+        // Pure retail feed (no main category).
         if (IsRetail(productTypeId) && categoryId is not > 0)
         {
             return false;
         }
 
-        // Hybrid category+retail — personal customers only see the retail card.
-        if (IsRetail(productTypeId) && categoryId is > 0)
-        {
-            return false;
-        }
-
+        // Hybrid category+retail — only when retail price/unit exist.
         if (HasRetailStockConfigured(categoryId, productTypeId, retailPrice, retailUnitId))
         {
             return false;

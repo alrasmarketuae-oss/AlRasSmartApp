@@ -454,10 +454,23 @@ class ClintCubit extends Cubit<ClintStates> {
         item.isOfferProduct) {
       return false;
     }
+    // Wholesale / category channel cards are never for personal customers.
     if (item.searchListingChannel == 'category') return false;
-    if (item.searchListingChannel == 'retail') return true;
-    if (item.isPureRetailProduct || item.isRetailFeedProduct) return true;
-    // Wholesale / category-only listings are not for personal customers.
+
+    // Pure retail (no main category).
+    if (item.isPureRetailProduct) return true;
+
+    // Hybrid retail: only when retail price/unit/qty are actually configured.
+    // Without this, Retail+Category ads without retail fields look like wholesale.
+    if (item.hasRetailPricing) {
+      if (item.searchListingChannel == 'retail') return true;
+      // Unscoped / default channel hybrid still OK when retail pricing exists.
+      if (item.searchListingChannel == null ||
+          item.searchListingChannel!.trim().isEmpty) {
+        return true;
+      }
+    }
+
     return false;
   }
 
@@ -949,7 +962,11 @@ class ClintCubit extends Cubit<ClintStates> {
     );
 
     try {
-      final response = categoryId != null
+      // Personal customers must stay on audience-scoped /Products/search.
+      // Paginating via by-category + publicCatalog returns wholesale catalog.
+      final useCategoryPagination = categoryId != null &&
+          !AuthService.instance.isPersonalCustomerAccount;
+      final response = useCategoryPagination
           ? await DioHelper.getData(
               url: ApiConstants.productsByCategoryEndPoint(categoryId),
               query: {
