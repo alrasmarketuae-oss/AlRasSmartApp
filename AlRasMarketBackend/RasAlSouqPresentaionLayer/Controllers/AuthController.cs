@@ -308,6 +308,7 @@ public class AuthController(
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Operation status message.</returns>
     [HttpPost("send-email-otp")]
+    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -340,6 +341,7 @@ public class AuthController(
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Verification result message.</returns>
     [HttpPost("verify-email-otp")]
+    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

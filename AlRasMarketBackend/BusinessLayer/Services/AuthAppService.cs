@@ -504,10 +504,21 @@ public class AuthAppService(
             .FirstOrDefaultAsync(x => x.Email == normalizedEmail, cancellationToken)
             ?? throw new KeyNotFoundException("User not found.");
 
+        if (!user.IsVerified)
+        {
+            user.IsVerified = true;
+        }
+
+        if (!string.IsNullOrWhiteSpace(fcmToken))
+        {
+            user.FcmToken = fcmToken;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
         if (!string.IsNullOrWhiteSpace(fcmToken))
         {
             await userRepository.UpdateFcmTokenAsync(user.Id.ToString(), fcmToken);
-            user.FcmToken = fcmToken;
         }
 
         var isCompanyAccount = user.RoleId == RoleIds.Seller;

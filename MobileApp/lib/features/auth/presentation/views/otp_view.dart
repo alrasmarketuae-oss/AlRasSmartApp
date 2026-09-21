@@ -101,17 +101,83 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
     context.go(AppRoutes.kLoginView);
   }
 
-  Future<void> _openGmail() async {
-    final candidates = <Uri>[
-      Uri.parse('googlegmail://'),
-      if (Platform.isAndroid)
-        Uri.parse(
-          'intent://mail.google.com/#Intent;scheme=https;package=com.google.android.gm;end',
-        ),
-      Uri.parse('https://mail.google.com/mail/u/0/#inbox'),
-    ];
+  String get _emailDomain {
+    final email = widget.email.trim().toLowerCase();
+    final at = email.lastIndexOf('@');
+    if (at < 0 || at >= email.length - 1) return '';
+    return email.substring(at + 1);
+  }
 
-    for (final uri in candidates) {
+  List<Uri> _emailInboxCandidates() {
+    final domain = _emailDomain;
+    final candidates = <Uri>[];
+
+    final isGmail = domain == 'gmail.com' || domain == 'googlemail.com';
+    final isYahoo = domain == 'yahoo.com' ||
+        domain == 'yahoo.co.uk' ||
+        domain == 'ymail.com' ||
+        domain.endsWith('.yahoo.com');
+    final isOutlook = domain == 'outlook.com' ||
+        domain == 'hotmail.com' ||
+        domain == 'live.com' ||
+        domain == 'msn.com' ||
+        domain == 'office365.com';
+    final isIcloud = domain == 'icloud.com' ||
+        domain == 'me.com' ||
+        domain == 'mac.com';
+
+    if (isGmail) {
+      candidates.add(Uri.parse('googlegmail://'));
+      if (Platform.isAndroid) {
+        candidates.add(
+          Uri.parse(
+            'intent://mail.google.com/#Intent;scheme=https;package=com.google.android.gm;end',
+          ),
+        );
+      }
+      candidates.add(Uri.parse('https://mail.google.com/mail/u/0/#inbox'));
+    } else if (isYahoo) {
+      if (Platform.isAndroid) {
+        candidates.add(
+          Uri.parse(
+            'intent://mail.yahoo.com/#Intent;scheme=https;package=com.yahoo.mobile.client.android.mail;end',
+          ),
+        );
+      }
+      candidates.add(Uri.parse('https://mail.yahoo.com/'));
+    } else if (isOutlook) {
+      candidates.add(Uri.parse('ms-outlook://'));
+      if (Platform.isAndroid) {
+        candidates.add(
+          Uri.parse(
+            'intent://outlook.live.com/mail/#Intent;scheme=https;package=com.microsoft.office.outlook;end',
+          ),
+        );
+      }
+      candidates.add(Uri.parse('https://outlook.live.com/mail/0/inbox'));
+    } else if (isIcloud) {
+      candidates.add(Uri.parse('message://'));
+      candidates.add(Uri.parse('https://www.icloud.com/mail'));
+    }
+
+    // Default mail app / any custom domain mailbox on the device.
+    if (Platform.isAndroid) {
+      candidates.add(
+        Uri.parse(
+          'intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.APP_EMAIL;end',
+        ),
+      );
+    }
+    if (Platform.isIOS) {
+      candidates.add(Uri.parse('message://'));
+    }
+    candidates.add(Uri(scheme: 'mailto', path: widget.email.trim()));
+
+    return candidates;
+  }
+
+  Future<void> _openEmailInbox() async {
+    for (final uri in _emailInboxCandidates()) {
       try {
         final opened = await launchUrl(
           uri,
@@ -126,7 +192,7 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
     if (!mounted) return;
     AppToast.showError(
       context,
-      _isArabic ? 'تعذر فتح تطبيق Gmail' : 'Could not open Gmail',
+      _isArabic ? 'تعذر فتح تطبيق البريد' : 'Could not open your email app',
     );
   }
 
@@ -258,12 +324,12 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                       ],
                       SizedBox(height: 16.h),
                       OutlinedButton.icon(
-                        onPressed: _openGmail,
+                        onPressed: _openEmailInbox,
                         icon: Icon(Icons.mail_outline, size: 20.sp),
                         label: Text(
                           _isArabic
-                              ? 'فتح Gmail لقراءة الرمز'
-                              : 'Open Gmail to get the code',
+                              ? 'فتح البريد لقراءة الرمز'
+                              : 'Open email to get the code',
                           style: TextStyle(
                             fontSize: 13.sp,
                             fontWeight: FontWeight.w600,

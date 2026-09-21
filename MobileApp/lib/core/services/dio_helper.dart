@@ -24,12 +24,18 @@ class DioHelper {
 
   static Map<String, dynamic> _authHeaders({String? token}) {
     final language = _preferredLanguage();
-    return {
-      'x-auth-token': _resolveToken(token),
-      'Authorization': 'Bearer ${_resolveToken(token)}',
+    final resolved = _resolveToken(token)?.trim();
+    final headers = <String, dynamic>{
       'X-Preferred-Language': language,
       'Accept-Language': language,
     };
+    if (resolved != null &&
+        resolved.isNotEmpty &&
+        resolved.toLowerCase() != 'null') {
+      headers['x-auth-token'] = resolved;
+      headers['Authorization'] = 'Bearer $resolved';
+    }
+    return headers;
   }
 
   static init() {
