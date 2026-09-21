@@ -3,7 +3,10 @@ import { createVoiceFile, pickVoiceRecorderMimeType } from '../../lib/voiceRecor
 import ChatComposer from './ChatComposer'
 import ChatForwardPicker from './ChatForwardPicker'
 import ChatMessageActions from './ChatMessageActions'
-import ChatMessageBubble, { getChatGalleryItems } from './ChatMessageBubble'
+import ChatMessageBubble, {
+  getChatGalleryItems,
+  type AskForPriceSupplierTarget,
+} from './ChatMessageBubble'
 import ChatSessionDivider from './ChatSessionDivider'
 import ImageGallery, { type GalleryMediaItem } from '../ui/ImageGallery'
 import { PROJECT_IMAGES } from '../../constants/projectImages'
@@ -69,6 +72,9 @@ type ChatThreadPanelProps = {
   companyDisplay?: ChatCompanyDisplay | null
   onCompanyClick?: () => void
   isGeneratingReport?: boolean
+  paneLabel?: string | null
+  onClosePane?: () => void
+  onChatWithSupplier?: (target: AskForPriceSupplierTarget) => void
   className?: string
   t: (key: string, params?: Record<string, string | number>) => string
 }
@@ -107,6 +113,9 @@ export default function ChatThreadPanel({
   companyDisplay = null,
   onCompanyClick,
   isGeneratingReport = false,
+  paneLabel = null,
+  onClosePane,
+  onChatWithSupplier,
   className = '',
   t,
 }: ChatThreadPanelProps) {
@@ -380,6 +389,11 @@ export default function ChatThreadPanel({
               )}
 
               <div className="min-w-0 flex-1">
+                {paneLabel ? (
+                  <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-white/70">
+                    {paneLabel}
+                  </p>
+                ) : null}
                 <div className="flex items-center gap-2">
                   <h3 className="truncate text-base font-bold text-white sm:text-lg">{headerTitle}</h3>
                   {companyDisplay?.isCompany ? (
@@ -439,6 +453,16 @@ export default function ChatThreadPanel({
             className="shrink-0 rounded-full border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20 disabled:opacity-60"
           >
             {isClosingConversation ? t('chat.closing') : t('chat.closeConversation')}
+          </button>
+        ) : null}
+        {onClosePane ? (
+          <button
+            type="button"
+            onClick={onClosePane}
+            className="shrink-0 rounded-full border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
+            aria-label={t('chat.closeSupplierPane')}
+          >
+            ×
           </button>
         ) : null}
       </header>
@@ -515,6 +539,7 @@ export default function ChatThreadPanel({
                   message={item.message}
                   isMine={item.message.toUserId === contact.contactUserId}
                   onOpenMedia={openMedia}
+                  onChatWithSupplier={onChatWithSupplier}
                 />
               </ChatMessageActions>
             )

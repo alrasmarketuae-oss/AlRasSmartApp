@@ -22,13 +22,24 @@ const IMAGE_LINE = /(?:^|\n)\s*Image:\s*(.+)(?:\n|$)/i
 const PRODUCT_NAME_LINE =
   /(?:^|\n)\s*(?:Product Name|اسم المنتج|اسم الإعلان)\s*[:：]\s*(.+)(?:\n|$)/i
 const PRODUCT_CODE_LINE = /(?:^|\n)\s*(?:Product Code|كود المنتج)\s*[:：]\s*(.+)(?:\n|$)/i
+const SUPPLIER_ID_LINE = /(?:^|\n)\s*Supplier ID:\s*([0-9a-fA-F-]{36})/i
+const QUANTITY_LINE =
+  /(?:^|\n)\s*(?:Quantity|الكمية|الكميه)\s*[:：]\s*(.+)(?:\n|$)/i
 const ASK_FOR_PRICE_HINT = /ask\s*for\s*price|طلب\s*سعر|اطلب\s*السعر/i
+
+export type AskForPriceSupplierTarget = {
+  supplierUserId: string
+  displayName: string
+  avatarUrl?: string | null
+}
 
 type AskForPricePayload = {
   productId: string
   imagePath: string | null
   productName: string | null
   productCode: string | null
+  supplierId: string | null
+  quantityLabel: string | null
 }
 
 function parseAskForPriceContent(content: string): AskForPricePayload | null {
@@ -50,12 +61,16 @@ function parseAskForPriceContent(content: string): AskForPricePayload | null {
   const imageMatch = text.match(IMAGE_LINE)
   const nameMatch = text.match(PRODUCT_NAME_LINE)
   const codeMatch = text.match(PRODUCT_CODE_LINE)
+  const supplierMatch = text.match(SUPPLIER_ID_LINE)
+  const quantityMatch = text.match(QUANTITY_LINE)
 
   return {
     productId,
     imagePath: imageMatch?.[1]?.trim() || null,
     productName: nameMatch?.[1]?.trim() || null,
     productCode: codeMatch?.[1]?.trim() || null,
+    supplierId: supplierMatch?.[1]?.trim() || null,
+    quantityLabel: quantityMatch?.[1]?.trim() || null,
   }
 }
 
@@ -63,12 +78,14 @@ type ChatMessageBubbleProps = {
   message: ChatMessage
   isMine: boolean
   onOpenMedia?: (item: GalleryMediaItem) => void
+  onChatWithSupplier?: (target: AskForPriceSupplierTarget) => void
 }
 
 export default function ChatMessageBubble({
   message,
   isMine,
   onOpenMedia,
+  onChatWithSupplier,
 }: ChatMessageBubbleProps) {
   const { t, locale } = useAppPreferences()
   const timeLabel =
@@ -111,6 +128,7 @@ export default function ChatMessageBubble({
               message={message}
               isMine={isMine}
               onOpenMedia={onOpenMedia}
+              onChatWithSupplier={onChatWithSupplier}
             />
           </>
         )}
@@ -152,7 +170,12 @@ function DeliveryIndicator({ message }: { message: ChatMessage }) {
   return <span className="font-semibold text-white/75">✓</span>
 }
 
-function MessageBody({ message, isMine, onOpenMedia }: ChatMessageBubbleProps) {
+function MessageBody({
+  message,
+  isMine,
+  onOpenMedia,
+  onChatWithSupplier,
+}: ChatMessageBubbleProps) {
   switch (message.messageType) {
     case 3:
       return <ChatImageMessage message={message} onOpenMedia={onOpenMedia} />
@@ -191,7 +214,13 @@ function MessageBody({ message, isMine, onOpenMedia }: ChatMessageBubbleProps) {
     default: {
       const askForPrice = parseAskForPriceContent(message.content)
       if (askForPrice) {
-        return <AskForPriceProductCard payload={askForPrice} isMine={isMine} />
+        return (
+          <AskForPriceProductCard
+            payload={askForPrice}
+            isMine={isMine}
+            onChatWithSupplier={onChatWithSupplier}
+          />
+        )
       }
       return (
         <p className="notranslate whitespace-pre-wrap break-words text-sm leading-relaxed" translate="no">
@@ -205,9 +234,11 @@ function MessageBody({ message, isMine, onOpenMedia }: ChatMessageBubbleProps) {
 function AskForPriceProductCard({
   payload,
   isMine,
+  onChatWithSupplier,
 }: {
   payload: AskForPricePayload
   isMine: boolean
+  onChatWithSupplier?: (target: AskForPriceSupplierTarget) => void
 }) {
   const { t } = useAppPreferences()
   const { data: product, isLoading, isError } = useGetAdminProductDetailQuery(
@@ -225,6 +256,20 @@ function AskForPriceProductCard({
 
   const code = payload.productCode?.trim() || null
 
+  const quantityLabel = useMemo(() => {
+    if (payload.quantityLabel?.trim()) return payload.quantityLabel.trim()
+    if (!product) return null
+    const qty = product.quantity
+    const unit = product.unitName?.trim()
+    if (qty == null && !unit) return null
+    return [qty != null ? String(qty) : null, unit].filter(Boolean).join(' ')
+  }, [payload.quantityLabel, product])
+
+  const customerPrice =
+    product?.customerPriceFormatted?.trim() ||
+    (product?.customerPriceUsd != null ? String(product.customerPriceUsd) : null)
+  const supplierPrice = product?.priceFormatted?.trim() || null
+
   const imageUrl = useMemo(() => {
     const path =
       product?.primaryImagePath?.trim() ||
@@ -234,30 +279,40 @@ function AskForPriceProductCard({
     return path ? resolveAssetUrl(path) : null
   }, [payload.imagePath, product?.imagePaths, product?.primaryImagePath])
 
+  const supplierUserId =
+    payload.supplierId?.trim() || product?.ownerId?.trim() || null
+  const supplierDisplayName =
+    product?.ownerCompanyName?.trim() ||
+    product?.ownerName?.trim() ||
+    t('chat.supplierChat')
+
   const href = `/ads/${payload.productId}`
 
+  function handleChatWithSupplier() {
+    if (!supplierUserId || !onChatWithSupplier) return
+    onChatWithSupplier({
+      supplierUserId,
+      displayName: supplierDisplayName,
+      avatarUrl: null,
+    })
+  }
+
   return (
-    <Link
-      to={href}
-      className={`group block overflow-hidden rounded-xl border text-start transition hover:opacity-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+    <div
+      className={`overflow-hidden rounded-xl border text-start ${
         isMine
-          ? 'border-white/35 bg-white/15 focus-visible:outline-white'
-          : 'border-slate-200 bg-white focus-visible:outline-[#3B7FC7] dark:border-slate-600 dark:bg-slate-900'
+          ? 'border-white/35 bg-white/15'
+          : 'border-slate-200 bg-white dark:border-slate-600 dark:bg-slate-900'
       }`}
-      title={t('chat.askForPriceOpenAd')}
     >
       <div className="flex gap-2.5 p-2 sm:gap-3 sm:p-2.5">
         <div
-          className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg sm:h-20 sm:w-20 ${
+          className={`relative h-24 w-24 shrink-0 overflow-hidden rounded-lg sm:h-28 sm:w-28 ${
             isMine ? 'bg-white/20' : 'bg-slate-100 dark:bg-slate-800'
           }`}
         >
           {imageUrl ? (
-            <img
-              src={imageUrl}
-              alt=""
-              className="h-full w-full object-cover transition duration-200 group-hover:scale-[1.03]"
-            />
+            <img src={imageUrl} alt="" className="h-full w-full object-cover" />
           ) : (
             <div
               className={`flex h-full w-full items-center justify-center text-[11px] font-semibold ${
@@ -284,26 +339,89 @@ function AskForPriceProductCard({
           >
             {isLoading && !payload.productName ? t('chat.askForPriceLoading') : title}
           </p>
-          {code ? (
+          {quantityLabel ? (
             <p
               className={`notranslate mt-0.5 truncate text-[11px] ${
                 isMine ? 'text-white/70' : 'text-slate-500 dark:text-slate-400'
               }`}
               translate="no"
             >
+              {quantityLabel}
+            </p>
+          ) : null}
+          {code ? (
+            <p
+              className={`notranslate mt-0.5 truncate text-[11px] ${
+                isMine ? 'text-white/65' : 'text-slate-500 dark:text-slate-400'
+              }`}
+              translate="no"
+            >
               {code}
             </p>
           ) : null}
-          <p
-            className={`mt-1.5 text-[11px] font-semibold underline-offset-2 group-hover:underline ${
-              isMine ? 'text-white/90' : 'text-[#3B7FC7]'
-            }`}
-          >
-            {isError ? title : t('chat.askForPriceOpenAd')} →
-          </p>
+          <div className="mt-1.5 space-y-0.5">
+            {customerPrice ? (
+              <p
+                className={`notranslate text-sm font-bold ${
+                  isMine ? 'text-[#7dffa8]' : 'text-[#619d51]'
+                }`}
+                translate="no"
+              >
+                <span className={`me-1 text-[10px] font-semibold uppercase tracking-wide ${
+                  isMine ? 'text-white/70' : 'text-slate-500'
+                }`}>
+                  {t('chat.customerPrice')}
+                </span>
+                {customerPrice}
+              </p>
+            ) : isLoading ? (
+              <p className={`text-[11px] ${isMine ? 'text-white/60' : 'text-slate-400'}`}>
+                {t('chat.askForPriceLoading')}
+              </p>
+            ) : null}
+            {supplierPrice ? (
+              <p
+                className={`notranslate text-[11px] ${
+                  isMine ? 'text-white/65' : 'text-slate-500 dark:text-slate-400'
+                }`}
+                translate="no"
+              >
+                {t('chat.supplierPrice')}: {supplierPrice}
+              </p>
+            ) : null}
+          </div>
         </div>
       </div>
-    </Link>
+      <div
+        className={`flex flex-wrap gap-1.5 border-t px-2 py-2 sm:px-2.5 ${
+          isMine ? 'border-white/20' : 'border-slate-100 dark:border-slate-700'
+        }`}
+      >
+        <Link
+          to={href}
+          className={`inline-flex items-center rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition ${
+            isMine
+              ? 'bg-white/20 text-white hover:bg-white/30'
+              : 'bg-[#3B7FC7]/10 text-[#3B7FC7] hover:bg-[#3B7FC7]/20'
+          }`}
+        >
+          {isError ? title : t('chat.askForPriceOpenAd')}
+        </Link>
+        {supplierUserId && onChatWithSupplier ? (
+          <button
+            type="button"
+            onClick={handleChatWithSupplier}
+            className={`inline-flex items-center rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition ${
+              isMine
+                ? 'bg-[#619d51]/90 text-white hover:bg-[#619d51]'
+                : 'bg-[#619d51] text-white hover:bg-[#528544]'
+            }`}
+          >
+            {t('chat.chatWithSupplier')}
+          </button>
+        ) : null}
+      </div>
+    </div>
   )
 }
 

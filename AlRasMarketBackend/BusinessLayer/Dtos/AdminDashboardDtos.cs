@@ -566,6 +566,7 @@ public sealed class AdminProductVideoDto
 
 public sealed class AdminProductDetailDto : AdminProductListItemDto
 {
+    public Guid? OwnerId { get; set; }
     public byte? UnitId { get; set; }
     public byte? StatusId { get; set; }
     public long ViewsCount { get; set; }
@@ -578,6 +579,10 @@ public sealed class AdminProductDetailDto : AdminProductListItemDto
     public IReadOnlyList<AdminProductVideoDto> Videos { get; set; } = [];
     public IReadOnlyList<AdminProductImageDto> Images { get; set; } = [];
     public IReadOnlyList<AdminProductDocumentDto> Documents { get; set; } = [];
+    /// <summary>Customer-facing unit price after commission (same markup as mobile).</summary>
+    public decimal? CustomerPriceUsd { get; set; }
+    /// <summary>Formatted customer-facing price after commission (display currency).</summary>
+    public string? CustomerPriceFormatted { get; set; }
     /// <summary>Previous vs proposed values while a seller edit awaits review.</summary>
     public AdminPendingProductEditDto? PendingEdit { get; set; }
 }

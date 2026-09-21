@@ -97,6 +97,7 @@ export type AdminProductDetail = AdminProduct & {
   unitId: number | null
   statusId: number | null
   viewsCount: number
+  ownerId: string | null
   ownerPhone: string | null
   ownerCity: string | null
   supplierNotesEn: string | null
@@ -106,6 +107,10 @@ export type AdminProductDetail = AdminProduct & {
   videos: AdminProductVideo[]
   images: AdminProductImage[]
   documents: AdminProductDocument[]
+  /** Customer-facing unit price after commission (USD equivalent). */
+  customerPriceUsd?: number | null
+  /** Formatted customer-facing price after commission. */
+  customerPriceFormatted?: string | null
   pendingEdit?: AdminPendingProductEdit | null
 }
 

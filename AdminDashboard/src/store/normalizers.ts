@@ -398,6 +398,8 @@ type RawProductDetail = RawProduct & {
   statusId?: number | null
   ViewsCount?: number
   viewsCount?: number
+  OwnerId?: string | null
+  ownerId?: string | null
   OwnerPhone?: string | null
   ownerPhone?: string | null
   OwnerCity?: string | null
@@ -418,6 +420,10 @@ type RawProductDetail = RawProduct & {
   images?: RawProductImage[]
   Documents?: RawProductDocument[]
   documents?: RawProductDocument[]
+  CustomerPriceUsd?: number | null
+  customerPriceUsd?: number | null
+  CustomerPriceFormatted?: string | null
+  customerPriceFormatted?: string | null
   PendingEdit?: RawPendingProductEdit | null
   pendingEdit?: RawPendingProductEdit | null
 }
@@ -512,6 +518,12 @@ export function normalizeProductDetail(raw: RawProductDetail) {
     unitId: raw.unitId ?? raw.UnitId ?? null,
     statusId: raw.statusId ?? raw.StatusId ?? null,
     viewsCount: raw.viewsCount ?? raw.ViewsCount ?? 0,
+    ownerId: (() => {
+      const value = raw.ownerId ?? raw.OwnerId
+      if (value == null) return null
+      const text = String(value).trim()
+      return text || null
+    })(),
     ownerPhone: raw.ownerPhone ?? raw.OwnerPhone ?? null,
     ownerCity: raw.ownerCity ?? raw.OwnerCity ?? null,
     supplierNotesEn: raw.supplierNotesEn ?? raw.SupplierNotesEn ?? null,
@@ -524,6 +536,18 @@ export function normalizeProductDetail(raw: RawProductDetail) {
       ? images
       : base.imagePaths.map((path, index) => ({ id: index, path })),
     documents,
+    customerPriceUsd: (() => {
+      const value = raw.customerPriceUsd ?? raw.CustomerPriceUsd
+      if (value == null) return null
+      const n = Number(value)
+      return Number.isFinite(n) ? n : null
+    })(),
+    customerPriceFormatted: (() => {
+      const value = raw.customerPriceFormatted ?? raw.CustomerPriceFormatted
+      if (value == null) return null
+      const text = String(value).trim()
+      return text || null
+    })(),
     pendingEdit: normalizePendingProductEdit(raw.pendingEdit ?? raw.PendingEdit),
   }
 }

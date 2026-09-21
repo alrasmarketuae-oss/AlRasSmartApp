@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
@@ -11,20 +12,20 @@ import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_sta
 import 'package:alrasmarket/features/auth/presentation/widgets/biometric_enrollment_prompt.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pinput/pinput.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class OtpVerificationView extends StatefulWidget {
   const OtpVerificationView({
     super.key,
     required this.email,
-
   });
 
   final String email;
-
 
   @override
   State<OtpVerificationView> createState() => _OtpVerificationViewState();
@@ -35,6 +36,9 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
   late final TextEditingController _otpController;
   Timer? _timer;
   int _secondsLeft = _resendSeconds;
+
+  bool get _isArabic =>
+      Localizations.localeOf(context).languageCode.startsWith('ar');
 
   @override
   void initState() {
@@ -97,6 +101,35 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
     context.go(AppRoutes.kLoginView);
   }
 
+  Future<void> _openGmail() async {
+    final candidates = <Uri>[
+      Uri.parse('googlegmail://'),
+      if (Platform.isAndroid)
+        Uri.parse(
+          'intent://mail.google.com/#Intent;scheme=https;package=com.google.android.gm;end',
+        ),
+      Uri.parse('https://mail.google.com/mail/u/0/#inbox'),
+    ];
+
+    for (final uri in candidates) {
+      try {
+        final opened = await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+        if (opened) return;
+      } catch (_) {
+        // Try next candidate.
+      }
+    }
+
+    if (!mounted) return;
+    AppToast.showError(
+      context,
+      _isArabic ? 'تعذر فتح تطبيق Gmail' : 'Could not open Gmail',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final defaultPinTheme = PinTheme(
@@ -124,201 +157,246 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
     return PopScope(
       canPop: false,
       child: SafeArea(
-      child: Scaffold(
-        backgroundColor: LightColor.background,
-        body: BlocConsumer<AuthCubit, AuthStates>(
-          listener: (context, state) async {
-            if (state is VerifyOtpSuccessState) {
-              AppToast.showSuccess(
-                context,
-                Localizations.localeOf(context).languageCode.startsWith('ar')
-                    ? 'تم التحقق بنجاح'
-                    : 'Verified successfully',
-              );
-              await promptBiometricEnrollmentIfNeeded(context);
-              if (!context.mounted) return;
-              AuthCubit.navigateAfterAuthSuccess(context, state.loginResponse);
-            } else if (state is VerifyOtpErrorState) {
-              if (AuthCubit.isPendingApprovalMessage(state.message)) {
-                AuthService.instance.setCompanyWaiting(true);
-                context.go(AppRoutes.kUnderReviewView);
-                return;
+        child: Scaffold(
+          backgroundColor: LightColor.background,
+          body: BlocConsumer<AuthCubit, AuthStates>(
+            listener: (context, state) async {
+              if (state is VerifyOtpSuccessState) {
+                AppToast.showSuccess(
+                  context,
+                  _isArabic ? 'تم التحقق بنجاح' : 'Verified successfully',
+                );
+                await promptBiometricEnrollmentIfNeeded(context);
+                if (!context.mounted) return;
+                AuthCubit.navigateAfterAuthSuccess(context, state.loginResponse);
+              } else if (state is VerifyOtpErrorState) {
+                if (AuthCubit.isPendingApprovalMessage(state.message)) {
+                  AuthService.instance.setCompanyWaiting(true);
+                  context.go(AppRoutes.kUnderReviewView);
+                  return;
+                }
+                AppToast.showError(context, state.message);
+              } else if (state is ResendOtpSuccessState) {
+                AppToast.showSuccess(
+                  context,
+                  _isArabic
+                      ? 'تم إرسال رمز التحقق إلى بريدك الإلكتروني'
+                      : 'Verification code sent to your email',
+                );
+              } else if (state is ResendOtpErrorState) {
+                AppToast.showError(context, state.message);
               }
-              AppToast.showError(context, state.message);
-            } else if (state is ResendOtpSuccessState) {
-              AppToast.showSuccess(
-                context,
-                Localizations.localeOf(context).languageCode.startsWith('ar')
-                    ? 'تم إرسال رمز التحقق عبر SMS'
-                    : 'Verification code sent by SMS',
-              );
-            } else if (state is ResendOtpErrorState) {
-              AppToast.showError(context, state.message);
-            }
-          },
-          builder: (context, state) {
-            final isLoading = state is VerifyOtpLoadingState;
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    SizedBox(height: 16.h),
-                    const AuthHeader(),
-                    SizedBox(height: 24.h),
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            TextButton.icon(
-                              onPressed: () => _onLogout(context),
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.symmetric(horizontal: 8.w),
-                                foregroundColor: LightColor.defaultColor,
+            },
+            builder: (context, state) {
+              final isLoading = state is VerifyOtpLoadingState;
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SizedBox(height: 16.h),
+                      const AuthHeader(),
+                      SizedBox(height: 24.h),
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton.icon(
+                                onPressed: () => _onLogout(context),
+                                style: TextButton.styleFrom(
+                                  padding:
+                                      EdgeInsets.symmetric(horizontal: 8.w),
+                                  foregroundColor: LightColor.defaultColor,
+                                ),
+                                icon: Icon(Icons.logout, size: 20.sp),
+                                label: Text(
+                                  S.of(context).logout,
+                                  style: TextStyle(
+                                    fontSize: 13.sp,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ),
-                              icon: Icon(Icons.logout, size: 20.sp),
-                              label: Text(
-                                S.of(context).logout,
+                            ],
+                          ),
+                          Text(
+                            S.of(context).otpCode,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 20.sp,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF333333),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8.h),
+                      Text(
+                        _isArabic
+                            ? 'أدخل الرمز المرسل إلى بريدك الإلكتروني'
+                            : 'Enter the code sent to your email',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: LightColor.greyTextColor,
+                        ),
+                      ),
+                      if (widget.email.trim().isNotEmpty) ...[
+                        SizedBox(height: 4.h),
+                        Text(
+                          widget.email.trim(),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                            color: LightColor.defaultColor,
+                          ),
+                        ),
+                      ],
+                      SizedBox(height: 16.h),
+                      OutlinedButton.icon(
+                        onPressed: _openGmail,
+                        icon: Icon(Icons.mail_outline, size: 20.sp),
+                        label: Text(
+                          _isArabic
+                              ? 'فتح Gmail لقراءة الرمز'
+                              : 'Open Gmail to get the code',
+                          style: TextStyle(
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: LightColor.defaultColor,
+                          side: BorderSide(
+                            color: LightColor.defaultColor.withOpacity(0.45),
+                          ),
+                          padding: EdgeInsets.symmetric(vertical: 12.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.r),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 24.h),
+                      AutofillGroup(
+                        child: Directionality(
+                          textDirection: TextDirection.ltr,
+                          child: Pinput(
+                            controller: _otpController,
+                            length: 6,
+                            autofillHints: const [AutofillHints.oneTimeCode],
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            defaultPinTheme: defaultPinTheme,
+                            separatorBuilder: (_) => SizedBox(width: 16.w),
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            focusedPinTheme: defaultPinTheme.copyDecorationWith(
+                              border: Border.all(
+                                color: LightColor.defaultColor,
+                                width: 1.2,
+                              ),
+                            ),
+                            submittedPinTheme: defaultPinTheme,
+                            onCompleted: (_) => _onConfirm(),
+                            cursor: Column(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Container(
+                                  margin: EdgeInsets.only(bottom: 16.h),
+                                  width: 28.w,
+                                  height: 2.h,
+                                  color: const Color(0xFFCFD6DF),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 14.h),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                S.of(context).countdown + ':',
                                 style: TextStyle(
-                                  fontSize: 13.sp,
+                                  fontSize: 12.sp,
+                                  color: LightColor.greyTextColor,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              SizedBox(width: 4.w),
+                              Text(
+                                _formatTime(_secondsLeft),
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  color: LightColor.greyTextColor,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                        Text(
-                          S.of(context).otpCode,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 20.sp,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF333333),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 8.h),
-                    Text(
-                      Localizations.localeOf(context).languageCode.startsWith('ar')
-                          ? 'أدخل الرمز المرسل عبر SMS إلى رقم هاتفك'
-                          : 'Enter the code sent by SMS to your phone number',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        color: LightColor.greyTextColor,
-                      ),
-                    ),
-                    SizedBox(height: 24.h),
-                    Directionality(
-                      textDirection: TextDirection.ltr,
-                      child: Pinput(
-                        controller: _otpController,
-                        length: 6,
-                        defaultPinTheme: defaultPinTheme,
-                        separatorBuilder: (_) => SizedBox(width: 16.w),
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        focusedPinTheme: defaultPinTheme.copyDecorationWith(
-                          border: Border.all(
-                            color: LightColor.defaultColor,
-                            width: 1.2,
-                          ),
-                        ),
-                        submittedPinTheme: defaultPinTheme,
-                        cursor: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Container(
-                              margin: EdgeInsets.only(bottom: 16.h),
-                              width: 28.w,
-                              height: 2.h,
-                              color: const Color(0xFFCFD6DF),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 14.h),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              S.of(context).countdown + ':',
-                              style: TextStyle(
-                                fontSize: 12.sp,
+                              SizedBox(width: 6.w),
+                              Icon(
+                                Icons.access_time,
+                                size: 22.sp,
                                 color: LightColor.greyTextColor,
-                                fontWeight: FontWeight.w500,
                               ),
+                              SizedBox(width: 6.w),
+                            ],
+                          ),
+                          TextButton(
+                            onPressed: _secondsLeft == 0 ? _onResend : null,
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
                             ),
-                            SizedBox(width: 4.w),
-                            Text(
-                              _formatTime(_secondsLeft),
+                            child: Text(
+                              S.of(context).resendCode,
                               style: TextStyle(
                                 fontSize: 12.sp,
-                                color: LightColor.greyTextColor,
+                                decoration: TextDecoration.underline,
+                                decorationColor: _secondsLeft == 0
+                                    ? LightColor.defaultColor
+                                    : LightColor.greyTextColor,
+                                color: _secondsLeft == 0
+                                    ? LightColor.defaultColor
+                                    : LightColor.greyTextColor,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            SizedBox(width: 6.w),
-                            Icon(
-                              Icons.access_time,
-                              size: 22.sp,
-                              color: LightColor.greyTextColor,
-                            ),
-                            SizedBox(width: 6.w),
-                          ],
-                        ),
-                        TextButton(
-                          onPressed: _secondsLeft == 0 ? _onResend : null,
-                          style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                          child: Text(
-                            S.of(context).resendCode,
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              decoration: TextDecoration.underline,
-                              decorationColor: _secondsLeft == 0
-                                  ? LightColor.defaultColor
-                                  : LightColor.greyTextColor,
-                              color: _secondsLeft == 0
-                                  ? LightColor.defaultColor
-                                  : LightColor.greyTextColor,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 24.h),
+                      PrimaryButton(
+                        text: S.of(context).confirm,
+                        onPressed: isLoading ? null : _onConfirm,
+                        isLoading: isLoading,
+                        backgroundColor: LightColor.defaultColor,
+                        borderRadius: 10,
+                      ),
+                      SizedBox(height: 36.h),
+                      Center(
+                        child: Text(
+                          S.of(context).codeValidFor10Minutes,
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: LightColor.greyTextColor,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                      ],
-                    ),
-                    SizedBox(height: 24.h),
-                    PrimaryButton(
-                      text: S.of(context).confirm,
-                      onPressed: isLoading ? null : _onConfirm,
-                      isLoading: isLoading,
-                      backgroundColor: LightColor.defaultColor,
-                      borderRadius: 10,
-                    ),
-                    SizedBox(height: 36.h),
-                    Center(
-                      child: Text(
-                        S.of(context).codeValidFor10Minutes,
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: LightColor.greyTextColor,
-                          fontWeight: FontWeight.w500,
-                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
-      ),
       ),
     );
   }

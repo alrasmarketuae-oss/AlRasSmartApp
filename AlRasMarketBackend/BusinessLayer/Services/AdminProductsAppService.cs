@@ -5,6 +5,7 @@ using BusinessLayer.Interfaces;
 using DataLayer.Interfaces;
 using DataLayer.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -21,6 +22,9 @@ public class AdminProductsAppService(
     IAdminAuditLogAppService auditLogAppService,
     IMediaStorageService mediaStorage,
     IProductImageIndexingQueue productImageIndexingQueue,
+    ICommissionSettingsProvider commissionSettingsProvider,
+    ICategoryCommissionProvider categoryCommissionProvider,
+    IConfiguration configuration,
     ILogger<AdminProductsAppService> logger) : IAdminProductsAppService
 {
     private readonly IProductsAppService _productsAppService = productsAppService;
@@ -725,6 +729,7 @@ public class AdminProductsAppService(
                 ProductTypeName = x.ProductType != null ? x.ProductType.TypeNameEn : "—",
                 x.UnitId,
                 UnitName = x.Unit != null ? x.Unit.UnitNameEn : "—",
+                x.OwnerId,
                 OwnerName = x.Owner != null ? x.Owner.FullName : "—",
                 OwnerCompanyName = x.Owner != null ? x.Owner.CompanyName : null,
                 OwnerEmail = x.Owner != null ? x.Owner.Email : "—",
@@ -846,6 +851,18 @@ public class AdminProductsAppService(
             staticReferenceCache,
             language);
 
+        var commissionSettings = await commissionSettingsProvider.GetAsync(cancellationToken);
+        var categoryCommissions = await categoryCommissionProvider.GetAsync(cancellationToken);
+        var usdToAedRate = CurrencyConversionHelper.GetUsdToAedRate(configuration);
+        var customerFacing = CustomerPricingHelper.BuildCustomerFacingPrice(
+            raw.USDPrice,
+            ProductTypeCodes.WholesaleCommissionProductTypeId(raw.CategoryId, raw.ProductTypeId),
+            raw.CategoryId,
+            raw.Currency,
+            commissionSettings,
+            categoryCommissions,
+            usdToAedRate);
+
         return new AdminProductDetailDto
         {
             ProductId = raw.ProductId,
@@ -856,6 +873,10 @@ public class AdminProductsAppService(
             PriceFormatted = ProductCurrencyHelper.FormatPrice(
                 raw.USDPrice,
                 ProductCurrencyHelper.Normalize(raw.Currency, raw.ProductTypeId)),
+            CustomerPriceUsd = customerFacing.PriceUsd,
+            CustomerPriceFormatted = ProductCurrencyHelper.FormatPrice(
+                customerFacing.Price,
+                customerFacing.Currency),
             Quantity = raw.Quantity,
             Negotiable = raw.Negotiable,
             ShowPrice = raw.ShowPrice,
@@ -865,6 +886,7 @@ public class AdminProductsAppService(
             ProductTypeName = raw.ProductTypeName,
             UnitId = raw.UnitId,
             UnitName = raw.UnitName,
+            OwnerId = raw.OwnerId,
             OwnerName = raw.OwnerName,
             OwnerCompanyName = raw.OwnerCompanyName,
             OwnerEmail = raw.OwnerEmail,

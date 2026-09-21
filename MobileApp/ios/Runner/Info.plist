@@ -60,6 +60,7 @@
 			<string>mailto</string>
 			<string>https</string>
 			<string>http</string>
+			<string>googlegmail</string>
 		</array>
 		<key>NSFaceIDUsageDescription</key>
 		<string>We use Face ID so you can unlock your saved account quickly and securely.</string>
