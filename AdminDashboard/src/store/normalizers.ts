@@ -1522,7 +1522,7 @@ type RawUserDetail = AdminUserDetail & {
 }
 
 export function normalizeUserDetail(raw: RawUserDetail): AdminUserDetail {
-  const roleId = raw.roleId ?? 0
+  const roleId = Number(raw.roleId ?? 0)
   const isActive = raw.isActive ?? raw.IsActive ?? false
   const isVerified = raw.isVerified ?? raw.IsVerified ?? false
   const isRejected = raw.isRejected ?? raw.IsRejected ?? false
@@ -1687,10 +1687,8 @@ export function normalizeUserDetail(raw: RawUserDetail): AdminUserDetail {
         (((roleId === 2 || roleId === 5) && !isApproved && isVerified) ||
           Boolean(raw.pendingProfileChanges ?? raw.PendingProfileChanges))),
     canDeactivate: raw.canDeactivate ?? raw.CanDeactivate ?? roleId !== 1,
-    canDelete:
-      raw.canDelete ??
-      raw.CanDelete ??
-      (roleId !== 1 && (!isApproved || (raw.ordersCount ?? raw.OrdersCount ?? 0) === 0)),
+    // Always allow delete for non-admin users (API previously hid it when orders existed).
+    canDelete: roleId !== 1,
   }
 }
 

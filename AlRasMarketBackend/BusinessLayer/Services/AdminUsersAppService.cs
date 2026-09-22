@@ -369,7 +369,6 @@ public class AdminUsersAppService(
                     || !string.IsNullOrWhiteSpace(user.PendingProfileChanges)),
             CanDeactivate = user.RoleId != RoleIds.Admin,
             CanDelete = user.RoleId != RoleIds.Admin
-                && (!user.IsApproved || ordersCount == 0)
         };
 
         var translations = await contentTranslationService.GetUserTranslationsAsync(
@@ -455,16 +454,6 @@ public class AdminUsersAppService(
         if (user.RoleId == RoleIds.Admin)
         {
             throw new InvalidOperationException("Admin accounts cannot be deleted.");
-        }
-
-        var ordersCount = await dbContext.Orders.CountAsync(
-            o => o.FromUserId == user.Id || o.ToUserId == user.Id,
-            cancellationToken);
-
-        if (user.IsApproved && ordersCount > 0)
-        {
-            throw new InvalidOperationException(
-                "Cannot delete an approved account that has orders.");
         }
 
         var message = await accountDeletionAppService.DeleteUserByAdminAsync(
