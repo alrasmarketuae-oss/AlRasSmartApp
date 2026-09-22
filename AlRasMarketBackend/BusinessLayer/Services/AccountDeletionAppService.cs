@@ -206,12 +206,26 @@ public class AccountDeletionAppService(
                     cancellationToken);
             }
 
-            // 7) Shipping posts published by user
+            // 7) Shipping phone reveals (viewer / company / posts) — before posts + user
+            var shippingPostIds = await dbContext.InternationalShippingPosts
+                .AsNoTracking()
+                .Where(x => x.PublisherUserId == userId)
+                .Select(x => x.Id)
+                .ToListAsync(cancellationToken);
+
+            await RemoveRangeAsync(
+                dbContext.ShippingPhoneReveals.Where(x =>
+                    x.ViewerUserId == userId
+                    || x.ShippingCompanyUserId == userId
+                    || (shippingPostIds.Count > 0 && shippingPostIds.Contains(x.PostId))),
+                cancellationToken);
+
+            // 8) Shipping posts published by user
             await RemoveRangeAsync(
                 dbContext.InternationalShippingPosts.Where(x => x.PublisherUserId == userId),
                 cancellationToken);
 
-            // 8) Products owned by user (cart lines on those products first)
+            // 9) Products owned by user (cart lines on those products first)
             if (ownedProductIds.Count > 0)
             {
                 await RemoveRangeAsync(
