@@ -320,6 +320,62 @@ public class AccountDeletionAppService(
                 dbContext.UserFeedbackSubmissions.Where(x => x.UserId == userId),
                 cancellationToken);
 
+            // Admin acted-as references (nullable NoAction FKs) — clear before Users delete.
+            var feedbackResolvedByUser = await dbContext.UserFeedbackSubmissions
+                .Where(x => x.ResolvedByAdminUserId == userId)
+                .ToListAsync(cancellationToken);
+            foreach (var row in feedbackResolvedByUser)
+            {
+                row.ResolvedByAdminUserId = null;
+            }
+
+            var callbacksContactedByUser = await dbContext.SupportCallbackRequests
+                .Where(x => x.ContactedByAdminUserId == userId)
+                .ToListAsync(cancellationToken);
+            foreach (var row in callbacksContactedByUser)
+            {
+                row.ContactedByAdminUserId = null;
+            }
+
+            var clipRefsCreatedByUser = await dbContext.ClipReferenceImages
+                .Where(x => x.CreatedByAdminUserId == userId)
+                .ToListAsync(cancellationToken);
+            foreach (var row in clipRefsCreatedByUser)
+            {
+                row.CreatedByAdminUserId = null;
+            }
+
+            // Orders cancelled by this user (may not be in orderIds if they cancelled others' orders).
+            var ordersCancelledByUser = await dbContext.Orders
+                .Where(x => x.CancelledByUserId == userId)
+                .ToListAsync(cancellationToken);
+            foreach (var order in ordersCancelledByUser)
+            {
+                order.CancelledByUserId = null;
+            }
+
+            // Product review locks held by this agent.
+            await RemoveRangeAsync(
+                dbContext.ProductReviewLocks.Where(x => x.AgentUserId == userId),
+                cancellationToken);
+
+            // AI chat threads (SQL FK is NoAction despite EF Cascade mapping).
+            var aiConversationIds = await dbContext.AiConversations
+                .AsNoTracking()
+                .Where(x => x.UserId == userId)
+                .Select(x => x.Id)
+                .ToListAsync(cancellationToken);
+            if (aiConversationIds.Count > 0)
+            {
+                await RemoveRangeAsync(
+                    dbContext.AiConversationMessages.Where(x =>
+                        aiConversationIds.Contains(x.ConversationId)),
+                    cancellationToken);
+                await RemoveRangeAsync(
+                    dbContext.AiConversations.Where(x => aiConversationIds.Contains(x.Id)),
+                    cancellationToken);
+            }
+
             // Admin audit rows Restrict on ActorUserId — remove before Users delete.
             await RemoveRangeAsync(
                 dbContext.AdminAuditLogs.Where(x => x.ActorUserId == userId),
