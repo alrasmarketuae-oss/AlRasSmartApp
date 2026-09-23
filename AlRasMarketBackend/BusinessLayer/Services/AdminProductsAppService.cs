@@ -47,6 +47,60 @@ public class AdminProductsAppService(
         });
     }
 
+    /// <summary>
+    /// Enqueues a missed-search match event (non-blocking). FCM happens in the background worker.
+    /// </summary>
+    private void QueueMissedSearchMatchNotify(Guid productId, Guid? ownerId, string? legacyNameEn)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await using var scope = scopeFactory.CreateAsyncScope();
+                var translations = scope.ServiceProvider.GetRequiredService<IContentTranslationService>();
+                var publisher = scope.ServiceProvider.GetRequiredService<IMissedSearchMatchEventPublisher>();
+
+                var map = await translations
+                    .GetProductTranslationsAsync([productId], CancellationToken.None)
+                    .ConfigureAwait(false);
+                map.TryGetValue(productId, out var tr);
+
+                var names = new List<string>();
+                void Add(string? value)
+                {
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        names.Add(value.Trim());
+                    }
+                }
+
+                Add(tr?.NameEn);
+                Add(tr?.NameAr);
+                Add(legacyNameEn);
+                Add(AdminProductTextHelper.ResolveName(tr, legacyNameEn));
+
+                if (names.Count == 0)
+                {
+                    return;
+                }
+
+                await publisher.PublishProductBecameSearchableAsync(
+                    new ProductBecameSearchableEvent(
+                        productId,
+                        ownerId,
+                        names.Distinct(StringComparer.OrdinalIgnoreCase).ToList()),
+                    CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(
+                    ex,
+                    "Failed to enqueue missed-search match notify for product {ProductId}",
+                    productId);
+            }
+        });
+    }
+
     public async Task<object> ReindexImageVectorsAsync(CancellationToken cancellationToken = default)
     {
         var imageIds = await dbContext.ProductImages
@@ -545,6 +599,8 @@ public class AdminProductsAppService(
             bodyEn: notificationEn.FcmBody,
             titleAr: notificationAr.FcmTitle,
             bodyAr: notificationAr.FcmBody);
+
+        QueueMissedSearchMatchNotify(product.ProductId, product.OwnerId, product.NameEn);
 
         return "Product approved successfully.";
     }

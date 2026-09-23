@@ -27,11 +27,15 @@ type UserDetailViewProps = {
   isRejecting: boolean
   isDeactivating: boolean
   isDeleting: boolean
+  isConvertingToSupplier?: boolean
+  isConvertingToCompanyCustomer?: boolean
   onApprove: () => void
   onReject: (reason: string) => void
   onDeactivate: () => void
   onActivate: () => void
   onDelete: () => void
+  onConvertToSupplier?: () => void
+  onConvertToCompanyCustomer?: () => void
 }
 
 const ICON_BLUE = 'bg-[#eff6ff] text-[#3B7FC7]'
@@ -195,17 +199,33 @@ export default function UserDetailView({
   isRejecting,
   isDeactivating,
   isDeleting,
+  isConvertingToSupplier = false,
+  isConvertingToCompanyCustomer = false,
   onApprove,
   onReject,
   onDeactivate,
   onActivate,
   onDelete,
+  onConvertToSupplier,
+  onConvertToCompanyCustomer,
 }: UserDetailViewProps) {
   const { t, locale } = useAppPreferences()
   const [rejectReason, setRejectReason] = useState('')
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
-  const isBusy = isApproving || isRejecting || isDeactivating || isDeleting
+  const isBusy =
+    isApproving ||
+    isRejecting ||
+    isDeactivating ||
+    isDeleting ||
+    isConvertingToSupplier ||
+    isConvertingToCompanyCustomer
   const isSupplier = user.roleId === 2
+  const canConvertToSupplier =
+    Boolean(user.canConvertToSupplier) ||
+    (user.roleId === 2 && user.isCustomer === true)
+  const canConvertToCompanyCustomer =
+    Boolean(user.canConvertToCompanyCustomer) ||
+    (user.roleId === 2 && user.isCustomer !== true)
   const isShippingCompany = user.roleId === 5
   const showCompanyDocs = isSupplier || isShippingCompany
   const showVerifiedBadge =
@@ -292,8 +312,44 @@ export default function UserDetailView({
     </button>
   ) : null
 
+  const convertToSupplierButton =
+    canConvertToSupplier && onConvertToSupplier ? (
+      <button
+        type="button"
+        disabled={isBusy}
+        onClick={onConvertToSupplier}
+        className={`${outlineBtn} border-amber-400 text-amber-800 hover:bg-amber-50 dark:border-amber-700/60 dark:text-amber-200 dark:hover:bg-amber-950/30`}
+      >
+        {isConvertingToSupplier
+          ? t('users.convertingToSupplier')
+          : t('users.convertToSupplier')}
+      </button>
+    ) : null
+
+  const convertToCompanyCustomerButton =
+    canConvertToCompanyCustomer && onConvertToCompanyCustomer ? (
+      <button
+        type="button"
+        disabled={isBusy}
+        onClick={onConvertToCompanyCustomer}
+        className={`${outlineBtn} border-sky-400 text-sky-800 hover:bg-sky-50 dark:border-sky-700/60 dark:text-sky-200 dark:hover:bg-sky-950/30`}
+      >
+        {isConvertingToCompanyCustomer
+          ? t('users.convertingToCompanyCustomer')
+          : t('users.convertToCompanyCustomer')}
+      </button>
+    ) : null
+
+  const accountTypeButtons = (
+    <>
+      {convertToSupplierButton}
+      {convertToCompanyCustomerButton}
+    </>
+  )
+
   const actionButtons = user.canApprove ? (
     <div className="flex flex-wrap justify-end gap-3">
+      {accountTypeButtons}
       {deleteButton}
       <button
         type="button"
@@ -314,6 +370,7 @@ export default function UserDetailView({
     </div>
   ) : user.canDeactivate ? (
     <div className="flex flex-wrap justify-end gap-3">
+      {accountTypeButtons}
       {deleteButton}
       {user.isActive ? (
         <button
@@ -335,8 +392,11 @@ export default function UserDetailView({
         </button>
       ) : null}
     </div>
-  ) : deleteButton ? (
-    <div className="flex flex-wrap justify-end gap-3">{deleteButton}</div>
+  ) : deleteButton || convertToSupplierButton || convertToCompanyCustomerButton ? (
+    <div className="flex flex-wrap justify-end gap-3">
+      {accountTypeButtons}
+      {deleteButton}
+    </div>
   ) : null
 
   return (

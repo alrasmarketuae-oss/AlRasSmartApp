@@ -388,6 +388,19 @@ public static class NotificationMessages
             bodyEn);
     }
 
+    public static (string TitleEn, string BodyEn, string TitleAr, string BodyAr) MissedSearchProductAvailable(
+        string productName)
+    {
+        var safeName = string.IsNullOrWhiteSpace(productName) ? "the product" : productName.Trim();
+        var safeNameAr = string.IsNullOrWhiteSpace(productName) ? "المنتج" : productName.Trim();
+
+        return (
+            "Product you searched for is available",
+            $"\"{safeName}\" was just added. Search for it and you will find it.",
+            "المنتج الذي بحثت عنه متاح الآن",
+            $"تم إضافة \"{safeNameAr}\". ابحث عنه وستجده في التطبيق.");
+    }
+
     public static (string EmailSubject, string EmailHtml, string FcmTitle, string FcmBody) AdResubmittedForReview(
         string? language,
         string productName)

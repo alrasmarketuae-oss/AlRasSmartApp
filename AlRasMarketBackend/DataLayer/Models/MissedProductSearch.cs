@@ -20,5 +20,11 @@ public class MissedProductSearch
     /// <summary>Optional AI note (e.g. confirmed correctly spelled).</summary>
     public string? Notes { get; set; }
 
+    /// <summary>Set when the searcher was notified that a matching product became available.</summary>
+    public DateTime? NotifiedAtUtc { get; set; }
+
+    /// <summary>Product that matched this missed search when the user was notified.</summary>
+    public Guid? MatchedProductId { get; set; }
+
     public User? User { get; set; }
 }

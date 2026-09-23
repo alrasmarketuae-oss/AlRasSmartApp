@@ -24,6 +24,8 @@ export {
   useRejectCompanyMutation,
   useSetUserActiveMutation,
   useDeleteAdminUserMutation,
+  useConvertCompanyCustomerToSupplierMutation,
+  useConvertSupplierToCompanyCustomerMutation,
   useDeleteProductMutation,
   useGetCategoriesQuery,
   useCreateCategoryMutation,

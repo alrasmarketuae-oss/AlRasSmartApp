@@ -159,10 +159,12 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.Property(x => x.UserPhone).HasMaxLength(50);
             entity.Property(x => x.Notes).HasMaxLength(500);
             entity.Property(x => x.CreatedAtUtc).HasColumnType("datetime2");
+            entity.Property(x => x.NotifiedAtUtc).HasColumnType("datetime2");
             entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.SetNull);
             entity.HasIndex(x => x.CreatedAtUtc);
             entity.HasIndex(x => x.QueryText);
             entity.HasIndex(x => new { x.UserId, x.CreatedAtUtc });
+            entity.HasIndex(x => x.NotifiedAtUtc);
         });
 
         modelBuilder.Entity<ShippingPhoneReveal>(entity =>

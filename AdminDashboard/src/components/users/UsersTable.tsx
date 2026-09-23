@@ -70,18 +70,6 @@ function UserNameCell({
     />
   )
 
-  if (isCompanyAccount(user)) {
-    return (
-      <Link
-        to={companyAdsPath(user)}
-        state={listReturnState}
-        className="block min-w-0 text-[#3B7FC7] transition hover:text-[#2f6ab0] hover:underline"
-      >
-        {name}
-      </Link>
-    )
-  }
-
   return (
     <Link
       to={`/users/${user.id}`}
@@ -110,21 +98,23 @@ function CompanyNameCell({
   const hasBilingualCompany =
     Boolean(user.companyNameEn?.trim()) || Boolean(user.companyNameAr?.trim())
 
+  const content = hasBilingualCompany ? (
+    <BilingualNameLines
+      nameEn={user.companyNameEn}
+      nameAr={user.companyNameAr}
+      fallback={label}
+    />
+  ) : (
+    label
+  )
+
   return (
     <Link
       to={companyAdsPath(user)}
       state={listReturnState}
       className="block min-w-0 font-medium text-[#3B7FC7] transition hover:text-[#2f6ab0] hover:underline"
     >
-      {hasBilingualCompany ? (
-        <BilingualNameLines
-          nameEn={user.companyNameEn}
-          nameAr={user.companyNameAr}
-          fallback={label}
-        />
-      ) : (
-        label
-      )}
+      {content}
     </Link>
   )
 }
@@ -203,39 +193,40 @@ function UserMobileCard({
           <UserAvatar user={user} />
           <div className="min-w-0 text-start">
             {isCompanyAccount(user) ? (
-              <Link
-                to={companyAdsPath(user)}
-                state={listReturnState}
-                className="block min-w-0 text-[#3B7FC7] hover:underline"
-              >
-                <BilingualNameLines
-                  nameEn={user.fullNameEn}
-                  nameAr={user.fullNameAr}
-                  fallback={user.fullName}
-                />
-              </Link>
-            ) : (
-              <BilingualNameLines
-                nameEn={user.fullNameEn}
-                nameAr={user.fullNameAr}
-                fallback={user.fullName}
+              <CompanyNameCell
+                user={user}
+                locale={locale}
+                listReturnState={listReturnState}
               />
+            ) : (
+              <UserNameCell user={user} listReturnState={listReturnState} />
             )}
-            <p className="admin-text-muted truncate text-xs" dir="ltr">
-              {phoneDisplay}
+            <p className="admin-text-muted mt-0.5 truncate text-xs">
+              {isCompanyAccount(user) ? (
+                <UserNameCell user={user} listReturnState={listReturnState} />
+              ) : (
+                <span dir="ltr">{phoneDisplay}</span>
+              )}
             </p>
+            {isCompanyAccount(user) ? (
+              <p className="admin-text-muted truncate text-xs" dir="ltr">
+                {phoneDisplay}
+              </p>
+            ) : null}
           </div>
         </div>
         <TypeBadge label={user.typeLabelAr} locale={locale} />
       </div>
 
       <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
-        <div>
-          <dt className="admin-text-subtle text-xs">{t('users.company')}</dt>
-          <dd className="admin-text-muted mt-0.5">
-            <CompanyNameCell user={user} locale={locale} listReturnState={listReturnState} />
-          </dd>
-        </div>
+        {!isCompanyAccount(user) ? (
+          <div>
+            <dt className="admin-text-subtle text-xs">{t('users.company')}</dt>
+            <dd className="admin-text-muted mt-0.5">
+              <CellText>{customerKindLabel(user, locale)}</CellText>
+            </dd>
+          </div>
+        ) : null}
         <div>
           <dt className="admin-text-subtle text-xs">{t('users.orders')}</dt>
           <dd className="admin-text-muted mt-0.5">{user.ordersCount}</dd>
@@ -316,7 +307,7 @@ export default function UsersTable({ users }: UsersTableProps) {
           <thead>
             <tr className="admin-text-muted">
               <th className="admin-text-muted px-5 py-3 text-start text-sm font-medium">
-                {t('users.user')}
+                {t('users.company')}
               </th>
               <th className="admin-text-muted px-5 py-3 text-start text-sm font-medium">
                 {t('users.phone')}
@@ -325,7 +316,7 @@ export default function UsersTable({ users }: UsersTableProps) {
                 {t('users.type')}
               </th>
               <th className="admin-text-muted px-5 py-3 text-start text-sm font-medium">
-                {t('users.company')}
+                {t('users.user')}
               </th>
               <th className="admin-text-muted px-5 py-3 text-start text-sm font-medium">
                 {t('users.status')}
@@ -356,7 +347,11 @@ export default function UsersTable({ users }: UsersTableProps) {
                   <td className="px-5 py-5 text-start">
                     <div className="flex items-center justify-start gap-3">
                       <UserAvatar user={user} />
-                      <UserNameCell user={user} listReturnState={listReturnState} />
+                      <CompanyNameCell
+                        user={user}
+                        locale={locale}
+                        listReturnState={listReturnState}
+                      />
                     </div>
                   </td>
                   <td className="px-5 py-5 text-start">
@@ -368,11 +363,7 @@ export default function UsersTable({ users }: UsersTableProps) {
                     <TypeBadge label={user.typeLabelAr} locale={locale} />
                   </td>
                   <td className="px-5 py-5 text-start">
-                    <CompanyNameCell
-                      user={user}
-                      locale={locale}
-                      listReturnState={listReturnState}
-                    />
+                    <UserNameCell user={user} listReturnState={listReturnState} />
                   </td>
                   <td className="px-5 py-5 text-start">
                     <div className="flex flex-wrap items-center gap-2">

@@ -546,6 +546,18 @@ export const enMessages = {
         'Permanently delete this account and its files (licence, company photos, etc.)? The user cannot sign in; they may register again with the same email if this was a new registration.',
       deleteAccountSuccess: 'Account and files deleted',
       deleteAccountError: 'Could not delete account',
+      convertToSupplier: 'Convert to supplier',
+      convertingToSupplier: 'Converting...',
+      convertToSupplierConfirm:
+        'Convert this company customer account to a supplier? They will use the supplier app (create ads) instead of the company buyer experience.',
+      convertToSupplierSuccess: 'Account converted to supplier',
+      convertToSupplierError: 'Could not convert account to supplier',
+      convertToCompanyCustomer: 'Convert to company customer',
+      convertingToCompanyCustomer: 'Converting...',
+      convertToCompanyCustomerConfirm:
+        'Convert this supplier account to a company customer? They will use the company buyer experience instead of creating ads as a supplier.',
+      convertToCompanyCustomerSuccess: 'Account converted to company customer',
+      convertToCompanyCustomerError: 'Could not convert account to company customer',
       viewCompanyAds: 'View company ads',
       viewShippingAds: 'View shipping ads',
       editShippingAds: 'Edit shipping profile & ads',

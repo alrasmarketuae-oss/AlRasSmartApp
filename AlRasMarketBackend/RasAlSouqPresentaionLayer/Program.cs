@@ -116,6 +116,10 @@ builder.Services.AddScoped<IAdminNotificationsAppService, AdminNotificationsAppS
 builder.Services.AddSingleton<IAdminPushNotificationQueue, AdminPushNotificationQueue>();
 builder.Services.AddHostedService<AdminPushNotificationWorker>();
 builder.Services.AddHostedService<BusinessLayer.Services.DraftMediaCleanupWorker>();
+builder.Services.AddSingleton<IMissedSearchMatchEventQueue, MissedSearchMatchEventQueue>();
+builder.Services.AddSingleton<IMissedSearchMatchEventPublisher, MissedSearchMatchEventPublisher>();
+builder.Services.AddScoped<MissedSearchProductAvailableNotifier>();
+builder.Services.AddHostedService<MissedSearchMatchEventWorker>();
 builder.Services.AddScoped<IProductImageVectorIndexingProcessor, ProductImageVectorIndexingProcessor>();
 builder.Services.AddScoped<IAdminProductsAppService, AdminProductsAppService>();
 builder.Services.AddHttpClient<IAdminImageSearchAppService, AdminImageSearchAppService>(client =>

@@ -188,6 +188,10 @@ public sealed class AdminUserDetailDto
     public bool CanApprove { get; set; }
     public bool CanDeactivate { get; set; }
     public bool CanDelete { get; set; }
+    /// <summary>Company-customer (Seller + IsCustomer) can be switched to supplier.</summary>
+    public bool CanConvertToSupplier { get; set; }
+    /// <summary>Supplier (Seller + not customer) can be switched to company customer.</summary>
+    public bool CanConvertToCompanyCustomer { get; set; }
 }
 
 public sealed class AdminShippingPhoneRevealCompanyDto

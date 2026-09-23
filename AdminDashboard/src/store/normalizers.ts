@@ -1453,6 +1453,10 @@ type RawUserDetail = AdminUserDetail & {
   canDeactivate?: boolean
   CanDelete?: boolean
   canDelete?: boolean
+  CanConvertToSupplier?: boolean
+  canConvertToSupplier?: boolean
+  CanConvertToCompanyCustomer?: boolean
+  canConvertToCompanyCustomer?: boolean
   CreatedAt?: string
   ImgPath?: string | null
   CompanyName?: string | null
@@ -1689,6 +1693,14 @@ export function normalizeUserDetail(raw: RawUserDetail): AdminUserDetail {
     canDeactivate: raw.canDeactivate ?? raw.CanDeactivate ?? roleId !== 1,
     // Always allow delete for non-admin users (API previously hid it when orders existed).
     canDelete: roleId !== 1,
+    canConvertToSupplier:
+      raw.canConvertToSupplier ??
+      raw.CanConvertToSupplier ??
+      (roleId === 2 && isCustomer === true),
+    canConvertToCompanyCustomer:
+      raw.canConvertToCompanyCustomer ??
+      raw.CanConvertToCompanyCustomer ??
+      (roleId === 2 && isCustomer !== true),
   }
 }
 

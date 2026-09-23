@@ -5,6 +5,8 @@ import { useAppPreferences } from '../context/AppPreferencesProvider'
 import { useReturnToListPath } from '../hooks/useReturnToListPath'
 import {
   useApproveCompanyMutation,
+  useConvertCompanyCustomerToSupplierMutation,
+  useConvertSupplierToCompanyCustomerMutation,
   useDeleteAdminUserMutation,
   useGetAdminUserDetailQuery,
   useRejectCompanyMutation,
@@ -28,6 +30,10 @@ export default function UserDetailPage() {
   const [rejectCompany, { isLoading: isRejecting }] = useRejectCompanyMutation()
   const [setUserActive, { isLoading: isDeactivating }] = useSetUserActiveMutation()
   const [deleteAdminUser, { isLoading: isDeleting }] = useDeleteAdminUserMutation()
+  const [convertToSupplier, { isLoading: isConvertingToSupplier }] =
+    useConvertCompanyCustomerToSupplierMutation()
+  const [convertToCompanyCustomer, { isLoading: isConvertingToCompanyCustomer }] =
+    useConvertSupplierToCompanyCustomerMutation()
 
   if (!userId) {
     navigate('/users', { replace: true })
@@ -107,6 +113,42 @@ export default function UserDetailPage() {
     }
   }
 
+  async function handleConvertToSupplier() {
+    const confirmed = window.confirm(t('users.convertToSupplierConfirm'))
+    if (!confirmed) return
+
+    setActionError(null)
+    setSuccessMessage(null)
+
+    try {
+      const result = await convertToSupplier(userId).unwrap()
+      setSuccessMessage(result.message || t('users.convertToSupplierSuccess'))
+    } catch (err) {
+      setActionError(
+        getRtkErrorMessage(err as never, t('users.convertToSupplierError')),
+      )
+    }
+  }
+
+  async function handleConvertToCompanyCustomer() {
+    const confirmed = window.confirm(t('users.convertToCompanyCustomerConfirm'))
+    if (!confirmed) return
+
+    setActionError(null)
+    setSuccessMessage(null)
+
+    try {
+      const result = await convertToCompanyCustomer(userId).unwrap()
+      setSuccessMessage(
+        result.message || t('users.convertToCompanyCustomerSuccess'),
+      )
+    } catch (err) {
+      setActionError(
+        getRtkErrorMessage(err as never, t('users.convertToCompanyCustomerError')),
+      )
+    }
+  }
+
   return (
     <div className="space-y-6">
       <Link
@@ -136,11 +178,15 @@ export default function UserDetailPage() {
           isRejecting={isRejecting}
           isDeactivating={isDeactivating}
           isDeleting={isDeleting}
+          isConvertingToSupplier={isConvertingToSupplier}
+          isConvertingToCompanyCustomer={isConvertingToCompanyCustomer}
           onApprove={handleApprove}
           onReject={handleReject}
           onDeactivate={handleDeactivate}
           onActivate={handleActivate}
           onDelete={handleDelete}
+          onConvertToSupplier={handleConvertToSupplier}
+          onConvertToCompanyCustomer={handleConvertToCompanyCustomer}
         />
       )}
     </div>

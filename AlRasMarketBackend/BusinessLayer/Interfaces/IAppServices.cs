@@ -122,6 +122,10 @@ public interface IAdminUsersAppService
 
     Task<object> SetUserActiveAsync(string userId, bool isActive, CancellationToken cancellationToken = default);
 
+    Task<object> ConvertCompanyCustomerToSupplierAsync(string userId, CancellationToken cancellationToken = default);
+
+    Task<object> ConvertSupplierToCompanyCustomerAsync(string userId, CancellationToken cancellationToken = default);
+
     Task<object> DeleteUserAsync(string userId, CancellationToken cancellationToken = default);
 }
 

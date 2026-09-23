@@ -544,6 +544,18 @@ export const arMessages = {
         'حذف هذا الحساب نهائياً مع ملفاته (الرخصة، صور الشركة، وغيرها)؟ لن يتمكن المستخدم من تسجيل الدخول، ويمكنه التسجيل مجدداً بنفس البريد إن كان تسجيلاً جديداً.',
       deleteAccountSuccess: 'تم حذف الحساب وملفاته',
       deleteAccountError: 'تعذر حذف الحساب',
+      convertToSupplier: 'تحويل إلى مورد',
+      convertingToSupplier: 'جاري التحويل...',
+      convertToSupplierConfirm:
+        'تحويل حساب عميل الشركة هذا إلى مورد؟ سيستخدم تجربة المورد (إضافة إعلانات) بدل حساب الشركة المشتري.',
+      convertToSupplierSuccess: 'تم تحويل الحساب إلى مورد',
+      convertToSupplierError: 'تعذر تحويل الحساب إلى مورد',
+      convertToCompanyCustomer: 'تحويل إلى عميل شركة',
+      convertingToCompanyCustomer: 'جاري التحويل...',
+      convertToCompanyCustomerConfirm:
+        'تحويل حساب المورد هذا إلى عميل شركة؟ سيستخدم تجربة الشركة المشتري بدل إضافة إعلانات كمورد.',
+      convertToCompanyCustomerSuccess: 'تم تحويل الحساب إلى عميل شركة',
+      convertToCompanyCustomerError: 'تعذر تحويل الحساب إلى عميل شركة',
       viewCompanyAds: 'عرض إعلانات الشركة',
       viewShippingAds: 'عرض إعلانات الشحن',
       editShippingAds: 'تعديل بيانات وإعلانات الشحن',

@@ -590,6 +590,36 @@ export const adminApi = createApi({
       ],
     }),
 
+    convertCompanyCustomerToSupplier: builder.mutation<
+      { message: string; userId: string; isCustomer: boolean },
+      string
+    >({
+      query: (userId) => ({
+        url: `/api/admin/users/${userId}/convert-to-supplier`,
+        method: 'POST',
+      }),
+      invalidatesTags: (_r, _e, userId) => [
+        { type: 'Users', id: 'LIST' },
+        { type: 'Users', id: userId },
+        'Dashboard',
+      ],
+    }),
+
+    convertSupplierToCompanyCustomer: builder.mutation<
+      { message: string; userId: string; isCustomer: boolean },
+      string
+    >({
+      query: (userId) => ({
+        url: `/api/admin/users/${userId}/convert-to-company-customer`,
+        method: 'POST',
+      }),
+      invalidatesTags: (_r, _e, userId) => [
+        { type: 'Users', id: 'LIST' },
+        { type: 'Users', id: userId },
+        'Dashboard',
+      ],
+    }),
+
     deleteProduct: builder.mutation<{ message: string }, string>({
       query: (productId) => ({
         url: `/api/admin/products/${productId}`,
@@ -2314,6 +2344,8 @@ export const {
   useRejectCompanyMutation,
   useSetUserActiveMutation,
   useDeleteAdminUserMutation,
+  useConvertCompanyCustomerToSupplierMutation,
+  useConvertSupplierToCompanyCustomerMutation,
   useDeleteProductMutation,
   useGetAdminOrderStatsQuery,
   useGetAdminOrderDetailQuery,

@@ -87,6 +87,62 @@ public class AdminUsersController(IAdminUsersAppService adminUsersAppService) : 
         }
     }
 
+    /// <summary>Convert company-customer (IsCustomer=true) Seller to supplier (IsCustomer=false).</summary>
+    [HttpPost("{userId}/convert-to-supplier")]
+    [RequireAdminPermission(AdminPermissions.UsersManage)]
+    public async Task<IActionResult> ConvertToSupplier(
+        string userId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await adminUsersAppService.ConvertCompanyCustomerToSupplierAsync(
+                userId,
+                cancellationToken);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>Convert supplier (IsCustomer=false) Seller to company customer (IsCustomer=true).</summary>
+    [HttpPost("{userId}/convert-to-company-customer")]
+    [RequireAdminPermission(AdminPermissions.UsersManage)]
+    public async Task<IActionResult> ConvertToCompanyCustomer(
+        string userId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await adminUsersAppService.ConvertSupplierToCompanyCustomerAsync(
+                userId,
+                cancellationToken);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpDelete("{userId}")]
     [RequireAdminPermission(AdminPermissions.UsersManage)]
     public async Task<IActionResult> DeleteUser(string userId, CancellationToken cancellationToken)

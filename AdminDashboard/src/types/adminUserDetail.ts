@@ -83,4 +83,6 @@ export type AdminUserDetail = {
   canApprove: boolean
   canDeactivate: boolean
   canDelete: boolean
+  canConvertToSupplier: boolean
+  canConvertToCompanyCustomer: boolean
 }

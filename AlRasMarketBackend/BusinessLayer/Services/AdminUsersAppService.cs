@@ -368,7 +368,9 @@ public class AdminUsersAppService(
                     (user.RoleId == RoleIds.Seller && !user.IsApproved && user.IsVerified)
                     || !string.IsNullOrWhiteSpace(user.PendingProfileChanges)),
             CanDeactivate = user.RoleId != RoleIds.Admin,
-            CanDelete = user.RoleId != RoleIds.Admin
+            CanDelete = user.RoleId != RoleIds.Admin,
+            CanConvertToSupplier = user.RoleId == RoleIds.Seller && user.IsCustomer == true,
+            CanConvertToCompanyCustomer = user.RoleId == RoleIds.Seller && user.IsCustomer != true
         };
 
         var translations = await contentTranslationService.GetUserTranslationsAsync(
@@ -435,6 +437,80 @@ public class AdminUsersAppService(
             message = isActive ? "User account activated." : "User account deactivated.",
             userId = user.Id,
             isActive = user.IsActive
+        };
+    }
+
+    public async Task<object> ConvertCompanyCustomerToSupplierAsync(
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(userId, out var parsedUserId))
+        {
+            throw new ArgumentException("Invalid user id.");
+        }
+
+        var user = await dbContext.Users
+            .FirstOrDefaultAsync(x => x.Id == parsedUserId, cancellationToken)
+            ?? throw new KeyNotFoundException("User not found.");
+
+        if (user.RoleId != RoleIds.Seller)
+        {
+            throw new InvalidOperationException(
+                "Only company accounts (Seller role) can be converted to supplier.");
+        }
+
+        if (user.IsCustomer != true)
+        {
+            throw new InvalidOperationException(
+                "This account is already a supplier (IsCustomer is not set).");
+        }
+
+        user.IsCustomer = false;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new
+        {
+            message = "Company customer account converted to supplier.",
+            userId = user.Id,
+            isCustomer = false,
+            typeLabelAr = AdminMappings.GetUserTypeLabelAr(user.RoleId, user.IsCustomer)
+        };
+    }
+
+    public async Task<object> ConvertSupplierToCompanyCustomerAsync(
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(userId, out var parsedUserId))
+        {
+            throw new ArgumentException("Invalid user id.");
+        }
+
+        var user = await dbContext.Users
+            .FirstOrDefaultAsync(x => x.Id == parsedUserId, cancellationToken)
+            ?? throw new KeyNotFoundException("User not found.");
+
+        if (user.RoleId != RoleIds.Seller)
+        {
+            throw new InvalidOperationException(
+                "Only company accounts (Seller role) can be converted to company customer.");
+        }
+
+        if (user.IsCustomer == true)
+        {
+            throw new InvalidOperationException(
+                "This account is already a company customer.");
+        }
+
+        user.IsCustomer = true;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new
+        {
+            message = "Supplier account converted to company customer.",
+            userId = user.Id,
+            isCustomer = true,
+            typeLabelAr = AdminMappings.GetUserTypeLabelAr(user.RoleId, user.IsCustomer)
         };
     }
 
