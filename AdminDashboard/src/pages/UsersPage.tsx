@@ -82,7 +82,10 @@ export default function UsersPage() {
     }
   }, [page, pageSize, appliedFilters, profileEditsOnly])
 
-  const { data, error, isLoading, isFetching } = useGetUsersQuery(queryParams)
+  const { data, error, isLoading, isFetching } = useGetUsersQuery(queryParams, {
+    // Pending profile-edits queue must not stick on a stale empty/old cache.
+    refetchOnMountOrArgChange: profileEditsOnly ? true : false,
+  })
   const { showInitialLoader, showBackgroundUpdate } = queryViewState({
     isLoading,
     isFetching,

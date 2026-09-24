@@ -62,7 +62,10 @@ public class ProfileAppService(
         if (!string.IsNullOrWhiteSpace(input.FullName))
         {
             var nextValue = input.FullName.Trim();
-            if (!string.Equals(user.FullName?.Trim(), nextValue, StringComparison.Ordinal))
+            // Mobile header uses company name as fullName for company accounts;
+            // ignore that echoed value so saving profile does not stage a fake owner rename.
+            if (!UserAppDisplayName.IsEchoOfCompanyDisplayName(user, nextValue)
+                && !string.Equals(user.FullName?.Trim(), nextValue, StringComparison.Ordinal))
             {
                 pending.FullName = nextValue;
                 profileDataChanged = true;
@@ -506,7 +509,7 @@ public class ProfileAppService(
         return Task.FromResult<object>(new
         {
             id = user.Id,
-            fullName = user.FullName,
+            fullName = UserAppDisplayName.Resolve(user),
             email = user.Email,
             phoneNumber = user.PhoneNumber,
             landNumber = user.LandNumber,

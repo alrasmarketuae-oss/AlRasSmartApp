@@ -76,7 +76,7 @@ public class LoginService(
             Token = authToken,
             Id = user.Id,
             Email = user.Email,
-            Name = user.FullName,
+            Name = UserAppDisplayName.Resolve(user),
             ImgPath = user.ImgPath,
             CompanyName = user.CompanyName,
             RoleName = _tokenService.GetRoleName(user.RoleId),

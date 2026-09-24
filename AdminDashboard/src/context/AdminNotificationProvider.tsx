@@ -69,7 +69,9 @@ export function AdminNotificationProvider({ children }: { children: ReactNode })
     dispatch(
       adminApi.util.invalidateTags([
         { type: 'Dashboard', id: 'LIVE_COUNTS' },
-        { type: 'Users', id: 'LIST' },
+        // Invalidate all Users queries (list + open detail pages) so pending
+        // company profile edits appear without a manual browser refresh.
+        { type: 'Users' },
         { type: 'Products', id: 'LIST' },
         // Invalidate the whole Orders tag (not just LIST) so an order detail page
         // currently open also refetches on realtime pushes (e.g. status changes).
@@ -88,6 +90,14 @@ export function AdminNotificationProvider({ children }: { children: ReactNode })
     onAdminAlert: (alert) => {
       alertListenersRef.current.forEach((handler) => handler(alert))
       invalidateLists()
+      if (
+        (alert.type === 'profileEdit' || alert.type === 'newUser') &&
+        alert.referenceId
+      ) {
+        dispatch(
+          adminApi.util.invalidateTags([{ type: 'Users', id: alert.referenceId }]),
+        )
+      }
     },
   })
 

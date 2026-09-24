@@ -24,6 +24,9 @@ export default function UserDetailPage() {
 
   const { data: user, error, isLoading } = useGetAdminUserDetailQuery(userId, {
     skip: !userId,
+    // Always fetch fresh detail so pending company profile edits are visible
+    // without requiring a manual page refresh.
+    refetchOnMountOrArgChange: true,
   })
 
   const [approveCompany, { isLoading: isApproving }] = useApproveCompanyMutation()
