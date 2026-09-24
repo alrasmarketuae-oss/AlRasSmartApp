@@ -206,6 +206,8 @@ public sealed partial class AiAssistantMcpToolsService(
                     "(Arabic or English; synonyms like هيل/cardamom). " +
                     "Use when the user wants ads, listings, product cards, or examples of a product — " +
                     "not specifically the cheapest/most expensive. " +
+                    "NEVER use for returns, refunds, money not received after return, order tracking, or Refund ID — " +
+                    "use lookup_refund_by_id / get_my_last_order instead. " +
                     "Returns listing cards the app shows in chat. Compare BOTH wholesale/category and retail channels.",
                 parameters = new
                 {
@@ -429,6 +431,33 @@ public sealed partial class AiAssistantMcpToolsService(
                             description = "Optional numeric order id from My Orders."
                         }
                     },
+                    additionalProperties = false
+                }
+            }
+        },
+        new
+        {
+            type = "function",
+            function = new
+            {
+                name = "lookup_refund_by_id",
+                description =
+                    "Look up THIS USER's refund / استرداد by Stripe refund ID (re_...). " +
+                    "PREFERRED when the user returned a product and money has not arrived, or pastes a refund id. " +
+                    "Ask for Refund ID (not a catalog product search). " +
+                    "Returns order id, amount, status, refundedAtUtc for their account only.",
+                parameters = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        refund_id = new
+                        {
+                            type = "string",
+                            description = "Stripe refund ID, usually starting with re_."
+                        }
+                    },
+                    required = new[] { "refund_id" },
                     additionalProperties = false
                 }
             }
@@ -685,6 +714,8 @@ public sealed partial class AiAssistantMcpToolsService(
                 "get_my_last_order" => await GetMyLastOrderAsync(
                     userId, cancellationToken).ConfigureAwait(false),
                 "explain_my_order_delay" => await ExplainMyOrderDelayAsync(
+                    userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
+                "lookup_refund_by_id" => await LookupRefundByIdAsync(
                     userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
                 "lookup_create_ad_reference" => await LookupCreateAdReferenceAsync(
                     call.ArgumentsJson, cancellationToken).ConfigureAwait(false),

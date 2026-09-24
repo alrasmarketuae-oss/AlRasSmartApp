@@ -1214,6 +1214,22 @@ class MessageLookup extends MessageLookupByLibrary {
     "orderRefundCompleted": MessageLookupByLibrary.simpleMessage(
       "Refund completed",
     ),
+    "orderRefundIdLabel": MessageLookupByLibrary.simpleMessage("Refund ID"),
+    "orderRefundIdCopied": MessageLookupByLibrary.simpleMessage(
+      "Refund ID copied",
+    ),
+    "orderRefundProcessedFromOurSide": MessageLookupByLibrary.simpleMessage(
+      "We have already processed the refund from our side to your original payment method.",
+    ),
+    "orderRefundProcessedOnLabel": MessageLookupByLibrary.simpleMessage(
+      "Processed on",
+    ),
+    "orderRefundAskAiHint": MessageLookupByLibrary.simpleMessage(
+      "Tap to ask Al Ras AI about this refund",
+    ),
+    "orderRefundBankDelayHint": MessageLookupByLibrary.simpleMessage(
+      "Banks usually show the amount within 3–5 business days depending on your bank.",
+    ),
     "orderRefundNotice": MessageLookupByLibrary.simpleMessage(
       "The amount will be refunded to your original payment method within one business day.",
     ),

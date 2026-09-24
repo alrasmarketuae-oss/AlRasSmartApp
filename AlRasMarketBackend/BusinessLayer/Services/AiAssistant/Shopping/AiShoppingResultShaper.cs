@@ -202,7 +202,10 @@ public static class AiShoppingResultShaper
             ["quantity"] = Pick(map, "quantity", "Quantity"),
             ["total"] = Pick(map, "totalPrice", "TotalPrice", "customerTotal"),
             ["currency"] = Pick(map, "currency", "Currency"),
-            ["createdAt"] = Pick(map, "createdAt", "CreatedAt")
+            ["createdAt"] = Pick(map, "createdAt", "CreatedAt"),
+            ["refundId"] = Pick(map, "stripeRefundId", "StripeRefundId", "refundId", "RefundId"),
+            ["isRefunded"] = Pick(map, "isRefunded", "IsRefunded"),
+            ["refundedAtUtc"] = Pick(map, "refundedAtUtc", "RefundedAtUtc")
         };
 
         return JsonSerializer.Serialize(new { ok = true, item = safe }, JsonOptions);

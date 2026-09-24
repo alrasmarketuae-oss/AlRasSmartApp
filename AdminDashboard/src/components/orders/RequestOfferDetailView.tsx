@@ -27,6 +27,7 @@ import ContactSupplierDialog, {
 } from '../shared/ContactSupplierDialog'
 import WhatsAppPhoneLink from '../shared/WhatsAppPhoneLink'
 import ConfirmDialog from '../ui/ConfirmDialog'
+import CompanyAvatar from '../ui/CompanyAvatar'
 import ImageGallery, { type GalleryMediaItem } from '../ui/ImageGallery'
 import { getRtkErrorMessage } from '../../utils/rtkError'
 import OrderStatusHistoryStrip from './OrderStatusHistoryStrip'
@@ -321,7 +322,6 @@ export default function RequestOfferDetailView({
     locale,
   )
 
-  const supplierInitials = (order.supplierName || '—').slice(0, 2).toUpperCase()
   const buyerLabel = order.customerName?.trim() || '—'
   const buyerInitials = buyerLabel.slice(0, 2).toUpperCase()
 
@@ -807,9 +807,13 @@ export default function RequestOfferDetailView({
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-start gap-3">
-                  <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-sm font-bold text-slate-600">
-                    {supplierInitials}
-                  </span>
+                  <CompanyAvatar
+                    path={order.supplierAvatarPath}
+                    name={order.supplierName || '—'}
+                    className="h-14 w-14"
+                    roundedClassName="rounded-2xl"
+                    fallbackClassName="bg-slate-100 text-sm font-bold text-slate-600"
+                  />
                   <div className="min-w-0 text-start">
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="admin-text text-lg font-bold">{order.supplierName}</h2>

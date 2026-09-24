@@ -20,6 +20,7 @@ import {
   InfoFieldIcons,
 } from '../shared/IconInfoField'
 import ConfirmDialog from '../ui/ConfirmDialog'
+import CompanyAvatar from '../ui/CompanyAvatar'
 import CappedText from '../shared/CappedText'
 import CompactMediaStrip from './CompactMediaStrip'
 import ProductDetailsDialog from './ProductDetailsDialog'
@@ -516,7 +517,6 @@ export default function OffersOrderDetailView({
   const returnVideoPaths = returnMediaPaths.filter((p) => /\.(mp4|mov|webm)$/i.test(p))
 
   const customerInitials = (order.customerName || '—').slice(0, 2).toUpperCase()
-  const supplierInitials = (order.supplierName || '—').slice(0, 2).toUpperCase()
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'overview', label: t('orders.tabOverview') },
@@ -1499,9 +1499,12 @@ export default function OffersOrderDetailView({
           <SidebarCard title={t('orders.supplierInfo')} icon={Icons.user}>
             <div className="space-y-3 text-start">
               <div className="flex items-center gap-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">
-                  {supplierInitials}
-                </span>
+                <CompanyAvatar
+                  path={order.supplierAvatarPath}
+                  name={order.supplierName || '—'}
+                  className="h-11 w-11"
+                  fallbackClassName="bg-slate-100 text-xs font-bold text-slate-600"
+                />
                 <p className="admin-text text-sm font-bold">{order.supplierName || '—'}</p>
               </div>
               <p className="flex items-center gap-2 text-sm" dir="ltr">

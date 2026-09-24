@@ -164,6 +164,42 @@ public partial class OrdersAppService
         return dto;
     }
 
+    public async Task<object> GetOrderByRefundIdAsync(
+        string userId,
+        string refundId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(userId, out var parsedUserId))
+        {
+            throw new ArgumentException("Invalid user id.");
+        }
+
+        var normalized = (refundId ?? string.Empty).Trim();
+        if ((normalized.StartsWith('"') && normalized.EndsWith('"'))
+            || (normalized.StartsWith('\'') && normalized.EndsWith('\'')))
+        {
+            normalized = normalized[1..^1].Trim();
+        }
+
+        if (normalized.Length < 6)
+        {
+            throw new ArgumentException("Refund id is required.");
+        }
+
+        var orderId = await orderData.FindOrderIdByStripeRefundIdAsync(
+                parsedUserId,
+                normalized,
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        if (orderId is null or <= 0)
+        {
+            throw new KeyNotFoundException("No refund with this ID was found on your account.");
+        }
+
+        return await GetOrderByIdAsync(userId, orderId.Value, cancellationToken).ConfigureAwait(false);
+    }
+
     public async Task<object> GetOffersForRequestAsync(
         string userId,
         string productId,

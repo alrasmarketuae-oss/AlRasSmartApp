@@ -455,8 +455,14 @@ abstract class AppRoutes {
         builder: (context, state) {
           final extra = state.extra;
           final startVoice = extra is Map && extra['voice'] == true;
+          final initialMessage = extra is Map
+              ? extra['initialMessage']?.toString()
+              : null;
           return AdminAccountPage.wrap(
-            AiAssistantView(startInVoiceCall: startVoice),
+            AiAssistantView(
+              startInVoiceCall: startVoice,
+              initialMessage: initialMessage,
+            ),
           );
         },
       ),

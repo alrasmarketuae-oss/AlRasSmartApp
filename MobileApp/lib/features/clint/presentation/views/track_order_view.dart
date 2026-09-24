@@ -8,6 +8,7 @@ import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_c
 import 'package:alrasmarket/features/clint/presentation/controller/cubit/clint_states.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/search_header.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/track_order_widgets/track_order_customer_service_card.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/track_order_widgets/track_order_refund_id_card.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/track_order_widgets/track_order_status_helper.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/track_order_widgets/track_order_summary_card.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/track_order_widgets/track_order_timeline_card.dart';
@@ -419,8 +420,17 @@ class _TrackOrderViewState extends State<TrackOrderView>
             steps: steps,
             fontFamily: fontFamily,
           ),
+          if (widget.showBuyerActions &&
+              TrackOrderRefundIdCard.shouldShow(displayOrder)) ...[
+            SizedBox(height: 16.h),
+            TrackOrderRefundIdCard(
+              order: displayOrder,
+              fontFamily: fontFamily,
+            ),
+          ],
           if (showOnlineRefundNotice &&
-              displayOrder.statusId != OrderStatusCodes.cancelled) ...[
+              displayOrder.statusId != OrderStatusCodes.cancelled &&
+              !TrackOrderRefundIdCard.shouldShow(displayOrder)) ...[
             SizedBox(height: 16.h),
             _RefundNoticeCard(
               message: s.orderRefundNotice,
@@ -577,6 +587,7 @@ extension on MyOrderModel {
       portId: portId,
       portName: portName,
       refundedAtUtc: refundedAtUtc,
+      stripeRefundId: stripeRefundId,
       isRefunded: isRefunded,
       returnReason: returnReason,
       returnMediaPaths: returnMediaPaths,

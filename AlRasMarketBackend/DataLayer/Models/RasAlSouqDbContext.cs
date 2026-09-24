@@ -558,7 +558,8 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedOnAdd();
             entity.Property(x => x.VideoPath).HasMaxLength(500).IsRequired();
-            entity.Property(x => x.IsMuted).HasDefaultValue(false);
+            // Always persist explicitly — SQL default is unmuted (0); do not rely on DB default alone.
+            entity.Property(x => x.IsMuted).HasDefaultValue(false).ValueGeneratedNever();
             entity.Property(x => x.CreatedAt).HasColumnType("datetime").HasDefaultValueSql("(getutcdate())");
             entity.HasOne(x => x.Product)
                 .WithMany(x => x.ProductVideos)

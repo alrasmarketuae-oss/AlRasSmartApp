@@ -52,6 +52,7 @@ class MyOrderModel {
     required this.portId,
     required this.portName,
     this.refundedAtUtc,
+    this.stripeRefundId,
     this.isRefunded = false,
     this.returnReason,
     this.returnMediaPaths = const [],
@@ -119,6 +120,8 @@ class MyOrderModel {
   final int? portId;
   final String? portName;
   final String? refundedAtUtc;
+  /// Stripe refund id (re_...) when an online refund was issued.
+  final String? stripeRefundId;
   final bool isRefunded;
   final String? returnReason;
   final List<String> returnMediaPaths;
@@ -394,6 +397,14 @@ class MyOrderModel {
       portName: json['portName']?.toString(),
       refundedAtUtc: json['refundedAtUtc']?.toString() ??
           json['RefundedAtUtc']?.toString(),
+      stripeRefundId: () {
+        final raw = json['stripeRefundId']?.toString() ??
+            json['StripeRefundId']?.toString() ??
+            json['refundId']?.toString() ??
+            json['RefundId']?.toString();
+        final trimmed = raw?.trim();
+        return trimmed == null || trimmed.isEmpty ? null : trimmed;
+      }(),
       isRefunded:
           json['isRefunded'] == true || json['IsRefunded'] == true,
       returnReason: json['returnReason']?.toString() ??

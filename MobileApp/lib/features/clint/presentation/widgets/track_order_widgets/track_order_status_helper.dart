@@ -104,6 +104,27 @@ class TrackOrderStatusHelper {
           ),
         );
       }
+      if (approved && isOnlinePayment(order)) {
+        final refunded = order.isRefunded ||
+            (order.stripeRefundId?.trim().isNotEmpty ?? false);
+        steps.add(
+          TrackOrderStepData(
+            title: refunded ? l10n.orderRefundCompleted : l10n.orderRefundPending,
+            state: refunded
+                ? TrackOrderStepState.completed
+                : TrackOrderStepState.inProgress,
+            subtitle: refunded
+                ? (order.stripeRefundId?.trim().isNotEmpty == true
+                    ? '${l10n.orderRefundIdLabel}: ${order.stripeRefundId!.trim()}'
+                    : (_formatRelative(l10n, order.refundedAtUtc ?? '') ??
+                        l10n.orderRefundCompleted))
+                : l10n.orderRefundNotice,
+            date: refunded
+                ? _formatRelative(l10n, order.refundedAtUtc ?? '')
+                : null,
+          ),
+        );
+      }
       return steps;
     }
 

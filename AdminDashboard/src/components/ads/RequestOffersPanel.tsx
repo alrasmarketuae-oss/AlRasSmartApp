@@ -9,6 +9,7 @@ import {
   useRejectRequestOfferMutation,
 } from '../../store'
 import type { AdminOrder } from '../../types/adminOrder'
+import CompanyAvatar from '../ui/CompanyAvatar'
 import { buildListReturnState } from '../../utils/listPageParams'
 import { formatAdAmount } from '../../utils/adsDisplay'
 import { formatRelativeTime } from '../../utils/timeAgo'
@@ -170,7 +171,6 @@ export default function RequestOffersPanel({
                 ? `${offer.supplierUnitPrice.toFixed(2)} ${offer.currency || 'AED'}`
                 : '—')
             const isBest = sortKey === 'bestMatch' && rank === 1
-            const supplierInitials = (offer.supplierName || '—').slice(0, 2).toUpperCase()
 
             return (
               <article
@@ -184,9 +184,13 @@ export default function RequestOffersPanel({
                     <RankBadge rank={rank} />
                     <div className="min-w-0 flex-1 text-start">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs font-bold text-slate-600">
-                          {supplierInitials}
-                        </span>
+                        <CompanyAvatar
+                          path={offer.supplierAvatarPath}
+                          name={offer.supplierName || '—'}
+                          className="h-10 w-10"
+                          roundedClassName="rounded-xl"
+                          fallbackClassName="bg-slate-100 text-xs font-bold text-slate-600"
+                        />
                         <div className="min-w-0">
                           <p className="admin-text truncate text-sm font-bold">
                             {offer.supplierName}

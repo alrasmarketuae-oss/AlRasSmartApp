@@ -1221,6 +1221,22 @@ class MessageLookup extends MessageLookupByLibrary {
     "orderRefundCompleted": MessageLookupByLibrary.simpleMessage(
       "تم استرداد المبلغ",
     ),
+    "orderRefundIdLabel": MessageLookupByLibrary.simpleMessage("رقم الاسترداد"),
+    "orderRefundIdCopied": MessageLookupByLibrary.simpleMessage(
+      "تم نسخ رقم الاسترداد",
+    ),
+    "orderRefundProcessedFromOurSide": MessageLookupByLibrary.simpleMessage(
+      "قمنا بالاسترداد من ناحيتنا إلى نفس طريقة الدفع الأصلية.",
+    ),
+    "orderRefundProcessedOnLabel": MessageLookupByLibrary.simpleMessage(
+      "تم التنفيذ في",
+    ),
+    "orderRefundAskAiHint": MessageLookupByLibrary.simpleMessage(
+      "اضغط للاستفسار من الذكاء الاصطناعي عن هذا الاسترداد",
+    ),
+    "orderRefundBankDelayHint": MessageLookupByLibrary.simpleMessage(
+      "عادة يظهر المبلغ في البنك خلال 3 إلى 5 أيام عمل حسب البنك.",
+    ),
     "orderRefundNotice": MessageLookupByLibrary.simpleMessage(
       "سيتم إعادة المبلغ إلى نفس طريقة الدفع خلال يوم عمل واحد.",
     ),

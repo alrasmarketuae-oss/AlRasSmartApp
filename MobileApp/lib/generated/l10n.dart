@@ -4584,6 +4584,66 @@ class S {
     );
   }
 
+  /// `Refund ID`
+  String get orderRefundIdLabel {
+    return Intl.message(
+      'Refund ID',
+      name: 'orderRefundIdLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Refund ID copied`
+  String get orderRefundIdCopied {
+    return Intl.message(
+      'Refund ID copied',
+      name: 'orderRefundIdCopied',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `We have already processed the refund from our side to your original payment method.`
+  String get orderRefundProcessedFromOurSide {
+    return Intl.message(
+      'We have already processed the refund from our side to your original payment method.',
+      name: 'orderRefundProcessedFromOurSide',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Processed on`
+  String get orderRefundProcessedOnLabel {
+    return Intl.message(
+      'Processed on',
+      name: 'orderRefundProcessedOnLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Tap to ask Al Ras AI about this refund`
+  String get orderRefundAskAiHint {
+    return Intl.message(
+      'Tap to ask Al Ras AI about this refund',
+      name: 'orderRefundAskAiHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Banks usually show the amount within 3–5 business days depending on your bank.`
+  String get orderRefundBankDelayHint {
+    return Intl.message(
+      'Banks usually show the amount within 3–5 business days depending on your bank.',
+      name: 'orderRefundBankDelayHint',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Cancelled`
   String get orderCancelledStatus {
     return Intl.message(

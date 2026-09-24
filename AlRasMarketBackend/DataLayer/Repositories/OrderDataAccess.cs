@@ -288,6 +288,35 @@ public sealed class OrderDataAccess(IRasAlSouqDbContext dbContext) : IOrderDataA
         OrderQueryHelpers.WithDetailDetails(dbContext.Orders)
             .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken);
 
+    public async Task<long?> FindOrderIdByStripeRefundIdAsync(
+        Guid userId,
+        string stripeRefundId,
+        CancellationToken cancellationToken = default)
+    {
+        var direct = await dbContext.Orders.AsNoTracking()
+            .Where(o =>
+                o.StripeRefundId == stripeRefundId
+                && (o.FromUserId == userId || o.ToUserId == userId))
+            .OrderByDescending(o => o.Id)
+            .Select(o => (long?)o.Id)
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+        if (direct is > 0)
+        {
+            return direct;
+        }
+
+        return await (
+                from po in dbContext.PendingOrders.AsNoTracking()
+                join o in dbContext.Orders.AsNoTracking() on po.Id equals o.PendingOrderId
+                where po.StripeRefundId == stripeRefundId
+                      && (o.FromUserId == userId || o.ToUserId == userId)
+                orderby o.Id descending
+                select (long?)o.Id)
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
     public Task<Order?> GetOrderWithProductAsNoTrackingAsync(long orderId, CancellationToken cancellationToken = default) =>
         dbContext.Orders
             .Include(x => x.Product)

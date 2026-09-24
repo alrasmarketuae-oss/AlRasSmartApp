@@ -15,6 +15,7 @@ import CountryFlag from '../shared/CountryFlag'
 import WhatsAppPhoneLink from '../shared/WhatsAppPhoneLink'
 import MailtoEmailLink from '../shared/MailtoEmailLink'
 import AdminImageBlurModal from '../shared/AdminImageBlurModal'
+import CompanyAvatar from '../ui/CompanyAvatar'
 import ImageGallery, { type GalleryMediaItem } from '../ui/ImageGallery'
 import { downloadAsset, filenameFromAssetPath } from '../../utils/downloadAsset'
 import {
@@ -284,7 +285,6 @@ export default function CatalogAdDetailView({
   const wholesaleUnitLabel = product.unitName?.trim() || '—'
   const retailUnitLabel = product.retailUnitName?.trim() || '—'
   const ownerLabel = product.ownerCompanyName?.trim() || product.ownerName || '—'
-  const ownerInitials = ownerLabel.slice(0, 2).toUpperCase()
   const shippingInfo = shippingFromProduct(product)
   const showShippingSection =
     hasInternationalShipping(shippingInfo) || hasDomesticShipping(shippingInfo)
@@ -1094,9 +1094,13 @@ export default function CatalogAdDetailView({
           <SidebarCard title={t('ads.supplierInfo')}>
             <div className="space-y-2 text-start">
               <div className="flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#eff6ff] text-[10px] font-bold text-[#2563eb]">
-                  {ownerInitials}
-                </span>
+                <CompanyAvatar
+                  path={product.ownerImgPath}
+                  name={ownerLabel}
+                  className="h-8 w-8"
+                  roundedClassName="rounded-lg"
+                  fallbackClassName="bg-[#eff6ff] text-[10px] font-bold text-[#2563eb]"
+                />
                 <div className="min-w-0">
                   <p className="admin-text text-[11px] font-bold">{ownerLabel}</p>
                   {product.ownerName && product.ownerCompanyName ? (

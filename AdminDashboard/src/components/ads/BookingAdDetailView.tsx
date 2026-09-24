@@ -7,6 +7,7 @@ import CountryFlag from '../shared/CountryFlag'
 import WhatsAppPhoneLink from '../shared/WhatsAppPhoneLink'
 import MailtoEmailLink from '../shared/MailtoEmailLink'
 import AdminImageBlurModal from '../shared/AdminImageBlurModal'
+import CompanyAvatar from '../ui/CompanyAvatar'
 import ImageGallery, { type GalleryMediaItem } from '../ui/ImageGallery'
 import { downloadAsset, filenameFromAssetPath } from '../../utils/downloadAsset'
 import {
@@ -335,7 +336,6 @@ export default function BookingAdDetailView({
       ? product.categoryName
       : t('ads.allCategories')
   const ownerLabel = product.ownerCompanyName?.trim() || product.ownerName || '—'
-  const ownerInitials = ownerLabel.slice(0, 2).toUpperCase()
   const shipping = shippingFromProduct(product)
   const shippingKind = shippingTypeKey(shipping)
   const specs = useMemo(
@@ -501,12 +501,13 @@ export default function BookingAdDetailView({
       </div>
       <div className="space-y-2 px-3 py-2.5 text-start">
         <div className="flex items-center gap-2.5">
-          <span
-            className="flex h-10 w-10 items-center justify-center rounded-full text-xs font-bold"
-            style={{ backgroundColor: C.blueSoft, color: C.blue }}
-          >
-            {ownerInitials}
-          </span>
+          <CompanyAvatar
+            path={product.ownerImgPath}
+            name={ownerLabel}
+            className="h-10 w-10"
+            fallbackClassName="text-xs font-bold"
+            fallbackStyle={{ backgroundColor: C.blueSoft, color: C.blue }}
+          />
           <p className="line-clamp-2 text-xs font-normal leading-tight" style={{ color: '#64748B' }}>
             {ownerLabel}
           </p>

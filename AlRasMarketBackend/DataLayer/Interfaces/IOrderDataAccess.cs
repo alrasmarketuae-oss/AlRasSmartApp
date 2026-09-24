@@ -70,6 +70,10 @@ public interface IOrderDataAccess
     Task<int> CountOrderImagesAsync(long orderId, CancellationToken cancellationToken = default);
     Task<Order?> GetOrderWithListDetailsAsync(long orderId, CancellationToken cancellationToken = default);
     Task<Order?> GetOrderWithDetailDetailsAsync(long orderId, CancellationToken cancellationToken = default);
+    Task<long?> FindOrderIdByStripeRefundIdAsync(
+        Guid userId,
+        string stripeRefundId,
+        CancellationToken cancellationToken = default);
     Task<Order?> GetOrderWithProductAsNoTrackingAsync(long orderId, CancellationToken cancellationToken = default);
     Task<Cart?> GetCartForCheckoutAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<Cart?> GetCartWithItemsAsync(Guid userId, CancellationToken cancellationToken = default);

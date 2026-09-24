@@ -40,9 +40,15 @@ part 'ai_assistant_view_voice.dart';
 part 'ai_assistant_view_media.dart';
 
 class AiAssistantView extends StatefulWidget {
-  const AiAssistantView({super.key, this.startInVoiceCall = false});
+  const AiAssistantView({
+    super.key,
+    this.startInVoiceCall = false,
+    this.initialMessage,
+  });
 
   final bool startInVoiceCall;
+  /// Optional seed message sent automatically after the hub connects.
+  final String? initialMessage;
 
   @override
   State<AiAssistantView> createState() => _AiAssistantViewState();
@@ -116,7 +122,12 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
       setState(() {
         _messages.add(AiChatMessage(text: s.aiAssistantWelcome, isUser: false));
       });
-      _connectFuture = _connect();
+      _connectFuture = _connect().then((_) async {
+        final seed = widget.initialMessage?.trim();
+        if (!mounted || seed == null || seed.isEmpty) return;
+        _controller.text = seed;
+        await _send();
+      });
     });
   }
 

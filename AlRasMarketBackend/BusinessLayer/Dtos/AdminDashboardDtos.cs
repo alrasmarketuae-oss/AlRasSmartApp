@@ -514,6 +514,8 @@ public class AdminProductListItemDto
     public string UnitName { get; set; } = string.Empty;
     public string OwnerName { get; set; } = string.Empty;
     public string? OwnerCompanyName { get; set; }
+    /// <summary>Owner profile / company logo path (Users.ImgPath).</summary>
+    public string? OwnerImgPath { get; set; }
     public string OwnerEmail { get; set; } = string.Empty;
     public string StatusLabelAr { get; set; } = string.Empty;
     public bool IsApproved { get; set; }

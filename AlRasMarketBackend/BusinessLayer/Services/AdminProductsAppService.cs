@@ -307,6 +307,7 @@ public class AdminProductsAppService(
                 UnitName = x.Unit != null ? x.Unit.UnitNameEn : "—",
                 OwnerName = x.Owner != null ? x.Owner.FullName : "—",
                 OwnerCompanyName = x.Owner != null ? x.Owner.CompanyName : null,
+                OwnerImgPath = x.Owner != null ? x.Owner.ImgPath : null,
                 OwnerEmail = x.Owner != null ? x.Owner.Email : "—",
                 x.Status,
                 x.IsApproved,
@@ -409,6 +410,7 @@ public class AdminProductsAppService(
             UnitName = x.UnitName,
             OwnerName = x.OwnerName,
             OwnerCompanyName = x.OwnerCompanyName,
+            OwnerImgPath = x.OwnerImgPath,
             OwnerEmail = x.OwnerEmail,
             StatusLabelAr = AdminMappings.GetProductStatusLabelAr(x.Status, x.IsApproved),
             IsApproved = x.IsApproved == true,
@@ -788,6 +790,7 @@ public class AdminProductsAppService(
                 x.OwnerId,
                 OwnerName = x.Owner != null ? x.Owner.FullName : "—",
                 OwnerCompanyName = x.Owner != null ? x.Owner.CompanyName : null,
+                OwnerImgPath = x.Owner != null ? x.Owner.ImgPath : null,
                 OwnerEmail = x.Owner != null ? x.Owner.Email : "—",
                 OwnerPhone = x.Owner != null ? x.Owner.PhoneNumber : null,
                 OwnerCity = x.Owner != null
@@ -945,6 +948,7 @@ public class AdminProductsAppService(
             OwnerId = raw.OwnerId,
             OwnerName = raw.OwnerName,
             OwnerCompanyName = raw.OwnerCompanyName,
+            OwnerImgPath = raw.OwnerImgPath,
             OwnerEmail = raw.OwnerEmail,
             OwnerPhone = raw.OwnerPhone,
             OwnerCity = raw.OwnerCity,
@@ -1277,7 +1281,8 @@ public class AdminProductsAppService(
                 new ProductVideo
                 {
                     ProductId = product.ProductId,
-                    VideoPath = path
+                    VideoPath = path,
+                    IsMuted = false
                 },
                 cancellationToken);
         }

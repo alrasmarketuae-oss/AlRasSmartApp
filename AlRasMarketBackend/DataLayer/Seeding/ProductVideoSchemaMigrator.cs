@@ -5,6 +5,7 @@ namespace DataLayer.Seeding;
 
 /// <summary>
 /// Keeps ProductVideos as the source of truth while Products.VideoPath remains a legacy pointer.
+/// New videos default to unmuted (IsMuted = 0).
 /// </summary>
 public static class ProductVideoSchemaMigrator
 {
@@ -29,7 +30,7 @@ public static class ProductVideoSchemaMigrator
                     ProductId UNIQUEIDENTIFIER NOT NULL,
                     VideoPath NVARCHAR(500) NOT NULL,
                     VideoDurationSeconds TINYINT NULL,
-                    IsMuted BIT NOT NULL CONSTRAINT DF_ProductVideos_IsMuted DEFAULT 1,
+                    IsMuted BIT NOT NULL CONSTRAINT DF_ProductVideos_IsMuted DEFAULT 0,
                     CreatedAt DATETIME NOT NULL CONSTRAINT DF_ProductVideos_CreatedAt DEFAULT (GETUTCDATE()),
                     CONSTRAINT FK_ProductVideos_Products FOREIGN KEY (ProductId)
                         REFERENCES dbo.Products(ProductId) ON DELETE CASCADE
@@ -44,9 +45,42 @@ public static class ProductVideoSchemaMigrator
         {
             await SqlSchemaHelper.ExecuteBatchAsync(
                 connection,
-                "ALTER TABLE dbo.ProductVideos ADD IsMuted BIT NOT NULL CONSTRAINT DF_ProductVideos_IsMuted DEFAULT 1;",
+                "ALTER TABLE dbo.ProductVideos ADD IsMuted BIT NOT NULL CONSTRAINT DF_ProductVideos_IsMuted DEFAULT 0;",
                 cancellationToken).ConfigureAwait(false);
         }
+
+        // Existing DBs may still have DF_ProductVideos_IsMuted DEFAULT 1 from the first schema.
+        // Force default to unmuted so new inserts (and EF inserts that omit the column) are audible.
+        await SqlSchemaHelper.ExecuteBatchAsync(
+            connection,
+            """
+            DECLARE @defaultConstraint sysname;
+            SELECT @defaultConstraint = dc.name
+            FROM sys.default_constraints AS dc
+            INNER JOIN sys.columns AS c
+                ON c.object_id = dc.parent_object_id
+               AND c.column_id = dc.parent_column_id
+            WHERE dc.parent_object_id = OBJECT_ID(N'dbo.ProductVideos')
+              AND c.name = N'IsMuted';
+
+            IF @defaultConstraint IS NOT NULL
+                EXEC(N'ALTER TABLE dbo.ProductVideos DROP CONSTRAINT [' + @defaultConstraint + N']');
+
+            IF NOT EXISTS (
+                SELECT 1
+                FROM sys.default_constraints AS dc
+                INNER JOIN sys.columns AS c
+                    ON c.object_id = dc.parent_object_id
+                   AND c.column_id = dc.parent_column_id
+                WHERE dc.parent_object_id = OBJECT_ID(N'dbo.ProductVideos')
+                  AND c.name = N'IsMuted'
+            )
+            BEGIN
+                ALTER TABLE dbo.ProductVideos
+                    ADD CONSTRAINT DF_ProductVideos_IsMuted DEFAULT 0 FOR IsMuted;
+            END
+            """,
+            cancellationToken).ConfigureAwait(false);
 
         var hasLegacyMute = await SqlSchemaHelper.ColumnExistsAsync(
             connection,
@@ -54,7 +88,7 @@ public static class ProductVideoSchemaMigrator
             "IsVideoMuted",
             cancellationToken).ConfigureAwait(false);
 
-        var legacyMuteExpression = hasLegacyMute ? "p.IsVideoMuted" : "CAST(1 AS bit)";
+        var legacyMuteExpression = hasLegacyMute ? "p.IsVideoMuted" : "CAST(0 AS bit)";
         await SqlSchemaHelper.ExecuteBatchAsync(
             connection,
             $"""

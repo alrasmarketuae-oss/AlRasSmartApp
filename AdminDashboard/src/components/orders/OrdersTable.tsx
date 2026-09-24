@@ -4,6 +4,7 @@ import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import { resolveAssetUrl } from '../../lib/assets'
 import type { AdminOrder } from '../../types/adminOrder'
 import BilingualNameLines from '../ui/BilingualNameLines'
+import CompanyAvatar from '../ui/CompanyAvatar'
 import { buildListReturnState } from '../../utils/listPageParams'
 import {
   formatAdAmount,
@@ -230,9 +231,10 @@ export default function OrdersTable({
                   </td>
                   <td className="px-4 py-3.5 text-start sm:px-5">
                     <div className="flex items-center gap-2">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-600">
-                        {(order.supplierName || '—').slice(0, 2).toUpperCase()}
-                      </span>
+                      <CompanyAvatar
+                        path={order.supplierAvatarPath}
+                        name={order.supplierName || '—'}
+                      />
                       <span className="min-w-0">
                         <BilingualNameLines
                           nameEn={order.supplierNameEn}

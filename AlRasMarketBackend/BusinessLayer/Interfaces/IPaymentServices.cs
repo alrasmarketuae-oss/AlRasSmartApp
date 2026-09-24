@@ -50,6 +50,8 @@ public interface IOrdersAppService
         string? search,
         CancellationToken cancellationToken = default);
     Task<object> GetOrderByIdAsync(string userId, long orderId, CancellationToken cancellationToken = default);
+    /// <summary>Buyer/seller party lookup by Stripe refund id (re_...).</summary>
+    Task<object> GetOrderByRefundIdAsync(string userId, string refundId, CancellationToken cancellationToken = default);
     Task<object> GetOffersForRequestAsync(
         string userId,
         string productId,

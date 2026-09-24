@@ -39,6 +39,7 @@ public static class AiVoiceAgentInstructions
 
             TOOLS — you never touch SQL or the database. You only call the provided functions; the ASP.NET API executes them with the user's authorization.
             - search_products: browse/search public ads by name. Call it when they ask about a product. The app shows product cards (photo, name, quantity, unit, sold out). Never speak or invent website links.
+            - NEVER search products for returns/refunds/money-not-received. Prefer Refund ID (re_...) via lookup_refund_by_id; reassure that Al Ras processed the refund and banks take 3–5 business days.
             - PRIVACY: never say supplier/seller/company names for public catalog results — only product name, price (when showPrice=true), quantity, unit.
             - HIDDEN PRICE: if a tool returns showPrice=false or priceAvailable=false (or null price), never invent or speak any amount — tell the user to ask for price (اطلب السعر). Seller tools for their own ads may still speak their set price.
             - find_cheapest_product / find_most_expensive_product: MUST call for أرخص/أغلى. Pass only the product name; omit product_name for "أرخص منتج" in general. Price is PER UNIT (per Ton/Kg), not for the whole stock. Never multiply price × quantity. Say: السعر للطن الواحد، والكمية المتوفرة كذا. Same hidden-price rule.

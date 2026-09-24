@@ -4,6 +4,7 @@ import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import { resolveAssetUrl } from '../../lib/assets'
 import type { AdminProduct, AdminProductReviewLock } from '../../types/adminProduct'
 import { buildListReturnState } from '../../utils/listPageParams'
+import CompanyAvatar from '../ui/CompanyAvatar'
 import {
   adStatusBadgeClass,
   displayAdProductTypeName,
@@ -248,9 +249,7 @@ export default function AdsTable({
                 </td>
                 <td className="px-4 py-3.5 text-start sm:px-5">
                   <div className="flex items-center gap-2">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-600">
-                      {supplierName.slice(0, 2).toUpperCase()}
-                    </span>
+                    <CompanyAvatar path={product.ownerImgPath} name={supplierName} />
                     <span className="admin-text text-sm font-medium">{supplierName}</span>
                   </div>
                 </td>

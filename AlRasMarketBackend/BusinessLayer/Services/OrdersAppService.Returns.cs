@@ -110,7 +110,9 @@ public partial class OrdersAppService
         }
 
         var defaultApproveNote = order.PaymentMethod == (byte)PaymentMethod.Online
-            ? "Return approved. Online refund can be processed from the admin dashboard when ready."
+            ? ProductTypeCodes.IsRetailOrder(order)
+                ? "Return approved. Online refund is being processed; you can ask support or the in-app assistant with your refund ID."
+                : "Return approved. Online refund can be processed from the admin dashboard when ready."
             : "Return approved. This order was cash on delivery — payment was collected on delivery.";
 
         var finalResponse = response.Length >= 2
@@ -135,11 +137,27 @@ public partial class OrdersAppService
 
         await orderData.SaveChangesAsync(cancellationToken);
 
+        string? refundId = null;
+        if (input.Approved
+            && order.PaymentMethod == (byte)PaymentMethod.Online
+            && ProductTypeCodes.IsRetailOrder(order))
+        {
+            refundId = await TryRefundReturnApprovedRetailOrderAsync(order.Id, cancellationToken);
+            if (!string.IsNullOrWhiteSpace(refundId) && response.Length < 2)
+            {
+                var noteWithId =
+                    $"Return approved. Refund ID: {refundId}. Keep this ID to check refund status with support or the in-app assistant.";
+                order.ReturnAdminResponse = noteWithId.Length > 2000 ? noteWithId[..2000] : noteWithId;
+                await orderData.SaveChangesAsync(cancellationToken);
+            }
+        }
+
         var orderForNotify = await orderData.GetOrderWithProductAsNoTrackingAsync(order.Id, cancellationToken)
             ?? order;
 
         if (input.Approved)
         {
+            // Return-approved push already includes Refund ID when auto-refund succeeded.
             await NotifyReturnApprovedAsync(orderForNotify, adminId, cancellationToken);
         }
         else

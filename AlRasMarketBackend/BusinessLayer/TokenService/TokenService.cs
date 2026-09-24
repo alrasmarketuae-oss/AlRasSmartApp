@@ -1,7 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using DataLayer.Models;
 using Microsoft.Extensions.Configuration;
@@ -31,7 +30,7 @@ public class TokenService(IConfiguration configuration) : ITokenService
             new("isRejected", user.IsRejected ? "true" : "false"),
             new("hasPendingProfile", string.IsNullOrWhiteSpace(user.PendingProfileChanges) ? "false" : "true"),
             new("phone", user.PhoneNumber ?? string.Empty),
-            new("fullName", UserAppDisplayName.Resolve(user)),
+            new("fullName", user.FullName),
             new("imgPath", user.ImgPath ?? string.Empty),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };

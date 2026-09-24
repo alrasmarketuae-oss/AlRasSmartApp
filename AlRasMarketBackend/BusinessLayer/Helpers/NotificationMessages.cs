@@ -213,13 +213,24 @@ public static class NotificationMessages
             $"لم تتم الموافقة على طلبك رقم {orderId}. السبب: {reasonA}");
     }
 
-    public static (string Title, string Body) OrderRefundProcessedBuyer(string? language, long orderId) =>
-        Pick(
+    public static (string Title, string Body) OrderRefundProcessedBuyer(
+        string? language,
+        long orderId,
+        string? refundId = null)
+    {
+        var idLineEn = string.IsNullOrWhiteSpace(refundId)
+            ? string.Empty
+            : $" Refund ID: {refundId.Trim()}.";
+        var idLineAr = string.IsNullOrWhiteSpace(refundId)
+            ? string.Empty
+            : $" رقم الاسترداد: {refundId.Trim()}.";
+        return Pick(
             language,
             "Refund processed",
-            $"Your refund for order #{orderId} has been processed to your original payment method.",
+            $"Your refund for order #{orderId} has been processed to your original payment method.{idLineEn} Banks usually show it within 3–5 business days.",
             "تم استرداد المبلغ",
-            $"تم استرداد المبلغ لطلبك رقم {orderId} إلى طريقة الدفع الأصلية.");
+            $"تم استرداد المبلغ لطلبك رقم {orderId} إلى طريقة الدفع الأصلية.{idLineAr} عادة يظهر في البنك خلال 3 إلى 5 أيام عمل.");
+    }
 
     public static (string Title, string Body) OrderReturnRequestedAdmin(string? language, long orderId) =>
         Pick(
@@ -254,13 +265,29 @@ public static class NotificationMessages
             "رد على طلب الاسترجاع",
             $"رد على طلب الاسترجاع للطلب رقم {orderId}: {response}");
 
-    public static (string Title, string Body) OrderReturnApprovedOnlineBuyer(string? language, long orderId) =>
-        Pick(
+    public static (string Title, string Body) OrderReturnApprovedOnlineBuyer(
+        string? language,
+        long orderId,
+        string? refundId = null)
+    {
+        if (!string.IsNullOrWhiteSpace(refundId))
+        {
+            var safeId = refundId.Trim();
+            return Pick(
+                language,
+                "Return approved — refund issued",
+                $"Your return for order #{orderId} was approved and refunded. Refund ID: {safeId}. We processed the refund from our side; banks usually show it within 3–5 business days.",
+                "تمت الموافقة على الاسترجاع وتم الاسترداد",
+                $"تمت الموافقة على استرجاع طلبك رقم {orderId} وتم استرداد المبلغ. رقم الاسترداد: {safeId}. قمنا بالاسترداد من ناحيتنا؛ عادة يظهر في البنك خلال 3 إلى 5 أيام عمل.");
+        }
+
+        return Pick(
             language,
             "Return approved",
-            $"Your return for order #{orderId} was approved and the product is marked as returned. The online refund will be processed by support separately; once issued, funds typically appear within 1–5 business days depending on your bank.",
+            $"Your return for order #{orderId} was approved and the product is marked as returned. The online refund is being processed; once issued, funds typically appear within 3–5 business days depending on your bank.",
             "تمت الموافقة على الاسترجاع",
-            $"تمت الموافقة على استرجاع طلبك رقم {orderId} وتم تسجيل إرجاع المنتج. سيتم استرداد المبلغ الإلكتروني من قبل الدعم لاحقاً؛ وبعد إصدار الاسترداد عادةً يظهر المبلغ خلال 1–5 أيام عمل حسب البنك.");
+            $"تمت الموافقة على استرجاع طلبك رقم {orderId} وتم تسجيل إرجاع المنتج. جاري استرداد المبلغ الإلكتروني؛ وبعد الإصدار عادة يظهر خلال 3 إلى 5 أيام عمل حسب البنك.");
+    }
 
     public static (string Title, string Body) OrderReturnApprovedCodBuyer(string? language, long orderId) =>
         Pick(

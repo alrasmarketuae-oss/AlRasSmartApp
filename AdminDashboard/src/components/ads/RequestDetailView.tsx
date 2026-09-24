@@ -11,6 +11,7 @@ import WhatsAppPhoneLink from '../shared/WhatsAppPhoneLink'
 import MailtoEmailLink from '../shared/MailtoEmailLink'
 import RequestOffersPanel from './RequestOffersPanel'
 import AdminImageBlurModal from '../shared/AdminImageBlurModal'
+import CompanyAvatar from '../ui/CompanyAvatar'
 import ImageGallery, { type GalleryMediaItem } from '../ui/ImageGallery'
 import { downloadAsset, filenameFromAssetPath } from '../../utils/downloadAsset'
 import {
@@ -255,7 +256,6 @@ export default function RequestDetailView({
     ? `${priceLabel} / ${product.unitName}`
     : priceLabel
   const ownerLabel = product.ownerCompanyName?.trim() || product.ownerName || '—'
-  const ownerInitials = ownerLabel.slice(0, 2).toUpperCase()
   const requestRef = shortRequestRef(product.productId)
 
   const galleryImages = useMemo(() => {
@@ -1126,9 +1126,13 @@ export default function RequestDetailView({
           <SidebarCard title={t('reqsOffers.requesterBuyer')}>
             <div className="space-y-4 text-start">
               <div className="flex items-start gap-3">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#eff6ff] text-sm font-bold text-[#2563eb]">
-                  {ownerInitials}
-                </span>
+                <CompanyAvatar
+                  path={product.ownerImgPath}
+                  name={ownerLabel}
+                  className="h-12 w-12"
+                  roundedClassName="rounded-xl"
+                  fallbackClassName="bg-[#eff6ff] text-sm font-bold text-[#2563eb]"
+                />
                 <div className="min-w-0">
                   <p className="admin-text text-sm font-bold">{ownerLabel}</p>
                   {product.isApproved ? (

@@ -172,6 +172,8 @@ type RawProduct = AdminProduct & {
   UnitName?: string
   OwnerName?: string
   OwnerCompanyName?: string | null
+  OwnerImgPath?: string | null
+  ownerImgPath?: string | null
   OwnerEmail?: string
   StatusLabelAr?: string
   IsApproved?: boolean
@@ -305,6 +307,7 @@ export function normalizeProduct(raw: RawProduct): AdminProduct {
     unitName: raw.unitName ?? raw.UnitName ?? '—',
     ownerName: raw.ownerName ?? raw.OwnerName ?? '—',
     ownerCompanyName: raw.ownerCompanyName ?? raw.OwnerCompanyName ?? null,
+    ownerImgPath: raw.ownerImgPath ?? raw.OwnerImgPath ?? null,
     ownerEmail: raw.ownerEmail ?? raw.OwnerEmail ?? '—',
     statusLabelAr: raw.statusLabelAr ?? raw.StatusLabelAr ?? 'قيد المراجعة',
     isApproved: raw.isApproved ?? raw.IsApproved ?? false,

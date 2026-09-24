@@ -1473,6 +1473,24 @@ internal static class AiAssistantKnowledgeSource
             For card payments the amount is refunded through the payment provider, and it may take extra time to appear on your bank statement depending on your bank.
             For cash on delivery, settlement follows the platform process and the Al Ras Smart team.
             """);
+
+        Add(chunks, "refund-id-lookup", "الاستعلام عن الاسترداد برقم Refund ID", "ar", All,
+            """
+            عند الموافقة على استرجاع طلب تجزئة (Retail) مدفوع إلكترونياً يُصدر رقم استرداد (Refund ID) يبدأ عادة بـ re_.
+            يمكنك الضغط على رقم الاسترداد في تفاصيل الطلب أو إرساله لمساعد الذكاء الاصطناعي داخل التطبيق.
+            عند الإجابة عن استرداد موجود: طمّن المستخدم أن منصة الراس نفّذت الاسترداد من ناحيتها، واذكر تاريخ التنفيذ إن وُجد،
+            ووضّح أن ظهور المبلغ في البنك عادة يستغرق من 3 إلى 5 أيام عمل حسب البنك.
+            استخدم أداة lookup_refund_by_id كلما أعطى المستخدم رقم الاسترداد.
+            """);
+        Add(chunks, "refund-id-lookup", "Look up a refund by Refund ID", "en", All,
+            """
+            When a retail card-paid return is approved, a Refund ID is issued (usually starting with re_).
+            You can paste that ID to the in-app AI assistant to check refund status, order id, amount, and refunded time.
+            The lookup only works for refunds on your own account.
+            When answering about a found refund: reassure the user that Al Ras has already processed the refund from our side,
+            tell them the refunded date if available, and explain that banks usually show the amount within 3–5 business days.
+            Use the lookup_refund_by_id tool whenever the user provides a Refund ID.
+            """);
     }
 
     // ---------------------------------------------------------------------

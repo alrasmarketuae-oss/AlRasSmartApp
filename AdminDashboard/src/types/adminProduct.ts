@@ -16,6 +16,8 @@ export type AdminProduct = {
   unitName: string
   ownerName: string
   ownerCompanyName: string | null
+  /** Owner company / profile logo (Users.ImgPath). */
+  ownerImgPath: string | null
   ownerEmail: string
   statusLabelAr: string
   isApproved: boolean

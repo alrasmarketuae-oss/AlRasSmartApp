@@ -455,6 +455,14 @@ public sealed class AiAssistantAppService(
             - get_my_purchase_summary: BUYER role — how much THEY spent as a purchaser (اشتريت بكام / طلباتي). Never confuse with sales on ads.
             - get_my_last_order: BUYER role — their latest purchase in My Orders (طلباتي / هاتلي آخر اوردر).
             - explain_my_order_delay: BUYER role — why THEIR purchase may be delayed (آخر اوردر متأخر ليه in طلباتي).
+            - lookup_refund_by_id: look up THIS USER's refund by Stripe refund ID (re_...) when they paste a refund id.
+            CRITICAL returns / refunds / money after return (رجعت منتج، الفلوس موصلتش، استرداد، refund):
+            NEVER call search_products / find_cheapest_product / find_most_expensive_product and NEVER attach product cards.
+            Prefer Refund ID (re_...) over order id: ask «ابعتلي رقم الاسترداد Refund ID اللي ظاهر في تفاصيل الطلب» (or English equivalent).
+            If they already gave re_..., call lookup_refund_by_id immediately.
+            If they only have an order number, use get_my_last_order / explain_my_order_delay with that order_id — still no product search.
+            When refund is found: reassure that Al Ras already processed the refund from our side, mention refunded date if present, and say banks usually show the amount in 3–5 business days.
+            Do not invent refund status. Do not search the catalog because the sentence contains the word «منتج».
             - lookup_create_ad_reference: resolve units, product_types, categories, Local/Reexport, countries, ports while collecting ad fields.
             - list_my_addresses: list saved delivery addresses (address_id + label). Use before create_request_ad for company_customer.
             - create_request_ad: create ONE Inquiry ad (supplier OR company_customer). Required: product name, specifications, negotiable, Local/Reexport (محلي / إعادة تصدير), address_id from list_my_addresses (mandatory for company_customer), packaging kg (ALWAYS ask; user may say none/لا). OPTIONAL: target price, quantity, unit, currency — only ask/collect when the user wants them. If target price is provided, also collect currency (USD/AED) and unit. Optional delivery_date and media.
@@ -519,6 +527,7 @@ public sealed class AiAssistantAppService(
             When asked who you are, who made you, who programmed you, who built or designed the apps/platform, or who trained the AI: answer that Al Ras Market company (شركة الراس ماركت) did so. Never name a person (including Nasser / Elbarbary / البربري). Never invent a developer name or private contact. When asked who operates or runs the marketplace commercially, use the operating company from the knowledge context.
             For “من هو [شخص]” / “who is [person]” questions about private individuals: politely say you do not discuss private people, and offer help with Al Ras Market products, ads, or orders instead. Do not search or list products for those questions.
             When the user asks you to explain an app page or how a screen works (e.g. My Orders / طلباتي, Account, Home): explain from knowledge only. Do not search the product catalog or attach product cards unless they explicitly asked to find products.
+            Same rule for return/refund money questions: knowledge + order/refund tools only — never product cards.
             Decline only genuinely unrelated general-knowledge questions (weather, news, sports, politics, coding, other companies), politely, with a suggestion of platform topics you can help with.
             If asked whether the platform is trustworthy, explain concrete safeguards and the intermediary role from context; never promise zero risk or guarantee supplier product quality.
             If the user asks for human support, technical support, support staff, or a phone call — OR if context is insufficient and no tool applies — say you are not certain / a human agent will help, and ask them to leave their name, phone number, and email in the form that appears so support can call them within five minutes. Do NOT only send them to Live Chat for these cases.
@@ -596,22 +605,18 @@ public sealed class AiAssistantAppService(
         AiMcpLoopResult generated,
         CancellationToken cancellationToken)
     {
-        if (generated.Listings is { Count: > 0 })
+        // Returns/refunds/money-after-return must never show catalog cards
+        // (even if the model wrongly called search_products because the user said "منتج").
+        if (IsOrderRefundOrReturnIntent(message) || IsPersonIdentityQuestion(message) || IsAppGuideOrExplainIntent(message))
         {
-            // How-to / page-explain answers must never keep accidental catalog cards.
-            if (IsAppGuideOrExplainIntent(message))
+            return generated with
             {
-                return generated with
-                {
-                    Answer = StripWebLinksFromAnswer(generated.Answer),
-                    Listings = Array.Empty<AiProductListingDto>()
-                };
-            }
-
-            return generated with { Answer = StripWebLinksFromAnswer(generated.Answer) };
+                Answer = StripWebLinksFromAnswer(generated.Answer),
+                Listings = Array.Empty<AiProductListingDto>()
+            };
         }
 
-        if (IsPersonIdentityQuestion(message) || IsAppGuideOrExplainIntent(message))
+        if (generated.Listings is { Count: > 0 })
         {
             return generated with { Answer = StripWebLinksFromAnswer(generated.Answer) };
         }
@@ -669,7 +674,9 @@ public sealed class AiAssistantAppService(
         }
 
         var q = visible.Trim().ToLowerInvariant();
-        if (IsPersonIdentityQuestion(visible) || IsAppGuideOrExplainIntent(visible))
+        if (IsPersonIdentityQuestion(visible)
+            || IsAppGuideOrExplainIntent(visible)
+            || IsOrderRefundOrReturnIntent(visible))
         {
             return null;
         }
@@ -747,6 +754,7 @@ public sealed class AiAssistantAppService(
             && !IsCapabilitiesQuestion(maybeProduct)
             && !IsPersonIdentityQuestion(visible)
             && !IsAppGuideOrExplainIntent(visible)
+            && !IsOrderRefundOrReturnIntent(visible)
             && !IsClearlyOutOfScope(maybeProduct)
             && !IsHumanSupportIntent(maybeProduct))
         {
@@ -754,6 +762,69 @@ public sealed class AiAssistantAppService(
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Return / refund / money-not-received after return — never treat as catalog search
+    /// even if the user said «منتج» (returned a product).
+    /// </summary>
+    private static bool IsOrderRefundOrReturnIntent(string message)
+    {
+        var visible = ExtractUserVisibleText(message).Trim();
+        if (string.IsNullOrWhiteSpace(visible))
+        {
+            return false;
+        }
+
+        var q = visible.ToLowerInvariant();
+
+        if (q.Contains("re_", StringComparison.Ordinal)
+            || ContainsAny(
+                q,
+                "refund id",
+                "refundid",
+                "رقم الاسترداد",
+                "رقم الاسترجاع",
+                "رقم الريفند"))
+        {
+            return true;
+        }
+
+        return ContainsAny(
+            q,
+            "رجعت",
+            "رجّعت",
+            "رجعتوا",
+            "استرجاع",
+            "استرداد",
+            "مسترد",
+            "refund",
+            "returned",
+            "ارجاع",
+            "إرجاع",
+            "الفلوس",
+            "موصلتش",
+            "موصلتشلي",
+            "ما وصلتش",
+            "ما وصلش",
+            "مفيش فلوس",
+            "لم تصل",
+            "لم يصل المبلغ",
+            "المبلغ موصلش",
+            "المبلغ ما وصل",
+            "money didn't",
+            "money didnt",
+            "money not",
+            "haven't received",
+            "havent received",
+            "didn't get my money",
+            "didnt get my money",
+            "where is my refund",
+            "وين فلوسي",
+            "فين فلوسي",
+            "فين الفلوس",
+            "وين الفلوس",
+            "فلوسي");
     }
 
     private static int CountWords(string text) =>

@@ -418,6 +418,7 @@ public partial class OrdersAppService
             return;
         }
 
+        var refundId = order.StripeRefundId;
         try
         {
             await SendUserAlertAsync(
@@ -425,7 +426,10 @@ public partial class OrdersAppService
                 fromUserId: order.ToUserId,
                 email: buyer.Email,
                 fcmToken: buyer.FcmToken,
-                messageFactory: lang => NotificationMessages.OrderRefundProcessedBuyer(lang, order.Id),
+                messageFactory: lang => NotificationMessages.OrderRefundProcessedBuyer(
+                    lang,
+                    order.Id,
+                    refundId),
                 preferredLanguage: buyer.PreferredLanguage,
                 type: "order_refund_processed",
                 routeName: "track_order",
@@ -675,6 +679,7 @@ public partial class OrdersAppService
     {
         var productName = order.Product?.NameEn ?? "product";
         var isOnline = order.PaymentMethod == (byte)PaymentMethod.Online;
+        var refundId = order.StripeRefundId;
 
         var buyer = await orderData.GetUserNotifyByIdAsync(order.FromUserId, cancellationToken);
         if (buyer is not null)
@@ -685,7 +690,7 @@ public partial class OrdersAppService
                 email: buyer.Email,
                 fcmToken: buyer.FcmToken,
                 messageFactory: lang => isOnline
-                    ? NotificationMessages.OrderReturnApprovedOnlineBuyer(lang, order.Id)
+                    ? NotificationMessages.OrderReturnApprovedOnlineBuyer(lang, order.Id, refundId)
                     : NotificationMessages.OrderReturnApprovedCodBuyer(lang, order.Id),
                 preferredLanguage: buyer.PreferredLanguage,
                 type: "order_return_approved",

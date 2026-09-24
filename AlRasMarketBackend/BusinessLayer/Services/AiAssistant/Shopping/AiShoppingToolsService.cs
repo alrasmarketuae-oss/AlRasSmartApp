@@ -27,6 +27,7 @@ public sealed class AiShoppingToolsService(
         "GetProductAlternatives",
         "GetMyOrders",
         "GetOrderDetails",
+        "LookupRefundById",
         "GetCategories",
         "GetOffers"
     };
@@ -171,6 +172,16 @@ public sealed class AiShoppingToolsService(
                     properties = new { orderId = integer },
                     required = new[] { "orderId" }
                 },
+                async: true),
+            Fn(
+                "LookupRefundById",
+                "Look up the signed-in user's refund by Stripe refund ID (re_...).",
+                new
+                {
+                    type = "object",
+                    properties = new { refundId = str },
+                    required = new[] { "refundId" }
+                },
                 async: true)
         ];
     }
@@ -253,6 +264,7 @@ public sealed class AiShoppingToolsService(
             "RemoveFromCart" => await RemoveFromCartAsync(userId, args, cancellationToken).ConfigureAwait(false),
             "GetMyOrders" => await GetMyOrdersAsync(userId, args, cancellationToken).ConfigureAwait(false),
             "GetOrderDetails" => await GetOrderDetailsAsync(userId, args, cancellationToken).ConfigureAwait(false),
+            "LookupRefundById" => await LookupRefundByIdAsync(userId, args, cancellationToken).ConfigureAwait(false),
             _ => """{"ok":false,"error":"unknown_tool"}"""
         };
 
@@ -456,6 +468,35 @@ public sealed class AiShoppingToolsService(
 
         var raw = await ordersAppService.GetOrderByIdAsync(userId.ToString("D"), orderId, ct).ConfigureAwait(false);
         return AiShoppingResultShaper.ShapeOrderDetail(raw, _options.MaxTextFieldChars);
+    }
+
+    private async Task<string> LookupRefundByIdAsync(Guid userId, JsonElement args, CancellationToken ct)
+    {
+        var refundId = args.TryGetProperty("refundId", out var idEl)
+            ? idEl.GetString()
+            : null;
+        if (string.IsNullOrWhiteSpace(refundId)
+            && args.TryGetProperty("refund_id", out var snakeEl))
+        {
+            refundId = snakeEl.GetString();
+        }
+
+        if (string.IsNullOrWhiteSpace(refundId))
+        {
+            return """{"ok":false,"error":"invalid_refundId"}""";
+        }
+
+        try
+        {
+            var raw = await ordersAppService
+                .GetOrderByRefundIdAsync(userId.ToString("D"), refundId, ct)
+                .ConfigureAwait(false);
+            return AiShoppingResultShaper.ShapeOrderDetail(raw, _options.MaxTextFieldChars);
+        }
+        catch (KeyNotFoundException)
+        {
+            return """{"ok":true,"found":false,"error":"refund_not_found"}""";
+        }
     }
 
     private static string BuildIdempotencyKey(

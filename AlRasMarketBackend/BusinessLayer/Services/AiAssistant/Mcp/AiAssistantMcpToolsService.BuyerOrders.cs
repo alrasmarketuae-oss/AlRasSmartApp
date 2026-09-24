@@ -280,6 +280,8 @@ public sealed partial class AiAssistantMcpToolsService
                 o.CustomStatusNameEn,
                 o.CustomStatusNameAr,
                 o.Notes,
+                o.StripeRefundId,
+                o.RefundedAtUtc,
                 ProductCode = p != null ? p.ProductCode : null,
                 RetailCode = p != null ? p.RetailCode : null,
                 NameEn = p != null ? p.NameEn : null,
@@ -361,9 +363,13 @@ public sealed partial class AiAssistantMcpToolsService
             OrderStatusCodes.ReturnRequested =>
                 "Buyer return request is under review.",
             OrderStatusCodes.ReturnApproved =>
-                "Return was approved.",
+                string.IsNullOrWhiteSpace(row.StripeRefundId)
+                    ? "Return was approved; refund may still be processing."
+                    : "Return was approved and a refund was issued.",
             _ => "Status is in progress on the platform workflow."
         };
+
+        var isRefunded = row.RefundedAtUtc.HasValue || !string.IsNullOrWhiteSpace(row.StripeRefundId);
 
         return new
         {
@@ -391,6 +397,11 @@ public sealed partial class AiAssistantMcpToolsService
             deliveryCityName = row.DeliveryCityName,
             deliveryAddressLine = row.DeliveryAddressLine,
             notes = row.Notes,
+            refundId = row.StripeRefundId,
+            refundedAtUtc = row.RefundedAtUtc.HasValue
+                ? DateTime.SpecifyKind(row.RefundedAtUtc.Value, DateTimeKind.Utc)
+                : (DateTime?)null,
+            isRefunded,
             createdAtUtc = DateTime.SpecifyKind(row.CreatedAt, DateTimeKind.Utc),
             recentStatusHistory = history,
             delayAnalysis = new
@@ -408,5 +419,165 @@ public sealed partial class AiAssistantMcpToolsService
                             : $"The order is still in progress at \"{statusEn}\". {stageHint}"
             }
         };
+    }
+
+    private async Task<string> LookupRefundByIdAsync(
+        Guid? userId,
+        string argumentsJson,
+        CancellationToken cancellationToken)
+    {
+        if (!userId.HasValue)
+        {
+            return Json(new { ok = false, error = "Sign in to look up a refund." });
+        }
+
+        using var args = System.Text.Json.JsonDocument.Parse(
+            string.IsNullOrWhiteSpace(argumentsJson) ? "{}" : argumentsJson);
+        var raw = GetString(args.RootElement, "refund_id")
+                  ?? GetString(args.RootElement, "refundId");
+        var refundId = NormalizeRefundId(raw);
+        if (refundId.Length < 6)
+        {
+            return Json(new
+            {
+                ok = false,
+                error = "refund_id_required",
+                message = "Provide a Stripe refund ID (usually starts with re_)."
+            });
+        }
+
+        var uid = userId.Value;
+        var row = await (
+                from o in dbContext.Orders.AsNoTracking()
+                join p in dbContext.Products.AsNoTracking() on o.ProductId equals p.ProductId into pj
+                from p in pj.DefaultIfEmpty()
+                join t in dbContext.ContentTranslations.AsNoTracking()
+                        .Where(x =>
+                            x.Scope == ContentTranslationScopes.Product &&
+                            x.Field == ContentTranslationFields.Name)
+                    on p.ProductId equals t.ProductId into tj
+                from t in tj.DefaultIfEmpty()
+                where o.StripeRefundId == refundId
+                      && (o.FromUserId == uid || o.ToUserId == uid)
+                select new
+                {
+                    o.Id,
+                    o.StatusId,
+                    o.StripeRefundId,
+                    o.RefundedAtUtc,
+                    o.TotalPrice,
+                    o.VatAed,
+                    o.ShippingCostAed,
+                    o.PaymentMethod,
+                    o.IsRetailPurchase,
+                    o.CreatedAt,
+                    o.CustomStatusNameEn,
+                    o.CustomStatusNameAr,
+                    NameEn = p != null ? p.NameEn : null,
+                    NameAr = t != null ? t.TextAr : null,
+                    IsBuyer = o.FromUserId == uid
+                })
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        if (row is null)
+        {
+            // Also match PendingOrder-level refund id (cart checkout group).
+            var viaPending = await (
+                    from po in dbContext.PendingOrders.AsNoTracking()
+                    join o in dbContext.Orders.AsNoTracking() on po.Id equals o.PendingOrderId
+                    where po.StripeRefundId == refundId
+                          && (o.FromUserId == uid || o.ToUserId == uid)
+                    orderby o.Id
+                    select o.Id)
+                .FirstOrDefaultAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            if (viaPending > 0)
+            {
+                var snapshot = await LoadOrderSnapshotAsync(
+                        uid,
+                        viaPending,
+                        asSeller: false,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+                if (snapshot is not null)
+                {
+                    return Json(new
+                    {
+                        ok = true,
+                        found = true,
+                        refundId,
+                        order = snapshot,
+                        instruction =
+                            "Summarize this refund for the signed-in user: refundId, orderId, amount, status, refundedAtUtc. " +
+                            "Say funds return to the original payment method; bank posting may take extra days."
+                    });
+                }
+            }
+
+            return Json(new
+            {
+                ok = true,
+                found = false,
+                refundId,
+                message = "No refund with this ID was found on your account."
+            });
+        }
+
+        var statusEn = !string.IsNullOrWhiteSpace(row.CustomStatusNameEn)
+            ? row.CustomStatusNameEn
+            : OrderStatusCodes.GetNameEn(row.StatusId);
+        var statusAr = !string.IsNullOrWhiteSpace(row.CustomStatusNameAr)
+            ? row.CustomStatusNameAr
+            : OrderStatusCodes.GetNameAr(row.StatusId);
+
+        return Json(new
+        {
+            ok = true,
+            found = true,
+            refundId = row.StripeRefundId,
+            order = new
+            {
+                perspective = row.IsBuyer ? "as_buyer" : "as_seller",
+                orderId = row.Id,
+                productNameEn = row.NameEn,
+                productNameAr = row.NameAr,
+                estimatedChargedTotal = row.TotalPrice + row.VatAed + row.ShippingCostAed,
+                currency = "AED",
+                statusId = row.StatusId,
+                statusEn,
+                statusAr,
+                paymentMethod = OrderResponseMapper.GetPaymentMethodName(row.PaymentMethod),
+                isRetailPurchase = row.IsRetailPurchase,
+                refundId = row.StripeRefundId,
+                refundedAtUtc = row.RefundedAtUtc.HasValue
+                    ? DateTime.SpecifyKind(row.RefundedAtUtc.Value, DateTimeKind.Utc)
+                    : (DateTime?)null,
+                isRefunded = true,
+                createdAtUtc = DateTime.SpecifyKind(row.CreatedAt, DateTimeKind.Utc)
+            },
+            instruction =
+                "Summarize this refund for the signed-in user: refundId, orderId, product, amount, order status, refundedAtUtc. " +
+                "Do not invent bank clearing times beyond: original payment method, usually within one business day on our side, bank may take longer."
+        });
+    }
+
+    private static string NormalizeRefundId(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return string.Empty;
+        }
+
+        var value = raw.Trim();
+        // Strip accidental wrappers users paste from emails/SMS.
+        if ((value.StartsWith('"') && value.EndsWith('"'))
+            || (value.StartsWith('\'') && value.EndsWith('\'')))
+        {
+            value = value[1..^1].Trim();
+        }
+
+        return value;
     }
 }

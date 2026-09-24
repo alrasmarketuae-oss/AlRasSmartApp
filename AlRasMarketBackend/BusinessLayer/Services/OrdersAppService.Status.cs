@@ -412,6 +412,30 @@ public partial class OrdersAppService
         }
     }
 
+    /// <summary>
+    /// Retail + online return approval: create Stripe refund immediately so StripeRefundId
+    /// is available for the buyer and the in-app AI assistant.
+    /// </summary>
+    private async Task<string?> TryRefundReturnApprovedRetailOrderAsync(
+        long orderId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var payments = serviceProvider.GetRequiredService<IPaymentsAppService>();
+            var result = await payments.RefundCancelledOrderAsync(orderId, cancellationToken);
+            return string.IsNullOrWhiteSpace(result.RefundId) ? null : result.RefundId.Trim();
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex,
+                "Auto-refund failed for return-approved retail order {OrderId}. Manual refund may be required.",
+                orderId);
+            return null;
+        }
+    }
+
     private sealed record OrderStatusRevertSnapshot(
         byte StatusId,
         bool IsApproved,

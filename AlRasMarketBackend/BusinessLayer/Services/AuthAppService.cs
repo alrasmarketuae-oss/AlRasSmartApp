@@ -82,11 +82,19 @@ public class AuthAppService(
             allowReplacingRejectedCompanyRegistration: true,
             cancellationToken);
 
+        // Supplier / company-customer: show company name as the account display name.
+        var companyName = string.IsNullOrWhiteSpace(input.CompanyName)
+            ? null
+            : input.CompanyName.Trim();
+        var displayName = !string.IsNullOrWhiteSpace(companyName)
+            ? companyName
+            : (input.FullName?.Trim() ?? string.Empty);
+
         var user = new User
         {
             Id = Guid.NewGuid(),
-            FullName = input.FullName,
-            CompanyName = input.CompanyName,
+            FullName = displayName,
+            CompanyName = companyName,
             Email = email,
             HashedPassword = passwordHasher.HashPassword(input.Password),
             RoleId = 2,
@@ -200,11 +208,6 @@ public class AuthAppService(
             throw new ArgumentException("Company name is required.");
         }
 
-        if (string.IsNullOrWhiteSpace(input.FullName))
-        {
-            throw new ArgumentException("Owner name is required.");
-        }
-
         if (string.IsNullOrWhiteSpace(input.PhoneNumber))
         {
             throw new ArgumentException("Phone number is required.");
@@ -217,12 +220,12 @@ public class AuthAppService(
             allowReplacingRejectedCompanyRegistration: true,
             cancellationToken);
 
+        // Shipping company: FullName mirrors CompanyName for app display.
         var companyName = input.CompanyName.Trim();
-        var ownerName = input.FullName.Trim();
         var user = new User
         {
             Id = Guid.NewGuid(),
-            FullName = ownerName,
+            FullName = companyName,
             CompanyName = companyName,
             Email = email,
             HashedPassword = passwordHasher.HashPassword(input.Password),
@@ -363,7 +366,7 @@ public class AuthAppService(
                 message = "Company account is active.",
                 Token = tokenService.CreateToken(user),
                 Email = user.Email,
-                Name = UserAppDisplayName.Resolve(user),
+                Name = user.FullName,
                 ImgPath = user.ImgPath,
                 CompanyName = user.CompanyName,
                 RoleName = tokenService.GetRoleName(user.RoleId),
@@ -443,7 +446,7 @@ public class AuthAppService(
             exists = true,
             email = user.Email,
             id = user.Id,
-            name = UserAppDisplayName.Resolve(user),
+            name = user.FullName,
             phone = user.PhoneNumber,
             roleName = tokenService.GetRoleName(user.RoleId),
             isCompanyAccount = isSellerAccount,
@@ -536,7 +539,7 @@ public class AuthAppService(
                 Token = (string?)null,
                 Id = user.Id,
                 Email = user.Email,
-                Name = UserAppDisplayName.Resolve(user),
+                Name = user.FullName,
                 ImgPath = user.ImgPath,
                 CompanyName = user.CompanyName,
                 RoleName = tokenService.GetRoleName(user.RoleId),
@@ -566,7 +569,7 @@ public class AuthAppService(
             Token = tokenService.CreateToken(user),
             Id = user.Id,
             Email = user.Email,
-            Name = UserAppDisplayName.Resolve(user),
+            Name = user.FullName,
             ImgPath = user.ImgPath,
             CompanyName = user.CompanyName,
             RoleName = tokenService.GetRoleName(user.RoleId),
