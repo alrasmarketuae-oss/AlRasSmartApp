@@ -271,18 +271,20 @@ class _ProductCardMarketplaceLayoutState
       unitName: widget.product.unitName,
       s: s,
     );
+    final preferRetail = widget.preferRetailChannel;
     final priceTypeLabel = BookingPriceTypeLabel.appliesTo(widget.product)
         ? BookingPriceTypeLabel.fromProduct(widget.product)
         : ProductPriceTypeLabel.fromProduct(
             widget.product,
             isAr: isAr,
           );
-    final showPriceType = (BookingPriceTypeLabel.appliesTo(widget.product) &&
-            priceTypeLabel.isNotEmpty) ||
-        (ProductPriceTypeLabel.appliesTo(widget.product) &&
-            priceTypeLabel.isNotEmpty);
+    // Local / Rexport (and booking FOB/CNF/CIF) belong to wholesale channels only.
+    final showPriceType = !preferRetail &&
+        ((BookingPriceTypeLabel.appliesTo(widget.product) &&
+                priceTypeLabel.isNotEmpty) ||
+            (ProductPriceTypeLabel.appliesTo(widget.product) &&
+                priceTypeLabel.isNotEmpty));
 
-    final preferRetail = widget.preferRetailChannel;
     final discount = widget.product.discountPercentValue;
     final showDeal = _offerMode &&
         _dealActive &&

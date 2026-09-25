@@ -203,9 +203,10 @@ class ProductDetailFactsCard extends StatelessWidget {
       );
     }
 
-    if (ProductPriceTypeLabel.appliesTo(product) ||
-        mode == ProductDetailFactsMode.offer ||
-        mode == ProductDetailFactsMode.request) {
+    if (mode != ProductDetailFactsMode.retail &&
+        (ProductPriceTypeLabel.appliesTo(product) ||
+            mode == ProductDetailFactsMode.offer ||
+            mode == ProductDetailFactsMode.request)) {
       final priceType = ProductPriceTypeLabel.fromProduct(product, isAr: isAr);
       addRow(
         label: s.requestFulfillment,
