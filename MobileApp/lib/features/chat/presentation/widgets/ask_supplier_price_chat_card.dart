@@ -556,14 +556,6 @@ class _AskSupplierPriceChatCardState extends State<AskSupplierPriceChatCard> {
                 color: titleColor,
               ),
             ),
-            Text(
-              s.askSupplierPriceBeforeCommission,
-              style: TextStyle(
-                fontFamily: fontFamily,
-                fontSize: 10.sp,
-                color: mutedColor,
-              ),
-            ),
           ],
         ],
       ),
