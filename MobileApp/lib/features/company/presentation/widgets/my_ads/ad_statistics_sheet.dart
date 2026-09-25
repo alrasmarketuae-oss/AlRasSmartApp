@@ -53,7 +53,7 @@ class _AdStatisticsSheetState extends State<_AdStatisticsSheet> {
   Widget build(BuildContext context) {
     final s = S.of(context);
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
-    final fontFamily = AppFonts.fontFamily(context);
+    final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
     final title = widget.product.localeDisplayName.capitalizeFirst();
 
     return Container(
