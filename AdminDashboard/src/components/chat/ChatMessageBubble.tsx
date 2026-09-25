@@ -19,6 +19,7 @@ const ASK_FOR_PRICE_MARKER = /ASK_FOR_PRICE_PRODUCT:\s*([0-9a-fA-F-]{36})/i
 const PRODUCT_ID_LINE = /(?:^|\n)\s*Product ID:\s*([0-9a-fA-F-]{36})/i
 const ANY_UUID = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/
 const IMAGE_LINE = /(?:^|\n)\s*Image:\s*(.+)(?:\n|$)/i
+const VIDEO_LINE = /(?:^|\n)\s*Video:\s*(.+)(?:\n|$)/i
 const PRODUCT_NAME_LINE =
   /(?:^|\n)\s*(?:Product Name|اسم المنتج|اسم الإعلان)\s*[:：]\s*(.+)(?:\n|$)/i
 const PRODUCT_CODE_LINE = /(?:^|\n)\s*(?:Product Code|كود المنتج)\s*[:：]\s*(.+)(?:\n|$)/i
@@ -29,6 +30,18 @@ const CUSTOMER_PRICE_LINE =
   /(?:^|\n)\s*(?:Customer Price|سعر العميل)\s*[:：]\s*(.+)(?:\n|$)/i
 const ASK_FOR_PRICE_HINT = /ask\s*for\s*price|طلب\s*سعر|اطلب\s*السعر|اسأل\s*عن\s*السعر/i
 
+function looksLikeVideoPath(path: string | null | undefined): boolean {
+  const lower = (path ?? '').trim().toLowerCase()
+  return (
+    lower.endsWith('.mp4') ||
+    lower.endsWith('.mov') ||
+    lower.endsWith('.webm') ||
+    lower.endsWith('.m4v') ||
+    lower.endsWith('.avi') ||
+    lower.endsWith('.mkv')
+  )
+}
+
 export type AskForPriceSupplierTarget = {
   supplierUserId: string
   displayName: string
@@ -38,6 +51,7 @@ export type AskForPriceSupplierTarget = {
 type AskForPricePayload = {
   productId: string
   imagePath: string | null
+  videoPath: string | null
   productName: string | null
   productCode: string | null
   supplierId: string | null
@@ -62,15 +76,23 @@ function parseAskForPriceContent(content: string): AskForPricePayload | null {
   if (!productId) return null
 
   const imageMatch = text.match(IMAGE_LINE)
+  const videoMatch = text.match(VIDEO_LINE)
   const nameMatch = text.match(PRODUCT_NAME_LINE)
   const codeMatch = text.match(PRODUCT_CODE_LINE)
   const supplierMatch = text.match(SUPPLIER_ID_LINE)
   const quantityMatch = text.match(QUANTITY_LINE)
   const customerPriceMatch = text.match(CUSTOMER_PRICE_LINE)
 
+  const rawImage = imageMatch?.[1]?.trim() || null
+  let videoPath = videoMatch?.[1]?.trim() || null
+  if (!videoPath && looksLikeVideoPath(rawImage)) {
+    videoPath = rawImage
+  }
+
   return {
     productId,
-    imagePath: imageMatch?.[1]?.trim() || null,
+    imagePath: rawImage && !looksLikeVideoPath(rawImage) ? rawImage : null,
+    videoPath,
     productName: nameMatch?.[1]?.trim() || null,
     productCode: codeMatch?.[1]?.trim() || null,
     supplierId: supplierMatch?.[1]?.trim() || null,
@@ -280,11 +302,21 @@ function AskForPriceProductCard({
   const imageUrl = useMemo(() => {
     const path =
       product?.primaryImagePath?.trim() ||
-      product?.imagePaths?.[0]?.trim() ||
+      product?.imagePaths?.find((p) => p?.trim() && !looksLikeVideoPath(p))?.trim() ||
       payload.imagePath?.trim() ||
       null
     return path ? resolveAssetUrl(path) : null
   }, [payload.imagePath, product?.imagePaths, product?.primaryImagePath])
+
+  const videoUrl = useMemo(() => {
+    if (imageUrl) return null
+    const path =
+      product?.videoPath?.trim() ||
+      product?.videoPaths?.find((p) => p?.trim())?.trim() ||
+      payload.videoPath?.trim() ||
+      null
+    return path ? resolveAssetUrl(path) : null
+  }, [imageUrl, payload.videoPath, product?.videoPath, product?.videoPaths])
 
   const supplierUserId =
     payload.supplierId?.trim() || product?.ownerId?.trim() || null
@@ -320,6 +352,14 @@ function AskForPriceProductCard({
         >
           {imageUrl ? (
             <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+          ) : videoUrl ? (
+            <video
+              src={videoUrl}
+              muted
+              playsInline
+              preload="metadata"
+              className="h-full w-full object-cover"
+            />
           ) : (
             <div
               className={`flex h-full w-full items-center justify-center text-[11px] font-semibold ${

@@ -15,8 +15,17 @@ class AskForPriceHelper {
       AskForPricePayload.productMarkerPrefix;
 
   static String buildMessage(MyListingProductModel product, S s) {
-    final imagePath =
-        product.images.isNotEmpty ? product.images.first.trim() : '';
+    final imagePath = product.images
+        .map((path) => path.trim())
+        .firstWhere(
+          (path) => path.isNotEmpty && !_looksLikeVideoPath(path),
+          orElse: () => '',
+        );
+    final videoPath = imagePath.isNotEmpty
+        ? ''
+        : (product.allVideoPaths.isNotEmpty
+            ? product.allVideoPaths.first.trim()
+            : '');
 
     // English-stable keys so dashboard/mobile parsers stay locale-independent.
     final buffer = StringBuffer()
@@ -29,6 +38,9 @@ class AskForPriceHelper {
 
     if (imagePath.isNotEmpty) {
       buffer.writeln('Image: $imagePath');
+    }
+    if (videoPath.isNotEmpty) {
+      buffer.writeln('Video: $videoPath');
     }
     if (product.categoryName.trim().isNotEmpty) {
       buffer.writeln('Category: ${product.categoryName}');
@@ -52,6 +64,16 @@ class AskForPriceHelper {
     }
 
     return buffer.toString().trim();
+  }
+
+  static bool _looksLikeVideoPath(String path) {
+    final lower = path.toLowerCase();
+    return lower.endsWith('.mp4') ||
+        lower.endsWith('.mov') ||
+        lower.endsWith('.webm') ||
+        lower.endsWith('.m4v') ||
+        lower.endsWith('.avi') ||
+        lower.endsWith('.mkv');
   }
 
   static Future<void> openSupportChatWithProduct({

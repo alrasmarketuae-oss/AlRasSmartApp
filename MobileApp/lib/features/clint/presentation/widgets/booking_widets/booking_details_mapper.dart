@@ -22,7 +22,11 @@ class BookingDetailsMapper {
   }
 
   static String? videoUrl(MyListingProductModel product) {
-    return _resolveAssetUrl(product.videoPath);
+    for (final path in product.allVideoPaths) {
+      final url = _resolveAssetUrl(path);
+      if (url != null) return url;
+    }
+    return null;
   }
 
   static List<ProductMediaItem> mediaItems(MyListingProductModel product) {

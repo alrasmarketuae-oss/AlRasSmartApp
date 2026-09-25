@@ -5,6 +5,8 @@ import 'package:alrasmarket/core/utils/string_display_format.dart';
 import 'package:alrasmarket/core/widgets/cached_app_image.dart';
 import 'package:alrasmarket/features/chat/presentation/helpers/ask_for_price_payload.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_details_opener.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_media_thumbnail.dart';
+import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_video_thumbnail.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
@@ -83,14 +85,57 @@ class _AskForPriceChatProductCardState extends State<AskForPriceChatProductCard>
     return '$qty $unit'.trim();
   }
 
-  String? get _imageUrl {
-    final fromApi = _product?.primaryImageUrl?.trim();
-    if (fromApi != null && fromApi.isNotEmpty) return fromApi;
-    final path = widget.payload.imagePath?.trim() ?? '';
-    if (path.isEmpty) return null;
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    final resolved = ApiConstants.resolveMediaUrl(path);
+  String? _resolveMediaUrl(String? path) {
+    final raw = path?.trim() ?? '';
+    if (raw.isEmpty) return null;
+    if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+    final resolved = ApiConstants.resolveMediaUrl(raw);
     return resolved.isEmpty ? null : resolved;
+  }
+
+  Widget _buildThumbnail(Color mutedColor) {
+    final product = _product;
+    if (product != null) {
+      return ProductMediaThumbnail(
+        product: product,
+        width: 64.w,
+        height: 64.w,
+        borderRadius: BorderRadius.circular(8.r),
+        openPreviewOnTap: false,
+        showVideoChrome: true,
+        showDefaultPlaceholderImage: false,
+      );
+    }
+
+    final imageUrl = _resolveMediaUrl(widget.payload.imagePath);
+    if (imageUrl != null) {
+      return CachedAppImage(
+        imageUrl: imageUrl,
+        fit: BoxFit.cover,
+        width: 64.w,
+        height: 64.w,
+      );
+    }
+
+    final videoUrl = _resolveMediaUrl(widget.payload.videoPath);
+    if (videoUrl != null) {
+      return ProductVideoThumbnail(
+        videoUrl: videoUrl,
+        width: 64.w,
+        height: 64.w,
+        borderRadius: BorderRadius.circular(8.r),
+        showPlayChrome: true,
+      );
+    }
+
+    return ColoredBox(
+      color: mutedColor.withValues(alpha: 0.15),
+      child: Icon(
+        Icons.image_outlined,
+        color: mutedColor,
+        size: 22.sp,
+      ),
+    );
   }
 
   Future<void> _openAd() async {
@@ -117,7 +162,6 @@ class _AskForPriceChatProductCardState extends State<AskForPriceChatProductCard>
     final mutedColor = isMe
         ? Colors.white.withValues(alpha: 0.7)
         : LightColor.greyTextColor;
-    final imageUrl = _imageUrl;
 
     return Material(
       color: Colors.transparent,
@@ -146,19 +190,7 @@ class _AskForPriceChatProductCardState extends State<AskForPriceChatProductCard>
                       child: SizedBox(
                         width: 64.w,
                         height: 64.w,
-                        child: imageUrl == null
-                            ? ColoredBox(
-                                color: mutedColor.withValues(alpha: 0.15),
-                                child: Icon(
-                                  Icons.image_outlined,
-                                  color: mutedColor,
-                                  size: 22.sp,
-                                ),
-                              )
-                            : CachedAppImage(
-                                imageUrl: imageUrl,
-                                fit: BoxFit.cover,
-                              ),
+                        child: _buildThumbnail(mutedColor),
                       ),
                     ),
                     SizedBox(width: 10.w),

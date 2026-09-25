@@ -3,6 +3,7 @@ class AskForPricePayload {
   const AskForPricePayload({
     required this.productId,
     this.imagePath,
+    this.videoPath,
     this.productName,
     this.productCode,
     this.supplierId,
@@ -12,6 +13,7 @@ class AskForPricePayload {
 
   final String productId;
   final String? imagePath;
+  final String? videoPath;
   final String? productName;
   final String? productCode;
   final String? supplierId;
@@ -30,6 +32,8 @@ class AskForPricePayload {
   );
   static final RegExp _imageLine =
       RegExp(r'(?:^|\n)\s*Image:\s*(.+)(?:\n|$)', caseSensitive: false);
+  static final RegExp _videoLine =
+      RegExp(r'(?:^|\n)\s*Video:\s*(.+)(?:\n|$)', caseSensitive: false);
   static final RegExp _nameLine = RegExp(
     r'(?:^|\n)\s*(?:Product Name|اسم المنتج|اسم الإعلان)\s*[:：]\s*(.+)(?:\n|$)',
     caseSensitive: false,
@@ -68,9 +72,21 @@ class AskForPricePayload {
 
     String? line(RegExp re) => re.firstMatch(text)?.group(1)?.trim();
 
+    final imagePath = line(_imageLine);
+    var videoPath = line(_videoLine);
+    // Older clients may put a video file under Image:.
+    if ((videoPath == null || videoPath.isEmpty) &&
+        imagePath != null &&
+        _looksLikeVideoPath(imagePath)) {
+      videoPath = imagePath;
+    }
+
     return AskForPricePayload(
       productId: productId,
-      imagePath: line(_imageLine),
+      imagePath: (imagePath != null && !_looksLikeVideoPath(imagePath))
+          ? imagePath
+          : null,
+      videoPath: videoPath,
       productName: line(_nameLine),
       productCode: line(_codeLine),
       supplierId: line(_supplierLine),
@@ -80,4 +96,14 @@ class AskForPricePayload {
   }
 
   static bool looksLike(String? content) => tryParse(content) != null;
+
+  static bool _looksLikeVideoPath(String path) {
+    final lower = path.toLowerCase();
+    return lower.endsWith('.mp4') ||
+        lower.endsWith('.mov') ||
+        lower.endsWith('.webm') ||
+        lower.endsWith('.m4v') ||
+        lower.endsWith('.avi') ||
+        lower.endsWith('.mkv');
+  }
 }
