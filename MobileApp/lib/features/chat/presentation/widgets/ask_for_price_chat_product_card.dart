@@ -1,7 +1,6 @@
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/theme/app_fonts.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
-import 'package:alrasmarket/core/utils/product_price_formatter.dart';
 import 'package:alrasmarket/core/utils/string_display_format.dart';
 import 'package:alrasmarket/core/widgets/cached_app_image.dart';
 import 'package:alrasmarket/features/chat/presentation/helpers/ask_for_price_payload.dart';
@@ -12,7 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// Compact product card for Ask-for-price support chat (matches dashboard layout).
-/// Shows customer-facing prices after commissions.
+/// Prices are never shown to the buyer — only product identity + Ask for price.
 class AskForPriceChatProductCard extends StatefulWidget {
   const AskForPriceChatProductCard({
     super.key,
@@ -84,26 +83,6 @@ class _AskForPriceChatProductCardState extends State<AskForPriceChatProductCard>
     return '$qty $unit'.trim();
   }
 
-  /// Always use customer-facing (post-commission) price for this support card.
-  String? get _customerPriceLabel {
-    final product = _product;
-    if (product != null) {
-      final label = ProductPriceFormatter.unitPriceLabel(
-        product,
-        preferRetail: product.preferRetailFromSearchListing,
-        s: S.of(context),
-      ).trim();
-      if (label.isNotEmpty) return label;
-      final fallback = ProductPriceFormatter.priceWithCurrency(
-        product,
-        preferRetail: product.preferRetailFromSearchListing,
-      ).trim();
-      if (fallback.isNotEmpty) return fallback;
-    }
-    final fromPayload = widget.payload.customerPriceLabel?.trim() ?? '';
-    return fromPayload.isEmpty ? null : fromPayload;
-  }
-
   String? get _imageUrl {
     final fromApi = _product?.primaryImageUrl?.trim();
     if (fromApi != null && fromApi.isNotEmpty) return fromApi;
@@ -138,7 +117,6 @@ class _AskForPriceChatProductCardState extends State<AskForPriceChatProductCard>
     final mutedColor = isMe
         ? Colors.white.withValues(alpha: 0.7)
         : LightColor.greyTextColor;
-    final priceColor = isMe ? const Color(0xFF7DFFA8) : const Color(0xFF619D51);
     final imageUrl = _imageUrl;
 
     return Material(
@@ -147,7 +125,7 @@ class _AskForPriceChatProductCardState extends State<AskForPriceChatProductCard>
         onTap: _openAd,
         borderRadius: BorderRadius.circular(12.r),
         child: Container(
-          width: 0.72.sw,
+          width: 260.w,
           decoration: BoxDecoration(
             color: cardBg,
             borderRadius: BorderRadius.circular(12.r),
@@ -156,46 +134,30 @@ class _AskForPriceChatProductCardState extends State<AskForPriceChatProductCard>
           clipBehavior: Clip.antiAlias,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
-                padding: EdgeInsets.all(10.w),
+                padding: EdgeInsets.fromLTRB(10.w, 10.h, 10.w, 8.h),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(10.r),
+                      borderRadius: BorderRadius.circular(8.r),
                       child: SizedBox(
-                        width: 88.w,
-                        height: 88.w,
+                        width: 64.w,
+                        height: 64.w,
                         child: imageUrl == null
                             ? ColoredBox(
-                                color: isMe
-                                    ? Colors.white.withValues(alpha: 0.2)
-                                    : const Color(0xFFF2F4F7),
-                                child: Center(
-                                  child: _loading
-                                      ? SizedBox(
-                                          width: 18.w,
-                                          height: 18.w,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: isMe
-                                                ? Colors.white
-                                                : LightColor.defaultColor,
-                                          ),
-                                        )
-                                      : Icon(
-                                          Icons.image_not_supported_outlined,
-                                          color: mutedColor,
-                                          size: 22.sp,
-                                        ),
+                                color: mutedColor.withValues(alpha: 0.15),
+                                child: Icon(
+                                  Icons.image_outlined,
+                                  color: mutedColor,
+                                  size: 22.sp,
                                 ),
                               )
                             : CachedAppImage(
                                 imageUrl: imageUrl,
                                 fit: BoxFit.cover,
-                                width: 88.w,
-                                height: 88.w,
                               ),
                       ),
                     ),
@@ -206,37 +168,30 @@ class _AskForPriceChatProductCardState extends State<AskForPriceChatProductCard>
                         children: [
                           Text(
                             s.askForPriceCardTitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontFamily: fontFamily,
-                              fontSize: 10.sp,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.4,
-                              color: isMe
-                                  ? Colors.white.withValues(alpha: 0.75)
-                                  : LightColor.defaultColor,
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w700,
+                              color: mutedColor,
                             ),
                           ),
                           SizedBox(height: 2.h),
                           Text(
-                            _loading &&
-                                    (widget.payload.productName
-                                            ?.trim()
-                                            .isEmpty ??
-                                        true)
-                                ? s.askForPriceCardLoading
-                                : _title,
+                            _title,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontFamily: fontFamily,
                               fontSize: 13.sp,
                               fontWeight: FontWeight.w700,
-                              height: 1.25,
                               color: titleColor,
+                              height: 1.25,
                             ),
                           ),
                           if (_quantityLabel != null) ...[
-                            SizedBox(height: 2.h),
+                            SizedBox(height: 4.h),
                             Text(
                               _quantityLabel!,
                               maxLines: 1,
@@ -262,38 +217,25 @@ class _AskForPriceChatProductCardState extends State<AskForPriceChatProductCard>
                             ),
                           ],
                           SizedBox(height: 6.h),
-                          if (_customerPriceLabel != null)
-                            Text.rich(
-                              TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: '${s.askForPriceCustomerPrice} ',
-                                    style: TextStyle(
-                                      fontFamily: fontFamily,
-                                      fontSize: 10.sp,
-                                      fontWeight: FontWeight.w600,
-                                      color: mutedColor,
-                                    ),
-                                  ),
-                                  TextSpan(
-                                    text: _customerPriceLabel!,
-                                    style: TextStyle(
-                                      fontFamily: fontFamily,
-                                      fontSize: 13.sp,
-                                      fontWeight: FontWeight.w800,
-                                      color: priceColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          else if (_loading)
+                          if (_loading)
                             Text(
                               s.askForPriceCardLoading,
                               style: TextStyle(
                                 fontFamily: fontFamily,
                                 fontSize: 11.sp,
                                 color: mutedColor,
+                              ),
+                            )
+                          else
+                            Text(
+                              s.askForPrice,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: fontFamily,
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w800,
+                                color: titleColor,
                               ),
                             ),
                         ],

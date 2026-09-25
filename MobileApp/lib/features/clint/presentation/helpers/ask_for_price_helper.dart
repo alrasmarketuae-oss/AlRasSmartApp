@@ -1,6 +1,5 @@
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
-import 'package:alrasmarket/core/utils/product_price_formatter.dart';
 import 'package:alrasmarket/features/chat/presentation/helpers/ask_for_price_payload.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
 import 'package:alrasmarket/generated/l10n.dart';
@@ -43,15 +42,7 @@ class AskForPriceHelper {
       );
     }
 
-    // Customer-facing price after commissions (same numbers the client catalog shows).
-    final customerPrice = ProductPriceFormatter.unitPriceLabel(
-      product,
-      preferRetail: product.preferRetailFromSearchListing,
-      s: s,
-    ).trim();
-    if (customerPrice.isNotEmpty) {
-      buffer.writeln('Customer Price: $customerPrice');
-    }
+    // Never embed catalog prices — Ask for price means the buyer must not see amounts.
 
     if (product.description.trim().isNotEmpty) {
       buffer.writeln('Description: ${product.description}');

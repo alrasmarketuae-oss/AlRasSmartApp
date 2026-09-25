@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:alrasmarket/core/utils/product_grid_layout.dart';
-import 'package:alrasmarket/core/utils/product_price_formatter.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/offer_product_card.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product _card.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
@@ -48,10 +47,7 @@ class AiProductListings extends StatelessWidget {
               showPriceRaw.toString().trim().toLowerCase() == 'true' ||
               showPriceRaw.toString().trim() == '1';
       map['showPrice'] = showPrice;
-      if (ProductPriceFormatter.companyCustomerSeesHiddenPrices) {
-        // Company buyers always see post-commission prices.
-        map['showPrice'] = true;
-      } else if (!showPrice) {
+      if (!showPrice) {
         map['price'] = null;
         map['displayPrice'] = null;
         map['usdPrice'] = null;

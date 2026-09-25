@@ -9,21 +9,15 @@ import 'package:alrasmarket/generated/l10n.dart';
 class ProductPriceFormatter {
   static bool get canShowPrices => AuthService.instance.isAuthenticated;
 
-  /// Company buyers always see the post-commission catalog price, even when
-  /// the seller hid the public price (Ask for price).
-  static bool get companyCustomerSeesHiddenPrices =>
-      AuthService.instance.isCompanyCustomerAccount;
-
   /// When [preferRetail] and the product has retail pricing, the wholesale
   /// `showPrice` / ask-for-price flag is ignored so retail stays visible.
-  /// Company-customer accounts also see wholesale prices when `showPrice` is false.
+  /// Ask-for-price listings never show a numeric wholesale price to buyers.
   static bool canShowProductPrice(
     MyListingProductModel product, {
     bool preferRetail = false,
   }) {
     if (!canShowPrices) return false;
     if (preferRetail && product.hasRetailPricing) return true;
-    if (companyCustomerSeesHiddenPrices) return true;
     return product.shouldShowPrice;
   }
 
