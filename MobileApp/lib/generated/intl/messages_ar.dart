@@ -1535,6 +1535,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "يمكنك أيضاً كتابة الكمية يدوياً",
     ),
     "quickActions": MessageLookupByLibrary.simpleMessage("إجراءات سريعة"),
+    "quickLogin": MessageLookupByLibrary.simpleMessage("دخول سريع"),
+    "quickLoginSubtitle": MessageLookupByLibrary.simpleMessage(
+      "للعملاء: ادخل مباشرة بدون إنشاء حساب",
+    ),
     "reEnterNewPassword": MessageLookupByLibrary.simpleMessage(
       "ادخل كلمة المرور الجديدة مرة أخرى",
     ),

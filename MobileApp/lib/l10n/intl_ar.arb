@@ -2,6 +2,8 @@
     "language": "اللغات",
     "googleAccount": "حساب جوجل",
     "login": "تسجيل الدخول",
+    "quickLogin": "دخول سريع",
+    "quickLoginSubtitle": "للعملاء: ادخل مباشرة بدون إنشاء حساب",
     "signUp": "سجل الآن",
     "dontHaveAnAccount": "ليس لديك حساب؟",
     "alreadyHaveAnAccount": "لديك حساب؟",

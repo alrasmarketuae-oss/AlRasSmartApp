@@ -2,6 +2,8 @@
     "language": "Languages",
     "googleAccount": "Google Account",
     "login": "Login",
+    "quickLogin": "Quick Login",
+    "quickLoginSubtitle": "Customers can sign in directly — no new account needed",
     "signUp": "Sign Up",
     "dontHaveAnAccount": "Don't have an account?",
     "alreadyHaveAnAccount": "Already have an account?",

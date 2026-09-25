@@ -1,4 +1,3 @@
-import 'package:alrasmarket/core/serveses/pending_profile_image_uploader.dart';
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
@@ -25,9 +24,7 @@ const Color _kBorder = Color(0xFFE6ECF5);
 const Color _kPrimary = Color(0xFF3A7DC5);
 
 class RegisterView extends StatefulWidget {
-  const RegisterView({super.key, required this.isSupplierCompany});
-
-  final bool isSupplierCompany;
+  const RegisterView({super.key});
 
   @override
   State<RegisterView> createState() => _RegisterViewState();
@@ -45,24 +42,11 @@ class _RegisterViewState extends State<RegisterView> {
   final _landlinePhoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _isCustomerCompany = true;
   String _selectedCountryCode = '+971';
   String _selectedOtherCountryCode = '+971';
   bool _acceptedTermsAndPrivacy = false;
   CreateAddressRequest? _pendingAddress;
   String? _profileImagePath;
-
-  /// Supplier signup must never register as Company Customer.
-  bool get _registersAsCustomerCompany =>
-      !widget.isSupplierCompany && _isCustomerCompany;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.isSupplierCompany) {
-      _isCustomerCompany = false;
-    }
-  }
 
   @override
   void dispose() {
@@ -98,10 +82,10 @@ class _RegisterViewState extends State<RegisterView> {
     required bool includeCompanyDocs,
   }) {
     final s = S.of(context);
-    final addressLabel = isArabic ? 'الموقع / العنوان' : 'Location / Address';
-    final pickLabel = isArabic ? 'تحديد الموقع' : 'Set location';
+    final addressLabel = isArabic ? 'Ø§Ù„Ù…ÙˆÙ‚Ø¹ / Ø§Ù„Ø¹Ù†ÙˆØ§Ù†' : 'Location / Address';
+    final pickLabel = isArabic ? 'ØªØ­Ø¯ÙŠØ¯ Ø§Ù„Ù…ÙˆÙ‚Ø¹' : 'Set location';
     final hint = isArabic
-        ? 'اضغط لاختيار موقعك الحالي أو التحديد من الخريطة'
+        ? 'Ø§Ø¶ØºØ· Ù„Ø§Ø®ØªÙŠØ§Ø± Ù…ÙˆÙ‚Ø¹Ùƒ Ø§Ù„Ø­Ø§Ù„ÙŠ Ø£Ùˆ Ø§Ù„ØªØ­Ø¯ÙŠØ¯ Ù…Ù† Ø§Ù„Ø®Ø±ÙŠØ·Ø©'
         : 'Tap to use current location or pick from the map';
 
     final locationPicker = Column(
@@ -213,8 +197,8 @@ class _RegisterViewState extends State<RegisterView> {
               padding: EdgeInsets.only(top: 6.h),
               child: Text(
                 isArabic
-                    ? 'الموقع مطلوب — اضغط لتحديده (موقعي الحالي أو الخريطة)'
-                    : 'Location is required — tap to choose current location or map',
+                    ? 'Ø§Ù„Ù…ÙˆÙ‚Ø¹ Ù…Ø·Ù„ÙˆØ¨ â€” Ø§Ø¶ØºØ· Ù„ØªØ­Ø¯ÙŠØ¯Ù‡ (Ù…ÙˆÙ‚Ø¹ÙŠ Ø§Ù„Ø­Ø§Ù„ÙŠ Ø£Ùˆ Ø§Ù„Ø®Ø±ÙŠØ·Ø©)'
+                    : 'Location is required â€” tap to choose current location or map',
                 style: TextStyle(
                   fontSize: 12.sp,
                   color: const Color(0xFFD92D20),
@@ -290,11 +274,6 @@ class _RegisterViewState extends State<RegisterView> {
     ).hasMatch(value);
   }
 
-  String _accountTypeLabel(BuildContext context) {
-    if (_isCustomerCompany) return S.of(context).company;
-    return S.of(context).person;
-  }
-
   void _handleRegister() {
     if (!_acceptedTermsAndPrivacy) {
       AppToast.showError(
@@ -310,44 +289,34 @@ class _RegisterViewState extends State<RegisterView> {
       final isAr = Localizations.localeOf(context).languageCode == 'ar';
       AppToast.showError(
         context,
-        isAr ? 'من فضلك حدد العنوان أولاً.' : 'Please set your address first.',
+        isAr ? 'Ù…Ù† ÙØ¶Ù„Ùƒ Ø­Ø¯Ø¯ Ø§Ù„Ø¹Ù†ÙˆØ§Ù† Ø£ÙˆÙ„Ø§Ù‹.' : 'Please set your address first.',
       );
       return;
     }
     PendingRegistrationAddress.store(_pendingAddress!);
 
     final fullPhone = '$_selectedCountryCode ${_phoneController.text.trim()}';
-    if (widget.isSupplierCompany || _isCustomerCompany) {
-      context.push(
-        AppRoutes.kCompletRegisterView,
-        extra: {
-          'isCompany': true,
-          'fullName': _ownerNameController.text.trim(),
-          'companyName': _companyNameController.text.trim(),
-          'email': _emailController.text.trim(),
-          'password': _passwordController.text.trim(),
-          'phoneNumber': fullPhone,
-          'landNumber':
-              '$_selectedOtherCountryCode ${_landlinePhoneController.text.trim()}',
-          'licenseNumber': _licenseNumberController.text.trim(),
-          'commercialRegister': '',
-          'taxNumber': _taxNumberController.text.trim(),
-          'website': _websiteController.text.trim(),
-          'isCustomerCompany': _registersAsCustomerCompany,
-          'isSupplierCompany': widget.isSupplierCompany,
-          'profileImagePath': _profileImagePath,
-        },
-      );
-      return;
-    }
-
-    AuthCubit.get(context).registerPerson(
-      fullName: _companyNameController.text.trim(),
-      email: _emailController.text.trim(),
-      password: _passwordController.text.trim(),
-      phoneNumber: fullPhone,
+    // All email/password signups register as supplier; roles can be changed in admin dashboard.
+    context.push(
+      AppRoutes.kCompletRegisterView,
+      extra: {
+        'isCompany': true,
+        'fullName': _ownerNameController.text.trim(),
+        'companyName': _companyNameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'password': _passwordController.text.trim(),
+        'phoneNumber': fullPhone,
+        'landNumber':
+            '$_selectedOtherCountryCode ${_landlinePhoneController.text.trim()}',
+        'licenseNumber': _licenseNumberController.text.trim(),
+        'commercialRegister': '',
+        'taxNumber': _taxNumberController.text.trim(),
+        'website': _websiteController.text.trim(),
+        'isCustomerCompany': false,
+        'isSupplierCompany': true,
+        'profileImagePath': _profileImagePath,
+      },
     );
-    PendingProfileImageUploader.setPending(_profileImagePath);
   }
 
   Widget _buildTermsAcceptanceRow() {
@@ -506,93 +475,6 @@ class _RegisterViewState extends State<RegisterView> {
     );
   }
 
-  Widget _accountTypeSwitcher() {
-    final s = S.of(context);
-    final isAr = Localizations.localeOf(context).languageCode == 'ar';
-    return PopupMenuButton<String>(
-      padding: EdgeInsets.zero,
-      offset: Offset(0, 40.h),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14.r),
-      ),
-      color: Colors.white,
-      elevation: 8,
-      onSelected: (value) {
-        setState(() {
-          _isCustomerCompany = value == 'company';
-        });
-      },
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: 'person',
-          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-          child: _AccountTypeMenuItem(
-            selected: !_isCustomerCompany,
-            icon: Icons.person_outline_rounded,
-            iconColor: _kPrimary,
-            title: s.person,
-            subtitle: isAr ? 'للاستخدام الشخصي' : 'For personal use',
-          ),
-        ),
-        PopupMenuItem(
-          value: 'company',
-          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-          child: _AccountTypeMenuItem(
-            selected: _isCustomerCompany,
-            icon: Icons.storefront_outlined,
-            iconColor: const Color(0xFF22A06B),
-            title: s.company,
-            subtitle: isAr ? 'للأعمال والشركات' : 'For businesses',
-          ),
-        ),
-      ],
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22.r),
-          border: Border.all(color: _kBorder),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              _isCustomerCompany
-                  ? Icons.storefront_outlined
-                  : Icons.person_outline_rounded,
-              size: 18.sp,
-              color: _isCustomerCompany
-                  ? const Color(0xFF22A06B)
-                  : _kPrimary,
-            ),
-            SizedBox(width: 6.w),
-            Text(
-              _accountTypeLabel(context),
-              style: TextStyle(
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w700,
-                color: _kTitle,
-              ),
-            ),
-            SizedBox(width: 2.w),
-            Icon(
-              Icons.keyboard_arrow_down_rounded,
-              size: 20.sp,
-              color: _kPrimary,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _phoneRow() {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final code = CountryCodeField(
@@ -670,8 +552,7 @@ class _RegisterViewState extends State<RegisterView> {
   }
 
   Widget _signUpButton({required bool isLoading}) {
-    final isCompany = widget.isSupplierCompany || _isCustomerCompany;
-    final label = isCompany ? S.of(context).next : S.of(context).signUp;
+    final label = S.of(context).next;
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
 
     return SizedBox(
@@ -721,27 +602,13 @@ class _RegisterViewState extends State<RegisterView> {
   @override
   Widget build(BuildContext context) {
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
-    // Person, company client, and supplier all get a profile/logo picker.
-    const showPhoto = true;
 
     return Scaffold(
       backgroundColor: _kBg,
       body: SafeArea(
         child: BlocConsumer<AuthCubit, AuthStates>(
           listener: (context, state) {
-            if (state is RegisterClientSuccessState) {
-              AppToast.showSuccess(
-                context,
-                S.of(context).accountCreatedSuccessfully,
-              );
-              context.push(
-                AppRoutes.kOtpVerificationView,
-                extra: {
-                  'email': _emailController.text.trim(),
-                  'isCompany': false,
-                },
-              );
-            } else if (state is RegisterClientErrorState) {
+            if (state is RegisterClientErrorState) {
               AppToast.showError(context, state.message);
             }
           },
@@ -757,108 +624,73 @@ class _RegisterViewState extends State<RegisterView> {
                   children: [
                     const AuthHeader(showBack: true),
                     SizedBox(height: 20.h),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                S.of(context).createAccount,
-                                style: TextStyle(
-                                  fontSize: 26.sp,
-                                  fontWeight: FontWeight.w800,
-                                  color: _kTitle,
-                                  height: 1.15,
-                                ),
-                              ),
-                              SizedBox(height: 6.h),
-                              Text(
-                                isAr
-                                    ? 'انضم إلينا وابدأ الآن'
-                                    : 'Join us and get started',
-                                style: TextStyle(
-                                  fontSize: 13.sp,
-                                  fontWeight: FontWeight.w500,
-                                  color: _kSubtitle,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (!widget.isSupplierCompany) ...[
-                          SizedBox(width: 8.w),
-                          _accountTypeSwitcher(),
-                        ],
-                      ],
+                    Text(
+                      S.of(context).createAccount,
+                      style: TextStyle(
+                        fontSize: 26.sp,
+                        fontWeight: FontWeight.w800,
+                        color: _kTitle,
+                        height: 1.15,
+                      ),
+                    ),
+                    SizedBox(height: 6.h),
+                    Text(
+                      isAr
+                          ? 'Ø§Ù†Ø¶Ù… Ø¥Ù„ÙŠÙ†Ø§ ÙˆØ§Ø¨Ø¯Ø£ Ø§Ù„Ø¢Ù†'
+                          : 'Join us and get started',
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w500,
+                        color: _kSubtitle,
+                      ),
                     ),
                     SizedBox(height: 22.h),
-                    if (showPhoto) ...[
-                      Align(
-                        alignment: isAr
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
-                        child: AuthProfilePhotoPicker(
-                          initialPath: _profileImagePath,
-                          onChanged: (path) => _profileImagePath = path,
-                        ),
+                    Align(
+                      alignment: isAr
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      child: AuthProfilePhotoPicker(
+                        initialPath: _profileImagePath,
+                        onChanged: (path) => _profileImagePath = path,
                       ),
-                      SizedBox(height: 18.h),
-                    ],
-                    if (widget.isSupplierCompany || _isCustomerCompany) ...[
-                      _iconField(
-                        controller: _companyNameController,
-                        label: S.of(context).companyName,
-                        hintText: S.of(context).enterCompanyName,
-                        icon: Icons.apartment_outlined,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return S.of(context).thisFieldIsRequired;
-                          }
-                          return null;
-                        },
-                      ),
-                      SizedBox(height: 14.h),
-                      _iconField(
-                        controller: _ownerNameController,
-                        label: isAr ? 'اسم المالك' : 'Owner name',
-                        hintText: isAr
-                            ? 'ادخل اسم المالك'
-                            : 'Enter owner name',
-                        icon: Icons.person_outline_rounded,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return S.of(context).thisFieldIsRequired;
-                          }
-                          return null;
-                        },
-                      ),
-                    ] else
-                      _iconField(
-                        controller: _companyNameController,
-                        label: S.of(context).fullName,
-                        hintText: S.of(context).enterFullName,
-                        icon: Icons.person_outline_rounded,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return S.of(context).thisFieldIsRequired;
-                          }
-                          return null;
-                        },
-                      ),
+                    ),
+                    SizedBox(height: 18.h),
+                    _iconField(
+                      controller: _companyNameController,
+                      label: S.of(context).companyName,
+                      hintText: S.of(context).enterCompanyName,
+                      icon: Icons.apartment_outlined,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return S.of(context).thisFieldIsRequired;
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 14.h),
+                    _iconField(
+                      controller: _ownerNameController,
+                      label: isAr ? 'Ø§Ø³Ù… Ø§Ù„Ù…Ø§Ù„Ùƒ' : 'Owner name',
+                      hintText: isAr
+                          ? 'Ø§Ø¯Ø®Ù„ Ø§Ø³Ù… Ø§Ù„Ù…Ø§Ù„Ùƒ'
+                          : 'Enter owner name',
+                      icon: Icons.person_outline_rounded,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return S.of(context).thisFieldIsRequired;
+                        }
+                        return null;
+                      },
+                    ),
                     SizedBox(height: 14.h),
                     _buildCompanyLocationAndTaxSection(
                       isArabic: isAr,
-                      includeCompanyDocs:
-                          widget.isSupplierCompany || _isCustomerCompany,
+                      includeCompanyDocs: true,
                     ),
                     SizedBox(height: 14.h),
                     _phoneRow(),
-                    if (widget.isSupplierCompany || _isCustomerCompany) ...[
-                      SizedBox(height: 14.h),
-                      _landlineRow(),
-                    ],
+                    SizedBox(height: 14.h),
+                    _landlineRow(),
                     SizedBox(height: 14.h),
                     _iconField(
                       controller: _emailController,
@@ -914,75 +746,6 @@ class _RegisterViewState extends State<RegisterView> {
             );
           },
         ),
-      ),
-    );
-  }
-}
-
-class _AccountTypeMenuItem extends StatelessWidget {
-  const _AccountTypeMenuItem({
-    required this.selected,
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-  });
-
-  final bool selected;
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 210.w,
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
-      decoration: BoxDecoration(
-        color: selected
-            ? LightColor.defaultColor.withValues(alpha: 0.08)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(10.r),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36.w,
-            height: 36.w,
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10.r),
-            ),
-            child: Icon(icon, color: iconColor, size: 20.sp),
-          ),
-          SizedBox(width: 10.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w700,
-                    color: _kTitle,
-                  ),
-                ),
-                SizedBox(height: 2.h),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 11.sp,
-                    color: _kSubtitle,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (selected)
-            Icon(Icons.check_rounded, color: _kPrimary, size: 20.sp),
-        ],
       ),
     );
   }

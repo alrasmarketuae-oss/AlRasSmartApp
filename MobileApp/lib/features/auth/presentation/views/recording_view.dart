@@ -13,9 +13,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
-/// Accent used by the shipping entry point; the rest come from [BrandColors].
-const Color _shippingOrange = Color(0xFFF97316);
-
 class RecordingView extends StatelessWidget {
   const RecordingView({super.key});
 
@@ -82,41 +79,18 @@ class RecordingView extends StatelessWidget {
                             _RoleTile(
                               accent: BrandColors.primaryBlue,
                               tint: const Color(0xFFF4F7FB),
-                              icon: Icons.person_outline_rounded,
-                              title: s.registerClient,
-                              subtitle: s.registerClientSubtitle,
-                              onTap: () => context.push(
-                                AppRoutes.kRegisterView,
-                                extra: {'isCompany': false},
-                              ),
-                            ),
-                            SizedBox(height: 12.h),
-                            _RoleTile(
-                              accent: const Color(0xFF16A34A),
-                              tint: const Color(0xFFF1FAF4),
-                              icon: Icons.storefront_rounded,
-                              title: s.registerSupplier,
-                              subtitle: s.registerSupplierSubtitle,
-                              onTap: () => context.push(
-                                AppRoutes.kRegisterView,
-                                extra: {'isCompany': true},
-                              ),
-                            ),
-                            SizedBox(height: 12.h),
-                            _RoleTile(
-                              accent: _shippingOrange,
-                              tint: const Color(0xFFFFF6EE),
-                              icon: Icons.directions_boat_rounded,
-                              title: s.shippingCompanyRegister,
+                              icon: Icons.person_add_alt_1_rounded,
+                              title: s.createAccount,
                               subtitle: isAr
-                                  ? 'شحن سريع وآمن داخل وخارج الدولة'
-                                  : s.shippingCompanySubtitle,
+                                  ? 'انضم إلينا وابدأ الآن'
+                                  : 'Join us and get started',
                               onTap: () =>
-                                  context.push(AppRoutes.kShippingRegisterView),
+                                  context.push(AppRoutes.kRegisterView),
                             ),
                             SizedBox(height: 18.h),
                             _LoginButton(
-                              label: s.login,
+                              label: s.quickLogin,
+                              subtitle: s.quickLoginSubtitle,
                               onTap: () => context.push(AppRoutes.kLoginView),
                             ),
                             SizedBox(height: 16.h),
@@ -301,9 +275,14 @@ class _RoleTile extends StatelessWidget {
 }
 
 class _LoginButton extends StatelessWidget {
-  const _LoginButton({required this.label, required this.onTap});
+  const _LoginButton({
+    required this.label,
+    required this.onTap,
+    this.subtitle,
+  });
 
   final String label;
+  final String? subtitle;
   final VoidCallback onTap;
 
   @override
@@ -353,15 +332,34 @@ class _LoginButton extends StatelessWidget {
                   ),
                 ),
                 Expanded(
-                  child: Text(
-                    label,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 17.sp,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      fontFamily: AppFonts.cairo,
-                    ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        label,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 17.sp,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          fontFamily: AppFonts.cairo,
+                        ),
+                      ),
+                      if (subtitle != null && subtitle!.trim().isNotEmpty) ...[
+                        SizedBox(height: 2.h),
+                        Text(
+                          subtitle!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white.withValues(alpha: 0.88),
+                            fontFamily: AppFonts.cairo,
+                            height: 1.25,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
                 SizedBox(width: 44.w),

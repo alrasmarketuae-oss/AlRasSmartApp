@@ -35,6 +35,7 @@ export default function Footer({ lang }) {
             <Link to="/delete-account" className="transition hover:text-brand-green">{nav.deleteAccount}</Link>
             <Link to="/model-training" className="transition hover:text-brand-green">{nav.modelTraining}</Link>
             <Link to="/encrypted-messages" className="transition hover:text-brand-green">{nav.encryptedChat}</Link>
+            <Link to="/shipping-register" className="transition hover:text-brand-green">{nav.shippingRegister}</Link>
             <Link to="/contact" className="transition hover:text-brand-green">{nav.contact}</Link>
           </div>
         </div>

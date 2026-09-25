@@ -3,8 +3,10 @@ export const STORE_LINKS = {
   ios: 'https://apps.apple.com/gb/app/al-ras-smart/id6795899781',
 }
 
-/** Production API host for AlRas Market. */
-export const API_BASE_URL = 'https://api.alrasmarketapp.com/api'
+/** Production API host for AlRas Market. In Vite/dev use same-origin proxy to avoid CORS. */
+export const API_BASE_URL = import.meta.env.DEV
+  ? '/api'
+  : 'https://api.alrasmarketapp.com/api'
 
 export const CONTACT = {
   phone: '+971 4 228 5598',

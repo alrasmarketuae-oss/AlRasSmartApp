@@ -203,12 +203,7 @@ abstract class AppRoutes {
       ),
       GoRoute(
         path: kRegisterView,
-        builder: (context, state) {
-          final extra = state.extra is Map<String, dynamic>
-              ? state.extra as Map<String, dynamic>
-              : const <String, dynamic>{};
-          return RegisterView(isSupplierCompany: extra['isCompany'] == true);
-        },
+        builder: (context, state) => const RegisterView(),
       ),
       GoRoute(
         path: kCompletRegisterView,

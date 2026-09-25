@@ -613,9 +613,9 @@ if (app.Environment.IsDevelopment())
     app.UseHttpLogging();
     app.UseMiddleware<RequestLoggingMiddleware>();
 }
+app.UseCors("AllowAdminDashboard");
 app.UseResponseCompression();
 app.UseHttpMetrics();
-app.UseCors("AllowAdminDashboard");
 
 var staticContentTypes = new FileExtensionContentTypeProvider();
 staticContentTypes.Mappings[".m4a"] = "audio/mp4";

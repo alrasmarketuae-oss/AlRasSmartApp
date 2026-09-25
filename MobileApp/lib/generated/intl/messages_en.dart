@@ -1533,6 +1533,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "You can also type the quantity manually",
     ),
     "quickActions": MessageLookupByLibrary.simpleMessage("Quick Actions"),
+    "quickLogin": MessageLookupByLibrary.simpleMessage("Quick Login"),
+    "quickLoginSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Customers can sign in directly — no new account needed",
+    ),
     "reEnterNewPassword": MessageLookupByLibrary.simpleMessage(
       "Re-enter new password",
     ),

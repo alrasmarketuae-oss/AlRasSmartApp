@@ -10,6 +10,7 @@ import Terms from './pages/Terms'
 import ModelTraining from './pages/ModelTraining'
 import DeleteAccount from './pages/DeleteAccount'
 import Contact from './pages/Contact'
+import ShippingRegister from './pages/ShippingRegister'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -58,6 +59,7 @@ function AppShell() {
           <Route path="/delete-account" element={<DeleteAccount lang={lang} />} />
           <Route path="/encrypted-messages" element={<EncryptedMessages lang={lang} />} />
           <Route path="/contact" element={<Contact lang={lang} />} />
+          <Route path="/Shipping-registration" element={<ShippingRegister lang={lang} />} />
         </Routes>
       </main>
       <Footer lang={lang} />

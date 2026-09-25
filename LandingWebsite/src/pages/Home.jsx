@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { content } from '../data/content'
 import SeoHelmet from '../components/SeoHelmet'
 import AppShowcase from '../components/AppShowcase'
@@ -130,6 +131,14 @@ export default function Home({ lang, onAskAi }) {
                     </div>
                     <h3 className="text-xl font-bold text-brand-navy">{item.title}</h3>
                     <p className="mt-3 text-sm leading-7 text-slate-600">{item.desc}</p>
+                    {i === 2 ? (
+                      <Link
+                        to="/shipping-register"
+                        className="mt-5 inline-flex rounded-full bg-brand-green px-4 py-2 text-sm font-bold text-white transition hover:opacity-95"
+                      >
+                        {t.nav?.shippingRegister || (isAr ? 'تسجيل شركة شحن' : 'Shipping company signup')}
+                      </Link>
+                    ) : null}
                   </div>
                 </div>
               )

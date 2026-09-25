@@ -123,6 +123,7 @@ public class AuthController(
     /// <summary>
     /// Registers a shipping company account pending admin approval.
     /// </summary>
+    [AllowAnonymous]
     [HttpPost("register-shipping-company")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

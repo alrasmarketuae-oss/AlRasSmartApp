@@ -79,6 +79,21 @@ class S {
     return Intl.message('Login', name: 'login', desc: '', args: []);
   }
 
+  /// `Quick Login`
+  String get quickLogin {
+    return Intl.message('Quick Login', name: 'quickLogin', desc: '', args: []);
+  }
+
+  /// `Customers can sign in directly — no new account needed`
+  String get quickLoginSubtitle {
+    return Intl.message(
+      'Customers can sign in directly — no new account needed',
+      name: 'quickLoginSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Sign Up`
   String get signUp {
     return Intl.message('Sign Up', name: 'signUp', desc: '', args: []);
