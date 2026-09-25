@@ -372,13 +372,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "appWord": MessageLookupByLibrary.simpleMessage("تطبيق"),
     "approved": MessageLookupByLibrary.simpleMessage("تم الموافقة "),
     "arabicLabel": MessageLookupByLibrary.simpleMessage("العربية"),
-    "askForPrice": MessageLookupByLibrary.simpleMessage("اسأل عن السعر"),
+    "askForPrice": MessageLookupByLibrary.simpleMessage("اطلب السعر"),
     "askForPriceCardLoading": MessageLookupByLibrary.simpleMessage(
       "جاري التحميل…",
     ),
     "askForPriceCardTitle": MessageLookupByLibrary.simpleMessage("طلب سعر"),
     "askForPriceChatIntro": MessageLookupByLibrary.simpleMessage(
-      "اسأل عن السعر — تفاصيل المنتج:",
+      "اطلب السعر — تفاصيل المنتج:",
     ),
     "askForPriceCustomerPrice": MessageLookupByLibrary.simpleMessage(
       "سعر العميل",
