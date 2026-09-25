@@ -1818,7 +1818,7 @@ internal static class AiAssistantKnowledgeSource
             2) البحث عن أرخص منتج معتمد في السوق باسم المنتج.
             3) معرفة عدد مبيعاتك كمورد: عدد الطلبات التي أنت مالك منتجها (ProductOwner / ToUserId) وحالتها تم الاستلام أو تم التسليم.
             الفويس مع المساعد: المساعد هو من يستمع ويعالج الكلام؛ يظهر النص مباشرة أثناء الحديث، وبعد الانتهاء يصحّح الأخطاء اللغوية/الإملائية الناتجة عن التعرف على الصوت ثم يعرض النص النهائي في حقل الكتابة لتختار إرسال أو إلغاء.
-            شات المساعد يقبل حالياً النص والفويس فقط، ولا يدعم الصور أو الفيديو أو الملفات أو الموقع الآن، ومن المتوقع دعم الصور مستقبلاً. لإرسال صور/فيديو/ملفات/موقع استخدم Live Chat.
+            شات المساعد يقبل النص والفويس. حساب الأدمن يمكنه أيضاً إرفاق صورتين لبطاقة عمل شركة لإنشاء حساب مورد تلقائياً (بدون OTP، كلمة المرور 123456، الحساب مفعّل وموافق عليه). لباقي أنواع الحسابات: صور/فيديو الإعلانات عبر وضع الخطة؛ ولإرسال وسائط للمحادثة البشرية استخدم Live Chat.
             """);
         Add(chunks, "ai-tools-voice-actions", "Update ad price quantity by voice, cheapest product, my sales, AI voice chat", "en", All,
             """
@@ -1827,7 +1827,20 @@ internal static class AiAssistantKnowledgeSource
             2) Find the cheapest approved marketplace product by name.
             3) Report your seller sales count: orders where you are the product owner (ToUserId) and status is received/delivered.
             Voice with the assistant: the AI listens and processes speech; text appears live while you talk, then the AI corrects speech-recognition mistakes and puts the cleaned text in the field so you can send or cancel.
-            The AI chat currently accepts text and voice only — not images, video, files, or location yet; image support is expected later. To send images/video/files/location use Live Chat.
+            AI chat accepts text and voice. Admin accounts can also attach up to two company business-card photos to auto-create a supplier (no OTP, password 123456, verified/approved/active). Other accounts: ad images/videos via Plan Mode; for human chat media use Live Chat.
+            """);
+
+        Add(chunks, "admin-business-card-supplier", "إنشاء مورد من بطاقة عمل عبر الذكاء الاصطناعي للأدمن", "ar", new[] { "admin", "public" },
+            """
+            حساب الأدمن في تطبيق الموبايل يمكنه إرسال صورة أو صورتين لبطاقة عمل شركة إلى المساعد الذكي.
+            الحقول المعتادة على البطاقة: اسم الشركة، رقم الجوال، الرقم الأرضي، العنوان، البريد الإلكتروني، الموقع الإلكتروني — وأي حقل غير موجود يُترك null.
+            ثم يُنشأ حساب مورد (Seller، IsCustomer=false) بكلمة مرور 123456 بدون OTP، والحساب Verified وApproved وActive فوراً.
+            """);
+        Add(chunks, "admin-business-card-supplier", "Create supplier from business card via AI for admin", "en", new[] { "admin", "public" },
+            """
+            Mobile admin accounts can send one or two company business-card photos to the AI assistant.
+            Usual card fields: company name, mobile, landline, address, email, website — anything missing stays null.
+            Then a supplier account is created (Seller, IsCustomer=false) with password 123456, no OTP, already verified, approved, and active.
             """);
     }
 
@@ -2538,11 +2551,11 @@ internal static class AiAssistantKnowledgeSource
     // ---------------------------------------------------------------------
 
     private static readonly string[] All =
-        ["public", "guest", "supplier", "personal", "company_customer", "shipping"];
+        ["public", "guest", "supplier", "personal", "company_customer", "shipping", "admin"];
 
     /// <summary>Signed-in accounts of any type (excludes anonymous guests).</summary>
     private static readonly string[] SignedIn =
-        ["public", "supplier", "personal", "company_customer", "shipping"];
+        ["public", "supplier", "personal", "company_customer", "shipping", "admin"];
 
     /// <summary>Accounts that can place orders and therefore have My Orders.</summary>
     private static readonly string[] Buyers =

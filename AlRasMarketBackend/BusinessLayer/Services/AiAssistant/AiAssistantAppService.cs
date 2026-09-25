@@ -424,6 +424,7 @@ public sealed class AiAssistantAppService(
             - supplier → allowed (Booking always; other types as permitted). Never refuse supplier Booking.
             CAPABILITIES (answer precisely when asked who you are / what you can do — adapt to audience {account.Audience}):
             You can: create ads (when allowed), update price/quantity on the seller's ads, search products, compare prices, find cheapest/most expensive listings, search shipping prices country-to-country, show the user's own ad details, buyer order details (طلباتي), and seller sales and pending orders on ads.
+            When audience is admin: you can also register supplier accounts from business-card photos via create_supplier_from_business_cards (no OTP; auto verified/approved/active; password 123456).
             Always state that available actions depend on the current account type.
             {responseLanguageRule}
             Mirror the user's everyday register and dialect as closely as possible in every reply (and in any clarifying question):
@@ -472,6 +473,7 @@ public sealed class AiAssistantAppService(
             - create_category_ad: supplier only. Ask name, category, wholesale price/qty/unit/currency, negotiable, Local/Reexport, wholesale specs, packaging (ALWAYS ask), media. If hybrid (جملة+تجزئة / enable_retail_pricing): ALSO ask BEFORE create — retail_price AED, retail_quantity, retail_unit, retail_specifications (مواصفات التجزئة منفصلة), retail packaging. Never call the tool for hybrid without retail_specifications.
             - create_shipping_ad: shipping company only. Ask route countries/ports, min/max duration days, 20ft/40ft USD prices, specs.
             - search_shipping_prices: search live international shipping offers from country A to country B (ports optional). Use for سعر الشحن / shipping cost questions.
+            - create_supplier_from_business_cards: ADMIN audience ONLY. When the admin uploads business-card photos tagged as [business_card_image_paths: path1 | path2], call this tool with those exact paths to OCR the card and register a SUPPLIER (Seller, IsCustomer=false). Password defaults to 123456. Account is verified+approved+active with NO OTP email. If the tool returns needs_clarification (missing email/company name), ask the admin once, then call again with overrides. Confirm the created email and that password is 123456.
             PLAN MODE (conversational create-ad in chat — yellow UI on the app):
             When the user message contains [PLAN_MODE] OR asks to create/publish an ad:
             1) Stay in chat. Do NOT tell the user to open a form, yellow form, Create Ad screen, or fill fields outside chat.
@@ -1308,7 +1310,7 @@ public sealed class AiAssistantAppService(
 
         var audience = user.RoleId switch
         {
-            1 => "public", // admin — reuse public knowledge; UI page context carries screen data
+            1 => "admin",
             5 => "shipping",
             3 => "personal",
             2 when user.IsCustomer == true => "company_customer",
@@ -1601,6 +1603,8 @@ public sealed class AiAssistantAppService(
         {
             "supplier" =>
                 "أقدر: أضيف إعلاناتك (Booking/Offer/Retail/Category/Inquiry حسب صلاحياتك)، أعدّل الأسعار والكميات، أبحث في المنتجات وأقارن الأسعار، أجيبك بالأرخص والأغلى، أعرف أسعار الشحن لدولة معيّنة، وأجيبك بتفاصيل إعلاناتك وطلباتك ومبيعاتك والطلبات المعلّقة على إعلاناتك.",
+            "admin" =>
+                "أقدر: أسجّل حساب مورد من صور بطاقة العمل (بدون OTP والحساب يتفعّل ويُوافق عليه فورًا)، وأساعدك في البحث والمنتجات وأسعار الشحن وأسئلة المنصة.",
             "company_customer" =>
                 "أقدر: أضيف إعلان طلب (Inquiry) فقط، أبحث في المنتجات وأقارن الأسعار، أجيبك بالأرخص والأغلى، أعرف أسعار الشحن لدولة معيّنة، وأجيبك بتفاصيل طلباتك في طلباتي.",
             "shipping" =>
@@ -1615,6 +1619,8 @@ public sealed class AiAssistantAppService(
         {
             "supplier" =>
                 "I can: create your ads (Booking/Offer/Retail/Category/Inquiry as allowed), update prices and quantities, search products and compare prices, find the cheapest and most expensive listings, look up shipping prices to a country, and show details of your ads, orders, sales, and pending ad orders.",
+            "admin" =>
+                "I can: register supplier accounts from business-card photos (no OTP — verified, approved, and active immediately), and help with product search, shipping prices, and platform questions.",
             "company_customer" =>
                 "I can: create Inquiry ads only, search products and compare prices, find cheapest/most expensive listings, look up shipping prices to a country, and show your My Orders details.",
             "shipping" =>

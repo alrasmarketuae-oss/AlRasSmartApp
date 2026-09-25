@@ -1,6 +1,9 @@
 part of 'ai_assistant_view.dart';
 
 mixin _AiAssistantMediaMixin on _AiAssistantViewStateBase {
+  static const int _businessCardMaxBytes = 220 * 1024;
+  static const int _businessCardMaxCount = 2;
+
   bool _looksLikeCancelPlan(String text) {
     final q = text.trim().toLowerCase();
     const markers = [
@@ -63,6 +66,129 @@ mixin _AiAssistantMediaMixin on _AiAssistantViewStateBase {
     });
   }
 
+  Future<void> _pickBusinessCardImages() async {
+    if (_uploadingAdMedia || _isThinking) return;
+    if (!_isAdminAi) return;
+
+    final token = AuthService.instance.currentToken;
+    if (token == null || token.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            Localizations.localeOf(context).languageCode == 'ar'
+                ? 'سجّل الدخول أولاً'
+                : 'Please sign in first',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    final remaining = _businessCardMaxCount - _businessCardImagePaths.length;
+    if (remaining <= 0) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isAr
+                ? 'يمكنك إرفاق صورتين فقط لبطاقة العمل — اضغط إرسال لإنشاء الحساب'
+                : 'You already attached 2 business-card photos — tap Send to create the account',
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _uploadingAdMedia = true;
+    });
+
+    try {
+      // Prefer multi-select so admin can pick front + back in one go.
+      final picked = await _imagePicker.pickMultiImage(imageQuality: 85);
+      if (picked.isEmpty) {
+        if (!mounted) return;
+        setState(() => _uploadingAdMedia = false);
+        return;
+      }
+
+      var uploaded = 0;
+      for (final item in picked.take(remaining)) {
+        if (_businessCardImagePaths.length >= _businessCardMaxCount) break;
+        final path = item.path;
+        if (path.isEmpty || !ImageCompressor.isImagePath(path)) continue;
+
+        // Compress hard before upload so Vision payload stays small.
+        final compressed = await ImageCompressor.compressToMaxBytes(
+          path,
+          maxBytes: _businessCardMaxBytes,
+        );
+        final uploadPath = compressed ?? path;
+        final result = await _draftOps.uploadDraftImage(
+          filePath: uploadPath,
+          token: token,
+        );
+        result.fold(
+          (_) {},
+          (remotePath) {
+            if (!_businessCardImagePaths.contains(remotePath) &&
+                _businessCardImagePaths.length < _businessCardMaxCount) {
+              _businessCardImagePaths.add(remotePath);
+              uploaded++;
+            }
+          },
+        );
+      }
+
+      if (!mounted) return;
+      setState(() {});
+      if (uploaded > 0) {
+        final total = _businessCardImagePaths.length;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isAr
+                  ? (total >= _businessCardMaxCount
+                      ? 'تم إرفاق صورتين لبطاقة العمل. اضغط إرسال لإنشاء حساب المورد.'
+                      : 'تم إرفاق $total صورة. يمكنك إضافة صورة ثانية أو اضغط إرسال.')
+                  : (total >= _businessCardMaxCount
+                      ? '2 business-card photos attached. Tap Send to create the supplier.'
+                      : '$total photo(s) attached. You can add a second photo or tap Send.'),
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isAr
+                  ? 'تعذر رفع الصور. حاول مرة أخرى.'
+                  : 'Could not upload the photos. Please try again.',
+            ),
+          ),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isAr
+                ? 'تعذر اختيار أو رفع صور بطاقة العمل'
+                : 'Could not pick or upload business-card photos',
+          ),
+        ),
+      );
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _uploadingAdMedia = false;
+    });
+  }
+
   Future<void> _pickAdMedia() async {
     if (_uploadingAdMedia || _isThinking) return;
     final token = AuthService.instance.currentToken;
@@ -116,8 +242,9 @@ mixin _AiAssistantMediaMixin on _AiAssistantViewStateBase {
 
       var uploadedImages = 0;
       for (final imagePath in imagePaths) {
+        final compressed = await ImageCompressor.compressIfNeeded(imagePath);
         final result = await _draftOps.uploadDraftImage(
-          filePath: imagePath,
+          filePath: compressed ?? imagePath,
           token: token,
         );
         result.fold(

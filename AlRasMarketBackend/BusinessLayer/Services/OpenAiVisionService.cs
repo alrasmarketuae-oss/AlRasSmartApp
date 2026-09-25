@@ -894,4 +894,187 @@ public class OpenAiVisionService(
             Summary = summary
         };
     }
+
+    public async Task<BusinessCardExtractionResult> ExtractBusinessCardAsync(
+        IReadOnlyList<(Stream Stream, string FileName)> images,
+        CancellationToken cancellationToken = default)
+    {
+        if (images is null || images.Count == 0)
+        {
+            return new BusinessCardExtractionResult
+            {
+                ExtractionFailed = true,
+                FailureReason = "no_images"
+            };
+        }
+
+        var apiKey = configuration["OpenAI:ApiKey"];
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            return new BusinessCardExtractionResult
+            {
+                ExtractionFailed = true,
+                FailureReason = "missing_api_key"
+            };
+        }
+
+        var contentParts = new List<object>
+        {
+            new
+            {
+                type = "text",
+                text =
+                    "These are photos of a company business card (front and/or back).\n" +
+                    "Extract ONLY the fields that are clearly printed. Never invent values.\n" +
+                    "Typical business cards have: company name, mobile phone, landline, address, email, website.\n" +
+                    "Return ONLY JSON (no markdown):\n" +
+                    "{\n" +
+                    "  \"companyName\": null,\n" +
+                    "  \"email\": null,\n" +
+                    "  \"phoneNumber\": null,\n" +
+                    "  \"landNumber\": null,\n" +
+                    "  \"website\": null,\n" +
+                    "  \"addressLine1\": null\n" +
+                    "}\n" +
+                    "CRITICAL: companyName must ALWAYS be English (Latin script only). " +
+                    "If the card prints Arabic, convert to English transliteration/translation " +
+                    "(مثال: شركة الراس الذكية → Al Ras Smart Company). Never put Arabic letters in companyName.\n" +
+                    "- email: email if printed, else null.\n" +
+                    "- phoneNumber: mobile / WhatsApp if printed (keep +country code when visible), else null.\n" +
+                    "- landNumber: landline / office phone if distinct from mobile, else null.\n" +
+                    "- website: URL if printed, else null.\n" +
+                    "- addressLine1: full printed address as one string if present, else null (may keep Arabic if that is how it is printed).\n" +
+                    "- Use JSON null (not empty string) for every missing field.\n" +
+                    "- Do NOT return extra keys (no fullName, city, street, building, postal, lat/lng)."
+            }
+        };
+
+        foreach (var (stream, fileName) in images.Take(2))
+        {
+            byte[] jpegBytes;
+            await using (var buffered = new MemoryStream())
+            {
+                await stream.CopyToAsync(buffered, cancellationToken).ConfigureAwait(false);
+                buffered.Position = 0;
+                try
+                {
+                    jpegBytes = await ImageFileHelper.CompressToJpegBytesAsync(
+                        buffered,
+                        ImageCompressionOptions.BusinessCardVision,
+                        cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Business card: failed to compress {File}; using raw bytes.", fileName);
+                    jpegBytes = buffered.ToArray();
+                }
+            }
+
+            if (jpegBytes.Length == 0) continue;
+
+            var dataUrl = $"data:image/jpeg;base64,{Convert.ToBase64String(jpegBytes)}";
+            contentParts.Add(new
+            {
+                type = "image_url",
+                image_url = new { url = dataUrl, detail = "high" }
+            });
+        }
+
+        if (contentParts.Count < 2)
+        {
+            return new BusinessCardExtractionResult
+            {
+                ExtractionFailed = true,
+                FailureReason = "empty_image"
+            };
+        }
+
+        var payload = new
+        {
+            model = "gpt-4o-mini",
+            temperature = 0,
+            response_format = new { type = "json_object" },
+            messages = new object[]
+            {
+                new { role = "user", content = contentParts.ToArray() }
+            }
+        };
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+        request.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(TimeSpan.FromSeconds(55));
+
+        using var response = await httpClient.SendAsync(request, timeoutCts.Token).ConfigureAwait(false);
+        var body = await response.Content.ReadAsStringAsync(timeoutCts.Token).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            logger.LogWarning("Business card OCR failed: {Status} {Body}", (int)response.StatusCode, body);
+            return new BusinessCardExtractionResult
+            {
+                ExtractionFailed = true,
+                FailureReason = "openai_error"
+            };
+        }
+
+        using var doc = JsonDocument.Parse(body);
+        var content = doc.RootElement
+            .GetProperty("choices")[0]
+            .GetProperty("message")
+            .GetProperty("content")
+            .GetString();
+
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return new BusinessCardExtractionResult
+            {
+                ExtractionFailed = true,
+                FailureReason = "empty_response"
+            };
+        }
+
+        return ParseBusinessCardExtraction(content);
+    }
+
+    private static BusinessCardExtractionResult ParseBusinessCardExtraction(string content)
+    {
+        using var contentDoc = JsonDocument.Parse(content);
+        var root = contentDoc.RootElement;
+
+        static string? S(JsonElement r, params string[] names)
+        {
+            foreach (var name in names)
+            {
+                if (!r.TryGetProperty(name, out var el)) continue;
+                if (el.ValueKind == JsonValueKind.Null) continue;
+                if (el.ValueKind == JsonValueKind.String)
+                {
+                    var v = el.GetString()?.Trim();
+                    if (!string.IsNullOrWhiteSpace(v)) return v;
+                }
+            }
+            return null;
+        }
+
+        // Only the usual business-card fields — everything else stays null.
+        return new BusinessCardExtractionResult
+        {
+            CompanyName = S(root, "companyName", "company_name"),
+            Email = S(root, "email"),
+            PhoneNumber = S(root, "phoneNumber", "phone_number", "mobile", "phone"),
+            LandNumber = S(root, "landNumber", "land_number", "landline", "landLine"),
+            Website = S(root, "website", "url"),
+            AddressLine1 = S(root, "addressLine1", "address_line1", "address"),
+            FullName = null,
+            CityName = null,
+            Area = null,
+            Street = null,
+            Building = null,
+            PostalCode = null,
+            Latitude = null,
+            Longitude = null
+        };
+    }
 }

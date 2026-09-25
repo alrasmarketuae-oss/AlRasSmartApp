@@ -1,16 +1,24 @@
+using System.Net.Mail;
 using BusinessLayer.Constants;
 using BusinessLayer.Dtos;
 using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using DataLayer.Interfaces;
+using DataLayer.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace BusinessLayer.Services;
 
 public class AdminUsersAppService(
     IRasAlSouqDbContext dbContext,
     IAccountDeletionAppService accountDeletionAppService,
-    IContentTranslationService contentTranslationService) : IAdminUsersAppService
+    IContentTranslationService contentTranslationService,
+    IPasswordHasher passwordHasher,
+    UserNameTranslationQueue userNameTranslationQueue,
+    IAddressesAppService addressesAppService,
+    IAdminAuditLogAppService auditLogAppService,
+    ILogger<AdminUsersAppService> logger) : IAdminUsersAppService
 {
     public async Task<object> GetUsersAsync(
         int page,
@@ -537,5 +545,306 @@ public class AdminUsersAppService(
             cancellationToken);
 
         return new { message, userId = parsedUserId };
+    }
+
+    public async Task<CreateAdminUserResult> CreateUserAsync(
+        CreateAdminUserRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var accountType = (request.AccountType ?? string.Empty).Trim().ToLowerInvariant();
+        if (accountType is not ("person" or "supplier" or "companycustomer" or "shippingcompany"))
+        {
+            throw new ArgumentException(
+                "Account type must be person, supplier, companyCustomer, or shippingCompany.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Trim().Length < 6)
+        {
+            throw new ArgumentException("Password must be at least 6 characters.");
+        }
+
+        var email = NormalizeAndValidateEmail(request.Email);
+        var emailExists = await dbContext.Users.AnyAsync(x => x.Email == email, cancellationToken);
+        if (emailExists)
+        {
+            throw new InvalidOperationException("Email is already registered.");
+        }
+
+        var preferredLanguage = NotificationMessages.NormalizeLanguage(request.PreferredLanguage);
+        var passwordHash = passwordHasher.HashPassword(request.Password.Trim());
+        var phone = string.IsNullOrWhiteSpace(request.PhoneNumber)
+            ? null
+            : request.PhoneNumber.Trim();
+
+        User user;
+        switch (accountType)
+        {
+            case "person":
+            {
+                var fullName = (request.FullName ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(fullName))
+                {
+                    throw new ArgumentException("Full name is required.");
+                }
+
+                user = new User
+                {
+                    Id = Guid.NewGuid(),
+                    FullName = fullName,
+                    Email = email,
+                    HashedPassword = passwordHash,
+                    RoleId = RoleIds.Buyer,
+                    LoginProviderName = "Local",
+                    IsActive = true,
+                    IsApproved = true,
+                    IsVerified = true,
+                    IsRejected = false,
+                    PhoneNumber = phone,
+                    PreferredLanguage = preferredLanguage,
+                };
+                break;
+            }
+            case "supplier":
+            case "companycustomer":
+            {
+                var companyName = string.IsNullOrWhiteSpace(request.CompanyName)
+                    ? null
+                    : request.CompanyName.Trim();
+                var ownerName = (request.FullName ?? string.Empty).Trim();
+                var displayName = !string.IsNullOrWhiteSpace(companyName)
+                    ? companyName
+                    : ownerName;
+                if (string.IsNullOrWhiteSpace(displayName))
+                {
+                    throw new ArgumentException("Company name or full name is required.");
+                }
+
+                var isCustomer = accountType == "companycustomer";
+                user = new User
+                {
+                    Id = Guid.NewGuid(),
+                    FullName = displayName,
+                    CompanyName = companyName,
+                    Email = email,
+                    HashedPassword = passwordHash,
+                    RoleId = RoleIds.Seller,
+                    LoginProviderName = "Local",
+                    IsActive = true,
+                    IsApproved = true,
+                    IsVerified = true,
+                    IsRejected = false,
+                    PhoneNumber = phone,
+                    LandNumber = TrimOrNull(request.LandNumber),
+                    LicenseNumber = TrimOrNull(request.LicenseNumber),
+                    BirthDate = request.BirthDate,
+                    CommercialRegister = TrimOrNull(request.CommercialRegister),
+                    TaxNumber = TrimOrNull(request.TaxNumber),
+                    Website = NormalizeOptionalWebsite(request.Website),
+                    IsCustomer = isCustomer,
+                    PreferredLanguage = preferredLanguage,
+                    LicencePath = string.IsNullOrWhiteSpace(request.LicencePath)
+                        ? null
+                        : WebRootFileHelper.NormalizeStoredPath(request.LicencePath),
+                    ImgPath = string.IsNullOrWhiteSpace(request.ImgPath)
+                        ? null
+                        : WebRootFileHelper.NormalizeStoredPath(request.ImgPath),
+                };
+
+                await dbContext.Users.AddAsync(user, cancellationToken);
+                if (request.CompanyImagePaths is not null)
+                {
+                    for (var i = 0; i < request.CompanyImagePaths.Count; i++)
+                    {
+                        var path = WebRootFileHelper.NormalizeStoredPath(request.CompanyImagePaths[i]);
+                        if (string.IsNullOrWhiteSpace(path)) continue;
+                        await dbContext.CompanyImages.AddAsync(
+                            new CompanyImage
+                            {
+                                UserId = user.Id,
+                                ImagePath = path,
+                                IsPrimary = i == 0,
+                            },
+                            cancellationToken);
+                    }
+                }
+
+                await dbContext.SaveChangesAsync(cancellationToken);
+                await TryAddCompanyAddressAsync(user.Id, request.Address, cancellationToken);
+                userNameTranslationQueue.Enqueue(
+                    user.Id,
+                    user.FullName,
+                    user.CompanyName,
+                    user.PreferredLanguage);
+
+                await auditLogAppService.WriteAsync(
+                    AdminAuditActions.UserCreate,
+                    AdminAuditEntityTypes.User,
+                    user.Id.ToString("D"),
+                    $"Admin created {(isCustomer ? "company customer" : "supplier")} '{displayName}'",
+                    new { email, accountType },
+                    cancellationToken);
+
+                return new CreateAdminUserResult
+                {
+                    UserId = user.Id.ToString("D"),
+                    Email = email,
+                    AccountType = isCustomer ? "companyCustomer" : "supplier",
+                    Message =
+                        "Account created as verified, approved, and active (no OTP sent).",
+                };
+            }
+            case "shippingcompany":
+            {
+                var companyName = (request.CompanyName ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(companyName))
+                {
+                    throw new ArgumentException("Company name is required.");
+                }
+
+                if (string.IsNullOrWhiteSpace(phone))
+                {
+                    throw new ArgumentException("Phone number is required.");
+                }
+
+                user = new User
+                {
+                    Id = Guid.NewGuid(),
+                    FullName = companyName,
+                    CompanyName = companyName,
+                    Email = email,
+                    HashedPassword = passwordHash,
+                    RoleId = RoleIds.ShippingCompany,
+                    LoginProviderName = "Local",
+                    IsActive = true,
+                    IsApproved = true,
+                    IsVerified = true,
+                    IsRejected = false,
+                    PhoneNumber = phone,
+                    LandNumber = TrimOrNull(request.LandNumber),
+                    CommercialRegister = TrimOrNull(request.CommercialRegister),
+                    TaxNumber = TrimOrNull(request.TaxNumber),
+                    Website = NormalizeOptionalWebsite(request.Website),
+                    PreferredLanguage = preferredLanguage,
+                };
+                break;
+            }
+            default:
+                throw new ArgumentException("Unsupported account type.");
+        }
+
+        await dbContext.Users.AddAsync(user, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        userNameTranslationQueue.Enqueue(
+            user.Id,
+            user.FullName,
+            user.CompanyName,
+            user.PreferredLanguage);
+
+        await auditLogAppService.WriteAsync(
+            AdminAuditActions.UserCreate,
+            AdminAuditEntityTypes.User,
+            user.Id.ToString("D"),
+            $"Admin created {accountType} user '{user.FullName}'",
+            new { email, accountType },
+            cancellationToken);
+
+        return new CreateAdminUserResult
+        {
+            UserId = user.Id.ToString("D"),
+            Email = email,
+            AccountType = accountType == "shippingcompany" ? "shippingCompany" : accountType,
+            Message = "Account created as verified, approved, and active (no OTP sent).",
+        };
+    }
+
+    private async Task TryAddCompanyAddressAsync(
+        Guid userId,
+        RegisterCompanyAddressInput? address,
+        CancellationToken cancellationToken)
+    {
+        if (address is null) return;
+        if (string.IsNullOrWhiteSpace(address.AddressLine1)
+            && !address.Latitude.HasValue
+            && string.IsNullOrWhiteSpace(address.CityName)
+            && !address.CityId.HasValue)
+        {
+            return;
+        }
+
+        try
+        {
+            await addressesAppService.AddAsync(
+                new AddAddressInput
+                {
+                    UserId = userId.ToString("D"),
+                    CityId = address.CityId,
+                    CountryId = address.CountryId,
+                    CityName = address.CityName,
+                    AddressLine1 = string.IsNullOrWhiteSpace(address.AddressLine1)
+                        ? "Company location"
+                        : address.AddressLine1,
+                    AddressLine2 = address.AddressLine2,
+                    AddressTypeId = address.AddressTypeId ?? 1,
+                    Area = address.Area,
+                    Street = address.Street,
+                    Building = address.Building,
+                    FloorNo = address.FloorNo,
+                    UnitNo = address.UnitNo,
+                    Landmark = address.Landmark,
+                    PostalCode = address.PostalCode,
+                    ContactPerson = address.ContactPerson,
+                    MobileNumber = address.MobileNumber,
+                    DeliveryInstructions = address.DeliveryInstructions,
+                    Latitude = address.Latitude,
+                    Longitude = address.Longitude,
+                },
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to save admin-created company address for {UserId}", userId);
+        }
+    }
+
+    private static string? TrimOrNull(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static string NormalizeAndValidateEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            throw new ArgumentException("Email is required.");
+        }
+
+        var normalized = email.Trim().ToLowerInvariant();
+        try
+        {
+            var address = new MailAddress(normalized);
+            if (!string.Equals(address.Address, normalized, StringComparison.OrdinalIgnoreCase)
+                || address.Host.IndexOf('.') < 0
+                || address.User.Length == 0)
+            {
+                throw new ArgumentException("Invalid email address.");
+            }
+        }
+        catch (FormatException)
+        {
+            throw new ArgumentException("Invalid email address.");
+        }
+
+        return normalized;
+    }
+
+    private static string? NormalizeOptionalWebsite(string? website)
+    {
+        if (string.IsNullOrWhiteSpace(website)) return null;
+        var trimmed = website.Trim();
+        if (trimmed is "https://" or "http://") return null;
+        if (!trimmed.Contains("://", StringComparison.Ordinal))
+        {
+            trimmed = "https://" + trimmed;
+        }
+
+        return trimmed;
     }
 }

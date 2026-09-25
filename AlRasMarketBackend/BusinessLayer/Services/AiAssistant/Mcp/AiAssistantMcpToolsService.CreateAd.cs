@@ -536,6 +536,7 @@ public sealed partial class AiAssistantMcpToolsService
             3 => "personal",
             2 when user.IsCustomer == true => "company_customer",
             2 => "supplier",
+            1 => "admin",
             _ => "public"
         };
     }

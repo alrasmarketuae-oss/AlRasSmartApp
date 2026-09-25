@@ -31,7 +31,8 @@ public sealed class AiAssistantMcpToolLoop(
         "create_retail_ad",
         "create_category_ad",
         "create_shipping_ad",
-        "submit_feedback"
+        "submit_feedback",
+        "create_supplier_from_business_cards"
     };
 
     private static readonly HashSet<string> AccountMutationTools = new(StringComparer.Ordinal)

@@ -26,6 +26,7 @@ import 'package:alrasmarket/core/services_locator/services_locator.dart';
 import 'package:alrasmarket/features/company/domain/usecases/create_ad_usecases.dart';
 import 'package:alrasmarket/features/company/presentation/helpers/create_ad_form_mapper.dart';
 import 'package:alrasmarket/core/media/video_compressor.dart';
+import 'package:alrasmarket/core/media/image_compressor.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -86,6 +87,7 @@ abstract class _AiAssistantViewStateBase extends State<AiAssistantView> {
   DateTime? _thinkingStartedAt;
   bool _pendingAdMediaButton = false;
   final List<String> _draftImagePaths = [];
+  final List<String> _businessCardImagePaths = [];
   String? _draftVideoPath;
   int? _draftVideoDurationSeconds;
   bool _uploadingAdMedia = false;
@@ -97,6 +99,8 @@ abstract class _AiAssistantViewStateBase extends State<AiAssistantView> {
   int? _inFlightResponseId;
   final Map<int, String> _questionForResponse = {};
   AiChatMessage? _replyTo;
+
+  bool get _isAdminAi => AuthService.instance.isAdminAccount;
 
   void _scrollToEnd() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -245,8 +249,16 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
   }
 
   Future<void> _send() async {
-    final visibleText = _controller.text.trim();
-    if (visibleText.isEmpty || _isThinking) return;
+    var visibleText = _controller.text.trim();
+    final hasBusinessCards = _businessCardImagePaths.isNotEmpty;
+    if (_isThinking) return;
+    if (visibleText.isEmpty && !hasBusinessCards) return;
+    if (visibleText.isEmpty && hasBusinessCards) {
+      final isArSeed = Localizations.localeOf(context).languageCode == 'ar';
+      visibleText = isArSeed
+          ? 'سجّل حساب مورد من بطاقة العمل المرفقة'
+          : 'Register a supplier account from the attached business card';
+    }
 
     FocusManager.instance.primaryFocus?.unfocus();
 
@@ -364,6 +376,21 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
       apiText = buffer.toString();
     }
 
+    if (_businessCardImagePaths.isNotEmpty) {
+      final buffer = StringBuffer(apiText);
+      buffer.writeln();
+      buffer.write(
+        '[business_card_image_paths: ${_businessCardImagePaths.join(' | ')}]',
+      );
+      buffer.writeln();
+      buffer.write(
+        isAr
+            ? 'استخدم أداة create_supplier_from_business_cards بهذه المسارات فورًا. كلمة المرور 123456 بدون OTP.'
+            : 'Call create_supplier_from_business_cards with these paths immediately. Password 123456, no OTP.',
+      );
+      apiText = buffer.toString();
+    }
+
     // Live cinematic thinking starts immediately with a rich locale narrative.
     final responseId = ++_nextResponseId;
     setState(() {
@@ -381,6 +408,7 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
       _draftImagePaths.clear();
       _draftVideoPath = null;
       _draftVideoDurationSeconds = null;
+      _businessCardImagePaths.clear();
     });
     _startThinkingNarrative(
       visibleText,
@@ -1205,9 +1233,13 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
                 onSend: _send,
                 colors: colors,
                 planMode: _planMode,
-                onPickAdMedia: _planMode ? _pickAdMedia : null,
+                onPickAdMedia: _planMode
+                    ? _pickAdMedia
+                    : (_isAdminAi ? _pickBusinessCardImages : null),
                 uploadingAdMedia: _uploadingAdMedia,
-                draftImageCount: _draftImagePaths.length,
+                draftImageCount: _planMode
+                    ? _draftImagePaths.length
+                    : _businessCardImagePaths.length,
                 hasDraftVideo: _draftVideoPath != null,
                 replyPreview: _previewForReply(_replyTo),
                 onCancelReply: _replyTo == null ? null : () => setState(() => _replyTo = null),

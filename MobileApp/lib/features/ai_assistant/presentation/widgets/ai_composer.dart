@@ -526,8 +526,12 @@ class AiComposerState extends State<AiComposer> {
                         _AttachmentChip(
                           icon: Icons.image_outlined,
                           label: isAr
-                              ? '${widget.draftImageCount} صورة مرفقة'
-                              : '${widget.draftImageCount} image(s) attached',
+                              ? (widget.planMode
+                                  ? '${widget.draftImageCount} صورة مرفقة'
+                                  : '${widget.draftImageCount} بطاقة عمل')
+                              : (widget.planMode
+                                  ? '${widget.draftImageCount} image(s) attached'
+                                  : '${widget.draftImageCount} business card(s)'),
                           colors: widget.colors,
                         ),
                       if (widget.hasDraftVideo)

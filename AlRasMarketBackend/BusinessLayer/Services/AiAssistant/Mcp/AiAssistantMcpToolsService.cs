@@ -674,7 +674,8 @@ public sealed partial class AiAssistantMcpToolsService(
             "create_shipping_ad",
             "Create ONE shipping company ad (shipping audience only). Collect: from/to country + port, min/max shipping duration days, optional container 20ft and/or 40ft USD prices, specifications/details. Uses profile phone if phone_number omitted.",
             ["from_country_name", "from_port_name", "to_country_name", "to_port_name", "min_duration_days", "max_duration_days", "specifications"]),
-        SubmitFeedbackToolDefinition
+        SubmitFeedbackToolDefinition,
+        CreateSupplierFromBusinessCardsToolDefinition
     ];
 
     public async Task<AiToolResult> ExecuteAsync(
@@ -736,6 +737,8 @@ public sealed partial class AiAssistantMcpToolsService(
                 "create_shipping_ad" => await CreateShippingAdAsync(
                     userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
                 "submit_feedback" => await SubmitFeedbackAsync(
+                    userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
+                "create_supplier_from_business_cards" => await CreateSupplierFromBusinessCardsAsync(
                     userId, call.ArgumentsJson, cancellationToken).ConfigureAwait(false),
                 _ => Json(new { ok = false, error = $"Unknown tool: {call.Name}" })
             };

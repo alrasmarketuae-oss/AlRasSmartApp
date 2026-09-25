@@ -65,6 +65,20 @@ public sealed class ImageCompressionOptions
         AutoOrient = true,
         EnforceByteTarget = false
     };
+
+    /// <summary>
+    /// Business-card OCR: keep text readable while capping payload size for OpenAI vision.
+    /// </summary>
+    public static ImageCompressionOptions BusinessCardVision { get; } = new()
+    {
+        MaxBytes = 280 * 1024,
+        MaxSide = 1400,
+        InitialQuality = 78,
+        MinQuality = 58,
+        QualityStep = 5,
+        AutoOrient = true,
+        EnforceByteTarget = true
+    };
 }
 
 public static class ImageFileHelper

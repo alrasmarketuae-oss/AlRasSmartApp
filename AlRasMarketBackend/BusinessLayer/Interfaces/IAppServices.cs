@@ -127,6 +127,14 @@ public interface IAdminUsersAppService
     Task<object> ConvertSupplierToCompanyCustomerAsync(string userId, CancellationToken cancellationToken = default);
 
     Task<object> DeleteUserAsync(string userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Creates a marketplace user as verified/approved/active (no OTP email).
+    /// Does not use public /Auth/register-* endpoints.
+    /// </summary>
+    Task<CreateAdminUserResult> CreateUserAsync(
+        CreateAdminUserRequest request,
+        CancellationToken cancellationToken = default);
 }
 
 public interface IAdminOrdersAppService
@@ -536,6 +544,13 @@ public interface IOpenAiVisionService
     Task<AdImagePolicyScanResult> ScanAdImageForPolicyViolationsAsync(
         Stream imageStream,
         string fileName,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reads company contact fields from one or two business-card photos (front/back).
+    /// </summary>
+    Task<BusinessCardExtractionResult> ExtractBusinessCardAsync(
+        IReadOnlyList<(Stream Stream, string FileName)> images,
         CancellationToken cancellationToken = default);
 
     /// <summary>

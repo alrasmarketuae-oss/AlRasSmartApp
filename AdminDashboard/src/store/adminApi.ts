@@ -148,6 +148,31 @@ export type FetchUsersParams = {
   pendingProfileEditsOnly?: boolean
 }
 
+export type CreateAdminUserPayload = {
+  accountType: 'person' | 'supplier' | 'companyCustomer' | 'shippingCompany'
+  email: string
+  password: string
+  phoneNumber?: string
+  preferredLanguage?: string
+  fullName?: string
+  companyName?: string
+  landNumber?: string
+  licenseNumber?: string
+  commercialRegister?: string
+  taxNumber?: string
+  website?: string
+  address?: {
+    addressLine1?: string
+    cityName?: string
+    area?: string
+    street?: string
+    building?: string
+    postalCode?: string
+    latitude?: number
+    longitude?: number
+  }
+}
+
 export const adminApi = createApi({
   reducerPath: 'adminApi',
   baseQuery: adminBaseQuery,
@@ -574,6 +599,33 @@ export const adminApi = createApi({
         { type: 'Users', id: 'LIST' },
         { type: 'Users', id: userId },
         'Dashboard',
+      ],
+    }),
+
+    createAdminUser: builder.mutation<
+      {
+        userId: string
+        email: string
+        accountType: string
+        message: string
+      },
+      CreateAdminUserPayload
+    >({
+      query: (body) => ({
+        url: '/api/admin/users',
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (response: Record<string, unknown>) => ({
+        userId: String(response.userId ?? response.UserId ?? ''),
+        email: String(response.email ?? response.Email ?? ''),
+        accountType: String(response.accountType ?? response.AccountType ?? ''),
+        message: String(response.message ?? response.Message ?? ''),
+      }),
+      invalidatesTags: [
+        { type: 'Users', id: 'LIST' },
+        'Dashboard',
+        { type: 'AuditLogs', id: 'LIST' },
       ],
     }),
 
@@ -2343,6 +2395,7 @@ export const {
   useApproveCompanyMutation,
   useRejectCompanyMutation,
   useSetUserActiveMutation,
+  useCreateAdminUserMutation,
   useDeleteAdminUserMutation,
   useConvertCompanyCustomerToSupplierMutation,
   useConvertSupplierToCompanyCustomerMutation,

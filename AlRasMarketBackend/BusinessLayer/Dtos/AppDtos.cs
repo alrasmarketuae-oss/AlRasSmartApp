@@ -459,6 +459,27 @@ public sealed class AdImagePolicyScanResult
     public bool ScanFailed { get; init; }
 }
 
+/// <summary>Fields extracted from one or two company business-card photos.</summary>
+public sealed class BusinessCardExtractionResult
+{
+    public string? CompanyName { get; init; }
+    public string? FullName { get; init; }
+    public string? Email { get; init; }
+    public string? PhoneNumber { get; init; }
+    public string? LandNumber { get; init; }
+    public string? Website { get; init; }
+    public string? AddressLine1 { get; init; }
+    public string? CityName { get; init; }
+    public string? Area { get; init; }
+    public string? Street { get; init; }
+    public string? Building { get; init; }
+    public string? PostalCode { get; init; }
+    public decimal? Latitude { get; init; }
+    public decimal? Longitude { get; init; }
+    public bool ExtractionFailed { get; init; }
+    public string? FailureReason { get; init; }
+}
+
 /// <summary>LLM result for ad title/specs text policy (contact, insults, etc.).</summary>
 public sealed class AdTextPolicyScanResult
 {

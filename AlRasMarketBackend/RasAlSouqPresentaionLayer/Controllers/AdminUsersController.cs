@@ -1,4 +1,5 @@
 using BusinessLayer.Constants;
+using BusinessLayer.Dtos;
 using BusinessLayer.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +13,27 @@ namespace RasAlSouqPresentaionLayer.Controllers;
 [RequireAdminPermission(AdminPermissions.UsersView)]
 public class AdminUsersController(IAdminUsersAppService adminUsersAppService) : ControllerBase
 {
+    [HttpPost]
+    [RequireAdminPermission(AdminPermissions.UsersManage)]
+    public async Task<IActionResult> CreateUser(
+        [FromBody] CreateAdminUserRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await adminUsersAppService.CreateUserAsync(request, cancellationToken);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+    }
+
     [HttpGet]
     public async Task<IActionResult> GetUsers(
         [FromQuery] int page = 1,

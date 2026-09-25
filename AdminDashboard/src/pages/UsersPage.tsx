@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import UsersFilterBar from '../components/users/UsersFilterBar'
 import UsersTable from '../components/users/UsersTable'
 import { useAppPreferences } from '../context/AppPreferencesProvider'
 import { useGlobalSearchParam } from '../hooks/useGlobalSearchParam'
 import { useListPageParam } from '../hooks/useListPageParam'
+import { hasPermission, PERMISSIONS } from '../lib/permissions'
 import { useGetUsersQuery } from '../store'
 import { queryViewState } from '../store/queryView'
 import { getRtkErrorMessage } from '../utils/rtkError'
@@ -147,11 +148,21 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
       <div className="max-w-3xl">
         <h1 className="admin-text text-2xl font-bold">{t('users.title')}</h1>
         <p className="admin-text-muted mt-2 text-sm leading-relaxed">
           {t('users.description')}
         </p>
+      </div>
+      {hasPermission(PERMISSIONS.usersManage) && !profileEditsOnly ? (
+        <Link
+          to="/users/add"
+          className="rounded-lg bg-[#3B7FC7] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#326ea9]"
+        >
+          {t('users.addUser')}
+        </Link>
+      ) : null}
       </div>
 
     <div className="admin-card">

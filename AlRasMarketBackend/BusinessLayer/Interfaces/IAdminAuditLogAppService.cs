@@ -38,6 +38,7 @@ public static class AdminAuditActions
     public const string CategoryDelete = "category.delete";
     public const string SettingsUpdate = "settings.update";
     public const string EmployeeCreate = "employee.create";
+    public const string UserCreate = "user.create";
     public const string EmployeeUpdate = "employee.update";
     public const string EmployeeDelete = "employee.delete";
     public const string ShippingPostApprove = "shipping.post_approve";
