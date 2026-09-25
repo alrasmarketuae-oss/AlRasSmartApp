@@ -918,35 +918,41 @@ public class OpenAiVisionService(
             };
         }
 
-        var contentParts = new List<object>
+        // Prefer Astra (gpt-6-astra) for precise OCR of emails / names / phone digits.
+        var model = configuration["OpenAI:BusinessCardModel"]
+            ?? configuration["AiShoppingAgent:Model"]
+            ?? "gpt-6-astra";
+        var reasoningEffort = configuration["OpenAI:BusinessCardReasoning"] ?? "medium";
+
+        const string instructions =
+            "You are a precise business-card OCR engine for Al Ras Market. " +
+            "Read every printed character carefully. Never invent values. " +
+            "Return ONLY a single JSON object — no markdown fences.";
+
+        const string promptText =
+            "These are photos of a company business card (front and/or back).\n" +
+            "Extract ONLY fields that are clearly printed.\n" +
+            "Return ONLY JSON:\n" +
+            "{\n" +
+            "  \"companyName\": null,\n" +
+            "  \"email\": null,\n" +
+            "  \"phoneNumber\": null,\n" +
+            "  \"landNumber\": null,\n" +
+            "  \"website\": null,\n" +
+            "  \"addressLine1\": null\n" +
+            "}\n" +
+            "ACCURACY RULES (critical):\n" +
+            "- Copy email EXACTLY as printed (every letter, dot, hyphen, underscore). Never invent domains.\n" +
+            "- Copy phone / landline digits EXACTLY. Do not confuse 0/O, 1/l/I, 5/S, 8/B. Keep +country code when visible.\n" +
+            "- companyName MUST be English (Latin script only). If Arabic is printed, transliterate/translate to English.\n" +
+            "- website: copy URL exactly if printed, else null.\n" +
+            "- addressLine1: full printed address as one string if present, else null.\n" +
+            "- phoneNumber = mobile/WhatsApp; landNumber = office landline if distinct; else null.\n" +
+            "- Use JSON null (not empty string) for missing fields. No extra keys.";
+
+        var inputContent = new List<object>
         {
-            new
-            {
-                type = "text",
-                text =
-                    "These are photos of a company business card (front and/or back).\n" +
-                    "Extract ONLY the fields that are clearly printed. Never invent values.\n" +
-                    "Typical business cards have: company name, mobile phone, landline, address, email, website.\n" +
-                    "Return ONLY JSON (no markdown):\n" +
-                    "{\n" +
-                    "  \"companyName\": null,\n" +
-                    "  \"email\": null,\n" +
-                    "  \"phoneNumber\": null,\n" +
-                    "  \"landNumber\": null,\n" +
-                    "  \"website\": null,\n" +
-                    "  \"addressLine1\": null\n" +
-                    "}\n" +
-                    "CRITICAL: companyName must ALWAYS be English (Latin script only). " +
-                    "If the card prints Arabic, convert to English transliteration/translation " +
-                    "(مثال: شركة الراس الذكية → Al Ras Smart Company). Never put Arabic letters in companyName.\n" +
-                    "- email: email if printed, else null.\n" +
-                    "- phoneNumber: mobile / WhatsApp if printed (keep +country code when visible), else null.\n" +
-                    "- landNumber: landline / office phone if distinct from mobile, else null.\n" +
-                    "- website: URL if printed, else null.\n" +
-                    "- addressLine1: full printed address as one string if present, else null (may keep Arabic if that is how it is printed).\n" +
-                    "- Use JSON null (not empty string) for every missing field.\n" +
-                    "- Do NOT return extra keys (no fullName, city, street, building, postal, lat/lng)."
-            }
+            new { type = "input_text", text = promptText }
         };
 
         foreach (var (stream, fileName) in images.Take(2))
@@ -973,14 +979,15 @@ public class OpenAiVisionService(
             if (jpegBytes.Length == 0) continue;
 
             var dataUrl = $"data:image/jpeg;base64,{Convert.ToBase64String(jpegBytes)}";
-            contentParts.Add(new
+            inputContent.Add(new
             {
-                type = "image_url",
-                image_url = new { url = dataUrl, detail = "high" }
+                type = "input_image",
+                image_url = dataUrl,
+                detail = "high"
             });
         }
 
-        if (contentParts.Count < 2)
+        if (inputContent.Count < 2)
         {
             return new BusinessCardExtractionResult
             {
@@ -989,29 +996,47 @@ public class OpenAiVisionService(
             };
         }
 
-        var payload = new
+        var payload = new Dictionary<string, object?>
         {
-            model = "gpt-4o-mini",
-            temperature = 0,
-            response_format = new { type = "json_object" },
-            messages = new object[]
+            ["model"] = model,
+            ["instructions"] = instructions,
+            ["input"] = new object[]
             {
-                new { role = "user", content = contentParts.ToArray() }
+                new
+                {
+                    role = "user",
+                    content = inputContent.ToArray()
+                }
+            },
+            ["store"] = false,
+            ["max_output_tokens"] = 900,
+            ["reasoning"] = new Dictionary<string, object?>
+            {
+                ["effort"] = NormalizeBusinessCardReasoning(reasoningEffort)
+            },
+            ["text"] = new
+            {
+                format = new { type = "json_object" }
             }
         };
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
-        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/responses");
+        request.Headers.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
         request.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(TimeSpan.FromSeconds(55));
+        timeoutCts.CancelAfter(TimeSpan.FromSeconds(90));
 
         using var response = await httpClient.SendAsync(request, timeoutCts.Token).ConfigureAwait(false);
         var body = await response.Content.ReadAsStringAsync(timeoutCts.Token).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
         {
-            logger.LogWarning("Business card OCR failed: {Status} {Body}", (int)response.StatusCode, body);
+            logger.LogWarning(
+                "Business card Astra OCR failed model={Model} status={Status} body={Body}",
+                model,
+                (int)response.StatusCode,
+                body.Length > 800 ? body[..800] : body);
             return new BusinessCardExtractionResult
             {
                 ExtractionFailed = true,
@@ -1019,13 +1044,7 @@ public class OpenAiVisionService(
             };
         }
 
-        using var doc = JsonDocument.Parse(body);
-        var content = doc.RootElement
-            .GetProperty("choices")[0]
-            .GetProperty("message")
-            .GetProperty("content")
-            .GetString();
-
+        var content = ExtractResponsesOutputText(body);
         if (string.IsNullOrWhiteSpace(content))
         {
             return new BusinessCardExtractionResult
@@ -1035,7 +1054,89 @@ public class OpenAiVisionService(
             };
         }
 
-        return ParseBusinessCardExtraction(content);
+        try
+        {
+            return ParseBusinessCardExtraction(StripJsonFences(content));
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Business card Astra OCR JSON parse failed. Raw={Raw}", content);
+            return new BusinessCardExtractionResult
+            {
+                ExtractionFailed = true,
+                FailureReason = "parse_error"
+            };
+        }
+    }
+
+    private static string NormalizeBusinessCardReasoning(string? effort)
+    {
+        var value = (effort ?? "medium").Trim().ToLowerInvariant();
+        return value switch
+        {
+            "low" or "medium" or "high" or "xhigh" => value,
+            "max" => "high",
+            _ => "medium"
+        };
+    }
+
+    private static string? ExtractResponsesOutputText(string json)
+    {
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+
+        if (root.TryGetProperty("output_text", out var outputText)
+            && outputText.ValueKind == JsonValueKind.String)
+        {
+            var direct = outputText.GetString();
+            if (!string.IsNullOrWhiteSpace(direct)) return direct;
+        }
+
+        var text = new StringBuilder();
+        if (root.TryGetProperty("output", out var output) && output.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in output.EnumerateArray())
+            {
+                var type = item.TryGetProperty("type", out var typeEl) ? typeEl.GetString() : null;
+                if (!string.Equals(type, "message", StringComparison.OrdinalIgnoreCase)) continue;
+                if (!item.TryGetProperty("content", out var content) || content.ValueKind != JsonValueKind.Array)
+                {
+                    continue;
+                }
+
+                foreach (var part in content.EnumerateArray())
+                {
+                    if (part.TryGetProperty("text", out var textEl)
+                        && textEl.ValueKind == JsonValueKind.String)
+                    {
+                        text.Append(textEl.GetString());
+                    }
+                    else if (part.TryGetProperty("type", out var pt)
+                             && pt.GetString() == "output_text"
+                             && part.TryGetProperty("text", out var ot)
+                             && ot.ValueKind == JsonValueKind.String)
+                    {
+                        text.Append(ot.GetString());
+                    }
+                }
+            }
+        }
+
+        return text.Length == 0 ? null : text.ToString().Trim();
+    }
+
+    private static string StripJsonFences(string content)
+    {
+        var trimmed = content.Trim();
+        if (!trimmed.StartsWith("```", StringComparison.Ordinal)) return trimmed;
+        var start = trimmed.IndexOf('{');
+        var end = trimmed.LastIndexOf('}');
+        if (start >= 0 && end > start)
+        {
+            return trimmed[start..(end + 1)];
+        }
+
+        return trimmed;
     }
 
     private static BusinessCardExtractionResult ParseBusinessCardExtraction(string content)

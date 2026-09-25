@@ -148,7 +148,8 @@ builder.Services.AddScoped<IOrderDataAccess, OrderDataAccess>();
 builder.Services.AddScoped<IProductsAppService, ProductsAppService>();
 builder.Services.AddHttpClient<IOpenAiVisionService, OpenAiVisionService>(client =>
 {
-    client.Timeout = TimeSpan.FromSeconds(45);
+    // Business-card Astra OCR can take longer than product vision calls.
+    client.Timeout = TimeSpan.FromSeconds(100);
 });
 builder.Services.Configure<QdrantOptions>(builder.Configuration.GetSection(QdrantOptions.SectionName));
 builder.Services.Configure<ImageEmbeddingOptions>(builder.Configuration.GetSection(ImageEmbeddingOptions.SectionName));

@@ -67,14 +67,14 @@ public sealed class ImageCompressionOptions
     };
 
     /// <summary>
-    /// Business-card OCR: keep text readable while capping payload size for OpenAI vision.
+    /// Business-card OCR (Astra): keep printed digits/emails readable while capping payload size.
     /// </summary>
     public static ImageCompressionOptions BusinessCardVision { get; } = new()
     {
-        MaxBytes = 280 * 1024,
-        MaxSide = 1400,
-        InitialQuality = 78,
-        MinQuality = 58,
+        MaxBytes = 400 * 1024,
+        MaxSide = 1600,
+        InitialQuality = 85,
+        MinQuality = 70,
         QualityStep = 5,
         AutoOrient = true,
         EnforceByteTarget = true

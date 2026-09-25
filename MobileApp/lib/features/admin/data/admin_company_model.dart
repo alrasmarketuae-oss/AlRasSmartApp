@@ -19,21 +19,22 @@ class AdminCompanyModel {
     final roleId = json['roleId'] ?? json['RoleId'];
     final roleName =
         (json['roleName'] ?? json['RoleName'] ?? '').toString().toLowerCase();
+    // Admin always shows company names in English.
     final companyName = _firstNonEmpty([
-      json['companyNameAr'],
-      json['CompanyNameAr'],
       json['companyNameEn'],
       json['CompanyNameEn'],
       json['companyName'],
       json['CompanyName'],
+      json['companyNameAr'],
+      json['CompanyNameAr'],
     ]);
     final fullName = _firstNonEmpty([
-      json['fullNameAr'],
-      json['FullNameAr'],
       json['fullNameEn'],
       json['FullNameEn'],
       json['fullName'],
       json['FullName'],
+      json['fullNameAr'],
+      json['FullNameAr'],
     ]);
 
     final email = _firstNonEmpty([json['email'], json['Email']]);

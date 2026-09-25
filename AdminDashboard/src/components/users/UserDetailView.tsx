@@ -265,7 +265,11 @@ export default function UserDetailView({
   )
 
   const companyTitle =
-    user.companyName?.trim() || user.fullName?.trim() || user.email
+    user.companyNameEn?.trim() ||
+    user.companyName?.trim() ||
+    user.fullNameEn?.trim() ||
+    user.fullName?.trim() ||
+    user.email
   const primaryAddress = pickPrimaryAddress(user.addresses ?? [])
   const extraAddresses = (user.addresses ?? []).filter(
     (item) => item.addressId !== primaryAddress?.addressId,
@@ -414,8 +418,12 @@ export default function UserDetailView({
                 >
                   <BilingualNameLines
                     nameEn={user.companyNameEn}
-                    nameAr={user.companyNameAr}
-                    fallback={companyTitle}
+                    nameAr={null}
+                    fallback={
+                      user.companyNameEn?.trim() ||
+                      user.companyName?.trim() ||
+                      companyTitle
+                    }
                     primaryClassName="admin-text text-2xl font-extrabold tracking-tight sm:text-[1.7rem]"
                     secondaryClassName="admin-text-muted mt-1 text-sm"
                   />
@@ -571,8 +579,12 @@ export default function UserDetailView({
                   >
                     <BilingualNameLines
                       nameEn={user.companyNameEn}
-                      nameAr={user.companyNameAr}
-                      fallback={user.companyName?.trim() || t('users.viewCompanyAds')}
+                      nameAr={null}
+                      fallback={
+                        user.companyNameEn?.trim() ||
+                        user.companyName?.trim() ||
+                        t('users.viewCompanyAds')
+                      }
                     />
                   </Link>
                 ) : (

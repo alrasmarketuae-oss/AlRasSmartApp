@@ -49,9 +49,19 @@ function companyAdsPath(user: AdminUser): string {
 }
 
 function companyCellLabel(user: AdminUser, locale: 'ar' | 'en'): string {
-  const companyName = user.companyName?.trim()
+  // Admin company column prefers English name.
+  const companyName =
+    user.companyNameEn?.trim() ||
+    user.companyName?.trim() ||
+    ''
   if (companyName) return companyName
-  if (isCompanyAccount(user)) return user.fullName?.trim() || customerKindLabel(user, locale)
+  if (isCompanyAccount(user)) {
+    return (
+      user.fullNameEn?.trim() ||
+      user.fullName?.trim() ||
+      customerKindLabel(user, locale)
+    )
+  }
   return customerKindLabel(user, locale)
 }
 
@@ -95,18 +105,9 @@ function CompanyNameCell({
   }
 
   const label = companyCellLabel(user, locale)
-  const hasBilingualCompany =
-    Boolean(user.companyNameEn?.trim()) || Boolean(user.companyNameAr?.trim())
-
-  const content = hasBilingualCompany ? (
-    <BilingualNameLines
-      nameEn={user.companyNameEn}
-      nameAr={user.companyNameAr}
-      fallback={label}
-    />
-  ) : (
-    label
-  )
+  // Admin shows companies in English only (no Arabic secondary line).
+  const englishCompany =
+    user.companyNameEn?.trim() || user.companyName?.trim() || label
 
   return (
     <Link
@@ -114,7 +115,7 @@ function CompanyNameCell({
       state={listReturnState}
       className="block min-w-0 font-medium text-[#3B7FC7] transition hover:text-[#2f6ab0] hover:underline"
     >
-      {content}
+      <CellText>{englishCompany}</CellText>
     </Link>
   )
 }
