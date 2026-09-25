@@ -485,9 +485,7 @@ export default function UserDetailView({
                 <span className={`flex h-7 w-7 items-center justify-center rounded-lg ${ICON_BLUE}`}>
                   {InfoFieldIcons.phone}
                 </span>
-                <span dir="ltr" className="admin-text font-semibold">
-                  {user.landNumber}
-                </span>
+                <WhatsAppPhoneLink phone={user.landNumber} className="text-sm" />
               </div>
             ) : null}
             {user.email ? (
@@ -635,7 +633,7 @@ export default function UserDetailView({
             <ProfileFieldRow
               icon={InfoFieldIcons.phone}
               label={t('users.landLine')}
-              value={<span dir="ltr">{user.landNumber?.trim() || '—'}</span>}
+              value={<WhatsAppPhoneLink phone={user.landNumber} className="text-sm" />}
             />
             <ProfileFieldRow
               icon={InfoFieldIcons.calendar}

@@ -47,7 +47,8 @@ import { useAppDispatch } from '../store/hooks'
 import type { ChatContact, ChatMessage, ChatMessageTypeCode } from '../types/chat'
 import { CHAT_MESSAGES_PAGE_SIZE } from '../types/chat'
 import { getRtkErrorMessage } from '../utils/rtkError'
-import type { AskForPriceSupplierTarget } from '../components/chat/ChatMessageBubble'
+import type { AskSupplierTarget } from '../components/chat/ChatMessageBubble'
+import { buildAskSupplierPriceMessage, parseAskSupplierContent } from '../utils/askSupplierPrice'
 
 type OpenChatWithState = {
   openChatWith?: {
@@ -507,6 +508,7 @@ export default function ChatPage() {
       if (involves(primaryId)) {
         void decryptForDisplay(message).then((decoded) => {
           mergeMessage(decoded)
+          invalidateProductAfterAskSupplierReply(decoded.content)
           if (primaryId && decoded.fromUserId === primaryId) {
             void markDelivered({ otherUserId: decoded.fromUserId }).catch(() => undefined)
             void markSeen({ otherUserId: decoded.fromUserId }).catch(() => undefined)
@@ -516,6 +518,7 @@ export default function ChatPage() {
       if (involves(secondaryId) && secondaryId !== primaryId) {
         void decryptForDisplay(message).then((decoded) => {
           mergeSecondaryMessage(decoded)
+          invalidateProductAfterAskSupplierReply(decoded.content)
           if (secondaryId && decoded.fromUserId === secondaryId) {
             void markDelivered({ otherUserId: decoded.fromUserId }).catch(() => undefined)
             void markSeen({ otherUserId: decoded.fromUserId }).catch(() => undefined)
@@ -523,7 +526,7 @@ export default function ChatPage() {
         })
       }
     },
-    [mergeMessage, mergeSecondaryMessage, markSeen, markDelivered],
+    [mergeMessage, mergeSecondaryMessage, markSeen, markDelivered, dispatch],
   )
 
   const replaceOptimisticMessage = useCallback(
@@ -672,6 +675,14 @@ export default function ChatPage() {
         { type: 'Chat', id: 'UNREAD' },
         { type: 'Chat', id: `THREAD:${otherUserId}` },
       ]),
+    )
+  }
+
+  function invalidateProductAfterAskSupplierReply(content: string) {
+    const parsed = parseAskSupplierContent(content)
+    if (parsed?.kind !== 'reply' || parsed.confirmed) return
+    dispatch(
+      adminApi.util.invalidateTags([{ type: 'Products', id: parsed.productId }]),
     )
   }
 
@@ -1222,7 +1233,7 @@ export default function ChatPage() {
     setSelectedContact(contact)
   }
 
-  async function handleChatWithSupplier(target: AskForPriceSupplierTarget) {
+  async function handleChatWithSupplier(target: AskSupplierTarget) {
     const supplierId = target.supplierUserId?.trim()
     if (!supplierId) return
     if (selectedUserId && supplierId.toLowerCase() === selectedUserId.toLowerCase()) {
@@ -1255,6 +1266,23 @@ export default function ChatPage() {
         // Secondary pane can still open even if claim fails (e.g. already claimed).
       }
     }
+
+    const productId = target.productId?.trim()
+    if (!productId) return
+
+    const content = buildAskSupplierPriceMessage({
+      productId,
+      productName: target.productName,
+      productCode: target.productCode,
+      unitName: target.unitName,
+      quantityLabel: target.quantityLabel,
+      supplierPriceFormatted: target.supplierPriceFormatted,
+      supplierPriceUsd: target.supplierPriceUsd,
+      imagePath: target.imagePath,
+    })
+
+    const optimisticId = pushOptimisticMessage(supplierId, true, null, 1, content)
+    await handleSend(supplierId, true, null, () => undefined, 1, content, optimisticId)
   }
 
   function handleCloseSecondaryPane() {

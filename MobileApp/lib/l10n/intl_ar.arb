@@ -634,6 +634,31 @@
   "askForPriceCardLoading": "جاري التحميل…",
   "askForPriceCustomerPrice": "سعر العميل",
   "askForPriceOpenAd": "فتح الإعلان",
+  "askSupplierTitle": "اسأل المورد",
+  "askSupplierQuestion": "هل ما زال سعر هذا المنتج كما هو؟",
+  "askSupplierQuestionWithUnit": "هل ما زال سعر هذا المنتج كما هو لكل {unit}؟",
+  "@askSupplierQuestionWithUnit": {
+    "placeholders": {
+      "unit": { "type": "String" }
+    }
+  },
+  "askSupplierYes": "نعم",
+  "askSupplierNo": "لا",
+  "askSupplierEnterNewPrice": "أدخل السعر الجديد لكل وحدة",
+  "askSupplierEnterNewPricePerUnit": "أدخل السعر الجديد لكل {unit}",
+  "@askSupplierEnterNewPricePerUnit": {
+    "placeholders": {
+      "unit": { "type": "String" }
+    }
+  },
+  "askSupplierPriceHint": "السعر الجديد",
+  "askSupplierSubmitPrice": "تحديث السعر",
+  "askSupplierInvalidPrice": "يرجى إدخال سعر صحيح",
+  "askSupplierSendFailed": "تعذر إرسال الرد",
+  "askSupplierThanks": "شكراً، تم إرسال ردك",
+  "askSupplierConfirmed": "تم تأكيد السعر",
+  "askSupplierUpdated": "تم تحديث السعر",
+  "askSupplierPriceBeforeCommission": "سعرك (قبل عمولة التطبيق)",
   "offerPrice": "سعر العرض",
   "beforeDiscount": "قبل الخصم",
   "afterDiscount": "بعد الخصم",

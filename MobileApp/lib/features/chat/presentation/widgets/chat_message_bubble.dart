@@ -6,13 +6,17 @@ import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/widgets/cached_app_image.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_message_model.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_message_type.dart';
+import 'package:alrasmarket/features/chat/presentation/controller/chat_cubit.dart';
 import 'package:alrasmarket/features/chat/presentation/helpers/ask_for_price_payload.dart';
+import 'package:alrasmarket/features/chat/presentation/helpers/ask_supplier_price_payload.dart';
 import 'package:alrasmarket/features/chat/presentation/widgets/ask_for_price_chat_product_card.dart';
+import 'package:alrasmarket/features/chat/presentation/widgets/ask_supplier_price_chat_card.dart';
 import 'package:alrasmarket/features/clint/presentation/models/product_media_item.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_media_preview_screen.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -392,6 +396,21 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
             ],
           );
         }
+        final askSupplier = AskSupplierPricePayload.tryParse(widget.message.content);
+        if (askSupplier != null) {
+          final answered = askSupplier.kind == AskSupplierPayloadKind.ask
+              ? _hasAskSupplierReply(
+                  context,
+                  productId: askSupplier.productId,
+                  askMessage: widget.message,
+                )
+              : false;
+          return AskSupplierPriceChatCard(
+            payload: askSupplier,
+            isMe: widget.isMe,
+            initiallyAnswered: answered,
+          );
+        }
         final askForPrice = AskForPricePayload.tryParse(widget.message.content);
         if (askForPrice != null) {
           return AskForPriceChatProductCard(
@@ -749,4 +768,30 @@ class _ChatVideoPlayerState extends State<ChatVideoPlayer> {
       ),
     );
   }
+}
+
+bool _hasAskSupplierReply(
+  BuildContext context, {
+  required String productId,
+  required ChatMessageModel askMessage,
+}) {
+  ChatCubit cubit;
+  try {
+    cubit = context.read<ChatCubit>();
+  } catch (_) {
+    return false;
+  }
+
+  final askTime = askMessage.sentAtUtc;
+  for (final message in cubit.messages) {
+    if (message.messageId == askMessage.messageId) continue;
+    if (message.sentAtUtc.isBefore(askTime)) continue;
+    final reply = AskSupplierPricePayload.tryParse(message.content);
+    if (reply != null &&
+        reply.kind == AskSupplierPayloadKind.reply &&
+        reply.productId.toLowerCase() == productId.toLowerCase()) {
+      return true;
+    }
+  }
+  return false;
 }

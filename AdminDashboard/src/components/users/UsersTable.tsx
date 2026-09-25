@@ -15,6 +15,7 @@ import {
 } from '../../utils/localizedLabels'
 import type { AdminUser } from '../../types/user'
 import BilingualNameLines from '../ui/BilingualNameLines'
+import WhatsAppPhoneLink from '../shared/WhatsAppPhoneLink'
 
 type UsersTableProps = {
   users: AdminUser[]
@@ -357,7 +358,7 @@ export default function UsersTable({ users }: UsersTableProps) {
                   </td>
                   <td className="px-5 py-5 text-start">
                     <CellText>
-                      <span dir="ltr">{user.phoneNumber?.trim() || '—'}</span>
+                      <WhatsAppPhoneLink phone={user.phoneNumber} className="text-sm" />
                     </CellText>
                   </td>
                   <td className="px-5 py-5 text-start">

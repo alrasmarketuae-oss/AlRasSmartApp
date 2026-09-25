@@ -5,7 +5,7 @@ import ChatForwardPicker from './ChatForwardPicker'
 import ChatMessageActions from './ChatMessageActions'
 import ChatMessageBubble, {
   getChatGalleryItems,
-  type AskForPriceSupplierTarget,
+  type AskSupplierTarget,
 } from './ChatMessageBubble'
 import ChatSessionDivider from './ChatSessionDivider'
 import ImageGallery, { type GalleryMediaItem } from '../ui/ImageGallery'
@@ -23,6 +23,9 @@ function replyPreviewFor(
   if (!message) return null
   if (message.isDeleted) return t('chat.deletedMessage')
   if (message.messageType === 1) {
+    if (/ASK_SUPPLIER_PRICE|ASK_SUPPLIER_REPLY:|ASK_SUPPLIER_PRODUCT:/i.test(message.content)) {
+      return t('chat.askSupplierTitle')
+    }
     if (/ASK_FOR_PRICE_PRODUCT:|ask\s*for\s*price|طلب\s*سعر|اطلب\s*السعر/i.test(message.content)) {
       return t('chat.askForPriceTitle')
     }
@@ -74,7 +77,7 @@ type ChatThreadPanelProps = {
   isGeneratingReport?: boolean
   paneLabel?: string | null
   onClosePane?: () => void
-  onChatWithSupplier?: (target: AskForPriceSupplierTarget) => void
+  onChatWithSupplier?: (target: AskSupplierTarget) => void
   className?: string
   t: (key: string, params?: Record<string, string | number>) => string
 }

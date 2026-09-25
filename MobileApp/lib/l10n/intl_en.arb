@@ -623,6 +623,31 @@
   "askForPriceCardLoading": "Loading…",
   "askForPriceCustomerPrice": "Customer price",
   "askForPriceOpenAd": "Open ad",
+  "askSupplierTitle": "Ask supplier",
+  "askSupplierQuestion": "Is this product still at the same price?",
+  "askSupplierQuestionWithUnit": "Is this product still at the same price per {unit}?",
+  "@askSupplierQuestionWithUnit": {
+    "placeholders": {
+      "unit": { "type": "String" }
+    }
+  },
+  "askSupplierYes": "Yes",
+  "askSupplierNo": "No",
+  "askSupplierEnterNewPrice": "Enter the new price per unit",
+  "askSupplierEnterNewPricePerUnit": "Enter the new price per {unit}",
+  "@askSupplierEnterNewPricePerUnit": {
+    "placeholders": {
+      "unit": { "type": "String" }
+    }
+  },
+  "askSupplierPriceHint": "New price",
+  "askSupplierSubmitPrice": "Update price",
+  "askSupplierInvalidPrice": "Please enter a valid price",
+  "askSupplierSendFailed": "Could not send the reply",
+  "askSupplierThanks": "Thanks, your reply was sent",
+  "askSupplierConfirmed": "You confirmed the price",
+  "askSupplierUpdated": "Price updated",
+  "askSupplierPriceBeforeCommission": "Your price (before app fees)",
   "offerPrice": "Offer Price",
   "beforeDiscount": "Before Discount",
   "afterDiscount": "After Discount",

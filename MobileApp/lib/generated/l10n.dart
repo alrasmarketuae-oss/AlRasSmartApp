@@ -4944,6 +4944,146 @@ class S {
     );
   }
 
+  /// `Ask supplier`
+  String get askSupplierTitle {
+    return Intl.message(
+      'Ask supplier',
+      name: 'askSupplierTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Is this product still at the same price?`
+  String get askSupplierQuestion {
+    return Intl.message(
+      'Is this product still at the same price?',
+      name: 'askSupplierQuestion',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Is this product still at the same price per {unit}?`
+  String askSupplierQuestionWithUnit(String unit) {
+    return Intl.message(
+      'Is this product still at the same price per $unit?',
+      name: 'askSupplierQuestionWithUnit',
+      desc: '',
+      args: [unit],
+    );
+  }
+
+  /// `Yes`
+  String get askSupplierYes {
+    return Intl.message('Yes', name: 'askSupplierYes', desc: '', args: []);
+  }
+
+  /// `No`
+  String get askSupplierNo {
+    return Intl.message('No', name: 'askSupplierNo', desc: '', args: []);
+  }
+
+  /// `Enter the new price per unit`
+  String get askSupplierEnterNewPrice {
+    return Intl.message(
+      'Enter the new price per unit',
+      name: 'askSupplierEnterNewPrice',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enter the new price per {unit}`
+  String askSupplierEnterNewPricePerUnit(String unit) {
+    return Intl.message(
+      'Enter the new price per $unit',
+      name: 'askSupplierEnterNewPricePerUnit',
+      desc: '',
+      args: [unit],
+    );
+  }
+
+  /// `New price`
+  String get askSupplierPriceHint {
+    return Intl.message(
+      'New price',
+      name: 'askSupplierPriceHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Update price`
+  String get askSupplierSubmitPrice {
+    return Intl.message(
+      'Update price',
+      name: 'askSupplierSubmitPrice',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Please enter a valid price`
+  String get askSupplierInvalidPrice {
+    return Intl.message(
+      'Please enter a valid price',
+      name: 'askSupplierInvalidPrice',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not send the reply`
+  String get askSupplierSendFailed {
+    return Intl.message(
+      'Could not send the reply',
+      name: 'askSupplierSendFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Thanks, your reply was sent`
+  String get askSupplierThanks {
+    return Intl.message(
+      'Thanks, your reply was sent',
+      name: 'askSupplierThanks',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `You confirmed the price`
+  String get askSupplierConfirmed {
+    return Intl.message(
+      'You confirmed the price',
+      name: 'askSupplierConfirmed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Price updated`
+  String get askSupplierUpdated {
+    return Intl.message(
+      'Price updated',
+      name: 'askSupplierUpdated',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Your price (before app fees)`
+  String get askSupplierPriceBeforeCommission {
+    return Intl.message(
+      'Your price (before app fees)',
+      name: 'askSupplierPriceBeforeCommission',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Offer Price`
   String get offerPrice {
     return Intl.message('Offer Price', name: 'offerPrice', desc: '', args: []);
