@@ -66,6 +66,35 @@ class DioUserFacingMessage {
     return text;
   }
 
+  /// Prefer API `message` when present; otherwise map busy HTTP statuses to high-demand copy.
+  static String fromHttpResponse({
+    required int statusCode,
+    dynamic data,
+    bool isAr = false,
+    String? fallback,
+  }) {
+    if (_isServerBusyStatus(statusCode)) {
+      final apiMessage = _extractApiMessage(data);
+      if (apiMessage != null &&
+          apiMessage.isNotEmpty &&
+          !_looksLikeTechnicalDump(apiMessage)) {
+        return apiMessage;
+      }
+      return highDemand(isAr: isAr);
+    }
+
+    final apiMessage = _extractApiMessage(data);
+    if (apiMessage != null &&
+        apiMessage.isNotEmpty &&
+        !_looksLikeTechnicalDump(apiMessage)) {
+      return apiMessage;
+    }
+
+    final fb = (fallback ?? '').trim();
+    if (fb.isNotEmpty && !_looksLikeTechnicalDump(fb)) return fb;
+    return highDemand(isAr: isAr);
+  }
+
   static bool _isServerBusyStatus(int status) =>
       status == 408 ||
       status == 425 ||

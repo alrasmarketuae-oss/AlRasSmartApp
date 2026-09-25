@@ -395,9 +395,10 @@ class _ProductCardMarketplaceLayoutState
                   preferRetail: preferRetail,
                 ) >
                 0);
-    final showAskForPrice = !widget.product.isRequestProduct &&
-        !(preferRetail && widget.product.hasRetailPricing) &&
-        !widget.product.shouldShowPrice;
+    final showAskForPrice = ProductPriceFormatter.shouldShowAskForPrice(
+      widget.product,
+      preferRetail: preferRetail,
+    );
     final showReconfirm =
         widget.showSubjectToReconfirm && !widget.product.isRequestProduct;
 

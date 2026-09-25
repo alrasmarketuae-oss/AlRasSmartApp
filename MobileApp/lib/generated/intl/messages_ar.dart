@@ -155,6 +155,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "adReceivedUploadingMedia": MessageLookupByLibrary.simpleMessage(
       "تم استلام إعلانك، وجارٍ رفع الفيديو والصور.",
     ),
+    "adStatCartAdds": MessageLookupByLibrary.simpleMessage("الإضافة إلى السلة"),
+    "adStatFavorites": MessageLookupByLibrary.simpleMessage("الحفظ في المفضلة"),
+    "adStatPurchases": MessageLookupByLibrary.simpleMessage("مرات الشراء"),
+    "adStatShares": MessageLookupByLibrary.simpleMessage("مرات المشاركة"),
+    "adStatVisits": MessageLookupByLibrary.simpleMessage("عدد الزيارات"),
+    "adStatistics": MessageLookupByLibrary.simpleMessage("الإحصائيات"),
     "adSubmittedForReview": MessageLookupByLibrary.simpleMessage(
       "تم إرسال إعلانك للمراجعة بنجاح.",
     ),
@@ -367,9 +373,17 @@ class MessageLookup extends MessageLookupByLibrary {
     "approved": MessageLookupByLibrary.simpleMessage("تم الموافقة "),
     "arabicLabel": MessageLookupByLibrary.simpleMessage("العربية"),
     "askForPrice": MessageLookupByLibrary.simpleMessage("اسأل عن السعر"),
+    "askForPriceCardLoading": MessageLookupByLibrary.simpleMessage(
+      "جاري التحميل…",
+    ),
+    "askForPriceCardTitle": MessageLookupByLibrary.simpleMessage("طلب سعر"),
     "askForPriceChatIntro": MessageLookupByLibrary.simpleMessage(
       "اسأل عن السعر — تفاصيل المنتج:",
     ),
+    "askForPriceCustomerPrice": MessageLookupByLibrary.simpleMessage(
+      "سعر العميل",
+    ),
+    "askForPriceOpenAd": MessageLookupByLibrary.simpleMessage("فتح الإعلان"),
     "availableQuantity": MessageLookupByLibrary.simpleMessage("الكمية المتاحة"),
     "awaitingAdminApproval": MessageLookupByLibrary.simpleMessage(
       "بانتظار موافقة التطبيق",
@@ -632,6 +646,21 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "continueWithGoogle": MessageLookupByLibrary.simpleMessage(
       "تسجيل الدخول بجوجل",
+    ),
+    "copyWholesaleToRetailAccept": MessageLookupByLibrary.simpleMessage(
+      "نعم، انسخ بيانات الجملة",
+    ),
+    "copyWholesaleToRetailAction": MessageLookupByLibrary.simpleMessage(
+      "نسخ بيانات الجملة",
+    ),
+    "copyWholesaleToRetailBody": MessageLookupByLibrary.simpleMessage(
+      "غالبًا ما تكون بيانات التجزئة مطابقة للجملة (السعر، الوحدة، التعبئة، والمواصفات). هل تريد نسخها إلى حقول التجزئة؟ يمكنك تعديلها بعد ذلك. عملة التجزئة تبقى درهم إماراتي (AED).",
+    ),
+    "copyWholesaleToRetailDecline": MessageLookupByLibrary.simpleMessage(
+      "لا، سأملأها بنفسي",
+    ),
+    "copyWholesaleToRetailTitle": MessageLookupByLibrary.simpleMessage(
+      "استخدام بيانات الجملة للتجزئة؟",
     ),
     "costCalculation": MessageLookupByLibrary.simpleMessage("حساب التكلفة"),
     "countdown": MessageLookupByLibrary.simpleMessage("العداد"),
@@ -1218,30 +1247,30 @@ class MessageLookup extends MessageLookupByLibrary {
     "orderDetails": MessageLookupByLibrary.simpleMessage("تفاصيل الطلب"),
     "orderInformation": MessageLookupByLibrary.simpleMessage("معلومات الطلب"),
     "orderNumber": MessageLookupByLibrary.simpleMessage("رقم الطلب"),
-    "orderRefundCompleted": MessageLookupByLibrary.simpleMessage(
-      "تم استرداد المبلغ",
-    ),
-    "orderRefundIdLabel": MessageLookupByLibrary.simpleMessage("رقم الاسترداد"),
-    "orderRefundIdCopied": MessageLookupByLibrary.simpleMessage(
-      "تم نسخ رقم الاسترداد",
-    ),
-    "orderRefundProcessedFromOurSide": MessageLookupByLibrary.simpleMessage(
-      "قمنا بالاسترداد من ناحيتنا إلى نفس طريقة الدفع الأصلية.",
-    ),
-    "orderRefundProcessedOnLabel": MessageLookupByLibrary.simpleMessage(
-      "تم التنفيذ في",
-    ),
     "orderRefundAskAiHint": MessageLookupByLibrary.simpleMessage(
       "اضغط للاستفسار من الذكاء الاصطناعي عن هذا الاسترداد",
     ),
     "orderRefundBankDelayHint": MessageLookupByLibrary.simpleMessage(
       "عادة يظهر المبلغ في البنك خلال 3 إلى 5 أيام عمل حسب البنك.",
     ),
+    "orderRefundCompleted": MessageLookupByLibrary.simpleMessage(
+      "تم استرداد المبلغ",
+    ),
+    "orderRefundIdCopied": MessageLookupByLibrary.simpleMessage(
+      "تم نسخ رقم الاسترداد",
+    ),
+    "orderRefundIdLabel": MessageLookupByLibrary.simpleMessage("رقم الاسترداد"),
     "orderRefundNotice": MessageLookupByLibrary.simpleMessage(
       "سيتم إعادة المبلغ إلى نفس طريقة الدفع خلال يوم عمل واحد.",
     ),
     "orderRefundPending": MessageLookupByLibrary.simpleMessage(
       "جاري استرداد المبلغ",
+    ),
+    "orderRefundProcessedFromOurSide": MessageLookupByLibrary.simpleMessage(
+      "قمنا بالاسترداد من ناحيتنا إلى نفس طريقة الدفع الأصلية.",
+    ),
+    "orderRefundProcessedOnLabel": MessageLookupByLibrary.simpleMessage(
+      "تم التنفيذ في",
     ),
     "orderReturnSuccess": MessageLookupByLibrary.simpleMessage(
       "تم تقديم طلب الإرجاع بنجاح",

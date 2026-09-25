@@ -18,11 +18,18 @@ class CategoryModel {
   final double commissionPercent;
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
+    int readId() {
+      final raw = json['categoryId'] ?? json['CategoryId'];
+      if (raw is int) return raw;
+      if (raw is num) return raw.toInt();
+      return int.tryParse(raw?.toString() ?? '') ?? 0;
+    }
+
     return CategoryModel(
-      categoryId: json['categoryId'] as int? ?? json['CategoryId'] as int? ?? 0,
-      nameEn: json['nameEn'] as String? ?? json['NameEn'] as String? ?? '',
-      nameAr: json['nameAr'] as String? ?? json['NameAr'] as String? ?? '',
-      imgPath: json['imgPath'] as String? ?? json['ImgPath'] as String? ?? '',
+      categoryId: readId(),
+      nameEn: json['nameEn']?.toString() ?? json['NameEn']?.toString() ?? '',
+      nameAr: json['nameAr']?.toString() ?? json['NameAr']?.toString() ?? '',
+      imgPath: json['imgPath']?.toString() ?? json['ImgPath']?.toString() ?? '',
       commissionPercent:
           (json['commissionPercent'] as num?)?.toDouble() ??
           (json['CommissionPercent'] as num?)?.toDouble() ??
@@ -47,10 +54,14 @@ class CategoriesResponse {
   final List<CategoryModel> items;
 
   factory CategoriesResponse.fromJson(Map<String, dynamic> json) {
-    final raw = json['items'] as List<dynamic>? ?? [];
+    final raw = json['items'] as List<dynamic>? ?? const [];
     final items = raw
-        .map((e) => CategoryModel.fromJson(e as Map<String, dynamic>))
-        .where((c) => c.categoryId > 0 && (c.nameEn.isNotEmpty || c.nameAr.isNotEmpty))
+        .whereType<Map>()
+        .map((e) => CategoryModel.fromJson(Map<String, dynamic>.from(e)))
+        .where(
+          (c) =>
+              c.categoryId > 0 && (c.nameEn.isNotEmpty || c.nameAr.isNotEmpty),
+        )
         .toList();
     return CategoriesResponse(
       count: json['count'] as int? ?? items.length,

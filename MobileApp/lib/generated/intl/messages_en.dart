@@ -150,6 +150,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "adReceivedUploadingMedia": MessageLookupByLibrary.simpleMessage(
       "Your ad was received. Video and photos are uploading now.",
     ),
+    "adStatCartAdds": MessageLookupByLibrary.simpleMessage("Added to cart"),
+    "adStatFavorites": MessageLookupByLibrary.simpleMessage(
+      "Saved to favorites",
+    ),
+    "adStatPurchases": MessageLookupByLibrary.simpleMessage("Purchases"),
+    "adStatShares": MessageLookupByLibrary.simpleMessage("Shares"),
+    "adStatVisits": MessageLookupByLibrary.simpleMessage("Visits"),
+    "adStatistics": MessageLookupByLibrary.simpleMessage("Statistics"),
     "adSubmittedForReview": MessageLookupByLibrary.simpleMessage(
       "Your ad was submitted for review successfully.",
     ),
@@ -366,9 +374,17 @@ class MessageLookup extends MessageLookupByLibrary {
     "approved": MessageLookupByLibrary.simpleMessage("Approved"),
     "arabicLabel": MessageLookupByLibrary.simpleMessage("Arabic"),
     "askForPrice": MessageLookupByLibrary.simpleMessage("Ask For Price"),
+    "askForPriceCardLoading": MessageLookupByLibrary.simpleMessage("Loading…"),
+    "askForPriceCardTitle": MessageLookupByLibrary.simpleMessage(
+      "Ask for price",
+    ),
     "askForPriceChatIntro": MessageLookupByLibrary.simpleMessage(
       "Ask For Price — product details:",
     ),
+    "askForPriceCustomerPrice": MessageLookupByLibrary.simpleMessage(
+      "Customer price",
+    ),
+    "askForPriceOpenAd": MessageLookupByLibrary.simpleMessage("Open ad"),
     "availableQuantity": MessageLookupByLibrary.simpleMessage(
       "Available Quantity",
     ),
@@ -625,6 +641,21 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "continueWithGoogle": MessageLookupByLibrary.simpleMessage(
       "Continue with Google",
+    ),
+    "copyWholesaleToRetailAccept": MessageLookupByLibrary.simpleMessage(
+      "Yes, copy wholesale details",
+    ),
+    "copyWholesaleToRetailAction": MessageLookupByLibrary.simpleMessage(
+      "Copy wholesale details",
+    ),
+    "copyWholesaleToRetailBody": MessageLookupByLibrary.simpleMessage(
+      "Often retail uses the same price, unit, packing, and specifications as wholesale. Apply those values to the retail fields? You can still edit them afterward. Retail currency stays AED.",
+    ),
+    "copyWholesaleToRetailDecline": MessageLookupByLibrary.simpleMessage(
+      "No, I\'ll fill them myself",
+    ),
+    "copyWholesaleToRetailTitle": MessageLookupByLibrary.simpleMessage(
+      "Use wholesale details for retail?",
     ),
     "costCalculation": MessageLookupByLibrary.simpleMessage("Cost Calculation"),
     "countdown": MessageLookupByLibrary.simpleMessage("Count"),
@@ -1211,30 +1242,30 @@ class MessageLookup extends MessageLookupByLibrary {
       "Order Information",
     ),
     "orderNumber": MessageLookupByLibrary.simpleMessage("Order Number"),
-    "orderRefundCompleted": MessageLookupByLibrary.simpleMessage(
-      "Refund completed",
-    ),
-    "orderRefundIdLabel": MessageLookupByLibrary.simpleMessage("Refund ID"),
-    "orderRefundIdCopied": MessageLookupByLibrary.simpleMessage(
-      "Refund ID copied",
-    ),
-    "orderRefundProcessedFromOurSide": MessageLookupByLibrary.simpleMessage(
-      "We have already processed the refund from our side to your original payment method.",
-    ),
-    "orderRefundProcessedOnLabel": MessageLookupByLibrary.simpleMessage(
-      "Processed on",
-    ),
     "orderRefundAskAiHint": MessageLookupByLibrary.simpleMessage(
       "Tap to ask Al Ras AI about this refund",
     ),
     "orderRefundBankDelayHint": MessageLookupByLibrary.simpleMessage(
       "Banks usually show the amount within 3–5 business days depending on your bank.",
     ),
+    "orderRefundCompleted": MessageLookupByLibrary.simpleMessage(
+      "Refund completed",
+    ),
+    "orderRefundIdCopied": MessageLookupByLibrary.simpleMessage(
+      "Refund ID copied",
+    ),
+    "orderRefundIdLabel": MessageLookupByLibrary.simpleMessage("Refund ID"),
     "orderRefundNotice": MessageLookupByLibrary.simpleMessage(
       "The amount will be refunded to your original payment method within one business day.",
     ),
     "orderRefundPending": MessageLookupByLibrary.simpleMessage(
       "Refund in progress",
+    ),
+    "orderRefundProcessedFromOurSide": MessageLookupByLibrary.simpleMessage(
+      "We have already processed the refund from our side to your original payment method.",
+    ),
+    "orderRefundProcessedOnLabel": MessageLookupByLibrary.simpleMessage(
+      "Processed on",
     ),
     "orderReturnSuccess": MessageLookupByLibrary.simpleMessage(
       "Return request submitted successfully",

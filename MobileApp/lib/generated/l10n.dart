@@ -659,6 +659,51 @@ class S {
     );
   }
 
+  /// `Statistics`
+  String get adStatistics {
+    return Intl.message('Statistics', name: 'adStatistics', desc: '', args: []);
+  }
+
+  /// `Visits`
+  String get adStatVisits {
+    return Intl.message('Visits', name: 'adStatVisits', desc: '', args: []);
+  }
+
+  /// `Added to cart`
+  String get adStatCartAdds {
+    return Intl.message(
+      'Added to cart',
+      name: 'adStatCartAdds',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Purchases`
+  String get adStatPurchases {
+    return Intl.message(
+      'Purchases',
+      name: 'adStatPurchases',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Saved to favorites`
+  String get adStatFavorites {
+    return Intl.message(
+      'Saved to favorites',
+      name: 'adStatFavorites',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Shares`
+  String get adStatShares {
+    return Intl.message('Shares', name: 'adStatShares', desc: '', args: []);
+  }
+
   /// `Your account is under review. We will notify you once it is approved.`
   String get yourAccountIsUnderReviewWeWillNotifyYouOnceItIsApproved {
     return Intl.message(
@@ -4859,6 +4904,46 @@ class S {
     );
   }
 
+  /// `Ask for price`
+  String get askForPriceCardTitle {
+    return Intl.message(
+      'Ask for price',
+      name: 'askForPriceCardTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Loading…`
+  String get askForPriceCardLoading {
+    return Intl.message(
+      'Loading…',
+      name: 'askForPriceCardLoading',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Customer price`
+  String get askForPriceCustomerPrice {
+    return Intl.message(
+      'Customer price',
+      name: 'askForPriceCustomerPrice',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Open ad`
+  String get askForPriceOpenAd {
+    return Intl.message(
+      'Open ad',
+      name: 'askForPriceOpenAd',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Offer Price`
   String get offerPrice {
     return Intl.message('Offer Price', name: 'offerPrice', desc: '', args: []);
@@ -7391,6 +7476,56 @@ class S {
     return Intl.message(
       'Do you want to add a retail price?',
       name: 'addRetailPriceQuestion',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Use wholesale details for retail?`
+  String get copyWholesaleToRetailTitle {
+    return Intl.message(
+      'Use wholesale details for retail?',
+      name: 'copyWholesaleToRetailTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Often retail uses the same price, unit, packing, and specifications as wholesale. Apply those values to the retail fields? You can still edit them afterward. Retail currency stays AED.`
+  String get copyWholesaleToRetailBody {
+    return Intl.message(
+      'Often retail uses the same price, unit, packing, and specifications as wholesale. Apply those values to the retail fields? You can still edit them afterward. Retail currency stays AED.',
+      name: 'copyWholesaleToRetailBody',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Yes, copy wholesale details`
+  String get copyWholesaleToRetailAccept {
+    return Intl.message(
+      'Yes, copy wholesale details',
+      name: 'copyWholesaleToRetailAccept',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No, I'll fill them myself`
+  String get copyWholesaleToRetailDecline {
+    return Intl.message(
+      'No, I\'ll fill them myself',
+      name: 'copyWholesaleToRetailDecline',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Copy wholesale details`
+  String get copyWholesaleToRetailAction {
+    return Intl.message(
+      'Copy wholesale details',
+      name: 'copyWholesaleToRetailAction',
       desc: '',
       args: [],
     );

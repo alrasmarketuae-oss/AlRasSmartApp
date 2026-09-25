@@ -580,6 +580,10 @@ export const arMessages = {
       statusActive: 'مفعل',
       statusRejected: 'مرفوض',
       preview: 'معاينة',
+      quickView: 'عرض سريع',
+      quickViewClose: 'إغلاق',
+      quickViewLoading: 'جاري تحميل تفاصيل الإعلان…',
+      quickViewLoadError: 'تعذر تحميل تفاصيل الإعلان.',
       rejectConfirm: 'هل أنت متأكد من رفض هذا الإعلان؟',
       rejectReasonRequired: 'اكتب سبب الرفض بالعربية أو الإنجليزية.',
       rejectReasonDialogHint:

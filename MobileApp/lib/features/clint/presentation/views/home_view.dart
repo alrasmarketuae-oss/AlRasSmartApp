@@ -431,9 +431,11 @@ class _CategoriesStrip extends StatelessWidget {
               onRetry: () => cubit.fetchCategories(force: true),
             );
           }
+          // Never force-refresh here: force clears disk cache. Prefer memory/disk
+          // (same as banners) so revisiting home does not hit the API.
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (context.mounted) {
-              cubit.fetchCategories(force: true);
+              cubit.fetchCategories(force: false);
             }
           });
           return const _CategoriesStripShimmer();

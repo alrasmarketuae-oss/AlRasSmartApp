@@ -17,6 +17,7 @@ import { formatRelativeTime } from '../../utils/timeAgo'
 import { useClaimProductReviewLockMutation } from '../../store'
 import { getRtkErrorMessage } from '../../utils/rtkError'
 import { normalizeProductReviewLock } from '../../store/normalizers'
+import AdQuickViewDialog from './AdQuickViewDialog'
 
 type AdsTableProps = {
   products: AdminProduct[]
@@ -81,6 +82,7 @@ export default function AdsTable({
   const [previewBusyId, setPreviewBusyId] = useState<string | null>(null)
   const [lockedLock, setLockedLock] = useState<AdminProductReviewLock | null>(null)
   const [previewError, setPreviewError] = useState<string | null>(null)
+  const [quickViewProductId, setQuickViewProductId] = useState<string | null>(null)
 
   async function handlePreview(productId: string) {
     setPreviewError(null)
@@ -288,28 +290,45 @@ export default function AdsTable({
                   </span>
                 </td>
                 <td className="px-4 py-3.5 text-start sm:px-5">
-                  <button
-                    type="button"
-                    disabled={isPreviewBusy || previewBusyId != null}
-                    onClick={() => void handlePreview(product.productId)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#3B7FC7]/40 bg-white px-3 py-1.5 text-xs font-bold text-[#3B7FC7] transition hover:bg-[#3B7FC7]/5 disabled:opacity-60"
-                  >
-                    {isPreviewBusy ? (
-                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#3B7FC7] border-t-transparent" />
-                    ) : (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setQuickViewProductId(product.productId)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                    >
                       <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9m11.25-5.25v4.5m0-4.5h-4.5m4.5 0L15 9m-11.25 11.25v-4.5m0 4.5h4.5m-4.5 0L9 15m11.25 5.25v-4.5m0 4.5h-4.5m4.5 0L15 15" />
                       </svg>
-                    )}
-                    {t('ads.preview')}
-                  </button>
+                      {t('ads.quickView')}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isPreviewBusy || previewBusyId != null}
+                      onClick={() => void handlePreview(product.productId)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#3B7FC7]/40 bg-white px-3 py-1.5 text-xs font-bold text-[#3B7FC7] transition hover:bg-[#3B7FC7]/5 disabled:opacity-60"
+                    >
+                      {isPreviewBusy ? (
+                        <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#3B7FC7] border-t-transparent" />
+                      ) : (
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        </svg>
+                      )}
+                      {t('ads.preview')}
+                    </button>
+                  </div>
                 </td>
               </tr>
             )
           })}
         </tbody>
       </table>
+
+      <AdQuickViewDialog
+        productId={quickViewProductId}
+        onClose={() => setQuickViewProductId(null)}
+      />
     </div>
   )
 }

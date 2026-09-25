@@ -189,6 +189,7 @@ public class CartAppService(
         }
 
         cart.UpdatedAt = DateTime.UtcNow;
+        product.CartAddsCount += 1;
         await dbContext.SaveChangesAsync(cancellationToken);
         cache.Remove(GetCartCacheKey(userId));
 

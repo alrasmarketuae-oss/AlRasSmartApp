@@ -4,6 +4,7 @@ using BusinessLayer.Interfaces;
 using DataLayer.Helpers;
 using DataLayer.Interfaces;
 using DataLayer.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace BusinessLayer.Services;
@@ -761,6 +762,109 @@ public partial class ProductsAppService
         {
             productId = product.ProductId,
             viewsCount = product.ViewsCount
+        };
+    }
+
+    public async Task<object> IncreaseFavoriteAsync(string productId, CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(productId, out var parsedProductId))
+        {
+            throw new ArgumentException("Invalid product id.");
+        }
+
+        var product = await productData.GetProductByIdTrackedAsync(parsedProductId, cancellationToken)
+            ?? throw new KeyNotFoundException("Product not found.");
+
+        product.FavoritesCount += 1;
+        await productData.SaveChangesAsync(cancellationToken);
+
+        return new
+        {
+            productId = product.ProductId,
+            favoritesCount = product.FavoritesCount
+        };
+    }
+
+    public async Task<object> IncreaseShareAsync(string productId, CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(productId, out var parsedProductId))
+        {
+            throw new ArgumentException("Invalid product id.");
+        }
+
+        var product = await productData.GetProductByIdTrackedAsync(parsedProductId, cancellationToken)
+            ?? throw new KeyNotFoundException("Product not found.");
+
+        product.SharesCount += 1;
+        await productData.SaveChangesAsync(cancellationToken);
+
+        return new
+        {
+            productId = product.ProductId,
+            sharesCount = product.SharesCount
+        };
+    }
+
+    public async Task<object> GetOwnerStatisticsAsync(
+        string productId,
+        string ownerId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(productId, out var parsedProductId))
+        {
+            throw new ArgumentException("Invalid product id.");
+        }
+
+        var owner = await EnsureCompanyOwnerAsync(ownerId, cancellationToken);
+
+        var product = await dbContext.Products
+            .AsNoTracking()
+            .Where(x => x.ProductId == parsedProductId)
+            .Select(x => new
+            {
+                x.ProductId,
+                x.OwnerId,
+                x.NameEn,
+                x.ProductTypeId,
+                x.CategoryId,
+                x.RetailPrice,
+                x.RetailUnitId,
+                x.ViewsCount,
+                x.CartAddsCount,
+                x.FavoritesCount,
+                x.SharesCount
+            })
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new KeyNotFoundException("Product not found.");
+
+        if (product.OwnerId != owner)
+        {
+            throw new UnauthorizedAccessException("You can only view statistics for your own listings.");
+        }
+
+        var purchasesCount = await dbContext.Orders
+            .AsNoTracking()
+            .CountAsync(
+                x => x.ProductId == parsedProductId && x.StatusId != OrderStatusCodes.Cancelled,
+                cancellationToken);
+
+        var showCartAdds = ProductTypeCodes.IsRetail(product.ProductTypeId)
+            || ProductTypeCodes.HasRetailStockConfigured(
+                product.CategoryId,
+                product.ProductTypeId,
+                product.RetailPrice,
+                product.RetailUnitId);
+
+        return new
+        {
+            productId = product.ProductId,
+            productName = product.NameEn ?? string.Empty,
+            viewsCount = product.ViewsCount,
+            cartAddsCount = product.CartAddsCount,
+            showCartAdds,
+            purchasesCount,
+            favoritesCount = product.FavoritesCount,
+            sharesCount = product.SharesCount
         };
     }
 }

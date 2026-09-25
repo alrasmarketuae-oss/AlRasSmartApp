@@ -413,6 +413,12 @@ public interface IProductsAppService
     Task<object> GetByIdAsync(string productId, bool asRetail = false, CancellationToken cancellationToken = default);
     Task<object> GetSearchNameIndexAsync(CancellationToken cancellationToken = default);
     Task<object> IncreaseViewsAsync(string productId, CancellationToken cancellationToken = default);
+    Task<object> IncreaseFavoriteAsync(string productId, CancellationToken cancellationToken = default);
+    Task<object> IncreaseShareAsync(string productId, CancellationToken cancellationToken = default);
+    Task<object> GetOwnerStatisticsAsync(
+        string productId,
+        string ownerId,
+        CancellationToken cancellationToken = default);
     Task<object> SearchByThreeNamesAsync(string firstName, string secondName, string thirdName, CancellationToken cancellationToken = default);
     Task<object> SearchBySuggestedNamesAsync(IReadOnlyList<string> suggestedNames, CancellationToken cancellationToken = default);
     Task<object> DetectProductsFromImageAsync(

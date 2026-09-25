@@ -100,7 +100,7 @@ class _OfferProductCardMarketplaceLayoutState
     final showDeal =
         _dealActive &&
         discount > 0 &&
-        product.shouldShowPrice &&
+        ProductPriceFormatter.canShowProductPrice(product) &&
         ProductPriceFormatter.saleAmountValue(product) > 0;
     final showTimer = showDeal && product.discountDaysValue > 0;
     final currency = ProductPriceFormatter.currencyCode(product);
@@ -269,7 +269,7 @@ class _OfferProductCardMarketplaceLayoutState
               ],
             ),
           )
-        else if (!product.shouldShowPrice)
+        else if (ProductPriceFormatter.shouldShowAskForPrice(product))
           SizedBox(
             height: ProductGridLayout.offerPriceBlockHeight(context),
             width: double.infinity,

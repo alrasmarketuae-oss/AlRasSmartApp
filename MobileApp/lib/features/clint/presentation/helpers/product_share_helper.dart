@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:alrasmarket/core/services/product_engagement_service.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/core/utils/string_display_format.dart';
 import 'package:alrasmarket/features/company/data/models/my_listing_product_model.dart';
@@ -38,6 +41,10 @@ class ProductShareHelper {
         lines.join('\n'),
         sharePositionOrigin: origin,
       );
+      final productId = product.productId.trim();
+      if (productId.isNotEmpty) {
+        unawaited(ProductEngagementService.trackShare(productId));
+      }
     } catch (e) {
       debugPrint('Product share failed: $e');
       if (context.mounted) {

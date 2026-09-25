@@ -9,6 +9,7 @@ import 'package:alrasmarket/core/utils/product_listing_status.dart';
 import 'package:alrasmarket/core/utils/product_stock.dart';
 import 'package:alrasmarket/core/widgets/product_price_text.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_price_type_label.dart';
+import 'package:alrasmarket/features/company/presentation/widgets/my_ads/ad_statistics_sheet.dart';
 import 'package:alrasmarket/features/company/presentation/widgets/my_ads/my_ad_product_facts.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_media_thumbnail.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product_views_badge.dart';
@@ -222,6 +223,7 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
                   fontFamily: fontFamily,
                   editLabel: S.of(context).edit,
                   deleteLabel: S.of(context).delete,
+                  statisticsLabel: S.of(context).adStatistics,
                   pauseOrPublishLabel:
                       _isListingActive ? pauseLabel : publishLabel,
                   soldOutLabel: S.of(context).soldOut,
@@ -238,6 +240,8 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
                   onDelete: _onDelete,
                   onToggleStatus: _onToggleListingStatus,
                   onSoldOut: _onMarkSoldOut,
+                  onStatistics: () =>
+                      showAdStatisticsSheet(context, product: product),
                 ),
               ),
             ],
@@ -431,6 +435,7 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
                     fontFamily: fontFamily,
                     editLabel: s.edit,
                     deleteLabel: s.delete,
+                    statisticsLabel: s.adStatistics,
                     pauseOrPublishLabel:
                         _isListingActive ? (isAr ? 'إيقاف' : 'Pause') : s.publish,
                     soldOutLabel: s.soldOut,
@@ -447,6 +452,8 @@ class _MyAdAnnouncementCardState extends State<MyAdAnnouncementCard>
                     onDelete: _onDelete,
                     onToggleStatus: _onToggleListingStatus,
                     onSoldOut: _onMarkSoldOut,
+                    onStatistics: () =>
+                        showAdStatisticsSheet(context, product: product),
                   ),
                 ],
               ),
@@ -1005,6 +1012,7 @@ class _AdActionsMenu extends StatelessWidget {
     required this.fontFamily,
     required this.editLabel,
     required this.deleteLabel,
+    required this.statisticsLabel,
     required this.pauseOrPublishLabel,
     required this.soldOutLabel,
     required this.showPauseOrPublish,
@@ -1016,11 +1024,13 @@ class _AdActionsMenu extends StatelessWidget {
     required this.onDelete,
     required this.onToggleStatus,
     required this.onSoldOut,
+    required this.onStatistics,
   });
 
   final String fontFamily;
   final String editLabel;
   final String deleteLabel;
+  final String statisticsLabel;
   final String pauseOrPublishLabel;
   final String soldOutLabel;
   final bool showPauseOrPublish;
@@ -1032,6 +1042,7 @@ class _AdActionsMenu extends StatelessWidget {
   final VoidCallback onDelete;
   final VoidCallback onToggleStatus;
   final VoidCallback onSoldOut;
+  final VoidCallback onStatistics;
 
   @override
   Widget build(BuildContext context) {
@@ -1049,6 +1060,9 @@ class _AdActionsMenu extends StatelessWidget {
           case _AdMenuAction.edit:
             onEdit();
             break;
+          case _AdMenuAction.statistics:
+            onStatistics();
+            break;
           case _AdMenuAction.toggleStatus:
             onToggleStatus();
             break;
@@ -1065,6 +1079,13 @@ class _AdActionsMenu extends StatelessWidget {
           value: _AdMenuAction.edit,
           child: Text(
             editLabel,
+            style: TextStyle(fontFamily: fontFamily, fontSize: 14.sp),
+          ),
+        ),
+        PopupMenuItem(
+          value: _AdMenuAction.statistics,
+          child: Text(
+            statisticsLabel,
             style: TextStyle(fontFamily: fontFamily, fontSize: 14.sp),
           ),
         ),
@@ -1103,7 +1124,7 @@ class _AdActionsMenu extends StatelessWidget {
   }
 }
 
-enum _AdMenuAction { edit, toggleStatus, soldOut, delete }
+enum _AdMenuAction { edit, statistics, toggleStatus, soldOut, delete }
 
 class _BadgeStyle {
   const _BadgeStyle({

@@ -25,7 +25,9 @@ const PRODUCT_CODE_LINE = /(?:^|\n)\s*(?:Product Code|كود المنتج)\s*[:�
 const SUPPLIER_ID_LINE = /(?:^|\n)\s*Supplier ID:\s*([0-9a-fA-F-]{36})/i
 const QUANTITY_LINE =
   /(?:^|\n)\s*(?:Quantity|الكمية|الكميه)\s*[:：]\s*(.+)(?:\n|$)/i
-const ASK_FOR_PRICE_HINT = /ask\s*for\s*price|طلب\s*سعر|اطلب\s*السعر/i
+const CUSTOMER_PRICE_LINE =
+  /(?:^|\n)\s*(?:Customer Price|سعر العميل)\s*[:：]\s*(.+)(?:\n|$)/i
+const ASK_FOR_PRICE_HINT = /ask\s*for\s*price|طلب\s*سعر|اطلب\s*السعر|اسأل\s*عن\s*السعر/i
 
 export type AskForPriceSupplierTarget = {
   supplierUserId: string
@@ -40,6 +42,7 @@ type AskForPricePayload = {
   productCode: string | null
   supplierId: string | null
   quantityLabel: string | null
+  customerPriceLabel: string | null
 }
 
 function parseAskForPriceContent(content: string): AskForPricePayload | null {
@@ -63,6 +66,7 @@ function parseAskForPriceContent(content: string): AskForPricePayload | null {
   const codeMatch = text.match(PRODUCT_CODE_LINE)
   const supplierMatch = text.match(SUPPLIER_ID_LINE)
   const quantityMatch = text.match(QUANTITY_LINE)
+  const customerPriceMatch = text.match(CUSTOMER_PRICE_LINE)
 
   return {
     productId,
@@ -71,6 +75,7 @@ function parseAskForPriceContent(content: string): AskForPricePayload | null {
     productCode: codeMatch?.[1]?.trim() || null,
     supplierId: supplierMatch?.[1]?.trim() || null,
     quantityLabel: quantityMatch?.[1]?.trim() || null,
+    customerPriceLabel: customerPriceMatch?.[1]?.trim() || null,
   }
 }
 
@@ -267,7 +272,9 @@ function AskForPriceProductCard({
 
   const customerPrice =
     product?.customerPriceFormatted?.trim() ||
-    (product?.customerPriceUsd != null ? String(product.customerPriceUsd) : null)
+    (product?.customerPriceUsd != null ? String(product.customerPriceUsd) : null) ||
+    payload.customerPriceLabel?.trim() ||
+    null
   const supplierPrice = product?.priceFormatted?.trim() || null
 
   const imageUrl = useMemo(() => {

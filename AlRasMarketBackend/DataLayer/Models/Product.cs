@@ -63,6 +63,12 @@ public class Product
     public bool ShowPrice { get; set; } = true;
     public bool IsFeatured { get; set; }
     public long ViewsCount { get; set; }
+    /// <summary>Times buyers added this product to cart (retail-sellable listings).</summary>
+    public long CartAddsCount { get; set; }
+    /// <summary>Times buyers bookmarked / saved this product.</summary>
+    public long FavoritesCount { get; set; }
+    /// <summary>Times buyers shared this product.</summary>
+    public long SharesCount { get; set; }
 
     /// <summary>Optional retail channel price (AED) for category products that also sell retail.</summary>
     public decimal? RetailPrice { get; set; }

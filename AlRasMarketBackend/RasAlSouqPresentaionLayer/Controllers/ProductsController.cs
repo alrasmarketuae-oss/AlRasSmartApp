@@ -323,6 +323,95 @@ public class ProductsController(
     }
 
     /// <summary>
+    /// Increases product favorites (bookmark) count by one.
+    /// </summary>
+    [HttpPost("{productId}/increase-favorite")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> IncreaseFavorite([FromRoute] string productId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var result = await _productsAppService.IncreaseFavoriteAsync(productId, cancellationToken);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Increases product share count by one.
+    /// </summary>
+    [HttpPost("{productId}/increase-share")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> IncreaseShare([FromRoute] string productId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var result = await _productsAppService.IncreaseShareAsync(productId, cancellationToken);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Owner-scoped engagement statistics for a listing (views, cart adds, purchases, favorites, shares).
+    /// </summary>
+    [HttpGet("{productId}/statistics")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetStatistics(
+        [FromRoute] string productId,
+        [FromQuery] string? ownerId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = ResolveActingOwnerId(ownerId);
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        try
+        {
+            var result = await _productsAppService.GetOwnerStatisticsAsync(productId, userId, cancellationToken);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+    }
+
+    /// <summary>
     /// Visual search: Image → CLIP → Qdrant. When labeled (e.g. cardamom),
     /// expands to the full matching catalog, paginated.
     /// </summary>

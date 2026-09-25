@@ -184,6 +184,12 @@ class ApiConstants {
       '/Products/$productId/submit-for-review';
   static String productIncreaseViewEndPoint(String productId) =>
       '/Products/$productId/increase-view';
+  static String productIncreaseFavoriteEndPoint(String productId) =>
+      '/Products/$productId/increase-favorite';
+  static String productIncreaseShareEndPoint(String productId) =>
+      '/Products/$productId/increase-share';
+  static String productStatisticsEndPoint(String productId) =>
+      '/Products/$productId/statistics';
   static String productImageUploadEndPoint(String productId) =>
       '/ProductAssets/$productId/images/upload';
   static String productImagePresignEndPoint(String productId) =>

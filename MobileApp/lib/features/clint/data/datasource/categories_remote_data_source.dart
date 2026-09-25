@@ -5,6 +5,7 @@ import 'package:alrasmarket/core/cache/api_cache_store.dart';
 import 'package:alrasmarket/core/error/failure.dart';
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/services/dio_helper.dart';
+import 'package:alrasmarket/core/utils/dio_user_facing_message.dart';
 import 'package:alrasmarket/features/clint/data/models/category_model.dart';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
@@ -26,16 +27,24 @@ class CategoriesRemoteDataSource implements BaseCategoriesRemoteDataSource {
     if (forceRefresh) {
       await ApiCacheStore.instance.remove(cacheKey);
     } else {
-      final cached = await ApiCacheStore.instance.read(
+      // Prefer fresh cache (no network). Fall back to stale while revalidating.
+      final fresh = await ApiCacheStore.instance.read(cacheKey);
+      if (fresh != null) {
+        final parsed = _parseCached(fresh.data);
+        if (parsed != null) {
+          return Right(parsed);
+        }
+        await ApiCacheStore.instance.remove(cacheKey);
+      }
+
+      final stale = await ApiCacheStore.instance.read(
         cacheKey,
         allowStale: true,
       );
-      if (cached != null) {
-        final parsed = _parseCached(cached.data);
+      if (stale != null) {
+        final parsed = _parseCached(stale.data);
         if (parsed != null) {
-          if (!cached.isFresh) {
-            unawaited(_fetchFromNetwork(cacheKey, emitOnly: true));
-          }
+          unawaited(_fetchFromNetwork(cacheKey, emitOnly: true));
           return Right(parsed);
         }
         await ApiCacheStore.instance.remove(cacheKey);
@@ -66,7 +75,13 @@ class CategoriesRemoteDataSource implements BaseCategoriesRemoteDataSource {
       _inFlightNetwork = null;
     });
     final result = await _inFlightNetwork!;
-    if (emitOnly) return const Right(CategoriesResponse(count: 0, items: []));
+    if (emitOnly) {
+      // Disk already updated inside the impl; callers that only revalidate
+      // in the background do not need the payload again.
+      return result.isRight()
+          ? result
+          : const Right(CategoriesResponse(count: 0, items: []));
+    }
     return result;
   }
 
@@ -82,19 +97,26 @@ class CategoriesRemoteDataSource implements BaseCategoriesRemoteDataSource {
       if (status < 200 || status >= 300) {
         return _fallbackOrLeft(
           cacheKey,
-          ServerFailure(response?.statusMessage ?? 'Request failed ($status)'),
+          ServerFailure(
+            DioUserFacingMessage.fromHttpResponse(
+              statusCode: status,
+              data: response?.data,
+              fallback: response?.statusMessage,
+            ),
+          ),
         );
       }
 
       final data = response?.data;
-      if (data is! Map<String, dynamic>) {
+      if (data is! Map) {
         return _fallbackOrLeft(
           cacheKey,
           const ServerFailure('Invalid categories response'),
         );
       }
 
-      final parsed = CategoriesResponse.fromJson(data);
+      final map = Map<String, dynamic>.from(data);
+      final parsed = CategoriesResponse.fromJson(map);
       if (parsed.items.isEmpty) {
         return _fallbackOrLeft(
           cacheKey,
@@ -104,25 +126,21 @@ class CategoriesRemoteDataSource implements BaseCategoriesRemoteDataSource {
 
       await ApiCacheStore.instance.write(
         cacheKey,
-        data,
+        map,
         ApiCacheTtl.catalog,
       );
 
       return Right(parsed);
     } on DioException catch (e) {
-      final String message;
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.sendTimeout ||
-          e.type == DioExceptionType.receiveTimeout) {
-        message = 'Request timed out. Please try again.';
-      } else if (e.type == DioExceptionType.connectionError) {
-        message = 'Please check your internet connection.';
-      } else {
-        message = e.message ?? e.toString();
-      }
-      return _fallbackOrLeft(cacheKey, NetworkFailure(message));
+      return _fallbackOrLeft(
+        cacheKey,
+        NetworkFailure(DioUserFacingMessage.fromDio(e)),
+      );
     } catch (e) {
-      return _fallbackOrLeft(cacheKey, NetworkFailure(e.toString()));
+      return _fallbackOrLeft(
+        cacheKey,
+        NetworkFailure(DioUserFacingMessage.sanitize(e)),
+      );
     }
   }
 

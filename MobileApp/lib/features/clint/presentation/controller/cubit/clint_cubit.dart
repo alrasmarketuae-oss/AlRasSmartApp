@@ -15,8 +15,10 @@ import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/services/dio_helper.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/serveses/app_order_listener_service.dart';
+import 'package:alrasmarket/core/utils/dio_user_facing_message.dart';
 import 'package:alrasmarket/core/utils/localized_product_text.dart';
 import 'package:alrasmarket/core/utils/thousands_separator_input_formatter.dart';
+import 'package:alrasmarket/core/helper/cach_helper.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_ownership_helper.dart';
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
 import 'package:alrasmarket/core/usecase/base_usecase.dart';
@@ -108,6 +110,28 @@ class ClintCubit extends Cubit<ClintStates> {
        _getGeoPortsByCountryUseCase = getGeoPortsByCountryUseCase,
        _getClientAddressesUseCase = getClientAddressesUseCase,
        super(ClintInitialState());
+
+  bool get _preferArabicUi {
+    final raw = CachHelper.getData('languageCode')?.toString() ??
+        CachHelper.getData('locale')?.toString() ??
+        'en';
+    return raw.trim().toLowerCase().startsWith('ar');
+  }
+
+  String _facingNetworkError(Object error) =>
+      DioUserFacingMessage.sanitize(error, isAr: _preferArabicUi);
+
+  String _facingHttpError({
+    required int statusCode,
+    dynamic data,
+    String? fallback,
+  }) =>
+      DioUserFacingMessage.fromHttpResponse(
+        statusCode: statusCode,
+        data: data,
+        isAr: _preferArabicUi,
+        fallback: fallback,
+      );
 
   final GetHomeBannersUseCase _getHomeBannersUseCase;
   final GetCategoriesUseCase _getCategoriesUseCase;
@@ -756,10 +780,11 @@ class ClintCubit extends Cubit<ClintStates> {
 
       final status = response?.statusCode ?? 0;
       if (status < 200 || status >= 300) {
-        final message = (response?.data is Map<String, dynamic>)
-            ? (response?.data['message']?.toString() ??
-                  'Search failed ($status)')
-            : 'Search failed ($status)';
+        final message = _facingHttpError(
+          statusCode: status,
+          data: response?.data,
+          fallback: 'Search failed ($status)',
+        );
         productSearchResults = [];
         searchError = message;
         isLoadingSearch = false;
@@ -791,7 +816,7 @@ class ClintCubit extends Cubit<ClintStates> {
       if (requestGeneration != _productSearchFetchGeneration) return;
       productSearchResults = [];
       searchAiAssist = null;
-      searchError = 'Network error while searching products. ($e)';
+      searchError = _facingNetworkError(e);
       isLoadingSearch = false;
       emit(ProductSearchErrorState(searchError!));
     }
@@ -836,10 +861,11 @@ class ClintCubit extends Cubit<ClintStates> {
 
       final status = response?.statusCode ?? 0;
       if (status < 200 || status >= 300) {
-        final message = (response?.data is Map<String, dynamic>)
-            ? (response?.data['message']?.toString() ??
-                  'Image search failed ($status)')
-            : 'Image search failed ($status)';
+        final message = _facingHttpError(
+          statusCode: status,
+          data: response?.data,
+          fallback: 'Image search failed ($status)',
+        );
         productSearchResults = [];
         searchError = message;
         isLoadingSearch = false;
@@ -932,7 +958,7 @@ class ClintCubit extends Cubit<ClintStates> {
     } catch (e) {
       if (requestGeneration != _productSearchFetchGeneration) return;
       productSearchResults = [];
-      searchError = 'Network error while searching by image. ($e)';
+      searchError = _facingNetworkError(e);
       isLoadingSearch = false;
       emit(ProductSearchErrorState(searchError!));
     }
@@ -1097,7 +1123,7 @@ class ClintCubit extends Cubit<ClintStates> {
     } catch (e) {
       if (requestGeneration != _productSearchFetchGeneration) return;
       productSearchResults = [];
-      searchError = 'Failed to restore search history. ($e)';
+      searchError = _facingNetworkError(e);
       isLoadingSearch = false;
       emit(ProductSearchErrorState(searchError!));
     }
@@ -1265,16 +1291,20 @@ class ClintCubit extends Cubit<ClintStates> {
     if (entry == null) return;
     try {
       final data = Map<String, dynamic>.from(entry.data as Map);
-      final raw = data['items'] as List<dynamic>? ?? [];
-      categories = raw
-          .whereType<Map<String, dynamic>>()
-          .map(CategoryModel.fromJson)
-          .where((c) => c.categoryId > 0 && (c.nameEn.isNotEmpty || c.nameAr.isNotEmpty))
+      final raw = data['items'] as List<dynamic>? ?? const [];
+      final parsed = raw
+          .whereType<Map>()
+          .map((item) => CategoryModel.fromJson(Map<String, dynamic>.from(item)))
+          .where(
+            (c) =>
+                c.categoryId > 0 &&
+                (c.nameEn.isNotEmpty || c.nameAr.isNotEmpty),
+          )
           .toList();
-      if (categories.isNotEmpty) {
-        isLoadingCategories = false;
-        emit(FetchCategoriesSuccessState(categories));
-      }
+      if (parsed.isEmpty) return;
+      categories = parsed;
+      isLoadingCategories = false;
+      emit(FetchCategoriesSuccessState(categories));
     } catch (_) {}
   }
 
@@ -1354,22 +1384,20 @@ class ClintCubit extends Cubit<ClintStates> {
   Future<void> fetchCategories({bool force = false}) async {
     if (force) {
       await ApiCacheStore.instance.remove(ApiCacheKeys.categories);
-      categories = [];
-    } else if (categories.isNotEmpty) {
-      unawaited(_refreshCategoriesInBackground());
-      return;
     }
 
-    if (categories.isEmpty) {
+    final hadCategories = categories.isNotEmpty;
+    if (!hadCategories) {
       await _hydrateCategoriesFromDisk();
     }
 
-    // Cached categories on disk: show immediately, refresh in background only.
+    // Instant paint from memory/disk — same pattern as banners/products.
     if (!force && categories.isNotEmpty) {
       categoriesError = null;
       isLoadingCategories = false;
       emit(FetchCategoriesSuccessState(categories));
-      unawaited(_refreshCategoriesInBackground());
+      // Revalidate only when the disk TTL expired (avoid hitting API on every home open).
+      unawaited(_refreshCategoriesIfStale());
       return;
     }
 
@@ -1395,6 +1423,11 @@ class ClintCubit extends Cubit<ClintStates> {
         }
       },
       (items) {
+        if (items.isEmpty && categories.isNotEmpty) {
+          isLoadingCategories = false;
+          emit(FetchCategoriesSuccessState(categories));
+          return;
+        }
         categories = items;
         categoriesError = null;
         isLoadingCategories = false;
@@ -1403,7 +1436,14 @@ class ClintCubit extends Cubit<ClintStates> {
     );
   }
 
-  Future<void> _refreshCategoriesInBackground() async {
+  /// Background revalidate only after catalog TTL expires (6h), not on every home visit.
+  Future<void> _refreshCategoriesIfStale() async {
+    final entry = await ApiCacheStore.instance.read(
+      ApiCacheKeys.categories,
+      allowStale: true,
+    );
+    if (entry != null && entry.isFresh) return;
+
     final result = await _getCategoriesUseCase(const GetCategoriesParams());
     result.fold(
       (_) {},
@@ -1479,10 +1519,11 @@ class ClintCubit extends Cubit<ClintStates> {
 
       final status = response?.statusCode ?? 0;
       if (status < 200 || status >= 300) {
-        final message = (response?.data is Map<String, dynamic>)
-            ? (response?.data['message']?.toString() ??
-                  'Failed to load products ($status)')
-            : 'Failed to load products ($status)';
+        final message = _facingHttpError(
+          statusCode: status,
+          data: response?.data,
+          fallback: 'Failed to load products ($status)',
+        );
         homeProductsError = isAppend ? null : message;
         if (!hadCachedProducts) {
           homeProducts = [];
@@ -1550,8 +1591,9 @@ class ClintCubit extends Cubit<ClintStates> {
     } catch (e) {
       if (requestGeneration != _homeProductsFetchGeneration) return;
 
+      final message = _facingNetworkError(e);
       if (!isAppend) {
-        homeProductsError = 'Network error while loading products.';
+        homeProductsError = message;
       }
       if (!hadCachedProducts) {
         homeProducts = [];
@@ -1561,11 +1603,7 @@ class ClintCubit extends Cubit<ClintStates> {
       if (homeProducts.isNotEmpty) {
         _emitHomeProductsStateIfLoaded();
       } else {
-        emit(
-          FetchHomeProductsErrorState(
-            'Network error while loading products. ($e)',
-          ),
-        );
+        emit(FetchHomeProductsErrorState(message));
       }
     }
   }
@@ -1615,10 +1653,11 @@ class ClintCubit extends Cubit<ClintStates> {
       final status = response?.statusCode ?? 0;
       if (status < 200 || status >= 300) {
         print('fetchFeaturedProducts error');
-        final message = (response?.data is Map<String, dynamic>)
-            ? (response?.data['message']?.toString() ??
-                  'Failed to load featured products ($status)')
-            : 'Failed to load featured products ($status)';
+        final message = _facingHttpError(
+          statusCode: status,
+          data: response?.data,
+          fallback: 'Failed to load featured products ($status)',
+        );
         featuredProductsError = message;
         if (!hadCachedProducts) {
           featuredProducts = [];
@@ -1660,7 +1699,8 @@ class ClintCubit extends Cubit<ClintStates> {
     } catch (e) {
       if (requestGeneration != _featuredProductsFetchGeneration) return;
 
-      featuredProductsError = 'Network error while loading featured products.';
+      final message = _facingNetworkError(e);
+      featuredProductsError = message;
       if (!hadCachedProducts) {
         featuredProducts = [];
       }
@@ -1668,11 +1708,7 @@ class ClintCubit extends Cubit<ClintStates> {
       if (featuredProducts.isNotEmpty) {
         _emitFeaturedProductsStateIfLoaded();
       } else {
-        emit(
-          FetchFeaturedProductsErrorState(
-            'Network error while loading featured products. ($e)',
-          ),
-        );
+        emit(FetchFeaturedProductsErrorState(message));
       }
     }
   }
@@ -1842,10 +1878,11 @@ class ClintCubit extends Cubit<ClintStates> {
 
       final status = response?.statusCode ?? 0;
       if (status < 200 || status >= 300) {
-        final message = (response?.data is Map<String, dynamic>)
-            ? (response?.data['message']?.toString() ??
-                  'Failed to load products ($status)')
-            : 'Failed to load products ($status)';
+        final message = _facingHttpError(
+          statusCode: status,
+          data: response?.data,
+          fallback: 'Failed to load products ($status)',
+        );
         bucket.error = isAppend ? null : message;
         if (!hadCachedProducts) {
           bucket.items = [];
@@ -1939,7 +1976,7 @@ class ClintCubit extends Cubit<ClintStates> {
       if (requestGeneration != bucket.fetchGeneration) return;
 
       if (!isAppend) {
-        bucket.error = 'Network error while loading products.';
+        bucket.error = _facingNetworkError(e);
       }
       if (!hadCachedProducts) {
         bucket.items = [];
@@ -1957,7 +1994,7 @@ class ClintCubit extends Cubit<ClintStates> {
         emit(
           FetchProductsByTypeErrorState(
             productType: normalizedType,
-            message: 'Network error while loading products. ($e)',
+            message: _facingNetworkError(e),
           ),
         );
       }
@@ -2390,10 +2427,11 @@ class ClintCubit extends Cubit<ClintStates> {
 
       final status = response?.statusCode ?? 0;
       if (status < 200 || status >= 300) {
-        final message = (response?.data is Map<String, dynamic>)
-            ? (response?.data['message']?.toString() ??
-                  'Failed to load category products ($status)')
-            : 'Failed to load category products ($status)';
+        final message = _facingHttpError(
+          statusCode: status,
+          data: response?.data,
+          fallback: 'Failed to load category products ($status)',
+        );
         categoryProducts = [];
         categoryProductsError = message;
         isLoadingCategoryProducts = false;
@@ -2439,13 +2477,14 @@ class ClintCubit extends Cubit<ClintStates> {
         ),
       );
     } catch (e) {
+      final message = _facingNetworkError(e);
       categoryProducts = [];
-      categoryProductsError = 'Network error while loading category products.';
+      categoryProductsError = message;
       isLoadingCategoryProducts = false;
       emit(
         FetchCategoryProductsErrorState(
           categoryId: categoryId,
-          message: 'Network error while loading category products. ($e)',
+          message: message,
         ),
       );
     }
@@ -2488,10 +2527,11 @@ class ClintCubit extends Cubit<ClintStates> {
 
       final status = response?.statusCode ?? 0;
       if (status < 200 || status >= 300) {
-        final message = (response?.data is Map<String, dynamic>)
-            ? (response?.data['message']?.toString() ??
-                  'Failed to load shipping posts ($status)')
-            : 'Failed to load shipping posts ($status)';
+        final message = _facingHttpError(
+          statusCode: status,
+          data: response?.data,
+          fallback: 'Failed to load shipping posts ($status)',
+        );
         shippingPosts = [];
         shippingPostsError = message;
         isLoadingShippingPosts = false;
@@ -2524,14 +2564,11 @@ class ClintCubit extends Cubit<ClintStates> {
     } catch (e) {
       if (requestGeneration != _shippingPostsFetchGeneration) return;
 
+      final message = _facingNetworkError(e);
       shippingPosts = [];
-      shippingPostsError = 'Network error while loading shipping posts.';
+      shippingPostsError = message;
       isLoadingShippingPosts = false;
-      emit(
-        FetchShippingPostsErrorState(
-          'Network error while loading shipping posts. ($e)',
-        ),
-      );
+      emit(FetchShippingPostsErrorState(message));
     }
   }
 

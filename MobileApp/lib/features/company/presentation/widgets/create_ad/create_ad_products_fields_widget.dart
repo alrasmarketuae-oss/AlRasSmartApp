@@ -119,7 +119,11 @@ class CreateAdProductsFieldsWidget extends StatelessWidget {
             SizedBox(height: 12.h),
             _RetailPricingSwitchRow(
               enabled: state.enableRetailPricing,
-              onChanged: cubit.setEnableRetailPricing,
+              onChanged: (enabled) => _onRetailPricingToggled(
+                context,
+                cubit: cubit,
+                enabled: enabled,
+              ),
               fontFamily: fontFamily,
               isAr: isAr,
             ),
@@ -142,6 +146,14 @@ class CreateAdProductsFieldsWidget extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 8.h),
+                    _CopyWholesaleSuggestionChip(
+                      fontFamily: fontFamily,
+                      onTap: () => _promptCopyWholesaleToRetail(
+                        context,
+                        cubit: cubit,
+                      ),
+                    ),
+                    SizedBox(height: 10.h),
                     CreateAdPricingRowSection(
                       quantityController: cubit.retailQuantityController,
                       priceController: cubit.retailPriceController,
@@ -219,6 +231,147 @@ class _ChannelSection extends StatelessWidget {
         border: Border.all(color: border),
       ),
       child: child,
+    );
+  }
+}
+
+Future<void> _onRetailPricingToggled(
+  BuildContext context, {
+  required CreateAdCubit cubit,
+  required bool enabled,
+}) async {
+  if (!enabled) {
+    cubit.setEnableRetailPricing(false);
+    return;
+  }
+
+  cubit.setEnableRetailPricing(true);
+  if (!context.mounted) return;
+  await _promptCopyWholesaleToRetail(
+    context,
+    cubit: cubit,
+  );
+}
+
+Future<void> _promptCopyWholesaleToRetail(
+  BuildContext context, {
+  required CreateAdCubit cubit,
+}) async {
+  final s = S.of(context);
+  final fontFamily = AppFonts.familyFor(Localizations.localeOf(context));
+
+  final accepted = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        title: Text(
+          s.copyWholesaleToRetailTitle,
+          style: TextStyle(
+            fontFamily: fontFamily,
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w700,
+            color: CreateAdDesign.text,
+          ),
+        ),
+        content: Text(
+          s.copyWholesaleToRetailBody,
+          style: TextStyle(
+            fontFamily: fontFamily,
+            fontSize: 14.sp,
+            color: CreateAdDesign.muted,
+            height: 1.5,
+          ),
+        ),
+        actionsAlignment: MainAxisAlignment.spaceBetween,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(
+              s.copyWholesaleToRetailDecline,
+              style: TextStyle(
+                fontFamily: fontFamily,
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w600,
+                color: CreateAdDesign.muted,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(
+              s.copyWholesaleToRetailAccept,
+              style: TextStyle(
+                fontFamily: fontFamily,
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w700,
+                color: CreateAdDesign.brand,
+              ),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (accepted == true) {
+    cubit.copyWholesaleChannelToRetail();
+  }
+}
+
+class _CopyWholesaleSuggestionChip extends StatelessWidget {
+  const _CopyWholesaleSuggestionChip({
+    required this.fontFamily,
+    required this.onTap,
+  });
+
+  final String fontFamily;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20.r),
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20.r),
+              border: Border.all(color: const Color(0xFFA7F3D0)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.content_copy_rounded,
+                  size: 14.sp,
+                  color: const Color(0xFF065F46),
+                ),
+                SizedBox(width: 6.w),
+                Flexible(
+                  child: Text(
+                    s.copyWholesaleToRetailAction,
+                    style: TextStyle(
+                      fontFamily: fontFamily,
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF065F46),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/services/product_view_service.dart';
 import 'package:alrasmarket/core/theme/app_fonts.dart';
+import 'package:alrasmarket/core/utils/product_price_formatter.dart';
 import 'package:alrasmarket/core/utils/product_stock.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/ask_for_price_helper.dart';
 import 'package:alrasmarket/features/clint/presentation/helpers/product_details_opener.dart';
@@ -104,7 +105,7 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
               top: false,
               child: Padding(
                 padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 12.h),
-                child: !_product.shouldShowPrice
+                child: ProductPriceFormatter.shouldShowAskForPrice(_product)
                     ? Row(
                         children: [
                           Expanded(

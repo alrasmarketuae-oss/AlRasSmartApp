@@ -6,6 +6,8 @@ import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/widgets/cached_app_image.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_message_model.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_message_type.dart';
+import 'package:alrasmarket/features/chat/presentation/helpers/ask_for_price_payload.dart';
+import 'package:alrasmarket/features/chat/presentation/widgets/ask_for_price_chat_product_card.dart';
 import 'package:alrasmarket/features/clint/presentation/models/product_media_item.dart';
 import 'package:alrasmarket/features/clint/presentation/widgets/product_media/product_media_preview_screen.dart';
 import 'package:alrasmarket/generated/l10n.dart';
@@ -388,6 +390,13 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
                 ),
               ),
             ],
+          );
+        }
+        final askForPrice = AskForPricePayload.tryParse(widget.message.content);
+        if (askForPrice != null) {
+          return AskForPriceChatProductCard(
+            payload: askForPrice,
+            isMe: widget.isMe,
           );
         }
         return Text(

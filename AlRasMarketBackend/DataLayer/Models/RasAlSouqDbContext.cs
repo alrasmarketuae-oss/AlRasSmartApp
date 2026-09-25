@@ -509,6 +509,9 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
                     store => store ?? true);
             entity.Property(x => x.PendingProductChanges).HasColumnType("nvarchar(max)");
             entity.Property(x => x.ViewsCount).HasDefaultValue(0L);
+            entity.Property(x => x.CartAddsCount).HasDefaultValue(0L);
+            entity.Property(x => x.FavoritesCount).HasDefaultValue(0L);
+            entity.Property(x => x.SharesCount).HasDefaultValue(0L);
             entity.HasOne(x => x.Category).WithMany(x => x.Products).HasForeignKey(x => x.CategoryId);
             entity.HasOne(x => x.ProductType).WithMany(x => x.Products).HasForeignKey(x => x.ProductTypeId);
             entity.HasOne(x => x.RequestType).WithMany(x => x.Products).HasForeignKey(x => x.RequestTypeId).OnDelete(DeleteBehavior.NoAction);

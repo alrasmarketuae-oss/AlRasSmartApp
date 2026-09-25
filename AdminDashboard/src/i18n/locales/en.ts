@@ -582,6 +582,10 @@ export const enMessages = {
       statusActive: 'Active',
       statusRejected: 'Rejected',
       preview: 'Preview',
+      quickView: 'Quick view',
+      quickViewClose: 'Close',
+      quickViewLoading: 'Loading ad details…',
+      quickViewLoadError: 'Could not load ad details.',
       rejectConfirm: 'Are you sure you want to reject this ad?',
       rejectReasonRequired: 'Enter a rejection reason in English or Arabic.',
       rejectReasonDialogHint:

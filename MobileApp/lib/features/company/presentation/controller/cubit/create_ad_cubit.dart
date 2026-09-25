@@ -663,8 +663,44 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     if (!enabled) {
       retailPriceController.clear();
       retailQuantityController.clear();
+      retailSpecificationsController.clear();
+      retailPackingKgController.clear();
+      retailOtherPackingController.clear();
+      emit(
+        state.copyWith(
+          enableRetailPricing: false,
+          retailOtherPacking: false,
+        ),
+      );
+      return;
     }
-    emit(state.copyWith(enableRetailPricing: enabled));
+    emit(state.copyWith(enableRetailPricing: true));
+  }
+
+  /// Copies wholesale price / unit / packing / specs into the retail channel.
+  /// Call only after the seller explicitly accepts the suggestion dialog.
+  void copyWholesaleChannelToRetail() {
+    retailPriceController.text = priceController.text.trim();
+    retailSpecificationsController.text = specificationsController.text;
+
+    final useOtherPacking = state.otherPacking;
+    if (useOtherPacking) {
+      retailPackingKgController.clear();
+      retailOtherPackingController.text = otherPackingController.text;
+    } else {
+      retailOtherPackingController.clear();
+      retailPackingKgController.text = packingKgController.text;
+    }
+
+    final unit = state.selectedUnit.trim();
+    emit(
+      state.copyWith(
+        selectedRetailUnit:
+            unit.isNotEmpty ? unit : state.selectedRetailUnit,
+        retailOtherPacking: useOtherPacking,
+        formRevision: state.formRevision + 1,
+      ),
+    );
   }
 
   void setSelectedCurrency(String currency) {

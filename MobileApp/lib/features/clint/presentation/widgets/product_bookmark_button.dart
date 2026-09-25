@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:alrasmarket/core/services/product_engagement_service.dart';
 import 'package:alrasmarket/core/utils/saved_products_store.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
@@ -48,6 +51,10 @@ class _ProductBookmarkButtonState extends State<ProductBookmarkButton> {
 
   Future<void> _toggle() async {
     final next = await SavedProductsStore.toggle(widget.productId);
+    if (next) {
+      // Fire-and-forget: count each save action for seller statistics.
+      unawaited(ProductEngagementService.trackFavorite(widget.productId));
+    }
     if (!mounted) return;
     setState(() => _bookmarked = next);
   }

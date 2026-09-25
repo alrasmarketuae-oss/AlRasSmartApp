@@ -537,6 +537,8 @@ await using (var scope = app.Services.CreateAsyncScope())
     await ProductRetailCodeSchemaMigrator.EnsureAsync(db);
     // ShowPrice is mapped on Product; add before EF Products queries and usp_* recreate.
     await ProductShowPriceSchemaMigrator.EnsureAsync(db);
+    // Engagement counters (cart/favorites/shares) mapped on Product; add before EF Products queries.
+    await ProductEngagementSchemaMigrator.EnsureAsync(db);
     await ProductCodeSchemaMigrator.EnsureAsync(db);
     await ProductStoredProceduresSchemaMigrator.EnsureAsync(db);
     await OrderSchemaMigrator.EnsureAsync(db);

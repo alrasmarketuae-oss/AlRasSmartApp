@@ -26,7 +26,7 @@ class _CategoriesViewState extends State<CategoriesView> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ClintCubit>().fetchCategories(force: true);
+      context.read<ClintCubit>().fetchCategories(force: false);
     });
   }
 
