@@ -528,17 +528,15 @@ await using (var scope = app.Services.CreateAsyncScope())
     var db = scope.ServiceProvider.GetRequiredService<IRasAlSouqDbContext>();
     // Schema columns (e.g. Categories.IsHide) must exist before any EF category queries.
     await CategoryProductSchemaMigrator.EnsureAsync(db);
-    // Must run before any EF Products query (e.g. ProductCodeSchemaMigrator).
-    // RetailCode is mapped on Product; add the column before EF selects Products rows.
+    // Product-mapped columns must exist before any EF Products query
+    // (RetailCode backfill, ProductCode, ShowPrice, engagement counters, etc.).
     await ProductReadyForAdminReviewSchemaMigrator.EnsureAsync(db);
     await PendingProductChangesSchemaMigrator.EnsureAsync(db);
     await ProductRetailPricingSchemaMigrator.EnsureAsync(db);
     await ProductRetailChannelDetailsSchemaMigrator.EnsureAsync(db);
-    await ProductRetailCodeSchemaMigrator.EnsureAsync(db);
-    // ShowPrice is mapped on Product; add before EF Products queries and usp_* recreate.
     await ProductShowPriceSchemaMigrator.EnsureAsync(db);
-    // Engagement counters (cart/favorites/shares) mapped on Product; add before EF Products queries.
     await ProductEngagementSchemaMigrator.EnsureAsync(db);
+    await ProductRetailCodeSchemaMigrator.EnsureAsync(db);
     await ProductCodeSchemaMigrator.EnsureAsync(db);
     await ProductStoredProceduresSchemaMigrator.EnsureAsync(db);
     await OrderSchemaMigrator.EnsureAsync(db);

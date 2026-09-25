@@ -29,8 +29,10 @@ public static class ProductRetailCodeSchemaMigrator
                 cancellationToken).ConfigureAwait(false);
         }
 
-        // Hybrids with retail pricing configured but no RetailCode yet.
-        var missingCodes = await db.Products
+        // Project keys only — full Product materialization requires every mapped column
+        // (ShowPrice, engagement counters, …) to already exist.
+        var missingIds = await db.Products
+            .AsNoTracking()
             .Where(p =>
                 (p.RetailCode == null || p.RetailCode == string.Empty)
                 && p.CategoryId != null
@@ -41,18 +43,29 @@ public static class ProductRetailCodeSchemaMigrator
                 && p.RetailQuantity > 0)
             .OrderBy(p => p.CreatedAt)
             .ThenBy(p => p.ProductId)
+            .Select(p => p.ProductId)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        if (missingCodes.Count > 0)
+        if (missingIds.Count > 0)
         {
-            foreach (var product in missingCodes)
+            foreach (var productId in missingIds)
             {
-                product.RetailCode = await AllocateCodeAsync(connection, cancellationToken)
+                var code = await AllocateCodeAsync(connection, cancellationToken)
                     .ConfigureAwait(false);
+                await using var update = connection.CreateCommand();
+                update.CommandText =
+                    "UPDATE dbo.Products SET RetailCode = @code WHERE ProductId = @id AND (RetailCode IS NULL OR RetailCode = N'');";
+                var codeParam = update.CreateParameter();
+                codeParam.ParameterName = "@code";
+                codeParam.Value = code;
+                update.Parameters.Add(codeParam);
+                var idParam = update.CreateParameter();
+                idParam.ParameterName = "@id";
+                idParam.Value = productId;
+                update.Parameters.Add(idParam);
+                await update.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
-
-            await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
         await SqlSchemaHelper.ExecuteBatchAsync(

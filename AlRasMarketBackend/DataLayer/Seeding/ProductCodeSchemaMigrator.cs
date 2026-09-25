@@ -43,21 +43,33 @@ public static class ProductCodeSchemaMigrator
             """,
             cancellationToken).ConfigureAwait(false);
 
-        var missingCodes = await db.Products
+        var missingIds = await db.Products
+            .AsNoTracking()
             .Where(p => p.ProductCode == null || p.ProductCode == string.Empty)
             .OrderBy(p => p.CreatedAt)
             .ThenBy(p => p.ProductId)
+            .Select(p => p.ProductId)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        if (missingCodes.Count > 0)
+        if (missingIds.Count > 0)
         {
-            foreach (var product in missingCodes)
+            foreach (var productId in missingIds)
             {
-                product.ProductCode = await AllocateCodeAsync(connection, cancellationToken).ConfigureAwait(false);
+                var code = await AllocateCodeAsync(connection, cancellationToken).ConfigureAwait(false);
+                await using var update = connection.CreateCommand();
+                update.CommandText =
+                    "UPDATE dbo.Products SET ProductCode = @code WHERE ProductId = @id AND (ProductCode IS NULL OR ProductCode = N'');";
+                var codeParam = update.CreateParameter();
+                codeParam.ParameterName = "@code";
+                codeParam.Value = code;
+                update.Parameters.Add(codeParam);
+                var idParam = update.CreateParameter();
+                idParam.ParameterName = "@id";
+                idParam.Value = productId;
+                update.Parameters.Add(idParam);
+                await update.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
-
-            await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
         await SqlSchemaHelper.ExecuteBatchAsync(connection,
