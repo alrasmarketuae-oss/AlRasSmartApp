@@ -66,6 +66,32 @@ mixin _AiAssistantMediaMixin on _AiAssistantViewStateBase {
     });
   }
 
+  Future<ImageSource?> _pickBusinessCardSource() {
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    return showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt_outlined),
+                title: Text(isAr ? 'تصوير من الكاميرا' : 'Take photo'),
+                onTap: () => Navigator.pop(sheetContext, ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: Text(isAr ? 'من الاستوديو / المعرض' : 'Choose from gallery'),
+                onTap: () => Navigator.pop(sheetContext, ImageSource.gallery),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _pickBusinessCardImages() async {
     if (_uploadingAdMedia || _isThinking) return;
     if (!_isAdminAi) return;
@@ -101,24 +127,42 @@ mixin _AiAssistantMediaMixin on _AiAssistantViewStateBase {
       return;
     }
 
+    final source = await _pickBusinessCardSource();
+    if (source == null || !mounted) return;
+
     setState(() {
       _uploadingAdMedia = true;
     });
 
     try {
-      // Prefer multi-select so admin can pick front + back in one go.
-      final picked = await _imagePicker.pickMultiImage(imageQuality: 85);
-      if (picked.isEmpty) {
+      final localPaths = <String>[];
+      if (source == ImageSource.camera) {
+        final shot = await _imagePicker.pickImage(
+          source: ImageSource.camera,
+          imageQuality: 85,
+          preferredCameraDevice: CameraDevice.rear,
+        );
+        if (shot != null && shot.path.isNotEmpty) {
+          localPaths.add(shot.path);
+        }
+      } else {
+        // Gallery: multi-select so admin can pick front + back in one go.
+        final picked = await _imagePicker.pickMultiImage(imageQuality: 85);
+        for (final item in picked.take(remaining)) {
+          if (item.path.isNotEmpty) localPaths.add(item.path);
+        }
+      }
+
+      if (localPaths.isEmpty) {
         if (!mounted) return;
         setState(() => _uploadingAdMedia = false);
         return;
       }
 
       var uploaded = 0;
-      for (final item in picked.take(remaining)) {
+      for (final path in localPaths.take(remaining)) {
         if (_businessCardImagePaths.length >= _businessCardMaxCount) break;
-        final path = item.path;
-        if (path.isEmpty || !ImageCompressor.isImagePath(path)) continue;
+        if (!ImageCompressor.isImagePath(path)) continue;
 
         // Compress hard before upload so Vision payload stays small.
         final compressed = await ImageCompressor.compressToMaxBytes(
@@ -152,10 +196,10 @@ mixin _AiAssistantMediaMixin on _AiAssistantViewStateBase {
               isAr
                   ? (total >= _businessCardMaxCount
                       ? 'تم إرفاق صورتين لبطاقة العمل. اضغط إرسال لإنشاء حساب المورد.'
-                      : 'تم إرفاق $total صورة. يمكنك إضافة صورة ثانية أو اضغط إرسال.')
+                      : 'تم إرفاق $total صورة. يمكنك تصوير/إضافة صورة ثانية أو اضغط إرسال.')
                   : (total >= _businessCardMaxCount
                       ? '2 business-card photos attached. Tap Send to create the supplier.'
-                      : '$total photo(s) attached. You can add a second photo or tap Send.'),
+                      : '$total photo(s) attached. You can capture/add a second photo or tap Send.'),
             ),
           ),
         );
