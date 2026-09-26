@@ -27,7 +27,7 @@ export default function Navbar({ lang, setLang }) {
     { to: '/delete-account', label: t.deleteAccount },
     { to: '/model-training', label: t.modelTraining },
     { to: '/encrypted-messages', label: t.encryptedChat },
-    { to: '/shipping-register', label: t.shippingRegister },
+    { to: '/Shipping-registration', label: t.shippingRegister },
     { to: '/contact', label: t.contact },
   ]
 

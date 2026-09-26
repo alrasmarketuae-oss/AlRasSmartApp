@@ -133,7 +133,7 @@ export default function Home({ lang, onAskAi }) {
                     <p className="mt-3 text-sm leading-7 text-slate-600">{item.desc}</p>
                     {i === 2 ? (
                       <Link
-                        to="/shipping-register"
+                        to="/Shipping-registration"
                         className="mt-5 inline-flex rounded-full bg-brand-green px-4 py-2 text-sm font-bold text-white transition hover:opacity-95"
                       >
                         {t.nav?.shippingRegister || (isAr ? 'تسجيل شركة شحن' : 'Shipping company signup')}

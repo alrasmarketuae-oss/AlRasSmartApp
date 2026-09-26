@@ -14,6 +14,7 @@
     <PackageReference Include="AWSSDK.S3" />
     <PackageReference Include="Google.Apis.Auth" />
     <PackageReference Include="Konscious.Security.Cryptography.Argon2" />
+    <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="SixLabors.ImageSharp" />
     <PackageReference Include="StackExchange.Redis" />
@@ -27,6 +28,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <!-- Host publish uses Presentation Link to this file; avoid duplicate Assets/email-logo.png. -->
       <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </None>
+    <None Include="Assets\nasser-ai-watermark.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>
   </ItemGroup>
 

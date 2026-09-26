@@ -122,12 +122,12 @@ export const SEO_PAGES = {
     ar: {
       title: 'تسجيل شركة شحن | الراس الذكي',
       description: 'إنشاء حساب شركة شحن في الراس الذكي مع التحقق عبر OTP.',
-      path: '/shipping-register',
+      path: '/Shipping-registration',
     },
     en: {
       title: 'Shipping Company Signup | Al Ras Smart',
       description: 'Create a shipping company account on Al Ras Smart with email OTP verification.',
-      path: '/shipping-register',
+      path: '/Shipping-registration',
     },
   },
 }

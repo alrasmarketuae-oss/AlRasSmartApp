@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import { formatChatRelativeTime } from '../../utils/formatChatRelativeTime'

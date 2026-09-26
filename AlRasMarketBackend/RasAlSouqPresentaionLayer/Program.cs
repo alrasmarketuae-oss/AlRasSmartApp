@@ -203,6 +203,19 @@ builder.Services.AddHttpClient<IAiTextEmbeddingService, OpenAiTextEmbeddingServi
 });
 builder.Services.AddScoped<IAiAssistantToolsService, AiAssistantMcpToolsService>();
 builder.Services.AddScoped<IAiAssistantMcpToolLoop, AiAssistantMcpToolLoop>();
+// Nasser portfolio API moved to ../NasserChatBackend — keep DI only if legacy routes still needed.
+builder.Services.AddSingleton<RasAlSouqPresentaionLayer.Services.NasserImageQuota>();
+builder.Services.AddSingleton<RasAlSouqPresentaionLayer.Services.NasserAdminAuth>();
+builder.Services.AddHttpClient<RasAlSouqPresentaionLayer.Services.NasserGeoLocator>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(3);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("nasser-portfolio/1.0");
+});
+builder.Services.AddSingleton<INasserPortfolioStore, NasserPortfolioStore>();
+builder.Services.AddHttpClient<INasserPortfolioAppService, NasserPortfolioAppService>(client =>
+{
+    client.Timeout = TimeSpan.FromMinutes(3);
+});
 builder.Services.AddHttpClient<IAiAssistantAppService, AiAssistantAppService>(client =>
 {
     client.Timeout = TimeSpan.FromSeconds(90);
@@ -413,6 +426,14 @@ builder.Services.AddCors(options =>
                 }
 
                 if (uri.Host.Equals("gomango01-001-site1.mtempurl.com", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                if (uri.Host.Equals("nasser-mostafa.dev", StringComparison.OrdinalIgnoreCase)
+                    || uri.Host.Equals("www.nasser-mostafa.dev", StringComparison.OrdinalIgnoreCase)
+                    || uri.Host.Equals("nasser.chat", StringComparison.OrdinalIgnoreCase)
+                    || uri.Host.Equals("www.nasser.chat", StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }

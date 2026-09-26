@@ -40,6 +40,18 @@ public sealed class ImageCompressionOptions
         EnforceByteTarget = true
     };
 
+    /// <summary>Fast enough for gpt-image edits without multi‑MB PNG uploads.</summary>
+    public static ImageCompressionOptions AiEdit { get; } = new()
+    {
+        MaxBytes = 2 * 1024 * 1024,
+        MaxSide = 1280,
+        InitialQuality = 85,
+        MinQuality = 75,
+        QualityStep = 5,
+        AutoOrient = true,
+        EnforceByteTarget = false
+    };
+
     public static ImageCompressionOptions SearchVision { get; } = new()
     {
         MaxBytes = 350 * 1024,
@@ -106,6 +118,41 @@ public static class ImageFileHelper
     {
         await using var input = file.OpenReadStream();
         return await CompressToJpegBytesAsync(input, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Resize and encode as JPEG — smaller/faster uploads to OpenAI than lossless PNG.
+    /// </summary>
+    public static async Task<PreparedAiImage> PrepareForAiEditAsync(
+        IFormFile file,
+        CancellationToken cancellationToken = default)
+    {
+        await using var input = file.OpenReadStream();
+        using var image = await Image.LoadAsync(input, cancellationToken).ConfigureAwait(false);
+
+        image.Mutate(x => x.AutoOrient());
+
+        var maxSide = Math.Max(image.Width, image.Height);
+        var limit = ImageCompressionOptions.AiEdit.MaxSide;
+        if (maxSide > limit)
+        {
+            image.Mutate(x => x.Resize(new ResizeOptions
+            {
+                Mode = ResizeMode.Max,
+                Size = new Size(limit, limit)
+            }));
+        }
+
+        var jpeg = await EncodeOnceAsync(image, ImageCompressionOptions.AiEdit.InitialQuality, cancellationToken)
+            .ConfigureAwait(false);
+        return new PreparedAiImage
+        {
+            Bytes = jpeg,
+            ContentType = "image/jpeg",
+            FileName = "input.jpg",
+            Width = image.Width,
+            Height = image.Height
+        };
     }
 
     public static async Task<byte[]> CompressToJpegBytesAsync(
@@ -187,4 +234,13 @@ public static class ImageFileHelper
             cancellationToken);
         return ms.ToArray();
     }
+}
+
+public sealed class PreparedAiImage
+{
+    public required byte[] Bytes { get; init; }
+    public required string ContentType { get; init; }
+    public required string FileName { get; init; }
+    public int Width { get; init; }
+    public int Height { get; init; }
 }
