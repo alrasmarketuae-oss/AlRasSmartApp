@@ -138,6 +138,7 @@ class ApiConstants {
   static String verifyPasswordEndPoint = '/Auth/verify-password';
   static String accountApprovalStatusEndPoint(String email) =>
       '/Auth/account-approval-status?email=${Uri.encodeComponent(email)}';
+  static String resubmitRegistrationEndPoint = '/Auth/resubmit-registration';
   static String uploadCompanyLicenceEndPoint = '/CompanyLicence/upload';
   static String uploadCompanyImagesEndPoint = '/CompanyImages/upload';
   static String uploadCompanyProfileLogoEndPoint = '/CompanyImages/upload-profile';

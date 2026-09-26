@@ -30,6 +30,14 @@ export type PendingCompanyProfileChanges = {
   companyImagePaths: string[]
 }
 
+export type RegistrationCompletionRequest = {
+  missingLocation: boolean
+  missingImages: boolean
+  missingDocuments: boolean
+  message: string | null
+  requestedAtUtc: string
+}
+
 export type AdminShippingPhoneRevealCompany = {
   companyUserId: string
   companyName: string
@@ -74,6 +82,7 @@ export type AdminUserDetail = {
   taxNumber: string | null
   website: string | null
   pendingProfileChanges: PendingCompanyProfileChanges | null
+  registrationCompletionRequest: RegistrationCompletionRequest | null
   companyImages: AdminUserCompanyImage[]
   addresses: AdminUserAddress[]
   ordersCount: number

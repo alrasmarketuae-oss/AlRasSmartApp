@@ -76,6 +76,7 @@ function AdminLayoutInner({
   }, [openTick, consumeOpenAskAiRequest, setActingCompany, setAskAiOpen])
 
   return (
+    <>
       <div dir={isRtl ? 'rtl' : 'ltr'} className="admin-page-bg flex h-svh max-h-svh overflow-hidden print:h-auto print:max-h-none print:overflow-visible">
         {sidebarOpen ? (
           <button
@@ -125,5 +126,6 @@ function AdminLayoutInner({
           poweredBy: t('askAi.poweredBy'),
         }}
       />
+    </>
   )
 }

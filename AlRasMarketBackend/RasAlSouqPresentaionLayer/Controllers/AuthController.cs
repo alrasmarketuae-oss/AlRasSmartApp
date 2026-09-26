@@ -270,6 +270,43 @@ public class AuthController(
     }
 
     /// <summary>
+    /// Pending company resubmits after filling missing registration data requested by admin.
+    /// </summary>
+    [HttpPost("resubmit-registration")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ResubmitRegistration(CancellationToken cancellationToken = default)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var message = await _authAppService.ResubmitRegistrationForReviewAsync(
+                userId,
+                cancellationToken);
+            return Ok(new { message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Checks whether a company account has been activated by admin.
     /// </summary>
     /// <param name="email">Company account email.</param>

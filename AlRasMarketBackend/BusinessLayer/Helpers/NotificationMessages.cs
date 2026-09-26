@@ -611,6 +611,40 @@ public static class NotificationMessages
             safeReason);
     }
 
+    public static (string EmailSubject, string EmailHtml, string FcmTitle, string FcmBody) CompanyRegistrationIncomplete(
+        string? language,
+        string details)
+    {
+        var safeDetails = string.IsNullOrWhiteSpace(details)
+            ? (IsArabic(language)
+                ? "يوجد بيانات ناقصة في تسجيلك. افتح التطبيق وأكمل الخطوات."
+                : "Your registration is missing required details. Open the app and complete the steps.")
+            : details.Trim();
+
+        if (IsArabic(language))
+        {
+            return (
+                "بيانات ناقصة في تسجيلك - تطبيق الراس الذكي",
+                BrandEmailLayout.Headline("أكمل بيانات التسجيل") +
+                BrandEmailLayout.StatusPill("بيانات ناقصة", BrandEmailLayout.Blue) +
+                BrandEmailLayout.Paragraph("راجع الإدارة طلبت منك إكمال بيانات التسجيل. حسابك ما زال موجوداً ولم يُحذف.") +
+                BrandEmailLayout.InfoCard("المطلوب", safeDetails) +
+                BrandEmailLayout.Paragraph("افتح التطبيق، أكمل الخطوات الناقصة، ثم أعد الإرسال للمراجعة."),
+                "بيانات ناقصة في التسجيل",
+                safeDetails.Length > 160 ? safeDetails[..157] + "..." : safeDetails);
+        }
+
+        return (
+            "Incomplete registration details - Al Ras Smart",
+            BrandEmailLayout.Headline("Complete your registration") +
+            BrandEmailLayout.StatusPill("Incomplete", BrandEmailLayout.Blue) +
+            BrandEmailLayout.Paragraph("Admin asked you to complete missing registration details. Your account was not deleted.") +
+            BrandEmailLayout.InfoCard("Required", safeDetails) +
+            BrandEmailLayout.Paragraph("Open the app, complete the missing steps, then resubmit for review."),
+            "Incomplete registration",
+            safeDetails.Length > 160 ? safeDetails[..157] + "..." : safeDetails);
+    }
+
     public static string ChatFallbackSenderName(string? language) =>
         IsArabic(language) ? "رسالة جديدة" : "New message";
 

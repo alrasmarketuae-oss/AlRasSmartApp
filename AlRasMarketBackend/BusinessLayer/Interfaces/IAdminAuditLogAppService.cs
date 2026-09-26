@@ -27,6 +27,7 @@ public static class AdminAuditActions
 {
     public const string CompanyApprove = "company.approve";
     public const string CompanyReject = "company.reject";
+    public const string CompanyRequestCompletion = "company.request_completion";
     public const string CompanyProfileApprove = "company.profile_approve";
     public const string CompanyProfileReject = "company.profile_reject";
     public const string ProductApprove = "product.approve";

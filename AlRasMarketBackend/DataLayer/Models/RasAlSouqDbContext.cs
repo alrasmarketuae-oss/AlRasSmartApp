@@ -114,6 +114,7 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.Property(x => x.IsCustomer);
             entity.Property(x => x.IsApproved).HasDefaultValue(false);
             entity.Property(x => x.PendingProfileChanges).HasColumnType("nvarchar(max)");
+            entity.Property(x => x.RegistrationCompletionRequest).HasColumnType("nvarchar(max)");
             entity.Property(x => x.PhoneNumber).HasMaxLength(255).IsUnicode(false);
             entity.Property(x => x.LandNumber).HasMaxLength(255).IsUnicode(false);
             entity.Property(x => x.FcmToken).HasMaxLength(512).IsUnicode(false);

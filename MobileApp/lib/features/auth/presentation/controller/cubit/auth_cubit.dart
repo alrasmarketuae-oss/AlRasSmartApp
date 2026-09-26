@@ -658,6 +658,38 @@ class AuthCubit extends Cubit<AuthStates> {
           userPhone: status.phone,
         );
         emit(const AccountApprovalApprovedState());
+        return;
+      }
+
+      if (status.needsRegistrationCompletion &&
+          status.registrationCompletionRequest != null &&
+          status.registrationCompletionRequest!.hasAnyMissing) {
+        final token = status.token ?? AuthService.instance.currentToken ?? '';
+        if (token.isNotEmpty) {
+          await AuthService.instance.saveAuthData(
+            personId: status.id ?? AuthService.instance.currentUserID ?? '',
+            authToken: token,
+            userRoleId: _roleIdFromApprovalStatus(status),
+            userEmail: status.email ?? email,
+            fullName: status.name ?? AuthService.instance.currentUserName,
+            userRole:
+                status.roleName ?? AuthService.instance.currentUserRoleName,
+            companyWaiting: true,
+            approved: false,
+            verified: status.isVerified,
+            companyAccount: status.isCompanyAccount,
+            shippingCompanyAccount: status.isShippingCompanyAccount ||
+                isShippingCompanyAccount == true ||
+                status.roleName == 'ShippingCompany',
+            isCustomerAcount: status.isCustomer,
+            userPhone: status.phone,
+          );
+        }
+        emit(
+          AccountNeedsRegistrationCompletionState(
+            status.registrationCompletionRequest!,
+          ),
+        );
       }
     });
   }

@@ -331,6 +331,7 @@ public class AdminUsersAppService(
             TaxNumber = user.TaxNumber,
             Website = user.Website,
             PendingProfileChanges = MapPendingProfileChanges(user.PendingProfileChanges),
+            RegistrationCompletionRequest = MapRegistrationCompletionRequest(user.RegistrationCompletionRequest),
             CompanyImages = user.CompanyImages
                 .OrderByDescending(x => x.IsPrimary)
                 .ThenBy(x => x.CreatedAt)
@@ -374,7 +375,7 @@ public class AdminUsersAppService(
             ShippingPhoneRevealsByViewer = revealsByViewer,
             CanApprove = !user.IsRejected
                 && (
-                    (user.RoleId == RoleIds.Seller && !user.IsApproved && user.IsVerified)
+                    (RoleIds.RequiresAdminApproval(user.RoleId) && !user.IsApproved && user.IsVerified)
                     || !string.IsNullOrWhiteSpace(user.PendingProfileChanges)),
             CanDeactivate = user.RoleId != RoleIds.Admin,
             CanDelete = user.RoleId != RoleIds.Admin,
@@ -410,6 +411,24 @@ public class AdminUsersAppService(
             LicencePath = pending.LicencePath,
             CompanyImagesChanged = pending.CompanyImagesChanged,
             CompanyImagePaths = pending.CompanyImagePaths ?? []
+        };
+    }
+
+    private static RegistrationCompletionRequestDto? MapRegistrationCompletionRequest(string? raw)
+    {
+        var request = RegistrationCompletionRequestHelper.TryParse(raw);
+        if (request is null || !request.HasAnyMissing)
+        {
+            return null;
+        }
+
+        return new RegistrationCompletionRequestDto
+        {
+            MissingLocation = request.MissingLocation,
+            MissingImages = request.MissingImages,
+            MissingDocuments = request.MissingDocuments,
+            Message = request.Message,
+            RequestedAtUtc = request.RequestedAtUtc
         };
     }
 

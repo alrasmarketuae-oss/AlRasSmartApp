@@ -374,6 +374,14 @@ public sealed class AdminRejectCompanyRequest
     public string Reason { get; set; } = string.Empty;
 }
 
+public sealed class AdminRequestRegistrationCompletionRequest
+{
+    public bool MissingLocation { get; set; }
+    public bool MissingImages { get; set; }
+    public bool MissingDocuments { get; set; }
+    public string? Message { get; set; }
+}
+
 /// <summary>
 /// إيقاف الإعلان (IsActive=false) أو إعادة تنشيطه (IsActive=true) من قِبل صاحب الإعلان.
 /// </summary>

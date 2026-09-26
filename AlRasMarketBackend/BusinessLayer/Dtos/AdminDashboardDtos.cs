@@ -177,6 +177,7 @@ public sealed class AdminUserDetailDto
     public string? TaxNumber { get; set; }
     public string? Website { get; set; }
     public PendingCompanyProfileChangeDto? PendingProfileChanges { get; set; }
+    public RegistrationCompletionRequestDto? RegistrationCompletionRequest { get; set; }
     public IReadOnlyList<AdminUserCompanyImageDto> CompanyImages { get; set; } = [];
     public IReadOnlyList<AdminUserAddressDto> Addresses { get; set; } = [];
     public int OrdersCount { get; set; }
@@ -239,6 +240,15 @@ public sealed class PendingCompanyProfileChangeDto
     public string? LicencePath { get; set; }
     public bool? CompanyImagesChanged { get; set; }
     public IReadOnlyList<string> CompanyImagePaths { get; set; } = [];
+}
+
+public sealed class RegistrationCompletionRequestDto
+{
+    public bool MissingLocation { get; set; }
+    public bool MissingImages { get; set; }
+    public bool MissingDocuments { get; set; }
+    public string? Message { get; set; }
+    public DateTime RequestedAtUtc { get; set; }
 }
 
 public sealed class AdminOrderStatsDto

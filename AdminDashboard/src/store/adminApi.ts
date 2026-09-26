@@ -600,6 +600,29 @@ export const adminApi = createApi({
       ],
     }),
 
+    requestRegistrationCompletion: builder.mutation<
+      { message: string },
+      {
+        companyUserId: string
+        missingLocation: boolean
+        missingImages: boolean
+        missingDocuments: boolean
+        message?: string
+      }
+    >({
+      query: ({ companyUserId, ...body }) => ({
+        url: `/api/admin/companies/${companyUserId}/request-completion`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: (_r, _e, { companyUserId }) => [
+        { type: 'Users', id: 'LIST' },
+        { type: 'Users', id: companyUserId },
+        'Dashboard',
+        { type: 'AuditLogs', id: 'LIST' },
+      ],
+    }),
+
     setUserActive: builder.mutation<
       { message: string; userId: string; isActive: boolean },
       { userId: string; isActive: boolean }
@@ -2430,6 +2453,7 @@ export const {
   useSetAdminProductVideoMuteMutation,
   useApproveCompanyMutation,
   useRejectCompanyMutation,
+  useRequestRegistrationCompletionMutation,
   useSetUserActiveMutation,
   useCreateAdminUserMutation,
   useUpdateAdminUserMutation,

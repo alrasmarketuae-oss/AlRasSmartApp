@@ -7,7 +7,8 @@ public static class LoginAccessHelper
 {
     /// <summary>
     /// Rules for API access after a token is issued.
-    /// Only verified + approved (when required) + active accounts may call protected APIs.
+    /// Pending-approval companies may call APIs so they can complete missing registration data.
+    /// Product publish and similar flows still enforce IsApproved separately.
     /// </summary>
     public static void EnsureCanAuthenticate(User user)
     {
@@ -25,11 +26,17 @@ public static class LoginAccessHelper
                 language));
         }
 
-        if (RoleIds.RequiresAdminApproval(user.RoleId) && !user.IsApproved)
+        if (!user.IsActive && !IsPendingCompanyApproval(user))
         {
             throw new UnauthorizedAccessException(UserMessages.Localize(
-                "Your company account has not been approved yet. It is pending admin approval.",
+                "Your account is suspended or deactivated.",
                 language));
+        }
+
+        // Pending admin approval is allowed (complete registration / under review).
+        if (RoleIds.RequiresAdminApproval(user.RoleId) && !user.IsApproved)
+        {
+            return;
         }
 
         if (!user.IsActive)
@@ -42,7 +49,6 @@ public static class LoginAccessHelper
 
     /// <summary>
     /// Rules before issuing a login session token.
-    /// Token is only allowed when the account is verified and (if required) admin-approved.
     /// </summary>
     public static void EnsureCanLogin(User user)
     {
@@ -60,6 +66,11 @@ public static class LoginAccessHelper
                 language));
         }
 
+        if (IsPendingCompanyApproval(user))
+        {
+            return;
+        }
+
         if (RoleIds.RequiresAdminApproval(user.RoleId) && !user.IsApproved)
         {
             throw new UnauthorizedAccessException(UserMessages.Localize(
@@ -76,13 +87,14 @@ public static class LoginAccessHelper
     }
 
     /// <summary>
-    /// JWT is issued only for verified, active, non-rejected accounts that are approved when required.
+    /// JWT is issued for verified non-rejected accounts that are either approved
+    /// or still pending admin approval (so they can complete missing registration).
     /// </summary>
     public static bool ShouldIssueToken(User user) =>
         !user.IsRejected
         && user.IsVerified
-        && user.IsActive
-        && (!RoleIds.RequiresAdminApproval(user.RoleId) || user.IsApproved);
+        && (user.IsActive || IsPendingCompanyApproval(user))
+        && (!RoleIds.RequiresAdminApproval(user.RoleId) || user.IsApproved || IsPendingCompanyApproval(user));
 
     public static bool IsPendingCompanyApproval(User user) =>
         RoleIds.RequiresAdminApproval(user.RoleId)

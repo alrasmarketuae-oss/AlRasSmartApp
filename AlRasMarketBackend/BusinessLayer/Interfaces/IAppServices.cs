@@ -19,6 +19,10 @@ public interface IAuthAppService
     Task ClearFcmTokenAsync(string userId, CancellationToken cancellationToken = default);
     Task<object> GetCompanyActivationStatusAsync(string email, string? fcmToken = null, CancellationToken cancellationToken = default);
     Task<object> GetAccountApprovalStatusAsync(string email, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Pending company clears the admin completion request after filling missing data.
+    /// </summary>
+    Task<string> ResubmitRegistrationForReviewAsync(string userId, CancellationToken cancellationToken = default);
     Task<string> ChangePasswordAsync(string userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default);
     /// <summary>Verifies the current password without issuing a new token (mobile sensitive gates).</summary>
     Task VerifyPasswordAsync(string userId, string password, CancellationToken cancellationToken = default);
@@ -37,6 +41,10 @@ public interface IAdminCompaniesAppService
     Task<object> GetPendingCompaniesAsync(CancellationToken cancellationToken = default);
     Task<string> ApproveCompanyAsync(string companyUserId, CancellationToken cancellationToken = default);
     Task<string> RejectCompanyAsync(string companyUserId, AdminRejectCompanyRequest request, CancellationToken cancellationToken = default);
+    Task<string> RequestRegistrationCompletionAsync(
+        string companyUserId,
+        AdminRequestRegistrationCompletionRequest request,
+        CancellationToken cancellationToken = default);
 }
 
 public interface IAdminGlobalSearchAppService

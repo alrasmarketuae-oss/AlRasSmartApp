@@ -74,6 +74,7 @@ public class AdminCompaniesAppService(
         company.IsRejected = false;
         company.RejectionReason = null;
         company.PendingProfileChanges = null;
+        company.RegistrationCompletionRequest = null;
         await dbContext.SaveChangesAsync(cancellationToken);
         await adminRealtimeNotificationService.BroadcastCountsAsync(cancellationToken);
 
@@ -385,6 +386,154 @@ public class AdminCompaniesAppService(
         });
 
         return "Pending profile changes discarded. Company remains on previous approved data.";
+    }
+
+    public async Task<string> RequestRegistrationCompletionAsync(
+        string companyUserId,
+        AdminRequestRegistrationCompletionRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(companyUserId, out var companyId))
+        {
+            throw new ArgumentException("Invalid company user id.");
+        }
+
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (!request.MissingLocation && !request.MissingImages && !request.MissingDocuments)
+        {
+            throw new ArgumentException(
+                "Select at least one missing item: location, documents, or images.");
+        }
+
+        var company = await dbContext.Users
+            .FirstOrDefaultAsync(x => x.Id == companyId, cancellationToken)
+            ?? throw new KeyNotFoundException("User not found.");
+
+        if (!LoginAccessHelper.IsPendingCompanyApproval(company)
+            && string.IsNullOrWhiteSpace(company.PendingProfileChanges))
+        {
+            throw new InvalidOperationException(
+                "Registration completion can only be requested for pending company registrations.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(company.PendingProfileChanges)
+            && company.IsApproved)
+        {
+            throw new InvalidOperationException(
+                "This company has a pending profile edit. Reject or approve that edit instead.");
+        }
+
+        var completion = new RegistrationCompletionRequest
+        {
+            MissingLocation = request.MissingLocation,
+            MissingImages = request.MissingImages,
+            MissingDocuments = request.MissingDocuments,
+            Message = string.IsNullOrWhiteSpace(request.Message) ? null : request.Message.Trim(),
+            RequestedAtUtc = DateTime.UtcNow
+        };
+
+        company.RegistrationCompletionRequest = RegistrationCompletionRequestHelper.Serialize(completion);
+        // Keep account under review; do not reject or delete.
+        company.IsRejected = false;
+        company.RejectionReason = null;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await adminRealtimeNotificationService.BroadcastCountsAsync(cancellationToken);
+
+        await auditLogAppService.WriteAsync(
+            AdminAuditActions.CompanyRequestCompletion,
+            AdminAuditEntityTypes.Company,
+            company.Id.ToString("D"),
+            $"Requested registration completion for '{company.FullName}'",
+            new
+            {
+                companyName = company.FullName,
+                email = company.Email,
+                roleId = company.RoleId,
+                missingLocation = completion.MissingLocation,
+                missingImages = completion.MissingImages,
+                missingDocuments = completion.MissingDocuments,
+                message = completion.Message
+            },
+            cancellationToken);
+
+        var preferredLanguage = company.PreferredLanguage;
+        var companyEmail = company.Email;
+        var fcmToken = company.FcmToken;
+        var allowPushAndEmail = NotificationDeliveryPrefs.AllowsPushAndEmail(company.IsNotificationsOn);
+        var companyIdText = company.Id.ToString();
+        var companyUserIdForNotify = company.Id;
+        var userFacingEn = RegistrationCompletionRequestHelper.BuildUserFacingMessage(completion, "en");
+        var userFacingAr = RegistrationCompletionRequestHelper.BuildUserFacingMessage(completion, "ar");
+        var notificationEn = NotificationMessages.CompanyRegistrationIncomplete("en", userFacingEn);
+        var notificationAr = NotificationMessages.CompanyRegistrationIncomplete("ar", userFacingAr);
+        var notification = NotificationMessages.IsArabic(preferredLanguage)
+            ? notificationAr
+            : notificationEn;
+        var fcmType = company.RoleId == RoleIds.ShippingCompany
+            ? "shipping_registration_incomplete"
+            : "registration_incomplete";
+        const string routeId = "complete-registration";
+
+        try
+        {
+            await PersistCompanyInboxNotificationAsync(
+                companyUserIdForNotify,
+                fcmType,
+                routeId,
+                companyIdText,
+                notificationEn.FcmTitle,
+                notificationEn.FcmBody,
+                notificationAr.FcmTitle,
+                notificationAr.FcmBody,
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex,
+                "Failed to persist registration-incomplete inbox for {CompanyId}",
+                companyId);
+        }
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                if (!allowPushAndEmail)
+                {
+                    return;
+                }
+
+                await emailService.SendAsync(
+                    companyEmail,
+                    notification.EmailSubject,
+                    notification.EmailHtml);
+
+                if (!string.IsNullOrWhiteSpace(fcmToken))
+                {
+                    await fcmNotificationService.SendNotificationAsync(
+                        fcmToken,
+                        new FcmNotificationPayload
+                        {
+                            Title = notification.FcmTitle,
+                            Body = notification.FcmBody,
+                            Type = fcmType,
+                            RouteId = routeId,
+                            ReferenceId = companyIdText
+                        });
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(
+                    ex,
+                    "Failed to send registration-incomplete notifications for company {CompanyId}",
+                    companyId);
+            }
+        });
+
+        return "User notified to complete missing registration data. Account was not deleted.";
     }
 
     private async Task PersistCompanyInboxNotificationAsync(

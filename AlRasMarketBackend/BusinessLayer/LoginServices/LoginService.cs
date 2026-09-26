@@ -91,6 +91,10 @@ public class LoginService(
             IsCustomer = user.IsCustomer ?? false,
             LicenseNumber = user.LicenseNumber,
             LicencePath = user.LicencePath,
+            NeedsRegistrationCompletion =
+                RegistrationCompletionRequestHelper.TryParse(user.RegistrationCompletionRequest)?.HasAnyMissing == true,
+            RegistrationCompletionRequest = RegistrationCompletionRequestHelper.TryParse(
+                user.RegistrationCompletionRequest),
             Permissions = permissions,
             CompanyImages = user.CompanyImages.Select(x => new
             {

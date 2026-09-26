@@ -1,7 +1,9 @@
 import 'package:alrasmarket/core/router/where_to_go.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/features/auth/presentation/views/complet_register.dart';
+import 'package:alrasmarket/features/auth/presentation/views/complete_registration_view.dart';
 import 'package:alrasmarket/features/auth/presentation/views/login_view.dart';
+import 'package:alrasmarket/features/auth/data/models/registration_completion_request_model.dart';
 import 'package:alrasmarket/features/auth/presentation/views/otp_view.dart';
 import 'package:alrasmarket/features/auth/presentation/views/recording_view.dart';
 import 'package:alrasmarket/features/auth/presentation/views/under_review.dart';
@@ -77,6 +79,7 @@ abstract class AppRoutes {
   static const String kCompletRegisterView = '/CompletRegisterView';
   static const String kOtpVerificationView = '/OtpVerificationView';
   static const String kUnderReviewView = '/CompanyWaitingView';
+  static const String kCompleteRegistrationView = '/CompleteRegistrationView';
   static const String kClientHomeView = '/ClientHomeView';
   static const String kCompanyHomeView = '/CompanyHomeView';
   static const String kShippingLoginView = '/ShippingLoginView';
@@ -238,6 +241,19 @@ abstract class AppRoutes {
       GoRoute(
         path: kUnderReviewView,
         builder: (context, state) => const UnderReviewView(),
+      ),
+      GoRoute(
+        path: kCompleteRegistrationView,
+        builder: (context, state) {
+          final extra = state.extra;
+          RegistrationCompletionRequestModel? request;
+          if (extra is RegistrationCompletionRequestModel) {
+            request = extra;
+          } else if (extra is Map<String, dynamic>) {
+            request = RegistrationCompletionRequestModel.fromJson(extra);
+          }
+          return CompleteRegistrationView(initialRequest: request);
+        },
       ),
       GoRoute(
         path: kCompanyHomeView,

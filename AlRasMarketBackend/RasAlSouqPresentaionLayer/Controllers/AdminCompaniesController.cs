@@ -85,4 +85,35 @@ public class AdminCompaniesController(
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Soft-request: notify the company to complete missing registration data without deleting the account.
+    /// </summary>
+    [HttpPost("{companyUserId}/request-completion")]
+    public async Task<IActionResult> RequestRegistrationCompletion(
+        string companyUserId,
+        [FromBody] AdminRequestRegistrationCompletionRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var message = await _adminCompaniesAppService.RequestRegistrationCompletionAsync(
+                companyUserId,
+                request,
+                cancellationToken);
+            return Ok(new { message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

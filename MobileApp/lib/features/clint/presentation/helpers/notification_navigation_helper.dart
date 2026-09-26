@@ -54,6 +54,14 @@ class NotificationNavigationHelper {
             !title.contains('new offer available') &&
             title.trim() != 'عرض جديد متاح');
 
+    // Soft incomplete-registration request — reopen completion steps.
+    if (type.contains('registration_incomplete') ||
+        route == 'complete-registration' ||
+        route == 'complete_registration') {
+      context.push(AppRoutes.kCompleteRegistrationView);
+      return;
+    }
+
     if (route == 'profile') {
       context.push(AppRoutes.kEditProfileView);
       return;

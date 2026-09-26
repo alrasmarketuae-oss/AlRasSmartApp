@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import '../../../data/models/login_response_model.dart';
+import '../../../data/models/registration_completion_request_model.dart';
 import '../../../domain/entities/user.dart';
 
 abstract class AuthStates extends Equatable {
@@ -100,6 +101,15 @@ class VerifyOtpErrorState extends AuthStates {
 
 class AccountApprovalApprovedState extends AuthStates {
   const AccountApprovalApprovedState();
+}
+
+class AccountNeedsRegistrationCompletionState extends AuthStates {
+  const AccountNeedsRegistrationCompletionState(this.request);
+
+  final RegistrationCompletionRequestModel request;
+
+  @override
+  List<Object?> get props => [request];
 }
 
 class ResendOtpLoadingState extends AuthStates {}

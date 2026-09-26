@@ -67,7 +67,7 @@ export default function CreateCompanyAdPage() {
 
   const categories = categoriesData?.items ?? []
   const unitOptions =
-    lookups?.units?.map((u) => u.nameEn).filter(Boolean) ?? [...UNITS]
+    lookups?.units?.map((u) => u.name).filter(Boolean) ?? [...UNITS]
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()

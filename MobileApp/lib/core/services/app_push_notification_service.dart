@@ -480,6 +480,15 @@ class AppPushNotificationService {
       return;
     }
 
+    if (type.contains('registration_incomplete') ||
+        (data['routeId'] ?? data['RouteId'] ?? '')
+            .toString()
+            .toLowerCase()
+            .contains('complete-registration')) {
+      AppRoutes.router.push(AppRoutes.kCompleteRegistrationView);
+      return;
+    }
+
     // Same routing as in-app notification list (Android + iOS).
     // Prefer order id for order payloads so status taps open tracking.
     final isOrderType = type.contains('order');

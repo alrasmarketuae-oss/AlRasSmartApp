@@ -8,6 +8,7 @@ import 'package:alrasmarket/core/serveses/pending_profile_image_uploader.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/widgets/auth_header.dart';
 import 'package:alrasmarket/core/widgets/primary_button.dart';
+import 'package:alrasmarket/features/auth/data/models/registration_completion_request_model.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_cubit.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_states.dart';
 import 'package:alrasmarket/generated/l10n.dart';
@@ -27,6 +28,7 @@ class UnderReviewView extends StatefulWidget {
 
 class _UnderReviewViewState extends State<UnderReviewView> {
   Timer? _pollTimer;
+  RegistrationCompletionRequestModel? _completionRequest;
 
   @override
   void initState() {
@@ -65,6 +67,8 @@ class _UnderReviewViewState extends State<UnderReviewView> {
     }
   }
 
+  bool get _isAr => Localizations.localeOf(context).languageCode == 'ar';
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -78,6 +82,8 @@ class _UnderReviewViewState extends State<UnderReviewView> {
                 context.go(
                   whereToGo(),
                 );
+              } else if (state is AccountNeedsRegistrationCompletionState) {
+                setState(() => _completionRequest = state.request);
               }
             },
             child: Padding(
@@ -104,9 +110,15 @@ class _UnderReviewViewState extends State<UnderReviewView> {
                     ),
                     SizedBox(height: 16.h),
                     Text(
-                      S
-                          .of(context)
-                          .yourAccountIsUnderReviewWeWillNotifyYouOnceItIsApproved,
+                      _completionRequest?.hasAnyMissing == true
+                          ? (_completionRequest!.userMessage ??
+                              _completionRequest!.message ??
+                              (_isAr
+                                  ? 'يوجد بيانات ناقصة في تسجيلك. أكمل الخطوات ثم أعد الإرسال.'
+                                  : 'Your registration is missing details. Complete the steps and resubmit.'))
+                          : S
+                              .of(context)
+                              .yourAccountIsUnderReviewWeWillNotifyYouOnceItIsApproved,
                       style: TextStyle(
                         fontSize: 16.sp,
                         color: const Color(0xCC333333),
@@ -114,7 +126,38 @@ class _UnderReviewViewState extends State<UnderReviewView> {
                       textAlign: TextAlign.center,
                     ),
                     SizedBox(height: 24.h),
-                    const NotificationCards(),
+                    if (_completionRequest?.hasAnyMissing == true) ...[
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48.h,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF619D50),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                          ),
+                          onPressed: () {
+                            context.push(
+                              AppRoutes.kCompleteRegistrationView,
+                              extra: _completionRequest,
+                            );
+                          },
+                          child: Text(
+                            _isAr
+                                ? 'استكمال بيانات التسجيل'
+                                : 'Complete registration details',
+                            style: TextStyle(
+                              fontSize: 15.sp,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 16.h),
+                    ] else
+                      const NotificationCards(),
                     SizedBox(height: 28.h),
                     SizedBox(
                       width: double.infinity,

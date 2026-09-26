@@ -54,6 +54,23 @@ public class ProfileAppService(
             user.BirthDate = input.BirthDate;
         }
 
+        // Unapproved companies update live fields so admin can re-review registration.
+        if (LoginAccessHelper.IsPendingCompanyApproval(user))
+        {
+            var liveChanged = ApplyLiveCompanyProfileFields(user, input);
+            if (liveChanged)
+            {
+                await dbContext.SaveChangesAsync(cancellationToken);
+                await adminRealtimeNotificationService.NotifyProfileEditAsync(user, cancellationToken);
+            }
+            else
+            {
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
+
+            return await MapProfileAsync(user, cancellationToken);
+        }
+
         // All identity/company fields stay on live row until admin approves pending payload.
         var pending = PendingCompanyProfileChangeHelper.TryParse(user.PendingProfileChanges)
             ?? new PendingCompanyProfileChange();
@@ -237,10 +254,30 @@ public class ProfileAppService(
 
         EnsureCompanyAccount(user);
 
-        var extension = Path.GetExtension(input.File.FileName);
-        if (string.IsNullOrWhiteSpace(extension))
+        if (LoginAccessHelper.IsPendingCompanyApproval(user))
         {
-            extension = ".jpg";
+            var extension = Path.GetExtension(input.File.FileName);
+            if (string.IsNullOrWhiteSpace(extension))
+            {
+                extension = ".jpg";
+            }
+
+            var previousPath = user.LicencePath;
+            var fileName = $"licence-{parsedUserId:N}-{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
+            user.LicencePath = await mediaStorage.SaveFormFileAsync(
+                input.File,
+                "company-licences",
+                fileName,
+                cancellationToken: cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            if (!string.Equals(previousPath, user.LicencePath, StringComparison.OrdinalIgnoreCase))
+            {
+                await mediaStorage.DeleteAsync(previousPath, cancellationToken);
+            }
+
+            await adminRealtimeNotificationService.NotifyProfileEditAsync(user, cancellationToken);
+            return await MapProfileAsync(user, cancellationToken);
         }
 
         var pending = PendingCompanyProfileChangeHelper.TryParse(user.PendingProfileChanges)
@@ -253,11 +290,16 @@ public class ProfileAppService(
             await mediaStorage.DeleteAsync(pending.LicencePath, cancellationToken);
         }
 
-        var fileName = $"licence-{parsedUserId:N}-{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
+        var pendingFileName = $"licence-{parsedUserId:N}-{Guid.NewGuid():N}{Path.GetExtension(input.File.FileName).ToLowerInvariant()}";
+        if (string.IsNullOrWhiteSpace(Path.GetExtension(input.File.FileName)))
+        {
+            pendingFileName = $"licence-{parsedUserId:N}-{Guid.NewGuid():N}.jpg";
+        }
+
         pending.LicencePath = await mediaStorage.SaveFormFileAsync(
             input.File,
             PendingCompanyLicencesFolder,
-            fileName,
+            pendingFileName,
             cancellationToken: cancellationToken);
 
         user.PendingProfileChanges = PendingCompanyProfileChangeHelper.Serialize(pending);
@@ -295,6 +337,30 @@ public class ProfileAppService(
             ?? throw new KeyNotFoundException("User not found.");
 
         EnsureCompanyAccount(user);
+
+        if (LoginAccessHelper.IsPendingCompanyApproval(user))
+        {
+            var liveFileName = $"company-{parsedUserId:N}-{Guid.NewGuid():N}.jpg";
+            var liveImagePath = await mediaStorage.SaveCompressedJpegAsync(
+                input.File,
+                "company-images",
+                liveFileName,
+                cancellationToken: cancellationToken);
+
+            var isPrimary = user.CompanyImages is null || user.CompanyImages.Count == 0;
+            user.CompanyImages ??= [];
+            user.CompanyImages.Add(new CompanyImage
+            {
+                UserId = user.Id,
+                ImagePath = liveImagePath,
+                IsPrimary = isPrimary,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await adminRealtimeNotificationService.NotifyProfileEditAsync(user, cancellationToken);
+            return await MapProfileAsync(user, cancellationToken);
+        }
 
         var pending = PendingCompanyProfileChangeHelper.TryParse(user.PendingProfileChanges)
             ?? new PendingCompanyProfileChange();
@@ -477,6 +543,104 @@ public class ProfileAppService(
         return await MapProfileAsync(user, cancellationToken);
     }
 
+    private static bool ApplyLiveCompanyProfileFields(User user, UpdateProfileInput input)
+    {
+        var changed = false;
+
+        if (!string.IsNullOrWhiteSpace(input.FullName))
+        {
+            var nextValue = input.FullName.Trim();
+            if (!string.Equals(user.FullName?.Trim(), nextValue, StringComparison.Ordinal))
+            {
+                user.FullName = nextValue;
+                changed = true;
+            }
+        }
+
+        if (input.PhoneNumber is not null)
+        {
+            var nextValue = string.IsNullOrWhiteSpace(input.PhoneNumber)
+                ? string.Empty
+                : input.PhoneNumber.Trim();
+            var currentValue = user.PhoneNumber?.Trim() ?? string.Empty;
+            if (!string.Equals(currentValue, nextValue, StringComparison.Ordinal))
+            {
+                user.PhoneNumber = nextValue;
+                changed = true;
+            }
+        }
+
+        if (user.RoleId is RoleIds.Seller or RoleIds.ShippingCompany)
+        {
+            if (input.CompanyName is not null)
+            {
+                var nextValue = string.IsNullOrWhiteSpace(input.CompanyName)
+                    ? string.Empty
+                    : input.CompanyName.Trim();
+                var currentValue = user.CompanyName?.Trim() ?? string.Empty;
+                if (!string.Equals(currentValue, nextValue, StringComparison.Ordinal))
+                {
+                    user.CompanyName = nextValue;
+                    changed = true;
+                }
+            }
+
+            if (input.CommercialRegister is not null)
+            {
+                var nextValue = string.IsNullOrWhiteSpace(input.CommercialRegister)
+                    ? string.Empty
+                    : input.CommercialRegister.Trim();
+                var currentValue = user.CommercialRegister?.Trim() ?? string.Empty;
+                if (!string.Equals(currentValue, nextValue, StringComparison.Ordinal))
+                {
+                    user.CommercialRegister = nextValue;
+                    changed = true;
+                }
+            }
+
+            if (input.TaxNumber is not null)
+            {
+                var nextValue = string.IsNullOrWhiteSpace(input.TaxNumber)
+                    ? string.Empty
+                    : input.TaxNumber.Trim();
+                var currentValue = user.TaxNumber?.Trim() ?? string.Empty;
+                if (!string.Equals(currentValue, nextValue, StringComparison.Ordinal))
+                {
+                    user.TaxNumber = nextValue;
+                    changed = true;
+                }
+            }
+
+            if (input.Website is not null)
+            {
+                var nextValue = string.IsNullOrWhiteSpace(input.Website)
+                    ? string.Empty
+                    : input.Website.Trim();
+                var currentValue = user.Website?.Trim() ?? string.Empty;
+                if (!string.Equals(currentValue, nextValue, StringComparison.Ordinal))
+                {
+                    user.Website = nextValue;
+                    changed = true;
+                }
+            }
+
+            if (input.LandNumber is not null)
+            {
+                var nextValue = string.IsNullOrWhiteSpace(input.LandNumber)
+                    ? string.Empty
+                    : input.LandNumber.Trim();
+                var currentValue = user.LandNumber?.Trim() ?? string.Empty;
+                if (!string.Equals(currentValue, nextValue, StringComparison.Ordinal))
+                {
+                    user.LandNumber = nextValue;
+                    changed = true;
+                }
+            }
+        }
+
+        return changed;
+    }
+
     private static void EnsureCompanyAccount(User user)
     {
         if (user.RoleId is not (RoleIds.Seller or RoleIds.ShippingCompany))
@@ -491,6 +655,8 @@ public class ProfileAppService(
     {
         _ = cancellationToken;
         var pending = PendingCompanyProfileChangeHelper.TryParse(user.PendingProfileChanges);
+        var registrationCompletion =
+            RegistrationCompletionRequestHelper.TryParse(user.RegistrationCompletionRequest);
         var isCompanyAccount = user.RoleId == RoleIds.Seller;
         var companyImages = (user.CompanyImages ?? [])
             .OrderByDescending(x => x.IsPrimary)
@@ -533,6 +699,8 @@ public class ProfileAppService(
             hasPassword = !string.IsNullOrWhiteSpace(user.HashedPassword),
             hasPendingProfileChanges = pending?.HasAnyChange == true,
             pendingProfileChanges = pending,
+            needsRegistrationCompletion = registrationCompletion?.HasAnyMissing == true,
+            registrationCompletionRequest = registrationCompletion,
             isNotificationsOn = user.IsNotificationsOn,
         });
     }

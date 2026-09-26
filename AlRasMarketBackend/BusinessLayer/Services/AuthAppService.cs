@@ -433,8 +433,11 @@ public class AuthAppService(
         var isApproved = !requiresAdminApproval || user.IsApproved;
         var isPendingAdminApproval =
             requiresAdminApproval && user.IsVerified && !user.IsApproved && !user.IsRejected;
+        var registrationCompletion =
+            RegistrationCompletionRequestHelper.TryParse(user.RegistrationCompletionRequest);
 
         // When admin approves, return a fresh token so the mobile session is valid.
+        // Do NOT issue tokens for pending accounts here (endpoint is email-only / anonymous).
         string? token = null;
         if (requiresAdminApproval && isApproved && user.IsVerified && !user.IsRejected && user.IsActive)
         {
@@ -457,15 +460,63 @@ public class AuthAppService(
             rejectionReason = user.RejectionReason,
             isPendingAdminApproval,
             isCustomer = user.IsCustomer ?? false,
+            needsRegistrationCompletion = registrationCompletion?.HasAnyMissing == true,
+            registrationCompletionRequest = registrationCompletion is null
+                ? null
+                : new
+                {
+                    missingLocation = registrationCompletion.MissingLocation,
+                    missingImages = registrationCompletion.MissingImages,
+                    missingDocuments = registrationCompletion.MissingDocuments,
+                    message = registrationCompletion.Message,
+                    requestedAtUtc = registrationCompletion.RequestedAtUtc,
+                    userMessage = RegistrationCompletionRequestHelper.BuildUserFacingMessage(
+                        registrationCompletion,
+                        user.PreferredLanguage)
+                },
             token,
             message = user.IsRejected
                 ? "Account registration was rejected."
-                : isApproved
-                    ? "Account is approved."
-                    : requiresAdminApproval
-                        ? "Account is pending admin approval."
-                        : "Account is not approved."
+                : registrationCompletion?.HasAnyMissing == true
+                    ? RegistrationCompletionRequestHelper.BuildUserFacingMessage(
+                        registrationCompletion,
+                        user.PreferredLanguage)
+                    : isApproved
+                        ? "Account is approved."
+                        : requiresAdminApproval
+                            ? "Account is pending admin approval."
+                            : "Account is not approved."
         };
+    }
+
+    public async Task<string> ResubmitRegistrationForReviewAsync(
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(userId, out var parsedUserId))
+        {
+            throw new ArgumentException("Invalid user id.");
+        }
+
+        var user = await dbContext.Users
+            .FirstOrDefaultAsync(x => x.Id == parsedUserId, cancellationToken)
+            ?? throw new KeyNotFoundException("User not found.");
+
+        if (!LoginAccessHelper.IsPendingCompanyApproval(user))
+        {
+            throw new InvalidOperationException(
+                "Only pending company registrations can resubmit for review.");
+        }
+
+        user.RegistrationCompletionRequest = null;
+        user.IsRejected = false;
+        user.RejectionReason = null;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await adminRealtimeNotificationService.NotifyProfileEditAsync(user, cancellationToken);
+
+        return NotificationMessages.IsArabic(user.PreferredLanguage)
+            ? "تم إعادة إرسال بياناتك للمراجعة."
+            : "Your registration was resubmitted for review.";
     }
 
     public async Task SendEmailOtpAsync(string email, CancellationToken cancellationToken = default)
@@ -532,11 +583,11 @@ public class AuthAppService(
 
         if (isPendingAdminApproval)
         {
-            // Email is verified, but do NOT issue an API token until admin approves.
+            // Issue a limited session so the user can complete missing registration data.
             return new
             {
                 Message = "Email verified. Your company account is pending admin approval.",
-                Token = (string?)null,
+                Token = tokenService.CreateToken(user),
                 Id = user.Id,
                 Email = user.Email,
                 Name = user.FullName,
@@ -552,6 +603,8 @@ public class AuthAppService(
                 IsCustomer = user.IsCustomer ?? false,
                 LicenseNumber = user.LicenseNumber,
                 LicencePath = user.LicencePath,
+                RegistrationCompletionRequest = RegistrationCompletionRequestHelper.TryParse(
+                    user.RegistrationCompletionRequest),
                 CompanyImages = user.CompanyImages.Select(x => new
                 {
                     x.Id,

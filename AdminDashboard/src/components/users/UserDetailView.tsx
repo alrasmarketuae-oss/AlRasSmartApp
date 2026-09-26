@@ -28,12 +28,19 @@ type UserDetailViewProps = {
   user: AdminUserDetail
   isApproving: boolean
   isRejecting: boolean
+  isRequestingCompletion?: boolean
   isDeactivating: boolean
   isDeleting: boolean
   isConvertingToSupplier?: boolean
   isConvertingToCompanyCustomer?: boolean
   onApprove: () => void
   onReject: (reason: string) => void
+  onRequestCompletion: (payload: {
+    missingLocation: boolean
+    missingImages: boolean
+    missingDocuments: boolean
+    message?: string
+  }) => void
   onDeactivate: () => void
   onActivate: () => void
   onDelete: () => void
@@ -200,12 +207,14 @@ export default function UserDetailView({
   user,
   isApproving,
   isRejecting,
+  isRequestingCompletion = false,
   isDeactivating,
   isDeleting,
   isConvertingToSupplier = false,
   isConvertingToCompanyCustomer = false,
   onApprove,
   onReject,
+  onRequestCompletion,
   onDeactivate,
   onActivate,
   onDelete,
@@ -216,21 +225,22 @@ export default function UserDetailView({
   const navigate = useNavigate()
   const { requestOpenAskAi } = useAskAiPageData()
   const [rejectReason, setRejectReason] = useState('')
+  const [completionMessage, setCompletionMessage] = useState('')
+  const [missingLocation, setMissingLocation] = useState(true)
+  const [missingDocuments, setMissingDocuments] = useState(true)
+  const [missingImages, setMissingImages] = useState(false)
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
   const [createAdOpen, setCreateAdOpen] = useState(false)
   const isBusy =
     isApproving ||
     isRejecting ||
+    isRequestingCompletion ||
     isDeactivating ||
     isDeleting ||
     isConvertingToSupplier ||
     isConvertingToCompanyCustomer
   const isSupplier = user.roleId === 2
   const canCreateCompanyAd = user.roleId === 2
-  const companyTitle =
-    user.companyName?.trim() ||
-    user.fullName?.trim() ||
-    user.id
   const canConvertToSupplier =
     Boolean(user.canConvertToSupplier) ||
     (user.roleId === 2 && user.isCustomer === true)
@@ -379,6 +389,25 @@ export default function UserDetailView({
       {editButton}
       {accountTypeButtons}
       {deleteButton}
+      <button
+        type="button"
+        disabled={
+          isBusy || (!missingLocation && !missingDocuments && !missingImages)
+        }
+        onClick={() =>
+          onRequestCompletion({
+            missingLocation,
+            missingDocuments,
+            missingImages,
+            message: completionMessage.trim() || undefined,
+          })
+        }
+        className={`${outlineBtn} border-amber-300 text-amber-800 hover:bg-amber-50 dark:border-amber-800/60 dark:text-amber-200 dark:hover:bg-amber-950/30`}
+      >
+        {isRequestingCompletion
+          ? t('users.requestingCompletion')
+          : t('users.requestCompletion')}
+      </button>
       <button
         type="button"
         disabled={isBusy}
@@ -1159,6 +1188,66 @@ export default function UserDetailView({
               </div>
             ) : null}
           </div>
+        </section>
+      ) : null}
+
+      {user.canApprove ? (
+        <section className="admin-card rounded-2xl p-5 shadow-sm sm:p-6">
+          <h2 className="admin-text mb-3 text-start text-lg font-bold">
+            {t('users.requestCompletionTitle')}
+          </h2>
+          <p className="admin-text-muted mb-4 text-start text-sm leading-relaxed">
+            {t('users.requestCompletionHint')}
+          </p>
+          {user.registrationCompletionRequest ? (
+            <p className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-start text-sm text-amber-900 dark:border-amber-800/50 dark:bg-amber-950/30 dark:text-amber-100">
+              {t('users.completionRequestedBadge')}
+              {user.registrationCompletionRequest.message
+                ? ` — ${user.registrationCompletionRequest.message}`
+                : ''}
+            </p>
+          ) : null}
+          <div className="mb-4 flex flex-col gap-2 text-start">
+            <label className="inline-flex items-center gap-2 text-sm admin-text">
+              <input
+                type="checkbox"
+                checked={missingLocation}
+                onChange={(e) => setMissingLocation(e.target.checked)}
+              />
+              {t('users.missingLocation')}
+            </label>
+            <label className="inline-flex items-center gap-2 text-sm admin-text">
+              <input
+                type="checkbox"
+                checked={missingDocuments}
+                onChange={(e) => setMissingDocuments(e.target.checked)}
+              />
+              {t('users.missingDocuments')}
+            </label>
+            <label className="inline-flex items-center gap-2 text-sm admin-text">
+              <input
+                type="checkbox"
+                checked={missingImages}
+                onChange={(e) => setMissingImages(e.target.checked)}
+              />
+              {t('users.missingImages')}
+            </label>
+          </div>
+          <label className="admin-text mb-1 block text-start text-sm font-medium">
+            {t('users.requestCompletionMessage')}
+          </label>
+          <textarea
+            value={completionMessage}
+            onChange={(e) => setCompletionMessage(e.target.value)}
+            rows={3}
+            placeholder={t('users.requestCompletionMessagePlaceholder')}
+            className="admin-input mb-2 w-full resize-y px-3 py-2.5 text-sm"
+          />
+          {!missingLocation && !missingDocuments && !missingImages ? (
+            <p className="text-start text-xs text-red-600">
+              {t('users.requestCompletionSelectOne')}
+            </p>
+          ) : null}
         </section>
       ) : null}
 

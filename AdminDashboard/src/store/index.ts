@@ -22,6 +22,7 @@ export {
   useDeleteAdminProductVideoMutation,
   useApproveCompanyMutation,
   useRejectCompanyMutation,
+  useRequestRegistrationCompletionMutation,
   useSetUserActiveMutation,
   useCreateAdminUserMutation,
   useUpdateAdminUserMutation,

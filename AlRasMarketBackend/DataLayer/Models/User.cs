@@ -18,6 +18,11 @@ public class User
     public string? RejectionReason { get; set; }
     /// <summary>JSON snapshot of company fields awaiting admin approval.</summary>
     public string? PendingProfileChanges { get; set; }
+    /// <summary>
+    /// JSON: admin requested the pending company to complete missing registration
+    /// (location / images / documents). Cleared when the user resubmits.
+    /// </summary>
+    public string? RegistrationCompletionRequest { get; set; }
     public bool IsVerified { get; set; }
     public string? PhoneNumber { get; set; }
     public string? LandNumber { get; set; }

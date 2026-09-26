@@ -10,6 +10,7 @@ import {
   useDeleteAdminUserMutation,
   useGetAdminUserDetailQuery,
   useRejectCompanyMutation,
+  useRequestRegistrationCompletionMutation,
   useSetUserActiveMutation,
 } from '../store'
 import { getRtkErrorMessage } from '../utils/rtkError'
@@ -31,6 +32,8 @@ export default function UserDetailPage() {
 
   const [approveCompany, { isLoading: isApproving }] = useApproveCompanyMutation()
   const [rejectCompany, { isLoading: isRejecting }] = useRejectCompanyMutation()
+  const [requestRegistrationCompletion, { isLoading: isRequestingCompletion }] =
+    useRequestRegistrationCompletionMutation()
   const [setUserActive, { isLoading: isDeactivating }] = useSetUserActiveMutation()
   const [deleteAdminUser, { isLoading: isDeleting }] = useDeleteAdminUserMutation()
   const [convertToSupplier, { isLoading: isConvertingToSupplier }] =
@@ -70,6 +73,40 @@ export default function UserDetailPage() {
       setSuccessMessage(result.message || t('users.rejectSuccess'))
     } catch (err) {
       setActionError(getRtkErrorMessage(err as never, t('users.rejectError')))
+    }
+  }
+
+  async function handleRequestCompletion(payload: {
+    missingLocation: boolean
+    missingImages: boolean
+    missingDocuments: boolean
+    message?: string
+  }) {
+    if (
+      !payload.missingLocation &&
+      !payload.missingImages &&
+      !payload.missingDocuments
+    ) {
+      setActionError(t('users.requestCompletionSelectOne'))
+      return
+    }
+
+    const confirmed = window.confirm(t('users.requestCompletionConfirm'))
+    if (!confirmed) return
+
+    setActionError(null)
+    setSuccessMessage(null)
+
+    try {
+      const result = await requestRegistrationCompletion({
+        companyUserId: userId,
+        ...payload,
+      }).unwrap()
+      setSuccessMessage(result.message || t('users.requestCompletionSuccess'))
+    } catch (err) {
+      setActionError(
+        getRtkErrorMessage(err as never, t('users.requestCompletionError')),
+      )
     }
   }
 
@@ -179,12 +216,14 @@ export default function UserDetailPage() {
           user={user}
           isApproving={isApproving}
           isRejecting={isRejecting}
+          isRequestingCompletion={isRequestingCompletion}
           isDeactivating={isDeactivating}
           isDeleting={isDeleting}
           isConvertingToSupplier={isConvertingToSupplier}
           isConvertingToCompanyCustomer={isConvertingToCompanyCustomer}
           onApprove={handleApprove}
           onReject={handleReject}
+          onRequestCompletion={handleRequestCompletion}
           onDeactivate={handleDeactivate}
           onActivate={handleActivate}
           onDelete={handleDelete}
