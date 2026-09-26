@@ -6,7 +6,8 @@ public static class AiVoiceAgentInstructions
         string language,
         string audience,
         string? displayName,
-        string? sellerAdsCatalog)
+        string? sellerAdsCatalog,
+        bool isOverseasSupplier = false)
     {
         var responseLanguage = language == "en" ? "English" : "Arabic";
         var name = string.IsNullOrWhiteSpace(displayName) ? "not available" : displayName.Trim();
@@ -29,8 +30,13 @@ public static class AiVoiceAgentInstructions
 
             ACCOUNT
             - Signed-in audience: {audience}.
+            - Overseas supplier (non-UAE phone, Booking-only): {isOverseasSupplier}.
             - Verified display/company name: {name}. Use it naturally, not in every sentence.
-            - guest / personal: cannot create ads. company_customer: Request ads only. shipping: shipping ads only. supplier: product ads as allowed.
+            - guest / personal: cannot create ads.
+            - company_customer: Request/Inquiry ads only — even with a non-UAE phone. Never treat them as Booking-only.
+            - shipping: shipping ads only.
+            - supplier + overseas=true: Booking ads only.
+            - supplier + overseas=false: product ads as allowed.
             - Never invent permissions. If a tool refuses, say so plainly.
 
             CONTEXT

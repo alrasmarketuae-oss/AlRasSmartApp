@@ -12,6 +12,7 @@ import AddUserPage from '../pages/AddUserPage'
 import EditUserPage from '../pages/EditUserPage'
 import UserDetailPage from '../pages/UserDetailPage'
 import UserAdsPage from '../pages/UserAdsPage'
+import CreateCompanyAdPage from '../pages/CreateCompanyAdPage'
 import AdsPage from '../pages/AdsPage'
 import AdDetailPage from '../pages/AdDetailPage'
 import OrderDetailPage from '../pages/OrderDetailPage'
@@ -118,6 +119,21 @@ export default function AppRoutes() {
               ]}
             >
               <UserAdsPage />
+            </PermissionRoute>
+          }
+        />
+        <Route
+          path="/users/:userId/ads/create"
+          element={
+            <PermissionRoute
+              anyOf={[
+                PERMISSIONS.usersView,
+                PERMISSIONS.usersProfileEdits,
+                PERMISSIONS.productsView,
+                PERMISSIONS.productsAdEdits,
+              ]}
+            >
+              <CreateCompanyAdPage />
             </PermissionRoute>
           }
         />

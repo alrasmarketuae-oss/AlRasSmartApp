@@ -341,6 +341,17 @@ public sealed partial class AiAssistantMcpToolsService
             });
         }
 
+        // Overseas suppliers are Booking-only. Company customers keep Requests regardless of phone.
+        if (audience == "supplier")
+        {
+            var overseasBlock = await RefuseIfOverseasSupplierAsync(
+                    userId.Value,
+                    "Request/Inquiry",
+                    cancellationToken)
+                .ConfigureAwait(false);
+            if (overseasBlock is not null) return overseasBlock;
+        }
+
         using var args = JsonDocument.Parse(string.IsNullOrWhiteSpace(argumentsJson) ? "{}" : argumentsJson);
         var root = args.RootElement;
 
@@ -539,6 +550,52 @@ public sealed partial class AiAssistantMcpToolsService
             1 => "admin",
             _ => "public"
         };
+    }
+
+    /// <summary>
+    /// Overseas supplier (non-UAE phone, not company customer) may only create Booking ads.
+    /// Returns a JSON error string when blocked; null when allowed.
+    /// </summary>
+    private async Task<string?> RefuseIfOverseasSupplierAsync(
+        Guid userId,
+        string attemptedType,
+        CancellationToken cancellationToken)
+    {
+        if (!await IsOverseasSupplierAsync(userId, cancellationToken).ConfigureAwait(false))
+        {
+            return null;
+        }
+
+        return Json(new
+        {
+            ok = false,
+            error =
+                $"Overseas suppliers (non-UAE phone) can only publish Booking ads, not {attemptedType}. Company customers are exempt and may still create Request/Inquiry ads."
+        });
+    }
+
+    private async Task<bool> IsOverseasSupplierAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var user = await dbContext.Users
+            .AsNoTracking()
+            .Where(x => x.Id == userId)
+            .Select(x => new { x.RoleId, x.IsCustomer, x.PhoneNumber })
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        if (user is null || user.RoleId != 2 || user.IsCustomer == true)
+        {
+            return false;
+        }
+
+        return !IsUaePhoneNumber(user.PhoneNumber);
+    }
+
+    private static bool IsUaePhoneNumber(string? phone)
+    {
+        if (string.IsNullOrWhiteSpace(phone)) return false;
+        var digits = new string(phone.Where(char.IsDigit).ToArray());
+        return digits.StartsWith("971", StringComparison.Ordinal);
     }
 
     private static string? NormalizeRequestTypeForCreate(string? name, long? id)

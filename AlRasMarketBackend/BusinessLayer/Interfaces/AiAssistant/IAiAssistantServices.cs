@@ -39,6 +39,12 @@ public sealed class AiAssistantAskRequest
 
     /// <summary>e.g. admin_dashboard, landing, mobile.</summary>
     public string? ClientSource { get; set; }
+
+    /// <summary>
+    /// When the signed-in user is an admin, optionally create/manage ads as this
+    /// company user id (act-as). Ignored for non-admin callers.
+    /// </summary>
+    public string? ActingOwnerUserId { get; set; }
 }
 
 public sealed class AiAssistantHistoryMessageDto

@@ -237,7 +237,7 @@ class AiMessageBubble extends StatelessWidget {
                         height: 14.w,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Icon(Icons.photo_library_outlined, size: 16.sp),
+                    : Icon(Icons.add_a_photo_outlined, size: 16.sp),
                 label: Text(
                   isAr ? 'إضافة صور / فيديو للإعلان' : 'Add ad photos / video',
                   style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600),

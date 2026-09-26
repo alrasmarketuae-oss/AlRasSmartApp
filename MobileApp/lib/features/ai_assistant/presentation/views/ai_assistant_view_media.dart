@@ -233,6 +233,37 @@ mixin _AiAssistantMediaMixin on _AiAssistantViewStateBase {
     });
   }
 
+  Future<String?> _pickAdMediaSource() {
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    return showModalBottomSheet<String>(
+      context: context,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: Text(isAr ? 'المعرض' : 'Gallery'),
+                onTap: () => Navigator.pop(sheetContext, 'gallery'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt_outlined),
+                title: Text(isAr ? 'الكاميرا (صورة)' : 'Camera (photo)'),
+                onTap: () => Navigator.pop(sheetContext, 'camera'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.videocam_outlined),
+                title: Text(isAr ? 'تصوير فيديو' : 'Record video'),
+                onTap: () => Navigator.pop(sheetContext, 'record_video'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _pickAdMedia() async {
     if (_uploadingAdMedia || _isThinking) return;
     final token = AuthService.instance.currentToken;
@@ -251,6 +282,9 @@ mixin _AiAssistantMediaMixin on _AiAssistantViewStateBase {
     }
 
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    final choice = await _pickAdMediaSource();
+    if (choice == null || !mounted) return;
+
     setState(() {
       _uploadingAdMedia = true;
       _isThinking = true;
@@ -262,8 +296,32 @@ mixin _AiAssistantMediaMixin on _AiAssistantViewStateBase {
     _scrollToEnd();
 
     try {
-      final picked = await _imagePicker.pickMultipleMedia();
-      if (picked.isEmpty) {
+      final localPaths = <String>[];
+      if (choice == 'gallery') {
+        final picked = await _imagePicker.pickMultipleMedia();
+        for (final item in picked) {
+          if (item.path.isNotEmpty) localPaths.add(item.path);
+        }
+      } else if (choice == 'camera') {
+        final shot = await _imagePicker.pickImage(
+          source: ImageSource.camera,
+          imageQuality: 85,
+          preferredCameraDevice: CameraDevice.rear,
+        );
+        if (shot != null && shot.path.isNotEmpty) {
+          localPaths.add(shot.path);
+        }
+      } else if (choice == 'record_video') {
+        final video = await _imagePicker.pickVideo(
+          source: ImageSource.camera,
+          preferredCameraDevice: CameraDevice.rear,
+        );
+        if (video != null && video.path.isNotEmpty) {
+          localPaths.add(video.path);
+        }
+      }
+
+      if (localPaths.isEmpty) {
         if (!mounted) return;
         setState(() {
           _uploadingAdMedia = false;
@@ -274,9 +332,7 @@ mixin _AiAssistantMediaMixin on _AiAssistantViewStateBase {
 
       final imagePaths = <String>[];
       final videoPaths = <String>[];
-      for (final item in picked) {
-        final path = item.path;
-        if (path.isEmpty) continue;
+      for (final path in localPaths) {
         if (CreateAdFormMapper.isVideoPath(path)) {
           videoPaths.add(path);
         } else {

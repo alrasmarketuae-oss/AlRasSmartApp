@@ -2,8 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import AdsFilterBar from '../components/ads/AdsFilterBar'
 import AdsTable from '../components/ads/AdsTable'
+import CreateCompanyAdChooser from '../components/users/CreateCompanyAdChooser'
 import { useAppPreferences } from '../context/AppPreferencesProvider'
+import { useAskAiPageData } from '../context/AskAiPageDataProvider'
 import { useListPageParam } from '../hooks/useListPageParam'
+import { useRegisterAskAiPageData } from '../hooks/useRegisterAskAiPageData'
 import { useReturnToListPath } from '../hooks/useReturnToListPath'
 import {
   useApproveProductMutation,
@@ -33,6 +36,7 @@ export default function UserAdsPage() {
   const { userId = '' } = useParams()
   const navigate = useNavigate()
   const { t, locale } = useAppPreferences()
+  const { requestOpenAskAi } = useAskAiPageData()
   const backToUsersPath = useReturnToListPath('/users')
   const { page, setPage } = useListPageParam()
   const [search, setSearch] = useState('')
@@ -44,6 +48,7 @@ export default function UserAdsPage() {
   const [rejectingId, setRejectingId] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [createAdOpen, setCreateAdOpen] = useState(false)
 
   const pageSize = 20
 
@@ -94,6 +99,20 @@ export default function UserAdsPage() {
 
   const [approveProduct] = useApproveProductMutation()
   const [rejectProduct] = useRejectProductMutation()
+
+  const companyTitle =
+    user?.companyName?.trim() || user?.fullName?.trim() || t('users.company')
+
+  useRegisterAskAiPageData(
+    {
+      screen: 'company_ads',
+      ownerUserId: userId,
+      companyName: companyTitle,
+      roleId: user?.roleId,
+      isCustomer: user?.isCustomer,
+    },
+    Boolean(userId) && !isShippingCompany,
+  )
 
   if (!userId) {
     navigate('/users', { replace: true })
@@ -158,8 +177,6 @@ export default function UserAdsPage() {
 
   const products = productsData?.items ?? []
   const totalPages = productsData?.totalPages ?? 1
-  const companyTitle =
-    user?.companyName?.trim() || user?.fullName?.trim() || t('users.company')
 
   return (
     <div className="space-y-5">
@@ -188,6 +205,15 @@ export default function UserAdsPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          {user?.roleId === 2 ? (
+            <button
+              type="button"
+              onClick={() => setCreateAdOpen(true)}
+              className="keep-white inline-flex items-center rounded-xl bg-[#3B7FC7] px-4 py-2 text-sm font-bold text-white hover:bg-[#2f6ab0]"
+            >
+              {t('users.createAd')}
+            </button>
+          ) : null}
           <Link to={`/users/${userId}`} className="admin-btn-ghost text-sm font-semibold">
             {t('users.review')}
           </Link>
@@ -273,6 +299,36 @@ export default function UserAdsPage() {
           </>
         )}
       </div>
+
+      <CreateCompanyAdChooser
+        open={createAdOpen}
+        companyName={companyTitle}
+        onClose={() => setCreateAdOpen(false)}
+        onManual={() => {
+          setCreateAdOpen(false)
+          navigate(`/users/${userId}/ads/create`)
+        }}
+        onAi={() => {
+          setCreateAdOpen(false)
+          requestOpenAskAi({
+            ownerUserId: userId,
+            companyName: companyTitle,
+            seedMessage:
+              locale === 'ar'
+                ? `[PLAN_MODE] أضف إعلان لهذه الشركة (${companyTitle}). ابدأ بجمع الحقول المطلوبة حسب نوع الحساب.`
+                : `[PLAN_MODE] Create an ad for this company (${companyTitle}). Start collecting the required fields for this account type.`,
+          })
+        }}
+        labels={{
+          title: t('users.createAdChooserTitle'),
+          subtitle: t('users.createAdChooserSubtitle'),
+          manual: t('users.createAdManual'),
+          manualHint: t('users.createAdManualHint'),
+          ai: t('users.createAdAi'),
+          aiHint: t('users.createAdAiHint'),
+          cancel: t('users.createAdCancel'),
+        }}
+      />
     </div>
   )
 }

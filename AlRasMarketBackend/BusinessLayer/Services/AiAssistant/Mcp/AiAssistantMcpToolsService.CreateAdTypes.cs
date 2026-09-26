@@ -153,6 +153,10 @@ public sealed partial class AiAssistantMcpToolsService
             return Json(new { ok = false, error = "Only suppliers can create Offer ads." });
         }
 
+        var overseasBlock = await RefuseIfOverseasSupplierAsync(userId.Value, "Offer", cancellationToken)
+            .ConfigureAwait(false);
+        if (overseasBlock is not null) return overseasBlock;
+
         using var args = JsonDocument.Parse(string.IsNullOrWhiteSpace(argumentsJson) ? "{}" : argumentsJson);
         var root = args.RootElement;
 
@@ -270,6 +274,10 @@ public sealed partial class AiAssistantMcpToolsService
             return Json(new { ok = false, error = "Only suppliers can create Retail ads." });
         }
 
+        var overseasBlock = await RefuseIfOverseasSupplierAsync(userId.Value, "Retail", cancellationToken)
+            .ConfigureAwait(false);
+        if (overseasBlock is not null) return overseasBlock;
+
         using var args = JsonDocument.Parse(string.IsNullOrWhiteSpace(argumentsJson) ? "{}" : argumentsJson);
         var root = args.RootElement;
 
@@ -358,6 +366,10 @@ public sealed partial class AiAssistantMcpToolsService
         {
             return Json(new { ok = false, error = "Only suppliers can create Category ads." });
         }
+
+        var overseasBlock = await RefuseIfOverseasSupplierAsync(userId.Value, "Category", cancellationToken)
+            .ConfigureAwait(false);
+        if (overseasBlock is not null) return overseasBlock;
 
         using var args = JsonDocument.Parse(string.IsNullOrWhiteSpace(argumentsJson) ? "{}" : argumentsJson);
         var root = args.RootElement;

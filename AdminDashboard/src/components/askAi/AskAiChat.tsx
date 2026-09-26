@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAskAiPageData } from '../../context/AskAiPageDataProvider'
 import { askAdminAi, type AskAiHistoryMessage } from '../../services/askAiApi'
@@ -55,7 +55,7 @@ export default function AskAiChat({
   labels,
 }: AskAiChatProps) {
   const location = useLocation()
-  const { getPageData } = useAskAiPageData()
+  const { getPageData, actingCompany } = useAskAiPageData()
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -64,10 +64,83 @@ export default function AskAiChat({
   const sendingRef = useRef(false)
   const abortRef = useRef<AbortController | null>(null)
   const messagesRef = useRef<ChatMessage[]>([])
+  const seededRef = useRef<string | null>(null)
+  const busyRef = useRef(false)
 
   useEffect(() => {
     messagesRef.current = messages
   }, [messages])
+
+  useEffect(() => {
+    busyRef.current = busy
+  }, [busy])
+
+  const sendMessage = useCallback(
+    async (text: string) => {
+      const trimmed = text.trim()
+      if (!trimmed || busyRef.current || sendingRef.current) return
+
+      sendingRef.current = true
+      const prior = messagesRef.current
+      const history: AskAiHistoryMessage[] = prior
+        .slice(-HISTORY_LIMIT)
+        .map((m) => ({ role: m.role, content: m.text }))
+
+      const pagePath = `${location.pathname}${location.search}${location.hash}`
+      const pageData = getPageData()
+      const snapshot = buildAskAiPageSnapshot({
+        path: pagePath,
+        registeredData: {
+          ...(typeof pageData === 'object' && pageData ? (pageData as object) : {}),
+          actingCompany: actingCompany
+            ? {
+                ownerUserId: actingCompany.ownerUserId,
+                companyName: actingCompany.companyName,
+              }
+            : null,
+        },
+      })
+      const pageContext = serializeAskAiPageContext(snapshot)
+
+      setMessages((prev) => [
+        ...prev,
+        { id: nextId('user'), role: 'user', text: trimmed },
+      ])
+      setInput('')
+      setBusy(true)
+
+      abortRef.current?.abort()
+      const controller = new AbortController()
+      abortRef.current = controller
+
+      try {
+        const result = await askAdminAi({
+          message: trimmed,
+          language: locale,
+          history,
+          pagePath,
+          pageContext,
+          actingOwnerUserId: actingCompany?.ownerUserId,
+          signal: controller.signal,
+        })
+        const answer = (result.answer || '').trim() || labels.error
+        setMessages((prev) => [
+          ...prev,
+          { id: nextId('assistant'), role: 'assistant', text: answer },
+        ])
+      } catch (err) {
+        if ((err as Error)?.name === 'AbortError') return
+        setMessages((prev) => [
+          ...prev,
+          { id: nextId('assistant'), role: 'assistant', text: labels.error },
+        ])
+      } finally {
+        setBusy(false)
+        sendingRef.current = false
+      }
+    },
+    [actingCompany, getPageData, labels.error, locale, location.hash, location.pathname, location.search],
+  )
 
   useEffect(() => {
     if (!open) {
@@ -75,6 +148,7 @@ export default function AskAiChat({
       abortRef.current = null
       setBusy(false)
       sendingRef.current = false
+      seededRef.current = null
       return
     }
     const id = window.setTimeout(() => inputRef.current?.focus(), 120)
@@ -87,66 +161,22 @@ export default function AskAiChat({
     }
   }, [messages, busy, open])
 
-  if (!open) return null
-
-  async function sendMessage(text: string) {
-    const trimmed = text.trim()
-    if (!trimmed || busy || sendingRef.current) return
-
-    sendingRef.current = true
-    const prior = messagesRef.current
-    const history: AskAiHistoryMessage[] = prior
-      .slice(-HISTORY_LIMIT)
-      .map((m) => ({ role: m.role, content: m.text }))
-
-    const pagePath = `${location.pathname}${location.search}${location.hash}`
-    const snapshot = buildAskAiPageSnapshot({
-      path: pagePath,
-      registeredData: getPageData(),
-    })
-    const pageContext = serializeAskAiPageContext(snapshot)
-
-    setMessages((prev) => [
-      ...prev,
-      { id: nextId('user'), role: 'user', text: trimmed },
-    ])
-    setInput('')
-    setBusy(true)
-
-    abortRef.current?.abort()
-    const controller = new AbortController()
-    abortRef.current = controller
-
-    try {
-      const result = await askAdminAi({
-        message: trimmed,
-        language: locale,
-        history,
-        pagePath,
-        pageContext,
-        signal: controller.signal,
-      })
-      const answer = (result.answer || '').trim() || labels.error
-      setMessages((prev) => [
-        ...prev,
-        { id: nextId('assistant'), role: 'assistant', text: answer },
-      ])
-    } catch (err) {
-      if ((err as Error)?.name === 'AbortError') return
-      setMessages((prev) => [
-        ...prev,
-        { id: nextId('assistant'), role: 'assistant', text: labels.error },
-      ])
-    } finally {
-      setBusy(false)
-      sendingRef.current = false
-    }
-  }
+  useEffect(() => {
+    if (!open) return
+    const seed = actingCompany?.seedMessage?.trim()
+    if (!seed) return
+    const key = `${actingCompany?.ownerUserId ?? ''}|${seed}`
+    if (seededRef.current === key) return
+    seededRef.current = key
+    void sendMessage(seed)
+  }, [open, actingCompany?.ownerUserId, actingCompany?.seedMessage, sendMessage])
 
   function onSubmit(e: FormEvent) {
     e.preventDefault()
     void sendMessage(input)
   }
+
+  if (!open) return null
 
   return (
     <div className="fixed inset-0 z-[95] print:hidden" role="dialog" aria-modal="true">
@@ -176,7 +206,11 @@ export default function AskAiChat({
               {labels.title}
             </p>
             <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
-              {labels.subtitle}
+              {actingCompany?.companyName
+                ? locale === 'ar'
+                  ? `إنشاء إعلان لـ ${actingCompany.companyName}`
+                  : `Creating ad for ${actingCompany.companyName}`
+                : labels.subtitle}
             </p>
           </div>
           <button

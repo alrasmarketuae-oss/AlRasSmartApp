@@ -522,8 +522,10 @@ public sealed partial class AiAssistantMcpToolsService(
             {
                 name = "create_request_ad",
                 description =
-                    "Create ONE Inquiry ad (طلب / Inquiry) using the same backend API as mobile Create Ad / Create Order. " +
-                    "Allowed audiences: supplier OR company_customer only. " +
+                    "Create ONE Inquiry ad (طلب / Inquiry / Requests) using the same backend API as mobile Create Ad / Create Order. " +
+                    "Allowed audiences: UAE supplier OR company_customer. " +
+                    "Company customers may create Request ads even with a non-UAE phone. " +
+                    "Overseas suppliers (non-UAE phone, not company customer) cannot create Request — Booking only. " +
                     "Collect required fields first: name, specifications, negotiable, request_type Local/Reexport, packaging (ALWAYS ask). " +
                     "OPTIONAL: target price, quantity, unit_name, currency — omit any the user did not provide. " +
                     "If target price is provided, also collect currency (USD/AED) and unit_name. " +
@@ -612,19 +614,19 @@ public sealed partial class AiAssistantMcpToolsService(
         },
         CreateAdToolDefinition(
             "create_booking_ad",
-            "Create ONE Booking ad (supplier only). Currency is always USD. Ask FOB/CNF/CIF first. FOB: exporting country (الدولة المصدرة) ONLY — never destination or ports. CNF/CIF: exporting country required; loading port, destination country, and arrival port are OPTIONAL (nullable) — do not block create if they are missing. Also: name, price, qty, unit, shipping days, negotiable, specs, packaging (ALWAYS ask), media.",
+            "Create ONE Booking ad (supplier only, including overseas/non-UAE suppliers). Currency is always USD. Ask FOB/CNF/CIF first. FOB: exporting country (الدولة المصدرة) ONLY — never destination or ports. CNF/CIF: exporting country required; loading port, destination country, and arrival port are OPTIONAL (nullable) — do not block create if they are missing. Also: name, price, qty, unit, shipping days, negotiable, specs, packaging (ALWAYS ask), media. Company customers cannot create Booking.",
             ["name", "price", "quantity", "unit_name", "origin_country_name", "booking_price_type_name", "shipping_duration_days", "specifications"]),
         CreateAdToolDefinition(
             "create_offer_ad",
-            "Create ONE Offer ad (supplier only). Collect BEFORE calling: product name, media, price_before, price_after, offer_duration_days, quantity, unit_name, currency, negotiable, Local/Reexport, specifications, packaging kg (ALWAYS ask; user may say none).",
+            "Create ONE Offer ad (UAE supplier only — not overseas/non-UAE suppliers, not company_customer). Collect BEFORE calling: product name, media, price_before, price_after, offer_duration_days, quantity, unit_name, currency, negotiable, Local/Reexport, specifications, packaging kg (ALWAYS ask; user may say none).",
             ["name", "price_before", "price_after", "offer_duration_days", "quantity", "unit_name", "currency", "request_type_name", "specifications"]),
         CreateAdToolDefinition(
             "create_retail_ad",
-            "Create ONE Retail ad (supplier only). Currency is always AED. Collect BEFORE calling: product name, media, price, quantity, unit_name, delivery_days, negotiable, specifications, packaging kg (ALWAYS ask; user may say none).",
+            "Create ONE Retail ad (UAE supplier only — not overseas/non-UAE suppliers, not company_customer). Currency is always AED. Collect BEFORE calling: product name, media, price, quantity, unit_name, delivery_days, negotiable, specifications, packaging kg (ALWAYS ask; user may say none).",
             ["name", "price", "quantity", "unit_name", "delivery_days", "specifications"]),
         CreateAdToolDefinition(
             "create_category_ad",
-            "Create ONE Category ad (supplier only). Collect BEFORE calling: product name, category_id/name, media, wholesale price, quantity, unit_name, currency, negotiable, Local/Reexport, wholesale specifications, packaging kg (ALWAYS ask; user may say none). "
+            "Create ONE Category ad (UAE supplier only — not overseas/non-UAE suppliers, not company_customer). Collect BEFORE calling: product name, category_id/name, media, wholesale price, quantity, unit_name, currency, negotiable, Local/Reexport, wholesale specifications, packaging kg (ALWAYS ask; user may say none). "
             + "HYBRID (enable_retail_pricing=true): you MUST also ask and collect SEPARATE retail fields BEFORE calling the tool: retail_price (AED), retail_quantity, retail_unit_name, retail_specifications (مواصفات التجزئة — never skip; do NOT copy wholesale specs unless user says same), optional retail_packaging. "
             + "Never call create_category_ad with enable_retail_pricing=true until retail_specifications is present.",
             ["name", "price", "quantity", "unit_name", "category_id", "request_type_name", "specifications"]),

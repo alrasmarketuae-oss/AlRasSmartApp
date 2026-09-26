@@ -1,8 +1,9 @@
 import { useState, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { resolveAssetUrl } from '../../lib/assets'
 import { hasPermission, PERMISSIONS } from '../../lib/permissions'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
+import { useAskAiPageData } from '../../context/AskAiPageDataProvider'
 import {
   formatJoinDate,
   getStatusBadgeClass,
@@ -21,6 +22,7 @@ import {
   IconInfoSectionTitle,
   InfoFieldIcons,
 } from '../shared/IconInfoField'
+import CreateCompanyAdChooser from './CreateCompanyAdChooser'
 
 type UserDetailViewProps = {
   user: AdminUserDetail
@@ -211,8 +213,11 @@ export default function UserDetailView({
   onConvertToCompanyCustomer,
 }: UserDetailViewProps) {
   const { t, locale } = useAppPreferences()
+  const navigate = useNavigate()
+  const { requestOpenAskAi } = useAskAiPageData()
   const [rejectReason, setRejectReason] = useState('')
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
+  const [createAdOpen, setCreateAdOpen] = useState(false)
   const isBusy =
     isApproving ||
     isRejecting ||
@@ -221,6 +226,11 @@ export default function UserDetailView({
     isConvertingToSupplier ||
     isConvertingToCompanyCustomer
   const isSupplier = user.roleId === 2
+  const canCreateCompanyAd = user.roleId === 2
+  const companyTitle =
+    user.companyName?.trim() ||
+    user.fullName?.trim() ||
+    user.id
   const canConvertToSupplier =
     Boolean(user.canConvertToSupplier) ||
     (user.roleId === 2 && user.isCustomer === true)
@@ -479,12 +489,23 @@ export default function UserDetailView({
                 </Link>
               </div>
             ) : isSupplier ? (
-              <Link
-                to={`/users/${user.id}/ads`}
-                className="keep-white inline-flex items-center gap-2 rounded-xl bg-[#3B7FC7] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#2f6ab0]"
-              >
-                {t('users.viewCompanyAds')}
-              </Link>
+              <div className="flex flex-wrap justify-end gap-2">
+                <Link
+                  to={`/users/${user.id}/ads`}
+                  className="keep-white inline-flex items-center gap-2 rounded-xl bg-[#3B7FC7] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#2f6ab0]"
+                >
+                  {t('users.viewCompanyAds')}
+                </Link>
+                {canCreateCompanyAd ? (
+                  <button
+                    type="button"
+                    onClick={() => setCreateAdOpen(true)}
+                    className={`${outlineBtn} border-[#3B7FC7]/40 text-[#3B7FC7] hover:bg-[#eff6ff] dark:border-[#3B7FC7]/50 dark:hover:bg-slate-800`}
+                  >
+                    {t('users.createAd')}
+                  </button>
+                ) : null}
+              </div>
             ) : null}
 
             <div className="space-y-1.5 text-sm">
@@ -1180,6 +1201,36 @@ export default function UserDetailView({
         initialIndex={previewIndex ?? 0}
         open={previewIndex != null}
         onClose={() => setPreviewIndex(null)}
+      />
+
+      <CreateCompanyAdChooser
+        open={createAdOpen}
+        companyName={companyTitle}
+        onClose={() => setCreateAdOpen(false)}
+        onManual={() => {
+          setCreateAdOpen(false)
+          navigate(`/users/${user.id}/ads/create`)
+        }}
+        onAi={() => {
+          setCreateAdOpen(false)
+          requestOpenAskAi({
+            ownerUserId: user.id,
+            companyName: companyTitle,
+            seedMessage:
+              locale === 'ar'
+                ? `[PLAN_MODE] أضف إعلان لهذه الشركة (${companyTitle}). ابدأ بجمع الحقول المطلوبة حسب نوع الحساب.`
+                : `[PLAN_MODE] Create an ad for this company (${companyTitle}). Start collecting the required fields for this account type.`,
+          })
+        }}
+        labels={{
+          title: t('users.createAdChooserTitle'),
+          subtitle: t('users.createAdChooserSubtitle'),
+          manual: t('users.createAdManual'),
+          manualHint: t('users.createAdManualHint'),
+          ai: t('users.createAdAi'),
+          aiHint: t('users.createAdAiHint'),
+          cancel: t('users.createAdCancel'),
+        }}
       />
     </div>
   )

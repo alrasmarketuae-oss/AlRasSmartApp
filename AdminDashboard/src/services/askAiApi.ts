@@ -19,6 +19,7 @@ export async function askAdminAi(input: {
   history: AskAiHistoryMessage[]
   pagePath: string
   pageContext: string
+  actingOwnerUserId?: string | null
   signal?: AbortSignal
 }): Promise<AskAiAnswer> {
   const history = input.history
@@ -40,6 +41,7 @@ export async function askAdminAi(input: {
       pagePath: input.pagePath,
       pageContext: input.pageContext,
       clientSource: 'admin_dashboard',
+      actingOwnerUserId: input.actingOwnerUserId?.trim() || undefined,
     },
   })
 }

@@ -653,7 +653,7 @@ class AiComposerState extends State<AiComposer> {
                                 ),
                               )
                             : Icon(
-                                Icons.photo_library_outlined,
+                                Icons.add_a_photo_outlined,
                                 size: 22.sp,
                                 color: widget.planMode
                                     ? AiAdPlanColors.accentDark

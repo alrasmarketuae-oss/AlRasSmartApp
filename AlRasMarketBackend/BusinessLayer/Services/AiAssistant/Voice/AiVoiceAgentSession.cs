@@ -734,6 +734,7 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
         string audience = "guest";
         string? displayName = null;
         string? catalog = null;
+        var isOverseasSupplier = false;
         await using (var scope = _scopeFactory.CreateAsyncScope())
         {
             var tools = scope.ServiceProvider.GetRequiredService<IAiAssistantToolsService>();
@@ -743,7 +744,7 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
                 var user = await db.Users
                     .AsNoTracking()
                     .Where(x => x.Id == userId)
-                    .Select(x => new { x.RoleId, x.IsCustomer, x.FullName, x.CompanyName })
+                    .Select(x => new { x.RoleId, x.IsCustomer, x.FullName, x.CompanyName, x.PhoneNumber })
                     .FirstOrDefaultAsync(cancellationToken)
                     .ConfigureAwait(false);
                 if (user is not null)
@@ -759,6 +760,13 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
                     displayName = audience is "supplier" or "company_customer" or "shipping"
                         ? FirstNonEmpty(user.CompanyName, user.FullName)
                         : FirstNonEmpty(user.FullName, user.CompanyName);
+                    if (audience == "supplier")
+                    {
+                        var digits = string.IsNullOrWhiteSpace(user.PhoneNumber)
+                            ? ""
+                            : new string(user.PhoneNumber.Where(char.IsDigit).ToArray());
+                        isOverseasSupplier = !digits.StartsWith("971", StringComparison.Ordinal);
+                    }
                 }
 
                 try
@@ -793,7 +801,12 @@ public sealed class AiVoiceAgentSession : IAsyncDisposable
                     ["required"] = new JsonArray("query")
                 }
             });
-            var instructions = AiVoiceAgentInstructions.Build(_language, audience, displayName, catalog);
+            var instructions = AiVoiceAgentInstructions.Build(
+                _language,
+                audience,
+                displayName,
+                catalog,
+                isOverseasSupplier);
             var session = new JsonObject
             {
                 ["type"] = "realtime",

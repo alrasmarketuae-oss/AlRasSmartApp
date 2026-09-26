@@ -41,5 +41,6 @@ public interface IAiAssistantMcpToolLoop
         Guid? userId,
         string responseLanguage = "en",
         Func<string, CancellationToken, Task>? onThinkingStep = null,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        Guid? toolUserId = null);
 }

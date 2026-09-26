@@ -4,7 +4,7 @@ import { useAppPreferences } from '../context/AppPreferencesProvider'
 import { ChatProvider } from '../context/ChatProvider'
 import { AdminNotificationProvider } from '../context/AdminNotificationProvider'
 import { AdminAlertProvider } from '../context/AdminAlertProvider'
-import { AskAiPageDataProvider } from '../context/AskAiPageDataProvider'
+import { AskAiPageDataProvider, useAskAiPageData } from '../context/AskAiPageDataProvider'
 import Sidebar from '../components/layout/Sidebar'
 import TopBar from '../components/layout/TopBar'
 import AskAiChat from '../components/askAi/AskAiChat'
@@ -32,7 +32,51 @@ export default function AdminLayout() {
       <AdminNotificationProvider>
       <AdminAlertProvider>
       <AskAiPageDataProvider>
-      <div dir={dir} className="admin-page-bg flex h-svh max-h-svh overflow-hidden print:h-auto print:max-h-none print:overflow-visible">
+      <AdminLayoutInner
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        askAiOpen={askAiOpen}
+        setAskAiOpen={setAskAiOpen}
+        isRtl={isRtl}
+        locale={locale}
+        t={t}
+      />
+      </AskAiPageDataProvider>
+      </AdminAlertProvider>
+      </AdminNotificationProvider>
+    </ChatProvider>
+  )
+}
+
+function AdminLayoutInner({
+  sidebarOpen,
+  setSidebarOpen,
+  askAiOpen,
+  setAskAiOpen,
+  isRtl,
+  locale,
+  t,
+}: {
+  sidebarOpen: boolean
+  setSidebarOpen: (v: boolean) => void
+  askAiOpen: boolean
+  setAskAiOpen: (v: boolean) => void
+  isRtl: boolean
+  locale: 'ar' | 'en'
+  t: (key: string) => string
+}) {
+  const { openTick, consumeOpenAskAiRequest, setActingCompany } = useAskAiPageData()
+
+  useEffect(() => {
+    if (openTick <= 0) return
+    const req = consumeOpenAskAiRequest()
+    if (req === undefined) return
+    if (req) setActingCompany(req)
+    setAskAiOpen(true)
+  }, [openTick, consumeOpenAskAiRequest, setActingCompany, setAskAiOpen])
+
+  return (
+      <div dir={isRtl ? 'rtl' : 'ltr'} className="admin-page-bg flex h-svh max-h-svh overflow-hidden print:h-auto print:max-h-none print:overflow-visible">
         {sidebarOpen ? (
           <button
             type="button"
@@ -62,7 +106,10 @@ export default function AdminLayout() {
 
       <AskAiChat
         open={askAiOpen}
-        onClose={() => setAskAiOpen(false)}
+        onClose={() => {
+          setAskAiOpen(false)
+          setActingCompany(null)
+        }}
         isRtl={isRtl}
         locale={locale}
         labels={{
@@ -78,9 +125,5 @@ export default function AdminLayout() {
           poweredBy: t('askAi.poweredBy'),
         }}
       />
-      </AskAiPageDataProvider>
-      </AdminAlertProvider>
-      </AdminNotificationProvider>
-    </ChatProvider>
   )
 }

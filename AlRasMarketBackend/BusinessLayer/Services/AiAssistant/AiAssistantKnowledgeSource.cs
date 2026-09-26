@@ -373,7 +373,7 @@ internal static class AiAssistantKnowledgeSource
             توجد خمس حالات للمستخدم: الزائر (غير مسجل)، والمورد (Supplier)، والعميل الفردي (Personal customer)، وعميل الشركة (Company customer)، وشركة الشحن (Shipping company).
             المورد: شركة تبيع وتعرض بضائعها؛ المورد داخل الإمارات ينشئ معظم أنواع الإعلانات، والمورد خارج الإمارات المسجل برقم غير إماراتي ينشئ Booking فقط. والمورد يستطيع أيضاً الشراء والطلب من المنصة ومتابعة مشترياته من طلباتي.
             العميل الفردي: مشترٍ أفراد، يشتري منتجات التجزئة فقط ولا ينشئ إعلانات.
-            عميل الشركة: شركة تشتري بالجملة، تتصفح الأصناف وأنواع الإعلانات وتنشئ إعلان طلب (Request) فقط.
+            عميل الشركة: شركة تشتري بالجملة، تتصفح الأصناف وأنواع الإعلانات وتنشئ إعلان طلبات (Request / Inquiry) فقط — سواء كان رقم الهاتف إماراتياً أو من خارج الإمارات. قيد Booking للمورد الخارجي لا ينطبق على عميل الشركة.
             شركة الشحن: تعرض خدمات الشحن من ميناء إلى ميناء فقط.
             كل نوع حساب يرى واجهة مختلفة وصلاحيات مختلفة.
             """);
@@ -382,7 +382,7 @@ internal static class AiAssistantKnowledgeSource
             There are five user states: Guest (not signed in), Supplier, Personal customer, Company customer, and Shipping company.
             Supplier: a company that sells and lists goods. A UAE-based supplier can create most ad types, while an overseas supplier registered with a non-UAE phone number can create Booking only. Suppliers can also buy from the marketplace and track their purchases in My Orders.
             Personal customer: an individual buyer who purchases retail products and cannot create ads.
-            Company customer: a company that buys wholesale, browses categories and ad types, and can create Inquiry ads only.
+            Company customer: a company that buys wholesale, browses categories and ad types, and can create Request/Inquiry ads only — whether the phone is UAE or non-UAE. The overseas Booking-only lock applies to suppliers, never to company customers.
             Shipping company: publishes port-to-port shipping services only.
             Each account type sees a different interface and has different permissions.
             """);
@@ -442,11 +442,12 @@ internal static class AiAssistantKnowledgeSource
             الإجابة تعتمد على نوع الحساب الحالي:
 
             المورد داخل الإمارات: يستطيع إضافة إعلانات Category وRetail وBooking وOffer بخصم وRequest.
-            إذا طلب نشر إعلان داخل شات الراس الذكي والجمهور الحالي supplier، ساعده مباشرة عبر أدوات create_*_ad (مثل create_booking_ad لـ Booking) — لا ترفض ولا تقل "حسابك لا يسمح".
+            إذا طلب نشر إعلان داخل شات الراس الذكي والجمهور الحالي supplier (وليس مورداً خارجياً)، ساعده مباشرة عبر أدوات create_*_ad (مثل create_booking_ad لـ Booking) — لا ترفض ولا تقل "حسابك لا يسمح".
             استخدم وضع الخطة بالحوار: اعرض قائمة الحقول المطلوبة، ولو نسي المستخدم شيئاً في رده أخبره صراحة بالحقول الناقصة، ثم استدعِ الأداة بعد اكتمالها. يمكن أيضاً الإنشاء يدوياً من زر إنشاء إعلان في البار السفلي.
             المورد خارج الإمارات برقم غير إماراتي: Booking فقط — أخبره بذلك ولا تعرض بقية الأنواع، لكن Booking مسموح عبر create_booking_ad في الشات.
 
-            عميل الشركة: يضيف إعلان Request فقط (لا Booking ولا Retail ولا Category ولا Offer بخصم).
+            عميل الشركة: يضيف إعلان طلبات (Request / Inquiry) فقط (لا Booking ولا Retail ولا Category ولا Offer بخصم) — سواء كان رقمه إماراتياً أو من خارج الإمارات.
+            مهم: رقم خارج الإمارات لا يحوّل عميل الشركة إلى Booking؛ قيد Booking للمورد الخارجي فقط. عميل الشركة يبقى على الطلبات دائماً.
             أخبره بذلك ووضّح المطلوب: اسم المنتج، المواصفات، قابل للتفاوض، محلي أو إعادة تصدير، عنوان التسليم من العناوين المحفوظة، والتعبئة. السعر المستهدف والكمية والوحدة والعملة اختيارية — لا تسأل عنها إلا إذا ذكرها المستخدم أو طلب تضمينها. تاريخ التسليم والصور اختياريان، ثم النشر من إنشاء طلب أو شات الراس الذكي.
 
             شركة الشحن: تضيف إعلان شحن فقط من الصفحة الرئيسية (ميناء إلى ميناء وأسعار 20ft و40ft).
@@ -464,11 +465,12 @@ internal static class AiAssistantKnowledgeSource
             Answer depends on the current account type:
 
             UAE supplier: can create Category, Retail, Booking, discounted Offer, and Request.
-            If they ask to publish in Alras Smart chat and the current audience is supplier, help via create_*_ad tools (e.g. create_booking_ad for Booking) — never refuse or say the account is not allowed.
+            If they ask to publish in Alras Smart chat and the current audience is supplier (not an overseas supplier), help via create_*_ad tools (e.g. create_booking_ad for Booking) — never refuse or say the account is not allowed.
             Use conversational Plan Mode: list required fields, explicitly call out anything still missing in their reply, then call the tool when complete. They may also use Create Ad in the bottom bar manually.
             Overseas supplier with a non-UAE phone: Booking only — say so and do not offer the other types, but Booking is allowed via create_booking_ad in chat.
 
-            Company customer: Inquiry ads only (not Booking, Retail, Category, or discounted Offer).
+            Company customer: Request/Inquiry ads only (not Booking, Retail, Category, or discounted Offer) — whether the phone is UAE or non-UAE.
+            Important: a non-UAE phone does NOT switch a company customer to Booking; the Booking-only lock is for overseas suppliers only. Company customers stay on Requests always.
             Tell them that and list what a Request needs: product name, specifications, negotiable, Local or Reexport, delivery address from saved addresses (required for company_customer). Target price, quantity, unit, and currency are OPTIONAL unless the user provides a target price (then also collect currency USD/AED and unit). Optional delivery date and images. Publish from Create Order or Alras Smart chat.
 
             Shipping company: shipping ads only from Home (port-to-port with 20ft and 40ft prices).
@@ -1502,19 +1504,21 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "overseas-supplier-ads", "المورد خارج الإمارات أو المسجل برقم غير إماراتي: ما الإعلانات المسموحة؟", "ar", ["supplier", "public"],
             """
             سؤال: أنا مورد خارج الإمارات، ما نوع الإعلان الذي أستطيع إضافته؟ رقمي غير إماراتي، لماذا لا تظهر أنواع الإعلانات؟ هل المورد الدولي يستطيع إضافة Retail أو Offer أو Request؟
-            الإجابة: إذا كان حساب المورد مسجلاً برقم هاتف غير إماراتي وكان موقعه خارج دولة الإمارات، فإن نوع الإعلان المتاح له هو Booking فقط.
+            الإجابة: إذا كان حساب المورد (Supplier — ليس عميل شركة) مسجلاً برقم هاتف غير إماراتي، فإن نوع الإعلان المتاح له هو Booking فقط.
             لا يستطيع هذا المورد إنشاء Category أو Retail أو Offer بخصم أو Request، ولذلك لا تظهر له هذه الأنواع في صفحة إنشاء الإعلان.
             إعلان Booking مناسب للتجارة والشحنات الدولية، ويجب فيه إدخال الدولة المصدرة وميناء التحميل وبلد الوجهة وميناء الوصول، واختيار FOB أو CNF أو CIF، وتكون العملة بالدولار USD.
             أما المورد داخل الإمارات والمسجل برقم إماراتي فتتاح له أنواع الإعلانات الأخرى بحسب صلاحيات حساب المورد.
+            تنبيه مهم: عميل الشركة (Company customer / IsCustomer) حتى لو رقمه من خارج الإمارات يستطيع إضافة إعلانات طلبات (Request) فقط — وليس Booking. قيد Booking يخص المورد الخارجي فقط.
             هذا القيد يخص إنشاء الإعلانات فقط؛ ولا يمنع المورد خارج الإمارات من إدارة حسابه أو متابعة طلباته وإعلانات Booking الخاصة به أو استخدام الدعم.
             """);
         Add(chunks, "overseas-supplier-ads", "Overseas supplier or non-UAE phone number: which ads are allowed?", "en", ["supplier", "public"],
             """
             Question: I am a supplier outside the UAE; which ad can I create? My phone number is non-UAE; why are the other ad types missing? Can an international supplier create Retail, Offer, or Inquiry ads?
-            Answer: If the supplier account is registered with a non-UAE phone number and the supplier is located outside the UAE, Booking is the only ad type available.
+            Answer: If the supplier account (Seller — not a company customer) is registered with a non-UAE phone number, Booking is the only ad type available.
             This supplier cannot create Category, Retail, discounted Offer, or Inquiry ads, so those creation types are not shown on the Create Ad page.
             Booking fits international trade and shipments: enter the origin country, loading port, destination country, arrival port, choose FOB, CNF, or CIF, and use USD.
             A UAE-based supplier registered with a UAE phone number can access the other supplier ad types according to the account permissions.
+            Important: a company customer (IsCustomer) with a non-UAE phone can still create Request/Inquiry ads only — not Booking. The Booking-only lock applies to overseas suppliers only.
             This restriction applies only to creating ads; it does not prevent an overseas supplier from managing the account, tracking orders and Booking ads, or using support.
             """);
 
@@ -1879,7 +1883,7 @@ internal static class AiAssistantKnowledgeSource
             تاريخ التسليم المطلوب (اختياري)، صور توضيحية (اختياري).
             بعد اكتمال الحقول انشر الطلب؛ وبعد المراجعة يظهر في قسم Inquiry ليتقدم الموردون بعروضهم.
             تابع العروض من صفحة طلباتي → الواردة واقبل العرض المناسب أو ارفضه. إعلاناتك نفسها من الحساب → إعلاناتي.
-            حسابك يستطيع إنشاء Inquiry فقط ولا يستطيع إنشاء Booking أو Retail أو Category أو Offer بخصم.
+            حسابك يستطيع إنشاء Inquiry فقط ولا يستطيع إنشاء Booking أو Retail أو Category أو Offer بخصم — حتى لو كان رقم الهاتف من خارج الإمارات.
             """);
         Add(chunks, "create-request-company", "How a company customer creates an Inquiry ad", "en", ["company_customer"],
             """
@@ -1891,12 +1895,13 @@ internal static class AiAssistantKnowledgeSource
             Required delivery date (optional), reference images (optional).
             When complete, publish; after review it appears in Inquiry so suppliers can offer.
             Follow offers from My Orders → Incoming and accept or reject. Manage the ads themselves from Account → My Ads.
-            Your account can create Inquiry ads only — not Booking, Retail, Category, or discounted Offer.
+            Your account can create Inquiry ads only — not Booking, Retail, Category, or discounted Offer — even with a non-UAE phone number.
             """);
 
         Add(chunks, "create-request-supplier", "كيف ينشئ المورد إعلان Inquiry", "ar", ["supplier"],
             """
-            يستطيع المورد أيضاً نشر إعلان Inquiry عندما يحتاج بضاعة غير متوفرة لديه.
+            يستطيع المورد داخل الإمارات أيضاً نشر إعلان Inquiry عندما يحتاج بضاعة غير متوفرة لديه.
+            المورد المسجل برقم غير إماراتي لا يستطيع إنشاء Inquiry — المسموح له Booking فقط.
             افتح إنشاء إعلان واختر نوع Inquiry، أو انشر من الشات عبر create_request_ad.
             الحقول المطلوبة: اسم المنتج، المواصفات، قابل للتفاوض، محلي أو إعادة تصدير (إلزامي).
             اختياري: الكمية والوحدة، السعر المستهدف والعملة (إذا أُدخل سعر مستهدف يُطلب العملة والوحدة)، عنوان التسليم من العناوين المحفوظة، تاريخ التسليم، صور.
@@ -1905,7 +1910,8 @@ internal static class AiAssistantKnowledgeSource
             """);
         Add(chunks, "create-request-supplier", "How a supplier creates an Inquiry ad", "en", ["supplier"],
             """
-            A supplier can also publish an Inquiry ad when they need goods they do not stock.
+            A UAE-based supplier can also publish an Inquiry ad when they need goods they do not stock.
+            An overseas supplier with a non-UAE phone cannot create Inquiry — Booking only.
             Open Create Ad and choose Inquiry, or publish in chat via create_request_ad.
             Required fields: product name, specifications, negotiable, Local or Reexport (required).
             Optional: quantity and unit, target price and currency (if target price is provided, also collect currency and unit), delivery address from saved addresses, delivery date, images.

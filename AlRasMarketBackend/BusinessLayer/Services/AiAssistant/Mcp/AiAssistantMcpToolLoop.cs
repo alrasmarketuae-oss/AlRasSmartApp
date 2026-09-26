@@ -61,13 +61,16 @@ public sealed class AiAssistantMcpToolLoop(
         Guid? userId,
         string responseLanguage = "en",
         Func<string, CancellationToken, Task>? onThinkingStep = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Guid? toolUserId = null)
     {
         var isArabic = responseLanguage.StartsWith("ar", StringComparison.OrdinalIgnoreCase);
         var tools = toolsService.GetToolDefinitions();
         var successfulMutations = 0;
         string? successfulAdCreationPayload = null;
         var listings = new List<AiProductListingDto>();
+        // When admin acts as a company, execute create/manage tools as that owner.
+        var effectiveToolUserId = toolUserId ?? userId;
 
         AiMcpLoopResult Complete(string answer) =>
             new(answer, DeduplicateListings(listings));
@@ -160,8 +163,15 @@ public sealed class AiAssistantMcpToolLoop(
                         continue;
                     }
 
+                    var executeAsUserId = string.Equals(
+                            name,
+                            "create_supplier_from_business_cards",
+                            StringComparison.Ordinal)
+                        ? userId
+                        : effectiveToolUserId;
+
                     var result = await toolsService.ExecuteAsync(
-                            userId,
+                            executeAsUserId,
                             new AiToolCall(id, name, args),
                             cancellationToken)
                         .ConfigureAwait(false);
