@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/services/app_push_notification_service.dart';
+import 'package:alrasmarket/core/services/app_update_checker.dart';
 import 'package:alrasmarket/core/services/fcm_token_service.dart';
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
 import 'package:alrasmarket/core/theme/light_theme.dart';
+import 'package:alrasmarket/core/widgets/app_update_dialog.dart';
 import 'package:alrasmarket/core/widgets/dismiss_keyboard.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_cubit.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_states.dart';
@@ -28,6 +30,7 @@ class AlRasMarket extends StatefulWidget {
 
 class _AlRasMarketState extends State<AlRasMarket> with WidgetsBindingObserver {
   bool _permissionFlowStarted = false;
+  bool _updateCheckStarted = false;
 
   @override
   void initState() {
@@ -35,6 +38,7 @@ class _AlRasMarketState extends State<AlRasMarket> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _promptNotificationPermission(reason: 'first-frame');
+      _checkAppUpdate();
     });
   }
 
@@ -78,6 +82,18 @@ class _AlRasMarketState extends State<AlRasMarket> with WidgetsBindingObserver {
     await Future<void>.delayed(Duration(milliseconds: delayMs));
     if (!mounted) return;
     await FcmTokenService.instance.ensurePermission();
+  }
+
+  Future<void> _checkAppUpdate() async {
+    if (_updateCheckStarted || kIsWeb) return;
+    _updateCheckStarted = true;
+    await Future<void>.delayed(const Duration(milliseconds: 900));
+    if (!mounted) return;
+    final info = await AppUpdateChecker.check();
+    if (!mounted || info == null) return;
+    final navContext = AppRoutes.navigatorKey.currentContext;
+    if (navContext == null || !navContext.mounted) return;
+    await showAppUpdateDialog(navContext, info: info);
   }
 
   @override

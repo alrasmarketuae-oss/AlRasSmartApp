@@ -375,6 +375,15 @@ class MessageLookup extends MessageLookupByLibrary {
       "Our AI is identifying the product from your photo.",
     ),
     "appName": MessageLookupByLibrary.simpleMessage("Ecovera"),
+    "appUpdateForceMessage": MessageLookupByLibrary.simpleMessage(
+      "This version is no longer supported. Please update to continue using the app.",
+    ),
+    "appUpdateLater": MessageLookupByLibrary.simpleMessage("Later"),
+    "appUpdateMessage": MessageLookupByLibrary.simpleMessage(
+      "A new version of the app is available. Please update for the best experience.",
+    ),
+    "appUpdateNow": MessageLookupByLibrary.simpleMessage("Update now"),
+    "appUpdateTitle": MessageLookupByLibrary.simpleMessage("Update available"),
     "appWord": MessageLookupByLibrary.simpleMessage("App"),
     "approved": MessageLookupByLibrary.simpleMessage("Approved"),
     "arabicLabel": MessageLookupByLibrary.simpleMessage("Arabic"),
@@ -391,7 +400,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "askForPriceOpenAd": MessageLookupByLibrary.simpleMessage("Open ad"),
     "askSupplierConfirmed": MessageLookupByLibrary.simpleMessage(
-      "You confirmed the price",
+      "Price confirmed",
     ),
     "askSupplierEnterNewPrice": MessageLookupByLibrary.simpleMessage(
       "Enter the new price per unit",

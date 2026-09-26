@@ -373,6 +373,15 @@ class MessageLookup extends MessageLookupByLibrary {
       "يقوم الذكاء الاصطناعي بتحديد المنتج من صورتك.",
     ),
     "appName": MessageLookupByLibrary.simpleMessage("ايكوفيرا"),
+    "appUpdateForceMessage": MessageLookupByLibrary.simpleMessage(
+      "هذه النسخة لم تعد مدعومة. يرجى التحديث لمتابعة استخدام التطبيق.",
+    ),
+    "appUpdateLater": MessageLookupByLibrary.simpleMessage("لاحقاً"),
+    "appUpdateMessage": MessageLookupByLibrary.simpleMessage(
+      "توجد نسخة جديدة من التطبيق. حدّث الآن لأفضل تجربة.",
+    ),
+    "appUpdateNow": MessageLookupByLibrary.simpleMessage("حدّث الآن"),
+    "appUpdateTitle": MessageLookupByLibrary.simpleMessage("يتوفر تحديث جديد"),
     "appWord": MessageLookupByLibrary.simpleMessage("تطبيق"),
     "approved": MessageLookupByLibrary.simpleMessage("تم الموافقة "),
     "arabicLabel": MessageLookupByLibrary.simpleMessage("العربية"),

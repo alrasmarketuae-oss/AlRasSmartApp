@@ -1516,6 +1516,30 @@ type RawUserDetail = AdminUserDetail & {
     companyImagePaths?: string[] | null
     CompanyImagePaths?: string[] | null
   } | null
+  registrationCompletionRequest?: {
+    missingLocation?: boolean
+    MissingLocation?: boolean
+    missingImages?: boolean
+    MissingImages?: boolean
+    missingDocuments?: boolean
+    MissingDocuments?: boolean
+    message?: string | null
+    Message?: string | null
+    requestedAtUtc?: string
+    RequestedAtUtc?: string
+  } | null
+  RegistrationCompletionRequest?: {
+    missingLocation?: boolean
+    MissingLocation?: boolean
+    missingImages?: boolean
+    MissingImages?: boolean
+    missingDocuments?: boolean
+    MissingDocuments?: boolean
+    message?: string | null
+    Message?: string | null
+    requestedAtUtc?: string
+    RequestedAtUtc?: string
+  } | null
   CompanyImages?: RawUserCompanyImage[]
   Addresses?: Record<string, unknown>[]
   OrdersCount?: number
@@ -1638,6 +1662,25 @@ export function normalizeUserDetail(raw: RawUserDetail): AdminUserDetail {
         licencePath,
         companyImagesChanged,
         companyImagePaths,
+      }
+    })(),
+    registrationCompletionRequest: (() => {
+      const request =
+        raw.registrationCompletionRequest ?? raw.RegistrationCompletionRequest
+      if (!request) return null
+      const requestedAtUtc = String(
+        request.requestedAtUtc ?? request.RequestedAtUtc ?? '',
+      ).trim()
+      return {
+        missingLocation:
+          request.missingLocation === true || request.MissingLocation === true,
+        missingImages:
+          request.missingImages === true || request.MissingImages === true,
+        missingDocuments:
+          request.missingDocuments === true ||
+          request.MissingDocuments === true,
+        message: request.message ?? request.Message ?? null,
+        requestedAtUtc,
       }
     })(),
     companyImages: (raw.companyImages ?? raw.CompanyImages ?? []).map((image: RawUserCompanyImage) => ({

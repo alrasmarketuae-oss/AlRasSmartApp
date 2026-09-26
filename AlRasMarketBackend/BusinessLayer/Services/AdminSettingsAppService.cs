@@ -15,6 +15,11 @@ public class AdminSettingsAppService(
     IAdminAuditLogAppService auditLogAppService,
     IStaticReferenceCache staticReferenceCache) : IAdminSettingsAppService
 {
+    private const string DefaultAndroidStoreUrl =
+        "https://play.google.com/store/apps/details?id=com.mergespice.alrasmarket";
+    private const string DefaultIosStoreUrl =
+        "https://apps.apple.com/gb/app/al-ras-smart/id6795899781";
+
     public async Task<object> GetSettingsAsync(CancellationToken cancellationToken = default)
     {
         var settings = await GetOrCreateRowAsync(cancellationToken);
@@ -35,6 +40,14 @@ public class AdminSettingsAppService(
             address = settings.Address,
             featuredAdPriceAed = settings.FeaturedAdPriceAed,
             adDisplayDurationDays = settings.AdDisplayDurationDays,
+            androidLatestVersion = settings.AndroidLatestVersion,
+            iosLatestVersion = settings.IosLatestVersion,
+            androidMinVersion = settings.AndroidMinVersion,
+            iosMinVersion = settings.IosMinVersion,
+            androidStoreUrl = settings.AndroidStoreUrl,
+            iosStoreUrl = settings.IosStoreUrl,
+            appUpdateMessageAr = settings.AppUpdateMessageAr,
+            appUpdateMessageEn = settings.AppUpdateMessageEn,
             updatedAt = settings.UpdatedAt,
             categoryCommissions
         };
@@ -53,6 +66,26 @@ public class AdminSettingsAppService(
             offersCommissionPercent = settings.OffersCommissionPercent,
             shippingCommissionPercent = settings.ShippingCommissionPercent,
             categoryCommissions
+        };
+    }
+
+    public async Task<object> GetPublicAppVersionAsync(CancellationToken cancellationToken = default)
+    {
+        var settings = await GetOrCreateRowAsync(cancellationToken);
+        return new
+        {
+            androidLatestVersion = NormalizeVersion(settings.AndroidLatestVersion),
+            iosLatestVersion = NormalizeVersion(settings.IosLatestVersion),
+            androidMinVersion = NormalizeVersion(settings.AndroidMinVersion),
+            iosMinVersion = NormalizeVersion(settings.IosMinVersion),
+            androidStoreUrl = string.IsNullOrWhiteSpace(settings.AndroidStoreUrl)
+                ? DefaultAndroidStoreUrl
+                : settings.AndroidStoreUrl.Trim(),
+            iosStoreUrl = string.IsNullOrWhiteSpace(settings.IosStoreUrl)
+                ? DefaultIosStoreUrl
+                : settings.IosStoreUrl.Trim(),
+            messageAr = settings.AppUpdateMessageAr,
+            messageEn = settings.AppUpdateMessageEn
         };
     }
 
@@ -81,6 +114,11 @@ public class AdminSettingsAppService(
             throw new ArgumentException("FeaturedAdPriceAed cannot be negative.");
         }
 
+        ValidateOptionalVersion(input.AndroidLatestVersion, nameof(input.AndroidLatestVersion));
+        ValidateOptionalVersion(input.IosLatestVersion, nameof(input.IosLatestVersion));
+        ValidateOptionalVersion(input.AndroidMinVersion, nameof(input.AndroidMinVersion));
+        ValidateOptionalVersion(input.IosMinVersion, nameof(input.IosMinVersion));
+
         var settings = await GetOrCreateRowAsync(cancellationToken);
         settings.RetailCommissionPercent = input.RetailCommissionPercent;
         settings.BookingCommissionPercent = input.BookingCommissionPercent;
@@ -95,6 +133,14 @@ public class AdminSettingsAppService(
         settings.Address = NormalizeOptional(input.Address);
         settings.FeaturedAdPriceAed = decimal.Round(input.FeaturedAdPriceAed, 2, MidpointRounding.AwayFromZero);
         settings.AdDisplayDurationDays = input.AdDisplayDurationDays;
+        settings.AndroidLatestVersion = NormalizeVersion(input.AndroidLatestVersion);
+        settings.IosLatestVersion = NormalizeVersion(input.IosLatestVersion);
+        settings.AndroidMinVersion = NormalizeVersion(input.AndroidMinVersion);
+        settings.IosMinVersion = NormalizeVersion(input.IosMinVersion);
+        settings.AndroidStoreUrl = NormalizeOptional(input.AndroidStoreUrl);
+        settings.IosStoreUrl = NormalizeOptional(input.IosStoreUrl);
+        settings.AppUpdateMessageAr = NormalizeOptional(input.AppUpdateMessageAr);
+        settings.AppUpdateMessageEn = NormalizeOptional(input.AppUpdateMessageEn);
         settings.UpdatedAt = DateTime.UtcNow;
 
         if (input.CategoryCommissions is { Count: > 0 })
@@ -132,7 +178,11 @@ public class AdminSettingsAppService(
                 input.ShippingCommissionPercent,
                 input.AppName,
                 input.AdDisplayDurationDays,
-                input.FeaturedAdPriceAed
+                input.FeaturedAdPriceAed,
+                input.AndroidLatestVersion,
+                input.IosLatestVersion,
+                input.AndroidMinVersion,
+                input.IosMinVersion
             },
             cancellationToken);
 
@@ -159,6 +209,23 @@ public class AdminSettingsAppService(
         {
             throw new ArgumentException($"{fieldName} must be between 0 and 100.");
         }
+    }
+
+    private static void ValidateOptionalVersion(string? value, string fieldName)
+    {
+        var normalized = NormalizeVersion(value);
+        if (normalized is null) return;
+        if (!System.Text.RegularExpressions.Regex.IsMatch(normalized, @"^\d+(\.\d+){0,3}$"))
+        {
+            throw new ArgumentException($"{fieldName} must look like 1.0.46");
+        }
+    }
+
+    private static string? NormalizeVersion(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        var trimmed = value.Trim().TrimStart('v', 'V');
+        return trimmed.Length == 0 ? null : trimmed;
     }
 
     private async Task<List<CategoryCommissionDto>> GetCategoryCommissionsAsync(

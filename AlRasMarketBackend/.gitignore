@@ -1,4 +1,5 @@
 .nuget-cache/
+publish-smarterasp/
 deploy/monitoring/ram-alert.env
 deploy/monitoring/.ram-alert-last-sent
 deploy/monitoring/.ram-warning-state

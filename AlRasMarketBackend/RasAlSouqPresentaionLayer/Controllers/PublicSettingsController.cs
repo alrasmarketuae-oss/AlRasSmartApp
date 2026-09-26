@@ -16,4 +16,13 @@ public class PublicSettingsController(IAdminSettingsAppService adminSettingsAppS
         var result = await adminSettingsAppService.GetPublicCommissionsAsync(cancellationToken);
         return Ok(result);
     }
+
+    /// <summary>Latest / minimum app versions for Android &amp; iOS update prompts.</summary>
+    [HttpGet("app-version")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetAppVersion(CancellationToken cancellationToken = default)
+    {
+        var result = await adminSettingsAppService.GetPublicAppVersionAsync(cancellationToken);
+        return Ok(result);
+    }
 }

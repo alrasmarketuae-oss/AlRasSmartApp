@@ -10,6 +10,7 @@ class AskSupplierPricePayload {
     this.quantityLabel,
     this.supplierPriceLabel,
     this.newSupplierPriceLabel,
+    this.customerPriceLabel,
     this.imagePath,
     this.requesterUserId,
   });
@@ -42,6 +43,7 @@ class AskSupplierPricePayload {
     required bool confirmed,
     String? unitName,
     String? newSupplierPriceLabel,
+    String? customerPriceLabel,
     String? requesterUserId,
   }) {
     return AskSupplierPricePayload._(
@@ -50,6 +52,7 @@ class AskSupplierPricePayload {
       confirmed: confirmed,
       unitName: unitName,
       newSupplierPriceLabel: newSupplierPriceLabel,
+      customerPriceLabel: customerPriceLabel,
       requesterUserId: requesterUserId,
     );
   }
@@ -63,6 +66,7 @@ class AskSupplierPricePayload {
   final String? quantityLabel;
   final String? supplierPriceLabel;
   final String? newSupplierPriceLabel;
+  final String? customerPriceLabel;
   final String? imagePath;
   final String? requesterUserId;
 
@@ -98,7 +102,11 @@ class AskSupplierPricePayload {
     caseSensitive: false,
   );
   static final RegExp _newSupplierPriceLine = RegExp(
-    r'(?:^|\n)\s*(?:New Supplier Price|السعر الجديد)\s*[:：]\s*(.+)(?:\n|$)',
+    r'(?:^|\n)\s*(?:New Supplier Price|السعر الجديد|Confirmed Supplier Price|السعر المؤكد)\s*[:：]\s*(.+)(?:\n|$)',
+    caseSensitive: false,
+  );
+  static final RegExp _customerPriceLine = RegExp(
+    r'(?:^|\n)\s*(?:Customer Price|سعر المشتري|سعر العميل)\s*[:：]\s*(.+)(?:\n|$)',
     caseSensitive: false,
   );
   static final RegExp _imageLine = RegExp(
@@ -121,6 +129,9 @@ class AskSupplierPricePayload {
         productId: productId,
         confirmed: true,
         unitName: line(_unitLine),
+        newSupplierPriceLabel:
+            line(_newSupplierPriceLine) ?? line(_supplierPriceLine),
+        customerPriceLabel: line(_customerPriceLine),
         requesterUserId: requesterUserId,
       );
     }
@@ -131,6 +142,7 @@ class AskSupplierPricePayload {
         confirmed: false,
         unitName: line(_unitLine),
         newSupplierPriceLabel: line(_newSupplierPriceLine),
+        customerPriceLabel: line(_customerPriceLine),
         requesterUserId: requesterUserId,
       );
     }
@@ -156,11 +168,22 @@ class AskSupplierPricePayload {
   static String buildYesReply({
     required String productId,
     String? requesterUserId,
+    String? confirmedSupplierPrice,
+    String? unitName,
   }) {
     final lines = <String>[
       'ASK_SUPPLIER_REPLY:YES',
       '$productMarkerPrefix$productId',
     ];
+    // Same price line as NO so buyer/admin UIs can show the amount when price is unchanged.
+    final price = confirmedSupplierPrice?.trim();
+    if (price != null && price.isNotEmpty) {
+      lines.add('New Supplier Price: $price');
+    }
+    final unit = unitName?.trim();
+    if (unit != null && unit.isNotEmpty) {
+      lines.add('Unit: $unit');
+    }
     final requester = requesterUserId?.trim();
     if (requester != null && requester.isNotEmpty) {
       lines.add('$requesterMarkerPrefix$requester');

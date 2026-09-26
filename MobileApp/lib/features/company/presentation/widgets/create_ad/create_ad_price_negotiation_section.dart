@@ -43,7 +43,8 @@ class CreateAdPriceNegotiationSection extends StatelessWidget {
           previous.formRevision != current.formRevision ||
           previous.selectedCurrency != current.selectedCurrency ||
           previous.selectedType != current.selectedType ||
-          previous.selectedUnit != current.selectedUnit,
+          previous.selectedUnit != current.selectedUnit ||
+          previous.showPrice != current.showPrice,
       builder: (context, state) {
         final s = S.of(context);
         final isRetail = state.selectedType == CreateAdType.retail.label;
@@ -101,17 +102,24 @@ class CreateAdPriceNegotiationSection extends StatelessWidget {
                 fromBuyer: fromBuyer,
               ),
             ],
-            if (_shouldShowPriceHiddenNotice(state.selectedType)) ...[
+            if (_shouldShowPriceToggle(state.selectedType)) ...[
               SizedBox(height: 12.h),
-              Text(
-                s.createAdPriceHiddenNotice,
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  height: 1.35,
-                  color: Colors.amber.shade800,
-                  fontWeight: FontWeight.w500,
-                ),
+              CreateAdShowPriceToggle(
+                value: state.showPrice,
+                onChanged: cubit.setShowPrice,
               ),
+              if (!state.showPrice) ...[
+                SizedBox(height: 8.h),
+                Text(
+                  s.createAdPriceHiddenNotice,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    height: 1.35,
+                    color: Colors.amber.shade800,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ],
           ],
         );
@@ -120,11 +128,69 @@ class CreateAdPriceNegotiationSection extends StatelessWidget {
   }
 }
 
-bool _shouldShowPriceHiddenNotice(String? selectedType) {
+bool _shouldShowPriceToggle(String? selectedType) {
   final type = (selectedType ?? '').trim().toLowerCase();
-  // Offers always show price publicly — no hidden-price notice.
+  // Offers always show price publicly — no toggle.
   if (type.contains('offer') || type.contains('عرض')) return false;
-  // Retail listing price stays on the retail channel.
+  // Retail listing price stays on the retail channel; hide-price applies to wholesale/category ads.
   if (type.contains('retail') || type.contains('تجز')) return false;
+  // Categories, booking, requests — default hidden (showPrice=false), seller can opt in.
   return type.isNotEmpty;
+}
+
+/// Switch: on = show price on the product card; off (default) = hide until buyer asks.
+class CreateAdShowPriceToggle extends StatelessWidget {
+  const CreateAdShowPriceToggle({
+    super.key,
+    required this.value,
+    required this.onChanged,
+  });
+
+  /// True when price should be visible on the product card.
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            s.showPrice,
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        IconButton(
+          tooltip: s.showPriceHint,
+          onPressed: () {
+            showDialog<void>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                content: Text(s.showPriceHint),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: Text(s.gotIt),
+                  ),
+                ],
+              ),
+            );
+          },
+          icon: Icon(
+            Icons.error_outline,
+            color: Colors.amber.shade700,
+            size: 22.sp,
+          ),
+        ),
+        Switch.adaptive(
+          value: value,
+          onChanged: onChanged,
+        ),
+      ],
+    );
+  }
 }

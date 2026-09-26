@@ -15,6 +15,14 @@ public sealed class SystemSettingsDto
     public string? Address { get; set; }
     public decimal FeaturedAdPriceAed { get; set; }
     public int AdDisplayDurationDays { get; set; }
+    public string? AndroidLatestVersion { get; set; }
+    public string? IosLatestVersion { get; set; }
+    public string? AndroidMinVersion { get; set; }
+    public string? IosMinVersion { get; set; }
+    public string? AndroidStoreUrl { get; set; }
+    public string? IosStoreUrl { get; set; }
+    public string? AppUpdateMessageAr { get; set; }
+    public string? AppUpdateMessageEn { get; set; }
     public DateTime UpdatedAt { get; set; }
 }
 
@@ -33,6 +41,14 @@ public sealed class UpdateSystemSettingsInput
     public string? Address { get; set; }
     public decimal FeaturedAdPriceAed { get; set; }
     public int AdDisplayDurationDays { get; set; }
+    public string? AndroidLatestVersion { get; set; }
+    public string? IosLatestVersion { get; set; }
+    public string? AndroidMinVersion { get; set; }
+    public string? IosMinVersion { get; set; }
+    public string? AndroidStoreUrl { get; set; }
+    public string? IosStoreUrl { get; set; }
+    public string? AppUpdateMessageAr { get; set; }
+    public string? AppUpdateMessageEn { get; set; }
     public IReadOnlyList<UpdateCategoryCommissionInput>? CategoryCommissions { get; set; }
 }
 

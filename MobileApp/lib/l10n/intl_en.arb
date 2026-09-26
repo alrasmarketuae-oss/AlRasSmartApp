@@ -648,7 +648,7 @@
   "askSupplierInvalidPrice": "Please enter a valid price",
   "askSupplierSendFailed": "Could not send the reply",
   "askSupplierThanks": "Thanks, your reply was sent",
-  "askSupplierConfirmed": "You confirmed the price",
+  "askSupplierConfirmed": "Price confirmed",
   "askSupplierUpdated": "Price updated",
   "askSupplierPriceBeforeCommission": "Your price (before app fees)",
   "offerPrice": "Offer Price",
@@ -1148,5 +1148,10 @@
   "returnPolicyRejected": "Usually not accepted: change of mind without defect, poor storage after delivery, or consuming most of the quantity then requesting a return without a proven defect.",
   "returnPolicyRefund": "If support approves the return, funds are refunded within 1 business day of approval.",
   "paymentRetailOnline": "Online card payment is available for Retail orders only.",
-  "paymentCodAll": "Cash on delivery applies to other deal types according to platform process and the Al Ras team."
+  "paymentCodAll": "Cash on delivery applies to other deal types according to platform process and the Al Ras team.",
+  "appUpdateTitle": "Update available",
+  "appUpdateMessage": "A new version of the app is available. Please update for the best experience.",
+  "appUpdateForceMessage": "This version is no longer supported. Please update to continue using the app.",
+  "appUpdateNow": "Update now",
+  "appUpdateLater": "Later"
 }

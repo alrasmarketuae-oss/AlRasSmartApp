@@ -1052,6 +1052,14 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.Property(x => x.Timezone).HasMaxLength(100);
             entity.Property(x => x.Address).HasMaxLength(500);
             entity.Property(x => x.FeaturedAdPriceAed).HasColumnType("decimal(12,2)");
+            entity.Property(x => x.AndroidLatestVersion).HasMaxLength(32);
+            entity.Property(x => x.IosLatestVersion).HasMaxLength(32);
+            entity.Property(x => x.AndroidMinVersion).HasMaxLength(32);
+            entity.Property(x => x.IosMinVersion).HasMaxLength(32);
+            entity.Property(x => x.AndroidStoreUrl).HasMaxLength(500);
+            entity.Property(x => x.IosStoreUrl).HasMaxLength(500);
+            entity.Property(x => x.AppUpdateMessageAr).HasMaxLength(500);
+            entity.Property(x => x.AppUpdateMessageEn).HasMaxLength(500);
             entity.Property(x => x.UpdatedAt).HasColumnType("datetime").HasDefaultValueSql("(getutcdate())");
         });
 

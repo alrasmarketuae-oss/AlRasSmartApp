@@ -96,5 +96,6 @@ public interface IAdminSettingsAppService
 {
     Task<object> GetSettingsAsync(CancellationToken cancellationToken = default);
     Task<object> GetPublicCommissionsAsync(CancellationToken cancellationToken = default);
+    Task<object> GetPublicAppVersionAsync(CancellationToken cancellationToken = default);
     Task<object> UpdateSettingsAsync(UpdateSystemSettingsInput input, CancellationToken cancellationToken = default);
 }

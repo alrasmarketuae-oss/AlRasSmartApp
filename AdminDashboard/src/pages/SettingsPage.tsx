@@ -26,6 +26,7 @@ type SettingsSection =
   | 'commissions'
   | 'categories'
   | 'appInfo'
+  | 'appUpdate'
   | 'ads'
   | 'shipping'
   | 'security'
@@ -71,6 +72,13 @@ const SETTINGS_SECTIONS: {
     accent: 'from-sky-50 to-blue-50 dark:from-sky-950/30 dark:to-blue-950/20',
   },
   {
+    id: 'appUpdate',
+    titleKey: 'settingsPage.appUpdateTitle',
+    descKey: 'settingsPage.cardAppUpdateDesc',
+    icon: '⬆️',
+    accent: 'from-indigo-50 to-blue-50 dark:from-indigo-950/30 dark:to-blue-950/20',
+  },
+  {
     id: 'ads',
     titleKey: 'settingsPage.adsTitle',
     descKey: 'settingsPage.cardAdsDesc',
@@ -97,6 +105,7 @@ const SETTINGS_FORM_SECTIONS = new Set<SettingsSection>([
   'commissions',
   'categories',
   'appInfo',
+  'appUpdate',
   'ads',
 ])
 
@@ -142,6 +151,14 @@ function toFormState(
     address: data.address,
     featuredAdPriceAed: data.featuredAdPriceAed,
     adDisplayDurationDays: data.adDisplayDurationDays,
+    androidLatestVersion: data.androidLatestVersion,
+    iosLatestVersion: data.iosLatestVersion,
+    androidMinVersion: data.androidMinVersion,
+    iosMinVersion: data.iosMinVersion,
+    androidStoreUrl: data.androidStoreUrl,
+    iosStoreUrl: data.iosStoreUrl,
+    appUpdateMessageAr: data.appUpdateMessageAr,
+    appUpdateMessageEn: data.appUpdateMessageEn,
   }
 }
 
@@ -626,6 +643,57 @@ export default function SettingsPage() {
                 label={t('settingsPage.address')}
                 value={form.address ?? ''}
                 onChange={(value) => updateField('address', value || null)}
+              />
+            </div>
+          </SectionPanel>
+        ) : null}
+
+        {activeSection === 'appUpdate' ? (
+          <SectionPanel
+            title={t('settingsPage.appUpdateTitle')}
+            hint={t('settingsPage.appUpdateHint')}
+            action={saveSettingsButton}
+          >
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <SettingsField
+                label={t('settingsPage.androidLatestVersion')}
+                value={form.androidLatestVersion ?? ''}
+                onChange={(value) => updateField('androidLatestVersion', value || null)}
+              />
+              <SettingsField
+                label={t('settingsPage.iosLatestVersion')}
+                value={form.iosLatestVersion ?? ''}
+                onChange={(value) => updateField('iosLatestVersion', value || null)}
+              />
+              <SettingsField
+                label={t('settingsPage.androidMinVersion')}
+                value={form.androidMinVersion ?? ''}
+                onChange={(value) => updateField('androidMinVersion', value || null)}
+              />
+              <SettingsField
+                label={t('settingsPage.iosMinVersion')}
+                value={form.iosMinVersion ?? ''}
+                onChange={(value) => updateField('iosMinVersion', value || null)}
+              />
+              <SettingsField
+                label={t('settingsPage.androidStoreUrl')}
+                value={form.androidStoreUrl ?? ''}
+                onChange={(value) => updateField('androidStoreUrl', value || null)}
+              />
+              <SettingsField
+                label={t('settingsPage.iosStoreUrl')}
+                value={form.iosStoreUrl ?? ''}
+                onChange={(value) => updateField('iosStoreUrl', value || null)}
+              />
+              <SettingsField
+                label={t('settingsPage.appUpdateMessageAr')}
+                value={form.appUpdateMessageAr ?? ''}
+                onChange={(value) => updateField('appUpdateMessageAr', value || null)}
+              />
+              <SettingsField
+                label={t('settingsPage.appUpdateMessageEn')}
+                value={form.appUpdateMessageEn ?? ''}
+                onChange={(value) => updateField('appUpdateMessageEn', value || null)}
               />
             </div>
           </SectionPanel>

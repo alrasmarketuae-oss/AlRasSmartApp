@@ -20,6 +20,14 @@ export type SystemSettings = {
   address: string | null
   featuredAdPriceAed: number
   adDisplayDurationDays: number
+  androidLatestVersion: string | null
+  iosLatestVersion: string | null
+  androidMinVersion: string | null
+  iosMinVersion: string | null
+  androidStoreUrl: string | null
+  iosStoreUrl: string | null
+  appUpdateMessageAr: string | null
+  appUpdateMessageEn: string | null
   updatedAt: string
 }
 

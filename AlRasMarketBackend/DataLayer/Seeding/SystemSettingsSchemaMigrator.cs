@@ -46,5 +46,46 @@ public static class SystemSettingsSchemaMigrator
                 WHERE AppName IN (N'سوق الراس', N'راس السوق', N'Al Ras Market', N'Ras Al Souq', N'تطبيق الراس', N'Al Ras Smart');
             END
             """, cancellationToken).ConfigureAwait(false);
+
+        await EnsureAppUpdateColumnsAsync(connection, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async Task EnsureAppUpdateColumnsAsync(
+        System.Data.Common.DbConnection connection,
+        CancellationToken cancellationToken)
+    {
+        async Task add(string column, string sql)
+        {
+            if (!await SqlSchemaHelper.ColumnExistsAsync(connection, "SystemSettings", column, cancellationToken)
+                    .ConfigureAwait(false))
+            {
+                await SqlSchemaHelper.ExecuteBatchAsync(connection, sql, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        await add("AndroidLatestVersion", """
+            ALTER TABLE dbo.SystemSettings ADD AndroidLatestVersion NVARCHAR(32) NULL;
+            """);
+        await add("IosLatestVersion", """
+            ALTER TABLE dbo.SystemSettings ADD IosLatestVersion NVARCHAR(32) NULL;
+            """);
+        await add("AndroidMinVersion", """
+            ALTER TABLE dbo.SystemSettings ADD AndroidMinVersion NVARCHAR(32) NULL;
+            """);
+        await add("IosMinVersion", """
+            ALTER TABLE dbo.SystemSettings ADD IosMinVersion NVARCHAR(32) NULL;
+            """);
+        await add("AndroidStoreUrl", """
+            ALTER TABLE dbo.SystemSettings ADD AndroidStoreUrl NVARCHAR(500) NULL;
+            """);
+        await add("IosStoreUrl", """
+            ALTER TABLE dbo.SystemSettings ADD IosStoreUrl NVARCHAR(500) NULL;
+            """);
+        await add("AppUpdateMessageAr", """
+            ALTER TABLE dbo.SystemSettings ADD AppUpdateMessageAr NVARCHAR(500) NULL;
+            """);
+        await add("AppUpdateMessageEn", """
+            ALTER TABLE dbo.SystemSettings ADD AppUpdateMessageEn NVARCHAR(500) NULL;
+            """);
     }
 }

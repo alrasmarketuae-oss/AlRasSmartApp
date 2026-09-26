@@ -5079,10 +5079,10 @@ class S {
     );
   }
 
-  /// `You confirmed the price`
+  /// `Price confirmed`
   String get askSupplierConfirmed {
     return Intl.message(
-      'You confirmed the price',
+      'Price confirmed',
       name: 'askSupplierConfirmed',
       desc: '',
       args: [],
@@ -8361,6 +8361,56 @@ class S {
     return Intl.message(
       'Cash on delivery applies to other deal types according to platform process and the Al Ras team.',
       name: 'paymentCodAll',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Update available`
+  String get appUpdateTitle {
+    return Intl.message(
+      'Update available',
+      name: 'appUpdateTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `A new version of the app is available. Please update for the best experience.`
+  String get appUpdateMessage {
+    return Intl.message(
+      'A new version of the app is available. Please update for the best experience.',
+      name: 'appUpdateMessage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This version is no longer supported. Please update to continue using the app.`
+  String get appUpdateForceMessage {
+    return Intl.message(
+      'This version is no longer supported. Please update to continue using the app.',
+      name: 'appUpdateForceMessage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Update now`
+  String get appUpdateNow {
+    return Intl.message(
+      'Update now',
+      name: 'appUpdateNow',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Later`
+  String get appUpdateLater {
+    return Intl.message(
+      'Later',
+      name: 'appUpdateLater',
       desc: '',
       args: [],
     );

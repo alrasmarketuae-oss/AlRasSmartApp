@@ -250,6 +250,7 @@ class ApiConstants {
   static String checkoutStatusEndPoint = '/Payments/CheckoutStatus';
 
   static String publicCommissionsEndPoint = '/settings/commissions';
+  static String publicAppVersionEndPoint = '/settings/app-version';
 
   static String notificationsMineEndPoint = '/Notifications/mine';
   static String notificationsUnreadCountEndPoint =

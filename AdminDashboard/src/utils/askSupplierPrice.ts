@@ -16,7 +16,9 @@ const QUANTITY_LINE =
 const SUPPLIER_PRICE_LINE =
   /(?:^|\n)\s*(?:Supplier Price|سعر المورد)\s*[:：]\s*(.+)(?:\n|$)/i
 const NEW_SUPPLIER_PRICE_LINE =
-  /(?:^|\n)\s*(?:New Supplier Price|السعر الجديد)\s*[:：]\s*(.+)(?:\n|$)/i
+  /(?:^|\n)\s*(?:New Supplier Price|السعر الجديد|Confirmed Supplier Price|السعر المؤكد)\s*[:：]\s*(.+)(?:\n|$)/i
+const CUSTOMER_PRICE_LINE =
+  /(?:^|\n)\s*(?:Customer Price|سعر المشتري|سعر العميل)\s*[:：]\s*(.+)(?:\n|$)/i
 const IMAGE_LINE = /(?:^|\n)\s*Image:\s*(.+)(?:\n|$)/i
 
 export type AskSupplierPricePayload = {
@@ -35,6 +37,7 @@ export type AskSupplierReplyPayload = {
   confirmed: boolean
   productId: string
   newSupplierPriceLabel: string | null
+  customerPriceLabel: string | null
   unitName: string | null
 }
 
@@ -64,7 +67,8 @@ export function parseAskSupplierContent(content: string | null | undefined): Ask
       kind: 'reply',
       confirmed: true,
       productId,
-      newSupplierPriceLabel: null,
+      newSupplierPriceLabel: line(NEW_SUPPLIER_PRICE_LINE) || line(SUPPLIER_PRICE_LINE),
+      customerPriceLabel: line(CUSTOMER_PRICE_LINE),
       unitName: line(UNIT_LINE),
     }
   }
@@ -75,6 +79,7 @@ export function parseAskSupplierContent(content: string | null | undefined): Ask
       confirmed: false,
       productId,
       newSupplierPriceLabel: line(NEW_SUPPLIER_PRICE_LINE),
+      customerPriceLabel: line(CUSTOMER_PRICE_LINE),
       unitName: line(UNIT_LINE),
     }
   }

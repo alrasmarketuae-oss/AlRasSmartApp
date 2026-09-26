@@ -42,6 +42,14 @@ public class AdminSettingsController(IAdminSettingsAppService adminSettingsAppSe
                 Address = request.Address,
                 FeaturedAdPriceAed = request.FeaturedAdPriceAed,
                 AdDisplayDurationDays = request.AdDisplayDurationDays,
+                AndroidLatestVersion = request.AndroidLatestVersion,
+                IosLatestVersion = request.IosLatestVersion,
+                AndroidMinVersion = request.AndroidMinVersion,
+                IosMinVersion = request.IosMinVersion,
+                AndroidStoreUrl = request.AndroidStoreUrl,
+                IosStoreUrl = request.IosStoreUrl,
+                AppUpdateMessageAr = request.AppUpdateMessageAr,
+                AppUpdateMessageEn = request.AppUpdateMessageEn,
                 CategoryCommissions = request.CategoryCommissions?.Select(x => new UpdateCategoryCommissionInput
                 {
                     CategoryId = x.CategoryId,
@@ -73,6 +81,14 @@ public sealed class UpdateSystemSettingsRequest
     public string? Address { get; set; }
     public decimal FeaturedAdPriceAed { get; set; }
     public int AdDisplayDurationDays { get; set; }
+    public string? AndroidLatestVersion { get; set; }
+    public string? IosLatestVersion { get; set; }
+    public string? AndroidMinVersion { get; set; }
+    public string? IosMinVersion { get; set; }
+    public string? AndroidStoreUrl { get; set; }
+    public string? IosStoreUrl { get; set; }
+    public string? AppUpdateMessageAr { get; set; }
+    public string? AppUpdateMessageEn { get; set; }
     public List<UpdateCategoryCommissionRequest>? CategoryCommissions { get; set; }
 }
 

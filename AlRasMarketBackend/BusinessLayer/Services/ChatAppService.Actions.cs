@@ -17,6 +17,12 @@ public sealed partial class ChatAppService
     private static readonly Regex AskSupplierRequesterMarker =
         new(@"ASK_SUPPLIER_REQUESTER:\s*([0-9a-fA-F-]{36})", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
+    private static readonly Regex AskSupplierNewPriceMarker =
+        new(@"New Supplier Price\s*[:：]\s*([0-9]+(?:[.,][0-9]+)?)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    private static readonly Regex AskSupplierCustomerPriceMarker =
+        new(@"Customer Price\s*[:：]", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
     /// <summary>
     /// Supplier answered YES/NO on a price ask → copy that reply into the original
     /// asker's support thread. Admin still keeps the supplier→admin message.
@@ -64,6 +70,9 @@ public sealed partial class ChatAppService
 
         await EnsureUserExistsAsync(requesterId.Value, ct);
 
+        // Enrich with buyer-facing customer price (YES used to omit any amount).
+        var buyerContent = await EnrichAskSupplierReplyForBuyerAsync(content, ct);
+
         var utcNow = DateTime.UtcNow;
         var copy = new ChatMessage
         {
@@ -71,7 +80,7 @@ public sealed partial class ChatAppService
             FromUserId = supportAdminId,
             ToUserId = requesterId.Value,
             MessageType = ChatMessageType.Text,
-            Content = content,
+            Content = buyerContent,
             SentAtUtc = utcNow,
             IsEdited = false,
             IsSeen = false,
@@ -85,6 +94,82 @@ public sealed partial class ChatAppService
         InvalidateSupportCaches(requesterId.Value, supportAdminId);
 
         return MapToDto(copy, utcNow);
+    }
+
+    /// <summary>
+    /// Appends Customer Price so the buyer sees an amount for YES (confirmed) and NO (updated).
+    /// </summary>
+    private async Task<string> EnrichAskSupplierReplyForBuyerAsync(string content, CancellationToken ct)
+    {
+        if (AskSupplierCustomerPriceMarker.IsMatch(content))
+            return content;
+
+        var productIdRaw = TryExtractProductId(content);
+        if (string.IsNullOrWhiteSpace(productIdRaw) || !Guid.TryParse(productIdRaw, out var productId))
+            return content;
+
+        var product = await dbContext.Products
+            .AsNoTracking()
+            .Where(p => p.ProductId == productId)
+            .Select(p => new
+            {
+                p.USDPrice,
+                p.CategoryId,
+                p.ProductTypeId,
+                p.Currency,
+                UnitName = p.Unit != null ? p.Unit.UnitNameEn : null
+            })
+            .FirstOrDefaultAsync(ct);
+
+        if (product is null)
+            return content;
+
+        var baseUsd = product.USDPrice;
+        var newPriceMatch = AskSupplierNewPriceMarker.Match(content);
+        if (newPriceMatch.Success &&
+            decimal.TryParse(
+                newPriceMatch.Groups[1].Value.Replace(',', '.'),
+                System.Globalization.NumberStyles.Number,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var parsedNew) &&
+            parsedNew > 0)
+        {
+            baseUsd = parsedNew;
+        }
+
+        try
+        {
+            var commissionSettings = await commissionSettingsProvider.GetAsync(ct);
+            var categoryCommissions = await categoryCommissionProvider.GetAsync(ct);
+            var usdToAedRate = CurrencyConversionHelper.GetUsdToAedRate(configuration);
+            var customerFacing = CustomerPricingHelper.BuildCustomerFacingPrice(
+                baseUsd,
+                ProductTypeCodes.WholesaleCommissionProductTypeId(product.CategoryId, product.ProductTypeId),
+                product.CategoryId,
+                product.Currency,
+                commissionSettings,
+                categoryCommissions,
+                usdToAedRate);
+
+            var formatted = ProductCurrencyHelper.FormatPrice(
+                customerFacing.Price,
+                customerFacing.Currency);
+
+            var lines = new List<string> { content.TrimEnd() };
+            if (!string.IsNullOrWhiteSpace(product.UnitName) &&
+                !Regex.IsMatch(content, @"(?:^|\n)\s*Unit\s*[:：]", RegexOptions.IgnoreCase))
+            {
+                lines.Add($"Unit: {product.UnitName}");
+            }
+
+            lines.Add($"Customer Price: {formatted}");
+            return string.Join("\n", lines);
+        }
+        catch
+        {
+            // Still relay the original reply if pricing enrichment fails.
+            return content;
+        }
     }
 
     private static Guid? TryExtractRequesterUserId(string content)

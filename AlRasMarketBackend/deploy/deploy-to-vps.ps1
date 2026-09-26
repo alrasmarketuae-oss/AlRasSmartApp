@@ -45,6 +45,8 @@ tar -czf $tar `
     --exclude=BusinessLayer/DataAccess `
     --exclude=loadtests `
     --exclude=tmp_json_test `
+    --exclude=publish-smarterasp `
+    --exclude=./publish-smarterasp `
     .
 Pop-Location
 Write-Host "    Archive: $([math]::Round((Get-Item $tar).Length / 1MB, 1)) MB"
@@ -61,15 +63,17 @@ cd '$RemotePath'
 # Must remove it before extract: Windows tar still lists the folder and mkdir fails.
 rm -rf BusinessLayer/DataAccess 2>/dev/null || true
 rm -rf tmp_json_test 2>/dev/null || true
+# Local SmarterASP publish output — not used on VPS; leftover read-only dirs break tar.
+rm -rf publish-smarterasp 2>/dev/null || true
 # Windows tar packs dirs as 0555; chmod so new files can be extracted.
 chmod -R u+w BusinessLayer DataLayer RasAlSouqPresentaionLayer deploy clip-service 2>/dev/null || true
 # Windows-built archives can contain duplicate members / metadata headers.
 # --overwrite replaces existing source files instead of aborting the deploy.
 # --delay-directory-restore keeps dirs writable until all files are extracted
 # (archive dir modes are 0555; applying them mid-extract blocks new files).
-tar --overwrite --no-same-owner --delay-directory-restore --exclude='BusinessLayer/DataAccess' --exclude='./BusinessLayer/DataAccess' -xzf backend.tar.gz
+tar --overwrite --no-same-owner --delay-directory-restore --exclude='BusinessLayer/DataAccess' --exclude='./BusinessLayer/DataAccess' --exclude='publish-smarterasp' --exclude='./publish-smarterasp' -xzf backend.tar.gz
 rm -f backend.tar.gz 2>/dev/null || true
-rm -rf BusinessLayer/DataAccess 2>/dev/null || true
+rm -rf BusinessLayer/DataAccess publish-smarterasp 2>/dev/null || true
 chmod -R u+w BusinessLayer DataLayer RasAlSouqPresentaionLayer deploy clip-service 2>/dev/null || true
 # Stale AI assistant paths before Services/AiAssistant (+ Mcp) move.
 rm -f BusinessLayer/Services/AiAssistantToolsService.cs

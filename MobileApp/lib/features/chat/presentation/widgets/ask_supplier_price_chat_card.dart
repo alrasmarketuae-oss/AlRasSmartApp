@@ -76,6 +76,8 @@ class _AskSupplierPriceChatCardState extends State<AskSupplierPriceChatCard> {
       final content = AskSupplierPricePayload.buildYesReply(
         productId: widget.payload.productId,
         requesterUserId: widget.payload.requesterUserId,
+        confirmedSupplierPrice: widget.payload.supplierPriceLabel,
+        unitName: widget.payload.unitName,
       );
       await context.read<ChatCubit>().sendTextMessage(content);
       if (!mounted) return;
@@ -513,7 +515,12 @@ class _AskSupplierPriceChatCardState extends State<AskSupplierPriceChatCard> {
   }) {
     final confirmed = widget.payload.confirmed == true;
     final unit = widget.payload.unitName?.trim();
-    final newPrice = widget.payload.newSupplierPriceLabel?.trim();
+    final customerPrice = widget.payload.customerPriceLabel?.trim();
+    final supplierPrice = widget.payload.newSupplierPriceLabel?.trim();
+    // Prefer customer (buyer-facing) price when relay enriched the message.
+    final displayPrice = (customerPrice != null && customerPrice.isNotEmpty)
+        ? customerPrice
+        : supplierPrice;
 
     return Container(
       width: 260.w,
@@ -547,10 +554,12 @@ class _AskSupplierPriceChatCardState extends State<AskSupplierPriceChatCard> {
                   : (isMe ? Colors.white : Colors.amber.shade800),
             ),
           ),
-          if (!confirmed && newPrice != null && newPrice.isNotEmpty) ...[
+          if (displayPrice != null && displayPrice.isNotEmpty) ...[
             SizedBox(height: 6.h),
             Text(
-              unit != null && unit.isNotEmpty ? '$newPrice / $unit' : newPrice,
+              unit != null && unit.isNotEmpty
+                  ? '$displayPrice / $unit'
+                  : displayPrice,
               style: TextStyle(
                 fontFamily: fontFamily,
                 fontSize: 14.sp,

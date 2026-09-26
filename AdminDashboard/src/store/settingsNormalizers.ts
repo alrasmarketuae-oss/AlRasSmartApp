@@ -22,6 +22,14 @@ type RawSettings = SystemSettings & {
   Address?: string | null
   FeaturedAdPriceAed?: number
   AdDisplayDurationDays?: number
+  AndroidLatestVersion?: string | null
+  IosLatestVersion?: string | null
+  AndroidMinVersion?: string | null
+  IosMinVersion?: string | null
+  AndroidStoreUrl?: string | null
+  IosStoreUrl?: string | null
+  AppUpdateMessageAr?: string | null
+  AppUpdateMessageEn?: string | null
   UpdatedAt?: string
 }
 
@@ -60,6 +68,14 @@ export function normalizeSystemSettings(raw: RawSettings): SystemSettings {
     featuredAdPriceAed: raw.featuredAdPriceAed ?? raw.FeaturedAdPriceAed ?? 0,
     adDisplayDurationDays:
       raw.adDisplayDurationDays ?? raw.AdDisplayDurationDays ?? 0,
+    androidLatestVersion: raw.androidLatestVersion ?? raw.AndroidLatestVersion ?? null,
+    iosLatestVersion: raw.iosLatestVersion ?? raw.IosLatestVersion ?? null,
+    androidMinVersion: raw.androidMinVersion ?? raw.AndroidMinVersion ?? null,
+    iosMinVersion: raw.iosMinVersion ?? raw.IosMinVersion ?? null,
+    androidStoreUrl: raw.androidStoreUrl ?? raw.AndroidStoreUrl ?? null,
+    iosStoreUrl: raw.iosStoreUrl ?? raw.IosStoreUrl ?? null,
+    appUpdateMessageAr: raw.appUpdateMessageAr ?? raw.AppUpdateMessageAr ?? null,
+    appUpdateMessageEn: raw.appUpdateMessageEn ?? raw.AppUpdateMessageEn ?? null,
     updatedAt: raw.updatedAt ?? raw.UpdatedAt ?? '',
   }
 }
