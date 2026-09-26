@@ -82,10 +82,10 @@ class _RegisterViewState extends State<RegisterView> {
     required bool includeCompanyDocs,
   }) {
     final s = S.of(context);
-    final addressLabel = isArabic ? 'Ø§Ù„Ù…ÙˆÙ‚Ø¹ / Ø§Ù„Ø¹Ù†ÙˆØ§Ù†' : 'Location / Address';
-    final pickLabel = isArabic ? 'ØªØ­Ø¯ÙŠØ¯ Ø§Ù„Ù…ÙˆÙ‚Ø¹' : 'Set location';
+    final addressLabel = isArabic ? 'الموقع / العنوان' : 'Location / Address';
+    final pickLabel = isArabic ? 'تحديد الموقع' : 'Set location';
     final hint = isArabic
-        ? 'Ø§Ø¶ØºØ· Ù„Ø§Ø®ØªÙŠØ§Ø± Ù…ÙˆÙ‚Ø¹Ùƒ Ø§Ù„Ø­Ø§Ù„ÙŠ Ø£Ùˆ Ø§Ù„ØªØ­Ø¯ÙŠØ¯ Ù…Ù† Ø§Ù„Ø®Ø±ÙŠØ·Ø©'
+        ? 'اضغط لاختيار موقعك الحالي أو التحديد من الخريطة'
         : 'Tap to use current location or pick from the map';
 
     final locationPicker = Column(
@@ -197,8 +197,8 @@ class _RegisterViewState extends State<RegisterView> {
               padding: EdgeInsets.only(top: 6.h),
               child: Text(
                 isArabic
-                    ? 'Ø§Ù„Ù…ÙˆÙ‚Ø¹ Ù…Ø·Ù„ÙˆØ¨ â€” Ø§Ø¶ØºØ· Ù„ØªØ­Ø¯ÙŠØ¯Ù‡ (Ù…ÙˆÙ‚Ø¹ÙŠ Ø§Ù„Ø­Ø§Ù„ÙŠ Ø£Ùˆ Ø§Ù„Ø®Ø±ÙŠØ·Ø©)'
-                    : 'Location is required â€” tap to choose current location or map',
+                    ? 'الموقع مطلوب — اضغط لتحديده (موقعي الحالي أو الخريطة)'
+                    : 'Location is required — tap to choose current location or map',
                 style: TextStyle(
                   fontSize: 12.sp,
                   color: const Color(0xFFD92D20),
@@ -289,7 +289,7 @@ class _RegisterViewState extends State<RegisterView> {
       final isAr = Localizations.localeOf(context).languageCode == 'ar';
       AppToast.showError(
         context,
-        isAr ? 'Ù…Ù† ÙØ¶Ù„Ùƒ Ø­Ø¯Ø¯ Ø§Ù„Ø¹Ù†ÙˆØ§Ù† Ø£ÙˆÙ„Ø§Ù‹.' : 'Please set your address first.',
+        isAr ? 'من فضلك حدد العنوان أولاً.' : 'Please set your address first.',
       );
       return;
     }
@@ -636,7 +636,7 @@ class _RegisterViewState extends State<RegisterView> {
                     SizedBox(height: 6.h),
                     Text(
                       isAr
-                          ? 'Ø§Ù†Ø¶Ù… Ø¥Ù„ÙŠÙ†Ø§ ÙˆØ§Ø¨Ø¯Ø£ Ø§Ù„Ø¢Ù†'
+                          ? 'انضم إلينا وابدأ الآن'
                           : 'Join us and get started',
                       style: TextStyle(
                         fontSize: 13.sp,
@@ -670,9 +670,9 @@ class _RegisterViewState extends State<RegisterView> {
                     SizedBox(height: 14.h),
                     _iconField(
                       controller: _ownerNameController,
-                      label: isAr ? 'Ø§Ø³Ù… Ø§Ù„Ù…Ø§Ù„Ùƒ' : 'Owner name',
+                      label: isAr ? 'اسم المالك' : 'Owner name',
                       hintText: isAr
-                          ? 'Ø§Ø¯Ø®Ù„ Ø§Ø³Ù… Ø§Ù„Ù…Ø§Ù„Ùƒ'
+                          ? 'ادخل اسم المالك'
                           : 'Enter owner name',
                       icon: Icons.person_outline_rounded,
                       validator: (value) {

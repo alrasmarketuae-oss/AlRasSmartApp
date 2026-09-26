@@ -377,7 +377,7 @@ public sealed class AiAssistantMcpToolLoop(
             GetJsonByte(el, "bookingPriceTypeId"),
             GetJsonString(el, "bookingPriceTypeName"),
             GetJsonString(el, "shippingDescriptionEn"),
-            GetJsonBool(el, "showPrice", defaultValue: true));
+            GetJsonBool(el, "showPrice", defaultValue: false));
     }
 
     private static bool TryGetPropertyIgnoreCase(JsonElement el, string name, out JsonElement value)

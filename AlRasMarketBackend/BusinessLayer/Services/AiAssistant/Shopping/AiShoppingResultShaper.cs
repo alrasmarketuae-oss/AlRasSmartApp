@@ -242,7 +242,7 @@ public static class AiShoppingResultShaper
         }
 
         var price = PickDecimal(item, "price", "Price", "displayPrice", "DisplayPrice", "priceAed", "PriceAed");
-        var showPrice = PickBool(item, "showPrice", "ShowPrice") ?? true;
+        var showPrice = PickBool(item, "showPrice", "ShowPrice") ?? false;
         if (!showPrice)
         {
             price = null;

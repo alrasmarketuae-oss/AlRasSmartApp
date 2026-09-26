@@ -712,7 +712,13 @@ class _AddOrderViewState extends State<AddOrderView> {
                             );
                           },
                         ),
-                        SizedBox(height: 20.h),
+                        // Home shell uses extendBody + scroll-aware bottom nav;
+                        // keep the publish CTA clear of the bar when it reappears.
+                        SizedBox(
+                          height: kBottomNavigationBarHeight +
+                              MediaQuery.viewPaddingOf(context).bottom +
+                              48.h,
+                        ),
                           ],
                         ),
                       ),

@@ -228,7 +228,7 @@ public sealed class ProductDataAccess(
         Guid productId,
         CancellationToken cancellationToken = default) =>
         ProductQueryHelpers.SelectPublicProductRows(
-                ProductQueryHelpers.ApplyPublicProductFilter(dbContext.Products.AsNoTracking())
+                ProductQueryHelpers.ApplyOpenableProductByIdFilter(dbContext.Products.AsNoTracking())
                     .Where(x => x.ProductId == productId))
             .FirstOrDefaultAsync(cancellationToken);
 

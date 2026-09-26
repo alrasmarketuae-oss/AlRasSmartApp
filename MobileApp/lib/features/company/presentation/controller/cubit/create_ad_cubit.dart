@@ -61,7 +61,11 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
   }
 
   void _applyNonUaeBookingDefault() {
-    if (AuthService.instance.isUaePhoneNumber) return;
+    // Booking-only lock is for overseas suppliers — not company customers.
+    if (!AuthService.instance.isSupplierAccount ||
+        AuthService.instance.isUaePhoneNumber) {
+      return;
+    }
     if (state.selectedType == CreateAdType.booking.label) {
       if (state.selectedCurrency != CreateAdCurrency.usd) {
         emit(state.copyWith(selectedCurrency: CreateAdCurrency.usd));
@@ -79,7 +83,10 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
   /// Re-evaluate Booking-only lock after login/profile phone sync.
   void refreshAccountRestrictions() {
     if (isClosed) return;
-    if (AuthService.instance.isUaePhoneNumber) return;
+    if (!AuthService.instance.isSupplierAccount ||
+        AuthService.instance.isUaePhoneNumber) {
+      return;
+    }
     _applyNonUaeBookingDefault();
   }
 
@@ -245,8 +252,8 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
             : isRetail
                 ? CreateAdCurrency.aed
                 : CreateAdCurrency.aed,
-        // Offers always show price publicly.
-        showPrice: isOffers ? true : state.showPrice,
+        // Offers always show price publicly; other types default to hidden.
+        showPrice: isOffers ? true : false,
         clearRequestFulfillmentType: !supportsPriceType,
         clearBookingPriceType: !isBooking,
         clearSelectedCategory: !isCategory,
@@ -1023,8 +1030,9 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
     }
 
     final selectedType = CreateAdType.fromLabel(state.selectedType);
-    if (!AuthService.instance.isUaePhoneNumber &&
-        selectedType != CreateAdType.booking) {
+    final overseasSupplierOnly = AuthService.instance.isSupplierAccount &&
+        !AuthService.instance.isUaePhoneNumber;
+    if (overseasSupplierOnly && selectedType != CreateAdType.booking) {
       emit(
         state.copyWith(
           submitErrorMessage: S.current.selectAnOption,

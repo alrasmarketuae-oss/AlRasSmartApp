@@ -75,21 +75,21 @@ class RecordingView extends StatelessWidget {
                               ),
                             ),
                             SizedBox(height: 24.h),
-                            const BiometricUnlockButton(),
-                            _RoleTile(
-                              accent: BrandColors.primaryBlue,
-                              tint: const Color(0xFFF4F7FB),
-                              icon: Icons.person_add_alt_1_rounded,
-                              title: s.createAccount,
+                            _LoginButton(
+                              label: s.createAccount,
                               subtitle: isAr
                                   ? 'انضم إلينا وابدأ الآن'
                                   : 'Join us and get started',
+                              icon: Icons.person_add_alt_1_rounded,
                               onTap: () =>
                                   context.push(AppRoutes.kRegisterView),
                             ),
                             SizedBox(height: 18.h),
-                            _LoginButton(
-                              label: s.quickLogin,
+                            _RoleTile(
+                              accent: BrandColors.primaryBlue,
+                              tint: const Color(0xFFF4F7FB),
+                              icon: Icons.login_rounded,
+                              title: s.quickLogin,
                               subtitle: s.quickLoginSubtitle,
                               onTap: () => context.push(AppRoutes.kLoginView),
                             ),
@@ -102,6 +102,8 @@ class RecordingView extends StatelessWidget {
                                 goToGuestHome(context);
                               },
                             ),
+                            SizedBox(height: 20.h),
+                            const BiometricUnlockButton(),
                             SizedBox(height: 16.h),
                           ],
                         ),
@@ -279,11 +281,13 @@ class _LoginButton extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.subtitle,
+    this.icon = Icons.login_rounded,
   });
 
   final String label;
   final String? subtitle;
   final VoidCallback onTap;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -326,7 +330,7 @@ class _LoginButton extends StatelessWidget {
                     ),
                   ),
                   child: Icon(
-                    Icons.login_rounded,
+                    icon,
                     color: Colors.white,
                     size: 22.sp,
                   ),

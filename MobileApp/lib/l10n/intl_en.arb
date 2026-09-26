@@ -619,6 +619,7 @@
   "nonNegotiable": "Non-Negotiable",
   "showPrice": "Show price?",
   "showPriceHint": "If you turn this off, the price will disappear from the product card and an Ask For Price button will appear. Tapping it sends the full product details to admin live chat.",
+  "createAdPriceHiddenNotice": "Note: Prices will only appear to buyers upon request.",
   "askForPrice": "Ask For Price",
   "askForPriceChatIntro": "Ask For Price — product details:",
   "askForPriceCardTitle": "Ask for price",

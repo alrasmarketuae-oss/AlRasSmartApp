@@ -279,7 +279,7 @@ export function normalizeProduct(raw: RawProduct): AdminProduct {
       null,
     showPrice: (() => {
       const value = raw.showPrice ?? raw.ShowPrice
-      if (value == null) return true
+      if (value == null) return false
       if (typeof value === 'boolean') return value
       const normalized = String(value).trim().toLowerCase()
       if (normalized === 'false' || normalized === '0' || normalized === 'no') {

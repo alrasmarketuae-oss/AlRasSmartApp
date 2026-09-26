@@ -276,7 +276,7 @@ class CreateAdProductRequest {
         'Quantity': quantity?.toString() ?? '',
         'UnitName': unitName ?? '',
         'Negotiable': (negotiable ?? false).toString(),
-        'ShowPrice': (showPrice ?? true).toString(),
+        'ShowPrice': (showPrice ?? false).toString(),
         'DescriptionEn': descriptionEn ?? '',
       };
 
@@ -357,7 +357,7 @@ class CreateAdProductRequest {
       'ProductTypeName': productTypeName ?? '',
       'UnitName': unitName ?? '',
       'Negotiable': (negotiable ?? false).toString(),
-      'ShowPrice': (showPrice ?? true).toString(),
+      'ShowPrice': (showPrice ?? false).toString(),
     };
 
     if (createdLanguage != null && createdLanguage!.trim().isNotEmpty) {

@@ -630,6 +630,7 @@
   "nonNegotiable": "غير قابل للتفاوض",
   "showPrice": "إظهار السعر؟",
   "showPriceHint": "عند إيقاف إظهار السعر، يختفي السعر من بطاقة المنتج ويظهر زر Ask For Price. عند الضغط عليه تُرسل تفاصيل المنتج كاملة إلى الشات المباشر للأدمن.",
+  "createAdPriceHiddenNotice": "ملاحظة: الأسعار لن تظهر للمشترين إلا عند الطلب.",
   "askForPrice": "اطلب السعر",
   "askForPriceChatIntro": "اطلب السعر — تفاصيل المنتج:",
   "askForPriceCardTitle": "طلب سعر",

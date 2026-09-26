@@ -503,10 +503,10 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.Property(x => x.IsReadyForAdminReview).HasDefaultValue(true);
             // Column may briefly be nullable after a partial deploy; never throw on NULL.
             entity.Property(x => x.ShowPrice)
-                .HasDefaultValue(true)
+                .HasDefaultValue(false)
                 .HasConversion(
                     model => (bool?)model,
-                    store => store ?? true);
+                    store => store ?? false);
             entity.Property(x => x.PendingProductChanges).HasColumnType("nvarchar(max)");
             entity.Property(x => x.ViewsCount).HasDefaultValue(0L);
             entity.Property(x => x.CartAddsCount).HasDefaultValue(0L);

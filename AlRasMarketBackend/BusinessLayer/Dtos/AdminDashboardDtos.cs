@@ -506,7 +506,7 @@ public class AdminProductListItemDto
     public string PriceFormatted { get; set; } = string.Empty;
     public long Quantity { get; set; }
     public bool? Negotiable { get; set; }
-    public bool ShowPrice { get; set; } = true;
+    public bool ShowPrice { get; set; } = false;
     public string CategoryName { get; set; } = string.Empty;
     public byte? CategoryId { get; set; }
     public byte? ProductTypeId { get; set; }

@@ -108,6 +108,18 @@ class CreateAdPriceNegotiationSection extends StatelessWidget {
                 value: state.showPrice,
                 onChanged: cubit.setShowPrice,
               ),
+              if (!state.showPrice) ...[
+                SizedBox(height: 8.h),
+                Text(
+                  s.createAdPriceHiddenNotice,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    height: 1.35,
+                    color: Colors.amber.shade800,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ],
           ],
         );
@@ -118,8 +130,12 @@ class CreateAdPriceNegotiationSection extends StatelessWidget {
 
 bool _shouldShowPriceToggle(String? selectedType) {
   final type = (selectedType ?? '').trim().toLowerCase();
-  // Offers always show price — toggle is Categories only.
-  return type.contains('categor') || type.contains('فئة');
+  // Offers always show price publicly — no toggle.
+  if (type.contains('offer') || type.contains('عرض')) return false;
+  // Retail listing price stays on the retail channel; hide-price applies to wholesale/category ads.
+  if (type.contains('retail') || type.contains('تجز')) return false;
+  // Categories, booking, requests, shipping, etc. — default hidden, seller can opt in.
+  return type.isNotEmpty;
 }
 
 class CreateAdShowPriceToggle extends StatelessWidget {

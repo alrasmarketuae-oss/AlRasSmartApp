@@ -18,7 +18,7 @@ class CreateAdFormState extends Equatable {
     this.retailOtherPacking = false,
     this.selectedCurrency = CreateAdCurrency.aed,
     this.negotiationType = NegotiationType.negotiable,
-    this.showPrice = true,
+    this.showPrice = false,
     this.requestFulfillmentType,
     this.bookingPriceType,
     this.productImages = const [],

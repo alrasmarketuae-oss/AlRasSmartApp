@@ -1815,6 +1815,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "showPriceHint": MessageLookupByLibrary.simpleMessage(
       "If you turn this off, the price will disappear from the product card and an Ask For Price button will appear. Tapping it sends the full product details to admin live chat.",
     ),
+    "createAdPriceHiddenNotice": MessageLookupByLibrary.simpleMessage(
+      "Note: Prices will only appear to buyers upon request.",
+    ),
     "signInToContinue": MessageLookupByLibrary.simpleMessage(
       "Sign in to continue",
     ),

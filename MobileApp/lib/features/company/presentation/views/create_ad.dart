@@ -88,7 +88,7 @@ class _CreateAdPage extends StatelessWidget {
         // under the bottom nav unless scroll padding clears it.
         final bottomPad = kBottomNavigationBarHeight +
             MediaQuery.viewPaddingOf(context).bottom +
-            32.h;
+            56.h;
         return AdminAccountPage.wrap(
           PopScope(
             canPop: !state.isSubmitting,

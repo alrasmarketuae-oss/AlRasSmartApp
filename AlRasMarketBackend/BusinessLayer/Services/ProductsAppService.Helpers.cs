@@ -235,17 +235,26 @@ public partial class ProductsAppService
         string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
         || value == "1";
 
-    /// <summary>Companies registered with a non-UAE phone may only create Booking ads.</summary>
+    /// <summary>
+    /// Non-UAE <b>supplier</b> companies may only create Booking ads.
+    /// Company-customer accounts (IsCustomer) keep normal Requests flow regardless of phone country.
+    /// </summary>
     private async Task EnsureNonUaeCompanyBookingOnlyAsync(
         Guid ownerId,
         byte? productTypeId,
         byte? categoryId,
         CancellationToken cancellationToken)
     {
+        var owner = await productData.GetUserByIdAsync(ownerId, tracked: false, cancellationToken);
+        if (owner?.IsCustomer == true)
+        {
+            return;
+        }
+
         var phone = httpContextAccessor.HttpContext?.User?.FindFirst("phone")?.Value;
         if (string.IsNullOrWhiteSpace(phone))
         {
-            phone = await productData.GetUserPhoneByIdAsync(ownerId, cancellationToken);
+            phone = owner?.PhoneNumber ?? await productData.GetUserPhoneByIdAsync(ownerId, cancellationToken);
         }
 
         if (IsUaePhoneNumber(phone))
@@ -257,7 +266,7 @@ public partial class ProductsAppService
         if (!isBookingOnly)
         {
             throw new ArgumentException(
-                "Companies registered with a non-UAE phone number can only publish Booking ads.");
+                "Suppliers registered with a non-UAE phone number can only publish Booking ads.");
         }
     }
 

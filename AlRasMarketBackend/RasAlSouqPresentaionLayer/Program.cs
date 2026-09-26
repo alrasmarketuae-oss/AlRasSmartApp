@@ -120,6 +120,10 @@ builder.Services.AddSingleton<IMissedSearchMatchEventQueue, MissedSearchMatchEve
 builder.Services.AddSingleton<IMissedSearchMatchEventPublisher, MissedSearchMatchEventPublisher>();
 builder.Services.AddScoped<MissedSearchProductAvailableNotifier>();
 builder.Services.AddHostedService<MissedSearchMatchEventWorker>();
+builder.Services.AddSingleton<IRequestAdSupplierNotifyQueue, RequestAdSupplierNotifyQueue>();
+builder.Services.AddSingleton<IRequestAdSupplierNotifyPublisher, RequestAdSupplierNotifyPublisher>();
+builder.Services.AddScoped<RequestAdSupplierNotifier>();
+builder.Services.AddHostedService<RequestAdSupplierNotifyWorker>();
 builder.Services.AddScoped<IProductImageVectorIndexingProcessor, ProductImageVectorIndexingProcessor>();
 builder.Services.AddScoped<IAdminProductsAppService, AdminProductsAppService>();
 builder.Services.AddHttpClient<IAdminImageSearchAppService, AdminImageSearchAppService>(client =>
@@ -421,6 +425,8 @@ builder.Services.AddCors(options =>
                     || uri.Host.EndsWith(".qtempurl.com", StringComparison.OrdinalIgnoreCase)
                     || uri.Host.EndsWith(".tempurl.host", StringComparison.OrdinalIgnoreCase)
                     || uri.Host.EndsWith(".netlify.app", StringComparison.OrdinalIgnoreCase)
+                    || uri.Host.EndsWith(".pages.dev", StringComparison.OrdinalIgnoreCase)
+                    || uri.Host.Equals("alrasmarketapp.pages.dev", StringComparison.OrdinalIgnoreCase)
                     || uri.Host.EndsWith(".alrasmarketapp.com", StringComparison.OrdinalIgnoreCase))
                 {
                     return true;

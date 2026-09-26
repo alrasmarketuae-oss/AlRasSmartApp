@@ -428,6 +428,19 @@ public static class NotificationMessages
             $"تم إضافة \"{safeNameAr}\". ابحث عنه وستجده في التطبيق.");
     }
 
+    public static (string TitleEn, string BodyEn, string TitleAr, string BodyAr) NewRequestAdAvailable(
+        string productName)
+    {
+        var safeName = string.IsNullOrWhiteSpace(productName) ? "a new request" : productName.Trim();
+        var safeNameAr = string.IsNullOrWhiteSpace(productName) ? "طلب جديد" : productName.Trim();
+
+        return (
+            "New request on Al Ras Smart",
+            $"A buyer posted a request: \"{safeName}\". Tap to open the ad.",
+            "طلب جديد على الراس الذكي",
+            $"تم نشر طلب جديد: \"{safeNameAr}\". اضغط لفتح الإعلان.");
+    }
+
     public static (string EmailSubject, string EmailHtml, string FcmTitle, string FcmBody) AdResubmittedForReview(
         string? language,
         string productName)

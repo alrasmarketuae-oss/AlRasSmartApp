@@ -67,7 +67,7 @@ public static class ProductStoredProceduresSchemaMigrator
                 @Packaging tinyint = NULL,
                 @PackagingDetails nvarchar(255) = NULL,
                 @Negotiable bit = NULL,
-                @ShowPrice bit = 1,
+                @ShowPrice bit = 0,
                 @VideoPath nvarchar(500) = NULL,
                 @VideoDurationSeconds tinyint = NULL,
                 @ShippingDuration nvarchar(20) = NULL,

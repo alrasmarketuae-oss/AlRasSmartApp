@@ -32,6 +32,25 @@ public static class ProductQueryHelpers
             && (x.DisplayExpiresAtUtc == null || x.DisplayExpiresAtUtc > utcNow));
     }
 
+    /// <summary>
+    /// Same as public catalog, plus Requests ads that are ready for review so FCM deep-links
+    /// can open a newly posted request before admin approval (lists stay filtered).
+    /// </summary>
+    public static IQueryable<Product> ApplyOpenableProductByIdFilter(IQueryable<Product> query)
+    {
+        var utcNow = DateTime.UtcNow;
+        return query.Where(x =>
+            (
+                x.Status == ProductCatalogCodes.StatusActive
+                || x.Status == ProductCatalogCodes.StatusPaused
+                || (x.Status == ProductCatalogCodes.StatusUnderReview && x.IsApproved == true)
+                || (x.ProductTypeId == ProductCatalogCodes.TypeRequests
+                    && x.IsReadyForAdminReview
+                    && x.Status != ProductCatalogCodes.StatusRejected)
+            )
+            && (x.DisplayExpiresAtUtc == null || x.DisplayExpiresAtUtc > utcNow));
+    }
+
     public static IQueryable<Product> ApplyHomeCatalogProductFilter(IQueryable<Product> query)
     {
         return query.Where(x =>

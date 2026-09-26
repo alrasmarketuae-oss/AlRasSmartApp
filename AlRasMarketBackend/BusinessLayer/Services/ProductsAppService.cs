@@ -171,7 +171,7 @@ public partial class ProductsAppService(
             Negotiable = input.Negotiable,
             ShowPrice = productTypeId == ProductTypeCodes.Offers
                 ? true
-                : (input.ShowPrice ?? true),
+                : (input.ShowPrice ?? false),
             VideoPath = videoPath,
             VideoDurationSeconds = input.ProductVideoFile is not null
                 ? input.VideoDurationSeconds
@@ -710,12 +710,57 @@ public partial class ProductsAppService(
         QueueAdminAdAlert(product, isEdit: isEditResubmit);
         QueueAutoModeration(product.ProductId, requireManualReview: false);
 
+        // First submit of a Requests ad → notify all suppliers in background (never await FCM).
+        if (!wasReady && product.ProductTypeId == ProductTypeCodes.Requests)
+        {
+            QueueRequestAdSupplierNotify(product.ProductId, product.OwnerId, product.NameEn);
+        }
+
         return new
         {
             productId = product.ProductId.ToString("D"),
             isReadyForAdminReview = true,
             message = "Product submitted for admin review."
         };
+    }
+
+    /// <summary>
+    /// Enqueues FCM/inbox fan-out to all suppliers without blocking the seller submit response.
+    /// </summary>
+    private void QueueRequestAdSupplierNotify(Guid productId, Guid? ownerId, string? legacyNameEn)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await using var scope = scopeFactory.CreateAsyncScope();
+                var translations = scope.ServiceProvider.GetRequiredService<IContentTranslationService>();
+                var publisher = scope.ServiceProvider.GetRequiredService<IRequestAdSupplierNotifyPublisher>();
+
+                var map = await translations
+                    .GetProductTranslationsAsync([productId], CancellationToken.None)
+                    .ConfigureAwait(false);
+                map.TryGetValue(productId, out var tr);
+
+                var nameEn = !string.IsNullOrWhiteSpace(tr?.NameEn)
+                    ? tr!.NameEn!.Trim()
+                    : legacyNameEn?.Trim();
+                var nameAr = !string.IsNullOrWhiteSpace(tr?.NameAr)
+                    ? tr!.NameAr!.Trim()
+                    : null;
+
+                await publisher.PublishAsync(
+                    new RequestAdSupplierNotifyEvent(productId, ownerId, nameEn, nameAr),
+                    CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(
+                    ex,
+                    "Failed to enqueue request-ad supplier notify for product {ProductId}",
+                    productId);
+            }
+        });
     }
 
     /// <summary>

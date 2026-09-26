@@ -4899,6 +4899,16 @@ class S {
     );
   }
 
+  /// `Note: Prices will only appear to buyers upon request.`
+  String get createAdPriceHiddenNotice {
+    return Intl.message(
+      'Note: Prices will only appear to buyers upon request.',
+      name: 'createAdPriceHiddenNotice',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Ask For Price`
   String get askForPrice {
     return Intl.message(

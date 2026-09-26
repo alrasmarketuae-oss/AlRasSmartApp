@@ -1807,6 +1807,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "showPriceHint": MessageLookupByLibrary.simpleMessage(
       "عند إيقاف إظهار السعر، يختفي السعر من بطاقة المنتج ويظهر زر Ask For Price. عند الضغط عليه تُرسل تفاصيل المنتج كاملة إلى الشات المباشر للأدمن.",
     ),
+    "createAdPriceHiddenNotice": MessageLookupByLibrary.simpleMessage(
+      "ملاحظة: الأسعار لن تظهر للمشترين إلا عند الطلب.",
+    ),
     "signInToContinue": MessageLookupByLibrary.simpleMessage(
       "سجل دخولك للمتابعة",
     ),

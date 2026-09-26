@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 namespace DataLayer.Seeding;
 
 /// <summary>
-/// Adds Products.ShowPrice (default true). When false, public UI hides price and shows Ask for price.
+/// Adds Products.ShowPrice (default false). When false, public UI hides price and shows Ask for price.
 /// Must run before any EF Products query and before ProductStoredProceduresSchemaMigrator.
 /// </summary>
 public static class ProductShowPriceSchemaMigrator
@@ -22,12 +22,12 @@ public static class ProductShowPriceSchemaMigrator
             BEGIN
                 ALTER TABLE dbo.Products
                 ADD ShowPrice BIT NOT NULL
-                    CONSTRAINT DF_Products_ShowPrice DEFAULT (1);
+                    CONSTRAINT DF_Products_ShowPrice DEFAULT (0);
             END
             ELSE
             BEGIN
                 -- Repair rows / nullable column from a partial earlier deploy.
-                UPDATE dbo.Products SET ShowPrice = 1 WHERE ShowPrice IS NULL;
+                UPDATE dbo.Products SET ShowPrice = 0 WHERE ShowPrice IS NULL;
 
                 IF EXISTS (
                     SELECT 1
@@ -47,11 +47,43 @@ public static class ProductShowPriceSchemaMigrator
                     )
                     BEGIN
                         ALTER TABLE dbo.Products
-                        ADD CONSTRAINT DF_Products_ShowPrice DEFAULT (1) FOR ShowPrice;
+                        ADD CONSTRAINT DF_Products_ShowPrice DEFAULT (0) FOR ShowPrice;
                     END
 
                     ALTER TABLE dbo.Products
                     ALTER COLUMN ShowPrice BIT NOT NULL;
+                END
+            END
+
+            -- New ads default to hidden price (DEFAULT 0). Recreate constraint if still DEFAULT 1.
+            IF COL_LENGTH(N'dbo.Products', N'ShowPrice') IS NOT NULL
+            BEGIN
+                DECLARE @ShowPriceDf sysname;
+                SELECT @ShowPriceDf = dc.name
+                FROM sys.default_constraints dc
+                INNER JOIN sys.columns c
+                    ON c.default_object_id = dc.object_id
+                WHERE dc.parent_object_id = OBJECT_ID(N'dbo.Products')
+                  AND c.name = N'ShowPrice';
+
+                IF @ShowPriceDf IS NOT NULL
+                BEGIN
+                    DECLARE @dropShowPriceDf nvarchar(300) =
+                        N'ALTER TABLE dbo.Products DROP CONSTRAINT [' + @ShowPriceDf + N']';
+                    EXEC sp_executesql @dropShowPriceDf;
+                END
+
+                IF NOT EXISTS (
+                    SELECT 1
+                    FROM sys.default_constraints dc
+                    INNER JOIN sys.columns c
+                        ON c.default_object_id = dc.object_id
+                    WHERE dc.parent_object_id = OBJECT_ID(N'dbo.Products')
+                      AND c.name = N'ShowPrice'
+                )
+                BEGIN
+                    ALTER TABLE dbo.Products
+                    ADD CONSTRAINT DF_Products_ShowPrice DEFAULT (0) FOR ShowPrice;
                 END
             END
 

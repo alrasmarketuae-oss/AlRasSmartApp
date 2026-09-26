@@ -107,7 +107,7 @@ export default function AdEditDialog({
   const [unitName, setUnitName] = useState('')
   const [quantity, setQuantity] = useState('')
   const [negotiable, setNegotiable] = useState(false)
-  const [showPrice, setShowPrice] = useState(true)
+  const [showPrice, setShowPrice] = useState(false)
   const [packingOther, setPackingOther] = useState(false)
   const [packagingKg, setPackagingKg] = useState('')
   const [packagingDetails, setPackagingDetails] = useState('')
@@ -150,7 +150,7 @@ export default function AdEditDialog({
     setUnitName(product.unitName ?? '')
     setQuantity(product.quantity != null ? String(product.quantity) : '')
     setNegotiable(product.negotiable === true)
-    setShowPrice(product.showPrice !== false)
+    setShowPrice(product.showPrice === true)
 
     const details = product.packagingDetails?.trim() ?? ''
     setPackingOther(details.length > 0)
@@ -408,7 +408,7 @@ export default function AdEditDialog({
             </Field>
           ) : null}
 
-          {!booking && hasCategory && !offers ? (
+          {!offers ? (
             <Field
               label={
                 <span className="inline-flex items-center gap-1.5">
@@ -430,8 +430,8 @@ export default function AdEditDialog({
                 value={showPrice ? 'yes' : 'no'}
                 onChange={(e) => setShowPrice(e.target.value === 'yes')}
               >
-                <option value="yes">{t('ads.showPriceYes')}</option>
                 <option value="no">{t('ads.showPriceNo')}</option>
+                <option value="yes">{t('ads.showPriceYes')}</option>
               </select>
             </Field>
           ) : null}

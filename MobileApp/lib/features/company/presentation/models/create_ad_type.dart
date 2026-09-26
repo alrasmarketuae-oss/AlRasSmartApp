@@ -19,9 +19,10 @@ enum CreateAdType {
     'Retail',
   ];
 
-  /// Non-UAE company accounts may only publish Booking ads.
-  static List<String> labelsForCompany({required bool isUaePhone}) {
-    if (isUaePhone) return labels;
+  /// Overseas suppliers may only publish Booking ads.
+  /// Company customers (and UAE suppliers) get the full type list.
+  static List<String> labelsForCompany({required bool isOverseasSupplier}) {
+    if (!isOverseasSupplier) return labels;
     return const ['Booking'];
   }
 

@@ -256,7 +256,7 @@ public sealed class ProductAdoRepository(
             RetailDescriptionEn = GetNullableString(reader, reader.GetOrdinal("RetailDescriptionEn")),
             Negotiable = reader.IsDBNull(reader.GetOrdinal("Negotiable")) ? null : reader.GetBoolean(reader.GetOrdinal("Negotiable")),
             ShowPrice = reader.IsDBNull(reader.GetOrdinal("ShowPrice"))
-                ? true
+                ? false
                 : reader.GetBoolean(reader.GetOrdinal("ShowPrice")),
             IsFeatured = reader.GetBoolean(reader.GetOrdinal("IsFeatured")),
             ViewsCount = reader.GetInt64(reader.GetOrdinal("ViewsCount")),

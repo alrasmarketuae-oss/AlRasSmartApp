@@ -59,8 +59,9 @@ public class Product
     public bool? Negotiable { get; set; }
     /// <summary>
     /// When false, public product cards/details hide the price and show Ask for price.
+    /// Defaults to false so new ads hide price unless the seller opts in.
     /// </summary>
-    public bool ShowPrice { get; set; } = true;
+    public bool ShowPrice { get; set; } = false;
     public bool IsFeatured { get; set; }
     public long ViewsCount { get; set; }
     /// <summary>Times buyers added this product to cart (retail-sellable listings).</summary>

@@ -24,8 +24,10 @@ class CreateAdTypeSelectionField extends StatelessWidget {
       fontFamily: fontFamily,
       fontSize: 13.sp,
     );
-    final isUae = AuthService.instance.isUaePhoneNumber;
-    final typeLabels = CreateAdType.labelsForCompany(isUaePhone: isUae);
+    final isOverseasSupplier = AuthService.instance.isSupplierAccount &&
+        !AuthService.instance.isUaePhoneNumber;
+    final typeLabels =
+        CreateAdType.labelsForCompany(isOverseasSupplier: isOverseasSupplier);
     final effectiveSelected =
         selectedType != null && typeLabels.contains(selectedType)
             ? selectedType
@@ -116,7 +118,7 @@ class CreateAdTypeSelectionField extends StatelessWidget {
             if (value == null || value.trim().isEmpty) {
               return S.of(context).selectAnOption;
             }
-            if (!isUae && value != CreateAdType.booking.label) {
+            if (isOverseasSupplier && value != CreateAdType.booking.label) {
               return S.of(context).selectAnOption;
             }
             return null;
