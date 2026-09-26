@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:alrasmarket/core/serveses/auth_service.dart';
-import 'package:alrasmarket/core/serveses/notifications_service.dart';
+import 'package:alrasmarket/core/serveses/chat_unread_service.dart';
 import 'package:alrasmarket/core/widgets/login_required_sheet.dart';
 import 'package:alrasmarket/core/widgets/scroll_aware_bottom_nav_scaffold.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
@@ -34,6 +34,9 @@ class _HomeLayoutState extends State<HomeLayout> {
       unawaited(cubit.ensureOrdersRealtimeListener());
       if (!AuthService.instance.isPersonalCustomerAccount) {
         unawaited(cubit.fetchIncomingOrders());
+      }
+      if (AuthService.instance.isAuthenticated) {
+        unawaited(ChatUnreadService.instance.refreshUnreadCount());
       }
     });
   }
@@ -79,7 +82,7 @@ class _HomeLayoutState extends State<HomeLayout> {
           backgroundColor: tabBackgrounds[currentIndex],
           body: IndexedStack(index: currentIndex, children: screens),
           bottomNavigationBar: ListenableBuilder(
-            listenable: NotificationsService.instance,
+            listenable: ChatUnreadService.instance,
             builder: (context, _) {
               return BlocSelector<ClintCubit, ClintStates, int>(
                 selector: (state) =>
@@ -99,8 +102,7 @@ class _HomeLayoutState extends State<HomeLayout> {
                     },
                     context: context,
                     showMyAds: showMyAds,
-                    unreadBadgeCount:
-                        NotificationsService.instance.unreadCount,
+                    unreadBadgeCount: ChatUnreadService.instance.unreadCount,
                     pendingOrdersBadgeCount: pendingOrdersBadgeCount,
                   );
                 },

@@ -6,6 +6,7 @@ import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/services/notification_alert_sound.dart';
 import 'package:alrasmarket/core/serveses/catalog_sync_service.dart';
 import 'package:alrasmarket/core/serveses/notifications_service.dart';
+import 'package:alrasmarket/core/serveses/chat_unread_service.dart';
 import 'package:alrasmarket/core/serveses/profile_service.dart';
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/in_app_notification_service.dart';
@@ -250,6 +251,7 @@ class AppPushNotificationService {
     _refreshOrderFromData(message.data);
     unawaited(_refreshProfileFromData(message.data));
     unawaited(NotificationsService.instance.refreshUnreadCount());
+    unawaited(ChatUnreadService.instance.refreshUnreadCount());
 
     final notification = message.notification;
     final title =

@@ -9,6 +9,7 @@ import ShippingDetailPage from '../pages/ShippingDetailPage'
 import DashboardPage from '../pages/DashboardPage'
 import UsersPage from '../pages/UsersPage'
 import AddUserPage from '../pages/AddUserPage'
+import EditUserPage from '../pages/EditUserPage'
 import UserDetailPage from '../pages/UserDetailPage'
 import UserAdsPage from '../pages/UserAdsPage'
 import AdsPage from '../pages/AdsPage'
@@ -84,6 +85,14 @@ export default function AppRoutes() {
           element={
             <PermissionRoute permission={PERMISSIONS.usersManage}>
               <AddUserPage />
+            </PermissionRoute>
+          }
+        />
+        <Route
+          path="/users/:userId/edit"
+          element={
+            <PermissionRoute permission={PERMISSIONS.usersManage}>
+              <EditUserPage />
             </PermissionRoute>
           }
         />

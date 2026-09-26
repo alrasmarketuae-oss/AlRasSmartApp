@@ -34,6 +34,32 @@ public class AdminUsersController(IAdminUsersAppService adminUsersAppService) : 
         }
     }
 
+    [HttpPut("{userId}")]
+    [RequireAdminPermission(AdminPermissions.UsersManage)]
+    public async Task<IActionResult> UpdateUser(
+        string userId,
+        [FromBody] UpdateAdminUserRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await adminUsersAppService.UpdateUserAsync(userId, request, cancellationToken);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+    }
+
     [HttpGet]
     public async Task<IActionResult> GetUsers(
         [FromQuery] int page = 1,

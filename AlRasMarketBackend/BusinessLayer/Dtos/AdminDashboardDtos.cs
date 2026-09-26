@@ -156,6 +156,7 @@ public sealed class AdminUserDetailDto
     public string Email { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
     public string? LandNumber { get; set; }
+    public string PreferredLanguage { get; set; } = "en";
     public byte RoleId { get; set; }
     public string RoleName { get; set; } = string.Empty;
     public string RoleLabelAr { get; set; } = string.Empty;

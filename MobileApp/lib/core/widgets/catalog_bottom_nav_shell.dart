@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/serveses/cached_constants.dart';
-import 'package:alrasmarket/core/serveses/notifications_service.dart';
+import 'package:alrasmarket/core/serveses/chat_unread_service.dart';
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/widgets/login_required_sheet.dart';
@@ -83,7 +83,7 @@ class CatalogBottomNavShell extends StatelessWidget {
       backgroundColor: AppColors.scaffold(context),
       body: body,
       bottomNavigationBar: ListenableBuilder(
-        listenable: NotificationsService.instance,
+        listenable: ChatUnreadService.instance,
         builder: (context, _) {
           return BlocSelector<ClintCubit, ClintStates, int>(
             selector: (_) =>
@@ -94,7 +94,7 @@ class CatalogBottomNavShell extends StatelessWidget {
                   currentIndex: tabIndex,
                   onTap: (index) => _onTap(context, index),
                   context: context,
-                  unreadBadgeCount: NotificationsService.instance.unreadCount,
+                  unreadBadgeCount: ChatUnreadService.instance.unreadCount,
                   pendingOrdersBadgeCount: pendingOrdersBadgeCount,
                 );
               }
@@ -105,7 +105,7 @@ class CatalogBottomNavShell extends StatelessWidget {
                 context: context,
                 isPerson: isPerson,
                 showMyAds: !isPerson,
-                unreadBadgeCount: NotificationsService.instance.unreadCount,
+                unreadBadgeCount: ChatUnreadService.instance.unreadCount,
                 pendingOrdersBadgeCount: pendingOrdersBadgeCount,
               );
             },

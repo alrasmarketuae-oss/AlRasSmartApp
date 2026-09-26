@@ -52,6 +52,7 @@ export type AdminUserDetail = {
   email: string
   phoneNumber: string | null
   landNumber: string | null
+  preferredLanguage?: string | null
   roleId: number
   roleName: string
   roleLabelAr: string

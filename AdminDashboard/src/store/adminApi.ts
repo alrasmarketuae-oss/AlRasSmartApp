@@ -173,6 +173,20 @@ export type CreateAdminUserPayload = {
   }
 }
 
+export type UpdateAdminUserPayload = {
+  email: string
+  password?: string
+  phoneNumber?: string
+  preferredLanguage?: string
+  fullName?: string
+  companyName?: string
+  landNumber?: string
+  licenseNumber?: string
+  commercialRegister?: string
+  taxNumber?: string
+  website?: string
+}
+
 export const adminApi = createApi({
   reducerPath: 'adminApi',
   baseQuery: adminBaseQuery,
@@ -624,6 +638,28 @@ export const adminApi = createApi({
       }),
       invalidatesTags: [
         { type: 'Users', id: 'LIST' },
+        'Dashboard',
+        { type: 'AuditLogs', id: 'LIST' },
+      ],
+    }),
+
+    updateAdminUser: builder.mutation<
+      { userId: string; email: string; message: string },
+      { userId: string; body: UpdateAdminUserPayload }
+    >({
+      query: ({ userId, body }) => ({
+        url: `/api/admin/users/${userId}`,
+        method: 'PUT',
+        body,
+      }),
+      transformResponse: (response: Record<string, unknown>) => ({
+        userId: String(response.userId ?? response.UserId ?? ''),
+        email: String(response.email ?? response.Email ?? ''),
+        message: String(response.message ?? response.Message ?? ''),
+      }),
+      invalidatesTags: (_r, _e, { userId }) => [
+        { type: 'Users', id: 'LIST' },
+        { type: 'Users', id: userId },
         'Dashboard',
         { type: 'AuditLogs', id: 'LIST' },
       ],
@@ -2396,6 +2432,7 @@ export const {
   useRejectCompanyMutation,
   useSetUserActiveMutation,
   useCreateAdminUserMutation,
+  useUpdateAdminUserMutation,
   useDeleteAdminUserMutation,
   useConvertCompanyCustomerToSupplierMutation,
   useConvertSupplierToCompanyCustomerMutation,

@@ -299,6 +299,7 @@ public class AdminUsersAppService(
             Email = user.Email,
             PhoneNumber = user.PhoneNumber,
             LandNumber = user.LandNumber,
+            PreferredLanguage = user.PreferredLanguage ?? "en",
             RoleId = user.RoleId,
             RoleName = AdminMappings.GetRoleName(user.RoleId, user.IsCustomer),
             RoleLabelAr = AdminMappings.GetRoleLabelAr(user.RoleId, user.IsCustomer),
@@ -754,6 +755,130 @@ public class AdminUsersAppService(
             Email = email,
             AccountType = accountType == "shippingcompany" ? "shippingCompany" : accountType,
             Message = "Account created as verified, approved, and active (no OTP sent).",
+        };
+    }
+
+    public async Task<UpdateAdminUserResult> UpdateUserAsync(
+        string userId,
+        UpdateAdminUserRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(userId, out var parsedUserId))
+        {
+            throw new ArgumentException("Invalid user id.");
+        }
+
+        var user = await dbContext.Users
+            .FirstOrDefaultAsync(x => x.Id == parsedUserId, cancellationToken)
+            ?? throw new KeyNotFoundException("User not found.");
+
+        if (user.RoleId is RoleIds.Admin or RoleIds.Employee)
+        {
+            throw new InvalidOperationException("Admin and employee accounts cannot be edited here.");
+        }
+
+        var email = NormalizeAndValidateEmail(request.Email);
+        var emailTaken = await dbContext.Users.AnyAsync(
+            x => x.Email == email && x.Id != parsedUserId,
+            cancellationToken);
+        if (emailTaken)
+        {
+            throw new InvalidOperationException("Email is already registered.");
+        }
+
+        user.Email = email;
+
+        if (!string.IsNullOrWhiteSpace(request.Password))
+        {
+            if (request.Password.Trim().Length < 6)
+            {
+                throw new ArgumentException("Password must be at least 6 characters.");
+            }
+
+            user.HashedPassword = passwordHasher.HashPassword(request.Password.Trim());
+        }
+
+        user.PreferredLanguage = NotificationMessages.NormalizeLanguage(request.PreferredLanguage);
+        user.PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber)
+            ? null
+            : request.PhoneNumber.Trim();
+
+        if (user.RoleId == RoleIds.Buyer)
+        {
+            var fullName = (request.FullName ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(fullName))
+            {
+                throw new ArgumentException("Full name is required.");
+            }
+
+            user.FullName = fullName;
+        }
+        else if (user.RoleId == RoleIds.ShippingCompany)
+        {
+            var companyName = (request.CompanyName ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(companyName))
+            {
+                throw new ArgumentException("Company name is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(user.PhoneNumber))
+            {
+                throw new ArgumentException("Phone number is required.");
+            }
+
+            user.CompanyName = companyName;
+            user.FullName = companyName;
+            user.LandNumber = TrimOrNull(request.LandNumber);
+            user.CommercialRegister = TrimOrNull(request.CommercialRegister);
+            user.TaxNumber = TrimOrNull(request.TaxNumber);
+            user.Website = NormalizeOptionalWebsite(request.Website);
+        }
+        else if (user.RoleId == RoleIds.Seller)
+        {
+            var companyName = TrimOrNull(request.CompanyName);
+            var ownerName = TrimOrNull(request.FullName);
+            var displayName = companyName ?? ownerName;
+            if (string.IsNullOrWhiteSpace(displayName))
+            {
+                throw new ArgumentException("Company name or full name is required.");
+            }
+
+            user.CompanyName = companyName;
+            user.FullName = displayName;
+            user.LandNumber = TrimOrNull(request.LandNumber);
+            user.LicenseNumber = TrimOrNull(request.LicenseNumber);
+            user.CommercialRegister = TrimOrNull(request.CommercialRegister);
+            user.TaxNumber = TrimOrNull(request.TaxNumber);
+            user.Website = NormalizeOptionalWebsite(request.Website);
+        }
+        else
+        {
+            throw new InvalidOperationException("Unsupported account type for edit.");
+        }
+
+        // Admin edit applies immediately — drop any staged mobile profile edits.
+        user.PendingProfileChanges = null;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        userNameTranslationQueue.Enqueue(
+            user.Id,
+            user.FullName,
+            user.CompanyName,
+            user.PreferredLanguage);
+
+        await auditLogAppService.WriteAsync(
+            AdminAuditActions.UserUpdate,
+            AdminAuditEntityTypes.User,
+            user.Id.ToString("D"),
+            $"Admin updated user '{user.FullName}'",
+            new { email },
+            cancellationToken);
+
+        return new UpdateAdminUserResult
+        {
+            UserId = user.Id.ToString("D"),
+            Email = email,
+            Message = "User updated successfully.",
         };
     }
 

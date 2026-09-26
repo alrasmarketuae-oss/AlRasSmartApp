@@ -1,12 +1,14 @@
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/widgets/login_required_sheet.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
+import 'package:alrasmarket/core/serveses/chat_unread_service.dart';
 import 'package:alrasmarket/core/serveses/profile_service.dart';
 import 'package:alrasmarket/core/services/biometric_auth_service.dart';
 import 'package:alrasmarket/core/services/sensitive_access_gate.dart';
 import 'package:alrasmarket/core/ui/widgets/feedback/app_toast.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
+import 'package:alrasmarket/core/widgets/header_notification_bell.dart';
 import 'package:alrasmarket/core/widgets/profile_avatar.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_cubit.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_states.dart';
@@ -59,6 +61,9 @@ class _ProfileViewState extends State<ProfileView> {
     super.initState();
     _loadProfile();
     _loadBiometricState();
+    if (AuthService.instance.isAuthenticated) {
+      ChatUnreadService.instance.refreshUnreadCount();
+    }
   }
 
   Future<void> _loadBiometricState() async {
@@ -309,16 +314,25 @@ class _ProfileViewState extends State<ProfileView> {
                                   ),
                                 ),
                                 SizedBox(width: 12.w),
-                                        Expanded(
-                                  child: _ShortcutCard(
-                                    title: s.liveChat,
-                                    subtitle: s.liveChatSubtitle,
-                                    assetIcon: AppAssets.profileMessageIcon,
-                                    onTap: () => _requireAuth(
-                                      () => context.push(AppRoutes.kSupportChatView),
-                                    ),
-                                                ),
-                                              ),
+                                Expanded(
+                                  child: ListenableBuilder(
+                                    listenable: ChatUnreadService.instance,
+                                    builder: (context, _) {
+                                      return _ShortcutCard(
+                                        title: s.liveChat,
+                                        subtitle: s.liveChatSubtitle,
+                                        assetIcon: AppAssets.profileMessageIcon,
+                                        badgeCount:
+                                            ChatUnreadService.instance.unreadCount,
+                                        onTap: () => _requireAuth(
+                                          () => context.push(
+                                            AppRoutes.kSupportChatView,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
                                             ],
                                           ),
                             SizedBox(height: 22.h),
@@ -743,6 +757,7 @@ class _ShortcutCard extends StatelessWidget {
     required this.onTap,
     this.icon,
     this.assetIcon,
+    this.badgeCount = 0,
   });
 
   final String title;
@@ -750,6 +765,7 @@ class _ShortcutCard extends StatelessWidget {
   final VoidCallback onTap;
   final IconData? icon;
   final String? assetIcon;
+  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -758,7 +774,11 @@ class _ShortcutCard extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
       child: Row(
         children: [
-          _RoundIcon(icon: icon, assetIcon: assetIcon, size: assetIcon?.endsWith('.png') == true ? 52 : 42),
+          _RoundIcon(
+            icon: icon,
+            assetIcon: assetIcon,
+            size: assetIcon?.endsWith('.png') == true ? 52 : 42,
+          ),
           SizedBox(width: 10.w),
           Expanded(
             child: Column(
@@ -792,6 +812,10 @@ class _ShortcutCard extends StatelessWidget {
               ],
             ),
           ),
+          if (badgeCount > 0) ...[
+            UnreadCountBadge(count: badgeCount),
+            SizedBox(width: 6.w),
+          ],
           _Chevron(size: 20.sp),
         ],
       ),

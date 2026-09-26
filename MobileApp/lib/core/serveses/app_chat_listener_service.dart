@@ -4,6 +4,7 @@ import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/services/app_push_notification_service.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
+import 'package:alrasmarket/core/serveses/chat_unread_service.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_message_deleted_event.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_message_model.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_message_type.dart';
@@ -335,6 +336,8 @@ class AppChatListenerService {
       return;
     }
     if (_isOnSupportChatScreen()) return;
+
+    unawaited(ChatUnreadService.instance.refreshUnreadCount());
 
     final body = _messagePreview(message);
     unawaited(

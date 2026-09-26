@@ -38,3 +38,30 @@ public sealed class CreateAdminUserResult
     public string AccountType { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
 }
+
+/// <summary>
+/// Admin update of marketplace user profile fields. Password is optional
+/// (leave empty to keep current). Account type / role is not changed here.
+/// </summary>
+public sealed class UpdateAdminUserRequest
+{
+    public string Email { get; set; } = string.Empty;
+    /// <summary>Optional. When set, must be at least 6 characters.</summary>
+    public string? Password { get; set; }
+    public string? PhoneNumber { get; set; }
+    public string? PreferredLanguage { get; set; }
+    public string? FullName { get; set; }
+    public string? CompanyName { get; set; }
+    public string? LandNumber { get; set; }
+    public string? LicenseNumber { get; set; }
+    public string? CommercialRegister { get; set; }
+    public string? TaxNumber { get; set; }
+    public string? Website { get; set; }
+}
+
+public sealed class UpdateAdminUserResult
+{
+    public string UserId { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+}

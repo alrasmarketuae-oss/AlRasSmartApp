@@ -11,6 +11,7 @@ import '../../../core/services/biometric_auth_service.dart';
 import '../../../core/services/dio_helper.dart';
 import '../../../core/services/fcm_token_service.dart';
 import '../../../core/serveses/notifications_service.dart';
+import '../../../core/serveses/chat_unread_service.dart';
 
 /// Centralized authentication service for managing user authentication state
 class AuthService {
@@ -321,6 +322,7 @@ class AuthService {
     // re-pointed at the account that just signed in.
     if (isAuthenticated) {
       unawaited(registerFcmToken());
+      unawaited(ChatUnreadService.instance.refreshUnreadCount());
     }
   }
 
@@ -438,6 +440,7 @@ class AuthService {
   /// Clear all authentication data
   Future<void> clearAuthData() async {
     NotificationsService.instance.resetForLogout();
+    ChatUnreadService.instance.resetForLogout();
     id = null;
     token = null;
     name = null;

@@ -135,6 +135,11 @@ public interface IAdminUsersAppService
     Task<CreateAdminUserResult> CreateUserAsync(
         CreateAdminUserRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<UpdateAdminUserResult> UpdateUserAsync(
+        string userId,
+        UpdateAdminUserRequest request,
+        CancellationToken cancellationToken = default);
 }
 
 public interface IAdminOrdersAppService

@@ -1279,6 +1279,7 @@ export default function ChatPage() {
       supplierPriceFormatted: target.supplierPriceFormatted,
       supplierPriceUsd: target.supplierPriceUsd,
       imagePath: target.imagePath,
+      requesterUserId: selectedUserId,
     })
 
     const optimisticId = pushOptimisticMessage(supplierId, true, null, 1, content)
@@ -1492,12 +1493,19 @@ export default function ChatPage() {
               className={
                 isDualPane
                   ? dualMobileTab === 'asker'
-                    ? 'flex min-h-0 flex-1 lg:border-e lg:border-[#3B7FC7]/15'
-                    : 'hidden min-h-0 flex-1 lg:flex lg:border-e lg:border-[#3B7FC7]/15'
+                    ? 'flex min-h-0 flex-1'
+                    : 'hidden min-h-0 flex-1 lg:flex'
                   : 'flex min-h-0 flex-1'
               }
               t={t}
             />
+
+            {isDualPane ? (
+              <div
+                aria-hidden
+                className="hidden w-1 shrink-0 self-stretch bg-[#3B7FC7]/55 lg:block dark:bg-[#7eb6ef]/70"
+              />
+            ) : null}
 
             {secondaryContact ? (
               <ChatThreadPanel

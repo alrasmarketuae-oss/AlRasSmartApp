@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:alrasmarket/core/media/media_compression_service.dart';
 import 'package:alrasmarket/core/services/api_constants.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
+import 'package:alrasmarket/core/serveses/chat_unread_service.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_message_deleted_event.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_message_model.dart';
 import 'package:alrasmarket/features/chat/data/models/chat_message_type.dart';
@@ -339,6 +340,7 @@ class ChatCubit extends Cubit<ChatState> {
       otherUserId: oid,
     );
     await _repository.markConversationSeen(token: token, otherUserId: oid);
+    unawaited(ChatUnreadService.instance.refreshUnreadCount());
     unawaited(_updatePresence());
   }
 

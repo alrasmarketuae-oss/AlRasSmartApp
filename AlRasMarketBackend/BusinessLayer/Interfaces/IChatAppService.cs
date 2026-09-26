@@ -203,6 +203,13 @@ public interface IChatAppService
         CreateChatMessageRequest request,
         CancellationToken ct = default);
 
+    /// When a supplier answers ASK_SUPPLIER_REPLY, copy that reply into the
+    /// original asker's support thread so they receive it while admin still
+    /// keeps the supplier→admin message.
+    Task<ChatMessageDto?> TryRelayAskSupplierReplyToRequesterAsync(
+        ChatMessageDto supplierToAdminReply,
+        CancellationToken ct = default);
+
     Task<ChatMessageDto> ForwardMessageAsync(
         string fromUserId,
         ForwardChatMessageRequest request,

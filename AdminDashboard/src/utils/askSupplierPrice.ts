@@ -1,6 +1,7 @@
 /** Structured chat payload: admin asks supplier to confirm/update product price. */
 
 export const ASK_SUPPLIER_PRODUCT_PREFIX = 'ASK_SUPPLIER_PRODUCT:'
+export const ASK_SUPPLIER_REQUESTER_PREFIX = 'ASK_SUPPLIER_REQUESTER:'
 export const ASK_SUPPLIER_PRICE_HINT = 'ASK_SUPPLIER_PRICE'
 export const ASK_SUPPLIER_REPLY_YES = 'ASK_SUPPLIER_REPLY:YES'
 export const ASK_SUPPLIER_REPLY_NO = 'ASK_SUPPLIER_REPLY:NO'
@@ -101,6 +102,8 @@ export type BuildAskSupplierPriceArgs = {
   supplierPriceFormatted?: string | null
   supplierPriceUsd?: number | null
   imagePath?: string | null
+  /** Original asker (customer) — used so supplier replies auto-relay back to them. */
+  requesterUserId?: string | null
 }
 
 export function buildAskSupplierPriceMessage(args: BuildAskSupplierPriceArgs): string {
@@ -108,6 +111,9 @@ export function buildAskSupplierPriceMessage(args: BuildAskSupplierPriceArgs): s
     'ASK_SUPPLIER_PRICE — confirm product price:',
     `${ASK_SUPPLIER_PRODUCT_PREFIX}${args.productId}`,
   ]
+
+  const requester = args.requesterUserId?.trim()
+  if (requester) lines.push(`${ASK_SUPPLIER_REQUESTER_PREFIX}${requester}`)
 
   const name = args.productName?.trim()
   if (name) lines.push(`Product Name: ${name}`)

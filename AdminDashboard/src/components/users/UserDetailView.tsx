@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { resolveAssetUrl } from '../../lib/assets'
+import { hasPermission, PERMISSIONS } from '../../lib/permissions'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import {
   formatJoinDate,
@@ -305,6 +306,18 @@ export default function UserDetailView({
 
   const outlineBtn =
     'inline-flex items-center gap-2 rounded-xl border-2 bg-white px-5 py-2.5 text-sm font-bold transition disabled:opacity-60 dark:bg-slate-900'
+  const canEditUser =
+    hasPermission(PERMISSIONS.usersManage) &&
+    user.roleId !== 1 &&
+    user.roleId !== 4
+  const editButton = canEditUser ? (
+    <Link
+      to={`/users/${user.id}/edit`}
+      className={`${outlineBtn} border-[#3B7FC7] text-[#3B7FC7] hover:bg-[#eff6ff] dark:hover:bg-slate-800`}
+    >
+      {t('users.editUser')}
+    </Link>
+  ) : null
   const deleteButton = user.canDelete ? (
     <button
       type="button"
@@ -353,6 +366,7 @@ export default function UserDetailView({
 
   const actionButtons = user.canApprove ? (
     <div className="flex flex-wrap justify-end gap-3">
+      {editButton}
       {accountTypeButtons}
       {deleteButton}
       <button
@@ -374,6 +388,7 @@ export default function UserDetailView({
     </div>
   ) : user.canDeactivate ? (
     <div className="flex flex-wrap justify-end gap-3">
+      {editButton}
       {accountTypeButtons}
       {deleteButton}
       {user.isActive ? (
@@ -396,8 +411,9 @@ export default function UserDetailView({
         </button>
       ) : null}
     </div>
-  ) : deleteButton || convertToSupplierButton || convertToCompanyCustomerButton ? (
+  ) : deleteButton || convertToSupplierButton || convertToCompanyCustomerButton || editButton ? (
     <div className="flex flex-wrap justify-end gap-3">
+      {editButton}
       {accountTypeButtons}
       {deleteButton}
     </div>

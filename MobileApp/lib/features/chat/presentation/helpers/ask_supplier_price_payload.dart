@@ -11,6 +11,7 @@ class AskSupplierPricePayload {
     this.supplierPriceLabel,
     this.newSupplierPriceLabel,
     this.imagePath,
+    this.requesterUserId,
   });
 
   factory AskSupplierPricePayload.ask({
@@ -21,6 +22,7 @@ class AskSupplierPricePayload {
     String? quantityLabel,
     String? supplierPriceLabel,
     String? imagePath,
+    String? requesterUserId,
   }) {
     return AskSupplierPricePayload._(
       kind: AskSupplierPayloadKind.ask,
@@ -31,6 +33,7 @@ class AskSupplierPricePayload {
       quantityLabel: quantityLabel,
       supplierPriceLabel: supplierPriceLabel,
       imagePath: imagePath,
+      requesterUserId: requesterUserId,
     );
   }
 
@@ -39,6 +42,7 @@ class AskSupplierPricePayload {
     required bool confirmed,
     String? unitName,
     String? newSupplierPriceLabel,
+    String? requesterUserId,
   }) {
     return AskSupplierPricePayload._(
       kind: AskSupplierPayloadKind.reply,
@@ -46,6 +50,7 @@ class AskSupplierPricePayload {
       confirmed: confirmed,
       unitName: unitName,
       newSupplierPriceLabel: newSupplierPriceLabel,
+      requesterUserId: requesterUserId,
     );
   }
 
@@ -59,11 +64,17 @@ class AskSupplierPricePayload {
   final String? supplierPriceLabel;
   final String? newSupplierPriceLabel;
   final String? imagePath;
+  final String? requesterUserId;
 
   static const String productMarkerPrefix = 'ASK_SUPPLIER_PRODUCT:';
+  static const String requesterMarkerPrefix = 'ASK_SUPPLIER_REQUESTER:';
 
   static final RegExp _productMarker = RegExp(
     r'ASK_SUPPLIER_PRODUCT:\s*([0-9a-fA-F-]{36})',
+    caseSensitive: false,
+  );
+  static final RegExp _requesterMarker = RegExp(
+    r'ASK_SUPPLIER_REQUESTER:\s*([0-9a-fA-F-]{36})',
     caseSensitive: false,
   );
   static final RegExp _nameLine = RegExp(
@@ -103,12 +114,14 @@ class AskSupplierPricePayload {
     if (productId == null || productId.isEmpty) return null;
 
     String? line(RegExp re) => re.firstMatch(text)?.group(1)?.trim();
+    final requesterUserId = _requesterMarker.firstMatch(text)?.group(1)?.trim();
 
     if (RegExp(r'ASK_SUPPLIER_REPLY:\s*YES', caseSensitive: false).hasMatch(text)) {
       return AskSupplierPricePayload.reply(
         productId: productId,
         confirmed: true,
         unitName: line(_unitLine),
+        requesterUserId: requesterUserId,
       );
     }
 
@@ -118,6 +131,7 @@ class AskSupplierPricePayload {
         confirmed: false,
         unitName: line(_unitLine),
         newSupplierPriceLabel: line(_newSupplierPriceLine),
+        requesterUserId: requesterUserId,
       );
     }
 
@@ -133,19 +147,32 @@ class AskSupplierPricePayload {
       quantityLabel: line(_quantityLine),
       supplierPriceLabel: line(_supplierPriceLine),
       imagePath: line(_imageLine),
+      requesterUserId: requesterUserId,
     );
   }
 
   static bool looksLike(String? content) => tryParse(content) != null;
 
-  static String buildYesReply({required String productId}) {
-    return 'ASK_SUPPLIER_REPLY:YES\n$productMarkerPrefix$productId';
+  static String buildYesReply({
+    required String productId,
+    String? requesterUserId,
+  }) {
+    final lines = <String>[
+      'ASK_SUPPLIER_REPLY:YES',
+      '$productMarkerPrefix$productId',
+    ];
+    final requester = requesterUserId?.trim();
+    if (requester != null && requester.isNotEmpty) {
+      lines.add('$requesterMarkerPrefix$requester');
+    }
+    return lines.join('\n');
   }
 
   static String buildNoReply({
     required String productId,
     required double newSupplierPrice,
     String? unitName,
+    String? requesterUserId,
   }) {
     final lines = <String>[
       'ASK_SUPPLIER_REPLY:NO',
@@ -155,6 +182,10 @@ class AskSupplierPricePayload {
     final unit = unitName?.trim();
     if (unit != null && unit.isNotEmpty) {
       lines.add('Unit: $unit');
+    }
+    final requester = requesterUserId?.trim();
+    if (requester != null && requester.isNotEmpty) {
+      lines.add('$requesterMarkerPrefix$requester');
     }
     return lines.join('\n');
   }

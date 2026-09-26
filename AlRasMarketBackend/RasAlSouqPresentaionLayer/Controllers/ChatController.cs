@@ -367,6 +367,27 @@ public class ChatController(
         {
             var result = await chatAppService.CreateMessageAsync(userId, request, ct);
             await PublishMessageCreatedAsync(result, ct);
+
+            // Supplier YES/NO (+ optional new price) must also reach the original asker.
+            // Admin still receives the supplier→support message above.
+            var relay = await chatAppService.TryRelayAskSupplierReplyToRequesterAsync(result, ct);
+            if (relay is not null)
+            {
+                await PublishMessageCreatedAsync(relay, ct);
+                // Also push to the support inbox group so an open dashboard sees the
+                // copy appear on the asker's thread (receiveMessage only targets ToUserId).
+                try
+                {
+                    await chatHub.Clients
+                        .Group(ChatHub.GetGroupName(relay.FromUserId))
+                        .SendAsync("receiveMessage", relay, ct);
+                }
+                catch
+                {
+                    // ignore realtime failures
+                }
+            }
+
             return Ok(result);
         }
         catch (ArgumentException ex)

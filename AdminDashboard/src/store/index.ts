@@ -24,6 +24,7 @@ export {
   useRejectCompanyMutation,
   useSetUserActiveMutation,
   useCreateAdminUserMutation,
+  useUpdateAdminUserMutation,
   useDeleteAdminUserMutation,
   useConvertCompanyCustomerToSupplierMutation,
   useConvertSupplierToCompanyCustomerMutation,

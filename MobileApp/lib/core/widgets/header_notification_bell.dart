@@ -1,12 +1,11 @@
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/widgets/login_required_sheet.dart';
 import 'package:alrasmarket/core/serveses/notifications_service.dart';
-import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
-/// App-header bell with unread badge (same count as Profile tab).
+/// App-header bell with unread notification badge.
 class HeaderNotificationBell extends StatelessWidget {
   const HeaderNotificationBell({super.key});
 
@@ -79,17 +78,21 @@ class UnreadCountBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     if (count <= 0) return const SizedBox.shrink();
     return Container(
+      constraints: BoxConstraints(minWidth: 18.w),
       padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
       decoration: BoxDecoration(
-        color: LightColor.defaultColor,
+        color: const Color(0xFFE53935),
         borderRadius: BorderRadius.circular(10.r),
       ),
+      alignment: Alignment.center,
       child: Text(
         count > 99 ? '99+' : '$count',
+        textAlign: TextAlign.center,
         style: TextStyle(
           color: Colors.white,
           fontSize: 10.sp,
           fontWeight: FontWeight.w700,
+          height: 1.1,
         ),
       ),
     );

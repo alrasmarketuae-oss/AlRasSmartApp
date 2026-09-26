@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using DataLayer.Models;
@@ -7,6 +8,140 @@ namespace BusinessLayer.Services;
 
 public sealed partial class ChatAppService
 {
+    private static readonly Regex AskSupplierReplyMarker =
+        new(@"ASK_SUPPLIER_REPLY\s*:", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    private static readonly Regex AskSupplierProductMarker =
+        new(@"ASK_SUPPLIER_PRODUCT:\s*([0-9a-fA-F-]{36})", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    private static readonly Regex AskSupplierRequesterMarker =
+        new(@"ASK_SUPPLIER_REQUESTER:\s*([0-9a-fA-F-]{36})", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    /// <summary>
+    /// Supplier answered YES/NO on a price ask → copy that reply into the original
+    /// asker's support thread. Admin still keeps the supplier→admin message.
+    /// </summary>
+    public async Task<ChatMessageDto?> TryRelayAskSupplierReplyToRequesterAsync(
+        ChatMessageDto supplierToAdminReply,
+        CancellationToken ct = default)
+    {
+        var content = supplierToAdminReply.Content?.Trim() ?? string.Empty;
+        if (content.Length == 0 || !AskSupplierReplyMarker.IsMatch(content))
+        {
+            return null;
+        }
+
+        if (!Guid.TryParse(supplierToAdminReply.FromUserId, out var supplierId) ||
+            !Guid.TryParse(supplierToAdminReply.ToUserId, out var toUserId))
+        {
+            return null;
+        }
+
+        var supportAdminId = await GetSupportAdminUserIdAsync(ct);
+
+        // Only relay replies that landed on the shared support inbox (supplier → admin).
+        if (toUserId != supportAdminId || supplierId == supportAdminId)
+        {
+            return null;
+        }
+
+        var requesterId = TryExtractRequesterUserId(content);
+        if (requesterId is null)
+        {
+            requesterId = await FindRequesterFromPriorAskAsync(
+                supportAdminId,
+                supplierId,
+                TryExtractProductId(content),
+                ct);
+        }
+
+        if (requesterId is null ||
+            requesterId == supportAdminId ||
+            requesterId == supplierId)
+        {
+            return null;
+        }
+
+        await EnsureUserExistsAsync(requesterId.Value, ct);
+
+        var utcNow = DateTime.UtcNow;
+        var copy = new ChatMessage
+        {
+            MessageId = Guid.NewGuid().ToString("N"),
+            FromUserId = supportAdminId,
+            ToUserId = requesterId.Value,
+            MessageType = ChatMessageType.Text,
+            Content = content,
+            SentAtUtc = utcNow,
+            IsEdited = false,
+            IsSeen = false,
+            IsDelivered = false,
+            IsForwarded = true,
+        };
+
+        await dbContext.ChatMessages.AddAsync(copy, ct);
+        await dbContext.SaveChangesAsync(ct);
+        InvalidateConversationCache(supportAdminId, requesterId.Value);
+        InvalidateSupportCaches(requesterId.Value, supportAdminId);
+
+        return MapToDto(copy, utcNow);
+    }
+
+    private static Guid? TryExtractRequesterUserId(string content)
+    {
+        var match = AskSupplierRequesterMarker.Match(content);
+        if (!match.Success || !Guid.TryParse(match.Groups[1].Value, out var id))
+        {
+            return null;
+        }
+
+        return id;
+    }
+
+    private static string? TryExtractProductId(string content)
+    {
+        var match = AskSupplierProductMarker.Match(content);
+        return match.Success ? match.Groups[1].Value.Trim() : null;
+    }
+
+    private async Task<Guid?> FindRequesterFromPriorAskAsync(
+        Guid supportAdminId,
+        Guid supplierId,
+        string? productId,
+        CancellationToken ct)
+    {
+        var recentAsks = await dbContext.ChatMessages
+            .AsNoTracking()
+            .Where(m =>
+                !m.IsDeleted &&
+                m.MessageType == ChatMessageType.Text &&
+                ((m.FromUserId == supportAdminId && m.ToUserId == supplierId) ||
+                 (m.FromUserId == supplierId && m.ToUserId == supportAdminId)) &&
+                m.Content.Contains("ASK_SUPPLIER_PRICE") &&
+                m.Content.Contains("ASK_SUPPLIER_REQUESTER"))
+            .OrderByDescending(m => m.SentAtUtc)
+            .Select(m => m.Content)
+            .Take(30)
+            .ToListAsync(ct);
+
+        foreach (var ask in recentAsks)
+        {
+            if (!string.IsNullOrWhiteSpace(productId) &&
+                ask.IndexOf(productId, StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                continue;
+            }
+
+            var requesterId = TryExtractRequesterUserId(ask);
+            if (requesterId.HasValue)
+            {
+                return requesterId;
+            }
+        }
+
+        return null;
+    }
+
     public async Task<ChatMessageDto> ForwardMessageAsync(
         string fromUserId,
         ForwardChatMessageRequest request,

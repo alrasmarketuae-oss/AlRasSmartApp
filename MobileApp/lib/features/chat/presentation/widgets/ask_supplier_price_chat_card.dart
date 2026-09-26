@@ -75,6 +75,7 @@ class _AskSupplierPriceChatCardState extends State<AskSupplierPriceChatCard> {
     try {
       final content = AskSupplierPricePayload.buildYesReply(
         productId: widget.payload.productId,
+        requesterUserId: widget.payload.requesterUserId,
       );
       await context.read<ChatCubit>().sendTextMessage(content);
       if (!mounted) return;
@@ -141,6 +142,7 @@ class _AskSupplierPriceChatCardState extends State<AskSupplierPriceChatCard> {
         productId: widget.payload.productId,
         newSupplierPrice: price,
         unitName: widget.payload.unitName,
+        requesterUserId: widget.payload.requesterUserId,
       );
       await context.read<ChatCubit>().sendTextMessage(content);
       if (!mounted) return;

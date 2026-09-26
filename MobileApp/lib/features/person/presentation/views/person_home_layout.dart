@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:alrasmarket/core/serveses/auth_service.dart';
-import 'package:alrasmarket/core/serveses/notifications_service.dart';
+import 'package:alrasmarket/core/serveses/chat_unread_service.dart';
 import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/widgets/login_required_sheet.dart';
 import 'package:alrasmarket/core/widgets/scroll_aware_bottom_nav_scaffold.dart';
@@ -38,6 +38,9 @@ class _PersonHomeLayoutState extends State<PersonHomeLayout> {
       } else {
         unawaited(cubit.fetchMyOrders());
         unawaited(cubit.loadCart());
+      }
+      if (AuthService.instance.isAuthenticated) {
+        unawaited(ChatUnreadService.instance.refreshUnreadCount());
       }
     });
   }
@@ -76,7 +79,7 @@ class _PersonHomeLayoutState extends State<PersonHomeLayout> {
             children: screens,
           ),
           bottomNavigationBar: ListenableBuilder(
-            listenable: NotificationsService.instance,
+            listenable: ChatUnreadService.instance,
             builder: (context, _) {
               return BlocSelector<ClintCubit, ClintStates, int>(
                 selector: (state) =>
@@ -100,8 +103,7 @@ class _PersonHomeLayoutState extends State<PersonHomeLayout> {
                     context: context,
                     isPerson: true,
                     showMyAds: false,
-                    unreadBadgeCount:
-                        NotificationsService.instance.unreadCount,
+                    unreadBadgeCount: ChatUnreadService.instance.unreadCount,
                     pendingOrdersBadgeCount: pendingOrdersBadgeCount,
                   );
                 },

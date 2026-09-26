@@ -73,7 +73,7 @@ class UserBottomNavBar extends StatelessWidget {
         icon: AppAssets.profileIcon,
         label: S.of(context).profile,
         outlinedCircle: true,
-        badgeCount: 0,
+        badgeCount: unreadBadgeCount,
       ),
     ];
 
