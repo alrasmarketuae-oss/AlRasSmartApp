@@ -54,8 +54,15 @@ class NotificationNavigationHelper {
             !title.contains('new offer available') &&
             title.trim() != 'عرض جديد متاح');
 
+    // Chat pushes carry the sender id in routeId and a message id in
+    // referenceId, so they must be matched before order/product routing.
+    if (typeName.contains('chat') || route.contains('chat')) {
+      openSupportChat(context);
+      return;
+    }
+
     // Soft incomplete-registration request — reopen completion steps.
-    if (type.contains('registration_incomplete') ||
+    if (typeName.contains('registration_incomplete') ||
         route == 'complete-registration' ||
         route == 'complete_registration') {
       context.push(AppRoutes.kCompleteRegistrationView);
@@ -153,11 +160,6 @@ class NotificationNavigationHelper {
       return;
     }
 
-    if (route.contains('chat')) {
-      context.push(AppRoutes.kSupportChatView);
-      return;
-    }
-
     if (referenceId.isNotEmpty &&
         (route.contains('order') || int.tryParse(referenceId) != null)) {
       openMyOrdersTab(
@@ -165,6 +167,14 @@ class NotificationNavigationHelper {
         highlightOrderId: int.tryParse(referenceId),
       );
     }
+  }
+
+  /// Opens live chat unless it is already the visible screen.
+  static void openSupportChat(BuildContext context) {
+    final currentPath =
+        AppRoutes.router.routerDelegate.currentConfiguration.uri.path;
+    if (currentPath == AppRoutes.kSupportChatView) return;
+    context.push(AppRoutes.kSupportChatView);
   }
 
   /// Opens My Orders, then pushes the order tracking screen for [orderId].

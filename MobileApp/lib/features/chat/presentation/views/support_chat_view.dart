@@ -11,6 +11,7 @@ import 'package:alrasmarket/features/chat/presentation/controller/chat_cubit.dar
 import 'package:alrasmarket/features/chat/presentation/controller/chat_states.dart';
 import 'package:alrasmarket/features/chat/presentation/widgets/chat_input_bar.dart';
 import 'package:alrasmarket/features/chat/presentation/widgets/chat_message_bubble.dart';
+import 'package:alrasmarket/features/chat/presentation/widgets/chat_messages_skeleton.dart';
 import 'package:alrasmarket/features/chat/presentation/widgets/chat_session_divider.dart';
 import 'package:alrasmarket/generated/l10n.dart';
 import 'package:flutter/material.dart';
@@ -53,6 +54,7 @@ class _SupportChatViewState extends State<SupportChatView> {
   double? _scrollOffsetBeforeOlderLoad;
   bool _wasLoadingOlder = false;
   bool _didSendInitialMessage = false;
+  bool _initialLoadDone = false;
 
   @override
   void dispose() {
@@ -144,6 +146,10 @@ class _SupportChatViewState extends State<SupportChatView> {
         ..startSupportChat(adminUserId: ApiConstants.supportAdminUserId),
       child: BlocConsumer<ChatCubit, ChatState>(
         listener: (context, state) {
+          if (!_initialLoadDone &&
+              (state is ChatMessagesLoaded || state is ChatMessagesError)) {
+            setState(() => _initialLoadDone = true);
+          }
           final initial = widget.initialMessage?.trim();
           if (!_didSendInitialMessage &&
               initial != null &&
@@ -199,7 +205,8 @@ class _SupportChatViewState extends State<SupportChatView> {
         builder: (context, state) {
           final cubit = ChatCubit.get(context);
           final threadItems = _buildThreadItems(cubit).reversed.toList();
-          final isLoading = state is ChatLoading && threadItems.isEmpty;
+          final isLoading = threadItems.isEmpty &&
+              (state is ChatLoading || !_initialLoadDone);
           final agentLabel = cubit.activeAgentName?.trim();
           final hasAgent =
               agentLabel != null && agentLabel.isNotEmpty;
@@ -271,7 +278,7 @@ class _SupportChatViewState extends State<SupportChatView> {
               children: [
                 Expanded(
                   child: isLoading
-                      ? const Center(child: CircularProgressIndicator())
+                      ? const ChatMessagesSkeleton()
                       : state is ChatMessagesError && threadItems.isEmpty
                           ? Center(
                               child: Padding(
@@ -315,17 +322,8 @@ class _SupportChatViewState extends State<SupportChatView> {
                               itemBuilder: (context, index) {
                                 if (cubit.isLoadingOlderMessages &&
                                     index == threadItems.length) {
-                                  return Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 8.h),
-                                    child: const Center(
-                                      child: SizedBox(
-                                        height: 22,
-                                        width: 22,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      ),
-                                    ),
+                                  return const ChatMessagesSkeleton(
+                                    itemCount: 2,
                                   );
                                 }
                                 final item = threadItems[index];

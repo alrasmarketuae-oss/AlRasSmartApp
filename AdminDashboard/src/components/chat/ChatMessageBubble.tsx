@@ -376,7 +376,7 @@ function AskForPriceProductCard({
             <img src={imageUrl} alt="" className="h-full w-full object-cover" />
           ) : videoUrl ? (
             <div className="flex h-full w-full items-center justify-center text-xs font-semibold opacity-80">
-              â–¶
+              ▶
             </div>
           ) : (
             <div className="flex h-full w-full items-center justify-center text-xs opacity-50">—</div>
@@ -458,6 +458,8 @@ function AskForPriceProductCard({
       >
         <Link
           to={href}
+          target="_blank"
+          rel="noopener noreferrer"
           className={`inline-flex items-center rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition ${
             isMine
               ? 'bg-white/20 text-white hover:bg-white/30'
@@ -628,6 +630,8 @@ function AskSupplierPriceCard({
       >
         <Link
           to={href}
+          target="_blank"
+          rel="noopener noreferrer"
           className={`inline-flex items-center rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition ${
             isMine
               ? 'bg-white/20 text-white hover:bg-white/30'
@@ -754,6 +758,8 @@ function AskSupplierReplyCard({
       ) : null}
       <Link
         to={`/ads/${payload.productId}`}
+        target="_blank"
+        rel="noopener noreferrer"
         className={`mt-2 inline-flex items-center rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition ${
           isMine
             ? 'bg-white/20 text-white hover:bg-white/30'
@@ -959,7 +965,7 @@ function ChatVideoMessage({
         className="pointer-events-none max-h-64 w-full object-contain"
       />
       <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/30 text-3xl text-white">
-        â–¶
+        ▶
       </span>
     </button>
   )
