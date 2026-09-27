@@ -85,7 +85,10 @@ export default function CreateCompanyAdPage() {
       form.append('UnitName', unitName)
       form.append('Negotiable', String(negotiable))
       form.append('CreatedLanguage', locale === 'ar' ? 'ar' : 'en')
-      form.append('ShowPrice', 'false')
+      form.append(
+        'ShowPrice',
+        String(productType === 'Booking' || productType === 'Offers' || productType === 'Retail'),
+      )
 
       if (productType === 'Booking') {
         form.append('Currency', 'USD')

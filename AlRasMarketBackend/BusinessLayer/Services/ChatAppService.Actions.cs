@@ -3,6 +3,7 @@ using BusinessLayer.Helpers;
 using BusinessLayer.Interfaces;
 using DataLayer.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace BusinessLayer.Services;
 
@@ -17,11 +18,19 @@ public sealed partial class ChatAppService
     private static readonly Regex AskSupplierRequesterMarker =
         new(@"ASK_SUPPLIER_REQUESTER:\s*([0-9a-fA-F-]{36})", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
-    private static readonly Regex AskSupplierNewPriceMarker =
-        new(@"New Supplier Price\s*[:：]\s*([0-9]+(?:[.,][0-9]+)?)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+    private static readonly Regex AskSupplierReplyYesMarker =
+        new(@"ASK_SUPPLIER_REPLY\s*:\s*YES", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
-    private static readonly Regex AskSupplierCustomerPriceMarker =
-        new(@"Customer Price\s*[:：]", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+    private static readonly Regex AskSupplierNewPriceMarker =
+        new(@"^\s*New Supplier Price\s*[:：]\s*(.+)$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Multiline | RegexOptions.Compiled);
+
+    /// <summary>Supplier-side and customer-side price lines; rebuilt for every buyer copy.</summary>
+    private static readonly Regex AskSupplierPriceLine =
+        new(@"^\s*(?:New Supplier Price|Confirmed Supplier Price|Supplier Price|Customer Price|السعر الجديد|السعر المؤكد|سعر المورد|سعر العميل|سعر المشتري)\s*[:：]",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    private static readonly Regex AskSupplierUnitLine =
+        new(@"(?:^|\n)\s*Unit\s*[:：]", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     /// <summary>
     /// Supplier answered YES/NO on a price ask → copy that reply into the original
@@ -97,16 +106,22 @@ public sealed partial class ChatAppService
     }
 
     /// <summary>
-    /// Appends Customer Price so the buyer sees an amount for YES (confirmed) and NO (updated).
+    /// Buyer copy of a supplier YES/NO reply: the supplier's own price is removed and a
+    /// Customer Price (supplier price + commission for the ad type / category, as set in
+    /// Settings) is always added. YES → current listing price; NO → the supplier's new price.
     /// </summary>
     private async Task<string> EnrichAskSupplierReplyForBuyerAsync(string content, CancellationToken ct)
     {
-        if (AskSupplierCustomerPriceMarker.IsMatch(content))
-            return content;
+        var withoutPrices = string.Join(
+            "\n",
+            content.Replace("\r", string.Empty)
+                .Split('\n')
+                .Where(line => !AskSupplierPriceLine.IsMatch(line)))
+            .TrimEnd();
 
         var productIdRaw = TryExtractProductId(content);
         if (string.IsNullOrWhiteSpace(productIdRaw) || !Guid.TryParse(productIdRaw, out var productId))
-            return content;
+            return withoutPrices;
 
         var product = await dbContext.Products
             .AsNoTracking()
@@ -122,19 +137,16 @@ public sealed partial class ChatAppService
             .FirstOrDefaultAsync(ct);
 
         if (product is null)
-            return content;
+            return withoutPrices;
 
-        var baseUsd = product.USDPrice;
-        var newPriceMatch = AskSupplierNewPriceMarker.Match(content);
-        if (newPriceMatch.Success &&
-            decimal.TryParse(
-                newPriceMatch.Groups[1].Value.Replace(',', '.'),
-                System.Globalization.NumberStyles.Number,
-                System.Globalization.CultureInfo.InvariantCulture,
-                out var parsedNew) &&
-            parsedNew > 0)
+        var supplierUnitPrice = product.USDPrice;
+        if (!AskSupplierReplyYesMarker.IsMatch(content))
         {
-            baseUsd = parsedNew;
+            var newPriceMatch = AskSupplierNewPriceMarker.Match(content);
+            if (newPriceMatch.Success && TryParseSupplierPrice(newPriceMatch.Groups[1].Value, out var parsedNew))
+            {
+                supplierUnitPrice = parsedNew;
+            }
         }
 
         try
@@ -143,7 +155,7 @@ public sealed partial class ChatAppService
             var categoryCommissions = await categoryCommissionProvider.GetAsync(ct);
             var usdToAedRate = CurrencyConversionHelper.GetUsdToAedRate(configuration);
             var customerFacing = CustomerPricingHelper.BuildCustomerFacingPrice(
-                baseUsd,
+                supplierUnitPrice,
                 ProductTypeCodes.WholesaleCommissionProductTypeId(product.CategoryId, product.ProductTypeId),
                 product.CategoryId,
                 product.Currency,
@@ -155,9 +167,8 @@ public sealed partial class ChatAppService
                 customerFacing.Price,
                 customerFacing.Currency);
 
-            var lines = new List<string> { content.TrimEnd() };
-            if (!string.IsNullOrWhiteSpace(product.UnitName) &&
-                !Regex.IsMatch(content, @"(?:^|\n)\s*Unit\s*[:：]", RegexOptions.IgnoreCase))
+            var lines = new List<string> { withoutPrices };
+            if (!string.IsNullOrWhiteSpace(product.UnitName) && !AskSupplierUnitLine.IsMatch(withoutPrices))
             {
                 lines.Add($"Unit: {product.UnitName}");
             }
@@ -165,11 +176,40 @@ public sealed partial class ChatAppService
             lines.Add($"Customer Price: {formatted}");
             return string.Join("\n", lines);
         }
-        catch
+        catch (Exception ex)
         {
-            // Still relay the original reply if pricing enrichment fails.
-            return content;
+            // Never leak the raw supplier price to the buyer when commission can't be applied.
+            logger.LogWarning(ex, "Failed to build customer price for ask-supplier reply on product {ProductId}", productId);
+            return withoutPrices;
         }
+    }
+
+    /// <summary>
+    /// Parses "120", "120.5", "1,150.00 AED", "$1,150.00", "1150,5".
+    /// </summary>
+    private static bool TryParseSupplierPrice(string raw, out decimal value)
+    {
+        value = 0;
+        var cleaned = new string((raw ?? string.Empty).Where(c => char.IsDigit(c) || c is '.' or ',').ToArray());
+        if (cleaned.Length == 0) return false;
+
+        if (cleaned.Contains('.') && cleaned.Contains(','))
+        {
+            cleaned = cleaned.Replace(",", string.Empty);
+        }
+        else if (cleaned.Contains(','))
+        {
+            cleaned = Regex.IsMatch(cleaned, @"^\d{1,3}(,\d{3})+$")
+                ? cleaned.Replace(",", string.Empty)
+                : cleaned.Replace(',', '.');
+        }
+
+        return decimal.TryParse(
+                   cleaned,
+                   System.Globalization.NumberStyles.Number,
+                   System.Globalization.CultureInfo.InvariantCulture,
+                   out value)
+               && value > 0;
     }
 
     private static Guid? TryExtractRequesterUserId(string content)
@@ -264,6 +304,14 @@ public sealed partial class ChatAppService
         await EnsureUserExistsAsync(targetUserId, ct);
         var (fromId, toId) = await ResolveSupportSendPartiesAsync(actingUserId, targetUserId, ct);
 
+        var content = original.Content;
+        if (original.MessageType == ChatMessageType.Text &&
+            targetUserId != original.FromUserId &&
+            AskSupplierReplyMarker.IsMatch(content ?? string.Empty))
+        {
+            content = await EnrichAskSupplierReplyForBuyerAsync(content!, ct);
+        }
+
         var utcNow = DateTime.UtcNow;
         var copy = new ChatMessage
         {
@@ -271,7 +319,7 @@ public sealed partial class ChatAppService
             FromUserId = fromId,
             ToUserId = toId,
             MessageType = original.MessageType,
-            Content = original.Content,
+            Content = content,
             SentAtUtc = utcNow,
             IsEdited = false,
             IsSeen = false,

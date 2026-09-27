@@ -1,7 +1,6 @@
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/widgets/login_required_sheet.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
-import 'package:alrasmarket/core/serveses/cached_constants.dart';
 import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/utils/string_display_format.dart';
 import 'package:alrasmarket/core/widgets/header_notification_bell.dart';
@@ -42,7 +41,7 @@ class AppHeader extends StatelessWidget {
       valueListenable: AuthService.instance.identityRevision,
       builder: (context, revision, child) {
         final display = displayName(
-          name,
+          AuthService.instance.headerDisplayName,
           fallback: 'Al Ras Market',
         );
         final subtitle = _accountSubtitle();

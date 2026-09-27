@@ -475,6 +475,7 @@ class ProfileService {
     await AuthService.instance.updateProfileData(
       userEmail: profile.email,
       fullName: profile.fullName,
+      userCompanyName: profile.companyName ?? '',
       userRole: profile.roleName,
       imagePath: profile.imgPath ?? '',
     );

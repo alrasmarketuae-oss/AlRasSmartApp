@@ -29,6 +29,10 @@
       <!-- Host publish uses Presentation Link to this file; avoid duplicate Assets/email-logo.png. -->
       <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </None>
+    <None Include="Assets\email-banner.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </None>
     <None Include="Assets\nasser-ai-watermark.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>

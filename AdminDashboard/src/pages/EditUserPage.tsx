@@ -78,10 +78,7 @@ export default function EditUserPage() {
     accountType === 'supplier' ||
     accountType === 'companyCustomer' ||
     accountType === 'shippingCompany'
-  const showPersonName =
-    accountType === 'person' ||
-    accountType === 'supplier' ||
-    accountType === 'companyCustomer'
+  const showPersonName = accountType !== null
   const phoneRequired = accountType === 'shippingCompany'
 
   function patchForm(patch: Partial<FormState>) {

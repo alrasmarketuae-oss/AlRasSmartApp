@@ -10,6 +10,8 @@ public static class BrandEmailLayout
 {
     public const string BrandMarker = "data-brand=\"rasalsouq\"";
     public const string LogoContentId = "rasalsouq-logo";
+    public const string BannerContentId = "rasalsouq-banner";
+    public const string BannerFileName = "email-banner.jpg";
 
     /// <summary>Logo blue</summary>
     public const string Blue = "#3376C2";
@@ -102,6 +104,99 @@ public static class BrandEmailLayout
                 </tr>
               </table>
               <p style="margin:16px 0 0;font-size:12px;line-height:1.65;color:#94a3b8;">{{footer}}</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+""";
+    }
+
+    /// <summary>
+    /// Full OTP email: app banner header, spaced code card and a plain "code: 123456" line
+    /// so iOS / Android can offer the code above the keyboard.
+    /// </summary>
+    public static string VerificationCodeEmail(string subject, string code, bool isArabic)
+    {
+        var dir = isArabic ? "rtl" : "ltr";
+        var lang = isArabic ? "ar" : "en";
+        var align = isArabic ? "right" : "left";
+        var safeTitle = WebUtility.HtmlEncode(subject);
+        var safeCode = WebUtility.HtmlEncode(code);
+        var brand = $"<span style=\"color:{Blue};font-weight:800;\">{(isArabic ? "الراس الذكي" : "Al Ras Smart")}</span>";
+
+        var headline = isArabic ? "رمز التحقق" : "Verification Code";
+        var intro = isArabic
+            ? $"استخدم الرمز التالي لإكمال التحقق على تطبيق {brand}:"
+            : $"Use the following code to complete the verification on {brand} app:";
+        var codeLabel = isArabic ? "رمز التحقق:" : "Verification code:";
+        var expiry = isArabic
+            ? "ينتهي هذا الرمز خلال 10 دقائق.<br />إذا لم تطلب هذا الرمز، يرجى تجاهل هذه الرسالة."
+            : "This code will expire in 10 minutes.<br />If you did not request this code, please ignore this email.";
+        var footer = isArabic
+            ? $"هذه رسالة تلقائية من تطبيق <strong style=\"color:#475569;\">الراس الذكي</strong>.<br />يمكنك تجاهل هذه الرسالة بأمان إذا لم تطلبها."
+            : $"This is an automated message from <strong style=\"color:#475569;\">Al Ras Smart</strong> app.<br />You can safely ignore this email if you did not request it.";
+        var preheader = isArabic ? $"رمز التحقق الخاص بك: {safeCode}" : $"Your verification code is {safeCode}";
+
+        return $$"""
+<!DOCTYPE html>
+<html lang="{{lang}}" dir="{{dir}}">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+  <title>{{safeTitle}}</title>
+</head>
+<body style="margin:0;padding:0;background:#eaf2fb;font-family:'Segoe UI',Tahoma,'Noto Sans Arabic',Arial,sans-serif;color:{{Ink}};-webkit-text-size-adjust:100%;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">{{preheader}}</div>
+  <table role="presentation" {{BrandMarker}} width="100%" cellspacing="0" cellpadding="0" style="background:linear-gradient(180deg,#dcebfb 0%,#f4f8fd 60%,#eaf2fb 100%);padding:28px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 16px 44px rgba(51,118,194,0.16);">
+          <tr>
+            <td style="padding:0;line-height:0;font-size:0;">
+              <img src="cid:{{BannerContentId}}" alt="Al Ras Smart - الراس الذكي" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;" />
+            </td>
+          </tr>
+          <tr>
+            <td dir="{{dir}}" style="padding:34px 32px 6px;text-align:{{align}};">
+              <h1 style="margin:0 0 12px;font-size:32px;line-height:1.25;color:#0b1b3f;font-weight:800;">{{headline}}</h1>
+              <p style="margin:0;font-size:17px;line-height:1.6;color:#475569;">{{intro}}</p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:26px 24px 8px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" dir="ltr">
+                <tr>
+                  <td style="padding:22px 26px 22px 40px;border:2px solid {{Blue}};border-radius:18px;background:linear-gradient(180deg,#f7fbff 0%,#e8f1fc 100%);box-shadow:0 8px 22px rgba(51,118,194,0.18);text-align:center;">
+                    <span style="font-size:42px;line-height:1;font-weight:800;letter-spacing:14px;color:{{Blue}};font-family:'Segoe UI',Arial,sans-serif;">{{safeCode}}</span>
+                  </td>
+                  <td valign="top" style="padding:0 0 0 10px;">
+                    <div style="width:54px;height:54px;border-radius:18px 18px 27px 27px;background:linear-gradient(135deg,#5aa2f2 0%,#2563eb 100%);box-shadow:0 8px 18px rgba(37,99,235,0.35);text-align:center;line-height:54px;font-size:24px;color:#ffffff;">&#128274;</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td dir="{{dir}}" style="padding:22px 32px 4px;text-align:{{align}};">
+              <p style="margin:0 0 14px;font-size:18px;line-height:1.5;color:#0b1b3f;font-weight:700;">{{codeLabel}} <span dir="ltr" style="color:{{Blue}};font-weight:800;">{{safeCode}}</span></p>
+              <p style="margin:0 0 8px;font-size:15px;line-height:1.7;color:#475569;">{{expiry}}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:22px 32px 30px;text-align:center;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" dir="ltr">
+                <tr>
+                  <td width="34%" height="4" style="background:{{Blue}};border-radius:4px 0 0 4px;line-height:4px;font-size:0;">&nbsp;</td>
+                  <td width="32%" height="4" style="background:{{Red}};line-height:4px;font-size:0;">&nbsp;</td>
+                  <td width="34%" height="4" style="background:{{Green}};border-radius:0 4px 4px 0;line-height:4px;font-size:0;">&nbsp;</td>
+                </tr>
+              </table>
+              <p dir="{{dir}}" style="margin:18px 0 0;font-size:13px;line-height:1.7;color:#64748b;">{{footer}}</p>
             </td>
           </tr>
         </table>

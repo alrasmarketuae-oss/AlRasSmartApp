@@ -517,10 +517,11 @@ class _AskSupplierPriceChatCardState extends State<AskSupplierPriceChatCard> {
     final unit = widget.payload.unitName?.trim();
     final customerPrice = widget.payload.customerPriceLabel?.trim();
     final supplierPrice = widget.payload.newSupplierPriceLabel?.trim();
-    // Prefer customer (buyer-facing) price when relay enriched the message.
+    // Buyers only ever see the price after commission; the raw supplier price is
+    // shown only on the supplier's own reply.
     final displayPrice = (customerPrice != null && customerPrice.isNotEmpty)
         ? customerPrice
-        : supplierPrice;
+        : (isMe ? supplierPrice : null);
 
     return Container(
       width: 260.w,

@@ -72,7 +72,10 @@ class ShippingCompanyCubit extends Cubit<ShippingCompanyStates> {
         return false;
       },
       (profile) async {
-        await authService.updateProfileData(fullName: fullName);
+        await authService.updateProfileData(
+          fullName: fullName,
+          userCompanyName: companyName,
+        );
         authService.phone = phoneNumber;
         await loadDashboard(force: true);
         return true;

@@ -252,8 +252,7 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
             : isRetail
                 ? CreateAdCurrency.aed
                 : CreateAdCurrency.aed,
-        // Offers always show price publicly; other types default to hidden.
-        showPrice: isOffers ? true : false,
+        showPrice: isOffers || isRetail || isBooking,
         clearRequestFulfillmentType: !supportsPriceType,
         clearBookingPriceType: !isBooking,
         clearSelectedCategory: !isCategory,
@@ -515,7 +514,8 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
         negotiationType: product.isNegotiable
             ? NegotiationType.negotiable
             : NegotiationType.nonNegotiable,
-        showPrice: isOffers ? true : product.showPrice,
+        showPrice:
+            CreateAdType.alwaysShowsPrice(editType) || product.showPrice,
         requestFulfillmentType: requestFulfillment,
         bookingPriceType: bookingPriceType,
         requiredDeliveryDate: requiredDeliveryDate,

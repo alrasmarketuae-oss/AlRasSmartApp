@@ -54,6 +54,18 @@ class AuthService {
   /// Get current user name (fullName)
   String? get currentUserName => name;
 
+  /// Company display name for company / shipping-company accounts.
+  String? companyName;
+
+  /// Company accounts are shown by their company name, not the owner's name.
+  String? get headerDisplayName {
+    final company = companyName?.trim();
+    final isCompany =
+        isCompanyAccount == true || isShippingCompanyAccount == true;
+    if (isCompany && company != null && company.isNotEmpty) return company;
+    return name;
+  }
+
   /// Get current user email
   String? get currentUserEmail => email;
 
@@ -133,6 +145,7 @@ class AuthService {
       // Map fullName to name
       final fullName = CachHelper.getData('fullName');
       name = fullName?.toString();
+      companyName = CachHelper.getData('companyName')?.toString();
 
       email = CachHelper.getData('email')?.toString();
       phone = CachHelper.getData('phone')?.toString();
@@ -185,6 +198,7 @@ class AuthService {
     required String authToken,
     String? userEmail,
     String? fullName,
+    String? userCompanyName,
     String? userRole,
     required String userRoleId,
     bool? companyWaiting,
@@ -242,6 +256,15 @@ class AuthService {
         await CachHelper.saveData(key: 'fullName', value: resolvedName);
         name = resolvedName;
 
+        final resolvedCompany = userCompanyName?.trim() ?? '';
+        if (resolvedCompany.isEmpty) {
+          await CachHelper.removeData('companyName');
+          companyName = null;
+        } else {
+          await CachHelper.saveData(key: 'companyName', value: resolvedCompany);
+          companyName = resolvedCompany;
+        }
+
         await saveProfileImagePath(imagePath ?? '');
       } else {
         if (userEmail != null) {
@@ -252,6 +275,12 @@ class AuthService {
         if (fullName != null) {
           await CachHelper.saveData(key: 'fullName', value: fullName);
           name = fullName;
+        }
+
+        final pendingCompany = userCompanyName?.trim();
+        if (pendingCompany != null && pendingCompany.isNotEmpty) {
+          await CachHelper.saveData(key: 'companyName', value: pendingCompany);
+          companyName = pendingCompany;
         }
 
         if (imagePath != null) {
@@ -389,11 +418,23 @@ class AuthService {
   Future<void> updateProfileData({
     String? userEmail,
     String? fullName,
+    String? userCompanyName,
     String? userRole,
     String? imagePath,
   }) async {
     try {
       var identityChanged = false;
+      if (userCompanyName != null) {
+        final next = userCompanyName.trim();
+        if (next.isEmpty) {
+          await CachHelper.removeData('companyName');
+        } else {
+          await CachHelper.saveData(key: 'companyName', value: next);
+        }
+        final resolved = next.isEmpty ? null : next;
+        if (companyName != resolved) identityChanged = true;
+        companyName = resolved;
+      }
       if (userEmail != null) {
         await CachHelper.saveData(key: 'email', value: userEmail);
         // Update global email variable from cached_constants
@@ -444,6 +485,7 @@ class AuthService {
     id = null;
     token = null;
     name = null;
+    companyName = null;
     email = null;
     roleName = null;
     roleId = null;
@@ -465,6 +507,7 @@ class AuthService {
     await CachHelper.removeData('token');
     await CachHelper.removeData('email');
     await CachHelper.removeData('fullName');
+    await CachHelper.removeData('companyName');
     await CachHelper.removeData('role');
     await CachHelper.removeData('roleId');
     await CachHelper.removeData('isCompanyWaiting');

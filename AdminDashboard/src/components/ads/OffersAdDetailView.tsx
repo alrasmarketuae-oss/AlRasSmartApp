@@ -698,7 +698,7 @@ export default function OffersAdDetailView({
                       src={videoUrl}
                     />
                     <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25 text-2xl text-white">
-                      ?
+                      ▶
                     </span>
                   </button>
                 ) : mainUrl ? (

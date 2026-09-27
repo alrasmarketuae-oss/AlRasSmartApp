@@ -91,6 +91,14 @@ class CategoryAdDetailsBody extends StatelessWidget {
               ],
             ),
           ),
+        ] else if (AdHeroDescriptionText.needsFullTextBelow(description)) ...[
+          SizedBox(height: 14.h),
+          AdFullDescriptionSection(
+            title: s.details,
+            text: description,
+            fontFamily: fontFamily,
+            icon: Icons.checklist_outlined,
+          ),
         ],
         SizedBox(height: 14.h),
         BookingShippingDetailsSection(

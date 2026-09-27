@@ -82,18 +82,18 @@ public class AuthAppService(
             allowReplacingRejectedCompanyRegistration: true,
             cancellationToken);
 
-        // Supplier / company-customer: show company name as the account display name.
+        // FullName = owner (person); CompanyName is the display name for company accounts.
         var companyName = string.IsNullOrWhiteSpace(input.CompanyName)
             ? null
             : input.CompanyName.Trim();
-        var displayName = !string.IsNullOrWhiteSpace(companyName)
-            ? companyName
-            : (input.FullName?.Trim() ?? string.Empty);
+        var ownerName = string.IsNullOrWhiteSpace(input.FullName)
+            ? (companyName ?? string.Empty)
+            : input.FullName.Trim();
 
         var user = new User
         {
             Id = Guid.NewGuid(),
-            FullName = displayName,
+            FullName = ownerName,
             CompanyName = companyName,
             Email = email,
             HashedPassword = passwordHasher.HashPassword(input.Password),
@@ -220,12 +220,12 @@ public class AuthAppService(
             allowReplacingRejectedCompanyRegistration: true,
             cancellationToken);
 
-        // Shipping company: FullName mirrors CompanyName for app display.
         var companyName = input.CompanyName.Trim();
+        var ownerName = string.IsNullOrWhiteSpace(input.FullName) ? companyName : input.FullName.Trim();
         var user = new User
         {
             Id = Guid.NewGuid(),
-            FullName = companyName,
+            FullName = ownerName,
             CompanyName = companyName,
             Email = email,
             HashedPassword = passwordHasher.HashPassword(input.Password),

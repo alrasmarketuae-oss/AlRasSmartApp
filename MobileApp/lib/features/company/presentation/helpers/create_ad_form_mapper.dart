@@ -498,7 +498,8 @@ class CreateAdFormMapper {
               : state.destinationPort),
       categoryId: catalogFields.categoryId,
       negotiable: state.negotiationType.isNegotiable,
-      showPrice: isOffers ? true : state.showPrice,
+      showPrice: CreateAdType.alwaysShowsPrice(state.selectedType) ||
+          state.showPrice,
       discountPercentage: discount?.percentage,
       discountDays: isOffers
           ? (offerDurationDays != null && offerDurationDays > 0

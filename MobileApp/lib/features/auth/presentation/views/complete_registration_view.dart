@@ -36,6 +36,7 @@ class _CompleteRegistrationViewState extends State<CompleteRegistrationView> {
   bool _addressDone = false;
   bool _documentsDone = false;
   bool _imagesDone = false;
+  String? _addressSummary;
   String? _tradeLicensePath;
   final List<String> _companyImagePaths = [];
 
@@ -63,11 +64,12 @@ class _CompleteRegistrationViewState extends State<CompleteRegistrationView> {
   Future<ImageSource?> _pickImageSource() => showImageSourceSheet(context);
 
   Future<void> _pickAddress() async {
-    final result = await showDialog<CreateAddressRequest>(
-      context: context,
-      builder: (_) => const AddAddressDialog(collectOnly: true),
-    );
-    if (result == null) return;
+    final CreateAddressRequest? result = await AddAddressDialog.collect(context);
+    if (!mounted || result == null) return;
+    final summary = [
+      result.addressLine1.trim(),
+      result.cityName?.trim() ?? '',
+    ].where((part) => part.isNotEmpty).join(', ');
 
     final token = AuthService.instance.currentToken;
     if (token == null || token.isEmpty) {
@@ -97,6 +99,7 @@ class _CompleteRegistrationViewState extends State<CompleteRegistrationView> {
       if (!mounted) return;
       setState(() {
         _addressDone = true;
+        _addressSummary = summary.isEmpty ? null : summary;
         _submitting = false;
       });
       AppToast.showInfo(
@@ -283,13 +286,15 @@ class _CompleteRegistrationViewState extends State<CompleteRegistrationView> {
                   children: [
                     if (_request.missingLocation)
                       _StepCard(
-                        title: _isAr ? 'الموقع / العنوان' : 'Location / Address',
+                        title: _isAr ? 'تحديد الموقع' : 'Set location',
                         done: _addressDone,
-                        subtitle: _addressDone
-                            ? (_isAr ? 'تم الحفظ' : 'Saved')
-                            : (_isAr
-                                ? 'اضغط لتحديد الموقع من الخريطة'
-                                : 'Tap to pick location on the map'),
+                        icon: Icons.add_location_alt_outlined,
+                        subtitle: _addressSummary ??
+                            (_addressDone
+                                ? (_isAr ? 'تم الحفظ' : 'Saved')
+                                : (_isAr
+                                    ? 'اضغط لاختيار موقعك الحالي أو التحديد من الخريطة'
+                                    : 'Tap to use current location or pick from the map')),
                         onTap: _submitting ? null : _pickAddress,
                       ),
                     if (_request.missingDocuments)
@@ -349,6 +354,7 @@ class _StepCard extends StatelessWidget {
     required this.done,
     required this.onTap,
     this.previewPath,
+    this.icon = Icons.add,
   });
 
   final String title;
@@ -356,6 +362,7 @@ class _StepCard extends StatelessWidget {
   final bool done;
   final VoidCallback? onTap;
   final String? previewPath;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -387,7 +394,7 @@ class _StepCard extends StatelessWidget {
                         ? const Color(0xFF619D50)
                         : LightColor.defaultColor,
                     child: Icon(
-                      done ? Icons.check : Icons.add,
+                      done ? Icons.check : icon,
                       color: Colors.white,
                       size: 20.sp,
                     ),
@@ -407,6 +414,8 @@ class _StepCard extends StatelessWidget {
                       SizedBox(height: 4.h),
                       Text(
                         subtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 13.sp,
                           color: const Color(0xFF555555),

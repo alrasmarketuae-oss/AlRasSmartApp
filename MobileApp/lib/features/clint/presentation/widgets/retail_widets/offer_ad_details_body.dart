@@ -66,6 +66,17 @@ class OfferAdDetailsBody extends StatelessWidget {
           unit: unit,
           isAr: isAr,
         ),
+        if (description.contains('\n') ||
+            AdHeroDescriptionText.needsFullTextBelow(description)) ...[
+          SizedBox(height: 14.h),
+          AdFullDescriptionSection(
+            title: description.contains('\n')
+                ? S.of(context).specifications
+                : S.of(context).details,
+            text: description,
+            fontFamily: fontFamily,
+          ),
+        ],
         SizedBox(height: 14.h),
         Form(
           key: quantityFormKey,

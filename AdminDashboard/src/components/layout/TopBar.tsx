@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { PROJECT_IMAGES } from '../../constants/projectImages'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import { useAdminNotifications } from '../../context/AdminNotificationProvider'
 import { useLogout } from '../../hooks/useLogout'
@@ -23,7 +25,8 @@ export default function TopBar({
   const { navCounts, totalBadgeCount } = useAdminNotifications()
   const logout = useLogout()
   const user = getAuthUser()
-  const initial = (user?.name ?? 'A')[0]
+  const [photoFailed, setPhotoFailed] = useState(false)
+  const showPhoto = Boolean(user?.imgPath) && !photoFailed
 
   return (
     <header
@@ -40,16 +43,19 @@ export default function TopBar({
       </button>
 
       <div className="flex shrink-0 items-center gap-3">
-        {user?.imgPath ? (
+        {showPhoto && user?.imgPath ? (
           <img
             src={resolveAssetUrl(user.imgPath)}
             alt=""
+            onError={() => setPhotoFailed(true)}
             className="h-10 w-10 rounded-full object-cover sm:h-11 sm:w-11"
           />
         ) : (
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-sm font-bold text-slate-600 sm:h-11 sm:w-11 dark:bg-slate-700 dark:text-slate-200">
-            {initial}
-          </div>
+          <img
+            src={PROJECT_IMAGES.logo}
+            alt=""
+            className="h-10 w-10 rounded-full border border-slate-200 bg-white object-contain p-1.5 sm:h-11 sm:w-11 dark:border-slate-700"
+          />
         )}
         <div className="hidden min-[480px]:block">
           <p className="admin-text text-sm font-bold leading-tight">

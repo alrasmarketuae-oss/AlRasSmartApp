@@ -28,5 +28,6 @@
   <!-- Single source: BusinessLayer/Assets/email-logo.png (avoids NETSDK1152 duplicate publish path). -->
   <ItemGroup>
     <Content Include="..\BusinessLayer\Assets\email-logo.png" Link="Assets\email-logo.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\BusinessLayer\Assets\email-banner.jpg" Link="Assets\email-banner.jpg" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

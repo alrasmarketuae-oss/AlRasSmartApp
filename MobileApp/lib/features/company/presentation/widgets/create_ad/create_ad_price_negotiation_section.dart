@@ -129,13 +129,9 @@ class CreateAdPriceNegotiationSection extends StatelessWidget {
 }
 
 bool _shouldShowPriceToggle(String? selectedType) {
-  final type = (selectedType ?? '').trim().toLowerCase();
-  // Offers always show price publicly — no toggle.
-  if (type.contains('offer') || type.contains('عرض')) return false;
-  // Retail listing price stays on the retail channel; hide-price applies to wholesale/category ads.
-  if (type.contains('retail') || type.contains('تجز')) return false;
-  // Categories, booking, requests — default hidden (showPrice=false), seller can opt in.
-  return type.isNotEmpty;
+  final type = (selectedType ?? '').trim();
+  // Categories and requests default hidden (showPrice=false), seller can opt in.
+  return type.isNotEmpty && !CreateAdType.alwaysShowsPrice(type);
 }
 
 /// Switch: on = show price on the product card; off (default) = hide until buyer asks.

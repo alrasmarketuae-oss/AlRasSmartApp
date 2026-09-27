@@ -33,6 +33,7 @@ class AddAddressDialog extends StatefulWidget {
     this.existing,
     this.collectOnly = false,
     this.mapOnly = false,
+    this.askPhone = false,
   });
 
   /// When true, only UAE and the seven domestic shipping emirates are shown,
@@ -49,14 +50,21 @@ class AddAddressDialog extends StatefulWidget {
   /// No street / building / contact form fields.
   final bool mapOnly;
 
+  /// With [mapOnly]: also require a mobile number (customer delivery address).
+  final bool askPhone;
+
+  /// Customer address (cart / My addresses): map or current location + phone.
   static Future<bool?> show(
     BuildContext context, {
-    bool retailMode = false,
     ClientAddressModel? existing,
   }) {
     return showDialog<bool>(
       context: context,
-      builder: (_) => AddAddressDialog(retailMode: retailMode, existing: existing),
+      builder: (_) => AddAddressDialog(
+        existing: existing,
+        mapOnly: true,
+        askPhone: true,
+      ),
     );
   }
 
@@ -119,8 +127,11 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
   @override
   void initState() {
     super.initState();
-    if (widget.mapOnly) {
+    if (widget.mapOnly && !widget.askPhone) {
       _addressTypeId = 1; // Company
+    }
+    if (widget.askPhone && widget.existing == null) {
+      _mobileController.text = AuthService.instance.currentUserPhone?.trim() ?? '';
     }
     final existing = widget.existing;
     if (existing != null) {
@@ -216,7 +227,7 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
           _countries = countries;
           _isCountriesLoading = false;
         });
-        if (!widget.mapOnly) {
+        if (!widget.mapOnly || widget.existing != null) {
           _applyDefaultCountry();
         }
       },
@@ -440,6 +451,9 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
 
   Future<void> _submitMapOnly() async {
     if (_isResolvingLocation) return;
+    if (widget.askPhone && !(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
 
     final coords = _pickedCoordinates;
     if (coords == null) {
@@ -472,12 +486,14 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
       return;
     }
 
-    final composedLine1 = [
-      _addressLine1Controller.text.trim(),
-      _streetController.text.trim(),
-      _areaController.text.trim(),
-      cityName,
-    ].where((part) => part.isNotEmpty).toSet().join(', ');
+    final line1 = _addressLine1Controller.text.trim();
+    final composedLine1 = line1.isNotEmpty
+        ? (line1.contains(cityName) ? line1 : '$line1, $cityName')
+        : [
+            _streetController.text.trim(),
+            _areaController.text.trim(),
+            cityName,
+          ].where((part) => part.isNotEmpty).toSet().join(', ');
 
     final fallbackLine1 =
         '${coords.latitude.toStringAsFixed(5)}, ${coords.longitude.toStringAsFixed(5)}';
@@ -487,11 +503,20 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
       countryId: country.countryId,
       cityName: cityName,
       addressLine1: composedLine1.isNotEmpty ? composedLine1 : fallbackLine1,
+      addressLine2: _addressLine2Controller.text,
       addressTypeId: _addressTypeId,
       area: _areaController.text,
       street: _streetController.text,
       building: _buildingController.text,
+      floorNo: _floorController.text,
+      unitNo: _unitController.text,
+      landmark: _landmarkController.text,
       postalCode: _postalController.text,
+      contactPerson: _contactController.text.trim().isNotEmpty
+          ? _contactController.text
+          : AuthService.instance.currentUserName,
+      mobileNumber: _mobileController.text,
+      deliveryInstructions: _instructionsController.text,
       latitude: coords.latitude,
       longitude: coords.longitude,
     );
@@ -759,7 +784,7 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
       title: Text(
-        widget.mapOnly
+        widget.mapOnly && !widget.askPhone
             ? (_isArabic ? 'تحديد موقع الشركة' : 'Set company location')
             : (_isEditing ? s.editAddress : s.addNewAddress),
         style: TextStyle(
@@ -1045,9 +1070,13 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          _isArabic
-              ? 'حدد موقع الشركة من موقعك الحالي أو من الخريطة.'
-              : 'Set the company location using GPS or the map.',
+          widget.askPhone
+              ? (_isArabic
+                  ? 'حدد عنوان التوصيل من موقعك الحالي أو من الخريطة، وأدخل رقم الهاتف.'
+                  : 'Set the delivery address using GPS or the map, and add a phone number.')
+              : (_isArabic
+                  ? 'حدد موقع الشركة من موقعك الحالي أو من الخريطة.'
+                  : 'Set the company location using GPS or the map.'),
           style: TextStyle(
             color: const Color(0xFF6B7280),
             fontFamily: fontFamily,
@@ -1109,6 +1138,23 @@ class _AddAddressDialogState extends State<AddAddressDialog> {
                 ),
               ],
             ),
+          ),
+        ],
+        if (widget.askPhone) ...[
+          SizedBox(height: 16.h),
+          CustomTextFormField(
+            controller: _mobileController,
+            label: _isArabic ? 'رقم الهاتف' : 'Mobile number',
+            hintText: '05xxxxxxxx',
+            keyboardType: TextInputType.phone,
+            validator: (value) {
+              final digits = (value ?? '').replaceAll(RegExp(r'\D'), '');
+              if (digits.isEmpty) return S.of(context).thisFieldIsRequired;
+              if (digits.length < 7) {
+                return _isArabic ? 'رقم الهاتف غير صحيح' : 'Invalid phone number';
+              }
+              return null;
+            },
           ),
         ],
       ],

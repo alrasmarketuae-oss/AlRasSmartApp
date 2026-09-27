@@ -87,14 +87,17 @@ public static class ProductShowPriceSchemaMigrator
                 END
             END
 
-            -- Offers (ProductTypeId = 3) always show price publicly.
+            -- Booking (2), Offers (3) and pure Retail (1, no category) always show price publicly.
             IF COL_LENGTH(N'dbo.Products', N'ShowPrice') IS NOT NULL
                AND COL_LENGTH(N'dbo.Products', N'ProductTypeId') IS NOT NULL
             BEGIN
                 UPDATE dbo.Products
                 SET ShowPrice = 1
-                WHERE ProductTypeId = 3
-                  AND ShowPrice = 0;
+                WHERE ShowPrice = 0
+                  AND (
+                        ProductTypeId IN (2, 3)
+                        OR (ProductTypeId = 1 AND ISNULL(CategoryId, 0) = 0)
+                      );
             END
             """,
             cancellationToken).ConfigureAwait(false);

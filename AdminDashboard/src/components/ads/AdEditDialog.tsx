@@ -96,6 +96,11 @@ export default function AdEditDialog({
     product.productTypeId === 4 ||
     product.productTypeName.trim().toLowerCase() === 'requests'
   const showRequestType = offers || isRequest || hasCategory
+  const pureRetail =
+    !hasCategory &&
+    (product.productTypeId === 1 || product.productTypeName.trim().toLowerCase() === 'retail')
+  // Retail, Booking and Offers ads always show their price.
+  const alwaysShowsPrice = booking || offers || pureRetail
 
   const allowedCurrencies = booking ? ['USD'] : hasCategory || offers || isRequest ? ['AED', 'USD'] : ['AED']
 
@@ -227,7 +232,7 @@ export default function AdEditDialog({
       productTypeName: '',
       unitName: unitName.trim(),
       negotiable,
-      showPrice: offers ? true : showPrice,
+      showPrice: alwaysShowsPrice || showPrice,
     }
 
     // Packing: free-text "Other packing" wins over the numeric kg value.
@@ -408,7 +413,7 @@ export default function AdEditDialog({
             </Field>
           ) : null}
 
-          {!offers ? (
+          {!alwaysShowsPrice ? (
             <Field
               label={
                 <span className="inline-flex items-center gap-1.5">

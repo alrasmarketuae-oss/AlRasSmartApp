@@ -631,10 +631,10 @@ public class AdminUsersAppService(
                     ? null
                     : request.CompanyName.Trim();
                 var ownerName = (request.FullName ?? string.Empty).Trim();
-                var displayName = !string.IsNullOrWhiteSpace(companyName)
-                    ? companyName
-                    : ownerName;
-                if (string.IsNullOrWhiteSpace(displayName))
+                var fullName = !string.IsNullOrWhiteSpace(ownerName)
+                    ? ownerName
+                    : companyName ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(fullName))
                 {
                     throw new ArgumentException("Company name or full name is required.");
                 }
@@ -643,7 +643,7 @@ public class AdminUsersAppService(
                 user = new User
                 {
                     Id = Guid.NewGuid(),
-                    FullName = displayName,
+                    FullName = fullName,
                     CompanyName = companyName,
                     Email = email,
                     HashedPassword = passwordHash,
@@ -700,7 +700,7 @@ public class AdminUsersAppService(
                     AdminAuditActions.UserCreate,
                     AdminAuditEntityTypes.User,
                     user.Id.ToString("D"),
-                    $"Admin created {(isCustomer ? "company customer" : "supplier")} '{displayName}'",
+                    $"Admin created {(isCustomer ? "company customer" : "supplier")} '{companyName ?? fullName}'",
                     new { email, accountType },
                     cancellationToken);
 
@@ -729,7 +729,7 @@ public class AdminUsersAppService(
                 user = new User
                 {
                     Id = Guid.NewGuid(),
-                    FullName = companyName,
+                    FullName = TrimOrNull(request.FullName) ?? companyName,
                     CompanyName = companyName,
                     Email = email,
                     HashedPassword = passwordHash,
@@ -764,7 +764,7 @@ public class AdminUsersAppService(
             AdminAuditActions.UserCreate,
             AdminAuditEntityTypes.User,
             user.Id.ToString("D"),
-            $"Admin created {accountType} user '{user.FullName}'",
+            $"Admin created {accountType} user '{user.CompanyName ?? user.FullName}'",
             new { email, accountType },
             cancellationToken);
 
@@ -846,7 +846,7 @@ public class AdminUsersAppService(
             }
 
             user.CompanyName = companyName;
-            user.FullName = companyName;
+            user.FullName = TrimOrNull(request.FullName) ?? companyName;
             user.LandNumber = TrimOrNull(request.LandNumber);
             user.CommercialRegister = TrimOrNull(request.CommercialRegister);
             user.TaxNumber = TrimOrNull(request.TaxNumber);
@@ -856,14 +856,14 @@ public class AdminUsersAppService(
         {
             var companyName = TrimOrNull(request.CompanyName);
             var ownerName = TrimOrNull(request.FullName);
-            var displayName = companyName ?? ownerName;
-            if (string.IsNullOrWhiteSpace(displayName))
+            var fullName = ownerName ?? companyName;
+            if (string.IsNullOrWhiteSpace(fullName))
             {
                 throw new ArgumentException("Company name or full name is required.");
             }
 
             user.CompanyName = companyName;
-            user.FullName = displayName;
+            user.FullName = fullName;
             user.LandNumber = TrimOrNull(request.LandNumber);
             user.LicenseNumber = TrimOrNull(request.LicenseNumber);
             user.CommercialRegister = TrimOrNull(request.CommercialRegister);
@@ -889,7 +889,7 @@ public class AdminUsersAppService(
             AdminAuditActions.UserUpdate,
             AdminAuditEntityTypes.User,
             user.Id.ToString("D"),
-            $"Admin updated user '{user.FullName}'",
+            $"Admin updated user '{user.CompanyName ?? user.FullName}'",
             new { email },
             cancellationToken);
 

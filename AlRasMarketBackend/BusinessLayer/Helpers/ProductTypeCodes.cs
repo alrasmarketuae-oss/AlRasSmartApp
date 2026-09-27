@@ -15,6 +15,15 @@ public static class ProductTypeCodes
     public static bool IsRequests(byte? productTypeId) => productTypeId == Requests;
 
     /// <summary>
+    /// Pure Retail, Booking and Offers ads always show their price publicly, for every
+    /// account type. Category ads dual-listed as Retail keep the seller's show-price choice.
+    /// </summary>
+    public static bool AlwaysShowsPrice(byte? categoryId, byte? productTypeId) =>
+        IsBooking(productTypeId)
+        || IsOffers(productTypeId)
+        || (IsRetail(productTypeId) && categoryId is null or 0);
+
+    /// <summary>
     /// Catalog products under Categories. May also have ProductTypeId = Retail when dual-listed.
     /// </summary>
     public static bool IsCategoryProduct(byte? categoryId, byte? productTypeId) =>

@@ -49,20 +49,9 @@ public class EmailOtpService(
 
         var isArabic = NotificationMessages.IsArabic(user.PreferredLanguage);
         var subject = isArabic
-            ? "تطبيق الراس - رمز التحقق"
-            : "Al Ras App - Your verification code";
-        // Plain 6-digit line helps iOS/Android suggest the code above the keyboard.
-        var body = isArabic
-            ? BrandEmailLayout.Headline("رمز التحقق") +
-              BrandEmailLayout.Paragraph("استخدم الرمز التالي لإكمال التحقق على تطبيق الراس:") +
-              BrandEmailLayout.CodeBlock(otp) +
-              BrandEmailLayout.Paragraph($"رمز التحقق: {otp}") +
-              BrandEmailLayout.Paragraph("ينتهي هذا الرمز خلال 10 دقائق. إذا لم تطلب هذا الرمز، تجاهل الرسالة.")
-            : BrandEmailLayout.Headline("Verification code") +
-              BrandEmailLayout.Paragraph("Use the code below to verify your Al Ras account:") +
-              BrandEmailLayout.CodeBlock(otp) +
-              BrandEmailLayout.Paragraph($"Your verification code is: {otp}") +
-              BrandEmailLayout.Paragraph("This code expires in 10 minutes. If you did not request it, you can ignore this email.");
+            ? "الراس الذكي - رمز التحقق"
+            : "Al Ras Smart - Your verification code";
+        var body = BrandEmailLayout.VerificationCodeEmail(subject, otp, isArabic);
 
         await _emailService.SendAsync(normalizedEmail, subject, body, cancellationToken);
     }

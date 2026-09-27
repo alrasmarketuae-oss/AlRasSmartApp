@@ -80,7 +80,11 @@ export default function AddUserPage() {
     accountType === 'supplier' ||
     accountType === 'companyCustomer' ||
     accountType === 'shippingCompany'
-  const showPersonName = accountType === 'person' || accountType === 'supplier' || accountType === 'companyCustomer'
+  const showPersonName =
+    accountType === 'person' ||
+    accountType === 'supplier' ||
+    accountType === 'companyCustomer' ||
+    accountType === 'shippingCompany'
   const showAddress = accountType === 'supplier' || accountType === 'companyCustomer'
   const phoneRequired = accountType === 'shippingCompany'
 

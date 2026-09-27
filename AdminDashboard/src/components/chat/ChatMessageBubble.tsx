@@ -167,7 +167,7 @@ export default function ChatMessageBubble({
           }`}
         >
           <span>{timeLabel}</span>
-          {message.isEdited && !message.isDeleted ? <span>Â· {t('chat.edited')}</span> : null}
+          {message.isEdited && !message.isDeleted ? <span>· {t('chat.edited')}</span> : null}
           {isMine ? <DeliveryIndicator message={message} /> : null}
         </div>
       </div>
@@ -189,14 +189,14 @@ function DeliveryIndicator({ message }: { message: ChatMessage }) {
   }
 
   if (message.isSeen) {
-    return <span className="font-semibold text-[#53bdeb]">âœ“âœ“</span>
+    return <span className="font-semibold text-[#53bdeb]">✓✓</span>
   }
 
   if (message.isDelivered) {
-    return <span className="font-semibold text-white/75">âœ“âœ“</span>
+    return <span className="font-semibold text-white/75">✓✓</span>
   }
 
-  return <span className="font-semibold text-white/75">âœ“</span>
+  return <span className="font-semibold text-white/75">✓</span>
 }
 
 function MessageBody({
@@ -379,7 +379,7 @@ function AskForPriceProductCard({
               â–¶
             </div>
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-xs opacity-50">â€”</div>
+            <div className="flex h-full w-full items-center justify-center text-xs opacity-50">—</div>
           )}
         </div>
         <div className="min-w-0 flex-1">
@@ -543,7 +543,7 @@ function AskSupplierPriceCard({
           {imageUrl ? (
             <img src={imageUrl} alt="" className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-xs opacity-50">â€”</div>
+            <div className="flex h-full w-full items-center justify-center text-xs opacity-50">—</div>
           )}
         </div>
         <div className="min-w-0 flex-1">
@@ -664,6 +664,94 @@ function AskSupplierReplyCard({
     (product?.customerPriceUsd != null ? String(product.customerPriceUsd) : null) ||
     payload.customerPriceLabel?.trim() ||
     null
+
+  return (
+    <div
+      className={`overflow-hidden rounded-xl border px-3 py-2.5 text-start ${
+        isMine
+          ? 'border-white/35 bg-white/15'
+          : 'border-slate-200 bg-white dark:border-slate-600 dark:bg-slate-900'
+      }`}
+    >
+      <p
+        className={`text-[10px] font-bold uppercase tracking-wide ${
+          isMine ? 'text-white/70' : 'text-slate-500'
+        }`}
+      >
+        {t('chat.askSupplierTitle')}
+      </p>
+      <p
+        className={`notranslate mt-0.5 text-sm font-bold ${
+          isMine ? 'text-white' : 'text-slate-900 dark:text-white'
+        }`}
+        translate="no"
+      >
+        {title}
+      </p>
+      <p
+        className={`mt-1.5 text-sm font-semibold ${
+          payload.confirmed
+            ? isMine
+              ? 'text-[#7dffa8]'
+              : 'text-[#619d51]'
+            : isMine
+              ? 'text-[#ffd27a]'
+              : 'text-amber-600 dark:text-amber-400'
+        }`}
+      >
+        {payload.confirmed ? t('chat.askSupplierConfirmed') : t('chat.askSupplierUpdated')}
+      </p>
+      {!payload.confirmed ? (
+        <div className="mt-1.5 space-y-0.5">
+          {customerPrice ? (
+            <p
+              className={`notranslate text-sm font-bold ${
+                isMine ? 'text-[#7dffa8]' : 'text-[#619d51]'
+              }`}
+              translate="no"
+            >
+              <span
+                className={`me-1 text-[10px] font-semibold uppercase tracking-wide ${
+                  isMine ? 'text-white/70' : 'text-slate-500'
+                }`}
+              >
+                {t('chat.customerPrice')}
+              </span>
+              {customerPrice}
+              {unit ? (
+                <span className={`ms-1 text-[10px] font-medium ${isMine ? 'text-white/60' : 'text-slate-400'}`}>
+                  / {unit}
+                </span>
+              ) : null}
+            </p>
+          ) : isLoading ? (
+            <p className={`text-[11px] ${isMine ? 'text-white/60' : 'text-slate-400'}`}>
+              {t('chat.askForPriceLoading')}
+            </p>
+          ) : payload.newSupplierPriceLabel ? (
+            <p className={`text-[11px] ${isMine ? 'text-white/70' : 'text-slate-500'}`}>
+              {t('chat.supplierPrice')}: {payload.newSupplierPriceLabel}
+              {unit ? ` / ${unit}` : ''}
+            </p>
+          ) : null}
+        </div>
+      ) : customerPrice ? (
+        <p
+          className={`notranslate mt-1 text-sm font-bold ${
+            isMine ? 'text-[#7dffa8]' : 'text-[#619d51]'
+          }`}
+          translate="no"
+        >
+          <span
+            className={`me-1 text-[10px] font-semibold uppercase tracking-wide ${
+              isMine ? 'text-white/70' : 'text-slate-500'
+            }`}
+          >
+            {t('chat.customerPrice')}
+          </span>
+          {customerPrice}
+        </p>
+      ) : null}
       <Link
         to={`/ads/${payload.productId}`}
         className={`mt-2 inline-flex items-center rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition ${

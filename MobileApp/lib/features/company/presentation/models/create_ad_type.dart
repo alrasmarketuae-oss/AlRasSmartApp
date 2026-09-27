@@ -60,6 +60,14 @@ enum CreateAdType {
     return null;
   }
 
+  /// Retail, Booking and Offers ads always show their price for every account type.
+  static bool alwaysShowsPrice(String? label) {
+    final type = fromLabel(label);
+    return type == CreateAdType.retail ||
+        type == CreateAdType.booking ||
+        type == CreateAdType.offers;
+  }
+
   static String displayLabel(String? label) {
     final type = fromLabel(label);
     return type?.label ?? (label?.trim().isNotEmpty == true ? label!.trim() : '—');

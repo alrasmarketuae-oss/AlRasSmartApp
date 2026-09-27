@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using System.Text.RegularExpressions;
 using DataLayer.Helpers;
 using DataLayer.Interfaces;
@@ -783,7 +783,7 @@ public sealed class ProductDataAccess(
     public Task<string?> GetUserDisplayNameAsync(Guid userId, CancellationToken cancellationToken = default) =>
         dbContext.Users.AsNoTracking()
             .Where(x => x.Id == userId)
-            .Select(x => x.FullName)
+            .Select(x => string.IsNullOrWhiteSpace(x.CompanyName) ? x.FullName : x.CompanyName)
             .FirstOrDefaultAsync(cancellationToken);
 
     public Task<List<OwnerListingRow>> GetOwnerListingsAsync(

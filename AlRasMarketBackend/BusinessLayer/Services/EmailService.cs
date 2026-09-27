@@ -48,6 +48,20 @@ public class EmailService(IConfiguration configuration, ILogger<EmailService> lo
         var logoSrc = BuildLogoSrc(section["PublicBaseUrl"], logoPath);
         var brandedHtml = BrandEmailLayout.EnsureBranded(subject, bodyHtml, logoSrc);
 
+        var bannerCid = $"cid:{BrandEmailLayout.BannerContentId}";
+        var usesBanner = brandedHtml.Contains(bannerCid, StringComparison.OrdinalIgnoreCase);
+        var bannerPath = usesBanner ? ResolveAssetPath(BrandEmailLayout.BannerFileName) : null;
+        if (usesBanner && bannerPath is null && !string.IsNullOrWhiteSpace(section["PublicBaseUrl"]))
+        {
+            brandedHtml = brandedHtml.Replace(
+                bannerCid,
+                $"{section["PublicBaseUrl"]!.TrimEnd('/')}/branding/{BrandEmailLayout.BannerFileName}",
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        var usesLogo = brandedHtml.Contains($"cid:{BrandEmailLayout.LogoContentId}", StringComparison.OrdinalIgnoreCase);
+        var embedLogo = usesLogo && !string.IsNullOrWhiteSpace(logoPath) && File.Exists(logoPath);
+
         using var client = new SmtpClient(smtpServer, smtpPort)
         {
             EnableSsl = enableSsl,
@@ -62,16 +76,29 @@ public class EmailService(IConfiguration configuration, ILogger<EmailService> lo
         };
         message.To.Add(toEmail);
 
-        if (!string.IsNullOrWhiteSpace(logoPath) && File.Exists(logoPath))
+        if (embedLogo || bannerPath is not null)
         {
             var htmlView = AlternateView.CreateAlternateViewFromString(brandedHtml, null, MediaTypeNames.Text.Html);
-            var logo = new LinkedResource(logoPath)
+            if (embedLogo)
             {
-                ContentId = BrandEmailLayout.LogoContentId,
-                TransferEncoding = TransferEncoding.Base64,
-                ContentType = new ContentType("image/png") { Name = "logo.png" }
-            };
-            htmlView.LinkedResources.Add(logo);
+                htmlView.LinkedResources.Add(new LinkedResource(logoPath!)
+                {
+                    ContentId = BrandEmailLayout.LogoContentId,
+                    TransferEncoding = TransferEncoding.Base64,
+                    ContentType = new ContentType("image/png") { Name = "logo.png" }
+                });
+            }
+
+            if (bannerPath is not null)
+            {
+                htmlView.LinkedResources.Add(new LinkedResource(bannerPath)
+                {
+                    ContentId = BrandEmailLayout.BannerContentId,
+                    TransferEncoding = TransferEncoding.Base64,
+                    ContentType = new ContentType(MediaTypeNames.Image.Jpeg) { Name = BrandEmailLayout.BannerFileName }
+                });
+            }
+
             message.AlternateViews.Add(htmlView);
         }
         else
@@ -97,6 +124,19 @@ public class EmailService(IConfiguration configuration, ILogger<EmailService> lo
         }
 
         return $"{publicBaseUrl.TrimEnd('/')}/branding/logo.png";
+    }
+
+    private static string? ResolveAssetPath(string fileName)
+    {
+        string[] candidates =
+        [
+            Path.Combine(AppContext.BaseDirectory, "Assets", fileName),
+            Path.Combine(Directory.GetCurrentDirectory(), "Assets", fileName),
+            Path.Combine(AppContext.BaseDirectory, "wwwroot", "branding", fileName),
+            Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "branding", fileName),
+        ];
+
+        return candidates.FirstOrDefault(File.Exists);
     }
 
     private static string? ResolveLogoPath(string? configuredPath)

@@ -297,7 +297,9 @@ class MyListingProductModel {
   }
 
   bool get isNegotiable => _parseBoolFlag(negotiable);
-  bool get shouldShowPrice => showPrice;
+  /// Pure Retail, Booking and Offers ads always show their price.
+  bool get shouldShowPrice =>
+      showPrice || isBookingProduct || isOfferProduct || isPureRetailProduct;
 
   bool get isCreatedInArabic =>
       createdLanguage.trim().toLowerCase().startsWith('ar');

@@ -169,9 +169,8 @@ public partial class ProductsAppService(
                 ? null
                 : input.PackagingDetails.Trim(),
             Negotiable = input.Negotiable,
-            ShowPrice = productTypeId == ProductTypeCodes.Offers
-                ? true
-                : (input.ShowPrice ?? false),
+            ShowPrice = ProductTypeCodes.AlwaysShowsPrice(categoryId, productTypeId)
+                || (input.ShowPrice ?? false),
             VideoPath = videoPath,
             VideoDurationSeconds = input.ProductVideoFile is not null
                 ? input.VideoDurationSeconds
@@ -506,7 +505,7 @@ public partial class ProductsAppService(
             product.SupplierNotesEn = input.SupplierNotesEn;
         }
         product.Negotiable = input.Negotiable ?? product.Negotiable ?? false;
-        if (product.ProductTypeId == ProductTypeCodes.Offers)
+        if (ProductTypeCodes.AlwaysShowsPrice(product.CategoryId, product.ProductTypeId))
         {
             product.ShowPrice = true;
         }

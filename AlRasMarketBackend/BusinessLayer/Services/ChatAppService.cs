@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace BusinessLayer.Services;
 
@@ -19,7 +20,8 @@ public sealed partial class ChatAppService(
     IMediaStorageService mediaStorage,
     Microsoft.Extensions.Options.IOptions<BusinessLayer.Options.CloudflareR2Options> r2Options,
     ICommissionSettingsProvider commissionSettingsProvider,
-    ICategoryCommissionProvider categoryCommissionProvider) : IChatAppService
+    ICategoryCommissionProvider categoryCommissionProvider,
+    ILogger<ChatAppService> logger) : IChatAppService
 {
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(3);
     private static readonly TimeSpan OnlineThreshold = TimeSpan.FromMinutes(5);
