@@ -17,14 +17,18 @@ import { formatRelativeTime } from '../../utils/timeAgo'
 import { useClaimProductReviewLockMutation } from '../../store'
 import { getRtkErrorMessage } from '../../utils/rtkError'
 import { normalizeProductReviewLock } from '../../store/normalizers'
-import AdQuickViewDialog from './AdQuickViewDialog'
+import RejectAdReasonDialog from './RejectAdReasonDialog'
+
+export type AdRejectNotes = { supplierNotesEn: string; supplierNotesAr: string }
 
 type AdsTableProps = {
   products: AdminProduct[]
   approvingId?: string | null
   rejectingId?: string | null
-  onApprove?: (productId: string) => void
-  onReject?: (productId: string) => void
+  /** Called after the review lock is claimed and the admin confirmed. */
+  onApprove?: (productId: string) => Promise<void>
+  /** Called after the review lock is claimed with the entered reason. */
+  onReject?: (productId: string, notes: AdRejectNotes) => Promise<void>
   /** When true, owner column shows client/requester label (request ads). */
   isRequestList?: boolean
 }
@@ -72,6 +76,10 @@ function extractLockedPayload(err: unknown): AdminProductReviewLock | null {
 
 export default function AdsTable({
   products,
+  approvingId = null,
+  rejectingId = null,
+  onApprove,
+  onReject,
   isRequestList = false,
 }: AdsTableProps) {
   const { t, locale } = useAppPreferences()
@@ -82,7 +90,49 @@ export default function AdsTable({
   const [previewBusyId, setPreviewBusyId] = useState<string | null>(null)
   const [lockedLock, setLockedLock] = useState<AdminProductReviewLock | null>(null)
   const [previewError, setPreviewError] = useState<string | null>(null)
-  const [quickViewProductId, setQuickViewProductId] = useState<string | null>(null)
+  const [claimingId, setClaimingId] = useState<string | null>(null)
+  const [rejectTargetId, setRejectTargetId] = useState<string | null>(null)
+
+  /** Approve/reject require the caller to hold the ad review lock. */
+  async function claimForAction(productId: string): Promise<boolean> {
+    setPreviewError(null)
+    setClaimingId(productId)
+    try {
+      const result = await claimReviewLock({ productId }).unwrap()
+      if (!result.isLockedByMe || result.isLockedByOther) {
+        setLockedLock({ ...result, isLockedByMe: false, isLockedByOther: true })
+        return false
+      }
+      return true
+    } catch (err) {
+      const locked = extractLockedPayload(err)
+      if (locked) {
+        setLockedLock(locked)
+      } else {
+        setPreviewError(getRtkErrorMessage(err as never, t('ads.reviewLockClaimError')))
+      }
+      return false
+    } finally {
+      setClaimingId(null)
+    }
+  }
+
+  async function handleQuickApprove(productId: string) {
+    if (!onApprove || !window.confirm(t('ads.approveConfirm'))) return
+    if (!(await claimForAction(productId))) return
+    await onApprove(productId)
+  }
+
+  async function handleQuickReject(notes: AdRejectNotes) {
+    const productId = rejectTargetId
+    if (!productId || !onReject) return
+    if (!(await claimForAction(productId))) {
+      setRejectTargetId(null)
+      return
+    }
+    await onReject(productId, notes)
+    setRejectTargetId(null)
+  }
 
   async function handlePreview(productId: string) {
     setPreviewError(null)
@@ -187,6 +237,10 @@ export default function AdsTable({
           {products.map((product) => {
             const listStatus = resolveAdListStatus(product)
             const isPreviewBusy = previewBusyId === product.productId
+            const isRowBusy =
+              claimingId != null ||
+              approvingId === product.productId ||
+              rejectingId === product.productId
             const supplierName =
               product.ownerCompanyName?.trim() || product.ownerName || '—'
             const statusLabel =
@@ -291,16 +345,43 @@ export default function AdsTable({
                 </td>
                 <td className="px-4 py-3.5 text-start sm:px-5">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setQuickViewProductId(product.productId)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-                    >
-                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9m11.25-5.25v4.5m0-4.5h-4.5m4.5 0L15 9m-11.25 11.25v-4.5m0 4.5h4.5m-4.5 0L9 15m11.25 5.25v-4.5m0 4.5h-4.5m4.5 0L15 15" />
-                      </svg>
-                      {t('ads.quickView')}
-                    </button>
+                    {onApprove && listStatus !== 'active' ? (
+                      <button
+                        type="button"
+                        title={t('ads.approveAd')}
+                        aria-label={t('ads.approveAd')}
+                        disabled={isRowBusy}
+                        onClick={() => void handleQuickApprove(product.productId)}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400"
+                      >
+                        {approvingId === product.productId ||
+                        (claimingId === product.productId && rejectTargetId == null) ? (
+                          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" />
+                        ) : (
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                          </svg>
+                        )}
+                      </button>
+                    ) : null}
+                    {onReject && listStatus !== 'rejected' ? (
+                      <button
+                        type="button"
+                        title={t('ads.rejectAd')}
+                        aria-label={t('ads.rejectAd')}
+                        disabled={isRowBusy}
+                        onClick={() => setRejectTargetId(product.productId)}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100 disabled:opacity-50 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400"
+                      >
+                        {rejectingId === product.productId ? (
+                          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-red-600 border-t-transparent" />
+                        ) : (
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                          </svg>
+                        )}
+                      </button>
+                    ) : null}
                     <button
                       type="button"
                       disabled={isPreviewBusy || previewBusyId != null}
@@ -325,9 +406,14 @@ export default function AdsTable({
         </tbody>
       </table>
 
-      <AdQuickViewDialog
-        productId={quickViewProductId}
-        onClose={() => setQuickViewProductId(null)}
+      <RejectAdReasonDialog
+        open={rejectTargetId != null}
+        busy={
+          rejectTargetId != null &&
+          (claimingId === rejectTargetId || rejectingId === rejectTargetId)
+        }
+        onCancel={() => setRejectTargetId(null)}
+        onConfirm={(notes) => void handleQuickReject(notes)}
       />
     </div>
   )

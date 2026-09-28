@@ -92,6 +92,17 @@ public interface IStaticReferenceCache
 /// <summary>Backward-compatible alias for geo lookups on <see cref="IStaticReferenceCache"/>.</summary>
 public interface IGeoReferenceCache : IStaticReferenceCache;
 
+/// <summary>Live versions currently published on Google Play / the App Store.</summary>
+public interface IStoreAppVersionProvider
+{
+    Task<StoreAppVersions> GetAsync(
+        string androidStoreUrl,
+        string iosStoreUrl,
+        CancellationToken cancellationToken = default);
+}
+
+public sealed record StoreAppVersions(string? AndroidVersion, string? IosVersion);
+
 public interface IAdminSettingsAppService
 {
     Task<object> GetSettingsAsync(CancellationToken cancellationToken = default);

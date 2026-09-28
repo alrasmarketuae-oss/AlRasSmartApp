@@ -17,15 +17,18 @@ public class CategoriesAppService(
     IAdminPermissionService permissionService,
     IAdminAuditLogAppService auditLogAppService,
     IMediaStorageService mediaStorage,
-    IStaticReferenceCache staticReferenceCache) : ICategoriesAppService
+    IStaticReferenceCache staticReferenceCache,
+    ICategoryCommissionProvider categoryCommissionProvider) : ICategoriesAppService
 {
     private const string PublicCategoriesCacheKeyPrefix = "categories:public";
     private const string AdminCategoriesCacheKeyPrefix = "categories:admin";
+    private const decimal DefaultNewCategoryCommissionPercent = 1m;
 
     private void BustCategoryCaches()
     {
         CategoriesListCache.Bump();
         staticReferenceCache.InvalidateCategories();
+        categoryCommissionProvider.Invalidate();
     }
 
     public async Task<object> GetAllAsync(CancellationToken cancellationToken = default)
@@ -84,7 +87,8 @@ public class CategoriesAppService(
         {
             NameEn = name,
             NameAr = nameAr,
-            ImgPath = string.IsNullOrWhiteSpace(input.ImgPath) ? "/images/categories/default.jpg" : input.ImgPath.Trim()
+            ImgPath = string.IsNullOrWhiteSpace(input.ImgPath) ? "/images/categories/default.jpg" : input.ImgPath.Trim(),
+            CommissionPercent = DefaultNewCategoryCommissionPercent
         };
 
         await dbContext.Categories.AddAsync(entity, cancellationToken);
@@ -96,7 +100,7 @@ public class CategoriesAppService(
             AdminAuditEntityTypes.Category,
             entity.CategoryId.ToString(),
             $"Created category '{entity.NameEn}'",
-            new { nameEn = entity.NameEn, nameAr = entity.NameAr },
+            new { nameEn = entity.NameEn, nameAr = entity.NameAr, commissionPercent = entity.CommissionPercent },
             cancellationToken);
 
         return MapCategory(entity, user.Id);

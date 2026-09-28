@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import AdsTable from '../components/ads/AdsTable'
+import AdsTable, { type AdRejectNotes } from '../components/ads/AdsTable'
 import OrdersTable from '../components/orders/OrdersTable'
 import AdsChannelTabs from '../components/layout/AdsChannelTabs'
 import OrdersChannelTabs from '../components/layout/OrdersChannelTabs'
@@ -232,13 +232,16 @@ export default function ReqsOffersPage() {
     }
   }
 
-  async function handleReject(productId: string) {
-    if (!window.confirm(t('ads.rejectConfirm'))) return
+  async function handleReject(productId: string, notes: AdRejectNotes) {
     setRejectingId(productId)
     setActionError(null)
     setSuccessMessage(null)
     try {
-      await rejectProduct({ productId }).unwrap()
+      await rejectProduct({
+        productId,
+        supplierNotesEn: notes.supplierNotesEn || null,
+        supplierNotesAr: notes.supplierNotesAr || null,
+      }).unwrap()
       setSuccessMessage(t('ads.rejectSuccess'))
     } catch (err) {
       setActionError(getRtkErrorMessage(err as never, t('ads.rejectError')))

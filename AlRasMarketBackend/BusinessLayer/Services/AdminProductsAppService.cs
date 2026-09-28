@@ -753,7 +753,8 @@ public class AdminProductsAppService(
             titleEn: notificationEn.FcmTitle,
             bodyEn: notificationEn.FcmBody,
             titleAr: notificationAr.FcmTitle,
-            bodyAr: notificationAr.FcmBody);
+            bodyAr: notificationAr.FcmBody,
+            sendEmail: true);
 
         return "Product rejected successfully.";
     }
@@ -1625,7 +1626,8 @@ public class AdminProductsAppService(
         string? titleEn = null,
         string? bodyEn = null,
         string? titleAr = null,
-        string? bodyAr = null)
+        string? bodyAr = null,
+        bool sendEmail = false)
     {
         if (owner is null)
         {
@@ -1633,6 +1635,7 @@ public class AdminProductsAppService(
         }
 
         var ownerId = owner.Id;
+        var ownerEmail = owner.Email;
         var fcmToken = owner.FcmToken;
         var preferredLanguage = owner.PreferredLanguage;
         var allowPushAndEmail = NotificationDeliveryPrefs.AllowsPushAndEmail(owner.IsNotificationsOn);
@@ -1676,7 +1679,18 @@ public class AdminProductsAppService(
                     logger.LogWarning(ex, "Failed to persist inbox notification for {LogContext}", logContext);
                 }
 
-                // Ad approve/reject: inbox + push only (no email).
+                if (sendEmail && !string.IsNullOrWhiteSpace(ownerEmail))
+                {
+                    try
+                    {
+                        var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                        await emailService.SendAsync(ownerEmail, subject, emailHtml);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, "Failed to send email for {LogContext}", logContext);
+                    }
+                }
 
                 if (allowPushAndEmail && !string.IsNullOrWhiteSpace(fcmToken))
                 {

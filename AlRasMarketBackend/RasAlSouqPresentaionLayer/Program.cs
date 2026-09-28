@@ -85,6 +85,14 @@ builder.Services.Configure<CloudflareTurnstileOptions>(
     builder.Configuration.GetSection(CloudflareTurnstileOptions.SectionName));
 builder.Services.AddHttpClient(nameof(TurnstileVerifier));
 builder.Services.AddScoped<ITurnstileVerifier, TurnstileVerifier>();
+builder.Services.AddHttpClient(StoreAppVersionProvider.HttpClientName, client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(8);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd(
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36");
+    client.DefaultRequestHeaders.AcceptLanguage.ParseAdd("en-US,en;q=0.9");
+});
+builder.Services.AddSingleton<IStoreAppVersionProvider, StoreAppVersionProvider>();
 builder.Services.AddScoped<IAuthAppService, AuthAppService>();
 builder.Services.AddScoped<IAccountDeletionAppService, AccountDeletionAppService>();
 builder.Services.AddScoped<IAdminCompaniesAppService, AdminCompaniesAppService>();

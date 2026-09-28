@@ -264,19 +264,29 @@ public class AdminCompaniesAppService(
 
             _ = Task.Run(async () =>
             {
+                // The rejection reason is transactional: always email it, even when
+                // the user muted push notifications.
+                if (!string.IsNullOrWhiteSpace(registrationCompanyEmail))
+                {
+                    try
+                    {
+                        await emailService.SendAsync(
+                            registrationCompanyEmail,
+                            registrationNotification.EmailSubject,
+                            registrationNotification.EmailHtml);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(
+                            ex,
+                            "Failed to email rejection reason to company {CompanyId}",
+                            companyId);
+                    }
+                }
+
                 try
                 {
-                    if (!registrationAllowPushAndEmail)
-                    {
-                        return;
-                    }
-
-                    await emailService.SendAsync(
-                        registrationCompanyEmail,
-                        registrationNotification.EmailSubject,
-                        registrationNotification.EmailHtml);
-
-                    if (!string.IsNullOrWhiteSpace(registrationFcmToken))
+                    if (registrationAllowPushAndEmail && !string.IsNullOrWhiteSpace(registrationFcmToken))
                     {
                         var isShipping = registrationRoleId == RoleIds.ShippingCompany;
                         await fcmNotificationService.SendNotificationAsync(
@@ -295,7 +305,7 @@ public class AdminCompaniesAppService(
                 {
                     logger.LogError(
                         ex,
-                        "Failed to send background rejection notifications for company {CompanyId}",
+                        "Failed to push rejection notification for company {CompanyId}",
                         companyId);
                 }
             });
@@ -353,19 +363,24 @@ public class AdminCompaniesAppService(
 
         _ = Task.Run(async () =>
         {
+            if (!string.IsNullOrWhiteSpace(companyEmail))
+            {
+                try
+                {
+                    await emailService.SendAsync(
+                        companyEmail,
+                        notification.EmailSubject,
+                        notification.EmailHtml);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Failed to email profile-reject reason to company {CompanyId}", companyId);
+                }
+            }
+
             try
             {
-                if (!allowPushAndEmail)
-                {
-                    return;
-                }
-
-                await emailService.SendAsync(
-                    companyEmail,
-                    notification.EmailSubject,
-                    notification.EmailHtml);
-
-                if (!string.IsNullOrWhiteSpace(fcmToken))
+                if (allowPushAndEmail && !string.IsNullOrWhiteSpace(fcmToken))
                 {
                     await fcmNotificationService.SendNotificationAsync(
                         fcmToken,

@@ -30,7 +30,10 @@ class AlRasMarket extends StatefulWidget {
 
 class _AlRasMarketState extends State<AlRasMarket> with WidgetsBindingObserver {
   bool _permissionFlowStarted = false;
-  bool _updateCheckStarted = false;
+  static const _updateRecheckInterval = Duration(minutes: 30);
+  bool _updateCheckRunning = false;
+  bool _updateDialogVisible = false;
+  DateTime? _lastUpdateCheckAt;
 
   @override
   void initState() {
@@ -53,6 +56,8 @@ class _AlRasMarketState extends State<AlRasMarket> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       // Tablets often attach Activity only after resume.
       _promptNotificationPermission(reason: 'resume');
+      // Apps kept in the background never cold-start, so re-check on resume.
+      _checkAppUpdate();
     }
   }
 
@@ -85,15 +90,27 @@ class _AlRasMarketState extends State<AlRasMarket> with WidgetsBindingObserver {
   }
 
   Future<void> _checkAppUpdate() async {
-    if (_updateCheckStarted || kIsWeb) return;
-    _updateCheckStarted = true;
-    await Future<void>.delayed(const Duration(milliseconds: 900));
-    if (!mounted) return;
-    final info = await AppUpdateChecker.check();
-    if (!mounted || info == null) return;
-    final navContext = AppRoutes.navigatorKey.currentContext;
-    if (navContext == null || !navContext.mounted) return;
-    await showAppUpdateDialog(navContext, info: info);
+    if (kIsWeb || _updateCheckRunning || _updateDialogVisible) return;
+    final last = _lastUpdateCheckAt;
+    if (last != null && DateTime.now().difference(last) < _updateRecheckInterval) {
+      return;
+    }
+    _updateCheckRunning = true;
+    _lastUpdateCheckAt = DateTime.now();
+    try {
+      await Future<void>.delayed(const Duration(milliseconds: 900));
+      if (!mounted) return;
+      final info = await AppUpdateChecker.check();
+      if (!mounted || info == null) return;
+      final navContext = AppRoutes.navigatorKey.currentContext;
+      if (navContext == null || !navContext.mounted) return;
+      _updateDialogVisible = true;
+      _updateCheckRunning = false;
+      await showAppUpdateDialog(navContext, info: info);
+    } finally {
+      _updateCheckRunning = false;
+      _updateDialogVisible = false;
+    }
   }
 
   @override

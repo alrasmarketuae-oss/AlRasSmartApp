@@ -478,12 +478,16 @@ public static class NotificationMessages
         string? adminNotesAr)
     {
         var safeName = string.IsNullOrWhiteSpace(productName) ? DefaultAdName(language) : productName.Trim();
-        var reasonEn = string.IsNullOrWhiteSpace(adminNotesEn)
-            ? "Please edit your ad details and resubmit."
-            : adminNotesEn.Trim();
-        var reasonAr = string.IsNullOrWhiteSpace(adminNotesAr)
-            ? "يرجى تعديل تفاصيل إعلانك وإعادة الإرسال."
-            : adminNotesAr.Trim();
+        // Admins may enter the reason in one language only; never drop it for the other.
+        var anyReason = !string.IsNullOrWhiteSpace(adminNotesAr) ? adminNotesAr.Trim()
+            : !string.IsNullOrWhiteSpace(adminNotesEn) ? adminNotesEn.Trim()
+            : null;
+        var reasonEn = !string.IsNullOrWhiteSpace(adminNotesEn)
+            ? adminNotesEn.Trim()
+            : anyReason ?? "Please edit your ad details and resubmit.";
+        var reasonAr = !string.IsNullOrWhiteSpace(adminNotesAr)
+            ? adminNotesAr.Trim()
+            : anyReason ?? "يرجى تعديل تفاصيل إعلانك وإعادة الإرسال.";
 
         if (IsArabic(language))
         {

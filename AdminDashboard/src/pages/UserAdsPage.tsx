@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import AdsFilterBar from '../components/ads/AdsFilterBar'
-import AdsTable from '../components/ads/AdsTable'
+import AdsTable, { type AdRejectNotes } from '../components/ads/AdsTable'
 import CreateCompanyAdChooser from '../components/users/CreateCompanyAdChooser'
 import { useAppPreferences } from '../context/AppPreferencesProvider'
 import { useAskAiPageData } from '../context/AskAiPageDataProvider'
@@ -134,9 +134,6 @@ export default function UserAdsPage() {
   }
 
   async function handleApprove(productId: string) {
-    const confirmed = window.confirm(t('ads.approveConfirm'))
-    if (!confirmed) return
-
     setApprovingId(productId)
     setActionError(null)
     setSuccessMessage(null)
@@ -151,13 +148,7 @@ export default function UserAdsPage() {
     }
   }
 
-  async function handleReject(productId: string) {
-    const reason = window.prompt(t('users.rejectReasonTitle')) ?? ''
-    if (!reason.trim()) return
-
-    const confirmed = window.confirm(t('ads.rejectConfirm'))
-    if (!confirmed) return
-
+  async function handleReject(productId: string, notes: AdRejectNotes) {
     setRejectingId(productId)
     setActionError(null)
     setSuccessMessage(null)
@@ -165,7 +156,8 @@ export default function UserAdsPage() {
     try {
       const result = await rejectProduct({
         productId,
-        supplierNotesEn: reason.trim(),
+        supplierNotesEn: notes.supplierNotesEn || null,
+        supplierNotesAr: notes.supplierNotesAr || null,
       }).unwrap()
       setSuccessMessage(result.message || t('ads.rejectSuccess'))
     } catch (err) {

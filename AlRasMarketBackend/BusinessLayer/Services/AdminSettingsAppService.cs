@@ -13,7 +13,8 @@ public class AdminSettingsAppService(
     ICommissionSettingsProvider commissionSettingsProvider,
     ICategoryCommissionProvider categoryCommissionProvider,
     IAdminAuditLogAppService auditLogAppService,
-    IStaticReferenceCache staticReferenceCache) : IAdminSettingsAppService
+    IStaticReferenceCache staticReferenceCache,
+    IStoreAppVersionProvider storeAppVersionProvider) : IAdminSettingsAppService
 {
     private const string DefaultAndroidStoreUrl =
         "https://play.google.com/store/apps/details?id=com.mergespice.alrasmarket";
@@ -72,18 +73,29 @@ public class AdminSettingsAppService(
     public async Task<object> GetPublicAppVersionAsync(CancellationToken cancellationToken = default)
     {
         var settings = await GetOrCreateRowAsync(cancellationToken);
+        var androidStoreUrl = string.IsNullOrWhiteSpace(settings.AndroidStoreUrl)
+            ? DefaultAndroidStoreUrl
+            : settings.AndroidStoreUrl.Trim();
+        var iosStoreUrl = string.IsNullOrWhiteSpace(settings.IosStoreUrl)
+            ? DefaultIosStoreUrl
+            : settings.IosStoreUrl.Trim();
+        var storeVersions = await storeAppVersionProvider.GetAsync(
+            androidStoreUrl,
+            iosStoreUrl,
+            cancellationToken);
+
         return new
         {
-            androidLatestVersion = NormalizeVersion(settings.AndroidLatestVersion),
-            iosLatestVersion = NormalizeVersion(settings.IosLatestVersion),
+            androidLatestVersion = MaxVersion(
+                NormalizeVersion(settings.AndroidLatestVersion),
+                NormalizeVersion(storeVersions.AndroidVersion)),
+            iosLatestVersion = MaxVersion(
+                NormalizeVersion(settings.IosLatestVersion),
+                NormalizeVersion(storeVersions.IosVersion)),
             androidMinVersion = NormalizeVersion(settings.AndroidMinVersion),
             iosMinVersion = NormalizeVersion(settings.IosMinVersion),
-            androidStoreUrl = string.IsNullOrWhiteSpace(settings.AndroidStoreUrl)
-                ? DefaultAndroidStoreUrl
-                : settings.AndroidStoreUrl.Trim(),
-            iosStoreUrl = string.IsNullOrWhiteSpace(settings.IosStoreUrl)
-                ? DefaultIosStoreUrl
-                : settings.IosStoreUrl.Trim(),
+            androidStoreUrl,
+            iosStoreUrl,
             messageAr = settings.AppUpdateMessageAr,
             messageEn = settings.AppUpdateMessageEn
         };
@@ -226,6 +238,28 @@ public class AdminSettingsAppService(
         if (string.IsNullOrWhiteSpace(value)) return null;
         var trimmed = value.Trim().TrimStart('v', 'V');
         return trimmed.Length == 0 ? null : trimmed;
+    }
+
+    private static string? MaxVersion(string? a, string? b)
+    {
+        if (a is null) return b;
+        if (b is null) return a;
+        return CompareVersions(a, b) >= 0 ? a : b;
+    }
+
+    private static int CompareVersions(string a, string b)
+    {
+        var left = a.Split('.');
+        var right = b.Split('.');
+        var length = Math.Max(left.Length, right.Length);
+        for (var i = 0; i < length; i++)
+        {
+            var l = i < left.Length && int.TryParse(left[i], out var lv) ? lv : 0;
+            var r = i < right.Length && int.TryParse(right[i], out var rv) ? rv : 0;
+            if (l != r) return l.CompareTo(r);
+        }
+
+        return 0;
     }
 
     private async Task<List<CategoryCommissionDto>> GetCategoryCommissionsAsync(
