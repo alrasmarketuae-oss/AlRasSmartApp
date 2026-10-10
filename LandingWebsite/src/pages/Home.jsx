@@ -46,6 +46,14 @@ export default function Home({ lang, onAskAi }) {
               >
                 {t.phones.iosBtn}
               </a>
+              <a
+                href={STORE_LINKS.mac}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full border-2 border-brand-blue bg-brand-blue/5 px-5 py-2.5 text-sm font-bold text-brand-blue transition hover:bg-brand-blue/10 sm:px-6 sm:py-3"
+              >
+                {t.phones.macBtn}
+              </a>
               <button
                 type="button"
                 onClick={onAskAi}
@@ -192,6 +200,14 @@ export default function Home({ lang, onAskAi }) {
               className="rounded-full border-2 border-white px-8 py-3 font-bold text-white"
             >
               App Store
+            </a>
+            <a
+              href={STORE_LINKS.mac}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-full border-2 border-white/80 bg-white/10 px-8 py-3 font-bold text-white"
+            >
+              Mac
             </a>
           </div>
           <p className="mt-6 text-sm font-semibold tracking-wide text-white/85">Powered by Al Ras Smart</p>

@@ -1,6 +1,8 @@
 export const STORE_LINKS = {
   android: 'https://play.google.com/store/apps/details?id=com.mergespice.alrasmarket',
   ios: 'https://apps.apple.com/gb/app/al-ras-smart/id6795899781',
+  /** Latest GitHub Release asset produced by `.github/workflows/build-macos.yml`. */
+  mac: 'https://github.com/alrasmarketuae-oss/AlRasSmartApp/releases/latest/download/AlRasMarket-macOS.zip',
 }
 
 /** Production API host for AlRas Market. In Vite/dev use same-origin proxy to avoid CORS. */

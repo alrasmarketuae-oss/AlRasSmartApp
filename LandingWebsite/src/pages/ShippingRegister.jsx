@@ -409,6 +409,14 @@ export default function ShippingRegister({ lang }) {
                 >
                   {t.downloadIos}
                 </a>
+                <a
+                  href={STORE_LINKS.mac}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex flex-1 items-center justify-center rounded-xl border border-brand-blue/40 bg-brand-blue/5 px-4 py-3 text-sm font-bold text-brand-blue"
+                >
+                  {t.downloadMac}
+                </a>
               </div>
             </div>
           ) : null}
