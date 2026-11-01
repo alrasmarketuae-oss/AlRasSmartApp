@@ -17,6 +17,7 @@ export const content = {
       subtitle: 'اختر منصتك وابدأ التجارة بسهولة وأمان',
       androidBtn: 'تحميل أندرويد',
       iosBtn: 'تحميل iOS',
+      macBtn: 'تحميل Mac',
       screenTitle: 'الراس الذكي',
       screenSubtitle: 'تجارة الجملة الذكية',
     },
@@ -178,6 +179,7 @@ export const content = {
       successBody: 'يمكنك الآن تحميل التطبيق وتسجيل الدخول بنفس البريد وكلمة المرور.',
       downloadAndroid: 'تحميل أندرويد',
       downloadIos: 'تحميل iOS',
+      downloadMac: 'تحميل Mac',
     },
   },
   en: {
@@ -198,6 +200,7 @@ export const content = {
       subtitle: 'Choose your platform and start trading securely',
       androidBtn: 'Download Android',
       iosBtn: 'Download iOS',
+      macBtn: 'Download Mac',
       screenTitle: 'Al Ras Smart',
       screenSubtitle: 'Smart wholesale trade',
     },
@@ -359,6 +362,7 @@ export const content = {
       successBody: 'You can now download the app and sign in with the same email and password.',
       downloadAndroid: 'Download Android',
       downloadIos: 'Download iOS',
+      downloadMac: 'Download Mac',
     },
   },
 }

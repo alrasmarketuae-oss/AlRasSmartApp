@@ -1,0 +1,83 @@
+name: Build macOS app
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - cursor/macos-download-build-30c8
+    paths:
+      - 'MobileApp/**'
+      - '.github/workflows/build-macos.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: MobileApp
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Enable macOS desktop
+        run: flutter config --enable-macos-desktop
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build macOS release
+        run: flutter build macos --release
+
+      - name: Package .app as zip
+        run: |
+          set -euo pipefail
+          APP_PATH="build/macos/Build/Products/Release/alrasmarket.app"
+          test -d "$APP_PATH"
+          VERSION="$(grep '^version:' pubspec.yaml | head -1 | awk '{print $2}' | cut -d+ -f1)"
+          OUT_NAME="AlRasMarket-macOS-${VERSION}.zip"
+          LATEST_NAME="AlRasMarket-macOS.zip"
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "../$OUT_NAME"
+          cp "../$OUT_NAME" "../$LATEST_NAME"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "OUT_NAME=$OUT_NAME" >> "$GITHUB_ENV"
+          echo "LATEST_NAME=$LATEST_NAME" >> "$GITHUB_ENV"
+          ls -lh "../$OUT_NAME" "../$LATEST_NAME"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AlRasMarket-macOS
+          path: |
+            AlRasMarket-macOS-*.zip
+            AlRasMarket-macOS.zip
+          if-no-files-found: error
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: macos-v${{ env.VERSION }}
+          name: macOS ${{ env.VERSION }}
+          body: |
+            Al Ras Market macOS desktop build `${{ env.VERSION }}`.
+
+            Download: `AlRasMarket-macOS.zip`
+
+            Note: the build is not notarized. On first open, use Right-click → Open if macOS Gatekeeper blocks it.
+          files: |
+            AlRasMarket-macOS-${{ env.VERSION }}.zip
+            AlRasMarket-macOS.zip
+          make_latest: true
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
