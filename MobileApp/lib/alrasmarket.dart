@@ -2,12 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:alrasmarket/core/router/app_router.dart';
+import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/services/app_push_notification_service.dart';
 import 'package:alrasmarket/core/services/app_update_checker.dart';
 import 'package:alrasmarket/core/services/fcm_token_service.dart';
 import 'package:alrasmarket/core/services_locator/services_locator.dart';
 import 'package:alrasmarket/core/theme/light_theme.dart';
 import 'package:alrasmarket/core/widgets/app_update_dialog.dart';
+import 'package:alrasmarket/core/widgets/brand_splash_overlay.dart';
 import 'package:alrasmarket/core/widgets/dismiss_keyboard.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_cubit.dart';
 import 'package:alrasmarket/features/auth/presentation/controller/cubit/auth_states.dart';
@@ -34,6 +36,8 @@ class _AlRasMarketState extends State<AlRasMarket> with WidgetsBindingObserver {
   bool _updateCheckRunning = false;
   bool _updateDialogVisible = false;
   DateTime? _lastUpdateCheckAt;
+  // Cold-start brand splash for signed-in users (skipped on warm resume).
+  late final bool _showColdStartSplash = AuthService.instance.isAuthenticated;
 
   @override
   void initState() {
@@ -160,9 +164,12 @@ class _AlRasMarketState extends State<AlRasMarket> with WidgetsBindingObserver {
                         systemNavigationBarColor: Colors.white,
                         systemNavigationBarIconBrightness: Brightness.dark,
                       ),
-                      child: ColoredBox(
-                        color: const Color(0xffF2F7FF),
-                        child: child ?? const SizedBox.shrink(),
+                      child: BrandSplashOverlay(
+                        visible: _showColdStartSplash,
+                        child: ColoredBox(
+                          color: const Color(0xffF2F7FF),
+                          child: child ?? const SizedBox.shrink(),
+                        ),
                       ),
                     ),
                   );

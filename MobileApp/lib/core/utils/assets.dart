@@ -2,6 +2,8 @@ class AppAssets {
   static const String logo = 'assets/logo/logo.png';
   /// Tri-color mark only (white background) for brand loading lockup.
   static const String brandMark = 'assets/logo/brand_mark.png';
+  /// Full marketing splash shown on cold start (native + brief Flutter overlay).
+  static const String splashScreen = 'assets/logo/splash_screen.jpg';
   /// Soft wave background for products loading screen.
   static const String brandLoadingBg = 'assets/images/brand_loading_bg.png';
   //language icons

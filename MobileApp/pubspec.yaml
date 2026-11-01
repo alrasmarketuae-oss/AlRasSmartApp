@@ -158,11 +158,13 @@ flutter_launcher_icons:
   remove_alpha_ios: true
 
 flutter_native_splash:
-  color: "#FFFFFF"
-  image: assets/logo/splash.png
+  # Full marketing splash fills the launch screen (pre-Flutter).
+  background_image: assets/logo/splash_screen.jpg
   android_12:
     color: "#FFFFFF"
+    # Android 12+ only allows a centered icon; keep the brand mark.
     image: assets/logo/splash.png
   android: true
   ios: true
   web: false
+  fullscreen: true

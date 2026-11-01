@@ -1,7 +1,6 @@
 import 'package:alrasmarket/core/router/app_router.dart';
 import 'package:alrasmarket/core/widgets/login_required_sheet.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
-import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/utils/string_display_format.dart';
 import 'package:alrasmarket/core/widgets/header_notification_bell.dart';
 import 'package:alrasmarket/core/widgets/profile_avatar.dart';
@@ -114,13 +113,6 @@ class AppHeader extends StatelessWidget {
               if (!isRecording) ...[
                 SizedBox(width: 4.w),
                 const HeaderNotificationBell(),
-                SizedBox(width: 2.w),
-                Image.asset(
-                  AppAssets.logo,
-                  width: 44.w,
-                  height: 44.w,
-                  fit: BoxFit.contain,
-                ),
               ],
             ],
           ),
