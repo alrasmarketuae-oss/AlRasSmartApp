@@ -41,7 +41,8 @@ class CreateAdBookingFieldsWidget extends StatelessWidget {
               current.isDestinationPortsLoading ||
           previous.bookingPriceType != current.bookingPriceType,
       builder: (context, state) {
-        final showPorts = state.bookingPriceType != BookingPriceType.fob;
+        // Loading port always follows Country of Origin (including FOB).
+        // Destination country + arrival port stay hidden for FOB.
         final showDestination = state.bookingPriceType != BookingPriceType.fob;
 
         return Column(
@@ -61,8 +62,8 @@ class CreateAdBookingFieldsWidget extends StatelessWidget {
               isPortsLoading: state.isOriginPortsLoading,
               onCountryChanged: cubit.setOriginCountry,
               onPortChanged: cubit.setOriginPort,
-              showPorts: showPorts,
-              // Origin country always required; loading port optional for CNF/CIF.
+              showPorts: true,
+              // Origin country required; loading port optional.
               requireCountry: true,
               requirePort: false,
             ),
@@ -77,7 +78,7 @@ class CreateAdBookingFieldsWidget extends StatelessWidget {
                 isPortsLoading: state.isDestinationPortsLoading,
                 onCountryChanged: cubit.setDestinationCountry,
                 onPortChanged: cubit.setDestinationPort,
-                showPorts: showPorts,
+                showPorts: true,
                 // Destination country + arrival port optional for CNF/CIF.
                 requireCountry: false,
                 requirePort: false,

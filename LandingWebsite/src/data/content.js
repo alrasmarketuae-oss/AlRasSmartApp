@@ -3,7 +3,7 @@ export const content = {
     nav: { home: 'الرئيسية', features: 'المميزات', download: 'تحميل', terms: 'الشروط والخصوصية', modelTraining: 'تدريب النموذج', deleteAccount: 'حذف الحساب', contact: 'تواصل معنا', encryptedChat: 'تشفير المحادثات', shippingRegister: 'تسجيل شركة شحن' },
     hero: {
       badge: 'منصة تجارة الجملة بين الشركات',
-      title: 'الراس الذكي',
+      title: 'ميرج سبايس',
       subtitle: 'منصة إلكترونية تربط الموردين والعملاء في تجارة المواد الغذائية والبقالة — طلبات، عروض، تجزئة، شحن، وتتبع كامل للطلبات من مكان واحد.',
       cta: 'حمّل التطبيق الآن',
       stats: [
@@ -17,7 +17,7 @@ export const content = {
       subtitle: 'اختر منصتك وابدأ التجارة بسهولة وأمان',
       androidBtn: 'تحميل أندرويد',
       iosBtn: 'تحميل iOS',
-      screenTitle: 'الراس الذكي',
+      screenTitle: 'ميرج سبايس',
       screenSubtitle: 'تجارة الجملة الذكية',
     },
     features: {
@@ -47,17 +47,17 @@ export const content = {
       items: ['توابل', 'بقوليات', 'مكسرات', 'قهوة', 'تمور', 'أرز', 'سكر', 'طحين', 'مجمدات', 'دواجن', 'حلويات', 'معلبات'],
     },
     cta: {
-      title: 'ابدأ رحلتك مع الراس الذكي اليوم',
+      title: 'ابدأ رحلتك مع ميرج سبايس اليوم',
       subtitle: 'حمّل التطبيق وانضم إلى منصة تجارة الجملة الرائدة في الإمارات',
     },
     footer: {
-      rights: '© 2026 الراس الذكي — شركة ميرج سبايس لتجارة المواد الغذائية',
+      rights: '© 2026 ميرج سبايس — شركة ميرج سبايس لتجارة المواد الغذائية',
       tagline: 'منصة آمنة وموثوقة لتجارة الجملة',
     },
     termsPage: {
       heading: 'السياسة والخصوصية',
       intro:
-        'تتضمن هذه الصفحة سياسة الخصوصية الكاملة (مطلوبة لمتاجر التطبيقات) ثم شروط الاستخدام. نفس المحتوى يظهر داخل تطبيق الراس الذكي.',
+        'تتضمن هذه الصفحة سياسة الخصوصية الكاملة (مطلوبة لمتاجر التطبيقات) ثم شروط الاستخدام. نفس المحتوى يظهر داخل تطبيق ميرج سبايس.',
       privacyHeading: 'سياسة الخصوصية',
       privacyIntro:
         'تشرح هذه الصفحة البيانات التي يجمعها التطبيق، ولماذا، وكيف تُحمى وتُشارك وتُحذف، وحقوق المستخدم — وفق متطلبات Google Play وApple.',
@@ -81,7 +81,7 @@ export const content = {
       badge: 'أمان المحادثات',
       heading: 'الرسائل مشفّرة تشفيرًا تامًا بين الطرفين',
       intro:
-        'في الراس الذكي، محادثة الدعم محمية بتشفير هجين (مفتاح عام/خاص + مفتاح جلسة AES). فقط الأشخاص داخل هذه المحادثة يستطيعون القراءة أو الاستماع بعد فك التشفير على أجهزتهم.',
+        'في ميرج سبايس، محادثة الدعم محمية بتشفير هجين (مفتاح عام/خاص + مفتاح جلسة AES). فقط الأشخاص داخل هذه المحادثة يستطيعون القراءة أو الاستماع بعد فك التشفير على أجهزتهم.',
     },
     contactPage: {
       heading: 'تواصل معنا',
@@ -184,7 +184,7 @@ export const content = {
     nav: { home: 'Home', features: 'Features', download: 'Download', terms: 'Terms & Privacy', modelTraining: 'Model training', deleteAccount: 'Delete account', contact: 'Contact', encryptedChat: 'Encrypted chat', shippingRegister: 'Shipping company signup' },
     hero: {
       badge: 'B2B wholesale marketplace',
-      title: 'Al Ras Smart',
+      title: 'Merge Spice',
       subtitle: 'An electronic platform connecting suppliers and clients in food & grocery trade — requests, offers, retail, shipping, and full order tracking in one app.',
       cta: 'Download the App',
       stats: [
@@ -198,7 +198,7 @@ export const content = {
       subtitle: 'Choose your platform and start trading securely',
       androidBtn: 'Download Android',
       iosBtn: 'Download iOS',
-      screenTitle: 'Al Ras Smart',
+      screenTitle: 'Merge Spice',
       screenSubtitle: 'Smart wholesale trade',
     },
     features: {
@@ -228,17 +228,17 @@ export const content = {
       items: ['Spices', 'Pulses', 'Nuts', 'Coffee', 'Dates', 'Rice', 'Sugar', 'Flour', 'Frozen', 'Poultry', 'Sweets', 'Canned'],
     },
     cta: {
-      title: 'Start your journey with Al Ras Smart today',
+      title: 'Start your journey with Merge Spice today',
       subtitle: 'Download the app and join the leading wholesale platform in the UAE',
     },
     footer: {
-      rights: '© 2026 Al Ras Smart — Merge Spice Foodstuff Trading LLC',
+      rights: '© 2026 Merge Spice — Merge Spice Foodstuff Trading LLC',
       tagline: 'A secure and trusted wholesale marketplace',
     },
     termsPage: {
       heading: 'Policy & Privacy',
       intro:
-        'This page includes the full Privacy Policy (required by app stores) followed by the Terms of Use. The same content is shown inside the Al Ras Smart mobile app.',
+        'This page includes the full Privacy Policy (required by app stores) followed by the Terms of Use. The same content is shown inside the Merge Spice mobile app.',
       privacyHeading: 'Privacy Policy',
       privacyIntro:
         'This page explains what data the app collects, why, how it is protected and shared, how it is deleted, and your rights — aligned with Google Play and Apple requirements.',
@@ -262,7 +262,7 @@ export const content = {
       badge: 'Chat security',
       heading: 'Messages are end-to-end encrypted',
       intro:
-        'In Al Ras Smart, support chat uses hybrid encryption (public/private keys + AES session keys). Only people in the conversation can read or listen after decrypting on their devices.',
+        'In Merge Spice, support chat uses hybrid encryption (public/private keys + AES session keys). Only people in the conversation can read or listen after decrypting on their devices.',
     },
     contactPage: {
       heading: 'Contact Us',

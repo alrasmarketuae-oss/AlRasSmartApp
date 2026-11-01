@@ -387,7 +387,7 @@ function AdEditor({ listing }: { listing?: MyListing }) {
                   value={form.bookingPriceType}
                   onChange={(e) => {
                     const value = e.target.value as BookingPriceType
-                    set(value === 'FOB' ? { bookingPriceType: value, originPort: '', destinationCountry: '', destinationPort: '' } : { bookingPriceType: value })
+                    set(value === 'FOB' ? { bookingPriceType: value, destinationCountry: '', destinationPort: '' } : { bookingPriceType: value })
                   }}
                 >
                   <option value="">{t('selectPriceType')}</option>
@@ -400,7 +400,7 @@ function AdEditor({ listing }: { listing?: MyListing }) {
               </FormField>
               <div className="grid gap-4 sm:grid-cols-2">
                 <CountryField id="originCountry" label={t('countryOfOrigin')} required value={form.originCountry} error={errors.originCountry} onChange={(value) => set({ originCountry: value, originPort: '' }, ['originCountry'])} />
-                {!fob && <PortField id="originPort" label={t('loadingPort')} country={form.originCountry} value={form.originPort} onChange={(value) => set({ originPort: value })} />}
+                <PortField id="originPort" label={t('loadingPort')} country={form.originCountry} value={form.originPort} onChange={(value) => set({ originPort: value })} />
               </div>
               {!fob && (
                 <div className="grid gap-4 sm:grid-cols-2">

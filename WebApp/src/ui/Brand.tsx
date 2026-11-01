@@ -7,15 +7,13 @@ export function ColoredBrandTitle({ className = 'text-[26px]', includeAppWord = 
     return (
       <p dir="rtl" className={`${base} text-center`} style={{ fontFamily: 'Cairo' }}>
         {includeAppWord && <span className="text-brand-navy">تطبيق </span>}
-        <span className="text-brand-blue">ال</span>
-        <span className="text-brand-red">راس</span> <span className="text-brand-green">الذكى</span>
+        <span className="text-brand-green">ميرج</span> <span className="text-brand-red">سبايس</span>
       </p>
     )
   }
   return (
     <p className={`${base} text-center`} style={{ fontFamily: 'Inter' }}>
-      <span className="text-brand-blue">Al</span> <span className="text-brand-red">Ras</span>{' '}
-      <span className="text-brand-green">Smart</span>
+      <span className="text-brand-green">Merge</span> <span className="text-brand-red">Spice</span>
       {includeAppWord && <span className="text-brand-navy"> App</span>}
     </p>
   )

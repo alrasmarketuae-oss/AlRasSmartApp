@@ -11,15 +11,15 @@ export default function Footer({ lang }) {
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-3">
         <div className={isAr ? 'text-right' : 'text-left'}>
           <div className="mb-4 flex items-center gap-3">
-            <img src="/logo.png" alt="الراس الذكي" className="h-12 w-12 rounded-xl object-cover ring-2 ring-white/15" />
+            <img src="/logo.png" alt="ميرج سبايس" className="h-12 w-12 rounded-xl object-cover ring-2 ring-white/15" />
             <div>
-              <p className="font-bold text-white">{isAr ? 'الراس الذكي' : 'Al Ras Smart'}</p>
+              <p className="font-bold text-white">{isAr ? 'ميرج سبايس' : 'Merge Spice'}</p>
               <p className="text-sm text-brand-green">{t.tagline}</p>
             </div>
           </div>
           <p className="text-sm leading-7 text-white/75">{t.rights}</p>
           <p className="mt-4 text-xs font-semibold tracking-wide text-white/65">
-            Powered by Al Ras Smart
+            Powered by Merge Spice
           </p>
         </div>
 

@@ -18,7 +18,7 @@ export default function WelcomePage() {
         <LanguagePill />
       </div>
       <div className="flex flex-1 flex-col items-center justify-center py-6">
-        <img src="/assets/logo/logo.png" alt="Al Ras Smart" className="w-[132px] sm:w-[150px]" />
+        <img src="/assets/logo/logo.png" alt="Merge Spice" className="w-[132px] sm:w-[150px]" />
         <div className="mt-2.5">
           <ColoredBrandTitle includeAppWord={false} className="text-[26px] sm:text-[30px]" />
         </div>

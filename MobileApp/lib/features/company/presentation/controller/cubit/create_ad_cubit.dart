@@ -271,13 +271,12 @@ class CreateAdCubit extends Cubit<CreateAdFormState> {
       emit(state.copyWith(clearBookingPriceType: true));
       return;
     }
-    // FOB does not use destination country or ports — clear any previous values.
+    // FOB keeps origin + loading port; only destination route is cleared.
     if (type == BookingPriceType.fob) {
       destinationCountryController.clear();
       emit(
         state.copyWith(
           bookingPriceType: type,
-          clearOriginPort: true,
           clearDestinationCountry: true,
           clearDestinationPort: true,
           destinationPorts: const [],

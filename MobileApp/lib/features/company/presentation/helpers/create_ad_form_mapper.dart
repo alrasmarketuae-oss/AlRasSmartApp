@@ -178,14 +178,11 @@ class CreateAdFormMapper {
     return value;
   }
 
-  static bool skipsPortsForBooking(CreateAdFormState state) {
+  /// FOB Booking: destination country + arrival port are hidden and must not be submitted.
+  /// Loading port still follows Country of Origin and is submitted for all booking types.
+  static bool skipsDestinationForBooking(CreateAdFormState state) {
     return state.selectedType == CreateAdType.booking.label &&
         state.bookingPriceType == BookingPriceType.fob;
-  }
-
-  /// FOB Booking: destination country is hidden and must not be submitted.
-  static bool skipsDestinationForBooking(CreateAdFormState state) {
-    return skipsPortsForBooking(state);
   }
 
   static bool skipsGeoForState(CreateAdFormState state) {
@@ -357,7 +354,6 @@ class CreateAdFormMapper {
         state.selectedType == CreateAdType.booking.label ||
         state.selectedType == CreateAdType.retail.label;
     final skipsGeo = skipsGeoForState(state);
-    final skipsPorts = skipsPortsForBooking(state);
     final skipsDestination = skipsDestinationForBooking(state);
     final offerDurationDaysText = isOffers
         ? _normalizeOfferDurationDays(shippingDurationText)
@@ -486,12 +482,12 @@ class CreateAdFormMapper {
                   value: state.destinationCountry,
                 )
               : state.destinationCountry),
-      loadingPortName: skipsGeo || skipsPorts
+      loadingPortName: skipsGeo
           ? null
           : (isEditMode
               ? _nullableGeoField(skipsGeo: false, value: state.originPort)
               : state.originPort),
-      arrivalPortName: skipsGeo || skipsPorts
+      arrivalPortName: skipsGeo || skipsDestination
           ? null
           : (isEditMode
               ? _nullableGeoField(skipsGeo: false, value: state.destinationPort)

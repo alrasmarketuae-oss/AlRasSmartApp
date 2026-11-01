@@ -48,7 +48,7 @@ export function AuthTopBar({ showBack = true, backFallback }: { showBack?: boole
       </button>
       <span className="flex-1" />
       <Link to="/" aria-label="Home">
-        <img src="/assets/logo/logo.png" alt="Al Ras Smart" className="h-11 w-auto" />
+        <img src="/assets/logo/logo.png" alt="Merge Spice" className="h-11 w-auto" />
       </Link>
     </div>
   )

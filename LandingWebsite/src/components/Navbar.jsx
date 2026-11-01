@@ -65,12 +65,12 @@ export default function Navbar({ lang, setLang }) {
         <Link to="/" className="flex min-w-0 items-center gap-2.5 sm:gap-3" onClick={() => setMenuOpen(false)}>
           <img
             src="/logo.png"
-            alt="الراس الذكي"
+            alt="ميرج سبايس"
             className="h-9 w-9 shrink-0 rounded-xl bg-white object-cover p-1 shadow-lg ring-1 ring-brand-blue/20 sm:h-10 sm:w-10"
           />
           <div className={`min-w-0 ${isAr ? 'text-right' : 'text-left'}`}>
             <p className="truncate text-sm font-bold text-brand-navy">
-              {isAr ? 'الراس الذكي' : 'Al Ras Smart'}
+              {isAr ? 'ميرج سبايس' : 'Merge Spice'}
             </p>
             <p className="truncate text-xs text-slate-600">
               {isAr ? 'تجارة الجملة' : 'Wholesale Trade'}

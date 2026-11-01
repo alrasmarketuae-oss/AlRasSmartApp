@@ -98,7 +98,7 @@ export function SiteHeader() {
           <LanguageToggle />
           <NotificationBell />
           <Link to="/" aria-label="Home">
-            <img src="/assets/logo/logo.png" alt="Al Ras Smart" className="h-10 w-12 object-contain" />
+            <img src="/assets/logo/logo.png" alt="Merge Spice" className="h-10 w-12 object-contain" />
           </Link>
         </div>
         <div className="mt-4 lg:hidden">

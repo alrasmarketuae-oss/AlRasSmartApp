@@ -182,8 +182,8 @@ export function buildProductForm(form: AdForm, media: MediaPayload, options: Sub
   if (type === 'Booking') {
     put('BookingPriceTypeName', form.bookingPriceType)
     put('OriginCountryName', form.originCountry)
+    put('LoadingPortName', form.originPort)
     if (form.bookingPriceType !== 'FOB') {
-      put('LoadingPortName', form.originPort)
       put('DestinationCountryName', form.destinationCountry)
       put('ArrivalPortName', form.destinationPort)
     }
