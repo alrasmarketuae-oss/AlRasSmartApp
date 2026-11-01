@@ -4,6 +4,7 @@ import { resolveAssetUrl } from '../../lib/assets'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import type { AdminProductDetail, AdminProductLookups } from '../../types/adminProduct'
 import PendingProductEditPanel from './PendingProductEditPanel'
+import { AdNameFields, AdNameReadout, storedAdNames } from './AdNameFields'
 import ProductVideosPanel, { resolveProductVideoPaths } from './ProductVideosPanel'
 import type { Category } from '../../types/category'
 import CountryFlag from '../shared/CountryFlag'
@@ -55,6 +56,7 @@ type RequestDetailViewProps = {
   deletingVideoPath?: string | null
   onSave: (payload: {
     nameEn: string
+    nameAr?: string | null
     usdPrice: number
     currency: string
     quantity: number
@@ -180,7 +182,8 @@ export default function RequestDetailView({
   const [showVideo, setShowVideo] = useState(() => shouldAutoShowProductVideo(product))
   const mainVideoRef = useRef<HTMLVideoElement>(null)
 
-  const [nameEn, setNameEn] = useState(product.name)
+  const [nameEn, setNameEn] = useState(() => storedAdNames(product).nameEn)
+  const [nameAr, setNameAr] = useState(() => storedAdNames(product).nameAr)
   const [usdPrice, setUsdPrice] = useState(String(product.priceUsd || ''))
   const [currency, setCurrency] = useState(product.currency || 'AED')
   const [unitName, setUnitName] = useState(product.unitName)
@@ -196,7 +199,8 @@ export default function RequestDetailView({
   const [setAdminProductVideoMute] = useSetAdminProductVideoMuteMutation()
 
   useEffect(() => {
-    setNameEn(product.name)
+    setNameEn(storedAdNames(product).nameEn)
+    setNameAr(storedAdNames(product).nameAr)
     setUsdPrice(String(product.priceUsd || ''))
     setCurrency(product.currency || 'AED')
     setUnitName(product.unitName)
@@ -316,9 +320,10 @@ export default function RequestDetailView({
 
   function handleSave() {
     const price = Number.parseFloat(usdPrice)
-    if (!nameEn.trim() || Number.isNaN(price) || price < 0) return
+    if (!nameEn.trim() || !nameAr.trim() || Number.isNaN(price) || price < 0) return
     onSave({
       nameEn: nameEn.trim(),
+      nameAr: nameAr.trim(),
       usdPrice: price,
       currency,
       quantity: product.quantity,
@@ -639,6 +644,11 @@ export default function RequestDetailView({
               <div className="min-w-0 text-start">
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="admin-text text-xl font-bold">{product.name}</h2>
+                  <AdNameReadout
+                    nameEn={product.nameEn ?? ''}
+                    nameAr={product.nameAr ?? ''}
+                    fallback={product.name}
+                  />
                   <span
                     className={`inline-flex rounded-md px-2 py-0.5 text-[10px] font-bold ${productTypeBadgeClassForProduct(product)}`}
                   >
@@ -881,14 +891,13 @@ export default function RequestDetailView({
               </div>
 
               <div className="space-y-4">
-                <label className="block text-start">
-                  <span className="admin-text-muted text-sm font-medium">{t('ads.productName')}</span>
-                  <input
-                    value={nameEn}
-                    onChange={(e) => setNameEn(e.target.value)}
-                    className="admin-input mt-1.5 w-full px-3 py-2.5 text-sm"
-                  />
-                </label>
+                <AdNameFields
+                  nameEn={nameEn}
+                  nameAr={nameAr}
+                  onNameEn={setNameEn}
+                  onNameAr={setNameAr}
+                  inputClassName="admin-input mt-1.5 w-full px-3 py-2.5 text-sm"
+                />
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <label className="block text-start">

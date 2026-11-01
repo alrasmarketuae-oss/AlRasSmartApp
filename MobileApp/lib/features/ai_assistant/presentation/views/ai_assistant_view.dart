@@ -78,6 +78,9 @@ abstract class _AiAssistantViewStateBase extends State<AiAssistantView> {
   AiVoiceGender? _appliedVoiceGender;
   Future<void>? _connectFuture;
   bool _isThinking = false;
+  bool _stickToEnd = true;
+  bool _programmaticScroll = false;
+  final List<String> _sendQueue = [];
   final List<String> _thinkingSteps = [];
   List<String> _thinkingNarrative = const [];
   final List<String> _backendThinkingHints = [];
@@ -104,13 +107,44 @@ abstract class _AiAssistantViewStateBase extends State<AiAssistantView> {
 
   void _scrollToEnd() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent + 80,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
-      );
+      if (!mounted || !_scrollController.hasClients || !_stickToEnd) return;
+      final target = _scrollController.position.maxScrollExtent;
+      if ((_scrollController.offset - target).abs() < 2) return;
+      _programmaticScroll = true;
+      _scrollController.jumpTo(target);
+      _programmaticScroll = false;
     });
+  }
+
+  void _onChatScroll() {
+    if (_programmaticScroll || !_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    _stickToEnd = position.maxScrollExtent - position.pixels < 140;
+  }
+
+  void _queueOrSend() {
+    final visibleText = _controller.text.trim();
+    if (!_isThinking) {
+      unawaited(_send());
+      return;
+    }
+    if (visibleText.isEmpty) return;
+    setState(() {
+      _sendQueue.add(visibleText);
+      _controller.clear();
+      _replyTo = null;
+    });
+    _stickToEnd = true;
+    _scrollToEnd();
+  }
+
+  void _flushSendQueue() {
+    if (!mounted || _isThinking || _uploadingAdMedia || _sendQueue.isEmpty) return;
+    final next = _sendQueue.removeAt(0);
+    if (mounted) setState(() {});
+    _controller.text = next;
+    _stickToEnd = true;
+    unawaited(_send());
   }
 }
 
@@ -119,6 +153,7 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onChatScroll);
     unawaited(_initVoice());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -143,6 +178,7 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
     unawaited(_realtime.close());
     unawaited(_tts.stop());
     _controller.dispose();
+    _scrollController.removeListener(_onChatScroll);
     _scrollController.dispose();
     super.dispose();
   }
@@ -251,8 +287,24 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
   Future<void> _send() async {
     var visibleText = _controller.text.trim();
     final hasBusinessCards = _businessCardImagePaths.isNotEmpty;
-    if (_isThinking) return;
+    if (_isThinking) {
+      if (visibleText.isEmpty && !hasBusinessCards) return;
+      final queued = visibleText.isEmpty
+          ? (Localizations.localeOf(context).languageCode == 'ar'
+              ? 'سجّل حساب مورد من بطاقة العمل المرفقة'
+              : 'Register a supplier account from the attached business card')
+          : visibleText;
+      setState(() {
+        _sendQueue.add(queued);
+        _controller.clear();
+        _replyTo = null;
+      });
+      _stickToEnd = true;
+      _scrollToEnd();
+      return;
+    }
     if (visibleText.isEmpty && !hasBusinessCards) return;
+    _stickToEnd = true;
     if (visibleText.isEmpty && hasBusinessCards) {
       final isArSeed = Localizations.localeOf(context).languageCode == 'ar';
       visibleText = isArSeed
@@ -686,7 +738,7 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
           }
         });
         _scrollToEnd();
-        // If SignalR dropped cards, pull them from the persisted conversation
+        _flushSendQueue();
         // (same source that already works when opening history).
         if (needsListingHydrate) {
           unawaited(_hydrateListingsFromHistory(responseId: responseId));
@@ -1071,9 +1123,8 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
         ),
       );
     });
+    _flushSendQueue();
   }
-
-  Future<void> _openHistorySheet() async {
     if (!AuthService.instance.isAuthenticated) return;
 
     final selected = await Navigator.of(context).push<AiConversationSummary>(
@@ -1207,11 +1258,7 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
                     }
                     final msg = _messages[index];
                     return AiSwipeToReply(
-                      key: ValueKey(
-                        'msg-$index-${msg.responseId}-'
-                        '${msg.showSupportCallbackForm}-'
-                        '${msg.listings.length}-${msg.text.length}',
-                      ),
+                      key: ValueKey('msg-$index-${msg.isUser}-${msg.responseId ?? 'n'}'),
                       onReply: () => _setReply(msg),
                       child: AiMessageBubble(
                         message: msg,
@@ -1226,11 +1273,36 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
                   },
                 ),
               ),
+              if (_sendQueue.isNotEmpty)
+                Padding(
+                  padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 0),
+                  child: Column(
+                    children: [
+                      for (var i = 0; i < _sendQueue.length; i++)
+                        Container(
+                          width: double.infinity,
+                          margin: EdgeInsets.only(bottom: 6.h),
+                          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF4F8FC),
+                            borderRadius: BorderRadius.circular(12.r),
+                            border: Border.all(color: const Color(0xFFD6E6F5)),
+                          ),
+                          child: Text(
+                            '${i + 1}. ${_sendQueue[i]}',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               AiComposer(
                 key: _composerKey,
                 controller: _controller,
                 isThinking: _isThinking,
-                onSend: _send,
+                onSend: _queueOrSend,
                 colors: colors,
                 planMode: _planMode,
                 onPickAdMedia: _planMode

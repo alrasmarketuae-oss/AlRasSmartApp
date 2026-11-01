@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import AdsFilterBar from '../components/ads/AdsFilterBar'
 import AdsStatsCards from '../components/ads/AdsStatsCards'
 import AdsTable, { type AdRejectNotes } from '../components/ads/AdsTable'
@@ -245,7 +245,17 @@ export default function AdsPage() {
         icon={IconAds}
       />
 
-      {!adEditsOnly ? <AdsChannelTabs activeId={activeChannel} /> : null}
+      {!adEditsOnly ? (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <AdsChannelTabs activeId={activeChannel} />
+          <Link
+            to="/ads/names"
+            className="inline-flex items-center rounded-xl border-2 border-[#3B7FC7] bg-white px-4 py-2 text-sm font-bold text-[#3B7FC7] hover:bg-[#eff6ff] dark:bg-slate-900 dark:hover:bg-slate-800"
+          >
+            {t('ads.changeNames')}
+          </Link>
+        </div>
+      ) : null}
 
       {!adEditsOnly ? (
         <AdsStatsCards stats={stats} isLoading={statsLoading} />

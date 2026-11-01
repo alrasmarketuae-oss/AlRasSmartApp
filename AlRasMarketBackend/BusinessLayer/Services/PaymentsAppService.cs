@@ -24,6 +24,8 @@ public class PaymentsAppService(
     private readonly string _cancelUrl = configuration["Stripe:CancelUrl"] ?? "https://example.com/payment-cancelled";
     private readonly string _mobileSuccessUrl = configuration["Stripe:MobileSuccessUrl"] ?? "alrasmarket://payment-success";
     private readonly string _mobileCancelUrl = configuration["Stripe:MobileCancelUrl"] ?? "alrasmarket://payment-cancel";
+    private readonly string _shopSuccessUrl = configuration["Stripe:WebSuccessUrl"] ?? "https://shop.alrasmarketapp.com/payment-success";
+    private readonly string _shopCancelUrl = configuration["Stripe:WebCancelUrl"] ?? "https://shop.alrasmarketapp.com/payment-cancel";
     private readonly string _secretKey = configuration["Stripe:SecretKey"] ?? string.Empty;
     private readonly string _webhookSecret = configuration["Stripe:WebhookSecret"] ?? string.Empty;
 
@@ -297,13 +299,16 @@ public class PaymentsAppService(
     }
 
     private string ResolveSuccessUrl(string? client) =>
-        IsMobileClient(client) ? _mobileSuccessUrl : _successUrl;
+        IsMobileClient(client) ? _mobileSuccessUrl : IsShopClient(client) ? _shopSuccessUrl : _successUrl;
 
     private string ResolveCancelUrl(string? client) =>
-        IsMobileClient(client) ? _mobileCancelUrl : _cancelUrl;
+        IsMobileClient(client) ? _mobileCancelUrl : IsShopClient(client) ? _shopCancelUrl : _cancelUrl;
 
     private static bool IsMobileClient(string? client) =>
         string.Equals(client, "mobile", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsShopClient(string? client) =>
+        string.Equals(client, "web", StringComparison.OrdinalIgnoreCase);
 
     public async Task<ManualRefundResult> RefundCancelledOrderAsync(long orderId, CancellationToken cancellationToken = default)
     {

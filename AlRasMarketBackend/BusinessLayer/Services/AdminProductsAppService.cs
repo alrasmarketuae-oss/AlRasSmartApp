@@ -927,6 +927,8 @@ public class AdminProductsAppService(
         {
             ProductId = raw.ProductId,
             Name = displayName,
+            NameEn = AdminProductTextHelper.ResolveStoredNameEn(tr, raw.Name),
+            NameAr = AdminProductTextHelper.ResolveStoredNameAr(tr, raw.Name),
             Description = displayDescription,
             PriceUsd = raw.USDPrice,
             Currency = ProductCurrencyHelper.Normalize(raw.Currency, raw.ProductTypeId),
@@ -1413,6 +1415,7 @@ public class AdminProductsAppService(
             OwnerId = product.OwnerId.Value.ToString(),
             AllowAdminUpdate = true,
             NameEn = request.NameEn.Trim(),
+            LockedNameAr = string.IsNullOrWhiteSpace(request.NameAr) ? null : request.NameAr.Trim(),
             USDPrice = request.USDPrice,
             Currency = request.Currency,
             Quantity = request.Quantity,
@@ -1477,6 +1480,133 @@ public class AdminProductsAppService(
             cancellationToken);
 
         return result;
+    }
+
+    public async Task<AdminPagedResult<AdminProductNameItemDto>> GetProductNamesAsync(
+        int page,
+        int pageSize,
+        string? search,
+        CancellationToken cancellationToken = default)
+    {
+        page = page < 1 ? 1 : page;
+        pageSize = pageSize is < 1 or > 100 ? 20 : pageSize;
+
+        var query = dbContext.Products.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim().ToLowerInvariant();
+            query = query.Where(x =>
+                (x.NameEn != null && x.NameEn.ToLower().Contains(term))
+                || (x.ProductCode != null && x.ProductCode.ToLower().Contains(term))
+                || (x.Owner != null && x.Owner.FullName.ToLower().Contains(term))
+                || (x.Owner != null && x.Owner.CompanyName != null && x.Owner.CompanyName.ToLower().Contains(term))
+                || dbContext.ContentTranslations.Any(t =>
+                    t.ProductId == x.ProductId
+                    && t.Scope == ContentTranslationScopes.Product
+                    && t.Field == ContentTranslationFields.Name
+                    && ((t.TextEn != null && t.TextEn.ToLower().Contains(term))
+                        || (t.TextAr != null && t.TextAr.ToLower().Contains(term)))));
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var rows = await query
+            .OrderByDescending(x => x.UpdatedAt)
+            .ThenByDescending(x => x.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(x => new
+            {
+                x.ProductId,
+                Name = x.NameEn ?? string.Empty,
+                x.ProductCode,
+                ProductTypeName = x.ProductType != null ? x.ProductType.TypeNameEn : string.Empty,
+                OwnerCompanyName = x.Owner != null
+                    ? (x.Owner.CompanyName ?? x.Owner.FullName)
+                    : null,
+                PrimaryImagePath = x.ProductImages
+                    .OrderBy(pi => pi.Id)
+                    .Select(pi => pi.ImagePath)
+                    .FirstOrDefault(),
+            })
+            .ToListAsync(cancellationToken);
+
+        var translations = await contentTranslationService.GetProductTranslationsAsync(
+            rows.Select(x => x.ProductId),
+            cancellationToken);
+
+        var items = rows.Select(x =>
+        {
+            translations.TryGetValue(x.ProductId, out var tr);
+            return new AdminProductNameItemDto
+            {
+                ProductId = x.ProductId,
+                ProductCode = x.ProductCode,
+                NameEn = AdminProductTextHelper.ResolveStoredNameEn(tr, x.Name),
+                NameAr = AdminProductTextHelper.ResolveStoredNameAr(tr, x.Name),
+                ProductTypeName = x.ProductTypeName,
+                OwnerCompanyName = x.OwnerCompanyName,
+                PrimaryImagePath = x.PrimaryImagePath,
+            };
+        }).ToList();
+
+        return new AdminPagedResult<AdminProductNameItemDto>
+        {
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            TotalPages = totalCount == 0 ? 1 : (int)Math.Ceiling(totalCount / (double)pageSize),
+            Items = items,
+        };
+    }
+
+    public async Task<object> UpdateProductNamesAsync(
+        string productId,
+        AdminUpdateProductNamesRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(productId, out var parsedProductId))
+        {
+            throw new ArgumentException("Invalid product id.");
+        }
+
+        var nameEn = (request.NameEn ?? string.Empty).Trim();
+        var nameAr = (request.NameAr ?? string.Empty).Trim();
+        if (nameEn.Length == 0 || nameAr.Length == 0)
+        {
+            throw new ArgumentException("English and Arabic names are required.");
+        }
+
+        var product = await dbContext.Products
+            .FirstOrDefaultAsync(x => x.ProductId == parsedProductId, cancellationToken)
+            ?? throw new KeyNotFoundException("Product not found.");
+
+        product.NameEn = nameEn;
+        product.UpdatedAt = UtcDateTimeHelper.UtcNow;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await contentTranslationService.UpsertProductNameBilingualAsync(
+            product.ProductId,
+            nameEn,
+            nameAr,
+            cancellationToken);
+
+        ProductsAppService.InvalidateListingCaches(product.OwnerId);
+        QueueTextSearchSync(product.ProductId);
+
+        await auditLogAppService.WriteAsync(
+            AdminAuditActions.ProductUpdate,
+            AdminAuditEntityTypes.Product,
+            productId,
+            $"Updated ad names '{nameEn}' / '{nameAr}'",
+            new { nameEn, nameAr },
+            cancellationToken);
+
+        return new
+        {
+            message = "Ad names updated.",
+            productId = product.ProductId,
+            nameEn,
+            nameAr,
+        };
     }
 
     public async Task<AdminProductLookupsDto> GetLookupsAsync(CancellationToken cancellationToken = default)

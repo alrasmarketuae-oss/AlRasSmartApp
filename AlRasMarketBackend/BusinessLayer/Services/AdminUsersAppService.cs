@@ -18,6 +18,7 @@ public class AdminUsersAppService(
     UserNameTranslationQueue userNameTranslationQueue,
     IAddressesAppService addressesAppService,
     IAdminAuditLogAppService auditLogAppService,
+    AuthSessionGuard authSessionGuard,
     ILogger<AdminUsersAppService> logger) : IAdminUsersAppService
 {
     public async Task<object> GetUsersAsync(
@@ -379,8 +380,10 @@ public class AdminUsersAppService(
                     || !string.IsNullOrWhiteSpace(user.PendingProfileChanges)),
             CanDeactivate = user.RoleId != RoleIds.Admin,
             CanDelete = user.RoleId != RoleIds.Admin,
-            CanConvertToSupplier = user.RoleId == RoleIds.Seller && user.IsCustomer == true,
-            CanConvertToCompanyCustomer = user.RoleId == RoleIds.Seller && user.IsCustomer != true
+            CanConvertToSupplier = user.RoleId == RoleIds.Buyer
+                || (user.RoleId == RoleIds.Seller && user.IsCustomer == true),
+            CanConvertToCompanyCustomer = user.RoleId == RoleIds.Buyer
+                || (user.RoleId == RoleIds.Seller && user.IsCustomer != true)
         };
 
         var translations = await contentTranslationService.GetUserTranslationsAsync(
@@ -481,24 +484,46 @@ public class AdminUsersAppService(
             .FirstOrDefaultAsync(x => x.Id == parsedUserId, cancellationToken)
             ?? throw new KeyNotFoundException("User not found.");
 
-        if (user.RoleId != RoleIds.Seller)
+        var wasPersonal = user.RoleId == RoleIds.Buyer;
+        if (user.RoleId != RoleIds.Seller && !wasPersonal)
         {
             throw new InvalidOperationException(
-                "Only company accounts (Seller role) can be converted to supplier.");
+                "Only a personal or company account can be converted to a supplier.");
         }
 
-        if (user.IsCustomer != true)
+        if (user.RoleId == RoleIds.Seller && user.IsCustomer != true)
         {
             throw new InvalidOperationException(
                 "This account is already a supplier (IsCustomer is not set).");
         }
 
-        user.IsCustomer = false;
+        if (wasPersonal)
+        {
+            PromotePersonalAccount(user, isCustomer: false);
+        }
+        else
+        {
+            user.IsCustomer = false;
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (wasPersonal)
+        {
+            authSessionGuard.Remember(user.Id, user.AuthStamp);
+            await auditLogAppService.WriteAsync(
+                AdminAuditActions.UserUpdate,
+                AdminAuditEntityTypes.User,
+                user.Id.ToString("D"),
+                $"Admin converted personal account '{user.CompanyName ?? user.FullName}' to supplier",
+                new { from = "person", to = "supplier" },
+                cancellationToken);
+        }
 
         return new
         {
-            message = "Company customer account converted to supplier.",
+            message = wasPersonal
+                ? "Personal account converted to supplier. The user must sign in again."
+                : "Company customer account converted to supplier.",
             userId = user.Id,
             isCustomer = false,
             typeLabelAr = AdminMappings.GetUserTypeLabelAr(user.RoleId, user.IsCustomer)
@@ -518,28 +543,71 @@ public class AdminUsersAppService(
             .FirstOrDefaultAsync(x => x.Id == parsedUserId, cancellationToken)
             ?? throw new KeyNotFoundException("User not found.");
 
-        if (user.RoleId != RoleIds.Seller)
+        var wasPersonal = user.RoleId == RoleIds.Buyer;
+        if (user.RoleId != RoleIds.Seller && !wasPersonal)
         {
             throw new InvalidOperationException(
-                "Only company accounts (Seller role) can be converted to company customer.");
+                "Only a personal or supplier account can be converted to a company account.");
         }
 
-        if (user.IsCustomer == true)
+        if (user.RoleId == RoleIds.Seller && user.IsCustomer == true)
         {
             throw new InvalidOperationException(
                 "This account is already a company customer.");
         }
 
-        user.IsCustomer = true;
+        if (wasPersonal)
+        {
+            PromotePersonalAccount(user, isCustomer: true);
+        }
+        else
+        {
+            user.IsCustomer = true;
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (wasPersonal)
+        {
+            authSessionGuard.Remember(user.Id, user.AuthStamp);
+            await auditLogAppService.WriteAsync(
+                AdminAuditActions.UserUpdate,
+                AdminAuditEntityTypes.User,
+                user.Id.ToString("D"),
+                $"Admin converted personal account '{user.CompanyName ?? user.FullName}' to company account",
+                new { from = "person", to = "companyCustomer" },
+                cancellationToken);
+        }
 
         return new
         {
-            message = "Supplier account converted to company customer.",
+            message = wasPersonal
+                ? "Personal account converted to company account. The user must sign in again."
+                : "Supplier account converted to company customer.",
             userId = user.Id,
             isCustomer = true,
             typeLabelAr = AdminMappings.GetUserTypeLabelAr(user.RoleId, user.IsCustomer)
         };
+    }
+
+    /// <summary>
+    /// Personal (buyer) becomes a seller. Approved immediately because an admin did the conversion.
+    /// Auth stamp is bumped so the old buyer token cannot keep the previous role.
+    /// </summary>
+    private static void PromotePersonalAccount(User user, bool isCustomer)
+    {
+        user.RoleId = RoleIds.Seller;
+        user.IsCustomer = isCustomer;
+        if (string.IsNullOrWhiteSpace(user.CompanyName))
+        {
+            user.CompanyName = user.FullName;
+        }
+
+        user.IsApproved = true;
+        user.IsVerified = true;
+        user.IsRejected = false;
+        user.IsActive = true;
+        user.PendingProfileChanges = null;
+        user.AuthStamp++;
     }
 
     public async Task<object> DeleteUserAsync(
@@ -815,6 +883,7 @@ public class AdminUsersAppService(
             }
 
             user.HashedPassword = passwordHasher.HashPassword(request.Password.Trim());
+            user.AuthStamp++;
         }
 
         user.PreferredLanguage = NotificationMessages.NormalizeLanguage(request.PreferredLanguage);
@@ -879,6 +948,7 @@ public class AdminUsersAppService(
         user.PendingProfileChanges = null;
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        authSessionGuard.Remember(user.Id, user.AuthStamp);
         userNameTranslationQueue.Enqueue(
             user.Id,
             user.FullName,

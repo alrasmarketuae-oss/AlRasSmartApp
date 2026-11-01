@@ -24,4 +24,27 @@ public sealed class AdminChatController(IAdminChatReportAppService chatReportApp
         var result = await chatReportAppService.GenerateCompanyReportAsync(request, cancellationToken);
         return Ok(result);
     }
+
+    /// <summary>
+    /// AI translation of a single chat message: Arabic → English, otherwise → Arabic.
+    /// </summary>
+    [HttpPost("translate")]
+    [RequireAdminPermission(AdminPermissions.ChatAccess)]
+    public async Task<ActionResult<AdminChatTranslateDto>> Translate(
+        [FromBody] AdminChatTranslateRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return Ok(await chatReportAppService.TranslateMessageAsync(request, cancellationToken));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(StatusCodes.Status502BadGateway, new { message = ex.Message });
+        }
+    }
 }

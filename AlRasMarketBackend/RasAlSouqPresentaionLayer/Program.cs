@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.StaticFiles;
 using BusinessLayer.Constants;
 using BusinessLayer.Helpers;
+using RasAlSouqPresentaionLayer;
 using RasAlSouqPresentaionLayer.Authorization;
 using RasAlSouqPresentaionLayer.Middleware;
 using RasAlSouqPresentaionLayer.Hubs;
@@ -93,6 +94,7 @@ builder.Services.AddHttpClient(StoreAppVersionProvider.HttpClientName, client =>
     client.DefaultRequestHeaders.AcceptLanguage.ParseAdd("en-US,en;q=0.9");
 });
 builder.Services.AddSingleton<IStoreAppVersionProvider, StoreAppVersionProvider>();
+builder.Services.AddScoped<AuthSessionGuard>();
 builder.Services.AddScoped<IAuthAppService, AuthAppService>();
 builder.Services.AddScoped<IAccountDeletionAppService, AccountDeletionAppService>();
 builder.Services.AddScoped<IAdminCompaniesAppService, AdminCompaniesAppService>();
@@ -158,6 +160,8 @@ builder.Services.AddScoped<ProductAdoRepository>();
 builder.Services.AddScoped<IProductDataAccess, ProductDataAccess>();
 builder.Services.AddScoped<IOrderDataAccess, OrderDataAccess>();
 builder.Services.AddScoped<IProductsAppService, ProductsAppService>();
+builder.Services.Configure<SeoOptions>(builder.Configuration.GetSection(SeoOptions.SectionName));
+builder.Services.AddScoped<ISeoAppService, SeoAppService>();
 builder.Services.AddHttpClient<IOpenAiVisionService, OpenAiVisionService>(client =>
 {
     // Business-card Astra OCR can take longer than product vision calls.
@@ -335,11 +339,45 @@ builder.Services.AddHttpClient();
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        context.HttpContext.Response.ContentType = "application/json";
+        await context.HttpContext.Response.WriteAsync(
+            "{\"message\":\"Too many requests. Please wait a minute and try again.\"}",
+            cancellationToken);
+    };
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+    {
+        if (httpContext.Request.Path.StartsWithSegments("/api/health"))
+        {
+            return RateLimitPartition.GetNoLimiter("health");
+        }
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            "ip:" + ClientRequestKey.Resolve(httpContext),
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 600,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            });
+    });
+    options.AddPolicy("auth", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            "auth:" + ClientRequestKey.Resolve(httpContext),
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 20,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
     options.AddPolicy("ai-assistant", context =>
         RateLimitPartition.GetFixedWindowLimiter(
             context.User.FindFirst("EntityId")?.Value
-                ?? context.Connection.RemoteIpAddress?.ToString()
-                ?? "anonymous",
+                ?? ClientRequestKey.Resolve(context),
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 12,
@@ -396,6 +434,31 @@ builder.Services.AddAuthentication(options =>
             }
 
             return Task.CompletedTask;
+        },
+        OnTokenValidated = async context =>
+        {
+            var userIdValue = context.Principal?.FindFirst("EntityId")?.Value
+                              ?? context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userIdValue, out var userId))
+            {
+                context.Fail("Invalid token.");
+                return;
+            }
+
+            var version = 0;
+            var versionClaim = context.Principal?.FindFirst("ver")?.Value;
+            if (!string.IsNullOrWhiteSpace(versionClaim) && !int.TryParse(versionClaim, out version))
+            {
+                context.Fail("Invalid token.");
+                return;
+            }
+
+            var guard = context.HttpContext.RequestServices.GetRequiredService<AuthSessionGuard>();
+            var stamp = await guard.GetStampAsync(userId, context.HttpContext.RequestAborted);
+            if (stamp is null || stamp.Value != version)
+            {
+                context.Fail("Session ended.");
+            }
         }
     };
 });

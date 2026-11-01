@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { resolveAssetUrl } from '../../lib/assets'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import PendingProductEditPanel from './PendingProductEditPanel'
+import { AdNameFields, AdNameReadout, storedAdNames } from './AdNameFields'
 import ProductVideosPanel from './ProductVideosPanel'
 import CountryFlag from '../shared/CountryFlag'
 import WhatsAppPhoneLink from '../shared/WhatsAppPhoneLink'
@@ -307,7 +308,8 @@ export default function RetailAdDetailView({
   const [selectedVideoIndex, setSelectedVideoIndex] = useState(0)
   const [showVideo, setShowVideo] = useState(() => shouldAutoShowProductVideo(product))
 
-  const [nameEn, setNameEn] = useState(product.name)
+  const [nameEn, setNameEn] = useState(() => storedAdNames(product).nameEn)
+  const [nameAr, setNameAr] = useState(() => storedAdNames(product).nameAr)
   const [usdPrice, setUsdPrice] = useState(String(product.priceUsd || ''))
   const [currency, setCurrency] = useState(product.currency || 'AED')
   const [unitName, setUnitName] = useState(product.unitName)
@@ -317,7 +319,8 @@ export default function RetailAdDetailView({
   const [setAdminProductVideoMute] = useSetAdminProductVideoMuteMutation()
 
   useEffect(() => {
-    setNameEn(product.name)
+    setNameEn(storedAdNames(product).nameEn)
+    setNameAr(storedAdNames(product).nameAr)
     setUsdPrice(String(product.priceUsd || ''))
     setCurrency(product.currency || 'AED')
     setUnitName(product.unitName)
@@ -433,9 +436,10 @@ export default function RetailAdDetailView({
 
   function handleSaveBasic() {
     const price = Number.parseFloat(usdPrice)
-    if (!nameEn.trim() || Number.isNaN(price) || price < 0) return
+    if (!nameEn.trim() || !nameAr.trim() || Number.isNaN(price) || price < 0) return
     onSave({
       nameEn: nameEn.trim(),
+      nameAr: nameAr.trim(),
       usdPrice: price,
       currency,
       quantity: product.quantity,
@@ -915,7 +919,8 @@ export default function RetailAdDetailView({
             editLabel={editingBasic ? t('cancel') : t('ads.edit')}
             onEdit={() => {
               if (editingBasic) {
-                setNameEn(product.name)
+                setNameEn(storedAdNames(product).nameEn)
+                setNameAr(storedAdNames(product).nameAr)
                 setUsdPrice(String(product.priceUsd || ''))
                 setDescriptionEn(product.description ?? '')
                 setUnitName(product.unitName)
@@ -927,12 +932,13 @@ export default function RetailAdDetailView({
           <div className="p-4">
             {editingBasic ? (
               <div className="space-y-2">
-                <input
-                  value={nameEn}
-                  onChange={(e) => setNameEn(e.target.value)}
-                  className="w-full rounded border px-2 py-1 text-[11px] font-semibold"
-                  style={{ borderColor: C.border }}
-                  placeholder={t('ads.productName')}
+                <AdNameFields
+                  nameEn={nameEn}
+                  nameAr={nameAr}
+                  onNameEn={setNameEn}
+                  onNameAr={setNameAr}
+                  inputClassName="w-full rounded border px-2 py-1 text-[11px] font-semibold"
+                  inputStyle={{ borderColor: C.border }}
                 />
                 <textarea
                   value={descriptionEn}
@@ -990,7 +996,13 @@ export default function RetailAdDetailView({
               <div className="grid gap-3 lg:grid-cols-[minmax(0,1.5fr)_minmax(150px,0.85fr)]">
                 <div className="grid grid-cols-3 gap-x-3 gap-y-2">
                   <div className="space-y-2">
-                    <Labeled label={t('ads.productName')}>{product.name}</Labeled>
+                    <Labeled label={t('ads.productName')}>
+                      <AdNameReadout
+                        nameEn={product.nameEn ?? ''}
+                        nameAr={product.nameAr ?? ''}
+                        fallback={product.name}
+                      />
+                    </Labeled>
                     <Labeled label={t('ads.productDescription')}>
                       <CappedText
                         text={product.description}

@@ -257,7 +257,7 @@ class AppPushNotificationService {
     final title =
         notification?.title ??
         message.data['title']?.toString() ??
-        'Al Ras Smart App';
+        'Merge Spice';
     final body =
         notification?.body ?? message.data['body']?.toString() ?? '';
     final data = Map<String, dynamic>.from(message.data);

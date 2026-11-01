@@ -1,11 +1,7 @@
 allprojects {
     repositories {
-        // Prefer Google/Maven Central so AndroidX AARs (e.g. appcompat layouts) are complete.
-        // Local mirrors stay as fallback for flaky TLS downloads.
         google()
         mavenCentral()
-        maven { url = uri("file:///C:/src/gradle-mirror/maven-local") }
-        maven { url = uri("file:///C:/src/gradle-mirror/aapt2-only") }
         maven { url = uri("https://www.jitpack.io") }
         maven { url = uri("https://storage.googleapis.com/download.flutter.io") }
     }
@@ -18,7 +14,7 @@ val newBuildDir: Directory =
 rootProject.layout.buildDirectory.value(newBuildDir)
 
 subprojects {
-    val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
+    val newSubprojectBuildDir = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
 subprojects {
@@ -27,8 +23,6 @@ subprojects {
             google()
             mavenCentral()
             gradlePluginPortal()
-            maven { url = uri("file:///C:/src/gradle-mirror/maven-local") }
-            maven { url = uri("file:///C:/src/gradle-mirror/aapt2-only") }
         }
         configurations.classpath {
             resolutionStrategy {
@@ -39,8 +33,6 @@ subprojects {
     repositories {
         google()
         mavenCentral()
-        maven { url = uri("file:///C:/src/gradle-mirror/maven-local") }
-        maven { url = uri("file:///C:/src/gradle-mirror/aapt2-only") }
         maven { url = uri("https://www.jitpack.io") }
         maven { url = uri("https://storage.googleapis.com/download.flutter.io") }
     }

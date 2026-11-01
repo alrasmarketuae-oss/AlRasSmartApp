@@ -50,20 +50,11 @@ public class FacebookProvider(IUserRepository userRepository, IHttpClientFactory
         var user = await _userRepository.GetByEmailAsync(tokenEmail);
         if (user is null)
         {
-            user = new User
-            {
-                Id = Guid.NewGuid(),
-                FullName = string.IsNullOrWhiteSpace(tokenName) ? tokenEmail.Split('@')[0] : tokenName,
-                Email = tokenEmail,
-                RoleId = 3, // Buyer
-                LoginProviderName = "Facebook",
-                IsActive = true,
-                IsVerified = true,
-                FcmToken = fcmToken
-            };
-            await _userRepository.AddAsync(user);
+            throw new UnauthorizedAccessException(
+                "You don't have an account. Please create an account first.");
         }
-        else if (!string.IsNullOrWhiteSpace(fcmToken))
+
+        if (!string.IsNullOrWhiteSpace(fcmToken))
         {
             await _userRepository.UpdateFcmTokenAsync(user.Id.ToString(), fcmToken);
         }

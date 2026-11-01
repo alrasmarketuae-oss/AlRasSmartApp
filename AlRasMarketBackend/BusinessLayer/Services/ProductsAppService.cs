@@ -342,7 +342,9 @@ public partial class ProductsAppService(
             await SanitizeOwnerEditLocalizedFieldsAsync(product, input, cancellationToken);
         }
 
-        var requiresAdminReapproval = isOwnerEdit && !IsPriceOnlyProductUpdate(
+        var requiresAdminReapproval = isOwnerEdit
+            && !TrustedAdPublishers.Contains(ownerId)
+            && !IsPriceOnlyProductUpdate(
             product,
             input,
             categoryId,
@@ -585,8 +587,19 @@ public partial class ProductsAppService(
         product.UpdatedAt = UtcDateTimeHelper.UtcNow;
 
         await productData.SaveChangesAsync(cancellationToken);
+        if (input.AllowAdminUpdate && !string.IsNullOrWhiteSpace(input.LockedNameAr))
+        {
+            await contentTranslationService.UpsertProductNameBilingualAsync(
+                product.ProductId,
+                product.NameEn ?? string.Empty,
+                input.LockedNameAr,
+                cancellationToken);
+        }
+
         // OpenAI translation must not block update response.
         // CLIP reindex runs once after translation (inside QueueTranslateProductFields).
+        // An admin-locked title is written first, with the same source hash, so the
+        // worker leaves that Arabic and English pair unchanged.
         await QueueTranslateProductFieldsAsync(product, cancellationToken);
         InvalidateProductCaches(ownerId);
         QueueTextSearchSync(product.ProductId);
@@ -651,6 +664,33 @@ public partial class ProductsAppService(
         if (product.OwnerId != ownerGuid)
         {
             throw new UnauthorizedAccessException("You can only submit your own products.");
+        }
+
+        if (TrustedAdPublishers.Contains(product.OwnerId))
+        {
+            var firstPublish = product.IsApproved != true;
+            product.IsApproved = true;
+            product.Status = ProductStatusCodes.Active;
+            product.IsReadyForAdminReview = true;
+            product.PendingProductChanges = null;
+            product.UpdatedAt = UtcDateTimeHelper.UtcNow;
+            await ApplyAdDisplayExpiryAsync(product, cancellationToken);
+            await productData.SaveChangesAsync(cancellationToken);
+            InvalidateProductCaches(product.OwnerId);
+            QueueTextSearchSync(product.ProductId);
+            QueueProductImagesForClipIndexing(product.ProductId);
+            if (firstPublish && product.ProductTypeId == ProductTypeCodes.Requests)
+            {
+                QueueRequestAdSupplierNotify(product.ProductId, product.OwnerId, product.NameEn);
+            }
+
+            return new
+            {
+                productId = product.ProductId.ToString("D"),
+                isReadyForAdminReview = true,
+                requiresAdminReview = false,
+                message = "Product published."
+            };
         }
 
         // Price-only (and similar) updates keep IsApproved=true and never enter UnderReview.

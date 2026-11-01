@@ -601,7 +601,7 @@ class AiComposerState extends State<AiComposer> {
                         ),
                         SizedBox(width: 4.w),
                         TextButton(
-                          onPressed: widget.isThinking ? null : _confirmSend,
+                          onPressed: _confirmSend,
                           style: TextButton.styleFrom(
                             foregroundColor: LightColor.defaultColor,
                             padding: EdgeInsets.symmetric(horizontal: 8.w),
@@ -776,19 +776,17 @@ class AiComposerState extends State<AiComposer> {
                   ),
                   SizedBox(width: 8.w),
                   Opacity(
-                    opacity: (widget.isThinking || _correcting || _listening)
-                        ? 0.5
-                        : 1,
+                    opacity: (_correcting || _listening) ? 0.5 : 1,
                     child: GestureDetector(
-                      onTap: (widget.isThinking || _correcting || _listening)
-                          ? null
-                          : () {
-                              if (_awaitingConfirm) {
-                                _confirmSend();
-                              } else {
-                                widget.onSend();
-                              }
-                            },
+                    onTap: (_correcting || _listening)
+                        ? null
+                        : () {
+                            if (_awaitingConfirm) {
+                              _confirmSend();
+                            } else {
+                              widget.onSend();
+                            }
+                          },
                       child: Container(
                         width: 44.w,
                         height: 44.w,

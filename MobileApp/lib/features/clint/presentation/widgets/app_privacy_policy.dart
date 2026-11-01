@@ -3,8 +3,8 @@ class AppPrivacyPolicy {
   const AppPrivacyPolicy._();
 
   static String title(bool isAr) => isAr
-      ? 'سياسة الخصوصية — تطبيق الراس الذكي (Al Ras Smart)'
-      : 'Privacy Policy — Al Ras Smart';
+      ? 'سياسة الخصوصية — تطبيق ميرج سبايس (Merge Spice)'
+      : 'Privacy Policy — Merge Spice';
 
   static String lastUpdated(bool isAr) =>
       isAr ? 'آخر تحديث: 14 أغسطس 2026' : 'Last updated: 14 August 2026';

@@ -29,6 +29,7 @@ public class AuthAppService(
     IAddressesAppService addressesAppService,
     ITurnstileVerifier turnstileVerifier,
     IHttpContextAccessor httpContextAccessor,
+    AuthSessionGuard authSessionGuard,
     ILogger<AuthAppService> logger) : IAuthAppService
 {
     public async Task<(string message, string userId, string? imgPath)> RegisterPersonAsync(RegisterPersonInput input, CancellationToken cancellationToken = default)
@@ -313,6 +314,10 @@ public class AuthAppService(
         }
 
         await userRepository.UpdateFcmTokenAsync(userId, null);
+        if (Guid.TryParse(userId, out var parsedUserId))
+        {
+            await authSessionGuard.RevokeAsync(parsedUserId, cancellationToken);
+        }
     }
 
     public async Task<object> GetCompanyActivationStatusAsync(string email, string? fcmToken = null, CancellationToken cancellationToken = default)
@@ -671,7 +676,7 @@ public class AuthAppService(
         }
 
         user.HashedPassword = passwordHasher.HashPassword(newPassword);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await authSessionGuard.RevokeAsync(parsedUserId, cancellationToken);
         return "Password changed successfully.";
     }
 
@@ -766,7 +771,7 @@ public class AuthAppService(
 
         user.HashedPassword = passwordHasher.HashPassword(newPassword);
         row.IsUsed = true;
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await authSessionGuard.RevokeAsync(user.Id, cancellationToken);
         return "Password reset successfully.";
     }
 

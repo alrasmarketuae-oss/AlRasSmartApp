@@ -103,7 +103,7 @@ internal static class AiAssistantKnowledgeSource
             """
             Question: how do I start? What should I do first? Where do I begin in the app? How do I use the app?
             Answer: start by signing in or creating an account, because most actions require one.
-            If you are an individual buyer, create your account with Google or Apple in seconds, then browse retail products on home or search by name or image, add to cart and complete the purchase, and follow your order from My Orders.
+            If you are an individual buyer, create your account from Create Account first, then you can sign in later with Google or Apple, browse retail products on home or search by name or image, add to cart and complete the purchase, and follow your order from My Orders.
             If you are a supplier, complete registration with your trade license and company images and wait for approval, then create listings from the Create Ad button, follow them from the Account page. Suppliers can also buy and place orders like any buyer and track those purchases from My Orders, in addition to incoming orders on their ads.
             If you are a company buying wholesale, browse the categories, and if you cannot find what you need publish a Inquiry ad from the Create Order page and receive offers.
             If you are a shipping company, add your shipping ad from Home and manage your ads from the same place.
@@ -613,8 +613,8 @@ internal static class AiAssistantKnowledgeSource
             """);
         Add(chunks, "signup-personal", "How a personal customer creates an account", "en", All,
             """
-            A personal customer signs up or signs in directly with Google or Apple, with no trade license, company images, or address required.
-            Tapping Google or Apple (depending on the device) creates the account automatically if none exists and signs the user straight in.
+            A personal customer creates an account through Create Account first, with no trade license, company images, or address required.
+            After the account exists, tapping Google or Apple (depending on the device) signs the user in. If no account exists yet, Google or Apple sign-in returns a message that the user does not have an account and does not create one automatically.
             Registering with an email address and password is also possible.
             A personal customer account needs no review or approval and works immediately.
             """);
@@ -2468,7 +2468,7 @@ internal static class AiAssistantKnowledgeSource
             """
             A guest can only browse, use text and image search, and open listing details.
             Registering gives you: the ability to complete a purchase, a My Orders page to track each order's status, saved favourite listings, saved addresses, notifications, Live Chat with support, and the ability to request returns for eligible cases.
-            A personal customer account is created in seconds with Google or Apple and needs no documents.
+            A personal customer account is created from Create Account and needs no documents; Google or Apple are for signing in after the account exists.
             Company accounts require additional details and review before activation.
             """);
     }

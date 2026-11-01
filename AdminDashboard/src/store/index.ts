@@ -10,6 +10,8 @@ export {
   useGetAdminUserDetailQuery,
   useGetAdminProductStatsQuery,
   useGetAdminProductsQuery,
+  useGetAdminProductNamesQuery,
+  useUpdateAdminProductNamesMutation,
   useApproveProductMutation,
   useRejectProductMutation,
   useGetAdminProductDetailQuery,
@@ -121,5 +123,6 @@ export {
   useGetAdminAiConversationsQuery,
   useLazyGetAdminAiConversationMessagesQuery,
   useGenerateAiConversationReportMutation,
+  useTranslateChatMessageMutation,
 } from './adminApi'
 export type { FetchUsersParams } from './adminApi'

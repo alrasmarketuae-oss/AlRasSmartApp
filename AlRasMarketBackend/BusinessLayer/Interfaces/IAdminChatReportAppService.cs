@@ -12,4 +12,9 @@ public interface IAdminChatReportAppService
         Guid conversationId,
         string language = "ar",
         CancellationToken cancellationToken = default);
+
+    /// <summary>Arabic text is translated to English, anything else to Arabic.</summary>
+    Task<AdminChatTranslateDto> TranslateMessageAsync(
+        AdminChatTranslateRequest request,
+        CancellationToken cancellationToken = default);
 }

@@ -50,34 +50,21 @@ public class AppleProvider(
         var user = await _userRepository.GetByEmailAsync(tokenEmail);
         if (user is null)
         {
-            user = new User
-            {
-                Id = Guid.NewGuid(),
-                FullName = displayName,
-                Email = tokenEmail,
-                RoleId = 3,
-                LoginProviderName = "Apple",
-                IsActive = true,
-                IsVerified = true,
-                FcmToken = fcmToken,
-                PreferredLanguage = "en"
-            };
-            await _userRepository.AddAsync(user);
+            throw new UnauthorizedAccessException(
+                "You don't have an account. Please create an account first.");
         }
-        else
-        {
-            if (!string.IsNullOrWhiteSpace(fullName) &&
-                (string.IsNullOrWhiteSpace(user.FullName) ||
-                 string.Equals(user.FullName, tokenEmail.Split('@')[0], StringComparison.OrdinalIgnoreCase)))
-            {
-                await _userRepository.UpdateFullNameAsync(user.Id, displayName);
-                user.FullName = displayName;
-            }
 
-            if (!string.IsNullOrWhiteSpace(fcmToken))
-            {
-                await _userRepository.UpdateFcmTokenAsync(user.Id.ToString(), fcmToken);
-            }
+        if (!string.IsNullOrWhiteSpace(fullName) &&
+            (string.IsNullOrWhiteSpace(user.FullName) ||
+             string.Equals(user.FullName, tokenEmail.Split('@')[0], StringComparison.OrdinalIgnoreCase)))
+        {
+            await _userRepository.UpdateFullNameAsync(user.Id, displayName);
+            user.FullName = displayName;
+        }
+
+        if (!string.IsNullOrWhiteSpace(fcmToken))
+        {
+            await _userRepository.UpdateFcmTokenAsync(user.Id.ToString(), fcmToken);
         }
 
         return new { User = user };

@@ -3,6 +3,7 @@ using BusinessLayer.LoginServices.Dtos;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace RasAlSouqPresentaionLayer.Controllers;
 
@@ -23,6 +24,7 @@ public class AuthController(
     /// </summary>
     /// <param name="request">Buyer registration payload.</param>
     /// <returns>Created user id and status message.</returns>
+    [EnableRateLimiting("auth")]
     [HttpPost("register-person")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -57,6 +59,7 @@ public class AuthController(
     /// </summary>
     /// <param name="request">Company registration payload including licence and optional image paths.</param>
     /// <returns>Created user id and pending-approval message.</returns>
+    [EnableRateLimiting("auth")]
     [HttpPost("register-company")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -124,6 +127,7 @@ public class AuthController(
     /// Registers a shipping company account pending admin approval.
     /// </summary>
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     [HttpPost("register-shipping-company")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -164,6 +168,7 @@ public class AuthController(
     /// <param name="request">Login payload with provider-specific fields and optional FCM token.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>JWT token and basic profile details.</returns>
+    [EnableRateLimiting("auth")]
     [HttpPost("login")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -345,6 +350,7 @@ public class AuthController(
     /// <param name="request">Target email payload.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Operation status message.</returns>
+    [EnableRateLimiting("auth")]
     [HttpPost("send-email-otp")]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -378,6 +384,7 @@ public class AuthController(
     /// <param name="request">Email and OTP payload.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Verification result message.</returns>
+    [EnableRateLimiting("auth")]
     [HttpPost("verify-email-otp")]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -547,6 +554,7 @@ public class AuthController(
     /// <param name="request">Provider and destination payload.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Operation status message.</returns>
+    [EnableRateLimiting("auth")]
     [HttpPost("forgot-password/request")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -578,6 +586,7 @@ public class AuthController(
     /// <param name="request">Provider, destination, code, and new password payload.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Operation status message.</returns>
+    [EnableRateLimiting("auth")]
     [HttpPost("forgot-password/reset")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

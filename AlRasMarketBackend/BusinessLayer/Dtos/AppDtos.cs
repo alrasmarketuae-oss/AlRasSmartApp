@@ -305,6 +305,11 @@ public sealed class UpdateProductInput : CreateProductInput
 {
     public string ProductId { get; set; } = string.Empty;
     public bool AllowAdminUpdate { get; set; }
+    /// <summary>
+    /// Arabic title chosen by an admin. When set, it is stored as-is and the
+    /// background translator does not replace it.
+    /// </summary>
+    public string? LockedNameAr { get; set; }
 }
 
 public sealed class DeleteProductInput
@@ -319,6 +324,8 @@ public sealed class DeleteProductInput
 public sealed class AdminUpdateProductRequest
 {
     public string NameEn { get; set; } = string.Empty;
+    /// <summary>Arabic ad title. Null leaves auto-translation in place; a value is stored as written.</summary>
+    public string? NameAr { get; set; }
     public decimal USDPrice { get; set; }
     public long Quantity { get; set; }
     public string? DescriptionEn { get; set; }

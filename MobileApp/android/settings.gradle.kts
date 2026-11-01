@@ -11,8 +11,6 @@ pluginManagement {
     includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
 
     repositories {
-        maven { url = uri("file:///C:/src/gradle-mirror/maven-local") }
-        maven { url = uri("file:///C:/src/gradle-mirror/aapt2-only") }
         google()
         mavenCentral()
         gradlePluginPortal()

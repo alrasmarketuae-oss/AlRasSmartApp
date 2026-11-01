@@ -5,8 +5,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// Locale-aware colored brand title.
 ///
-/// Arabic: «تطبيق الراس الذكى» (optional تطبيق) with ال blue / راس red / الذكى green.
-/// English: «Al Ras Smart App» with Al blue / Ras red / Smart green / App dark.
+/// Arabic: «تطبيق ميرج سبايس» (optional تطبيق).
+/// English: «Merge Spice App» with Merge green / Spice red / App dark.
 class ColoredBrandTitle extends StatelessWidget {
   const ColoredBrandTitle({
     super.key,
@@ -43,17 +43,13 @@ class ColoredBrandTitle extends StatelessWidget {
                 ),
               ],
               TextSpan(
-                text: 'ال',
-                style: base.copyWith(color: BrandColors.primaryBlue),
-              ),
-              TextSpan(
-                text: 'راس',
-                style: base.copyWith(color: BrandColors.primaryRed),
+                text: 'ميرج',
+                style: base.copyWith(color: BrandColors.primaryGreen),
               ),
               TextSpan(text: ' ', style: base),
               TextSpan(
-                text: 'الذكى',
-                style: base.copyWith(color: BrandColors.primaryGreen),
+                text: 'سبايس',
+                style: base.copyWith(color: BrandColors.primaryRed),
               ),
             ],
           ),
@@ -66,18 +62,13 @@ class ColoredBrandTitle extends StatelessWidget {
       TextSpan(
         children: [
           TextSpan(
-            text: 'Al',
-            style: base.copyWith(color: BrandColors.primaryBlue),
-          ),
-          TextSpan(text: ' ', style: base),
-          TextSpan(
-            text: 'Ras',
-            style: base.copyWith(color: BrandColors.primaryRed),
-          ),
-          TextSpan(text: ' ', style: base),
-          TextSpan(
-            text: 'Smart',
+            text: 'Merge',
             style: base.copyWith(color: BrandColors.primaryGreen),
+          ),
+          TextSpan(text: ' ', style: base),
+          TextSpan(
+            text: 'Spice',
+            style: base.copyWith(color: BrandColors.primaryRed),
           ),
           if (includeAppWord) ...[
             TextSpan(text: ' ', style: base),

@@ -1,0 +1,4 @@
+/sitemap.xml        https://api.alrasmarketapp.com/api/seo/sitemap.xml  200
+/product/:id        https://api.alrasmarketapp.com/api/seo/product/:id  200
+/product/:id/:slug  https://api.alrasmarketapp.com/api/seo/product/:id  200
+/*                  /index.html                                         200

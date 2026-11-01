@@ -1,9 +1,95 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAppPreferences } from '../context/AppPreferencesProvider'
+import { hasPermission, PERMISSIONS } from '../lib/permissions'
 import { useGetMissedProductSearchesQuery } from '../store'
+import type { MissedProductSearchItem } from '../types/missedProductSearch'
 import { queryViewState } from '../store/queryView'
 import { getRtkErrorMessage } from '../utils/rtkError'
 import { formatRelativeFromSeconds } from '../utils/timeAgo'
+import { whatsappHref } from '../utils/whatsapp'
+
+function telHref(phone: string | null | undefined): string | null {
+  const raw = phone?.trim()
+  if (!raw) return null
+  const normalized = raw.replace(/[^\d+]/g, '')
+  const digits = normalized.replace(/\D/g, '')
+  if (digits.length < 8) return null
+  return `tel:${normalized.startsWith('+') ? normalized : `+${digits}`}`
+}
+
+function mailtoHref(email: string | null | undefined): string | null {
+  const value = email?.trim()
+  if (!value || !value.includes('@')) return null
+  return `mailto:${value}`
+}
+
+function ContactActions({ item }: { item: MissedProductSearchItem }) {
+  const { t } = useAppPreferences()
+  const navigate = useNavigate()
+  const call = telHref(item.userPhone)
+  const whatsapp = whatsappHref(item.userPhone)
+  const email = mailtoHref(item.userEmail)
+  const userId = item.userId?.trim() || ''
+  const canChat = Boolean(userId) && hasPermission(PERMISSIONS.chatAccess)
+
+  const buttonClass =
+    'rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-40'
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      <button
+        type="button"
+        disabled={!call}
+        className={`${buttonClass} bg-slate-700 hover:bg-slate-800`}
+        onClick={() => {
+          if (call) window.location.href = call
+        }}
+      >
+        {t('missedSearches.call')}
+      </button>
+      <button
+        type="button"
+        disabled={!whatsapp}
+        className={`${buttonClass} bg-emerald-600 hover:bg-emerald-700`}
+        onClick={() => {
+          if (whatsapp) window.open(whatsapp, '_blank', 'noopener,noreferrer')
+        }}
+      >
+        {t('missedSearches.whatsapp')}
+      </button>
+      <button
+        type="button"
+        disabled={!email}
+        className={`${buttonClass} bg-[#3B7FC7] hover:bg-[#2f6ab0]`}
+        onClick={() => {
+          if (email) window.location.href = email
+        }}
+      >
+        {t('missedSearches.email')}
+      </button>
+      <button
+        type="button"
+        disabled={!canChat}
+        className={`${buttonClass} bg-[#2563eb] hover:bg-[#1d4ed8]`}
+        onClick={() => {
+          if (!canChat) return
+          navigate('/chat', {
+            state: {
+              openChatWith: {
+                userId,
+                displayName: item.userDisplayName?.trim() || '—',
+                avatarUrl: null,
+              },
+            },
+          })
+        }}
+      >
+        {t('missedSearches.inAppChat')}
+      </button>
+    </div>
+  )
+}
 
 function formatUtcStamp(value: string): string {
   if (!value) return '—'
@@ -94,6 +180,7 @@ export default function MissedProductSearchesPage() {
                   <th className="px-4 py-3">{t('missedSearches.query')}</th>
                   <th className="px-4 py-3">{t('missedSearches.customer')}</th>
                   <th className="px-4 py-3">{t('missedSearches.contact')}</th>
+                  <th className="px-4 py-3">{t('missedSearches.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -127,6 +214,9 @@ export default function MissedProductSearchesPage() {
                       {!item.userEmail && !item.userPhone ? (
                         <span className="text-slate-400">—</span>
                       ) : null}
+                    </td>
+                    <td className="px-4 py-3 align-top">
+                      <ContactActions item={item} />
                     </td>
                   </tr>
                 ))}

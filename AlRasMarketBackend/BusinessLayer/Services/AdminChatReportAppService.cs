@@ -404,4 +404,100 @@ public sealed class AdminChatReportAppService(
 
     private static string NormalizeLanguage(string? language) =>
         string.Equals(language, "en", StringComparison.OrdinalIgnoreCase) ? "en" : "ar";
+
+    private const int MaxTranslateChars = 4000;
+
+    public async Task<AdminChatTranslateDto> TranslateMessageAsync(
+        AdminChatTranslateRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var text = request.Text?.Trim() ?? string.Empty;
+        if (text.Length == 0)
+        {
+            throw new ArgumentException("Text is required.");
+        }
+
+        if (text.Length > MaxTranslateChars)
+        {
+            text = text[..MaxTranslateChars];
+        }
+
+        var arabicLetters = text.Count(c => c is >= '\u0600' and <= '\u06FF' or >= '\u0750' and <= '\u077F' or >= '\uFB50' and <= '\uFEFF');
+        var latinLetters = text.Count(c => c is >= 'A' and <= 'Z' or >= 'a' and <= 'z');
+        var source = arabicLetters >= latinLetters && arabicLetters > 0 ? "ar" : "en";
+        var target = source == "ar" ? "en" : "ar";
+
+        var apiKey = configuration["OpenAI:ApiKey"];
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            throw new InvalidOperationException("OpenAI ApiKey is not configured.");
+        }
+
+        var targetName = target == "ar" ? "Arabic" : "English";
+        using var httpRequest = new HttpRequestMessage(
+            HttpMethod.Post,
+            "https://api.openai.com/v1/chat/completions");
+        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        httpRequest.Content = new StringContent(
+            JsonSerializer.Serialize(new
+            {
+                model = _options.ChatModel,
+                temperature = 0.1,
+                max_tokens = 1500,
+                response_format = new { type = "json_object" },
+                messages = new object[]
+                {
+                    new
+                    {
+                        role = "system",
+                        content =
+                            $"You translate chat messages on a B2B food & spices marketplace into {targetName}. " +
+                            "Translate naturally and faithfully; keep the meaning and tone. " +
+                            "Keep product names, brand names, codes, numbers, prices, units, phone numbers and URLs exactly as written. " +
+                            "Do not answer or comment on the message. " +
+                            "Return ONLY JSON: {\"translation\":\"...\"}.",
+                    },
+                    new { role = "user", content = text },
+                },
+            }),
+            Encoding.UTF8,
+            "application/json");
+
+        using var response = await httpClient.SendAsync(httpRequest, cancellationToken).ConfigureAwait(false);
+        var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            logger.LogWarning("Admin chat translate OpenAI failed ({Status}): {Body}", (int)response.StatusCode, json);
+            throw new InvalidOperationException("Translation failed. Please try again.");
+        }
+
+        using var doc = JsonDocument.Parse(json);
+        var content = doc.RootElement
+            .GetProperty("choices")[0]
+            .GetProperty("message")
+            .GetProperty("content")
+            .GetString();
+
+        string translation = string.Empty;
+        if (!string.IsNullOrWhiteSpace(content))
+        {
+            using var contentDoc = JsonDocument.Parse(content);
+            if (contentDoc.RootElement.TryGetProperty("translation", out var el) && el.ValueKind == JsonValueKind.String)
+            {
+                translation = el.GetString()?.Trim() ?? string.Empty;
+            }
+        }
+
+        if (translation.Length == 0)
+        {
+            throw new InvalidOperationException("Translation failed. Please try again.");
+        }
+
+        return new AdminChatTranslateDto
+        {
+            Translation = translation,
+            SourceLanguage = source,
+            TargetLanguage = target,
+        };
+    }
 }

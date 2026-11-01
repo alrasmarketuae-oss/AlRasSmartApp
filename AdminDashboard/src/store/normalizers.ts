@@ -156,6 +156,8 @@ export function normalizeUsersResponse(
 type RawProduct = AdminProduct & {
   ProductId?: string
   Name?: string
+  NameEn?: string
+  NameAr?: string
   Description?: string | null
   PriceUsd?: number
   Currency?: string
@@ -268,6 +270,8 @@ export function normalizeProduct(raw: RawProduct): AdminProduct {
   return {
     productId: String(raw.productId ?? raw.ProductId ?? '').trim(),
     name: raw.name ?? raw.Name ?? '',
+    nameEn: String(raw.nameEn ?? raw.NameEn ?? ''),
+    nameAr: String(raw.nameAr ?? raw.NameAr ?? ''),
     description: raw.description ?? raw.Description ?? null,
     priceUsd: raw.priceUsd ?? raw.PriceUsd ?? 0,
     currency: raw.currency ?? raw.Currency ?? 'AED',
@@ -1742,11 +1746,11 @@ export function normalizeUserDetail(raw: RawUserDetail): AdminUserDetail {
     canConvertToSupplier:
       raw.canConvertToSupplier ??
       raw.CanConvertToSupplier ??
-      (roleId === 2 && isCustomer === true),
+      (roleId === 3 || (roleId === 2 && isCustomer === true)),
     canConvertToCompanyCustomer:
       raw.canConvertToCompanyCustomer ??
       raw.CanConvertToCompanyCustomer ??
-      (roleId === 2 && isCustomer !== true),
+      (roleId === 3 || (roleId === 2 && isCustomer !== true)),
   }
 }
 

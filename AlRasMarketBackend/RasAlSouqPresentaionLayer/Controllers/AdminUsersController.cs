@@ -135,7 +135,7 @@ public class AdminUsersController(IAdminUsersAppService adminUsersAppService) : 
         }
     }
 
-    /// <summary>Convert company-customer (IsCustomer=true) Seller to supplier (IsCustomer=false).</summary>
+    /// <summary>Convert a company customer or a personal account to a supplier (IsCustomer=false).</summary>
     [HttpPost("{userId}/convert-to-supplier")]
     [RequireAdminPermission(AdminPermissions.UsersManage)]
     public async Task<IActionResult> ConvertToSupplier(
@@ -163,7 +163,7 @@ public class AdminUsersController(IAdminUsersAppService adminUsersAppService) : 
         }
     }
 
-    /// <summary>Convert supplier (IsCustomer=false) Seller to company customer (IsCustomer=true).</summary>
+    /// <summary>Convert a supplier or a personal account to a company account (IsCustomer=true).</summary>
     [HttpPost("{userId}/convert-to-company-customer")]
     [RequireAdminPermission(AdminPermissions.UsersManage)]
     public async Task<IActionResult> ConvertToCompanyCustomer(

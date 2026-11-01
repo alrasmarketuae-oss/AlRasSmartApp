@@ -17,6 +17,8 @@ public static class UserMessages
         ["Invalid OTP."] = "رمز التحقق غير صحيح.",
         ["OTP expired."] = "انتهت صلاحية رمز التحقق.",
         ["No account found for this email."] = "لا يوجد حساب بهذا البريد الإلكتروني.",
+        ["You don't have an account. Please create an account first."] =
+            "ليس لديك حساب. يرجى إنشاء حساب أولاً.",
         ["Please verify your email before logging in."] = "يرجى تأكيد بريدك الإلكتروني قبل تسجيل الدخول.",
         ["Your account is suspended or deactivated."] = "حسابك موقوف أو غير مفعّل.",
         ["Your account registration was rejected."] = "تم رفض تسجيل حسابك.",

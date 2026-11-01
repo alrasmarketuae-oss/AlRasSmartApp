@@ -9,6 +9,8 @@ public class User
     public string? HashedPassword { get; set; }
     public byte RoleId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    /// <summary>Bumped on logout and password change. Tokens carry this value and die when it changes.</summary>
+    public int AuthStamp { get; set; }
     public DateTime? LastSeenAtUtc { get; set; }
     public string? ImgPath { get; set; }
     public string LoginProviderName { get; set; } = "Local";

@@ -32,7 +32,8 @@ public class TokenService(IConfiguration configuration) : ITokenService
             new("phone", user.PhoneNumber ?? string.Empty),
             new("fullName", user.FullName),
             new("imgPath", user.ImgPath ?? string.Empty),
-            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new("ver", user.AuthStamp.ToString())
         };
 
         if (permissionKeys is { Count: > 0 })

@@ -56,7 +56,7 @@ class S {
 
   /// `Ecovera`
   String get appName {
-    return Intl.message('Ecovera', name: 'appName', desc: '', args: []);
+    return Intl.message('Merge Spice', name: 'appName', desc: '', args: []);
   }
 
   /// `Languages`
@@ -87,7 +87,7 @@ class S {
   /// `Customers can sign in directly — no new account needed`
   String get quickLoginSubtitle {
     return Intl.message(
-      'Customers can sign in directly — no new account needed',
+      'Sign in with your existing account',
       name: 'quickLoginSubtitle',
       desc: '',
       args: [],
@@ -744,30 +744,30 @@ class S {
     return Intl.message('Welcome to', name: 'welcomeTo', desc: '', args: []);
   }
 
-  /// `Al Ras Smart App`
+  /// `Merge Spice App`
   String get alRasMarket {
     return Intl.message(
-      'Al Ras Smart App',
+      'Merge Spice App',
       name: 'alRasMarket',
       desc: '',
       args: [],
     );
   }
 
-  /// `Al Ras Smart`
+  /// `Merge Spice`
   String get smartAlRasBrand {
     return Intl.message(
-      'Al Ras Smart',
+      'Merge Spice',
       name: 'smartAlRasBrand',
       desc: '',
       args: [],
     );
   }
 
-  /// `Al Ras Smart App`
+  /// `Merge Spice App`
   String get smartAlRasAppFull {
     return Intl.message(
-      'Al Ras Smart App',
+      'Merge Spice App',
       name: 'smartAlRasAppFull',
       desc: '',
       args: [],

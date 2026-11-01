@@ -42,8 +42,10 @@ public sealed partial class AiAssistantMcpToolsService(
                     "Omit channel unless the user clearly said جملة/wholesale or تجزئة/retail. " +
                     "ONLY if this tool returns needs_channel_clarification=true, then ask جملة ولا تجزئة؟ and call again with channel. " +
                     "Never mention هجين / wholesale / retail / جملة / تجزئة in the user reply unless that clarification was required. " +
-                    "Use the SELLER ADS CATALOG / list_my_ads names. If the spoken/typed name is an exact match, update immediately. " +
-                    "If several of the seller's ads share that SAME exact name, this tool updates ALL of them in one call — do not ask which copy. " +
+                    "Use the SELLER ADS CATALOG / list_my_ads names. If the spoken/typed name matches exactly ONE ad, update immediately. " +
+                    "If several of the seller's ads share that SAME exact name, this tool does NOT update any of them. " +
+                    "It returns needs_clarification. Ask which copy they mean, and distinguish the copies by product code, current price, quantity, and unit — the names are identical, so the name alone is not enough. " +
+                    "When they pick one, call again with that product_code. Never update every copy in one call. " +
                     "If the name is a slight typo or matches DIFFERENT names, the tool returns needs_clarification with suggestions — " +
                     "ask the user in their language: did you mean ad A or ad B? When they pick one, call again with that exact product_name or product_code.",
                 parameters = new
@@ -865,15 +867,32 @@ public sealed partial class AiAssistantMcpToolsService(
         }
 
         var exactMatches = ranked.Where(x => x.Score >= 100).ToList();
-        if (exactMatches.Count > 0)
+        if (exactMatches.Count == 1)
         {
             return await ApplyPriceQuantityUpdateToAdsAsync(
-                    exactMatches.Select(x => x.ProductId).Distinct().ToList(),
+                    [exactMatches[0].ProductId],
                     price,
                     quantity,
                     channel,
                     cancellationToken)
                 .ConfigureAwait(false);
+        }
+
+        if (exactMatches.Count > 1)
+        {
+            return Json(new
+            {
+                ok = false,
+                needs_clarification = true,
+                duplicateName = true,
+                message =
+                    "Several of the seller's ads share this exact name. Do NOT update any of them. " +
+                    "Ask which copy they mean. The names are identical, so distinguish each copy by product code, current price, quantity, and unit. " +
+                    "Example: عندك أكثر من إعلان بنفس الاسم. تقصد الكود X (السعر الحالي … والكمية …) ولا الكود Y؟ " +
+                    "When they pick one, call update_ad_price_quantity again with that product_code only. Never update all copies.",
+                query = productName.Trim(),
+                suggestions = exactMatches.Take(20).Select(ToAdSuggestion).ToList()
+            });
         }
 
         var best = ranked[0];
@@ -951,8 +970,7 @@ public sealed partial class AiAssistantMcpToolsService(
                 names = products.Select(p => p.NameEn).Distinct().ToList(),
                 message =
                     "One or more matching ads have two prices (جملة + تجزئة). Do NOT update yet. " +
-                    "Ask ONLY: جملة ولا تجزئة؟ Then call again with the same product_name and channel=wholesale or channel=retail. " +
-                    "The tool will then update EVERY ad with this exact name."
+                    "Ask ONLY: جملة ولا تجزئة؟ Then call again with the same product_code and channel=wholesale or channel=retail."
             });
         }
 
@@ -983,8 +1001,7 @@ public sealed partial class AiAssistantMcpToolsService(
             updatedCount = results.Count,
             updated = results,
             instruction =
-                "Updated every ad with this exact name. Tell the seller how many ads changed " +
-                "and the new price/quantity. Do not ask which copy they meant."
+                "Updated the listed ads. Tell the seller the new price/quantity for each one."
         });
     }
 
@@ -1235,7 +1252,7 @@ public sealed partial class AiAssistantMcpToolsService(
             "\nUse this list when the seller asks to update an ad. " +
             "Ads without the word 'hybrid' have ONE price — update immediately and never mention جملة/تجزئة/هجين. " +
             "Ask جملة ولا تجزئة ONLY after update_ad_price_quantity returns needs_channel_clarification. " +
-            "If several ads share the same exact name, update_ad_price_quantity changes ALL of them — do not ask which copy. " +
+            "If several ads share the same exact name, do not update them. Ask which copy, using product code, current price, quantity, and unit, then call update_ad_price_quantity with that product_code. " +
             "If their name has a slight typo or matches different names, ask which catalog ad they meant before calling update.";
     }
 

@@ -389,7 +389,12 @@ class _LoginTopBar extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          Image.asset(AppAssets.logo, width: 62.w, height: 44.h),
+          Image.asset(
+            AppAssets.logo,
+            width: 52.w,
+            height: 52.w,
+            fit: BoxFit.contain,
+          ),
         ],
       ),
     );

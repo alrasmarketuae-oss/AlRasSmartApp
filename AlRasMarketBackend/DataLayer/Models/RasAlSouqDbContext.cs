@@ -120,6 +120,7 @@ public class RasAlSouqDbContext(DbContextOptions<RasAlSouqDbContext> options)
             entity.Property(x => x.FcmToken).HasMaxLength(512).IsUnicode(false);
             entity.Property(x => x.PreferredLanguage).HasMaxLength(10).IsUnicode(false).HasDefaultValue("en");
             entity.Property(x => x.CreatedAt).HasColumnType("datetime").HasDefaultValueSql("(getutcdate())").ValueGeneratedOnAdd();
+            entity.Property(x => x.AuthStamp).HasDefaultValue(0);
             entity.Property(x => x.LastSeenAtUtc).HasColumnType("datetime");
             entity.HasOne(x => x.Role).WithMany(x => x.Users).HasForeignKey(x => x.RoleId);
         });

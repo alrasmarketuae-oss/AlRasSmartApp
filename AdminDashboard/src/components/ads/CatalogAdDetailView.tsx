@@ -8,6 +8,7 @@ import type {
   AdminUpdateProductPayload,
 } from '../../types/adminProduct'
 import PendingProductEditPanel from './PendingProductEditPanel'
+import { AdNameFields, storedAdNames } from './AdNameFields'
 import ProductVideosPanel from './ProductVideosPanel'
 import type { Category } from '../../types/category'
 import ProductShippingPanel from '../shared/ProductShippingPanel'
@@ -183,7 +184,8 @@ export default function CatalogAdDetailView({
   const [selectedVideoIndex, setSelectedVideoIndex] = useState(0)
   const [showVideo, setShowVideo] = useState(() => shouldAutoShowProductVideo(product))
   const mainVideoRef = useRef<HTMLVideoElement>(null)
-  const [nameEn, setNameEn] = useState(product.name)
+  const [nameEn, setNameEn] = useState(() => storedAdNames(product).nameEn)
+  const [nameAr, setNameAr] = useState(() => storedAdNames(product).nameAr)
   const [usdPrice, setUsdPrice] = useState(String(product.priceUsd || ''))
   const [currency, setCurrency] = useState(product.currency || 'AED')
   const [unitName, setUnitName] = useState(product.unitName)
@@ -199,7 +201,8 @@ export default function CatalogAdDetailView({
   const [setAdminProductVideoMute] = useSetAdminProductVideoMuteMutation()
 
   useEffect(() => {
-    setNameEn(product.name)
+    setNameEn(storedAdNames(product).nameEn)
+    setNameAr(storedAdNames(product).nameAr)
     setUsdPrice(String(product.priceUsd || ''))
     setCurrency(product.currency || 'AED')
     setUnitName(product.unitName)
@@ -338,7 +341,7 @@ export default function CatalogAdDetailView({
 
   function handleSave() {
     const price = Number.parseFloat(usdPrice)
-    if (!nameEn.trim() || Number.isNaN(price) || price < 0) return
+    if (!nameEn.trim() || !nameAr.trim() || Number.isNaN(price) || price < 0) return
     // Hybrid ads keep CategoryId; sending ProductTypeName=Retail would strip
     // the category on the server and turn the ad into pure Retail.
     const resolvedProductTypeName = isHybridPricing || categoryId
@@ -346,6 +349,7 @@ export default function CatalogAdDetailView({
       : productTypeName
     onSave({
       nameEn: nameEn.trim(),
+      nameAr: nameAr.trim(),
       usdPrice: price,
       currency,
       quantity: product.quantity,
@@ -688,10 +692,12 @@ export default function CatalogAdDetailView({
                 iconClass="bg-rose-50 text-rose-500"
                 className="sm:col-span-2 lg:col-span-3"
                 value={
-                  <input
-                    value={nameEn}
-                    onChange={(e) => setNameEn(e.target.value)}
-                    className={inputDense}
+                  <AdNameFields
+                    nameEn={nameEn}
+                    nameAr={nameAr}
+                    onNameEn={setNameEn}
+                    onNameAr={setNameAr}
+                    inputClassName={inputDense}
                   />
                 }
               />

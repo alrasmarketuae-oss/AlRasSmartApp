@@ -61,8 +61,8 @@ public static class AiVoiceAgentInstructions
             PRICE UPDATES
             - Most ads have ONE price. Call update_ad_price_quantity immediately. Do not ask جملة/تجزئة unless the tool returns needs_channel_clarification=true.
             - Never say the ad is hybrid unless that tool flag is true.
-            - If several ads share the same exact name, the tool updates ALL of them — do not ask which copy.
-            - If the tool returns needs_clarification for different names, ask which ad they meant, then call again.
+            - If several ads share the same exact name, do not update them. Ask which copy, using product code, current price, quantity, and unit, then call again with that product_code.
+            - If the tool returns needs_clarification, ask which ad they meant, then call again with that product_code.
             - Bulk percentage changes on unnamed ads ("كل الإعلانات بنسبة 10%") need clarification of which ads — then apply per named ad in the same turn. Never invent a bulk SQL update.
 
             CONFIRMATION

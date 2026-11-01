@@ -359,7 +359,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "aiIdentifiedProducts": MessageLookupByLibrary.simpleMessage(
       "عثر نظام الذكاء الاصطناعي لدينا على منتجات مطابقة لصورتك.",
     ),
-    "alRasMarket": MessageLookupByLibrary.simpleMessage("تطبيق الراس الذكي"),
+    "alRasMarket": MessageLookupByLibrary.simpleMessage("تطبيق ميرج سبايس"),
     "allOffers": MessageLookupByLibrary.simpleMessage("جميع العروض"),
     "allOrders": MessageLookupByLibrary.simpleMessage("كل الطلبات"),
     "alreadyHaveAnAccount": MessageLookupByLibrary.simpleMessage("لديك حساب؟"),
@@ -372,7 +372,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "analyzingImageHint": MessageLookupByLibrary.simpleMessage(
       "يقوم الذكاء الاصطناعي بتحديد المنتج من صورتك.",
     ),
-    "appName": MessageLookupByLibrary.simpleMessage("ايكوفيرا"),
+    "appName": MessageLookupByLibrary.simpleMessage("ميرج سبايس"),
     "appUpdateForceMessage": MessageLookupByLibrary.simpleMessage(
       "هذه النسخة لم تعد مدعومة. يرجى التحديث لمتابعة استخدام التطبيق.",
     ),
@@ -1546,7 +1546,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "quickActions": MessageLookupByLibrary.simpleMessage("إجراءات سريعة"),
     "quickLogin": MessageLookupByLibrary.simpleMessage("دخول سريع"),
     "quickLoginSubtitle": MessageLookupByLibrary.simpleMessage(
-      "للعملاء: ادخل مباشرة بدون إنشاء حساب",
+      "سجّل الدخول بحسابك الحالي",
     ),
     "reEnterNewPassword": MessageLookupByLibrary.simpleMessage(
       "ادخل كلمة المرور الجديدة مرة أخرى",
@@ -1841,9 +1841,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "skip": MessageLookupByLibrary.simpleMessage("تخطي"),
     "skipLogin": MessageLookupByLibrary.simpleMessage("تخطي تسجيل الدخول"),
     "smartAlRasAppFull": MessageLookupByLibrary.simpleMessage(
-      "تطبيق الراس الذكي",
+      "تطبيق ميرج سبايس",
     ),
-    "smartAlRasBrand": MessageLookupByLibrary.simpleMessage("الراس الذكي"),
+    "smartAlRasBrand": MessageLookupByLibrary.simpleMessage("ميرج سبايس"),
     "soldOut": MessageLookupByLibrary.simpleMessage("نفد المخزون"),
     "specifications": MessageLookupByLibrary.simpleMessage("المواصفات"),
     "specifyQuantity": MessageLookupByLibrary.simpleMessage("الكمية المطلوبة"),

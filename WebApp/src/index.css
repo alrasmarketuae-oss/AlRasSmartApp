@@ -1,0 +1,154 @@
+@import 'tailwindcss';
+
+@font-face {
+  font-family: 'Cairo';
+  src: url('/fonts/Cairo-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Cairo';
+  src: url('/fonts/Cairo-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Cairo';
+  src: url('/fonts/Cairo-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Cairo';
+  src: url('/fonts/Cairo-Bold.ttf') format('truetype');
+  font-weight: 700 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/Inter-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/Inter-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/Inter-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/Inter-Bold.ttf') format('truetype');
+  font-weight: 700 900;
+  font-display: swap;
+}
+
+@theme {
+  --color-brand: #3a7dc5;
+  --color-brand-dark: #16499e;
+  --color-brand-light: #2e77cc;
+  --color-brand-blue: #0057d9;
+  --color-brand-navy: #0b2e83;
+  --color-brand-red: #e31e24;
+  --color-brand-green: #009b4d;
+  --color-page: #f2f7ff;
+  --color-auth-bg: #f7faff;
+  --color-title: #16233a;
+  --color-subtitle: #7b8794;
+  --color-line: #e4eaf2;
+  --color-input-line: #d5d9d9;
+  --color-auth-title: #1b3b5f;
+  --color-auth-body: #6b7a90;
+  --color-auth-label: #33455c;
+  --color-auth-hint: #9aa6b8;
+  --color-auth-border: #e6ecf5;
+  --color-card-details: #586574;
+  --color-deal-green: #619d50;
+  --color-deal-red: #cc0c39;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+html[lang='ar'] body {
+  font-family: 'Cairo', system-ui, sans-serif;
+}
+html[lang='en'] body {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: var(--color-page);
+  color: var(--color-title);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.auth-bg {
+  background:
+    radial-gradient(circle, rgba(58, 125, 197, 0.1) 1.1px, transparent 1.3px) 0 0 / 13px 13px,
+    linear-gradient(180deg, #fdfeff 0%, #edf3fc 100%);
+  -webkit-mask-image: none;
+}
+.auth-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 0%, transparent 35%, #f3f7fd 60%, #edf3fc 100%);
+  pointer-events: none;
+}
+.auth-swoosh {
+  position: absolute;
+  top: 0;
+  inset-inline-end: 0;
+  width: 70%;
+  height: 20%;
+  min-height: 120px;
+  background: linear-gradient(225deg, rgba(46, 119, 204, 0.16), rgba(46, 119, 204, 0.03));
+  border-end-start-radius: 100% 100%;
+  pointer-events: none;
+}
+html[dir='ltr'] .auth-swoosh {
+  inset-inline-end: 0;
+}
+
+.shimmer {
+  background: linear-gradient(90deg, #e5e7eb 0%, #f3f4f6 40%, #e5e7eb 80%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.line-clamp-var {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.leaflet-container {
+  font-family: inherit;
+}

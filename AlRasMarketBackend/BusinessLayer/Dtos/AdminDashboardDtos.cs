@@ -588,8 +588,29 @@ public sealed class AdminProductVideoDto
     public byte? DurationSeconds { get; set; }
 }
 
+public sealed class AdminProductNameItemDto
+{
+    public Guid ProductId { get; set; }
+    public string? ProductCode { get; set; }
+    public string NameEn { get; set; } = string.Empty;
+    public string NameAr { get; set; } = string.Empty;
+    public string ProductTypeName { get; set; } = string.Empty;
+    public string? OwnerCompanyName { get; set; }
+    public string? PrimaryImagePath { get; set; }
+}
+
+public sealed class AdminUpdateProductNamesRequest
+{
+    public string NameEn { get; set; } = string.Empty;
+    public string NameAr { get; set; } = string.Empty;
+}
+
 public sealed class AdminProductDetailDto : AdminProductListItemDto
 {
+    /// <summary>Stored English title, independent of the dashboard language.</summary>
+    public string NameEn { get; set; } = string.Empty;
+    /// <summary>Stored Arabic title, independent of the dashboard language.</summary>
+    public string NameAr { get; set; } = string.Empty;
     public Guid? OwnerId { get; set; }
     public byte? UnitId { get; set; }
     public byte? StatusId { get; set; }

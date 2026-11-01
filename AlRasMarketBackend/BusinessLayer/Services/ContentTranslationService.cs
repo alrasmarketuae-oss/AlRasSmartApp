@@ -104,6 +104,58 @@ public class ContentTranslationService(
             cancellationToken);
     }
 
+    public async Task UpsertProductNameBilingualAsync(
+        Guid productId,
+        string nameEn,
+        string nameAr,
+        CancellationToken cancellationToken = default)
+    {
+        var trimmedEn = nameEn.Trim();
+        var trimmedAr = nameAr.Trim();
+        if (string.IsNullOrWhiteSpace(trimmedEn) || string.IsNullOrWhiteSpace(trimmedAr))
+        {
+            return;
+        }
+
+        // Hash the English title. The background translator uses that same hash
+        // and skips the name when it already matches, so this Arabic text stays.
+        var hash = ComputeHash(trimmedEn);
+        var existing = await FindRowAsync(
+            ContentTranslationScopes.Product,
+            productId,
+            orderId: null,
+            ContentTranslationFields.Name,
+            cancellationToken);
+
+        if (existing is null)
+        {
+            await dbContext.ContentTranslations.AddAsync(
+                new ContentTranslation
+                {
+                    Id = Guid.NewGuid(),
+                    Scope = ContentTranslationScopes.Product,
+                    ProductId = productId,
+                    Field = ContentTranslationFields.Name,
+                    TextEn = trimmedEn,
+                    TextAr = trimmedAr,
+                    SourceLanguage = "en",
+                    SourceHash = hash,
+                    UpdatedAtUtc = DateTime.UtcNow
+                },
+                cancellationToken);
+        }
+        else
+        {
+            existing.TextEn = trimmedEn;
+            existing.TextAr = trimmedAr;
+            existing.SourceLanguage = "en";
+            existing.SourceHash = hash;
+            existing.UpdatedAtUtc = DateTime.UtcNow;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task UpsertProductSupplierNotesBilingualAsync(
         Guid productId,
         string? notesEn,

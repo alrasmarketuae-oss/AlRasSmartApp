@@ -31,8 +31,13 @@ public sealed class CloudflareR2Options
     /// </summary>
     public string[] AllowedCorsOrigins { get; set; } =
     [
+        "https://shop.alrasmarketapp.com",
+        "https://alrasmarketapp.com",
+        "https://www.alrasmarketapp.com",
+        "https://dash.alrasmarketapp.com",
         "https://*.alrasmarketapp.com",
         "https://*.netlify.app",
+        "http://localhost:5175",
         "http://localhost:5173",
         "http://localhost:4173",
         "http://localhost:3000",

@@ -30,6 +30,18 @@ public sealed class AdminAiConversationReportRequest
     public string Language { get; set; } = "ar";
 }
 
+public sealed class AdminChatTranslateRequest
+{
+    public string Text { get; set; } = string.Empty;
+}
+
+public sealed class AdminChatTranslateDto
+{
+    public string Translation { get; set; } = string.Empty;
+    public string SourceLanguage { get; set; } = "en";
+    public string TargetLanguage { get; set; } = "ar";
+}
+
 public sealed class AdminChatReportAdLine
 {
     public string Name { get; set; } = string.Empty;

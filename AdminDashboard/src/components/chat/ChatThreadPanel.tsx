@@ -434,7 +434,7 @@ export default function ChatThreadPanel({
                 onClick={onCompanyClick}
                 disabled={isGeneratingReport}
                 className="flex min-w-0 flex-1 items-center gap-2 rounded-xl text-start transition hover:bg-white/10 disabled:opacity-70 sm:gap-3"
-                title={t('chat.companyReportHint')}
+                title={t('chat.viewContactInfo')}
               >
                 {headerContent}
               </button>

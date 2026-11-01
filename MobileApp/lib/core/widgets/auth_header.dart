@@ -58,7 +58,12 @@ class AuthHeader extends StatelessWidget {
         const LanguageButton(),
         const Spacer(),
         if (!isRecording)
-          Image.asset(AppAssets.logo, width: 52.w, height: 42.h),
+          Image.asset(
+            AppAssets.logo,
+            width: 48.w,
+            height: 48.w,
+            fit: BoxFit.contain,
+          ),
       ],
     );
   }

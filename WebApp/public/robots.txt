@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /cart
+Disallow: /orders
+Disallow: /chat
+Disallow: /profile
+Disallow: /login
+Disallow: /register
+Disallow: /order-success
+
+Sitemap: https://shop.alrasmarketapp.com/sitemap.xml

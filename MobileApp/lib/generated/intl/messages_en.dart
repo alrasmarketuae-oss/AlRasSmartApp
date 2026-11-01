@@ -359,7 +359,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "aiIdentifiedProducts": MessageLookupByLibrary.simpleMessage(
       "Our AI recognition system found matching products for your image.",
     ),
-    "alRasMarket": MessageLookupByLibrary.simpleMessage("Al Ras Smart App"),
+    "alRasMarket": MessageLookupByLibrary.simpleMessage("Merge Spice App"),
     "allOffers": MessageLookupByLibrary.simpleMessage("All Offers"),
     "allOrders": MessageLookupByLibrary.simpleMessage("All Orders"),
     "alreadyHaveAnAccount": MessageLookupByLibrary.simpleMessage(
@@ -374,7 +374,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "analyzingImageHint": MessageLookupByLibrary.simpleMessage(
       "Our AI is identifying the product from your photo.",
     ),
-    "appName": MessageLookupByLibrary.simpleMessage("Ecovera"),
+    "appName": MessageLookupByLibrary.simpleMessage("Merge Spice"),
     "appUpdateForceMessage": MessageLookupByLibrary.simpleMessage(
       "This version is no longer supported. Please update to continue using the app.",
     ),
@@ -1544,7 +1544,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "quickActions": MessageLookupByLibrary.simpleMessage("Quick Actions"),
     "quickLogin": MessageLookupByLibrary.simpleMessage("Quick Login"),
     "quickLoginSubtitle": MessageLookupByLibrary.simpleMessage(
-      "Customers can sign in directly — no new account needed",
+      "Sign in with your existing account",
     ),
     "reEnterNewPassword": MessageLookupByLibrary.simpleMessage(
       "Re-enter new password",
@@ -1849,9 +1849,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "skip": MessageLookupByLibrary.simpleMessage("Skip"),
     "skipLogin": MessageLookupByLibrary.simpleMessage("Skip Login"),
     "smartAlRasAppFull": MessageLookupByLibrary.simpleMessage(
-      "Al Ras Smart App",
+      "Merge Spice App",
     ),
-    "smartAlRasBrand": MessageLookupByLibrary.simpleMessage("Al Ras Smart"),
+    "smartAlRasBrand": MessageLookupByLibrary.simpleMessage("Merge Spice"),
     "soldOut": MessageLookupByLibrary.simpleMessage("Sold out"),
     "specifications": MessageLookupByLibrary.simpleMessage("Specifications"),
     "specifyQuantity": MessageLookupByLibrary.simpleMessage("Require quantity"),

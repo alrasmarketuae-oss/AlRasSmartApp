@@ -132,7 +132,7 @@ class _AlRasMarketState extends State<AlRasMarket> with WidgetsBindingObserver {
             builder: (context, state) {
               final cubit = AuthCubit.get(context);
               return MaterialApp.router(
-                title: 'Al Ras Smart App',
+                title: 'Merge Spice',
                 theme: lightTheme(cubit.locale),
                 themeMode: ThemeMode.light,
                 color: const Color(0xffF2F7FF),

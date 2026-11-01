@@ -298,6 +298,17 @@ public interface IAdminProductsAppService
         AdminUpdateProductRequest request,
         CancellationToken cancellationToken = default);
 
+    Task<AdminPagedResult<AdminProductNameItemDto>> GetProductNamesAsync(
+        int page,
+        int pageSize,
+        string? search,
+        CancellationToken cancellationToken = default);
+
+    Task<object> UpdateProductNamesAsync(
+        string productId,
+        AdminUpdateProductNamesRequest request,
+        CancellationToken cancellationToken = default);
+
     Task<AdminProductLookupsDto> GetLookupsAsync(CancellationToken cancellationToken = default);
 
     Task<string> DeleteProductImageAsync(
@@ -647,6 +658,13 @@ public interface IContentTranslationService
 
     Task<IReadOnlyDictionary<long, OrderOfferNotesTranslations>> GetOrderOfferNotesTranslationsAsync(
         IEnumerable<long> orderIds,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Stores an admin-written ad title in both languages without AI translation.</summary>
+    Task UpsertProductNameBilingualAsync(
+        Guid productId,
+        string nameEn,
+        string nameAr,
         CancellationToken cancellationToken = default);
 
     /// <summary>Stores bilingual admin/auto-moderation rejection notes without AI translation.</summary>

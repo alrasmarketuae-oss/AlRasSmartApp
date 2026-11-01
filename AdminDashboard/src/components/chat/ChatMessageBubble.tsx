@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import { formatChatRelativeTime } from '../../utils/formatChatRelativeTime'
 import { resolveAssetUrl } from '../../lib/assets'
-import { useGetAdminProductDetailQuery } from '../../store'
+import { useGetAdminProductDetailQuery, useTranslateChatMessageMutation } from '../../store'
 import type { GalleryMediaItem } from '../ui/ImageGallery'
 import VoiceAudioPlayer from './VoiceAudioPlayer'
 import {
@@ -159,6 +159,9 @@ export default function ChatMessageBubble({
               onOpenMedia={onOpenMedia}
               onChatWithSupplier={onChatWithSupplier}
             />
+            {!isMine && isTranslatableText(message) ? (
+              <MessageTranslation key={`${message.messageId}:${message.content}`} message={message} />
+            ) : null}
           </>
         )}
         <div
@@ -171,6 +174,72 @@ export default function ChatMessageBubble({
           {isMine ? <DeliveryIndicator message={message} /> : null}
         </div>
       </div>
+    </div>
+  )
+}
+
+const HAS_WORDS = /[A-Za-z\u0600-\u06FF]{2,}/
+
+function isTranslatableText(message: ChatMessage): boolean {
+  if (message.messageType !== 1) return false
+  const text = message.content?.trim() ?? ''
+  if (!HAS_WORDS.test(text)) return false
+  return !parseAskSupplierContent(text) && !parseAskForPriceContent(text)
+}
+
+/** Survives virtualized list remounts so a message is only sent to the AI once. */
+const translationCache = new Map<string, string>()
+
+function MessageTranslation({ message }: { message: ChatMessage }) {
+  const { t } = useAppPreferences()
+  const cacheKey = `${message.messageId}:${message.content}`
+  const [translation, setTranslation] = useState<string | null>(() => translationCache.get(cacheKey) ?? null)
+  const [visible, setVisible] = useState(false)
+  const [failed, setFailed] = useState(false)
+  const [translate, { isLoading }] = useTranslateChatMessageMutation()
+
+  async function handleClick() {
+    if (isLoading) return
+    if (visible) {
+      setVisible(false)
+      return
+    }
+    setFailed(false)
+    if (translation) {
+      setVisible(true)
+      return
+    }
+    try {
+      const result = await translate({ text: message.content }).unwrap()
+      if (!result.translation) throw new Error('empty')
+      translationCache.set(cacheKey, result.translation)
+      setTranslation(result.translation)
+      setVisible(true)
+    } catch {
+      setFailed(true)
+    }
+  }
+
+  return (
+    <div className="mt-1">
+      {visible && translation ? (
+        <p
+          dir="auto"
+          translate="no"
+          className="notranslate mb-1 whitespace-pre-wrap break-words border-t border-slate-200 pt-1.5 text-sm leading-relaxed text-slate-700 dark:border-slate-600 dark:text-slate-200"
+        >
+          {translation}
+        </p>
+      ) : null}
+      <button
+        type="button"
+        onClick={() => void handleClick()}
+        disabled={isLoading}
+        className="text-[11px] font-semibold text-[#3B7FC7] hover:underline disabled:cursor-wait disabled:opacity-70 dark:text-[#7eb8ff]"
+      >
+        {isLoading ? t('chat.translating') : visible ? t('chat.hideTranslation') : t('chat.translate')}
+      </button>
+      {failed ? <span className="ms-2 text-[11px] text-red-500">{t('chat.translateFailed')}</span> : null}
     </div>
   )
 }

@@ -85,6 +85,12 @@ public static class AdminProductTextHelper
     private static string? ArabicLegacy(string? legacy) =>
         IsUsable(legacy) && LooksLikeArabic(legacy) ? legacy : null;
 
+    public static string ResolveStoredNameEn(ProductFieldTranslations? tr, string? legacyNameEn) =>
+        Prefer(tr?.NameEn, EnglishLegacy(legacyNameEn));
+
+    public static string ResolveStoredNameAr(ProductFieldTranslations? tr, string? legacyNameEn) =>
+        Prefer(tr?.NameAr, ArabicLegacy(legacyNameEn));
+
     public static string ResolveName(ProductFieldTranslations? tr, string? legacyNameEn) =>
         Prefer(tr?.NameEn, EnglishLegacy(legacyNameEn), tr?.NameAr, ArabicLegacy(legacyNameEn));
 

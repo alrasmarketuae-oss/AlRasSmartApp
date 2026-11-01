@@ -79,6 +79,45 @@ public class AdminProductsController(
         return Ok(result);
     }
 
+    [HttpGet("names")]
+    public async Task<IActionResult> GetNames(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? search = null,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await adminProductsAppService.GetProductNamesAsync(
+            page,
+            pageSize,
+            search,
+            cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPut("{productId}/names")]
+    public async Task<IActionResult> UpdateNames(
+        string productId,
+        [FromBody] AdminUpdateProductNamesRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var result = await adminProductsAppService.UpdateProductNamesAsync(
+                productId,
+                request,
+                cancellationToken);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
     [HttpGet("lookups")]
     public async Task<IActionResult> GetLookups(CancellationToken cancellationToken = default)
     {

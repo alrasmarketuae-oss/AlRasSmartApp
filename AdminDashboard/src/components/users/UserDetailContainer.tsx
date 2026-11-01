@@ -1,0 +1,232 @@
+import { useState } from 'react'
+import UserDetailView from './UserDetailView'
+import { useAppPreferences } from '../../context/AppPreferencesProvider'
+import {
+  useApproveCompanyMutation,
+  useConvertCompanyCustomerToSupplierMutation,
+  useConvertSupplierToCompanyCustomerMutation,
+  useDeleteAdminUserMutation,
+  useGetAdminUserDetailQuery,
+  useRejectCompanyMutation,
+  useRequestRegistrationCompletionMutation,
+  useSetUserActiveMutation,
+} from '../../store'
+import { getRtkErrorMessage } from '../../utils/rtkError'
+
+type UserDetailContainerProps = {
+  userId: string
+  onDeleted: () => void
+}
+
+export default function UserDetailContainer({ userId, onDeleted }: UserDetailContainerProps) {
+  const { t } = useAppPreferences()
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+
+  const { data: user, error, isLoading } = useGetAdminUserDetailQuery(userId, {
+    skip: !userId,
+    // Always fetch fresh detail so pending company profile edits are visible
+    // without requiring a manual page refresh.
+    refetchOnMountOrArgChange: true,
+  })
+
+  const [approveCompany, { isLoading: isApproving }] = useApproveCompanyMutation()
+  const [rejectCompany, { isLoading: isRejecting }] = useRejectCompanyMutation()
+  const [requestRegistrationCompletion, { isLoading: isRequestingCompletion }] =
+    useRequestRegistrationCompletionMutation()
+  const [setUserActive, { isLoading: isDeactivating }] = useSetUserActiveMutation()
+  const [deleteAdminUser, { isLoading: isDeleting }] = useDeleteAdminUserMutation()
+  const [convertToSupplier, { isLoading: isConvertingToSupplier }] =
+    useConvertCompanyCustomerToSupplierMutation()
+  const [convertToCompanyCustomer, { isLoading: isConvertingToCompanyCustomer }] =
+    useConvertSupplierToCompanyCustomerMutation()
+
+  async function handleApprove() {
+    const confirmed = window.confirm(t('users.approveConfirm'))
+    if (!confirmed) return
+
+    setActionError(null)
+    setSuccessMessage(null)
+
+    try {
+      const result = await approveCompany(userId).unwrap()
+      setSuccessMessage(result.message || t('users.approveSuccess'))
+    } catch (err) {
+      setActionError(getRtkErrorMessage(err as never, t('users.approveError')))
+    }
+  }
+
+  async function handleReject(reason: string) {
+    const confirmed = window.confirm(t('users.rejectConfirm'))
+    if (!confirmed) return
+
+    setActionError(null)
+    setSuccessMessage(null)
+
+    try {
+      const result = await rejectCompany({ companyUserId: userId, reason }).unwrap()
+      setSuccessMessage(result.message || t('users.rejectSuccess'))
+    } catch (err) {
+      setActionError(getRtkErrorMessage(err as never, t('users.rejectError')))
+    }
+  }
+
+  async function handleRequestCompletion(payload: {
+    missingLocation: boolean
+    missingImages: boolean
+    missingDocuments: boolean
+    message?: string
+  }) {
+    if (
+      !payload.missingLocation &&
+      !payload.missingImages &&
+      !payload.missingDocuments
+    ) {
+      setActionError(t('users.requestCompletionSelectOne'))
+      return
+    }
+
+    const confirmed = window.confirm(t('users.requestCompletionConfirm'))
+    if (!confirmed) return
+
+    setActionError(null)
+    setSuccessMessage(null)
+
+    try {
+      const result = await requestRegistrationCompletion({
+        companyUserId: userId,
+        ...payload,
+      }).unwrap()
+      setSuccessMessage(result.message || t('users.requestCompletionSuccess'))
+    } catch (err) {
+      setActionError(
+        getRtkErrorMessage(err as never, t('users.requestCompletionError')),
+      )
+    }
+  }
+
+  async function handleDeactivate() {
+    const confirmed = window.confirm(t('users.deactivateConfirm'))
+    if (!confirmed) return
+
+    setActionError(null)
+    setSuccessMessage(null)
+
+    try {
+      const result = await setUserActive({ userId, isActive: false }).unwrap()
+      setSuccessMessage(result.message || t('users.deactivateSuccess'))
+    } catch (err) {
+      setActionError(getRtkErrorMessage(err as never, t('users.deactivateError')))
+    }
+  }
+
+  async function handleActivate() {
+    setActionError(null)
+    setSuccessMessage(null)
+
+    try {
+      const result = await setUserActive({ userId, isActive: true }).unwrap()
+      setSuccessMessage(result.message || t('users.activateSuccess'))
+    } catch (err) {
+      setActionError(getRtkErrorMessage(err as never, t('users.activateError')))
+    }
+  }
+
+  async function handleDelete() {
+    const confirmed = window.confirm(t('users.deleteAccountConfirm'))
+    if (!confirmed) return
+
+    setActionError(null)
+    setSuccessMessage(null)
+
+    try {
+      const result = await deleteAdminUser(userId).unwrap()
+      setSuccessMessage(result.message || t('users.deleteAccountSuccess'))
+      onDeleted()
+    } catch (err) {
+      setActionError(getRtkErrorMessage(err as never, t('users.deleteAccountError')))
+    }
+  }
+
+  async function handleConvertToSupplier() {
+    const confirmed = window.confirm(
+      user?.roleId === 3
+        ? t('users.convertPersonalToSupplierConfirm')
+        : t('users.convertToSupplierConfirm'),
+    )
+    if (!confirmed) return
+
+    setActionError(null)
+    setSuccessMessage(null)
+
+    try {
+      const result = await convertToSupplier(userId).unwrap()
+      setSuccessMessage(result.message || t('users.convertToSupplierSuccess'))
+    } catch (err) {
+      setActionError(
+        getRtkErrorMessage(err as never, t('users.convertToSupplierError')),
+      )
+    }
+  }
+
+  async function handleConvertToCompanyCustomer() {
+    const confirmed = window.confirm(
+      user?.roleId === 3
+        ? t('users.convertPersonalToCompanyConfirm')
+        : t('users.convertToCompanyCustomerConfirm'),
+    )
+    if (!confirmed) return
+
+    setActionError(null)
+    setSuccessMessage(null)
+
+    try {
+      const result = await convertToCompanyCustomer(userId).unwrap()
+      setSuccessMessage(
+        result.message || t('users.convertToCompanyCustomerSuccess'),
+      )
+    } catch (err) {
+      setActionError(
+        getRtkErrorMessage(err as never, t('users.convertToCompanyCustomerError')),
+      )
+    }
+  }
+
+  return (
+    <>
+      {successMessage ? (
+        <div className="admin-alert-success">{successMessage}</div>
+      ) : null}
+      {actionError ? <div className="admin-alert-error">{actionError}</div> : null}
+
+      {isLoading ? (
+        <p className="admin-text-subtle py-16 text-center">{t('loading')}</p>
+      ) : error || !user ? (
+        <div className="admin-card px-6 py-16 text-center">
+          <p className="text-sm text-red-600 dark:text-red-400">
+            {getRtkErrorMessage(error as never, t('users.loadError'))}
+          </p>
+        </div>
+      ) : (
+        <UserDetailView
+          user={user}
+          isApproving={isApproving}
+          isRejecting={isRejecting}
+          isRequestingCompletion={isRequestingCompletion}
+          isDeactivating={isDeactivating}
+          isDeleting={isDeleting}
+          isConvertingToSupplier={isConvertingToSupplier}
+          isConvertingToCompanyCustomer={isConvertingToCompanyCustomer}
+          onApprove={handleApprove}
+          onReject={handleReject}
+          onRequestCompletion={handleRequestCompletion}
+          onDeactivate={handleDeactivate}
+          onActivate={handleActivate}
+          onDelete={handleDelete}
+          onConvertToSupplier={handleConvertToSupplier}
+          onConvertToCompanyCustomer={handleConvertToCompanyCustomer}
+        />
+      )}
+    </>
+  )
+}

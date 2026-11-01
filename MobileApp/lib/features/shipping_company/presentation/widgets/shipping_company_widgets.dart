@@ -38,7 +38,12 @@ class ShippingCompanyShell extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
               child: Row(
                 children: [
-                  Image.asset(AppAssets.logo, width: 44.w, height: 36.h),
+                  Image.asset(
+                    AppAssets.logo,
+                    width: 40.w,
+                    height: 40.w,
+                    fit: BoxFit.contain,
+                  ),
                   SizedBox(width: 10.w),
                   Expanded(
                     child: Text(
@@ -513,7 +518,12 @@ class ShippingMainHeader extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 4.h),
       child: Row(
         children: [
-          Image.asset(AppAssets.logo, width: 44.w, height: 36.h),
+          Image.asset(
+            AppAssets.logo,
+            width: 40.w,
+            height: 40.w,
+            fit: BoxFit.contain,
+          ),
           if (companyName != null && companyName!.isNotEmpty) ...[
             SizedBox(width: 10.w),
             Expanded(

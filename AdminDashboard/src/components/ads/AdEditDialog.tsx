@@ -8,6 +8,7 @@ import type {
   AdminUpdateProductPayload,
 } from '../../types/adminProduct'
 import { isBookingAd, isOffersAd } from '../../utils/adsDisplay'
+import { AdNameFields, storedAdNames } from './AdNameFields'
 
 type AdEditDialogProps = {
   open: boolean
@@ -106,6 +107,7 @@ export default function AdEditDialog({
 
   // --- form state ---
   const [nameEn, setNameEn] = useState('')
+  const [nameAr, setNameAr] = useState('')
   const [descriptionEn, setDescriptionEn] = useState('')
   const [price, setPrice] = useState('')
   const [currency, setCurrency] = useState('AED')
@@ -148,7 +150,8 @@ export default function AdEditDialog({
 
   useEffect(() => {
     if (!open) return
-    setNameEn(product.name ?? '')
+    setNameEn(storedAdNames(product).nameEn)
+    setNameAr(storedAdNames(product).nameAr)
     setDescriptionEn(product.description ?? '')
     setPrice(product.priceUsd != null ? String(product.priceUsd) : '')
     setCurrency(product.currency?.trim() || (booking ? 'USD' : 'AED'))
@@ -219,11 +222,13 @@ export default function AdEditDialog({
 
   function handleSubmit() {
     const trimmedName = nameEn.trim()
+    const trimmedNameAr = nameAr.trim()
     const parsedPrice = toNumberOrUndefined(price)
-    if (!trimmedName || parsedPrice == null || parsedPrice < 0) return
+    if (!trimmedName || !trimmedNameAr || parsedPrice == null || parsedPrice < 0) return
 
     const payload: AdminUpdateProductPayload = {
       nameEn: trimmedName,
+      nameAr: trimmedNameAr,
       usdPrice: parsedPrice,
       currency,
       quantity: Math.max(0, Math.trunc(toNumberOrUndefined(quantity) ?? 0)),
@@ -338,9 +343,13 @@ export default function AdEditDialog({
 
         <div className="grid gap-3 overflow-y-auto px-5 py-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <Field label={t('ads.productName')}>
-              <input className={inputClass} value={nameEn} onChange={(e) => setNameEn(e.target.value)} />
-            </Field>
+            <AdNameFields
+              nameEn={nameEn}
+              nameAr={nameAr}
+              onNameEn={setNameEn}
+              onNameAr={setNameAr}
+              inputClassName={inputClass}
+            />
           </div>
 
           {hasCategory ? (

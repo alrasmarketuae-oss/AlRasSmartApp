@@ -338,7 +338,7 @@ class _AppSearchFieldState extends State<AppSearchField> {
     }
     final tld = marketTld();
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
-    return isAr ? 'ابحث في Al Ras Smart.$tld' : 'Search Al Ras Smart.$tld';
+    return isAr ? 'ابحث في Merge Spice.$tld' : 'Search Merge Spice.$tld';
   }
 
   @override

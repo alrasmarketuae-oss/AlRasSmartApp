@@ -1,6 +1,10 @@
 export type AdminProduct = {
   productId: string
   name: string
+  /** Stored English title. Empty on list rows that only send the localized name. */
+  nameEn?: string
+  /** Stored Arabic title. */
+  nameAr?: string
   description: string | null
   priceUsd: number
   currency: string
@@ -128,6 +132,7 @@ export type AdminProductLookups = {
 
 export type AdminUpdateProductPayload = {
   nameEn: string
+  nameAr?: string | null
   usdPrice: number
   currency?: string | null
   quantity: number

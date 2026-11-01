@@ -31,6 +31,14 @@ public static class AppleIdentityTokenValidator
         }
 
         var keys = await GetAppleSigningKeysAsync(httpClient);
+        var kid = handler.ReadJwtToken(token).Header.Kid;
+        if (!string.IsNullOrEmpty(kid) && keys.All(k => k.KeyId != kid))
+        {
+            // Apple rotated its keys since the cache was filled.
+            KeyCache.TryRemove(AppleJwksUrl, out _);
+            keys = await GetAppleSigningKeysAsync(httpClient);
+        }
+
         var parameters = new TokenValidationParameters
         {
             ValidIssuer = AppleIssuer,

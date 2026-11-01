@@ -11,7 +11,8 @@ public sealed class AdminEmployeesAppService(
     IRasAlSouqDbContext dbContext,
     IPasswordHasher passwordHasher,
     IAdminPermissionService permissionService,
-    IAdminAuditLogAppService auditLogAppService) : IAdminEmployeesAppService
+    IAdminAuditLogAppService auditLogAppService,
+    AuthSessionGuard authSessionGuard) : IAdminEmployeesAppService
 {
     public IReadOnlyList<AdminPermissionDefinitionDto> GetPermissionDefinitions() =>
         AdminPermissionCatalog.Definitions;
@@ -179,6 +180,7 @@ public sealed class AdminEmployeesAppService(
             }
 
             user.HashedPassword = passwordHasher.HashPassword(request.NewPassword.Trim());
+            await authSessionGuard.RevokeAsync(user.Id, ct);
         }
 
         await dbContext.SaveChangesAsync(ct);

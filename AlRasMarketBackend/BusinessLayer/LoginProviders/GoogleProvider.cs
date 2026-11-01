@@ -1,6 +1,5 @@
 using BusinessLayer.Interfaces;
 using DataLayer.Interfaces;
-using DataLayer.Models;
 using Google.Apis.Auth;
 using Microsoft.Extensions.Configuration;
 
@@ -46,29 +45,16 @@ public class GoogleProvider(IUserRepository userRepository, IConfiguration confi
         var user = await _userRepository.GetByEmailAsync(tokenEmail);
         if (user is null)
         {
-            user = new User
-            {
-                Id = Guid.NewGuid(),
-                FullName = payload.Name ?? tokenEmail.Split('@')[0],
-                Email = tokenEmail,
-                RoleId = 3,
-                LoginProviderName = "Google",
-                IsActive = true,
-                IsVerified = true,
-                FcmToken = fcmToken,
-                PreferredLanguage = "en"
-            };
-            await _userRepository.AddAsync(user);
+            throw new UnauthorizedAccessException(
+                "You don't have an account. Please create an account first.");
         }
-        else
+
+        await _userRepository.MarkGoogleLoginReadyAsync(user.Id, fcmToken);
+        user.IsVerified = true;
+        user.IsActive = true;
+        if (!string.IsNullOrWhiteSpace(fcmToken))
         {
-            await _userRepository.MarkGoogleLoginReadyAsync(user.Id, fcmToken);
-            user.IsVerified = true;
-            user.IsActive = true;
-            if (!string.IsNullOrWhiteSpace(fcmToken))
-            {
-                user.FcmToken = fcmToken;
-            }
+            user.FcmToken = fcmToken;
         }
 
         return new { User = user };

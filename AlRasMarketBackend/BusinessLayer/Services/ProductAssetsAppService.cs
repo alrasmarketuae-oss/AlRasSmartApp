@@ -540,6 +540,11 @@ public class ProductAssetsAppService(
         Product product,
         CancellationToken cancellationToken)
     {
+        if (TrustedAdPublishers.Contains(product.OwnerId))
+        {
+            return false;
+        }
+
         if (!ShouldTreatMediaChangeAsOwnerEdit(product))
         {
             return false;

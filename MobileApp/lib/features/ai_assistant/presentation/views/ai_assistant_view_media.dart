@@ -412,5 +412,6 @@ mixin _AiAssistantMediaMixin on _AiAssistantViewStateBase {
       _isThinking = false;
     });
     _scrollToEnd();
+    _flushSendQueue();
   }
 }

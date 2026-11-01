@@ -30,17 +30,26 @@ public class LoginService(
         string? fullName = null)
     {
         var provider = _providerFactory.GetProvider(providerName);
-        dynamic result = await provider.LoginAsync(email, password, token, fcmToken, fullName);
+        var requestLanguage = NotificationMessages.NormalizeLanguage(preferredLanguage);
+        dynamic result;
+        try
+        {
+            result = await provider.LoginAsync(email, password, token, fcmToken, fullName);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            // Prefer the app's current UI language (request) over a missing/unknown user language.
+            throw new UnauthorizedAccessException(UserMessages.Localize(ex.Message, requestLanguage));
+        }
 
         User user = result.User ?? throw new InvalidOperationException("Login provider returned invalid result.");
 
         if (!string.IsNullOrWhiteSpace(preferredLanguage))
         {
-            var normalizedLanguage = NotificationMessages.NormalizeLanguage(preferredLanguage);
-            if (!string.Equals(user.PreferredLanguage, normalizedLanguage, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(user.PreferredLanguage, requestLanguage, StringComparison.OrdinalIgnoreCase))
             {
-                user.PreferredLanguage = normalizedLanguage;
-                await _userRepository.UpdatePreferredLanguageAsync(user.Id, normalizedLanguage);
+                user.PreferredLanguage = requestLanguage;
+                await _userRepository.UpdatePreferredLanguageAsync(user.Id, requestLanguage);
             }
         }
 

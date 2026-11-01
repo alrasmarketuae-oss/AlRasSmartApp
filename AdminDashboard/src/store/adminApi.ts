@@ -392,6 +392,77 @@ export const adminApi = createApi({
       transformResponse: normalizeProductReviewLock,
     }),
 
+    getAdminProductNames: builder.query<
+      {
+        page: number
+        pageSize: number
+        totalCount: number
+        totalPages: number
+        items: Array<{
+          productId: string
+          productCode: string
+          nameEn: string
+          nameAr: string
+          productTypeName: string
+          ownerCompanyName: string
+          primaryImagePath: string | null
+        }>
+      },
+      { page: number; pageSize: number; search?: string }
+    >({
+      query: ({ page, pageSize, search }) => ({
+        url: '/api/admin/products/names',
+        params: { page, pageSize, search: search || undefined },
+      }),
+      transformResponse: (response: unknown) => {
+        const raw = (response ?? {}) as Record<string, unknown>
+        const rows = (raw.items ?? raw.Items ?? []) as unknown[]
+        return {
+          page: Number(raw.page ?? raw.Page ?? 1),
+          pageSize: Number(raw.pageSize ?? raw.PageSize ?? 20),
+          totalCount: Number(raw.totalCount ?? raw.TotalCount ?? 0),
+          totalPages: Number(raw.totalPages ?? raw.TotalPages ?? 1),
+          items: rows.map((item) => {
+            const row = item as Record<string, unknown>
+            return {
+              productId: String(row.productId ?? row.ProductId ?? ''),
+              productCode: String(row.productCode ?? row.ProductCode ?? ''),
+              nameEn: String(row.nameEn ?? row.NameEn ?? ''),
+              nameAr: String(row.nameAr ?? row.NameAr ?? ''),
+              productTypeName: String(row.productTypeName ?? row.ProductTypeName ?? ''),
+              ownerCompanyName: String(row.ownerCompanyName ?? row.OwnerCompanyName ?? ''),
+              primaryImagePath: (row.primaryImagePath ?? row.PrimaryImagePath ?? null) as
+                | string
+                | null,
+            }
+          }),
+        }
+      },
+      providesTags: (result) =>
+        result
+          ? [
+              { type: 'Products' as const, id: 'NAMES' },
+              ...result.items.map((item) => ({ type: 'Products' as const, id: item.productId })),
+            ]
+          : [{ type: 'Products' as const, id: 'NAMES' }],
+    }),
+
+    updateAdminProductNames: builder.mutation<
+      { message: string },
+      { productId: string; nameEn: string; nameAr: string }
+    >({
+      query: ({ productId, nameEn, nameAr }) => ({
+        url: `/api/admin/products/${productId}/names`,
+        method: 'PUT',
+        body: { nameEn, nameAr },
+      }),
+      invalidatesTags: (_r, _e, { productId }) => [
+        { type: 'Products', id: 'NAMES' },
+        { type: 'Products', id: 'LIST' },
+        { type: 'Products', id: productId },
+      ],
+    }),
+
     getAdminProductLookups: builder.query<AdminProductLookups, void>({
       query: () => '/api/admin/products/lookups',
       transformResponse: normalizeProductLookups,
@@ -408,6 +479,7 @@ export const adminApi = createApi({
         // full-edit fields are only sent when the edit dialog provides them.
         body: {
           nameEn: body.nameEn,
+          nameAr: body.nameAr,
           usdPrice: body.usdPrice,
           currency: body.currency,
           quantity: body.quantity,
@@ -2430,6 +2502,22 @@ export const adminApi = createApi({
       }),
       transformResponse: (response: Record<string, unknown>) => normalizeChatCompanyReport(response),
     }),
+
+    translateChatMessage: builder.mutation<
+      { translation: string; sourceLanguage: string; targetLanguage: string },
+      { text: string }
+    >({
+      query: (body) => ({
+        url: '/api/admin/chat/translate',
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (response: Record<string, unknown>) => ({
+        translation: String(response.translation ?? response.Translation ?? ''),
+        sourceLanguage: String(response.sourceLanguage ?? response.SourceLanguage ?? ''),
+        targetLanguage: String(response.targetLanguage ?? response.TargetLanguage ?? ''),
+      }),
+    }),
   }),
 })
 
@@ -2440,6 +2528,8 @@ export const {
   useGetAdminUserDetailQuery,
   useGetAdminProductStatsQuery,
   useGetAdminProductsQuery,
+  useGetAdminProductNamesQuery,
+  useUpdateAdminProductNamesMutation,
   useApproveProductMutation,
   useRejectProductMutation,
   useGetAdminProductDetailQuery,
@@ -2555,4 +2645,5 @@ export const {
   useLazyGetAdminAiConversationMessagesQuery,
   useGenerateAiConversationReportMutation,
   useGenerateChatCompanyReportMutation,
+  useTranslateChatMessageMutation,
 } = adminApi

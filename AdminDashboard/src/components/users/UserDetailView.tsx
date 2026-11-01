@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { resolveAssetUrl } from '../../lib/assets'
+import { getAuthUser } from '../../lib/authStorage'
 import { hasPermission, PERMISSIONS } from '../../lib/permissions'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import { useAskAiPageData } from '../../context/AskAiPageDataProvider'
@@ -241,10 +242,13 @@ export default function UserDetailView({
     isConvertingToCompanyCustomer
   const isSupplier = user.roleId === 2
   const canCreateCompanyAd = user.roleId === 2
+  const isPersonal = user.roleId === 3
   const canConvertToSupplier =
+    isPersonal ||
     Boolean(user.canConvertToSupplier) ||
     (user.roleId === 2 && user.isCustomer === true)
   const canConvertToCompanyCustomer =
+    isPersonal ||
     Boolean(user.canConvertToCompanyCustomer) ||
     (user.roleId === 2 && user.isCustomer !== true)
   const isShippingCompany = user.roleId === 5
@@ -330,6 +334,38 @@ export default function UserDetailView({
     hasPermission(PERMISSIONS.usersManage) &&
     user.roleId !== 1 &&
     user.roleId !== 4
+  const canMessageUser =
+    hasPermission(PERMISSIONS.chatAccess) && user.id !== getAuthUser()?.id
+
+  function openUserChat() {
+    const displayName =
+      user.companyName?.trim() ||
+      user.companyNameEn?.trim() ||
+      user.fullName?.trim() ||
+      user.fullNameEn?.trim() ||
+      '—'
+    const avatar = resolveAssetUrl(user.imgPath)
+    navigate('/chat', {
+      state: {
+        openChatWith: {
+          userId: user.id,
+          displayName,
+          avatarUrl: avatar || null,
+        },
+      },
+    })
+  }
+
+  const messageButton = canMessageUser ? (
+    <button
+      type="button"
+      onClick={openUserChat}
+      className="keep-white inline-flex items-center gap-2 rounded-xl bg-[#2563eb] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#1d4ed8]"
+    >
+      {t('users.sendMessage')}
+    </button>
+  ) : null
+
   const editButton = canEditUser ? (
     <Link
       to={`/users/${user.id}/edit`}
@@ -373,7 +409,9 @@ export default function UserDetailView({
       >
         {isConvertingToCompanyCustomer
           ? t('users.convertingToCompanyCustomer')
-          : t('users.convertToCompanyCustomer')}
+          : isPersonal
+            ? t('users.convertPersonalToCompany')
+            : t('users.convertToCompanyCustomer')}
       </button>
     ) : null
 
@@ -502,6 +540,7 @@ export default function UserDetailView({
           </div>
 
           <div className="flex flex-col items-end gap-3">
+            {messageButton}
             {isShippingCompany ? (
               <div className="flex flex-wrap justify-end gap-2">
                 <Link

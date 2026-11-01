@@ -115,7 +115,12 @@ class AppHeader extends StatelessWidget {
                 SizedBox(width: 4.w),
                 const HeaderNotificationBell(),
                 SizedBox(width: 2.w),
-                Image.asset(AppAssets.logo, width: 48.w, height: 40.h),
+                Image.asset(
+                  AppAssets.logo,
+                  width: 44.w,
+                  height: 44.w,
+                  fit: BoxFit.contain,
+                ),
               ],
             ],
           ),

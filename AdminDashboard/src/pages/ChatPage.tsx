@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import ChatContactsPanel from '../components/chat/ChatContactsPanel'
 import ChatThreadPanel from '../components/chat/ChatThreadPanel'
+import ChatUserInfoDialog from '../components/chat/ChatUserInfoDialog'
 import { useAppPreferences } from '../context/AppPreferencesProvider'
 import { useChat } from '../context/ChatProvider'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
@@ -89,6 +90,8 @@ export default function ChatPage() {
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null)
   const [secondaryReplyTo, setSecondaryReplyTo] = useState<ChatMessage | null>(null)
   const [forwardingMessage, setForwardingMessage] = useState<ChatMessage | null>(null)
+  const [infoTarget, setInfoTarget] = useState<{ userId: string; title: string } | null>(null)
+  const closeInfoDialog = useCallback(() => setInfoTarget(null), [])
 
   const [claimSupportConversation] = useClaimSupportConversationMutation()
   const [releaseSupportConversation, { isLoading: isReleasingConversation }] =
@@ -1488,6 +1491,15 @@ export default function ChatPage() {
                 setSelectedContact(null)
               }}
               companyDisplay={companyDisplay}
+              onCompanyClick={
+                selectedUserId
+                  ? () =>
+                      setInfoTarget({
+                        userId: selectedUserId,
+                        title: companyDisplay?.title ?? selectedContact?.displayName ?? '',
+                      })
+                  : undefined
+              }
               paneLabel={isDualPane ? t('chat.askerChat') : null}
               onChatWithSupplier={handleChatWithSupplier}
               className={
@@ -1546,6 +1558,15 @@ export default function ChatPage() {
                 onForwardTo={handleForwardTo}
                 onCloseForward={() => setForwardingMessage(null)}
                 companyDisplay={secondaryCompanyDisplay}
+                onCompanyClick={
+                  secondaryUserId
+                    ? () =>
+                        setInfoTarget({
+                          userId: secondaryUserId,
+                          title: secondaryCompanyDisplay?.title ?? secondaryContact.displayName,
+                        })
+                    : undefined
+                }
                 paneLabel={t('chat.supplierChat')}
                 onClosePane={handleCloseSecondaryPane}
                 className={
@@ -1559,6 +1580,13 @@ export default function ChatPage() {
           </div>
         </div>
       </div>
+
+      <ChatUserInfoDialog
+        userId={infoTarget?.userId ?? null}
+        title={infoTarget?.title}
+        onClose={closeInfoDialog}
+        t={t}
+      />
     </div>
   )
 }
