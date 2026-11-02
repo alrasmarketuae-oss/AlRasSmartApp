@@ -1464,6 +1464,8 @@ type RawUserDetail = AdminUserDetail & {
   canConvertToSupplier?: boolean
   CanConvertToCompanyCustomer?: boolean
   canConvertToCompanyCustomer?: boolean
+  CanConvertToPersonalCustomer?: boolean
+  canConvertToPersonalCustomer?: boolean
   CreatedAt?: string
   ImgPath?: string | null
   CompanyName?: string | null
@@ -1751,6 +1753,10 @@ export function normalizeUserDetail(raw: RawUserDetail): AdminUserDetail {
       raw.canConvertToCompanyCustomer ??
       raw.CanConvertToCompanyCustomer ??
       (roleId === 3 || (roleId === 2 && isCustomer !== true)),
+    canConvertToPersonalCustomer:
+      raw.canConvertToPersonalCustomer ??
+      raw.CanConvertToPersonalCustomer ??
+      roleId === 2,
   }
 }
 

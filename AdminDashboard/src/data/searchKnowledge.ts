@@ -151,7 +151,7 @@ const BASE_SEARCH_CLUSTERS: SearchCluster[] = [
     terms: [
       'app name', 'application name', 'brand name', 'app title', 'site name', 'platform name',
       'اسم التطبيق', 'اسم البرنامج', 'اسم المنصة', 'اسم الموقع', 'اسم', 'تطبيق', 'التطبيق',
-      'الراس الذكي', 'سوق راس', 'راس السوق', 'ras al souq', 'ras alsouq', 'ras al-souq',
+      'الراس الذكي', 'ميرج سبايس', 'merge spice', 'Merge Spice', 'سوق راس', 'راس السوق', 'ras al souq', 'ras alsouq', 'ras al-souq',
       'Ras Al Souq', 'RasAlSouq', 'rasalsouq', 'راس', 'الراس', 'سوق',
       'app info', 'معلومات التطبيق', 'application info',
     ],
@@ -344,5 +344,7 @@ export const POPULAR_SEARCHES = [
   'إرسال إشعار',
   'عمولة',
   'الراس الذكي',
+  'ميرج سبايس',
+  'merge spice',
   'commission settings',
 ]

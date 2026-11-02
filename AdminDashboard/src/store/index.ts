@@ -31,6 +31,7 @@ export {
   useDeleteAdminUserMutation,
   useConvertCompanyCustomerToSupplierMutation,
   useConvertSupplierToCompanyCustomerMutation,
+  useConvertToPersonalCustomerMutation,
   useDeleteProductMutation,
   useGetCategoriesQuery,
   useCreateCategoryMutation,

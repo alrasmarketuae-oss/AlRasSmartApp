@@ -213,7 +213,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
     >
       <div className="admin-border flex shrink-0 items-center gap-3 border-b px-4 py-5 sm:px-6">
         <img
-          src={PROJECT_IMAGES.logo}
+          src={`${PROJECT_IMAGES.logo}?v=mergespice`}
           alt={t('appName')}
           className="h-11 w-11 shrink-0 object-contain sm:h-12 sm:w-12"
         />

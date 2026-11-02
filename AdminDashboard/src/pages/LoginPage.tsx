@@ -140,9 +140,9 @@ export default function LoginPage() {
 
       <div className="mb-8 flex w-full max-w-md flex-col items-center text-center">
         <img
-          src="/ProjectImages/SouqLogo.png"
+          src="/ProjectImages/logo.png?v=mergespice"
           alt={t('appName')}
-          className="mb-5 h-24 w-24 object-contain"
+          className="mb-5 h-24 w-auto max-w-[220px] object-contain"
         />
         <h1 className="admin-text text-2xl font-bold tracking-tight">
           {t('login.title')}

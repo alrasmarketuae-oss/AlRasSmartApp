@@ -1,5 +1,5 @@
 export const enMessages = {
-    appName: 'Al Ras Smart',
+    appName: 'Merge Spice',
     appSubtitle: 'Admin',
     generalManager: 'General Manager',
     search: 'Smart search all sections...',
@@ -390,7 +390,7 @@ export const enMessages = {
       },
     },
     login: {
-      title: 'Ras Al Souq — Admin',
+      title: 'Merge Spice — Admin',
       subtitle: 'Sign in to the admin dashboard',
       email: 'Email',
       emailPlaceholder: 'Enter your email',
@@ -623,6 +623,12 @@ export const enMessages = {
         'Convert this supplier account to a company customer? They will use the company buyer experience instead of creating ads as a supplier.',
       convertToCompanyCustomerSuccess: 'Account converted to company customer',
       convertToCompanyCustomerError: 'Could not convert account to company customer',
+      convertToPersonalCustomer: 'Convert to customer',
+      convertingToPersonalCustomer: 'Converting...',
+      convertToPersonalCustomerConfirm:
+        'Convert this supplier/company account to a personal customer? They will use the buyer (customer) experience. They must sign in again so the app picks up the new account type.',
+      convertToPersonalCustomerSuccess: 'Account converted to personal customer',
+      convertToPersonalCustomerError: 'Could not convert account to personal customer',
       viewCompanyAds: 'View company ads',
       viewShippingAds: 'View shipping ads',
       editShippingAds: 'Edit shipping profile & ads',
@@ -637,7 +643,7 @@ export const enMessages = {
       createAdManual: 'Manual',
       createAdManualHint: 'Fill the form yourself (photo/video supported)',
       createAdAi: 'With AI',
-      createAdAiHint: 'Ask Alras AI to collect fields and publish for this company',
+      createAdAiHint: 'Ask Merge Spice AI to collect fields and publish for this company',
       createAdCancel: 'Cancel',
       createAdTitle: 'Create ad — {name}',
       createAdNotAllowed: 'This account type cannot create product ads.',
@@ -1770,7 +1776,7 @@ export const enMessages = {
       unmuteSound: 'Unmute alert sounds',
     },
     payment: {
-      appName: 'Ras Al Souq',
+      appName: 'Merge Spice',
       confirmTitle: 'Payment confirmation',
       cancelTitle: 'Payment cancelled',
       loading: 'Verifying payment...',
@@ -1786,7 +1792,7 @@ export const enMessages = {
       loginRequired: 'Please sign in to check payment status.',
       returnToApp: 'Payment received',
       returnToAppDetail:
-        'Your payment was submitted successfully. Return to the Al Ras Smart app to track your order. Do not rely on this browser page as the final confirmation.',
+        'Your payment was submitted successfully. Return to the Merge Spice app to track your order. Do not rely on this browser page as the final confirmation.',
       timeout: 'Verification timed out. Please check your order status later.',
       cancelled: 'Payment was cancelled',
       cancelledDetail: 'No charges were made. You can try again when placing your order.',
@@ -1795,7 +1801,7 @@ export const enMessages = {
       fabLabel: 'Ask AI',
       fabAria: 'Open Ask AI assistant',
       title: 'Ask AI',
-      subtitle: 'Al Ras Smart admin assistant',
+      subtitle: 'Merge Spice admin assistant',
       hello:
     'Hello 👋 I can see the screen you’re currently viewing and the data displayed on it. I can analyze it, help you understand it, and answer any questions you have. Ask me anything 🚀',
       placeholder: 'Ask about this page…',
@@ -1803,7 +1809,7 @@ export const enMessages = {
       close: 'Close',
       thinking: 'Thinking…',
       error: 'Something went wrong. Please try again.',
-      dataSafe: 'Your admin session data stays on Al Ras Smart',
-      poweredBy: 'Powered by Al Ras Smart',
+      dataSafe: 'Your admin session data stays on Merge Spice',
+      poweredBy: 'Powered by Merge Spice',
     },
 } as const

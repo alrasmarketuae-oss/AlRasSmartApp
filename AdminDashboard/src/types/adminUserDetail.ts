@@ -95,4 +95,5 @@ export type AdminUserDetail = {
   canDelete: boolean
   canConvertToSupplier: boolean
   canConvertToCompanyCustomer: boolean
+  canConvertToPersonalCustomer: boolean
 }

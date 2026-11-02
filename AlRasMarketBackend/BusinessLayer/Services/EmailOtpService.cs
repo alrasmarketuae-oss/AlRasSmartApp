@@ -49,8 +49,8 @@ public class EmailOtpService(
 
         var isArabic = NotificationMessages.IsArabic(user.PreferredLanguage);
         var subject = isArabic
-            ? "الراس الذكي - رمز التحقق"
-            : "Al Ras Smart - Your verification code";
+            ? "ميرج سبايس - رمز التحقق"
+            : "Merge Spice - Your verification code";
         var body = BrandEmailLayout.VerificationCodeEmail(subject, otp, isArabic);
 
         await _emailService.SendAsync(normalizedEmail, subject, body, cancellationToken);

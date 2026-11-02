@@ -1,5 +1,5 @@
 export const arMessages = {
-    appName: 'Al Ras Smart',
+    appName: 'ميرج سبايس',
     appSubtitle: 'الإدارة',
     generalManager: 'المدير العام',
     search: 'بحث ذكي في كل الأقسام...',
@@ -389,7 +389,7 @@ export const arMessages = {
       },
     },
     login: {
-      title: 'الراس الذكي - الإدارة',
+      title: 'ميرج سبايس - الإدارة',
       subtitle: 'تسجيل الدخول للوحة التحكم',
       email: 'البريد الإلكتروني',
       emailPlaceholder: 'ادخل البريد الإلكتروني',
@@ -621,6 +621,12 @@ export const arMessages = {
         'تحويل حساب المورد هذا إلى عميل شركة؟ سيستخدم تجربة الشركة المشتري بدل إضافة إعلانات كمورد.',
       convertToCompanyCustomerSuccess: 'تم تحويل الحساب إلى عميل شركة',
       convertToCompanyCustomerError: 'تعذر تحويل الحساب إلى عميل شركة',
+      convertToPersonalCustomer: 'تحويل إلى عميل',
+      convertingToPersonalCustomer: 'جاري التحويل...',
+      convertToPersonalCustomerConfirm:
+        'تحويل حساب المورد/الشركة هذا إلى عميل شخصي؟ سيستخدم تجربة المشتري (العميل). لازم يسجّل دخول من جديد عشان التطبيق يتحدث.',
+      convertToPersonalCustomerSuccess: 'تم تحويل الحساب إلى عميل شخصي',
+      convertToPersonalCustomerError: 'تعذر تحويل الحساب إلى عميل شخصي',
       viewCompanyAds: 'عرض إعلانات الشركة',
       viewShippingAds: 'عرض إعلانات الشحن',
       editShippingAds: 'تعديل بيانات وإعلانات الشحن',
@@ -635,7 +641,7 @@ export const arMessages = {
       createAdManual: 'يدوي',
       createAdManualHint: 'املأ النموذج بنفسك (يدعم الصور والفيديو)',
       createAdAi: 'بالذكاء الاصطناعي',
-      createAdAiHint: 'خلّي الراس الذكي يجمع البيانات وينشر الإعلان باسم الشركة',
+      createAdAiHint: 'خلّي ميرج سبايس يجمع البيانات وينشر الإعلان باسم الشركة',
       createAdCancel: 'إلغاء',
       createAdTitle: 'إضافة إعلان — {name}',
       createAdNotAllowed: 'نوع الحساب ده مش مسموح له بإضافة إعلانات منتجات.',
@@ -1766,7 +1772,7 @@ export const arMessages = {
       unmuteSound: 'تشغيل صوت التنبيهات',
     },
     payment: {
-      appName: 'الراس الذكي',
+      appName: 'ميرج سبايس',
       confirmTitle: 'تأكيد الدفع',
       cancelTitle: 'إلغاء الدفع',
       loading: 'جاري التحقق من الدفع...',
@@ -1782,7 +1788,7 @@ export const arMessages = {
       loginRequired: 'يرجى تسجيل الدخول للتحقق من حالة الدفع.',
       returnToApp: 'تم استلام الدفع',
       returnToAppDetail:
-        'تم سحب المبلغ بنجاح. ارجع إلى تطبيق الراس الذكي لمتابعة طلبك. لا تعتمد على هذه الصفحة كتأكيد نهائي.',
+        'تم سحب المبلغ بنجاح. ارجع إلى تطبيق ميرج سبايس لمتابعة طلبك. لا تعتمد على هذه الصفحة كتأكيد نهائي.',
       timeout: 'انتهت مهلة التحقق. يرجى التحقق من حالة الطلب لاحقاً.',
       cancelled: 'تم إلغاء عملية الدفع',
       cancelledDetail: 'لم يتم خصم أي مبلغ. يمكنك المحاولة مرة أخرى عند إتمام الطلب.',
@@ -1791,7 +1797,7 @@ export const arMessages = {
       fabLabel: 'Ask AI',
       fabAria: 'فتح مساعد Ask AI',
       title: 'Ask AI',
-      subtitle: 'مساعد إدارة الراس الذكي',
+      subtitle: 'مساعد إدارة ميرج سبايس',
       hello:
       'أهلاً بك 👋 أنا شايف الشاشة اللي قدامك والبيانات المعروضة فيها، وأقدر أحللها وأساعدك تفهمها وتتخذ القرار المناسب. اسألني عن أي شيء 🚀',
       placeholder: 'اسأل عن هذه الصفحة…',
@@ -1799,7 +1805,7 @@ export const arMessages = {
       close: 'إغلاق',
       thinking: 'جاري التفكير…',
       error: 'حصل خطأ. حاول مرة أخرى.',
-      dataSafe: 'بيانات جلسة الإدارة تبقى داخل الراس الذكي',
-      poweredBy: 'مدعوم من الراس الذكي',
+      dataSafe: 'بيانات جلسة الإدارة تبقى داخل ميرج سبايس',
+      poweredBy: 'مدعوم من ميرج سبايس',
     },
 } as const

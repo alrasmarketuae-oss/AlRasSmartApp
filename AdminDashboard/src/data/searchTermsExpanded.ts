@@ -149,6 +149,8 @@ const MANUAL_SYNONYMS: Array<{ route: string; section: string; labelAr: string; 
       'اسم البرنامج',
       'اسم المنصة',
       'الراس الذكي',
+      'ميرج سبايس',
+      'merge spice',
       'سوق راس',
       'راس السوق',
       'ras al souq',

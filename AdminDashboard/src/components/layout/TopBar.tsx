@@ -1,11 +1,8 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { PROJECT_IMAGES } from '../../constants/projectImages'
 import { useAppPreferences } from '../../context/AppPreferencesProvider'
 import { useAdminNotifications } from '../../context/AdminNotificationProvider'
 import { useLogout } from '../../hooks/useLogout'
-import { resolveAssetUrl } from '../../lib/assets'
-import { getAuthUser } from '../../lib/authStorage'
 import GlobalSearchBox from '../search/GlobalSearchBox'
 import { IconBell, IconChat, IconLogout, IconMenu } from '../icons'
 import PreferencesControls from './PreferencesControls'
@@ -24,9 +21,6 @@ export default function TopBar({
   const { t } = useAppPreferences()
   const { navCounts, totalBadgeCount } = useAdminNotifications()
   const logout = useLogout()
-  const user = getAuthUser()
-  const [photoFailed, setPhotoFailed] = useState(false)
-  const showPhoto = Boolean(user?.imgPath) && !photoFailed
 
   return (
     <header
@@ -43,25 +37,16 @@ export default function TopBar({
       </button>
 
       <div className="flex shrink-0 items-center gap-3">
-        {showPhoto && user?.imgPath ? (
-          <img
-            src={resolveAssetUrl(user.imgPath)}
-            alt=""
-            onError={() => setPhotoFailed(true)}
-            className="h-10 w-10 rounded-full object-cover sm:h-11 sm:w-11"
-          />
-        ) : (
-          <img
-            src={PROJECT_IMAGES.logo}
-            alt=""
-            className="h-10 w-10 rounded-full border border-slate-200 bg-white object-contain p-1.5 sm:h-11 sm:w-11 dark:border-slate-700"
-          />
-        )}
+        <img
+          src={`${PROJECT_IMAGES.logo}?v=mergespice`}
+          alt={t('appName')}
+          className="h-10 w-10 object-contain sm:h-11 sm:w-11"
+        />
         <div className="hidden min-[480px]:block">
-          <p className="admin-text text-sm font-bold leading-tight">
-            {user?.name ?? t('generalManager')}
+          <p className="brand-gradient-text text-sm font-extrabold leading-tight tracking-tight sm:text-base">
+            {t('appName')}
           </p>
-          <p className="admin-text-muted text-xs">{t('generalManager')}</p>
+          <p className="admin-text-muted text-xs">{t('appSubtitle')}</p>
         </div>
       </div>
 

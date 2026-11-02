@@ -12,7 +12,7 @@ export default function PaymentCancelPage() {
 
       <div className="mb-8 flex w-full max-w-md flex-col items-center text-center">
         <img
-          src="/ProjectImages/SouqLogo.png"
+          src="/ProjectImages/logo.png?v=mergespice"
           alt={t('payment.appName')}
           className="mb-5 h-24 w-24 object-contain"
         />

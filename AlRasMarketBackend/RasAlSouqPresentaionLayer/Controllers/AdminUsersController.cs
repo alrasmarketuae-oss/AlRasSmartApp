@@ -191,6 +191,34 @@ public class AdminUsersController(IAdminUsersAppService adminUsersAppService) : 
         }
     }
 
+    /// <summary>Convert a supplier or company account to a personal customer (Buyer).</summary>
+    [HttpPost("{userId}/convert-to-personal-customer")]
+    [RequireAdminPermission(AdminPermissions.UsersManage)]
+    public async Task<IActionResult> ConvertToPersonalCustomer(
+        string userId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await adminUsersAppService.ConvertToPersonalCustomerAsync(
+                userId,
+                cancellationToken);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpDelete("{userId}")]
     [RequireAdminPermission(AdminPermissions.UsersManage)]
     public async Task<IActionResult> DeleteUser(string userId, CancellationToken cancellationToken)

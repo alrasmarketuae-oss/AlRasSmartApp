@@ -34,6 +34,7 @@ type UserDetailViewProps = {
   isDeleting: boolean
   isConvertingToSupplier?: boolean
   isConvertingToCompanyCustomer?: boolean
+  isConvertingToPersonalCustomer?: boolean
   onApprove: () => void
   onReject: (reason: string) => void
   onRequestCompletion: (payload: {
@@ -47,6 +48,7 @@ type UserDetailViewProps = {
   onDelete: () => void
   onConvertToSupplier?: () => void
   onConvertToCompanyCustomer?: () => void
+  onConvertToPersonalCustomer?: () => void
 }
 
 const ICON_BLUE = 'bg-[#eff6ff] text-[#3B7FC7]'
@@ -213,6 +215,7 @@ export default function UserDetailView({
   isDeleting,
   isConvertingToSupplier = false,
   isConvertingToCompanyCustomer = false,
+  isConvertingToPersonalCustomer = false,
   onApprove,
   onReject,
   onRequestCompletion,
@@ -221,6 +224,7 @@ export default function UserDetailView({
   onDelete,
   onConvertToSupplier,
   onConvertToCompanyCustomer,
+  onConvertToPersonalCustomer,
 }: UserDetailViewProps) {
   const { t, locale } = useAppPreferences()
   const navigate = useNavigate()
@@ -239,7 +243,8 @@ export default function UserDetailView({
     isDeactivating ||
     isDeleting ||
     isConvertingToSupplier ||
-    isConvertingToCompanyCustomer
+    isConvertingToCompanyCustomer ||
+    isConvertingToPersonalCustomer
   const isSupplier = user.roleId === 2
   const canCreateCompanyAd = user.roleId === 2
   const isPersonal = user.roleId === 3
@@ -251,6 +256,8 @@ export default function UserDetailView({
     isPersonal ||
     Boolean(user.canConvertToCompanyCustomer) ||
     (user.roleId === 2 && user.isCustomer !== true)
+  const canConvertToPersonalCustomer =
+    Boolean(user.canConvertToPersonalCustomer) || user.roleId === 2
   const isShippingCompany = user.roleId === 5
   const showCompanyDocs = isSupplier || isShippingCompany
   const showVerifiedBadge =
@@ -415,10 +422,25 @@ export default function UserDetailView({
       </button>
     ) : null
 
+  const convertToPersonalCustomerButton =
+    canConvertToPersonalCustomer && onConvertToPersonalCustomer ? (
+      <button
+        type="button"
+        disabled={isBusy}
+        onClick={onConvertToPersonalCustomer}
+        className={`${outlineBtn} border-emerald-400 text-emerald-800 hover:bg-emerald-50 dark:border-emerald-700/60 dark:text-emerald-200 dark:hover:bg-emerald-950/30`}
+      >
+        {isConvertingToPersonalCustomer
+          ? t('users.convertingToPersonalCustomer')
+          : t('users.convertToPersonalCustomer')}
+      </button>
+    ) : null
+
   const accountTypeButtons = (
     <>
       {convertToSupplierButton}
       {convertToCompanyCustomerButton}
+      {convertToPersonalCustomerButton}
     </>
   )
 
@@ -488,7 +510,11 @@ export default function UserDetailView({
         </button>
       ) : null}
     </div>
-  ) : deleteButton || convertToSupplierButton || convertToCompanyCustomerButton || editButton ? (
+  ) : deleteButton ||
+    convertToSupplierButton ||
+    convertToCompanyCustomerButton ||
+    convertToPersonalCustomerButton ||
+    editButton ? (
     <div className="flex flex-wrap justify-end gap-3">
       {editButton}
       {accountTypeButtons}

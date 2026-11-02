@@ -5,6 +5,7 @@ import {
   useApproveCompanyMutation,
   useConvertCompanyCustomerToSupplierMutation,
   useConvertSupplierToCompanyCustomerMutation,
+  useConvertToPersonalCustomerMutation,
   useDeleteAdminUserMutation,
   useGetAdminUserDetailQuery,
   useRejectCompanyMutation,
@@ -40,6 +41,8 @@ export default function UserDetailContainer({ userId, onDeleted }: UserDetailCon
     useConvertCompanyCustomerToSupplierMutation()
   const [convertToCompanyCustomer, { isLoading: isConvertingToCompanyCustomer }] =
     useConvertSupplierToCompanyCustomerMutation()
+  const [convertToPersonalCustomer, { isLoading: isConvertingToPersonalCustomer }] =
+    useConvertToPersonalCustomerMutation()
 
   async function handleApprove() {
     const confirmed = window.confirm(t('users.approveConfirm'))
@@ -192,6 +195,25 @@ export default function UserDetailContainer({ userId, onDeleted }: UserDetailCon
     }
   }
 
+  async function handleConvertToPersonalCustomer() {
+    const confirmed = window.confirm(t('users.convertToPersonalCustomerConfirm'))
+    if (!confirmed) return
+
+    setActionError(null)
+    setSuccessMessage(null)
+
+    try {
+      const result = await convertToPersonalCustomer(userId).unwrap()
+      setSuccessMessage(
+        result.message || t('users.convertToPersonalCustomerSuccess'),
+      )
+    } catch (err) {
+      setActionError(
+        getRtkErrorMessage(err as never, t('users.convertToPersonalCustomerError')),
+      )
+    }
+  }
+
   return (
     <>
       {successMessage ? (
@@ -217,6 +239,7 @@ export default function UserDetailContainer({ userId, onDeleted }: UserDetailCon
           isDeleting={isDeleting}
           isConvertingToSupplier={isConvertingToSupplier}
           isConvertingToCompanyCustomer={isConvertingToCompanyCustomer}
+          isConvertingToPersonalCustomer={isConvertingToPersonalCustomer}
           onApprove={handleApprove}
           onReject={handleReject}
           onRequestCompletion={handleRequestCompletion}
@@ -225,6 +248,7 @@ export default function UserDetailContainer({ userId, onDeleted }: UserDetailCon
           onDelete={handleDelete}
           onConvertToSupplier={handleConvertToSupplier}
           onConvertToCompanyCustomer={handleConvertToCompanyCustomer}
+          onConvertToPersonalCustomer={handleConvertToPersonalCustomer}
         />
       )}
     </>

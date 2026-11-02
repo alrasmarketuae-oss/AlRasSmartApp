@@ -1,6 +1,9 @@
 /** مسارات أصول ProjectImages — كما في تصميم لوحة التحكم */
 export const PROJECT_IMAGES = {
+  /** Compact brand mark for sidebar / top bar */
   logo: '/ProjectImages/SouqLogo.png',
+  /** Full wordmark for login / payment */
+  logoFull: '/ProjectImages/logo.png',
 
   /** بطاقات الإحصائيات */
   statUsers: '/ProjectImages/users.png',

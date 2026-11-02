@@ -194,6 +194,8 @@ public sealed class AdminUserDetailDto
     public bool CanConvertToSupplier { get; set; }
     /// <summary>Supplier (Seller + not customer) can be switched to company customer.</summary>
     public bool CanConvertToCompanyCustomer { get; set; }
+    /// <summary>Seller (supplier or company customer) can be switched to personal customer.</summary>
+    public bool CanConvertToPersonalCustomer { get; set; }
 }
 
 public sealed class AdminShippingPhoneRevealCompanyDto

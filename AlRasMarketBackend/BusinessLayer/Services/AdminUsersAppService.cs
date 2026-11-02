@@ -383,7 +383,8 @@ public class AdminUsersAppService(
             CanConvertToSupplier = user.RoleId == RoleIds.Buyer
                 || (user.RoleId == RoleIds.Seller && user.IsCustomer == true),
             CanConvertToCompanyCustomer = user.RoleId == RoleIds.Buyer
-                || (user.RoleId == RoleIds.Seller && user.IsCustomer != true)
+                || (user.RoleId == RoleIds.Seller && user.IsCustomer != true),
+            CanConvertToPersonalCustomer = user.RoleId == RoleIds.Seller
         };
 
         var translations = await contentTranslationService.GetUserTranslationsAsync(
@@ -608,6 +609,55 @@ public class AdminUsersAppService(
         user.IsActive = true;
         user.PendingProfileChanges = null;
         user.AuthStamp++;
+    }
+
+    public async Task<object> ConvertToPersonalCustomerAsync(
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(userId, out var parsedUserId))
+        {
+            throw new ArgumentException("Invalid user id.");
+        }
+
+        var user = await dbContext.Users
+            .FirstOrDefaultAsync(x => x.Id == parsedUserId, cancellationToken)
+            ?? throw new KeyNotFoundException("User not found.");
+
+        if (user.RoleId != RoleIds.Seller)
+        {
+            throw new InvalidOperationException(
+                "Only a supplier or company account can be converted to a personal customer.");
+        }
+
+        var fromType = user.IsCustomer == true ? "companyCustomer" : "supplier";
+        user.RoleId = RoleIds.Buyer;
+        user.IsCustomer = false;
+        user.IsApproved = true;
+        user.IsVerified = true;
+        user.IsRejected = false;
+        user.IsActive = true;
+        user.PendingProfileChanges = null;
+        user.AuthStamp++;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        authSessionGuard.Remember(user.Id, user.AuthStamp);
+        await auditLogAppService.WriteAsync(
+            AdminAuditActions.UserUpdate,
+            AdminAuditEntityTypes.User,
+            user.Id.ToString("D"),
+            $"Admin converted '{user.CompanyName ?? user.FullName}' to personal customer",
+            new { from = fromType, to = "person" },
+            cancellationToken);
+
+        return new
+        {
+            message = "Account converted to personal customer. The user must sign in again.",
+            userId = user.Id,
+            isCustomer = false,
+            roleId = user.RoleId,
+            typeLabelAr = AdminMappings.GetUserTypeLabelAr(user.RoleId, user.IsCustomer)
+        };
     }
 
     public async Task<object> DeleteUserAsync(

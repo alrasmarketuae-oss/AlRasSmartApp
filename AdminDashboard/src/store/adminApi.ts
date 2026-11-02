@@ -803,6 +803,27 @@ export const adminApi = createApi({
       ],
     }),
 
+    convertToPersonalCustomer: builder.mutation<
+      {
+        message: string
+        userId: string
+        isCustomer: boolean
+        roleId: number
+        typeLabelAr?: string
+      },
+      string
+    >({
+      query: (userId) => ({
+        url: `/api/admin/users/${userId}/convert-to-personal-customer`,
+        method: 'POST',
+      }),
+      invalidatesTags: (_r, _e, userId) => [
+        { type: 'Users', id: 'LIST' },
+        { type: 'Users', id: userId },
+        'Dashboard',
+      ],
+    }),
+
     deleteProduct: builder.mutation<{ message: string }, string>({
       query: (productId) => ({
         url: `/api/admin/products/${productId}`,
@@ -2550,6 +2571,7 @@ export const {
   useDeleteAdminUserMutation,
   useConvertCompanyCustomerToSupplierMutation,
   useConvertSupplierToCompanyCustomerMutation,
+  useConvertToPersonalCustomerMutation,
   useDeleteProductMutation,
   useGetAdminOrderStatsQuery,
   useGetAdminOrderDetailQuery,

@@ -4,27 +4,39 @@ using System.Text.RegularExpressions;
 namespace BusinessLayer.Helpers;
 
 /// <summary>
-/// Shared branded HTML wrapper for all customer emails (logo colors + app logo).
+/// Shared branded HTML wrapper for all customer emails (Merge Spice).
 /// </summary>
 public static class BrandEmailLayout
 {
-    public const string BrandMarker = "data-brand=\"rasalsouq\"";
-    public const string LogoContentId = "rasalsouq-logo";
-    public const string BannerContentId = "rasalsouq-banner";
+    public const string BrandMarker = "data-brand=\"mergespice\"";
+    public const string LogoContentId = "mergespice-logo";
+    public const string BannerContentId = "mergespice-banner";
     public const string BannerFileName = "email-banner.jpg";
 
-    /// <summary>Logo blue</summary>
-    public const string Blue = "#3376C2";
+    public const string BrandNameEn = "Merge Spice";
+    public const string BrandNameAr = "ميرج سبايس";
+    public const string CompanyLegal = "Merge Spice Foodstuff Trading LLC";
+    public const string CompanyTagline = "Wholesale Spices • B2B Trading";
 
-    /// <summary>Logo red</summary>
-    public const string Red = "#BE362F";
+    /// <summary>Brand green (Merge)</summary>
+    public const string Green = "#2F6B45";
 
-    /// <summary>Logo green</summary>
-    public const string Green = "#5A9652";
+    /// <summary>Deep green for headings</summary>
+    public const string GreenDark = "#1B4D32";
 
-    public const string Ink = "#0f172a";
-    public const string Muted = "#64748b";
-    public const string SoftBg = "#f3f7fb";
+    /// <summary>Soft green for OTP card</summary>
+    public const string GreenSoft = "#E8F3EC";
+
+    /// <summary>Brand red accent</summary>
+    public const string Red = "#C0392B";
+
+    /// <summary>Legacy alias — maps to brand green</summary>
+    public const string Blue = Green;
+
+    public const string Ink = "#1A1A1A";
+    public const string Muted = "#6B7280";
+    public const string SoftBg = "#F7F3EC";
+    public const string CardBg = "#FFFFFF";
 
     public static string EnsureBranded(string subject, string bodyHtml, string? logoSrc = null)
     {
@@ -33,7 +45,9 @@ public static class BrandEmailLayout
             return Wrap(subject, "<p></p>", logoSrc);
         }
 
-        if (bodyHtml.Contains(BrandMarker, StringComparison.OrdinalIgnoreCase))
+        // Already branded (new or previous marker)
+        if (bodyHtml.Contains(BrandMarker, StringComparison.OrdinalIgnoreCase) ||
+            bodyHtml.Contains("data-brand=\"rasalsouq\"", StringComparison.OrdinalIgnoreCase))
         {
             return bodyHtml;
         }
@@ -47,16 +61,14 @@ public static class BrandEmailLayout
         var rtl = ContainsArabic($"{subject}\n{innerHtml}");
         var dir = rtl ? "rtl" : "ltr";
         var lang = rtl ? "ar" : "en";
-        var safeTitle = WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(subject) ? "Al Ras Smart" : subject.Trim());
+        var brand = rtl ? BrandNameAr : BrandNameEn;
+        var safeTitle = WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(subject) ? BrandNameEn : subject.Trim());
         var logo = string.IsNullOrWhiteSpace(logoSrc) ? $"cid:{LogoContentId}" : logoSrc.Trim();
         var footer = WebUtility.HtmlEncode(
             footerNote
             ?? (rtl
-                ? "هذه رسالة تلقائية من تطبيق الراس الذكي. يمكنك متابعة كل شيء من التطبيق."
-                : "This is an automated message from Al Ras Smart. Open the app to manage your account."));
-
-    //    var brandAr = rtl ? "تطبيق الراس الذكي" : "Al Ras Smart";
-   //     var brandEn = rtl ? "Al Ras Smart" : "تطبيق الراس الذكي";
+                ? $"هذه رسالة تلقائية من {BrandNameAr}. يمكنك متابعة كل شيء من التطبيق."
+                : $"This is an automated message from {BrandNameEn}. Open the app to manage your account."));
 
         return $$"""
 <!DOCTYPE html>
@@ -67,43 +79,28 @@ public static class BrandEmailLayout
   <meta name="color-scheme" content="light" />
   <title>{{safeTitle}}</title>
 </head>
-<body style="margin:0;padding:0;background:{{SoftBg}};font-family:'Segoe UI',Tahoma,'Noto Sans Arabic',Arial,sans-serif;color:{{Ink}};-webkit-text-size-adjust:100%;">
+<body style="margin:0;padding:0;background:{{SoftBg}};font-family:Arial,Helvetica,'Segoe UI',Tahoma,'Noto Sans Arabic',sans-serif;color:{{Ink}};-webkit-text-size-adjust:100%;">
   <table role="presentation" {{BrandMarker}} width="100%" cellspacing="0" cellpadding="0" style="background:{{SoftBg}};padding:28px 12px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:580px;background:#ffffff;border-radius:22px;overflow:hidden;box-shadow:0 14px 42px rgba(51,118,194,0.12);">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:580px;background:{{CardBg}};border-radius:20px;overflow:hidden;box-shadow:0 12px 36px rgba(31,77,50,0.10);">
           <tr>
-            <td style="padding:0;line-height:0;font-size:0;">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-                <tr>
-                  <td width="34%" height="6" style="background:{{Blue}};"></td>
-                  <td width="32%" height="6" style="background:{{Red}};"></td>
-                  <td width="34%" height="6" style="background:{{Green}};"></td>
-                </tr>
-              </table>
+            <td style="padding:28px 24px 12px;text-align:center;background:{{CardBg}};">
+              <img src="{{logo}}" alt="{{BrandNameEn}}" width="120" style="display:block;margin:0 auto;width:120px;max-width:160px;height:auto;border:0;" />
+              <p style="margin:14px 0 0;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:{{Ink}};letter-spacing:0.02em;">{{WebUtility.HtmlEncode(brand)}}</p>
             </td>
           </tr>
           <tr>
-            <td style="background:linear-gradient(135deg,{{Blue}} 0%,#2f6aad 48%,{{Green}} 100%);padding:26px 24px 22px;text-align:center;">
-              <img src="{{logo}}" alt="Al Ras Smart" width="96" height="96" style="display:block;margin:0 auto;width:96px;height:96px;border-radius:22px;border:0;background:#000000;object-fit:contain;" />
-
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:28px 26px 8px;font-size:15px;line-height:1.75;color:#334155;">
+            <td style="padding:18px 26px 8px;font-size:15px;line-height:1.75;color:#334155;">
               {{innerHtml}}
             </td>
           </tr>
           <tr>
-            <td style="padding:8px 26px 26px;text-align:center;">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:8px;">
-                <tr>
-                  <td width="34%" height="3" style="background:{{Blue}};border-radius:3px 0 0 3px;"></td>
-                  <td width="32%" height="3" style="background:{{Red}};"></td>
-                  <td width="34%" height="3" style="background:{{Green}};border-radius:0 3px 3px 0;"></td>
-                </tr>
-              </table>
-              <p style="margin:16px 0 0;font-size:12px;line-height:1.65;color:#94a3b8;">{{footer}}</p>
+            <td style="padding:8px 26px 28px;text-align:center;">
+              <div style="height:1px;background:#E5E7EB;margin:8px 0 16px;"></div>
+              <p style="margin:0 0 4px;font-size:13px;font-weight:700;color:{{Ink}};">{{WebUtility.HtmlEncode(CompanyLegal)}}</p>
+              <p style="margin:0 0 12px;font-size:12px;color:{{Muted}};">{{WebUtility.HtmlEncode(CompanyTagline)}}</p>
+              <p style="margin:0;font-size:12px;line-height:1.65;color:#94a3b8;">{{footer}}</p>
             </td>
           </tr>
         </table>
@@ -116,30 +113,42 @@ public static class BrandEmailLayout
     }
 
     /// <summary>
-    /// Full OTP email: app banner header, spaced code card and a plain "code: 123456" line
-    /// so iOS / Android can offer the code above the keyboard.
+    /// OTP email matching the Merge Spice verification design:
+    /// cream canvas, logo + brand, green shield, code card, legal footer.
     /// </summary>
     public static string VerificationCodeEmail(string subject, string code, bool isArabic)
     {
         var dir = isArabic ? "rtl" : "ltr";
         var lang = isArabic ? "ar" : "en";
-        var align = isArabic ? "right" : "left";
         var safeTitle = WebUtility.HtmlEncode(subject);
         var safeCode = WebUtility.HtmlEncode(code);
-        var brand = $"<span style=\"color:{Blue};font-weight:800;\">{(isArabic ? "الراس الذكي" : "Al Ras Smart")}</span>";
+        var spacedCode = WebUtility.HtmlEncode(string.Join(' ', code.Trim().ToCharArray()));
+        var brand = isArabic ? BrandNameAr : BrandNameEn;
 
-        var headline = isArabic ? "رمز التحقق" : "Verification Code";
+        var headline = isArabic ? "تحقق من بريدك الإلكتروني" : "Verify your email";
+        var welcome = isArabic
+            ? $"مرحباً بك في {brand}!"
+            : $"Welcome to {BrandNameEn}!";
         var intro = isArabic
-            ? $"استخدم الرمز التالي لإكمال التحقق على تطبيق {brand}:"
-            : $"Use the following code to complete the verification on {brand} app:";
-        var codeLabel = isArabic ? "رمز التحقق:" : "Verification code:";
+            ? "استخدم رمز التحقق أدناه لإكمال التسجيل."
+            : "Use the verification code below to complete your registration.";
+        var codeLabel = isArabic ? "رمز التحقق الخاص بك" : "YOUR VERIFICATION CODE";
         var expiry = isArabic
-            ? "ينتهي هذا الرمز خلال 10 دقائق.<br />إذا لم تطلب هذا الرمز، يرجى تجاهل هذه الرسالة."
-            : "This code will expire in 10 minutes.<br />If you did not request this code, please ignore this email.";
-        var footer = isArabic
-            ? $"هذه رسالة تلقائية من تطبيق <strong style=\"color:#475569;\">الراس الذكي</strong>.<br />يمكنك تجاهل هذه الرسالة بأمان إذا لم تطلبها."
-            : $"This is an automated message from <strong style=\"color:#475569;\">Al Ras Smart</strong> app.<br />You can safely ignore this email if you did not request it.";
-        var preheader = isArabic ? $"رمز التحقق الخاص بك: {safeCode}" : $"Your verification code is {safeCode}";
+            ? "ينتهي هذا الرمز خلال 10 دقائق."
+            : "This code expires in 10 minutes.";
+        var security = isArabic
+            ? "لحمايتك، لا تشارك هذا الرمز مع أي شخص."
+            : "For your security, do not share this code with anyone.";
+        var ignore = isArabic
+            ? "لم تطلب هذا الرمز؟ يمكنك تجاهل هذه الرسالة بأمان."
+            : "Didn't request this code? You can safely ignore this email.";
+        var preheader = isArabic
+            ? $"رمز التحقق الخاص بك: {safeCode}"
+            : $"Your verification code is {safeCode}";
+        // Plain line for OS autofill / keyboard suggestion
+        var autofillLine = isArabic
+            ? $"رمز التحقق: {safeCode}"
+            : $"Verification code: {safeCode}";
 
         return $$"""
 <!DOCTYPE html>
@@ -150,53 +159,54 @@ public static class BrandEmailLayout
   <meta name="color-scheme" content="light" />
   <title>{{safeTitle}}</title>
 </head>
-<body style="margin:0;padding:0;background:#eaf2fb;font-family:'Segoe UI',Tahoma,'Noto Sans Arabic',Arial,sans-serif;color:{{Ink}};-webkit-text-size-adjust:100%;">
+<body style="margin:0;padding:0;background:{{SoftBg}};font-family:Arial,Helvetica,'Segoe UI',Tahoma,'Noto Sans Arabic',sans-serif;color:{{Ink}};-webkit-text-size-adjust:100%;">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">{{preheader}}</div>
-  <table role="presentation" {{BrandMarker}} width="100%" cellspacing="0" cellpadding="0" style="background:linear-gradient(180deg,#dcebfb 0%,#f4f8fd 60%,#eaf2fb 100%);padding:28px 12px;">
+  <table role="presentation" {{BrandMarker}} width="100%" cellspacing="0" cellpadding="0" style="background:{{SoftBg}};padding:32px 12px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 16px 44px rgba(51,118,194,0.16);">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:{{CardBg}};border-radius:18px;overflow:hidden;box-shadow:0 10px 32px rgba(27,77,50,0.08);">
           <tr>
-            <td style="padding:0;line-height:0;font-size:0;">
-              <img src="cid:{{BannerContentId}}" alt="Al Ras Smart - الراس الذكي" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;" />
+            <td style="padding:36px 28px 8px;text-align:center;">
+              <img src="cid:{{LogoContentId}}" alt="{{BrandNameEn}}" width="140" style="display:block;margin:0 auto;width:140px;max-width:180px;height:auto;border:0;" />
+              <p style="margin:16px 0 0;font-family:Georgia,'Times New Roman',serif;font-size:24px;line-height:1.2;font-weight:700;color:{{Ink}};">{{WebUtility.HtmlEncode(brand)}}</p>
             </td>
           </tr>
           <tr>
-            <td dir="{{dir}}" style="padding:34px 32px 6px;text-align:{{align}};">
-              <h1 style="margin:0 0 12px;font-size:32px;line-height:1.25;color:#0b1b3f;font-weight:800;">{{headline}}</h1>
-              <p style="margin:0;font-size:17px;line-height:1.6;color:#475569;">{{intro}}</p>
+            <td style="padding:22px 28px 0;text-align:center;">
+              <div style="display:inline-block;width:42px;height:42px;border-radius:50%;background:{{Green}};line-height:42px;text-align:center;">
+                <span style="color:#ffffff;font-size:22px;font-weight:700;">&#10003;</span>
+              </div>
+              <h1 style="margin:16px 0 10px;font-family:Georgia,'Times New Roman',serif;font-size:30px;line-height:1.25;font-weight:700;color:{{GreenDark}};">{{WebUtility.HtmlEncode(headline)}}</h1>
+              <p style="margin:0 0 6px;font-size:17px;font-weight:700;color:{{Ink}};">{{WebUtility.HtmlEncode(welcome)}}</p>
+              <p style="margin:0;font-size:15px;line-height:1.6;color:{{Muted}};">{{WebUtility.HtmlEncode(intro)}}</p>
             </td>
           </tr>
           <tr>
-            <td align="center" style="padding:26px 24px 8px;">
-              <table role="presentation" cellspacing="0" cellpadding="0" dir="ltr">
+            <td style="padding:26px 28px 8px;" align="center">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:360px;background:{{GreenSoft}};border-radius:16px;">
                 <tr>
-                  <td style="padding:22px 26px 22px 40px;border:2px solid {{Blue}};border-radius:18px;background:linear-gradient(180deg,#f7fbff 0%,#e8f1fc 100%);box-shadow:0 8px 22px rgba(51,118,194,0.18);text-align:center;">
-                    <span style="font-size:42px;line-height:1;font-weight:800;letter-spacing:14px;color:{{Blue}};font-family:'Segoe UI',Arial,sans-serif;">{{safeCode}}</span>
-                  </td>
-                  <td valign="top" style="padding:0 0 0 10px;">
-                    <div style="width:54px;height:54px;border-radius:18px 18px 27px 27px;background:linear-gradient(135deg,#5aa2f2 0%,#2563eb 100%);box-shadow:0 8px 18px rgba(37,99,235,0.35);text-align:center;line-height:54px;font-size:24px;color:#ffffff;">&#128274;</div>
+                  <td style="padding:22px 20px;text-align:center;">
+                    <p style="margin:0 0 12px;font-size:11px;letter-spacing:0.14em;font-weight:700;color:{{GreenDark}};text-transform:uppercase;">{{WebUtility.HtmlEncode(codeLabel)}}</p>
+                    <p dir="ltr" style="margin:0;font-size:36px;line-height:1.15;font-weight:800;letter-spacing:0.28em;color:{{Ink}};font-family:Georgia,'Times New Roman',serif;">{{spacedCode}}</p>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
           <tr>
-            <td dir="{{dir}}" style="padding:22px 32px 4px;text-align:{{align}};">
-              <p style="margin:0 0 14px;font-size:18px;line-height:1.5;color:#0b1b3f;font-weight:700;">{{codeLabel}} <span dir="ltr" style="color:{{Blue}};font-weight:800;">{{safeCode}}</span></p>
-              <p style="margin:0 0 8px;font-size:15px;line-height:1.7;color:#475569;">{{expiry}}</p>
+            <td style="padding:18px 28px 6px;text-align:center;">
+              <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:{{Ink}};">{{WebUtility.HtmlEncode(expiry)}}</p>
+              <p style="margin:0;font-size:13px;line-height:1.55;color:{{Muted}};">{{WebUtility.HtmlEncode(security)}}</p>
+              <p dir="ltr" style="margin:16px 0 0;font-size:14px;color:{{GreenDark}};font-weight:600;">{{WebUtility.HtmlEncode(autofillLine)}}</p>
             </td>
           </tr>
           <tr>
-            <td style="padding:22px 32px 30px;text-align:center;">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" dir="ltr">
-                <tr>
-                  <td width="34%" height="4" style="background:{{Blue}};border-radius:4px 0 0 4px;line-height:4px;font-size:0;">&nbsp;</td>
-                  <td width="32%" height="4" style="background:{{Red}};line-height:4px;font-size:0;">&nbsp;</td>
-                  <td width="34%" height="4" style="background:{{Green}};border-radius:0 4px 4px 0;line-height:4px;font-size:0;">&nbsp;</td>
-                </tr>
-              </table>
-              <p dir="{{dir}}" style="margin:18px 0 0;font-size:13px;line-height:1.7;color:#64748b;">{{footer}}</p>
+            <td style="padding:24px 28px 32px;text-align:center;">
+              <div style="height:1px;background:#E5E7EB;margin:0 0 16px;"></div>
+              <p style="margin:0 0 18px;font-size:13px;line-height:1.55;color:{{Muted}};">{{WebUtility.HtmlEncode(ignore)}}</p>
+              <div style="height:1px;background:#E5E7EB;margin:0 0 16px;"></div>
+              <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:{{Ink}};">{{WebUtility.HtmlEncode(CompanyLegal)}}</p>
+              <p style="margin:0;font-size:12px;color:{{Muted}};">{{WebUtility.HtmlEncode(CompanyTagline)}}</p>
             </td>
           </tr>
         </table>
@@ -209,7 +219,7 @@ public static class BrandEmailLayout
     }
 
     public static string Headline(string text) =>
-        $"<h1 style=\"margin:0 0 14px;font-size:22px;line-height:1.4;color:{Ink};font-weight:800;\">{WebUtility.HtmlEncode(text)}</h1>";
+        $"<h1 style=\"margin:0 0 14px;font-size:22px;line-height:1.4;color:{GreenDark};font-family:Georgia,'Times New Roman',serif;font-weight:700;\">{WebUtility.HtmlEncode(text)}</h1>";
 
     public static string Paragraph(string text) =>
         $"<p style=\"margin:0 0 14px;font-size:15px;line-height:1.75;color:#334155;\">{WebUtility.HtmlEncode(text)}</p>";
@@ -219,11 +229,11 @@ public static class BrandEmailLayout
 
     public static string CodeBlock(string code)
     {
-        var safe = WebUtility.HtmlEncode(code);
+        var spaced = WebUtility.HtmlEncode(string.Join(' ', code.Trim().ToCharArray()));
         return $"""
 <div style="margin:18px 0 20px;text-align:center;">
-  <div style="display:inline-block;padding:14px 28px;border-radius:14px;background:#eef5fc;border:2px solid {Blue};color:{Blue};font-size:28px;font-weight:800;letter-spacing:6px;font-family:Consolas,'Courier New',monospace;">
-    {safe}
+  <div style="display:inline-block;padding:18px 28px;border-radius:14px;background:{GreenSoft};color:{Ink};font-size:28px;font-weight:800;letter-spacing:0.28em;font-family:Georgia,'Times New Roman',serif;">
+    {spaced}
   </div>
 </div>
 """;
@@ -232,7 +242,7 @@ public static class BrandEmailLayout
     public static string InfoCard(string label, string value)
     {
         return $"""
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 16px;background:#f8fbff;border:1px solid #d7e6f5;border-radius:14px;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 16px;background:{GreenSoft};border:1px solid #D5E8DB;border-radius:14px;">
   <tr>
     <td style="padding:14px 16px;font-size:13px;color:{Muted};width:40%;">{WebUtility.HtmlEncode(label)}</td>
     <td style="padding:14px 16px;font-size:14px;font-weight:700;color:{Ink};text-align:start;">{WebUtility.HtmlEncode(value)}</td>
@@ -243,7 +253,7 @@ public static class BrandEmailLayout
 
     public static string StatusPill(string text, string? background = null)
     {
-        var bg = background ?? Blue;
+        var bg = background ?? Green;
         return $"""
 <div style="display:inline-block;padding:8px 14px;border-radius:999px;background:{bg};color:#ffffff;font-size:13px;font-weight:700;margin:0 0 18px;">
   {WebUtility.HtmlEncode(text)}
@@ -270,9 +280,9 @@ public static class BrandEmailLayout
         for (var i = 0; i < steps.Count; i++)
         {
             var (label, date, isLatest) = steps[i];
-            var dot = isLatest ? Blue : Green;
+            var dot = isLatest ? Green : GreenDark;
             var weight = isLatest ? "800" : "600";
-            var color = isLatest ? Blue : Ink;
+            var color = isLatest ? Green : Ink;
             var dateHtml = string.IsNullOrWhiteSpace(date)
                 ? string.Empty
                 : $"""<div style="font-size:12px;color:{Muted};margin-top:4px;">{WebUtility.HtmlEncode(date)}</div>""";
@@ -284,7 +294,7 @@ public static class BrandEmailLayout
     <td width="24" valign="top" style="padding-top:3px;">
       <div style="width:11px;height:11px;border-radius:50%;background:{dot};margin:0 auto;"></div>
     </td>
-    <td style="padding:0 0 12px 10px;border-left:2px solid #dbeafe;">
+    <td style="padding:0 0 12px 10px;border-left:2px solid #D5E8DB;">
       <div style="font-size:14px;font-weight:{weight};color:{color};line-height:1.45;">{WebUtility.HtmlEncode(label)}</div>
       {dateHtml}
     </td>

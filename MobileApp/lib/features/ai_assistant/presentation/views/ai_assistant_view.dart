@@ -105,6 +105,8 @@ abstract class _AiAssistantViewStateBase extends State<AiAssistantView> {
 
   bool get _isAdminAi => AuthService.instance.isAdminAccount;
 
+  Future<void> _send();
+
   void _scrollToEnd() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_scrollController.hasClients || !_stickToEnd) return;
@@ -1125,6 +1127,8 @@ class _AiAssistantViewState extends _AiAssistantViewStateBase
     });
     _flushSendQueue();
   }
+
+  Future<void> _openHistorySheet() async {
     if (!AuthService.instance.isAuthenticated) return;
 
     final selected = await Navigator.of(context).push<AiConversationSummary>(
