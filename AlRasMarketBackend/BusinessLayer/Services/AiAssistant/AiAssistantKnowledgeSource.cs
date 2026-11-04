@@ -93,7 +93,7 @@ internal static class AiAssistantKnowledgeSource
             """
             سؤال: كيف أبدأ؟ ماذا أفعل أولاً؟ من أين أبدأ في التطبيق؟ كيف أستخدم التطبيق؟
             الإجابة: ابدأ بتسجيل الدخول أو إنشاء حساب، لأن معظم الإجراءات تحتاج حساباً.
-            إن كنت مشترياً فرداً فأنشئ حسابك بجوجل أو أبل في ثوانٍ، ثم تصفح منتجات التجزئة في الصفحة الرئيسية أو ابحث عما تريد بالاسم أو بالصورة، ثم أضف إلى السلة وأكمل الشراء، وتابع طلبك من صفحة طلباتي.
+            إن كنت مشترياً فرداً فأنشئ حسابك بتسجيل الدخول عبر أبل في ثوانٍ (أبل تنشئ الحساب إن لم يكن موجوداً)، أو من إنشاء حساب / البريد. جوجل لتسجيل الدخول لحساب موجود فقط. ثم تصفح منتجات التجزئة في الصفحة الرئيسية أو ابحث عما تريد بالاسم أو بالصورة، ثم أضف إلى السلة وأكمل الشراء، وتابع طلبك من صفحة طلباتي.
             إن كنت مورداً فأكمل التسجيل بالرخصة التجارية وصور الشركة وانتظر الاعتماد، ثم أنشئ إعلاناتك من زر إنشاء إعلان، وتابعها من صفحة الحساب. المورد يستطيع أيضاً الشراء وطلب البضائع مثل أي مشتري ويتابع مشترياته من صفحة طلباتي، بالإضافة لمتابعة الطلبات الواردة على إعلاناته.
             إن كنت شركة تشتري بالجملة فتصفح الأصناف، وإن لم تجد ما تريد فانشر إعلان Request من صفحة إنشاء طلب واستقبل العروض.
             إن كنت شركة شحن فأضف إعلان الشحن من الصفحة الرئيسية وأدر إعلاناتك من نفس المكان.
@@ -103,7 +103,7 @@ internal static class AiAssistantKnowledgeSource
             """
             Question: how do I start? What should I do first? Where do I begin in the app? How do I use the app?
             Answer: start by signing in or creating an account, because most actions require one.
-            If you are an individual buyer, create your account from Create Account first, then you can sign in later with Google or Apple, browse retail products on home or search by name or image, add to cart and complete the purchase, and follow your order from My Orders.
+            If you are an individual buyer, you can create your account with Sign in with Apple in seconds (Apple creates the account if you do not have one yet), or create it from Create Account / email. Google is for signing in to an existing account only. Then browse retail products on home or search by name or image, add to cart and complete the purchase, and follow your order from My Orders.
             If you are a supplier, complete registration with your trade license and company images and wait for approval, then create listings from the Create Ad button, follow them from the Account page. Suppliers can also buy and place orders like any buyer and track those purchases from My Orders, in addition to incoming orders on their ads.
             If you are a company buying wholesale, browse the categories, and if you cannot find what you need publish a Inquiry ad from the Create Order page and receive offers.
             If you are a shipping company, add your shipping ad from Home and manage your ads from the same place.
@@ -606,16 +606,15 @@ internal static class AiAssistantKnowledgeSource
     {
         Add(chunks, "signup-personal", "كيف ينشئ العميل الفردي حساباً", "ar", All,
             """
-            العميل الفردي ينشئ حسابه أو يسجل دخوله عبر جوجل أو أبل مباشرة دون رخصة تجارية أو صور شركة أو عنوان.
-            يضغط على زر جوجل أو أبل حسب نوع الجهاز، وإذا لم يكن لديه حساب سابق ينشئ النظام له حساباً تلقائياً ويدخل مباشرة.
+            العميل الفردي يستطيع إنشاء حسابه عبر تسجيل الدخول بأبل مباشرة دون رخصة تجارية أو صور شركة أو عنوان؛ إذا لم يكن لديه حساب سابق تنشئ أبل له حساب مشترٍ فردي تلقائياً ويدخل مباشرة.
+            جوجل تستخدم لتسجيل الدخول لحساب موجود مسبقاً فقط ولا تنشئ حساباً جديداً.
             كما يمكنه التسجيل بالبريد الإلكتروني وكلمة سر إن رغب.
             حساب العميل الفردي لا يحتاج أي مراجعة أو اعتماد ويعمل فوراً.
             """);
         Add(chunks, "signup-personal", "How a personal customer creates an account", "en", All,
             """
-            A personal customer creates an account through Create Account first, with no trade license, company images, or address required.
-            After the account exists, tapping Google or Apple (depending on the device) signs the user in. If no account exists yet, Google or Apple sign-in returns a message that the user does not have an account and does not create one automatically.
-            Registering with an email address and password is also possible.
+            A personal customer can create an account with Sign in with Apple (new Apple users get a personal buyer account automatically), or through Create Account / email. No trade license, company images, or address is required.
+            Google signs in only to an existing account and does not create one automatically.
             A personal customer account needs no review or approval and works immediately.
             """);
 
@@ -663,14 +662,14 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "signin-social", "تسجيل الدخول بجوجل أو أبل", "ar", All,
             """
             تسجيل الدخول بجوجل أو أبل متاح حسب نوع الجهاز: أبل تظهر عادة على أجهزة iPhone وiPad، وجوجل على أجهزة أندرويد وأيضاً على iOS.
-            العملاء الأفراد يستطيعون إنشاء الحساب وتسجيل الدخول بهذه الطريقة مباشرة.
+            العملاء الأفراد: أبل تنشئ الحساب إن لم يكن موجوداً؛ جوجل لتسجيل الدخول لحساب موجود فقط.
             الموردون لا يستطيعون إنشاء الحساب لأول مرة بهذه الطريقة بسبب متطلبات الرخصة وصور الشركة، لكن يمكنهم استخدامها لتسجيل الدخول بعد اعتماد الحساب.
             إذا سجلت دخولك بجوجل أو أبل فلن يكون لديك كلمة سر قديمة، ولذلك تظهر لك شاشة مبسطة لتعيين كلمة سر جديدة بحقلين فقط بدل ثلاثة.
             """);
         Add(chunks, "signin-social", "Signing in with Google or Apple", "en", All,
             """
             Google and Apple sign-in availability depends on the device: Apple typically appears on iPhone and iPad, Google on Android and also on iOS.
-            Personal customers can create the account and sign in this way directly.
+            For personal customers, Sign in with Apple creates the account if none exists; Google only signs in to an existing account.
             Suppliers cannot create the first account this way because of the license and company image requirements, but they can use it to sign in after approval.
             If you signed in with Google or Apple you have no existing password, so the password screen is simplified to two fields for setting a new password instead of three.
             """);
@@ -2335,7 +2334,7 @@ internal static class AiAssistantKnowledgeSource
             """
             الزائر يستطيع التصفح والبحث النصي والبحث بالصورة وفتح تفاصيل الإعلانات فقط.
             بتسجيل حساب تحصل على: إتمام الشراء، وصفحة طلباتي لتتبع حالة كل طلب، وحفظ الإعلانات المفضلة، وحفظ العناوين، والإشعارات، والتواصل مع الدعم عبر Live Chat، وإمكانية طلب الاسترجاع للحالات المؤهلة.
-            العميل الفردي ينشئ حسابه في ثوانٍ عبر جوجل أو أبل دون أي مستندات.
+            العميل الفردي ينشئ حسابه في ثوانٍ عبر أبل أو من إنشاء حساب / البريد دون أي مستندات؛ جوجل لتسجيل الدخول بعد وجود الحساب.
             حسابات الشركات تحتاج بيانات إضافية ومراجعة قبل التفعيل.
             """);
         Add(chunks, "order-lifecycle", "ماذا يحدث بعد أن أضع الطلب", "ar", Buyers,
@@ -2468,7 +2467,7 @@ internal static class AiAssistantKnowledgeSource
             """
             A guest can only browse, use text and image search, and open listing details.
             Registering gives you: the ability to complete a purchase, a My Orders page to track each order's status, saved favourite listings, saved addresses, notifications, Live Chat with support, and the ability to request returns for eligible cases.
-            A personal customer account is created from Create Account and needs no documents; Google or Apple are for signing in after the account exists.
+            A personal customer account needs no documents: Sign in with Apple can create it, Create Account / email also work, and Google is for signing in after the account exists.
             Company accounts require additional details and review before activation.
             """);
     }

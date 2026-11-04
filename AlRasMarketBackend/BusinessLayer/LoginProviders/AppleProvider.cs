@@ -50,21 +50,36 @@ public class AppleProvider(
         var user = await _userRepository.GetByEmailAsync(tokenEmail);
         if (user is null)
         {
-            throw new UnauthorizedAccessException(
-                "You don't have an account. Please create an account first.");
+            // App Store requires Sign in with Apple to create an account for new users.
+            // Google remains sign-in-only (no auto-create).
+            user = new User
+            {
+                Id = Guid.NewGuid(),
+                FullName = displayName,
+                Email = tokenEmail,
+                RoleId = 3, // Buyer / personal customer
+                LoginProviderName = "Apple",
+                IsActive = true,
+                IsVerified = true,
+                FcmToken = fcmToken,
+                PreferredLanguage = "en"
+            };
+            await _userRepository.AddAsync(user);
         }
-
-        if (!string.IsNullOrWhiteSpace(fullName) &&
-            (string.IsNullOrWhiteSpace(user.FullName) ||
-             string.Equals(user.FullName, tokenEmail.Split('@')[0], StringComparison.OrdinalIgnoreCase)))
+        else
         {
-            await _userRepository.UpdateFullNameAsync(user.Id, displayName);
-            user.FullName = displayName;
-        }
+            if (!string.IsNullOrWhiteSpace(fullName) &&
+                (string.IsNullOrWhiteSpace(user.FullName) ||
+                 string.Equals(user.FullName, tokenEmail.Split('@')[0], StringComparison.OrdinalIgnoreCase)))
+            {
+                await _userRepository.UpdateFullNameAsync(user.Id, displayName);
+                user.FullName = displayName;
+            }
 
-        if (!string.IsNullOrWhiteSpace(fcmToken))
-        {
-            await _userRepository.UpdateFcmTokenAsync(user.Id.ToString(), fcmToken);
+            if (!string.IsNullOrWhiteSpace(fcmToken))
+            {
+                await _userRepository.UpdateFcmTokenAsync(user.Id.ToString(), fcmToken);
+            }
         }
 
         return new { User = user };
