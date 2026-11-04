@@ -59,9 +59,9 @@ class BannerSlider extends StatelessWidget {
         );
       },
       options: CarouselOptions(
-        height: 136.h,
+        height: 148.h,
         aspectRatio: 16 / 9,
-        viewportFraction: 0.8,
+        viewportFraction: 0.78,
         initialPage: 0,
         enableInfiniteScroll: true,
         reverse: false,
@@ -70,6 +70,7 @@ class BannerSlider extends StatelessWidget {
         autoPlayAnimationDuration: const Duration(milliseconds: 1500),
         autoPlayCurve: Curves.fastOutSlowIn,
         enlargeCenterPage: false,
+        padEnds: false,
         scrollDirection: Axis.horizontal,
       ),
     );

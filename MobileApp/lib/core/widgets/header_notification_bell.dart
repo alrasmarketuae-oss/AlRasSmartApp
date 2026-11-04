@@ -34,7 +34,7 @@ class HeaderNotificationBell extends StatelessWidget {
               Icon(
                 Icons.notifications_outlined,
                 size: 26.sp,
-                color: const Color(0xFF334155),
+                color: const Color(0xFFE53935),
               ),
               if (count > 0)
                 PositionedDirectional(

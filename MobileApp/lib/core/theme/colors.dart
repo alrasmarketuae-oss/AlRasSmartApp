@@ -2,12 +2,14 @@ import 'package:alrasmarket/core/theme/theme_controller.dart';
 import 'package:flutter/material.dart';
 
 class LightColor {
-  static const Color defaultColor = Color(0xff3A7DC5);
-  static const Color background = Color(0xFFF2F7FF);
+  /// Forest green primary (home / brand chrome).
+  static const Color defaultColor = Color(0xFF2D5A27);
+  /// Warm cream scaffold like the Merge home mock.
+  static const Color background = Color(0xFFFDF8F3);
   static Color hintColor = Color(0xff333333).withOpacity(0.5);
   static Color greyTextColor = Color(0xff333333).withOpacity(0.8);
   static Color greyTextColor60 = Color(0xff333333).withOpacity(0.6);
-  static Color defultRed = Color(0xffC83D30);
+  static Color defultRed = Color(0xffE53935);
 
   static const Color titleTextColor = Colors.black;
 
@@ -44,11 +46,11 @@ class AppColors {
   static const Color _borderDark = Color(0xFF2A3344);
   static const Color _iconSoftDark = Color(0xFF243044);
   static const Color _inputBorderDark = Color(0xFF3A4458);
-  static const Color _inputBorderLight = Color(0xFFD5D9D9);
-  static const Color _titleLight = Color(0xFF16233A);
-  static const Color _subtitleLight = Color(0xFF7B8794);
-  static const Color _borderLight = Color(0xFFE4EAF2);
-  static const Color _iconSoftLight = Color(0xFFEAF3FB);
+  static const Color _inputBorderLight = Color(0xFFB7CFAE);
+  static const Color _titleLight = Color(0xFF2D5A27);
+  static const Color _subtitleLight = Color(0xFF7A8474);
+  static const Color _borderLight = Color(0xFFE6E0D6);
+  static const Color _iconSoftLight = Color(0xFFF3EFE8);
 
   static bool get dark => ThemeController.instance.isDark;
 

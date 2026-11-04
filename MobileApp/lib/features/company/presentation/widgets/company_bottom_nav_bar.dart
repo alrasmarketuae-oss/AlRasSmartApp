@@ -129,7 +129,7 @@ class CompanyBottomNavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = isSelected
         ? LightColor.defaultColor
-        : const Color(0xff999999);
+        : const Color(0xFF8A7A5C);
 
     final iconSize = 24.w;
 

@@ -1,4 +1,5 @@
 import 'package:alrasmarket/core/router/app_router.dart';
+import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:alrasmarket/core/widgets/login_required_sheet.dart';
 import 'package:alrasmarket/core/serveses/auth_service.dart';
 import 'package:alrasmarket/core/utils/string_display_format.dart';
@@ -79,7 +80,7 @@ class AppHeader extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 16.sp,
                             fontWeight: FontWeight.w700,
-                            color: Colors.black,
+                            color: LightColor.defaultColor,
                             height: 1.15,
                             letterSpacing: 0,
                           ),
