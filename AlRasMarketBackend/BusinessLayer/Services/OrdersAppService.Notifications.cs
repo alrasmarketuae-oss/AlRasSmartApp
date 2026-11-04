@@ -936,8 +936,8 @@ public partial class OrdersAppService
             + BuildOrderTrackingTimelineHtml(order, arabic);
 
         var subject = arabic
-            ? $"تطبيق الراس الذكي — تحديث طلب #{order.Id}"
-            : $"Al Ras Smart — Order #{order.Id} update";
+            ? $"تطبيق ميرج سبايس — تحديث طلب #{order.Id}"
+            : $"Merge Spice — Order #{order.Id} update";
 
         return BrandEmailLayout.Wrap(subject, inner);
     }

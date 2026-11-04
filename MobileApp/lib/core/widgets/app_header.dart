@@ -41,7 +41,7 @@ class AppHeader extends StatelessWidget {
       builder: (context, revision, child) {
         final display = displayName(
           AuthService.instance.headerDisplayName,
-          fallback: 'Al Ras Market',
+          fallback: 'Merge Spice',
         );
         final subtitle = _accountSubtitle();
 

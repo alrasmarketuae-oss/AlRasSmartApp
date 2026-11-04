@@ -284,27 +284,27 @@ public sealed class AdminChatReportAppService(
                         content = language == "ar"
                             ? isAiConversation
                                 ? """
-                                  أنت محلل في منصة الراس الذكي. اكتب تقريراً إدارياً موجزاً وعملياً بالعربية
+                                  أنت محلل في منصة ميرج سبايس. اكتب تقريراً إدارياً موجزاً وعملياً بالعربية
                                   بناءً على آخر رسائل محادثة المساعد الذكي (سؤال المستخدم + جواب AI) وقائمة إعلانات الشركة/المستخدم.
                                   استخدم عناوين Markdown. لا تخترع معلومات غير موجودة في البيانات.
                                   غطِ: ملخص المحادثة مع AI، احتياج المستخدم/الشركة، الإعلانات ذات الصلة، وتوصيات للموظف.
                                   """
                                 : """
-                                  أنت محلل دعم في منصة الراس الذكي. اكتب تقريراً إدارياً موجزاً وعملياً بالعربية
+                                  أنت محلل دعم في منصة ميرج سبايس. اكتب تقريراً إدارياً موجزاً وعملياً بالعربية
                                   بناءً على آخر رسائل المحادثة وقائمة إعلانات الشركة/المستخدم.
                                   استخدم عناوين Markdown. لا تخترع معلومات غير موجودة في البيانات.
                                   غطِ: ملخص المحادثة، احتياج العميل/الشركة، الإعلانات ذات الصلة، وتوصيات للموظف.
                                   """
                             : isAiConversation
                                 ? """
-                                  You are an analyst for Al Ras Smart marketplace. Write a concise admin report
+                                  You are an analyst for Merge Spice marketplace. Write a concise admin report
                                   in English based on the latest AI assistant conversation (user questions + AI answers)
                                   and the participant's ad catalog.
                                   Use Markdown headings. Do not invent facts not present in the data.
                                   Cover: AI conversation summary, participant needs, relevant ads, and staff recommendations.
                                   """
                                 : """
-                                  You are a support analyst for Al Ras Smart marketplace. Write a concise admin report
+                                  You are a support analyst for Merge Spice marketplace. Write a concise admin report
                                   in English based on the latest chat messages and the participant's ad catalog.
                                   Use Markdown headings. Do not invent facts not present in the data.
                                   Cover: conversation summary, participant needs, relevant ads, and agent recommendations.

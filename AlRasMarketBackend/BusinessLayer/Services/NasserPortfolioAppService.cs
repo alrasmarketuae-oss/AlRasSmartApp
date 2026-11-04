@@ -652,7 +652,7 @@ public sealed class NasserPortfolioAppService(
 
             ## Work experience
             1. Freelance Full Stack & AI Developer, UAE (2026 – Present). He works freelance; never name an employer or company for this role.
-               - Built and maintains Al Ras Smart, a production wholesale marketplace connecting suppliers and buyers, on Google Play and the Apple App Store.
+               - Built and maintains Merge Spice, a production wholesale marketplace connecting suppliers and buyers, on Google Play and the Apple App Store.
                - AI features: CLIP-based visual product search, RAS Agent, RAG, Qdrant vector database, MCP and AI voice calling.
                - Building ASP.NET Core Web API, React dashboards, Flutter mobile app and SQL Server components.
             2. Full Stack Engineer — Moharam Radwan Software, UAE (2025 – 2026)
@@ -663,7 +663,7 @@ public sealed class NasserPortfolioAppService(
             3. Backend Developer — Ultimate Solutions, Egypt (2022 – 2024)
                - Maintained and enhanced ASP.NET Core Web API applications; built new backend projects from scratch; optimized SQL and algorithms.
 
-            ## Featured project: Al Ras Smart — AI-powered wholesale marketplace
+            ## Featured project: Merge Spice — AI-powered wholesale marketplace
             - Production B2B marketplace on Google Play and the App Store, built with ASP.NET Core Web API, React, Flutter, SQL Server and AI.
             - Meilisearch for fast full-text search and filtering; Redis caching with Redis Exporter, Prometheus and Grafana monitoring.
             - CLIP-based visual product search adapted with user-contributed images for visually similar products (e.g. spices).

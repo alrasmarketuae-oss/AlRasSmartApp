@@ -30,6 +30,7 @@ public class AuthAppService(
     ITurnstileVerifier turnstileVerifier,
     IHttpContextAccessor httpContextAccessor,
     AuthSessionGuard authSessionGuard,
+    IAdminPermissionService permissionService,
     ILogger<AuthAppService> logger) : IAuthAppService
 {
     public async Task<(string message, string userId, string? imgPath)> RegisterPersonAsync(RegisterPersonInput input, CancellationToken cancellationToken = default)
@@ -318,6 +319,54 @@ public class AuthAppService(
         {
             await authSessionGuard.RevokeAsync(parsedUserId, cancellationToken);
         }
+    }
+
+    public async Task<object> RefreshSessionAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        if (!Guid.TryParse(userId, out var parsedUserId))
+        {
+            throw new ArgumentException("Invalid user id.");
+        }
+
+        var user = await dbContext.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == parsedUserId, cancellationToken)
+            ?? throw new KeyNotFoundException("User not found.");
+
+        LoginAccessHelper.EnsureCanAuthenticate(user);
+
+        IReadOnlyList<string> permissions = [];
+        if (permissionService.IsEmployee(user.RoleId))
+        {
+            permissions = await permissionService.GetPermissionKeysAsync(user.Id, cancellationToken);
+        }
+
+        var isCompanyAccount = user.RoleId == RoleIds.Seller;
+        var isShippingCompanyAccount = user.RoleId == RoleIds.ShippingCompany;
+        var requiresAdminApproval = RoleIds.RequiresAdminApproval(user.RoleId);
+        var isApproved = !requiresAdminApproval || user.IsApproved;
+        var isPendingAdminApproval =
+            requiresAdminApproval && user.IsVerified && !user.IsApproved && !user.IsRejected;
+
+        return new
+        {
+            Token = tokenService.CreateToken(user, permissions.Count > 0 ? permissions : null),
+            Id = user.Id,
+            Email = user.Email,
+            Name = user.FullName,
+            ImgPath = user.ImgPath,
+            CompanyName = user.CompanyName,
+            RoleName = tokenService.GetRoleName(user.RoleId),
+            Phone = user.PhoneNumber,
+            IsCompanyAccount = isCompanyAccount,
+            IsShippingCompanyAccount = isShippingCompanyAccount,
+            IsApproved = isApproved,
+            IsVerified = user.IsVerified,
+            IsPendingAdminApproval = isPendingAdminApproval,
+            IsRejected = user.IsRejected,
+            IsCustomer = user.IsCustomer ?? false,
+            RoleId = user.RoleId
+        };
     }
 
     public async Task<object> GetCompanyActivationStatusAsync(string email, string? fcmToken = null, CancellationToken cancellationToken = default)

@@ -58,7 +58,7 @@ public sealed class AiShoppingToolsService(
         [
             Fn(
                 "SearchProducts",
-                "Search Al Ras catalog for products matching a query. Never invent products.",
+                "Search Merge Spice catalog for products matching a query. Never invent products.",
                 new
                 {
                     type = "object",
@@ -72,7 +72,7 @@ public sealed class AiShoppingToolsService(
                 async: true),
             Fn(
                 "GetProductDetails",
-                "Get current product details and live price from Al Ras by productId.",
+                "Get current product details and live price from Merge Spice by productId.",
                 new
                 {
                     type = "object",

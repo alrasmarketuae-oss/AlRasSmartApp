@@ -50,14 +50,14 @@ public sealed class AiAssistantAppService(
         var system =
             language == "ar"
                 ? """
-                  You correct speech-to-text transcripts for the Al Ras Smart AI Assistant.
+                  You correct speech-to-text transcripts for the Merge Spice AI Assistant.
                   The user spoke in Arabic. Return ONLY corrected natural Arabic script in the same spoken register/dialect they used (Egyptian عامية, Gulf, Levantine, MSA, etc.) — do not force formal MSA if they spoke colloquially.
                   If the transcript is Latin letters, English words, Franco-Arab, or broken STT, rewrite it as clear Arabic matching the spoken marketplace intent (e.g. هاتلي أرخص هيل، اشتريت بكام، غيّر السعر).
                   Fix recognition errors; do not answer the question; no quotes, labels, or English output.
                   Keep marketplace terms such as ProductCode, Booking, Retail, Live Chat when clearly intended.
                   """
                 : """
-                  You correct speech-to-text transcripts for the Al Ras Smart AI Assistant.
+                  You correct speech-to-text transcripts for the Merge Spice AI Assistant.
                   The user spoke in English. Return ONLY corrected English text.
                   Fix recognition errors, missing words, and broken spelling while preserving intent.
                   Do not answer the question. Do not add greetings. Do not invent facts. No quotes or labels.
@@ -161,8 +161,8 @@ public sealed class AiAssistantAppService(
         form.Add(
             new StringContent(
                 lang == "ar"
-                    ? "الراس الذكي، أرخص هيل، زعفران، عدل السعر، كمية، ProductCode، مبيعاتي، Live Chat"
-                    : "Al Ras Smart, cheapest cardamom, saffron, update price, quantity, ProductCode, my sales, Live Chat"),
+                    ? "ميرج سبايس، أرخص هيل، زعفران، عدل السعر، كمية، ProductCode، مبيعاتي، Live Chat"
+                    : "Merge Spice, cheapest cardamom, saffron, update price, quantity, ProductCode, my sales, Live Chat"),
             "prompt");
 
         using var httpRequest = new HttpRequestMessage(
@@ -286,12 +286,12 @@ public sealed class AiAssistantAppService(
 
         if (language is "ar" or "en" && IsClearlyOutOfScope(message))
         {
-            await ThinkAsync(language == "ar" ? "بتأكد إن السؤال ضمن سوق الراس…" : "Checking the question is in scope…")
+            await ThinkAsync(language == "ar" ? "بتأكد إن السؤال ضمن ميرج سبايس…" : "Checking the question is in scope…")
                 .ConfigureAwait(false);
             return Finish(new AiAssistantAnswer(
                 language == "ar"
-                    ? $"{(string.IsNullOrWhiteSpace(account.DisplayName) ? "" : account.DisplayName + "، ")}أقدر أساعدك في أمور الراس الذكي بس، زي الإعلانات والأسعار والطلبات والبحث وأسعار الشحن."
-                    : $"{(string.IsNullOrWhiteSpace(account.DisplayName) ? "" : account.DisplayName + ", ")}I can only help with Al Ras Smart topics such as ads, prices, orders, search, and shipping rates.",
+                    ? $"{(string.IsNullOrWhiteSpace(account.DisplayName) ? "" : account.DisplayName + "، ")}أقدر أساعدك في أمور ميرج سبايس بس، زي الإعلانات والأسعار والطلبات والبحث وأسعار الشحن."
+                    : $"{(string.IsNullOrWhiteSpace(account.DisplayName) ? "" : account.DisplayName + ", ")}I can only help with Merge Spice topics such as ads, prices, orders, search, and shipping rates.",
                 language,
                 false,
                 []));
@@ -396,8 +396,8 @@ public sealed class AiAssistantAppService(
         var signedIn = userId.HasValue ? "yes" : "no";
         var system =
             $"""
-            You are allras ai, the official in-app AI agent for Al Ras Smart.
-            Your name is allras ai (Arabic: أولراس AI). Never invent a different name.
+            You are Merge Spice AI, the official in-app AI agent for Merge Spice.
+            Your name is Merge Spice AI (Arabic: ميرج سبايس AI). Never invent a different name.
             When you call tools, put a short natural sentence about THIS exact user question in the assistant message content (plain speech, not numbered steps). Never use generic filler such as "reading the question" or "drafting the reply". Keep it to one brief line.
             The current account audience is: {account.Audience}.
             Signed in: {signedIn}.
@@ -470,7 +470,7 @@ public sealed class AiAssistantAppService(
             Prefer Refund ID (re_...) over order id: ask «ابعتلي رقم الاسترداد Refund ID اللي ظاهر في تفاصيل الطلب» (or English equivalent).
             If they already gave re_..., call lookup_refund_by_id immediately.
             If they only have an order number, use get_my_last_order / explain_my_order_delay with that order_id — still no product search.
-            When refund is found: reassure that Al Ras already processed the refund from our side, mention refunded date if present, and say banks usually show the amount in 3–5 business days.
+            When refund is found: reassure that Merge Spice already processed the refund from our side, mention refunded date if present, and say banks usually show the amount in 3–5 business days.
             Do not invent refund status. Do not search the catalog because the sentence contains the word «منتج».
             - lookup_create_ad_reference: resolve units, product_types, categories, Local/Reexport, countries, ports while collecting ad fields.
             - list_my_addresses: list saved delivery addresses (address_id + label). Use before create_request_ad for company_customer.
@@ -532,12 +532,12 @@ public sealed class AiAssistantAppService(
             If not allowed for this audience, explain what they CAN create and which account type can create the requested type — do this before asking for any ad fields.
             Never refuse a UAE supplier's Booking request — Booking via create_booking_ad. Overseas suppliers are Booking-only. Company customers are Requests-only even with a non-UAE phone.
             You may explain differences between account types when explicitly asked, but never expose personal or confidential data.
-            Keep the answer concise and practical. Distinguish human technical support callback from Alras Smart.
+            Keep the answer concise and practical. Distinguish human technical support callback from Merge Spice.
             Questions about you, about the app itself, about what you can do, and about how to get started are always in scope: answer them warmly and helpfully with the capability list for this audience, never as out of scope.
-            If asked who you are or what you can do, say you are Alras Smart (الراس الذكي) and list concrete actions: create ads (if allowed), edit prices/quantities, search and compare products, cheapest/most expensive, shipping prices by country, own ads and orders details, sales and pending seller orders — depending on account type.
+            If asked who you are or what you can do, say you are Merge Spice (ميرج سبايس) and list concrete actions: create ads (if allowed), edit prices/quantities, search and compare products, cheapest/most expensive, shipping prices by country, own ads and orders details, sales and pending seller orders — depending on account type.
             If asked to describe the app or platform, give a short useful introduction from the knowledge context.
-            When asked who you are, who made you, who programmed you, who built or designed the apps/platform, or who trained the AI: answer that Al Ras Market company (شركة الراس ماركت) did so. Never name a person (including Nasser / Elbarbary / البربري). Never invent a developer name or private contact. When asked who operates or runs the marketplace commercially, use the operating company from the knowledge context.
-            For “من هو [شخص]” / “who is [person]” questions about private individuals: politely say you do not discuss private people, and offer help with Al Ras Market products, ads, or orders instead. Do not search or list products for those questions.
+            When asked who you are, who made you, who programmed you, who built or designed the apps/platform, or who trained the AI: answer that Merge Spice company (شركة ميرج سبايس) did so. Never name a person (including Nasser / Elbarbary / البربري). Never invent a developer name or private contact. When asked who operates or runs the marketplace commercially, use the operating company from the knowledge context.
+            For “من هو [شخص]” / “who is [person]” questions about private individuals: politely say you do not discuss private people, and offer help with Merge Spice products, ads, or orders instead. Do not search or list products for those questions.
             When the user asks you to explain an app page or how a screen works (e.g. My Orders / طلباتي, Account, Home): explain from knowledge only. Do not search the product catalog or attach product cards unless they explicitly asked to find products.
             Same rule for return/refund money questions: knowledge + order/refund tools only — never product cards.
             Decline only genuinely unrelated general-knowledge questions (weather, news, sports, politics, coding, other companies), politely, with a suggestion of platform topics you can help with.
@@ -904,8 +904,8 @@ public sealed class AiAssistantAppService(
             "booking",
             "تجزئة",
             "retail",
-            "الراس الذكي",
-            "الراس الذكي",
+            "ميرج سبايس",
+            "ميرج سبايس",
             "ai assistant");
 
         if (asksExplain && mentionsAppPage)
@@ -1289,7 +1289,7 @@ public sealed class AiAssistantAppService(
             return
                 $"""
                 ADMIN DASHBOARD UI CONTEXT (authoritative for on-screen questions):
-                The user is signed into the Al Ras Smart admin dashboard and is asking about the current screen.
+                The user is signed into the Merge Spice admin dashboard and is asking about the current screen.
                 Client source: admin_dashboard
                 Current route/path: {(string.IsNullOrEmpty(path) ? "(unknown)" : path)}
                 Prefer this page snapshot over general knowledge when they ask what is on the page, about a row/order/user/ad they are looking at, filters, statuses, or counts shown here.
@@ -1709,14 +1709,14 @@ public sealed class AiAssistantAppService(
         if (language == "ar")
         {
             return new AiAssistantAnswer(
-                $"أهلاً بيك{nameAr}. أنا الراس الذكي (Alras Smart).\n{bodyAr}\nاللي أقدر أعمله يعتمد على نوع حسابك. للدعم البشري استخدم Live Chat من الملف الشخصي.",
+                $"أهلاً بيك{nameAr}. أنا ميرج سبايس (Merge Spice).\n{bodyAr}\nاللي أقدر أعمله يعتمد على نوع حسابك. للدعم البشري استخدم Live Chat من الملف الشخصي.",
                 language,
                 false,
                 []);
         }
 
         return new AiAssistantAnswer(
-            $"Welcome{nameEn}. I’m Alras Smart (الراس الذكي).\n{bodyEn}\nWhat I can do depends on your account type. For human support, use Live Chat from Profile.",
+            $"Welcome{nameEn}. I’m Merge Spice (ميرج سبايس).\n{bodyEn}\nWhat I can do depends on your account type. For human support, use Live Chat from Profile.",
             language,
             false,
             []);

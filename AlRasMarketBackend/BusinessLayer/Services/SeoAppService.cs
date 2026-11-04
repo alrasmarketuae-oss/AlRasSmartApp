@@ -359,7 +359,7 @@ public sealed partial class SeoAppService(
         var blurb = FirstNonEmpty(descriptionEn, descriptionAr);
         var metaDescription = Truncate(
             FirstNonEmpty(blurb, summary.Length > 0 ? summary : null)
-                ?? $"{nameEn}{(categoryEn is null ? "" : $" — {categoryEn}")} on Al Ras Smart, the B2B marketplace for suppliers and buyers.",
+                ?? $"{nameEn}{(categoryEn is null ? "" : $" — {categoryEn}")} on Merge Spice, the B2B marketplace for suppliers and buyers.",
             160);
         var previewDescription = Truncate(
             string.Join(" — ", new[] { summary, blurb }.Where(v => !string.IsNullOrWhiteSpace(v))) is { Length: > 0 } rich
@@ -379,7 +379,7 @@ public sealed partial class SeoAppService(
             ["productID"] = productId.ToString("D"),
             ["category"] = categoryEn,
             ["url"] = url,
-            ["brand"] = new Dictionary<string, object?> { ["@type"] = "Brand", ["name"] = "Al Ras Smart" },
+            ["brand"] = new Dictionary<string, object?> { ["@type"] = "Brand", ["name"] = "Merge Spice" },
         };
         if (Settings.IncludePrices && decimal.TryParse(Str(item, "price"), NumberStyles.Any, CultureInfo.InvariantCulture, out var price) && price > 0)
         {
@@ -395,7 +395,7 @@ public sealed partial class SeoAppService(
 
         var breadcrumbs = new List<object>
         {
-            new Dictionary<string, object?> { ["@type"] = "ListItem", ["position"] = 1, ["name"] = "Al Ras Smart", ["item"] = $"{ShopBase}/" },
+            new Dictionary<string, object?> { ["@type"] = "ListItem", ["position"] = 1, ["name"] = "Merge Spice", ["item"] = $"{ShopBase}/" },
         };
         if (categoryEn is not null && int.TryParse(categoryId, out var catId) && catId > 0)
         {
@@ -447,7 +447,7 @@ public sealed partial class SeoAppService(
 
         var body = new StringBuilder()
             .Append("<main style=\"max-width:760px;margin:0 auto;padding:16px;font-family:Inter,Cairo,system-ui,sans-serif;color:#16233a\">")
-            .Append($"<nav aria-label=\"Breadcrumb\" style=\"font-size:13px\"><a href=\"{e(ShopBase)}/\">Al Ras Smart</a>");
+            .Append($"<nav aria-label=\"Breadcrumb\" style=\"font-size:13px\"><a href=\"{e(ShopBase)}/\">Merge Spice</a>");
         if (categoryEn is not null && int.TryParse(categoryId, out var catId2) && catId2 > 0)
         {
             body.Append($" › <a href=\"{e(ShopBase)}/category/{catId2}\">{e(categoryEn)}</a>");
@@ -488,7 +488,7 @@ public sealed partial class SeoAppService(
         AppendFact(body, "Origin", origin);
         AppendFact(body, "Product code", productCode);
         body.Append("</ul>")
-            .Append($"<p><a href=\"{e(url)}\">View {e(nameEn)} on Al Ras Smart</a></p>")
+            .Append($"<p><a href=\"{e(url)}\">View {e(nameEn)} on Merge Spice</a></p>")
             .Append("</main>");
 
         var html = HtmlTagRegex().Replace(shell, "<html lang=\"en\" dir=\"ltr\">", 1);

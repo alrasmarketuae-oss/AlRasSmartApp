@@ -17,6 +17,11 @@ public interface IAuthAppService
     Task<object> VerifyEmailOtpAndLoginAsync(string email, string otp, string? fcmToken = null, CancellationToken cancellationToken = default);
     Task UpdateFcmTokenAsync(string userId, string fcmToken, CancellationToken cancellationToken = default);
     Task ClearFcmTokenAsync(string userId, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Issues a fresh JWT from the current DB user row so approval/role claims stay current
+    /// without forcing logout (mobile cold-start / long-lived sessions).
+    /// </summary>
+    Task<object> RefreshSessionAsync(string userId, CancellationToken cancellationToken = default);
     Task<object> GetCompanyActivationStatusAsync(string email, string? fcmToken = null, CancellationToken cancellationToken = default);
     Task<object> GetAccountApprovalStatusAsync(string email, CancellationToken cancellationToken = default);
     /// <summary>

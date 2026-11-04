@@ -8,7 +8,7 @@ public class SystemSettings
     public decimal RequestsCommissionPercent { get; set; }
     public decimal OffersCommissionPercent { get; set; }
     public decimal ShippingCommissionPercent { get; set; }
-    public string AppName { get; set; } = "تطبيق الراس";
+    public string AppName { get; set; } = "تطبيق ميرج سبايس";
     public string? SupportEmail { get; set; }
     public string? PhoneNumber { get; set; }
     public string? LandlineNumber { get; set; }

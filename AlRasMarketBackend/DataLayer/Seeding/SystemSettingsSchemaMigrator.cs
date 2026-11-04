@@ -21,7 +21,7 @@ public static class SystemSettingsSchemaMigrator
                     RequestsCommissionPercent DECIMAL(5,2) NOT NULL CONSTRAINT DF_SystemSettings_RequestsCommission DEFAULT 0,
                     OffersCommissionPercent DECIMAL(5,2) NOT NULL CONSTRAINT DF_SystemSettings_OffersCommission DEFAULT 0,
                     ShippingCommissionPercent DECIMAL(5,2) NOT NULL CONSTRAINT DF_SystemSettings_ShippingCommission DEFAULT 0,
-                    AppName NVARCHAR(200) NOT NULL CONSTRAINT DF_SystemSettings_AppName DEFAULT N'تطبيق الراس',
+                    AppName NVARCHAR(200) NOT NULL CONSTRAINT DF_SystemSettings_AppName DEFAULT N'تطبيق ميرج سبايس',
                     SupportEmail NVARCHAR(255) NULL,
                     PhoneNumber NVARCHAR(50) NULL,
                     LandlineNumber NVARCHAR(50) NULL,
@@ -41,9 +41,11 @@ public static class SystemSettingsSchemaMigrator
             IF OBJECT_ID(N'dbo.SystemSettings', N'U') IS NOT NULL
             BEGIN
                 UPDATE dbo.SystemSettings
-                SET AppName = N'تطبيق الراس الذكي',
+                SET AppName = N'تطبيق ميرج سبايس',
                     UpdatedAt = GETUTCDATE()
-                WHERE AppName IN (N'سوق الراس', N'راس السوق', N'Al Ras Market', N'Ras Al Souq', N'تطبيق الراس', N'Al Ras Smart');
+                WHERE AppName IN (
+                    N'سوق الراس', N'راس السوق', N'Al Ras Market', N'Ras Al Souq',
+                    N'تطبيق الراس', N'Al Ras Smart', N'تطبيق الراس الذكي', N'الراس الذكي');
             END
             """, cancellationToken).ConfigureAwait(false);
 

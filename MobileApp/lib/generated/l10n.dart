@@ -54,7 +54,7 @@ class S {
     return Localizations.of<S>(context, S);
   }
 
-  /// `Ecovera`
+  /// `Merge Spice`
   String get appName {
     return Intl.message('Merge Spice', name: 'appName', desc: '', args: []);
   }
@@ -84,7 +84,7 @@ class S {
     return Intl.message('Quick Login', name: 'quickLogin', desc: '', args: []);
   }
 
-  /// `Customers can sign in directly — no new account needed`
+  /// `Sign in with your existing account`
   String get quickLoginSubtitle {
     return Intl.message(
       'Sign in with your existing account',
@@ -789,10 +789,10 @@ class S {
     );
   }
 
-  /// `A smart platform connecting suppliers and buyers inside and outside Al Ras Smart`
+  /// `A smart platform connecting suppliers and buyers inside and outside Merge Spice`
   String get welcomeTagline {
     return Intl.message(
-      'A smart platform connecting suppliers and buyers inside and outside Al Ras Smart',
+      'A smart platform connecting suppliers and buyers inside and outside Merge Spice',
       name: 'welcomeTagline',
       desc: '',
       args: [],
@@ -2254,10 +2254,10 @@ class S {
     );
   }
 
-  /// `Tell us about a problem or share your idea to improve Al Ras Smart. Our team will review your message.`
+  /// `Tell us about a problem or share your idea to improve Merge Spice. Our team will review your message.`
   String get complaintsSuggestionsHint {
     return Intl.message(
-      'Tell us about a problem or share your idea to improve Al Ras Smart. Our team will review your message.',
+      'Tell us about a problem or share your idea to improve Merge Spice. Our team will review your message.',
       name: 'complaintsSuggestionsHint',
       desc: '',
       args: [],
@@ -2814,10 +2814,10 @@ class S {
     );
   }
 
-  /// `Terms of Use and Conditions for the "Al Ras Smart" App`
+  /// `Terms of Use and Conditions for the "Merge Spice" App`
   String get termsTitle {
     return Intl.message(
-      'Terms of Use and Conditions for the "Al Ras Smart" App',
+      'Terms of Use and Conditions for the "Merge Spice" App',
       name: 'termsTitle',
       desc: '',
       args: [],
@@ -2834,10 +2834,10 @@ class S {
     );
   }
 
-  /// `The app refers to the Al Ras Smart electronic platform.`
+  /// `The app refers to the Merge Spice electronic platform.`
   String get defApp {
     return Intl.message(
-      'The app refers to the Al Ras Smart electronic platform.',
+      'The app refers to the Merge Spice electronic platform.',
       name: 'defApp',
       desc: '',
       args: [],
@@ -3834,10 +3834,10 @@ class S {
     );
   }
 
-  /// `Register your shipping company on Al Ras Smart`
+  /// `Register your shipping company on Merge Spice`
   String get shippingCompanyRegisterSubtitle {
     return Intl.message(
-      'Register your shipping company on Al Ras Smart',
+      'Register your shipping company on Merge Spice',
       name: 'shippingCompanyRegisterSubtitle',
       desc: '',
       args: [],
@@ -4114,10 +4114,10 @@ class S {
     );
   }
 
-  /// `Find this product on Al Ras Smart.`
+  /// `Find this product on Merge Spice.`
   String get shareProductHint {
     return Intl.message(
-      'Find this product on Al Ras Smart.',
+      'Find this product on Merge Spice.',
       name: 'shareProductHint',
       desc: '',
       args: [],
@@ -4684,10 +4684,10 @@ class S {
     );
   }
 
-  /// `Tap to ask Al Ras AI about this refund`
+  /// `Tap to ask Merge Spice AI about this refund`
   String get orderRefundAskAiHint {
     return Intl.message(
-      'Tap to ask Al Ras AI about this refund',
+      'Tap to ask Merge Spice AI about this refund',
       name: 'orderRefundAskAiHint',
       desc: '',
       args: [],
@@ -8176,10 +8176,10 @@ class S {
     );
   }
 
-  /// `I can only help with Al Ras Smart topics (accounts, ads, orders, payment, returns). Please ask something about the platform.`
+  /// `I can only help with Merge Spice topics (accounts, ads, orders, payment, returns). Please ask something about the platform.`
   String get aiAssistantOutOfScope {
     return Intl.message(
-      'I can only help with Al Ras Smart topics (accounts, ads, orders, payment, returns). Please ask something about the platform.',
+      'I can only help with Merge Spice topics (accounts, ads, orders, payment, returns). Please ask something about the platform.',
       name: 'aiAssistantOutOfScope',
       desc: '',
       args: [],
@@ -8398,22 +8398,12 @@ class S {
 
   /// `Update now`
   String get appUpdateNow {
-    return Intl.message(
-      'Update now',
-      name: 'appUpdateNow',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Update now', name: 'appUpdateNow', desc: '', args: []);
   }
 
   /// `Later`
   String get appUpdateLater {
-    return Intl.message(
-      'Later',
-      name: 'appUpdateLater',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Later', name: 'appUpdateLater', desc: '', args: []);
   }
 }
 

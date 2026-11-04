@@ -125,6 +125,7 @@ class ApiConstants {
   static String loginEndPoint = '/Auth/login';
   static String updateFcmTokenEndPoint = '/Auth/fcm-token';
   static String clearFcmTokenEndPoint = '/Auth/clear-fcm-token';
+  static String refreshSessionEndPoint = '/Auth/refresh-session';
   static String deleteAccountEndPoint = '/Auth/delete-account';
   static String registerPersonEndPoint = '/Auth/register-person';
   static String registerCompanyEndPoint = '/Auth/register-company';

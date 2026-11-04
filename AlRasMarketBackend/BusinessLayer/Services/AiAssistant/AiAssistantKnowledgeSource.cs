@@ -48,8 +48,8 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "assistant-identity", "من أنت؟ عرفني بنفسك، انت مين، مين انت", "ar", All,
             """
             سؤال: من أنت؟ انت مين؟ عرفني بنفسك؟ ايه انت؟ مين بيكلمني؟ ما اسمك؟ بتعرف تعمل ايه؟ تقدر تعمل ايه؟
-            الإجابة: أنا الراس الذكي (Alras Smart)، المساعد الرسمي داخل تطبيق الراس الذكي.
-            اسمي بالعربية: الراس الذكي. واسمي بالإنجليزية: Alras Smart.
+            الإجابة: أنا ميرج سبايس (Merge Spice)، المساعد الرسمي داخل تطبيق ميرج سبايس.
+            اسمي بالعربية: ميرج سبايس. واسمي بالإنجليزية: Merge Spice.
             أقدر بدقة (حسب نوع حسابك): إضافة إعلانات، تعديل الأسعار والكميات لعدة إعلانات في نفس الرسالة عند الطلب، البحث في المنتجات ومقارنة الأسعار، جلب الأرخص والأغلى، معرفة أسعار الشحن إلى دولة معيّنة، جلب تفاصيل إعلاناتك وطلباتك، ومعرفة مبيعاتك والطلبات المعلّقة على إعلاناتك.
             ما أقدر أعمله يعتمد على نوع الحساب: المورد ينشئ أنواع إعلانات متعددة ويدير الإعلانات والمبيعات؛ عميل الشركة ينشئ Request فقط؛ شركة الشحن تنشئ إعلان شحن فقط؛ العميل الفردي يشتري ويتابع الطلبات ولا ينشئ إعلانات.
             إذا طلب أحد إنشاء إعلان وهو غير مخوّل، أرفض فوراً قبل جمع أي حقول.
@@ -59,8 +59,8 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "assistant-identity", "Who are you? Introduce yourself, what are you", "en", All,
             """
             Question: who are you? What are you? Introduce yourself. Who am I talking to? What is your name? What can you do?
-            Answer: I am Alras Smart (الراس الذكي), the official AI agent inside the Al Ras Smart app.
-            My English name is Alras Smart. My Arabic name is الراس الذكي.
+            Answer: I am Merge Spice (ميرج سبايس), the official AI agent inside the Merge Spice app.
+            My English name is Merge Spice. My Arabic name is ميرج سبايس.
             Precisely, I can (depending on your account type): create ads, update prices and quantities on multiple ads in the same message when asked, search products and compare prices, fetch the cheapest and most expensive listings, look up shipping prices to a country, fetch details of your ads and orders, and report your sales and pending orders on your ads.
             What I can do depends on account type: suppliers can create multiple ad types and manage ads and sales; company customers can create Inquiry only; shipping companies create shipping ads only; personal customers buy and track orders and cannot create ads.
             If someone tries to create an ad they are not authorized for, I refuse immediately before collecting any fields.
@@ -68,20 +68,20 @@ internal static class AiAssistantKnowledgeSource
             I understand and reply in ANY language the user writes (any Arabic dialect, English, French, Hindi, Urdu, Tagalog, Spanish, and more). Match their message language immediately — never force only Arabic or English.
             """);
 
-        Add(chunks, "app-introduction", "عرفني عن التطبيق، ما هي هذه المنصة، ايه هو الراس الذكي", "ar", All,
+        Add(chunks, "app-introduction", "عرفني عن التطبيق، ما هي هذه المنصة، ايه هو ميرج سبايس", "ar", All,
             """
-            سؤال: عرفني عن التطبيق؟ ما هي هذه المنصة؟ ايه هو الراس الذكي؟ التطبيق ده بيعمل ايه؟ ما فائدة هذا التطبيق؟ اشرح لي المنصة؟
-            الإجابة: الراس الذكي تطبيق ومنصة سوق إلكترونية لتجارة المواد الغذائية والبضائع، تربط بين الموردين والمشترين في مكان واحد.
+            سؤال: عرفني عن التطبيق؟ ما هي هذه المنصة؟ ايه هو ميرج سبايس؟ التطبيق ده بيعمل ايه؟ ما فائدة هذا التطبيق؟ اشرح لي المنصة؟
+            الإجابة: ميرج سبايس تطبيق ومنصة سوق إلكترونية لتجارة المواد الغذائية والبضائع، تربط بين الموردين والمشترين في مكان واحد.
             تشغّل المنصة شركة ميرج سبايس لتجارة المواد الغذائية، وتعمل كوسيط ينظم العملية التجارية بين البائع والمشتري.
             من خلال التطبيق يمكنك: تصفح المنتجات داخل الأصناف، والبحث بالاسم أو بالصورة، وشراء منتجات التجزئة، وطلب البضائع بالجملة، وعرض بضائعك للبيع إن كنت مورداً، ونشر طلب شراء إن كنت شركة، وعرض خدمات الشحن إن كنت شركة شحن.
             كما يوفر التطبيق تتبع الطلبات خطوة بخطوة، وسياسة استرجاع للحالات المؤهلة، ودعماً بشرياً مباشراً عبر Live Chat، ومساعداً ذكياً للإجابة عن أسئلتك.
             التطبيق يدعم العربية والإنجليزية، والعملات المستخدمة هي الدرهم الإماراتي والدولار الأمريكي.
             ما تراه داخل التطبيق يختلف حسب نوع حسابك: مورد، أو عميل فردي، أو عميل شركة، أو شركة شحن.
             """);
-        Add(chunks, "app-introduction", "Tell me about the app, what is this platform, what is Al Ras Smart", "en", All,
+        Add(chunks, "app-introduction", "Tell me about the app, what is this platform, what is Merge Spice", "en", All,
             """
-            Question: tell me about the app? What is this platform? What is Al Ras Smart? What does this app do? What is this app for? Explain the platform to me.
-            Answer: Al Ras Smart is an app and electronic marketplace for foodstuff and goods trading that connects suppliers and buyers in one place.
+            Question: tell me about the app? What is this platform? What is Merge Spice? What does this app do? What is this app for? Explain the platform to me.
+            Answer: Merge Spice is an app and electronic marketplace for foodstuff and goods trading that connects suppliers and buyers in one place.
             It is operated by Merge Spice Foodstuff Trading LLC, which acts as an intermediary organising the trade process between seller and buyer.
             Through the app you can: browse products inside categories, search by name or by image, buy retail products, source goods wholesale, list your goods for sale if you are a supplier, publish a purchase request if you are a company, and publish freight services if you are a shipping company.
             The app also provides step-by-step order tracking, a returns policy for eligible cases, direct human support via Live Chat, and an AI Assistant to answer your questions.
@@ -113,8 +113,8 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "who-operates", "من يملك المنصة ومن يديرها ومن بناها", "ar", All,
             """
             سؤال: من صاحب التطبيق؟ من بنى المنصة؟ من يدير المنصة؟ ما هي الشركة المشغلة؟
-            الإجابة: برمجة وتصميم تطبيقات ومنصة الراس الذكي وتدريب المساعد الذكي من شركة الراس ماركت.
-            أما تشغيل منصة الراس الذكي وإدارة عمليات السوق فتتولاهما شركة ميرج سبايس لتجارة المواد الغذائية.
+            الإجابة: برمجة وتصميم تطبيقات ومنصة ميرج سبايس وتدريب المساعد الذكي من شركة ميرج سبايس.
+            أما تشغيل منصة ميرج سبايس وإدارة عمليات السوق فتتولاهما شركة ميرج سبايس لتجارة المواد الغذائية.
             دور الشركة المشغّلة هو الوساطة وتنظيم العمليات التجارية بين الموردين والعملاء، وهي ليست مالكة للبضائع المعروضة على المنصة.
             المورد هو المسؤول عن بضاعته من حيث الجودة والكمية والوزن والتغليف ومطابقتها لوصف الإعلان.
             تخضع الشروط لقوانين دولة الإمارات العربية المتحدة وتختص محاكم دبي بالنزاعات.
@@ -123,29 +123,29 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "who-operates", "Who built, owns, and operates the platform", "en", All,
             """
             Question: who owns the app? Who built the platform? Who runs it? Which company operates it?
-            Answer: Al Ras Market company programmed, designed, and built the Al Ras Smart apps and platform, and trained its AI assistant.
-            The Al Ras Smart marketplace and its commercial operations are operated by Merge Spice Foodstuff Trading LLC.
+            Answer: Merge Spice company programmed, designed, and built the Merge Spice apps and platform, and trained its AI assistant.
+            The Merge Spice marketplace and its commercial operations are operated by Merge Spice Foodstuff Trading LLC.
             The operating company's role is intermediation and organising trade between suppliers and customers; it does not own the goods listed on the platform.
             The supplier is responsible for their goods in terms of quality, quantity, weight, packaging, and matching the listing description.
             The Terms are governed by UAE law and Dubai courts have jurisdiction over disputes.
             Never name a person as the developer or programmer.
             """);
 
-        Add(chunks, "app-developer", "مين عامل البرنامج، مين المطور، مين صانع التطبيق، من برمج أو بنى الراس الذكي، من درب النموذج، مين برمجك", "ar", All,
+        Add(chunks, "app-developer", "مين عامل البرنامج، مين المطور، مين صانع التطبيق، من برمج أو بنى ميرج سبايس، من درب النموذج، مين برمجك", "ar", All,
             """
-            سؤال: مين عامل البرنامج ده؟ مين المطور؟ مين الصانع؟ من برمج التطبيق أو بنى المنصة؟ من صمم وطور الراس الذكي؟ من درّب نموذج الذكاء الاصطناعي؟ مين برمجك؟ عاوز أتواصل مع المطور.
-            الإجابة: أنا مساعد الراس الذكي، وبرمجني ودرّبني شركة الراس ماركت.
-            تطبيقات ومنصة الراس الذكي من تطوير وبرمجة شركة الراس ماركت.
+            سؤال: مين عامل البرنامج ده؟ مين المطور؟ مين الصانع؟ من برمج التطبيق أو بنى المنصة؟ من صمم وطور ميرج سبايس؟ من درّب نموذج الذكاء الاصطناعي؟ مين برمجك؟ عاوز أتواصل مع المطور.
+            الإجابة: أنا مساعد ميرج سبايس، وبرمجني ودرّبني شركة ميرج سبايس.
+            تطبيقات ومنصة ميرج سبايس من تطوير وبرمجة شركة ميرج سبايس.
             لا تذكر أي اسم شخصي (ولا ناصر ولا البربري ولا أي مطور فردي).
-            مشكلات الطلبات والاسترجاع والحساب تُتابع مع دعم الراس الذكي عبر Live Chat.
+            مشكلات الطلبات والاسترجاع والحساب تُتابع مع دعم ميرج سبايس عبر Live Chat.
             """);
-        Add(chunks, "app-developer", "Who made the program, developed or built Al Ras Smart, who trained the AI model, who programmed you", "en", All,
+        Add(chunks, "app-developer", "Who made the program, developed or built Merge Spice, who trained the AI model, who programmed you", "en", All,
             """
-            Question: who made this program? Who is the developer? Who built or programmed the app or platform? Who designed and developed Al Ras Smart? Who trained its AI model? Who programmed you? I want to contact the developer.
-            Answer: I am the Al Ras Smart assistant. Al Ras Market company programmed and trained me.
-            The Al Ras Smart apps and platform were developed and programmed by Al Ras Market company.
+            Question: who made this program? Who is the developer? Who built or programmed the app or platform? Who designed and developed Merge Spice? Who trained its AI model? Who programmed you? I want to contact the developer.
+            Answer: I am the Merge Spice assistant. Merge Spice company programmed and trained me.
+            The Merge Spice apps and platform were developed and programmed by Merge Spice company.
             Never name a person (including Nasser, Elbarbary, or any individual developer).
-            Order, return, and account issues should go to Al Ras Smart support through Live Chat.
+            Order, return, and account issues should go to Merge Spice support through Live Chat.
             """);
 
         Add(chunks, "what-can-i-do", "ماذا يمكنني أن أفعل في التطبيق بحسابي", "ar", SignedIn,
@@ -169,17 +169,17 @@ internal static class AiAssistantKnowledgeSource
             Shipping companies add and manage shipping ads only.
             """);
 
-        Add(chunks, "platform-overview", "شرح منصة الراس الذكي", "ar", All,
+        Add(chunks, "platform-overview", "شرح منصة ميرج سبايس", "ar", All,
             """
-            الراس الذكي منصة سوق إلكترونية تربط الموردين والعملاء الأفراد وعملاء الشركات وشركات الشحن.
+            ميرج سبايس منصة سوق إلكترونية تربط الموردين والعملاء الأفراد وعملاء الشركات وشركات الشحن.
             تعرض المنصة المنتجات داخل الأصناف (Categories)، وتدعم أنواع إعلانات هي: Retail (تجزئة) وBooking (حجز/شحنات) وOffers (عروض بخصم) وInquiry (طلبات شراء) وShipping (شحن).
             ما يظهر لك وما يمكنك تنفيذه يختلف حسب نوع حسابك.
             توفر المنصة بحثاً نصياً واقتراحات فورية وبحثاً بالصورة، وسلة شراء وطلبات وتتبع حالة الطلب، ودعماً بشرياً عبر Live Chat، ومساعد ذكاء اصطناعي لشرح المنصة وسياساتها.
             تعمل شركة ميرج سبايس لتجارة المواد الغذائية كوسيط لتنظيم العمليات التجارية، وليست مالكة للبضائع المعروضة.
             """);
-        Add(chunks, "platform-overview", "Al Ras Smart platform overview", "en", All,
+        Add(chunks, "platform-overview", "Merge Spice platform overview", "en", All,
             """
-            Al Ras Smart is an electronic marketplace connecting suppliers, personal customers, company customers, and shipping companies.
+            Merge Spice is an electronic marketplace connecting suppliers, personal customers, company customers, and shipping companies.
             It lists products under Categories and supports ad types: Retail, Booking, Offers (discounted), Inquiry, and Shipping.
             What you can see and do depends on your account type.
             The platform provides text search, instant suggestions, image search, a cart, orders with status tracking, human Live Chat support, and an AI Assistant for platform knowledge and policies.
@@ -188,8 +188,8 @@ internal static class AiAssistantKnowledgeSource
 
         Add(chunks, "app-walkthrough-home", "شرح الصفحة الرئيسية وأقسام التطبيق، الطلبات، العروض، الحجز، البيع المحلي، الشحن", "ar", All,
             """
-            سؤال: اشرح لي التطبيق؟ ما هي أقسام الصفحة الرئيسية؟ ما هي الطلبات والعروض والحجز والبيع المحلي وأسعار الشحن؟ كيف أستخدم الراس الذكي؟
-            الإجابة: تطبيق الراس الذكي منصة B2B ذكية لتجارة المواد الغذائية بالجملة، تربط المشترين والموردين وتجار الجملة وشركات الشحن في منصة واحدة.
+            سؤال: اشرح لي التطبيق؟ ما هي أقسام الصفحة الرئيسية؟ ما هي الطلبات والعروض والحجز والبيع المحلي وأسعار الشحن؟ كيف أستخدم ميرج سبايس؟
+            الإجابة: تطبيق ميرج سبايس منصة B2B ذكية لتجارة المواد الغذائية بالجملة، تربط المشترين والموردين وتجار الجملة وشركات الشحن في منصة واحدة.
             عند فتح التطبيق يظهر في الأعلى شريط إعلاني متحرك لأخبار السوق والمنتجات الجديدة والفرص والعروض المميزة.
             أسفل الشريط خمسة أقسام رئيسية:
             1) الطلبات Inquiry: طلبات منتجات ينشرها مشترون أو موردون يبحثون عن بضائع؛ يمكنك متابعة طلباتك أو تقديم عرض إذا كان المطلوب متوفراً لديك.
@@ -205,7 +205,7 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "app-walkthrough-home", "Home screen sections: Inquiry, Offers, Booking, Retail, Shipping", "en", All,
             """
             Question: explain the app home screen? What are Inquiry, Offers, Booking, Retail, and Shipping Prices sections?
-            Answer: Al Ras Smart is a smart B2B wholesale food trading platform connecting buyers, suppliers, wholesalers, and shipping companies in one place.
+            Answer: Merge Spice is a smart B2B wholesale food trading platform connecting buyers, suppliers, wholesalers, and shipping companies in one place.
             At the top is a scrolling news banner for market news, new products, opportunities, and featured offers.
             Below it are five main sections:
             1) Inquiry: product inquiries posted by buyers or suppliers looking for goods; follow your own inquiries or submit an offer if you have the product.
@@ -246,34 +246,34 @@ internal static class AiAssistantKnowledgeSource
 
         Add(chunks, "app-walkthrough-b2b-outro", "منصة B2B متكاملة، حمّل التطبيق، من دبي إلى أسواق العالم", "ar", All,
             """
-            سؤال: لماذا أستخدم الراس الذكي؟ ما فائدة المنصة؟ حمّل التطبيق
-            الإجابة: مع تطبيق الراس الذكي تصبح تجارة المواد الغذائية بالجملة أسهل: المشتري يصل للمورد، والمورد يصل للمشترين، والموردون يتعاملون مع بعضهم.
+            سؤال: لماذا أستخدم ميرج سبايس؟ ما فائدة المنصة؟ حمّل التطبيق
+            الإجابة: مع تطبيق ميرج سبايس تصبح تجارة المواد الغذائية بالجملة أسهل: المشتري يصل للمورد، والمورد يصل للمشترين، والموردون يتعاملون مع بعضهم.
             يمكنك البحث عن البضائع، طلب منتجات غير متوفرة، عرض مخزونك، نشر أسعار الحجز، إنشاء عروض خاصة، البيع داخل الإمارات، ومتابعة أسعار الشحن — كل ذلك من منصة واحدة.
             من دبي إلى أسواق العالم: اكتشف الفرص، ابحث عن منتجاتك، اشترِ، بع، وتواصل مع موردين وعملاء جدد.
-            تطبيق الراس الذكي — بوابتك الذكية إلى عالم تجارة المواد الغذائية بالجملة.
-            حمّل تطبيق الراس الذكي الآن على iOS وAndroid.
+            تطبيق ميرج سبايس — بوابتك الذكية إلى عالم تجارة المواد الغذائية بالجملة.
+            حمّل تطبيق ميرج سبايس الآن على iOS وAndroid.
             """);
 
         Add(chunks, "app-walkthrough-b2b-outro", "Integrated B2B platform, download the app", "en", All,
             """
-            Question: why use Al Ras Smart? What is the platform value? Download the app
-            Answer: Al Ras Smart makes wholesale food trading easier: buyers reach suppliers, suppliers reach buyers, and suppliers can trade with each other.
+            Question: why use Merge Spice? What is the platform value? Download the app
+            Answer: Merge Spice makes wholesale food trading easier: buyers reach suppliers, suppliers reach buyers, and suppliers can trade with each other.
             Search goods, request unavailable products, list your stock, publish booking prices, create special offers, sell locally in the UAE, and track shipping rates — all in one platform.
             From Dubai to global markets: discover opportunities, find your products, buy, sell, and connect with new suppliers and customers.
-            Al Ras Smart — your smart gateway to wholesale food trading.
-            Download Al Ras Smart now on iOS and Android.
+            Merge Spice — your smart gateway to wholesale food trading.
+            Download Merge Spice now on iOS and Android.
             """);
 
         Add(chunks, "terms-privacy", "الشروط والأحكام: طبيعة المنصة والمسؤولية", "ar", All,
             """
-            الراس الذكي منصة إلكترونية تعمل فيها شركة ميرج سبايس لتجارة المواد الغذائية كوسيط بين المورد والعميل لتنظيم العمليات التجارية.
+            ميرج سبايس منصة إلكترونية تعمل فيها شركة ميرج سبايس لتجارة المواد الغذائية كوسيط بين المورد والعميل لتنظيم العمليات التجارية.
             المورد مسؤول عن صحة بيانات الشركة والرخصة، وتوافر البضائع، والجودة والكمية والوزن والتغليف ومطابقة المنتج لوصف الإعلان.
             يُمنع نشر منتجات محظورة أو مقلدة، ويُمنع وضع بيانات اتصال أو هوية المورد داخل صور أو وصف الإعلان.
             استخدام المنصة يعني الموافقة على الشروط. تخضع الشروط لقوانين دولة الإمارات العربية المتحدة وتختص محاكم دبي بالنزاعات.
             """);
         Add(chunks, "terms-privacy", "Terms of use: platform nature and liability", "en", All,
             """
-            Al Ras Smart is an electronic marketplace operated by Merge Spice Foodstuff Trading LLC as an intermediary between suppliers and customers.
+            Merge Spice is an electronic marketplace operated by Merge Spice Foodstuff Trading LLC as an intermediary between suppliers and customers.
             Suppliers are responsible for accurate company and license data, stock availability, quality, quantity, weight, packaging, and matching the listing description.
             Illegal or counterfeit goods are prohibited, and supplier contact details or identity must not appear inside listing images or descriptions.
             Using the platform means accepting the Terms. UAE law applies and Dubai courts have jurisdiction over disputes.
@@ -316,13 +316,13 @@ internal static class AiAssistantKnowledgeSource
             Image-search uploads are used for matching and service improvement under the Terms, not to identify people.
             """);
 
-        Add(chunks, "platform-trust", "هل منصة الراس الذكي موثوقة وآمنة؟", "ar", All,
+        Add(chunks, "platform-trust", "هل منصة ميرج سبايس موثوقة وآمنة؟", "ar", All,
             """
             تبني المنصة الثقة عبر: مراجعة بيانات الشركات والرخص قبل اعتماد حساب المورد، ومراجعة الإعلانات قبل النشر، وقواعد تمنع المنتجات المحظورة والمقلدة، وتنظيم الدفع والتحصيل عبر المنصة، وتتبع حالة الطلب خطوة بخطوة، ودعم بشري عبر Live Chat، وسياسة استرجاع للحالات المؤهلة.
             مع ذلك لا يمكن تقديم ضمان مطلق بخلو التعامل من أي مخاطرة: ميرج سبايس وسيط وليست مالكة للبضائع، والمورد يظل مسؤولاً عن الجودة والكمية والمطابقة.
             ننصح بمراجعة تفاصيل الإعلان والصور والمواصفات، وإتمام الدفع عبر قنوات المنصة فقط، وعدم التعامل خارج المنصة، والإبلاغ فوراً عن أي مشكلة عبر Live Chat.
             """);
-        Add(chunks, "platform-trust", "Is Al Ras Smart trustworthy and safe?", "en", All,
+        Add(chunks, "platform-trust", "Is Merge Spice trustworthy and safe?", "en", All,
             """
             Trust is supported by: company and trade-license review before a supplier account is approved, listing review before publication, rules against illegal and counterfeit goods, payment and collection organised through the platform, step-by-step order status tracking, human Live Chat support, and a returns policy for eligible cases.
             It cannot be described as risk-free: Merge Spice is an intermediary rather than the owner of listed goods, and suppliers remain responsible for quality, quantity, and conformity.
@@ -368,7 +368,7 @@ internal static class AiAssistantKnowledgeSource
 
     private static void AddAccountTypesAndCapabilities(ICollection<AiKnowledgeChunk> chunks)
     {
-        Add(chunks, "account-types", "أنواع الحسابات في الراس الذكي", "ar", All,
+        Add(chunks, "account-types", "أنواع الحسابات في ميرج سبايس", "ar", All,
             """
             توجد خمس حالات للمستخدم: الزائر (غير مسجل)، والمورد (Supplier)، والعميل الفردي (Personal customer)، وعميل الشركة (Company customer)، وشركة الشحن (Shipping company).
             المورد: شركة تبيع وتعرض بضائعها؛ المورد داخل الإمارات ينشئ معظم أنواع الإعلانات، والمورد خارج الإمارات المسجل برقم غير إماراتي ينشئ Booking فقط. والمورد يستطيع أيضاً الشراء والطلب من المنصة ومتابعة مشترياته من طلباتي.
@@ -377,7 +377,7 @@ internal static class AiAssistantKnowledgeSource
             شركة الشحن: تعرض خدمات الشحن من ميناء إلى ميناء فقط.
             كل نوع حساب يرى واجهة مختلفة وصلاحيات مختلفة.
             """);
-        Add(chunks, "account-types", "Account types on Al Ras Smart", "en", All,
+        Add(chunks, "account-types", "Account types on Merge Spice", "en", All,
             """
             There are five user states: Guest (not signed in), Supplier, Personal customer, Company customer, and Shipping company.
             Supplier: a company that sells and lists goods. A UAE-based supplier can create most ad types, while an overseas supplier registered with a non-UAE phone number can create Booking only. Suppliers can also buy from the marketplace and track their purchases in My Orders.
@@ -442,13 +442,13 @@ internal static class AiAssistantKnowledgeSource
             الإجابة تعتمد على نوع الحساب الحالي:
 
             المورد داخل الإمارات: يستطيع إضافة إعلانات Category وRetail وBooking وOffer بخصم وRequest.
-            إذا طلب نشر إعلان داخل شات الراس الذكي والجمهور الحالي supplier (وليس مورداً خارجياً)، ساعده مباشرة عبر أدوات create_*_ad (مثل create_booking_ad لـ Booking) — لا ترفض ولا تقل "حسابك لا يسمح".
+            إذا طلب نشر إعلان داخل شات ميرج سبايس والجمهور الحالي supplier (وليس مورداً خارجياً)، ساعده مباشرة عبر أدوات create_*_ad (مثل create_booking_ad لـ Booking) — لا ترفض ولا تقل "حسابك لا يسمح".
             استخدم وضع الخطة بالحوار: اعرض قائمة الحقول المطلوبة، ولو نسي المستخدم شيئاً في رده أخبره صراحة بالحقول الناقصة، ثم استدعِ الأداة بعد اكتمالها. يمكن أيضاً الإنشاء يدوياً من زر إنشاء إعلان في البار السفلي.
             المورد خارج الإمارات برقم غير إماراتي: Booking فقط — أخبره بذلك ولا تعرض بقية الأنواع، لكن Booking مسموح عبر create_booking_ad في الشات.
 
             عميل الشركة: يضيف إعلان طلبات (Request / Inquiry) فقط (لا Booking ولا Retail ولا Category ولا Offer بخصم) — سواء كان رقمه إماراتياً أو من خارج الإمارات.
             مهم: رقم خارج الإمارات لا يحوّل عميل الشركة إلى Booking؛ قيد Booking للمورد الخارجي فقط. عميل الشركة يبقى على الطلبات دائماً.
-            أخبره بذلك ووضّح المطلوب: اسم المنتج، المواصفات، قابل للتفاوض، محلي أو إعادة تصدير، عنوان التسليم من العناوين المحفوظة، والتعبئة. السعر المستهدف والكمية والوحدة والعملة اختيارية — لا تسأل عنها إلا إذا ذكرها المستخدم أو طلب تضمينها. تاريخ التسليم والصور اختياريان، ثم النشر من إنشاء طلب أو شات الراس الذكي.
+            أخبره بذلك ووضّح المطلوب: اسم المنتج، المواصفات، قابل للتفاوض، محلي أو إعادة تصدير، عنوان التسليم من العناوين المحفوظة، والتعبئة. السعر المستهدف والكمية والوحدة والعملة اختيارية — لا تسأل عنها إلا إذا ذكرها المستخدم أو طلب تضمينها. تاريخ التسليم والصور اختياريان، ثم النشر من إنشاء طلب أو شات ميرج سبايس.
 
             شركة الشحن: تضيف إعلان شحن فقط من الصفحة الرئيسية (ميناء إلى ميناء وأسعار 20ft و40ft).
 
@@ -465,13 +465,13 @@ internal static class AiAssistantKnowledgeSource
             Answer depends on the current account type:
 
             UAE supplier: can create Category, Retail, Booking, discounted Offer, and Request.
-            If they ask to publish in Alras Smart chat and the current audience is supplier (not an overseas supplier), help via create_*_ad tools (e.g. create_booking_ad for Booking) — never refuse or say the account is not allowed.
+            If they ask to publish in Merge Spice chat and the current audience is supplier (not an overseas supplier), help via create_*_ad tools (e.g. create_booking_ad for Booking) — never refuse or say the account is not allowed.
             Use conversational Plan Mode: list required fields, explicitly call out anything still missing in their reply, then call the tool when complete. They may also use Create Ad in the bottom bar manually.
             Overseas supplier with a non-UAE phone: Booking only — say so and do not offer the other types, but Booking is allowed via create_booking_ad in chat.
 
             Company customer: Request/Inquiry ads only (not Booking, Retail, Category, or discounted Offer) — whether the phone is UAE or non-UAE.
             Important: a non-UAE phone does NOT switch a company customer to Booking; the Booking-only lock is for overseas suppliers only. Company customers stay on Requests always.
-            Tell them that and list what a Request needs: product name, specifications, negotiable, Local or Reexport, delivery address from saved addresses (required for company_customer). Target price, quantity, unit, and currency are OPTIONAL unless the user provides a target price (then also collect currency USD/AED and unit). Optional delivery date and images. Publish from Create Order or Alras Smart chat.
+            Tell them that and list what a Request needs: product name, specifications, negotiable, Local or Reexport, delivery address from saved addresses (required for company_customer). Target price, quantity, unit, and currency are OPTIONAL unless the user provides a target price (then also collect currency USD/AED and unit). Optional delivery date and images. Publish from Create Order or Merge Spice chat.
 
             Shipping company: shipping ads only from Home (port-to-port with 20ft and 40ft prices).
 
@@ -482,7 +482,7 @@ internal static class AiAssistantKnowledgeSource
             Never invent permissions outside the account type, and never confuse creating an ad with buying or tracking orders.
             """);
 
-        Add(chunks, "create-ad-via-chat-supplier", "إنشاء إعلان Booking وغيره من شات الراس الذكي — مورد", "ar", ["supplier"],
+        Add(chunks, "create-ad-via-chat-supplier", "إنشاء إعلان Booking وغيره من شات ميرج سبايس — مورد", "ar", ["supplier"],
             """
             سؤال: عاوز انشر إعلان Booking / أنشئ بوكينج / اضف إعلان booking / ساعدني أنشر إعلان.
             إذا كان نوع الحساب الحالي مورد (supplier) فهذا مسموح تماماً.
@@ -493,7 +493,7 @@ internal static class AiAssistantKnowledgeSource
             بعد اكتمال الحقول استدعِ create_booking_ad مرة واحدة. عملة Booking دائماً USD.
             نفس أسلوب الخطة الحوارية لـ Offer وRetail وCategory وRequest مع الحقول المناسبة لكل نوع.
             """);
-        Add(chunks, "create-ad-via-chat-supplier", "Create Booking and other ads via Alras Smart chat — supplier", "en", ["supplier"],
+        Add(chunks, "create-ad-via-chat-supplier", "Create Booking and other ads via Merge Spice chat — supplier", "en", ["supplier"],
             """
             Question: I want to publish a Booking ad / create booking / help me post a listing.
             If the current account audience is supplier, this is fully allowed.
@@ -622,27 +622,27 @@ internal static class AiAssistantKnowledgeSource
             """
             المورد لا يستطيع إنشاء الحساب لأول مرة باستخدام جوجل أو أبل، لأن التسجيل يتطلب بيانات أساسية لا توفرها هذه الطريقة، وهي: الرخصة التجارية وصور الشركة وبيانات الشركة الأساسية.
             لذلك يجب على المورد إتمام نموذج التسجيل الكامل وإرفاق الرخصة التجارية وصور الشركة.
-            بعد إرسال الطلب تتم مراجعة البيانات واعتماد الحساب من فريق الراس الذكي.
+            بعد إرسال الطلب تتم مراجعة البيانات واعتماد الحساب من فريق ميرج سبايس.
             بعد إنشاء الحساب واعتماده يستطيع المورد تسجيل الدخول لاحقاً عن طريق جوجل أو أبل حسب نوع الجهاز المستخدم، أو بالبريد وكلمة السر.
             """);
         Add(chunks, "signup-supplier", "How a supplier creates an account and registration requirements", "en", All,
             """
             A supplier cannot create the initial account with Google or Apple, because registration requires core data that those methods do not provide: the trade license, company images, and company details.
             The supplier must therefore complete the full registration form and attach the trade license and company images.
-            After submission, the Al Ras Smart team reviews the data and approves the account.
+            After submission, the Merge Spice team reviews the data and approves the account.
             Once the account exists and is approved, the supplier can sign in later with Google or Apple depending on the device, or with email and password.
             """);
 
         Add(chunks, "signup-company", "كيف ينشئ عميل الشركة حساباً", "ar", All,
             """
             حساب عميل الشركة مخصص للشركات التي تشتري بالجملة، ويتطلب بيانات الشركة عند التسجيل مثل اسم الشركة ووسائل التواصل، وقد يُطلب توثيق الشركة حسب سياسة المنصة.
-            بعد التسجيل يمر الحساب على مراجعة فريق الراس الذكي قبل التفعيل الكامل.
+            بعد التسجيل يمر الحساب على مراجعة فريق ميرج سبايس قبل التفعيل الكامل.
             بعد التفعيل يستطيع عميل الشركة تصفح الأصناف ومنتجات الجملة وإنشاء إعلانات Request واستقبال العروض عليها.
             """);
         Add(chunks, "signup-company", "How a company customer creates an account", "en", All,
             """
             A company customer account is for companies buying wholesale and requires company details at registration such as company name and contact channels; company verification may be requested per platform policy.
-            After registration the account passes through Al Ras Smart team review before full activation.
+            After registration the account passes through Merge Spice team review before full activation.
             Once activated, the company customer can browse categories and wholesale products, create Inquiry ads, and receive offers on them.
             """);
 
@@ -676,13 +676,13 @@ internal static class AiAssistantKnowledgeSource
 
         Add(chunks, "account-approval", "مراجعة الحساب ومدة الاعتماد", "ar", ["supplier", "company_customer", "shipping", "public"],
             """
-            حسابات الشركات (المورد وعميل الشركة وشركة الشحن) تمر على مراجعة من فريق الراس الذكي للتحقق من البيانات والرخصة قبل التفعيل الكامل.
+            حسابات الشركات (المورد وعميل الشركة وشركة الشحن) تمر على مراجعة من فريق ميرج سبايس للتحقق من البيانات والرخصة قبل التفعيل الكامل.
             أثناء المراجعة قد تكون بعض الصفحات أو إمكانية النشر غير متاحة حتى يُعتمد الحساب.
             إذا تأخر اعتماد الحساب أو رُفض، يمكنك التواصل مع الدعم عبر Live Chat من الملف الشخصي أو من صفحة المساعدة والدعم لمعرفة السبب واستكمال المطلوب.
             """);
         Add(chunks, "account-approval", "Account review and approval", "en", ["supplier", "company_customer", "shipping", "public"],
             """
-            Company accounts (supplier, company customer, shipping company) go through Al Ras Smart team review to verify details and the trade license before full activation.
+            Company accounts (supplier, company customer, shipping company) go through Merge Spice team review to verify details and the trade license before full activation.
             During review some pages or publishing may be unavailable until the account is approved.
             If approval is delayed or rejected, contact support through Live Chat in Profile or the Help & Support page to learn the reason and complete what is missing.
             """);
@@ -719,7 +719,7 @@ internal static class AiAssistantKnowledgeSource
             """
             من زر Edit profile يمكنك تعديل بياناتك.
             تغيير صورة الشركة يُطبَّق مباشرة دون مراجعة.
-            أما أي تعديل آخر مثل اسم الشركة أو الرخصة التجارية أو الرقم الضريبي أو رقم الهاتف فيذهب إلى المراجعة أولاً، ولا يظهر التغيير حتى يوافق عليه فريق الراس الذكي.
+            أما أي تعديل آخر مثل اسم الشركة أو الرخصة التجارية أو الرقم الضريبي أو رقم الهاتف فيذهب إلى المراجعة أولاً، ولا يظهر التغيير حتى يوافق عليه فريق ميرج سبايس.
             سبب المراجعة هو حماية المشترين والتأكد من أن بيانات الشركة المعروضة صحيحة وموثقة.
             إذا تأخرت الموافقة على التعديل يمكنك متابعتها مع الدعم عبر Live Chat.
             """);
@@ -727,7 +727,7 @@ internal static class AiAssistantKnowledgeSource
             """
             Use Edit profile to change your details.
             Changing the company image applies immediately with no review.
-            Any other edit such as company name, trade license, tax number, or phone number goes to review first, and the change is not shown until the Al Ras Smart team approves it.
+            Any other edit such as company name, trade license, tax number, or phone number goes to review first, and the change is not shown until the Merge Spice team approves it.
             The review exists to protect buyers and keep published company data accurate and verified.
             If an edit approval is delayed you can follow it up with support via Live Chat.
             """);
@@ -1054,16 +1054,16 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "payment-methods", "طرق الدفع المتاحة", "ar", Buyers,
             """
             الدفع الإلكتروني بالبطاقة متاح لطلبات Retail (التجزئة) فقط.
-            الدفع عند الاستلام متاح لباقي التدفقات حسب آلية المنصة وفريق الراس الذكي.
-            صفقات الجملة وأنواع الإعلانات غير Retail تتم معالجتها ومتابعتها بواسطة فريق الراس الذكي وليس بالدفع الذاتي داخل التطبيق.
+            الدفع عند الاستلام متاح لباقي التدفقات حسب آلية المنصة وفريق ميرج سبايس.
+            صفقات الجملة وأنواع الإعلانات غير Retail تتم معالجتها ومتابعتها بواسطة فريق ميرج سبايس وليس بالدفع الذاتي داخل التطبيق.
             بيانات البطاقة الكاملة يعالجها مزود دفع معتمد ولا تخزنها المنصة.
             استخدم قنوات الدفع داخل المنصة فقط، ولا تحوّل أي مبلغ خارج المنصة.
             """);
         Add(chunks, "payment-methods", "Available payment methods", "en", Buyers,
             """
             Online card payment is available for Retail orders only.
-            Cash on delivery applies to the other flows according to the platform process and the Al Ras Smart team.
-            Wholesale deals and non-Retail ad types are processed and followed up by the Al Ras Smart team rather than through self-service payment in the app.
+            Cash on delivery applies to the other flows according to the platform process and the Merge Spice team.
+            Wholesale deals and non-Retail ad types are processed and followed up by the Merge Spice team rather than through self-service payment in the app.
             Full card details are handled by an approved payment provider and are not stored by the platform.
             Use in-platform payment channels only and never transfer money outside the platform.
             """);
@@ -1101,15 +1101,15 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "wholesale-flow", "كيف تتم صفقات الجملة", "ar", ["supplier", "company_customer", "public"],
             """
             الدفع الذاتي عبر المنصة مخصص لتجارة التجزئة (Retail).
-            أما طلبات الأنواع الأخرى مثل الجملة وBooking وInquiry فتتم متابعتها ومعالجتها بواسطة فريق الراس الذكي، الذي ينسق بين المشتري والمورد ويتابع التحصيل والتسليم.
-            الدفع في تجارة الجملة يتم عبر فريق الراس الذكي.
+            أما طلبات الأنواع الأخرى مثل الجملة وBooking وInquiry فتتم متابعتها ومعالجتها بواسطة فريق ميرج سبايس، الذي ينسق بين المشتري والمورد ويتابع التحصيل والتسليم.
+            الدفع في تجارة الجملة يتم عبر فريق ميرج سبايس.
             يمكنك متابعة حالة الطلب من صفحة طلباتي، والتواصل مع الدعم عبر Live Chat لأي استفسار عن الصفقة.
             """);
         Add(chunks, "wholesale-flow", "How wholesale deals are handled", "en", ["supplier", "company_customer", "public"],
             """
             Self-service payment inside the platform is dedicated to Retail trade.
-            Orders of other types such as wholesale, Booking, and Inquiry are followed up and processed by the Al Ras Smart team, which coordinates between buyer and supplier and manages collection and delivery.
-            Wholesale payment runs through the Al Ras Smart team.
+            Orders of other types such as wholesale, Booking, and Inquiry are followed up and processed by the Merge Spice team, which coordinates between buyer and supplier and manages collection and delivery.
+            Wholesale payment runs through the Merge Spice team.
             You can still follow the order status from My Orders and contact support via Live Chat with any question about the deal.
             """);
     }
@@ -1260,13 +1260,13 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "notifications", "الإشعارات", "ar", SignedIn,
             """
             ترسل المنصة إشعارات عند الأحداث المهمة مثل تغير حالة الطلب، واعتماد الإعلان أو رفضه، وقبول أو رفض العرض المقدم.
-            تأكد من السماح بالإشعارات لتطبيق الراس الذكي في إعدادات جهازك حتى تصلك التنبيهات.
+            تأكد من السماح بالإشعارات لتطبيق ميرج سبايس في إعدادات جهازك حتى تصلك التنبيهات.
             حتى إن لم تصلك الإشعارات يمكنك دائماً متابعة الحالة يدوياً من صفحة طلباتي أو صفحة الحساب؛ قائمة الطلبات في التطبيق تُحدَّث تلقائياً عند تغير أي حالة.
             """);
         Add(chunks, "notifications", "Notifications", "en", SignedIn,
             """
             The platform sends notifications for important events such as order status changes, listing approval or rejection, acceptance or rejection of a submitted offer.
-            Make sure notifications are allowed for the Al Ras Smart app in your device settings so alerts reach you.
+            Make sure notifications are allowed for the Merge Spice app in your device settings so alerts reach you.
             Even without notifications you can always check status manually from My Orders or the Account page; the order list in the app refreshes automatically when any status changes.
             """);
     }
@@ -1466,13 +1466,13 @@ internal static class AiAssistantKnowledgeSource
             """
             بعد موافقة الدعم الفني على طلب الاسترجاع يتم رد الأموال خلال يوم عمل واحد من الموافقة.
             في الدفع الإلكتروني يُرد المبلغ عبر مزود الدفع، وقد يستغرق ظهوره في كشف حسابك البنكي وقتاً إضافياً حسب البنك.
-            في الدفع عند الاستلام تتم التسوية وفق آلية المنصة وفريق الراس الذكي.
+            في الدفع عند الاستلام تتم التسوية وفق آلية المنصة وفريق ميرج سبايس.
             """);
         Add(chunks, "refund-timing", "When the refund is issued after approval", "en", All,
             """
             After support approves the return, the refund is issued within one business day of approval.
             For card payments the amount is refunded through the payment provider, and it may take extra time to appear on your bank statement depending on your bank.
-            For cash on delivery, settlement follows the platform process and the Al Ras Smart team.
+            For cash on delivery, settlement follows the platform process and the Merge Spice team.
             """);
 
         Add(chunks, "refund-id-lookup", "الاستعلام عن الاسترداد برقم Refund ID", "ar", All,
@@ -1574,7 +1574,7 @@ internal static class AiAssistantKnowledgeSource
             اسأل أيضاً عن تعبئة الجملة وتعبئة التجزئة (كجم) حتى لو قال المستخدم لاحقاً بدون.
             سعر التجزئة بالدرهم AED دائماً.
             بعد التفعيل يظهر المنتج في مكانين: داخل الصنف ببيانات الجملة، وداخل قسم Retail ببيانات التجزئة.
-            في شات الراس الذكي: لا تستدعِ create_category_ad مع enable_retail_pricing قبل جمع مواصفات التجزئة.
+            في شات ميرج سبايس: لا تستدعِ create_category_ad مع enable_retail_pricing قبل جمع مواصفات التجزئة.
             """);
         Add(chunks, "create-retail-ad", "How a supplier enables retail selling", "en", ["supplier"],
             """
@@ -1583,7 +1583,7 @@ internal static class AiAssistantKnowledgeSource
             Also ask for wholesale packaging and retail packaging (kg); the user may answer none.
             Retail price is always AED.
             Once enabled, the product appears in the category (wholesale) and in Retail (retail).
-            In Alras Smart chat: never call create_category_ad with enable_retail_pricing until retail_specifications is collected.
+            In Merge Spice chat: never call create_category_ad with enable_retail_pricing until retail_specifications is collected.
             """);
 
         Add(chunks, "create-booking-ad", "كيف ينشئ المورد إعلان Booking", "ar", ["supplier"],
@@ -1737,7 +1737,7 @@ internal static class AiAssistantKnowledgeSource
 
         Add(chunks, "ad-edit", "تعديل الإعلان وإعادة المراجعة", "ar", ["supplier"],
             """
-            يمكنك تعديل إعلانك من قسم إعلاناتي أو عبر مساعد الراس الذكي في الشات.
+            يمكنك تعديل إعلانك من قسم إعلاناتي أو عبر مساعد ميرج سبايس في الشات.
             تعديل السعر فقط لا يُخرج الإعلان من حالة الاعتماد ويبقى ظاهراً.
             أما التعديلات الجوهرية مثل الاسم أو الوصف أو الصور أو المواصفات أو النوع فتُعيد الإعلان إلى حالة تحت المعالجة حتى يعتمده الفريق مرة أخرى.
             أثناء إعادة المراجعة قد لا يظهر التعديل للجمهور حتى الموافقة.
@@ -1746,7 +1746,7 @@ internal static class AiAssistantKnowledgeSource
             """);
         Add(chunks, "ad-edit", "Editing a listing and re-review", "en", ["supplier"],
             """
-            You can edit your listing from the My Ads section or via Alras Smart chat.
+            You can edit your listing from the My Ads section or via Merge Spice chat.
             A price-only change keeps the listing approved and visible.
             Substantive edits such as the name, description, images, specifications, or type send the listing back to under review until the team approves it again.
             While it is being re-reviewed, the edit may not be publicly visible until approval.
@@ -1801,14 +1801,14 @@ internal static class AiAssistantKnowledgeSource
 
         Add(chunks, "ad-review-time", "متى يظهر إعلاني بعد النشر", "ar", ["supplier", "company_customer", "shipping"],
             """
-            بعد حفظ الإعلان يدخل حالة تحت المعالجة ويراجعه فريق الراس الذكي قبل النشر للجمهور.
+            بعد حفظ الإعلان يدخل حالة تحت المعالجة ويراجعه فريق ميرج سبايس قبل النشر للجمهور.
             بعد الاعتماد يتحول إلى نشط ويظهر في القسم أو الصنف الذي اخترته.
             تأكد من اكتمال رفع الصور والفيديو، لأن الإعلان قد لا يُرسل للمراجعة قبل اكتمال الرفع.
             إذا طالت مدة المراجعة أكثر من المعتاد تواصل مع الدعم عبر Live Chat.
             """);
         Add(chunks, "ad-review-time", "When my listing goes live after publishing", "en", ["supplier", "company_customer", "shipping"],
             """
-            After saving, the listing enters under review and the Al Ras Smart team checks it before public publication.
+            After saving, the listing enters under review and the Merge Spice team checks it before public publication.
             Once approved it becomes active and appears in the section or category you chose.
             Make sure image and video uploads finished, because a listing may not be submitted for review until uploads complete.
             If review takes longer than usual, contact support via Live Chat.
@@ -1874,7 +1874,7 @@ internal static class AiAssistantKnowledgeSource
 
         Add(chunks, "create-request-company", "كيف ينشئ عميل الشركة إعلان Inquiry", "ar", ["company_customer"],
             """
-            من البار السفلي اختر إنشاء طلب (Create Order)، أو انشر من شات الراس الذكي عبر create_request_ad.
+            من البار السفلي اختر إنشاء طلب (Create Order)، أو انشر من شات ميرج سبايس عبر create_request_ad.
             الحقول المطلوبة:
             اسم المنتج، المواصفات، هل السعر قابل للتفاوض،
             نوع التلبية: محلي أو إعادة تصدير (إلزامي)، عنوان التسليم من العناوين المحفوظة (إلزامي — إن لم يوجد عنوان أضفه من الملف الشخصي أولاً).
@@ -1886,7 +1886,7 @@ internal static class AiAssistantKnowledgeSource
             """);
         Add(chunks, "create-request-company", "How a company customer creates an Inquiry ad", "en", ["company_customer"],
             """
-            From the bottom bar choose Create Order, or publish in Alras Smart chat via create_request_ad.
+            From the bottom bar choose Create Order, or publish in Merge Spice chat via create_request_ad.
             Required fields:
             product name, specifications, negotiable yes/no,
             fulfillment type: Local or Reexport (required), delivery address from saved addresses (required — add one in Profile first if empty).
@@ -1960,7 +1960,7 @@ internal static class AiAssistantKnowledgeSource
             افتح صفحة الحساب وادخل على إعلان الطلب لعرض العروض المقدمة عليه.
             قارن بين العروض من حيث السعر والكمية والمواصفات وسمعة المورد.
             اقبل العرض الأنسب أو ارفض العروض غير المناسبة، ويصل إشعار بذلك لمقدم العرض.
-            بعد القبول تنتقل الصفقة إلى خطوات التنفيذ بالتنسيق مع فريق الراس الذكي.
+            بعد القبول تنتقل الصفقة إلى خطوات التنفيذ بالتنسيق مع فريق ميرج سبايس.
             """);
         Add(chunks, "manage-offers-received", "Managing offers received on my request", "en", ["supplier", "company_customer"],
             """
@@ -1968,7 +1968,7 @@ internal static class AiAssistantKnowledgeSource
             Open the Account page and enter the request listing to view the offers submitted on it.
             Compare offers by price, quantity, specifications, and supplier standing.
             Accept the most suitable offer or reject unsuitable ones; the bidder is notified either way.
-            After acceptance the deal moves to fulfilment steps in coordination with the Al Ras Smart team.
+            After acceptance the deal moves to fulfilment steps in coordination with the Merge Spice team.
             """);
     }
 
@@ -2034,18 +2034,18 @@ internal static class AiAssistantKnowledgeSource
     {
         Add(chunks, "live-chat", "المحادثة المباشرة مع الدعم Live Chat", "ar", SignedIn,
             """
-            Live Chat هي محادثة مباشرة مع أحد موظفي الدعم البشري في الراس الذكي.
+            Live Chat هي محادثة مباشرة مع أحد موظفي الدعم البشري في ميرج سبايس.
             تجدها في صفحة الملف الشخصي أسفل زر تعديل الملف الشخصي.
-            بمجرد إرسال أول رسالة تُفتح جلسة بينك وبين أحد موظفي الراس الذكي ويرد عليك.
+            بمجرد إرسال أول رسالة تُفتح جلسة بينك وبين أحد موظفي ميرج سبايس ويرد عليك.
             استخدم Live Chat للمشكلات التي تحتاج تدخلاً بشرياً: مشكلة في طلب معين، أو طلب استرجاع، أو استفسار عن رفض إعلان أو حساب.
             عند التواصل اذكر رقم الطلب أو اسم الإعلان لتسريع المساعدة.
             في Live Chat / شات الدعم الفني يمكنك إرسال: رسائل نصية، ورسائل صوتية (فويس)، وصور، وفيديوهات، وملفات/مستندات، وموقعك الجغرافي.
             """);
         Add(chunks, "live-chat", "Live Chat with human support", "en", SignedIn,
             """
-            Live Chat is a direct conversation with a human Al Ras Smart support agent.
+            Live Chat is a direct conversation with a human Merge Spice support agent.
             You find it on the Profile page below the Edit profile button.
-            Sending the first message opens a session between you and an Al Ras Smart agent who replies to you.
+            Sending the first message opens a session between you and an Merge Spice agent who replies to you.
             Use Live Chat for anything needing human action: a problem with a specific order, a return request, or a question about a rejected listing or account.
             Mention the order number or listing name to speed up the help you get.
             In Live Chat / support chat you can send: text messages, voice messages, images, videos, files/documents, and your location.
@@ -2083,7 +2083,7 @@ internal static class AiAssistantKnowledgeSource
 
         Add(chunks, "assistant", "سياسة مساعد الذكاء الاصطناعي", "ar", All,
             """
-            الراس الذكي (Alras Smart) يجيب عن أسئلة الراس الذكي فقط، وفق نوع حسابك وصلاحياته.
+            ميرج سبايس (Merge Spice) يجيب عن أسئلة ميرج سبايس فقط، وفق نوع حسابك وصلاحياته.
             لا ينفذ عمليات نيابة عنك مثل إلغاء طلب أو الموافقة على استرجاع أو تحويل أموال، لكنه يستطيع عبر أدواته تحديث سعر/كمية إعلاناتك، وإيجاد أرخص منتج، وعرض عدد مبيعاتك.
             هو مختلف عن Live Chat: المساعد يشرح المنصة وسياساتها وينفّذ أدوات محددة، أما Live Chat فهو موظف دعم بشري يتدخل في الحالات الفردية ويمكنه استقبال صوت وصور وفيديو وملفات وموقع.
             شات المساعد يقبل حالياً الرسائل النصية والفويس فقط (والمساعد يصحّح نص الفويس بعد الاستماع)، ولا يدعم الصور أو الفيديو أو الملفات أو الموقع الآن، ومن المتوقع قبول الصور مستقبلاً.
@@ -2096,7 +2096,7 @@ internal static class AiAssistantKnowledgeSource
             """);
         Add(chunks, "assistant", "AI Assistant policy", "en", All,
             """
-            Alras Smart (الراس الذكي) answers questions about Al Ras Smart only, according to your account type and its permissions.
+            Merge Spice (ميرج سبايس) answers questions about Merge Spice only, according to your account type and its permissions.
             It does not cancel orders, approve returns, or move money for you, but through its tools it can update your ad price/quantity, find the cheapest product, and report your sales count.
             It is different from Live Chat: the assistant explains the platform and runs specific tools, while Live Chat is a human support agent who handles individual cases and can receive voice, images, video, files, and location.
             The AI chat currently accepts text and voice only (and the AI corrects the voice transcript after listening); images, video, files, and location are not supported yet — image support is expected in the future.
@@ -2190,14 +2190,14 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "retail-vs-wholesale", "الفرق بين الشراء بالتجزئة والشراء بالجملة", "ar", All,
             """
             الشراء بالتجزئة (Retail) يكون بكميات صغيرة داخل دولة الإمارات، بالدرهم AED، ومتاح للعميل الفردي، ويمكن الدفع فيه بالبطاقة إلكترونياً أو عند الاستلام، ويظهر في قسم Retail.
-            الشراء بالجملة يكون بكميات كبيرة من منتجات الأصناف أو عبر Booking أو Inquiry، ويخص الموردين وعملاء الشركات، وتتم معالجته ومتابعته بواسطة فريق الراس الذكي وليس بالدفع الذاتي.
+            الشراء بالجملة يكون بكميات كبيرة من منتجات الأصناف أو عبر Booking أو Inquiry، ويخص الموردين وعملاء الشركات، وتتم معالجته ومتابعته بواسطة فريق ميرج سبايس وليس بالدفع الذاتي.
             العميل الفردي يرى منتجات التجزئة فقط في صفحته الرئيسية، بينما يرى عميل الشركة والمورد منتجات الأصناف وأنواع الإعلانات.
             سياسة الاسترجاع خلال 24 ساعة عمل من الاستلام تطبق على الحالات المؤهلة، ورد الأموال خلال يوم عمل بعد موافقة الدعم.
             """);
         Add(chunks, "retail-vs-wholesale", "The difference between retail and wholesale buying", "en", All,
             """
             Retail buying happens in small quantities inside the UAE, priced in AED, is available to personal customers, supports card payment or cash on delivery, and appears in the Retail section.
-            Wholesale buying happens in large quantities from category products or through Booking and Inquiry, concerns suppliers and company customers, and is processed and followed up by the Al Ras Smart team rather than self-service payment.
+            Wholesale buying happens in large quantities from category products or through Booking and Inquiry, concerns suppliers and company customers, and is processed and followed up by the Merge Spice team rather than self-service payment.
             A personal customer sees retail products only on home, while company customers and suppliers see category products and ad types.
             The returns policy of 24 business hours from receipt applies to eligible cases, with refunds within one business day of support approval.
             """);
@@ -2284,7 +2284,7 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "account-security", "أمان الحساب", "ar", SignedIn,
             """
             استخدم كلمة سر قوية لا تستخدمها في مواقع أخرى، وغيّرها فوراً إذا شككت في تسريبها.
-            لا تشارك رمز التحقق OTP مع أي شخص إطلاقاً، حتى لو ادعى أنه من الدعم؛ فريق الراس الذكي لا يطلب منك رمز OTP ولا كلمة السر.
+            لا تشارك رمز التحقق OTP مع أي شخص إطلاقاً، حتى لو ادعى أنه من الدعم؛ فريق ميرج سبايس لا يطلب منك رمز OTP ولا كلمة السر.
             فعّل الدخول بالبصمة أو بصمة الوجه لحماية إضافية على جهازك.
             سجّل الخروج من الأجهزة التي لا تستخدمها.
             إذا لاحظت نشاطاً غير مألوف على حسابك تواصل مع الدعم فوراً عبر Live Chat.
@@ -2292,7 +2292,7 @@ internal static class AiAssistantKnowledgeSource
         Add(chunks, "account-security", "Account security", "en", SignedIn,
             """
             Use a strong password that you do not reuse elsewhere, and change it immediately if you suspect it was exposed.
-            Never share your OTP code with anyone, even someone claiming to be support; the Al Ras Smart team never asks for your OTP or password.
+            Never share your OTP code with anyone, even someone claiming to be support; the Merge Spice team never asks for your OTP or password.
             Enable fingerprint or face unlock for extra protection on your device.
             Sign out from devices you no longer use.
             If you notice unusual activity on your account, contact support immediately via Live Chat.
@@ -2315,7 +2315,7 @@ internal static class AiAssistantKnowledgeSource
 
         Add(chunks, "app-technical", "متطلبات التطبيق والتحديثات", "ar", All,
             """
-            حافظ على تحديث تطبيق الراس الذكي لآخر إصدار من متجر التطبيقات، لأن التحديثات تصلح المشكلات وتضيف الميزات.
+            حافظ على تحديث تطبيق ميرج سبايس لآخر إصدار من متجر التطبيقات، لأن التحديثات تصلح المشكلات وتضيف الميزات.
             بعض الميزات مثل تسجيل الدخول بأبل أو جوجل والبصمة تعتمد على نوع الجهاز ودعمه لها.
             البحث بالصور يحتاج إذن الوصول للكاميرا أو معرض الصور.
             الإشعارات تحتاج السماح بها في إعدادات الجهاز.
@@ -2323,7 +2323,7 @@ internal static class AiAssistantKnowledgeSource
             """);
         Add(chunks, "app-technical", "App requirements and updates", "en", All,
             """
-            Keep the Al Ras Smart app updated to the latest version from your app store, since updates fix issues and add features.
+            Keep the Merge Spice app updated to the latest version from your app store, since updates fix issues and add features.
             Some features such as Apple or Google sign-in and biometric unlock depend on your device supporting them.
             Image search needs permission to access the camera or photo gallery.
             Notifications need to be allowed in your device settings.
@@ -2406,7 +2406,7 @@ internal static class AiAssistantKnowledgeSource
             """
             بعد نشر إعلان Inquiry واعتماده يظهر في قسم Inquiry (الطلبات) ليراه الموردون.
             يتقدم الموردون بعروضهم، وتتابعها أنت من صفحة طلباتي → الواردة (ومن الحساب لإدارة الإعلان نفسه).
-            عندما تقبل عرضاً تبدأ خطوات التنفيذ بالتنسيق مع فريق الراس الذكي، وتُرفض بقية العروض أو تبقى دون قبول.
+            عندما تقبل عرضاً تبدأ خطوات التنفيذ بالتنسيق مع فريق ميرج سبايس، وتُرفض بقية العروض أو تبقى دون قبول.
             إذا اكتملت الكمية المطلوبة أو لم تعد بحاجة للبضاعة، لا يعود الطلب معروضاً للعروض الجديدة.
             إعلانات Inquiry التي وصلت كميتها إلى صفر لا تظهر في نتائج التصفح والبحث.
             """);
@@ -2414,7 +2414,7 @@ internal static class AiAssistantKnowledgeSource
             """
             After an Inquiry ad is published and approved it appears in the Inquiry section for suppliers to see.
             Suppliers submit their offers and you follow them from My Orders → Incoming (and manage the ad itself from Account).
-            When you accept an offer, fulfilment begins in coordination with the Al Ras Smart team, and the remaining offers are rejected or left unaccepted.
+            When you accept an offer, fulfilment begins in coordination with the Merge Spice team, and the remaining offers are rejected or left unaccepted.
             Once the required quantity is met or you no longer need the goods, the inquiry stops taking new offers.
             Inquiry ads whose quantity has reached zero do not appear in browsing or search results.
             """);
@@ -2431,7 +2431,7 @@ internal static class AiAssistantKnowledgeSource
             Offer: إما إعلان بخصم، أو عرض سعر تقدمه على إعلان Request.
             Request: إعلان طلب بضاعة غير متوفرة لدى صاحبه.
             Live Chat: محادثة مباشرة مع موظف دعم بشري.
-            الراس الذكي (Alras Smart): مساعد ذكي يشرح المنصة وسياساتها وينفّذ أدوات محددة.
+            ميرج سبايس (Merge Spice): مساعد ذكي يشرح المنصة وسياساتها وينفّذ أدوات محددة.
             """);
         Add(chunks, "glossary", "Platform glossary", "en", All,
             """
@@ -2445,21 +2445,21 @@ internal static class AiAssistantKnowledgeSource
             Offer: either a discounted ad, or a quotation you submit on a Inquiry ad.
             Request: an ad asking for goods the owner does not have.
             Live Chat: a direct conversation with a human support agent.
-            Alras Smart (الراس الذكي): an AI agent that explains the platform and its policies and can run specific tools.
+            Merge Spice (ميرج سبايس): an AI agent that explains the platform and its policies and can run specific tools.
             """);
 
         Add(chunks, "assistant-scope", "ما الذي يستطيع المساعد الإجابة عنه", "ar", All,
             """
             يستطيع المساعد شرح: أنواع الحسابات وصلاحياتها، وكيفية التسجيل وتسجيل الدخول، والتنقل بين صفحات التطبيق، والبحث النصي والبحث بالصور، وأنواع الإعلانات وكيفية إنشائها لمن يملك الصلاحية، والشراء وطرق الدفع، وتتبع الطلبات ومعاني حالاتها، وسياسة الاسترجاع ورد الأموال، وإعلانات الشحن، وسياسات الشروط والخصوصية، وطرق التواصل مع الدعم.
             لا يستطيع المساعد: تنفيذ أي إجراء نيابة عنك، ولا فتح تفاصيل طلب بعينه، ولا الموافقة على استرجاع، ولا تحويل أموال، ولا تعديل حسابك أو إعلانك.
-            لا يجيب عن أسئلة عامة خارج الراس الذكي مثل الطقس أو الأخبار أو الوقت.
+            لا يجيب عن أسئلة عامة خارج ميرج سبايس مثل الطقس أو الأخبار أو الوقت.
             للحالات الفردية التي تحتاج تدخلاً بشرياً استخدم Live Chat من الملف الشخصي.
             """);
         Add(chunks, "assistant-scope", "What the assistant can answer", "en", All,
             """
             The assistant can explain: account types and their permissions, registration and sign-in, navigating the app's pages, text and image search, ad types and how to create them for accounts that are allowed, buying and payment methods, order tracking and status meanings, the returns and refunds policy, shipping ads, terms and privacy policies, and how to reach support.
             The assistant cannot: perform any action for you, open a specific order's details, approve a return, transfer money, or edit your account or listing.
-            It does not answer general questions outside Al Ras Smart such as weather, news, or the time.
+            It does not answer general questions outside Merge Spice such as weather, news, or the time.
             For individual cases that need human intervention, use Live Chat from Profile.
             """);
 

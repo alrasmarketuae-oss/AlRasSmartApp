@@ -657,7 +657,7 @@ public class OpenAiVisionService(
 
         var dataUrl = $"data:image/jpeg;base64,{Convert.ToBase64String(jpegBytes)}";
         var prompt =
-            "You moderate marketplace product photos for Al Ras Smart (B2B wholesale).\n" +
+            "You moderate marketplace product photos for Merge Spice (B2B wholesale).\n" +
             "Look carefully at EVERY visible text and mark: sacks, bags, cartons, tins, stickers, labels, " +
             "banners, and overlays. Read Arabic and English.\n" +
             "Set hasViolation=true if ANY of these appear ANYWHERE in the photo:\n" +
@@ -802,7 +802,7 @@ public class OpenAiVisionService(
         }
 
         var prompt =
-            "You moderate marketplace ad TEXT for Al Ras Smart (B2B food wholesale).\n" +
+            "You moderate marketplace ad TEXT for Merge Spice (B2B food wholesale).\n" +
             "The text is labeled. ALWAYS inspect the Ad title fields first, then specifications.\n" +
             "This applies on first publish AND when the seller edits/resubmits the ad.\n" +
             "REJECT (hasViolation=true) if ANY field (especially Ad title) contains:\n" +
@@ -925,7 +925,7 @@ public class OpenAiVisionService(
         var reasoningEffort = configuration["OpenAI:BusinessCardReasoning"] ?? "medium";
 
         const string instructions =
-            "You are a precise business-card OCR engine for Al Ras Market. " +
+            "You are a precise business-card OCR engine for Merge Spice. " +
             "Read every printed character carefully. Never invent values. " +
             "Return ONLY a single JSON object — no markdown fences.";
 

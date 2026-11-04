@@ -316,7 +316,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Listening… speak now",
     ),
     "aiAssistantOutOfScope": MessageLookupByLibrary.simpleMessage(
-      "I can only help with Al Ras Smart topics (accounts, ads, orders, payment, returns). Please ask something about the platform.",
+      "I can only help with Merge Spice topics (accounts, ads, orders, payment, returns). Please ask something about the platform.",
     ),
     "aiAssistantReplyTo": MessageLookupByLibrary.simpleMessage("Replying to"),
     "aiAssistantReturnPolicyHint": MessageLookupByLibrary.simpleMessage(
@@ -642,7 +642,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Complaints & Suggestions",
     ),
     "complaintsSuggestionsHint": MessageLookupByLibrary.simpleMessage(
-      "Tell us about a problem or share your idea to improve Al Ras Smart. Our team will review your message.",
+      "Tell us about a problem or share your idea to improve Merge Spice. Our team will review your message.",
     ),
     "complaintsSuggestionsSubtitle": MessageLookupByLibrary.simpleMessage(
       "Share a complaint or suggest an improvement",
@@ -713,6 +713,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "Country of Origin",
     ),
     "createAccount": MessageLookupByLibrary.simpleMessage("Create Account"),
+    "createAdPriceHiddenNotice": MessageLookupByLibrary.simpleMessage(
+      "Note: Prices will only appear to buyers upon request.",
+    ),
     "createAds": MessageLookupByLibrary.simpleMessage("Create Ad"),
     "createOrder": MessageLookupByLibrary.simpleMessage("Create Order"),
     "creatingOrder": MessageLookupByLibrary.simpleMessage("Creating order"),
@@ -737,7 +740,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "dayUnit": MessageLookupByLibrary.simpleMessage("day"),
     "daysAgo": m13,
     "defApp": MessageLookupByLibrary.simpleMessage(
-      "The app refers to the Al Ras Smart electronic platform.",
+      "The app refers to the Merge Spice electronic platform.",
     ),
     "defClient": MessageLookupByLibrary.simpleMessage(
       "The client refers to any user purchasing products through the app.",
@@ -1288,7 +1291,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "orderNumber": MessageLookupByLibrary.simpleMessage("Order Number"),
     "orderRefundAskAiHint": MessageLookupByLibrary.simpleMessage(
-      "Tap to ask Al Ras AI about this refund",
+      "Tap to ask Merge Spice AI about this refund",
     ),
     "orderRefundBankDelayHint": MessageLookupByLibrary.simpleMessage(
       "Banks usually show the amount within 3–5 business days depending on your bank.",
@@ -1766,7 +1769,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "shareProduct": MessageLookupByLibrary.simpleMessage("Share product"),
     "shareProductHint": MessageLookupByLibrary.simpleMessage(
-      "Find this product on Al Ras Smart.",
+      "Find this product on Merge Spice.",
     ),
     "shareProductSearchHint": MessageLookupByLibrary.simpleMessage(
       "Search for this code in the app to open the product.",
@@ -1795,7 +1798,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Create Shipping Company Account",
     ),
     "shippingCompanyRegisterSubtitle": MessageLookupByLibrary.simpleMessage(
-      "Register your shipping company on Al Ras Smart",
+      "Register your shipping company on Merge Spice",
     ),
     "shippingCompanySubtitle": MessageLookupByLibrary.simpleMessage(
       "Reliable and fast shipping solutions",
@@ -1823,9 +1826,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "showPrice": MessageLookupByLibrary.simpleMessage("Show price?"),
     "showPriceHint": MessageLookupByLibrary.simpleMessage(
       "If you turn this off, the price will disappear from the product card and an Ask For Price button will appear. Tapping it sends the full product details to admin live chat.",
-    ),
-    "createAdPriceHiddenNotice": MessageLookupByLibrary.simpleMessage(
-      "Note: Prices will only appear to buyers upon request.",
     ),
     "signInToContinue": MessageLookupByLibrary.simpleMessage(
       "Sign in to continue",
@@ -1921,7 +1921,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Tenth: Acceptance",
     ),
     "termsTitle": MessageLookupByLibrary.simpleMessage(
-      "Terms of Use and Conditions for the \"Al Ras Smart\" App",
+      "Terms of Use and Conditions for the \"Merge Spice\" App",
     ),
     "theSupportTeamIsAlwaysHereToAssistYou":
         MessageLookupByLibrary.simpleMessage(
@@ -2032,7 +2032,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Welcome to your shipping company control panel",
     ),
     "welcomeTagline": MessageLookupByLibrary.simpleMessage(
-      "A smart platform connecting suppliers and buyers inside and outside Al Ras Smart",
+      "A smart platform connecting suppliers and buyers inside and outside Merge Spice",
     ),
     "welcomeTo": MessageLookupByLibrary.simpleMessage("Welcome to"),
     "whatPaymentMethodsAreAvailable": MessageLookupByLibrary.simpleMessage(

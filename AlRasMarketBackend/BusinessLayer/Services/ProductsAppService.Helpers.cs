@@ -222,10 +222,11 @@ public partial class ProductsAppService
         var isRejected = IsTruthClaim(principal.FindFirst("isRejected")?.Value);
         var hasPending = IsTruthClaim(principal.FindFirst("hasPendingProfile")?.Value);
 
+        // Stale JWTs keep isApproved=false for days after admin approval. Never throw from
+        // claims alone — fall through so EnsureCompanyOwnerAsync re-checks the database.
         if (isRejected || !isActive || (!isApproved && !hasPending))
         {
-            throw new UnauthorizedAccessException(
-                "Your company account is pending admin approval. You cannot create or edit ads now.");
+            return false;
         }
 
         return true;

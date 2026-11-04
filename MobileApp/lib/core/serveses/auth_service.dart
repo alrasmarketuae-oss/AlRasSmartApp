@@ -578,14 +578,78 @@ class AuthService {
         await setLoginProviderName(
           (data['loginProviderName'] ?? data['LoginProviderName'])?.toString(),
         );
+
+        final profileApproved = data['isApproved'] ?? data['IsApproved'];
+        if (profileApproved is bool) {
+          await CachHelper.saveData(key: 'isApproved', value: profileApproved);
+          isApproved = profileApproved;
+          if (profileApproved) {
+            await setCompanyWaiting(false);
+          }
+        }
       }
 
-      // Restored sessions never hit the login endpoint, so refresh the token here.
+      // Re-issue JWT so isApproved / role claims match the DB after long sessions.
+      await _refreshSessionToken();
       unawaited(registerFcmToken());
       return true;
     } catch (e) {
       debugPrint('Session validation skipped: $e');
       return true;
+    }
+  }
+
+  Future<void> _refreshSessionToken() async {
+    final existing = currentToken;
+    if (existing == null || existing.trim().isEmpty) return;
+    try {
+      final response = await DioHelper.postData(
+        url: ApiConstants.refreshSessionEndPoint,
+        data: const {},
+        token: existing,
+      );
+      final status = response?.statusCode ?? 0;
+      if (status != 200 || response?.data is! Map) return;
+
+      final data = response!.data as Map;
+      final freshToken =
+          (data['token'] ?? data['Token'])?.toString().trim() ?? '';
+      if (freshToken.isEmpty) return;
+
+      await CachHelper.saveData(key: 'token', value: freshToken);
+      token = freshToken;
+
+      final approved = data['isApproved'] ?? data['IsApproved'];
+      if (approved is bool) {
+        await CachHelper.saveData(key: 'isApproved', value: approved);
+        isApproved = approved;
+        if (approved) {
+          await setCompanyWaiting(false);
+        }
+      }
+
+      final pending =
+          data['isPendingAdminApproval'] ?? data['IsPendingAdminApproval'];
+      if (pending is bool) {
+        await setCompanyWaiting(pending);
+      }
+
+      final roleName = (data['roleName'] ?? data['RoleName'])?.toString();
+      if (roleName != null && roleName.isNotEmpty) {
+        await CachHelper.saveData(key: 'role', value: roleName);
+        this.roleName = roleName;
+      }
+
+      final roleIdRaw = data['roleId'] ?? data['RoleId'];
+      if (roleIdRaw != null) {
+        final roleIdText = roleIdRaw.toString();
+        await CachHelper.saveData(key: 'roleId', value: roleIdText);
+        roleId = roleIdText;
+      }
+
+      debugPrint('Session JWT refreshed from /Auth/refresh-session');
+    } catch (e) {
+      debugPrint('refresh-session skipped: $e');
     }
   }
 }

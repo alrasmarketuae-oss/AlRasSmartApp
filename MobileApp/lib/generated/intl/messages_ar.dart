@@ -314,7 +314,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "يستمع… تحدّث الآن",
     ),
     "aiAssistantOutOfScope": MessageLookupByLibrary.simpleMessage(
-      "أقدر أساعدك في أمور الراس الذكي فقط (حسابات، إعلانات، طلبات، دفع، استرجاع). جرّب سؤالاً عن المنصة.",
+      "أقدر أساعدك في أمور ميرج سبايس فقط (حسابات، إعلانات، طلبات، دفع، استرجاع). جرّب سؤالاً عن المنصة.",
     ),
     "aiAssistantReplyTo": MessageLookupByLibrary.simpleMessage("الرد على"),
     "aiAssistantReturnPolicyHint": MessageLookupByLibrary.simpleMessage(
@@ -650,7 +650,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "الشكاوى والاقتراحات",
     ),
     "complaintsSuggestionsHint": MessageLookupByLibrary.simpleMessage(
-      "أخبرنا عن مشكلة أو شاركنا فكرة لتحسين الراس الذكي. فريق الدعم هيراجع رسالتك.",
+      "أخبرنا عن مشكلة أو شاركنا فكرة لتحسين ميرج سبايس. فريق الدعم هيراجع رسالتك.",
     ),
     "complaintsSuggestionsSubtitle": MessageLookupByLibrary.simpleMessage(
       "قدّم شكوى أو اقتراحاً للتحسين",
@@ -719,6 +719,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "countryCode": MessageLookupByLibrary.simpleMessage("كود الدولة"),
     "countryOfOrigin": MessageLookupByLibrary.simpleMessage("بلد المنشأ"),
     "createAccount": MessageLookupByLibrary.simpleMessage("إنشاء حساب"),
+    "createAdPriceHiddenNotice": MessageLookupByLibrary.simpleMessage(
+      "ملاحظة: الأسعار لن تظهر للمشترين إلا عند الطلب.",
+    ),
     "createAds": MessageLookupByLibrary.simpleMessage("إنشاء إعلان"),
     "createOrder": MessageLookupByLibrary.simpleMessage("إنشاء طلب"),
     "creatingOrder": MessageLookupByLibrary.simpleMessage("جاري إنشاء الطلب"),
@@ -749,7 +752,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "dayUnit": MessageLookupByLibrary.simpleMessage("يوم"),
     "daysAgo": m13,
     "defApp": MessageLookupByLibrary.simpleMessage(
-      "يقصد بـ التطبيق: منصة الراس الذكي الإلكترونية.",
+      "يقصد بـ التطبيق: منصة ميرج سبايس الإلكترونية.",
     ),
     "defClient": MessageLookupByLibrary.simpleMessage(
       "يقصد بـ العميل: أي مستخدم يقوم بشراء المنتجات عبر التطبيق.",
@@ -1762,7 +1765,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "shareProduct": MessageLookupByLibrary.simpleMessage("مشاركة المنتج"),
     "shareProductHint": MessageLookupByLibrary.simpleMessage(
-      "ابحث عن هذا المنتج في الراس الذكي.",
+      "ابحث عن هذا المنتج في ميرج سبايس.",
     ),
     "shareProductSearchHint": MessageLookupByLibrary.simpleMessage(
       "ابحث عن هذا الرمز في التطبيق لفتح المنتج.",
@@ -1791,7 +1794,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "إنشاء حساب شركة شحن",
     ),
     "shippingCompanyRegisterSubtitle": MessageLookupByLibrary.simpleMessage(
-      "أنشئ حسابك كشركة شحن على منصة الراس الذكي",
+      "أنشئ حسابك كشركة شحن على منصة ميرج سبايس",
     ),
     "shippingCompanySubtitle": MessageLookupByLibrary.simpleMessage(
       "حلول شحن موثوقة وسريعة",
@@ -1815,9 +1818,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "showPrice": MessageLookupByLibrary.simpleMessage("إظهار السعر؟"),
     "showPriceHint": MessageLookupByLibrary.simpleMessage(
       "عند إيقاف إظهار السعر، يختفي السعر من بطاقة المنتج ويظهر زر Ask For Price. عند الضغط عليه تُرسل تفاصيل المنتج كاملة إلى الشات المباشر للأدمن.",
-    ),
-    "createAdPriceHiddenNotice": MessageLookupByLibrary.simpleMessage(
-      "ملاحظة: الأسعار لن تظهر للمشترين إلا عند الطلب.",
     ),
     "signInToContinue": MessageLookupByLibrary.simpleMessage(
       "سجل دخولك للمتابعة",
@@ -1909,7 +1909,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "taxNumber": MessageLookupByLibrary.simpleMessage("الرقم الضريبي"),
     "tenthAcceptance": MessageLookupByLibrary.simpleMessage("عاشراً: الموافقة"),
     "termsTitle": MessageLookupByLibrary.simpleMessage(
-      "سياسة الاستخدام والشروط والأحكام لتطبيق \"الراس الذكي\"",
+      "سياسة الاستخدام والشروط والأحكام لتطبيق \"ميرج سبايس\"",
     ),
     "theSupportTeamIsAlwaysHereToAssistYou":
         MessageLookupByLibrary.simpleMessage("فريق الدعم دائماً هنا لمساعدتك."),
@@ -2018,7 +2018,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "مرحباً بك في لوحة تحكم شركة الشحن الخاصة بك",
     ),
     "welcomeTagline": MessageLookupByLibrary.simpleMessage(
-      "منصة ذكية تربط الموردين والمشترين داخل الراس الذكي وخارجه",
+      "منصة ذكية تربط الموردين والمشترين داخل ميرج سبايس وخارجه",
     ),
     "welcomeTo": MessageLookupByLibrary.simpleMessage("مرحبا بك في"),
     "whatPaymentMethodsAreAvailable": MessageLookupByLibrary.simpleMessage(

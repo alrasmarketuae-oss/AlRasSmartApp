@@ -3,7 +3,7 @@ type Doc = { intro: string; sections: { title: string; paragraphs: string[] }[] 
 export const MODEL_TRAINING_DOC: Record<'ar' | 'en', Doc> = {
   ar: {
     intro:
-      'يعتمد الراس الذكي على نموذج ذكاء اصطناعي للبحث بالصور حتى يجد المستخدم منتجات مشابهة بسرعة ودقة. هذه الصفحة تشرح بأسلوب مبسط كيف يُبنى النموذج، وكيف تُستخدم صور الإعلانات، ولماذا نهتم دائماً بنتائج صحيحة.',
+      'يعتمد ميرج سبايس على نموذج ذكاء اصطناعي للبحث بالصور حتى يجد المستخدم منتجات مشابهة بسرعة ودقة. هذه الصفحة تشرح بأسلوب مبسط كيف يُبنى النموذج، وكيف تُستخدم صور الإعلانات، ولماذا نهتم دائماً بنتائج صحيحة.',
     sections: [
       {
         title: '1) الهدف من النموذج',
@@ -45,7 +45,7 @@ export const MODEL_TRAINING_DOC: Record<'ar' | 'en', Doc> = {
       {
         title: '6) التحسين المستمر والدقة',
         paragraphs: [
-          'النموذج لا يتوقف عند نسخة واحدة؛ مع إضافة إعلانات وصور جديدة تتحسن تغطية المنتجات ويزداد فهم النموذج لأنواع البضائع المعروضة في الراس الذكي.',
+          'النموذج لا يتوقف عند نسخة واحدة؛ مع إضافة إعلانات وصور جديدة تتحسن تغطية المنتجات ويزداد فهم النموذج لأنواع البضائع المعروضة في ميرج سبايس.',
           'كلما كانت صور الإعلان أوضح وأقرب للمنتج الحقيقي، ساعد ذلك النموذج على إعطاء نتائج أفضل للجميع.',
         ],
       },
@@ -68,7 +68,7 @@ export const MODEL_TRAINING_DOC: Record<'ar' | 'en', Doc> = {
   },
   en: {
     intro:
-      'Al Ras Smart uses an AI image-search model so users can find similar products quickly and accurately. This page explains how the model is built, how listing images are used, and why correct results always matter to us.',
+      'Merge Spice uses an AI image-search model so users can find similar products quickly and accurately. This page explains how the model is built, how listing images are used, and why correct results always matter to us.',
     sections: [
       {
         title: '1) Purpose of the model',
@@ -110,7 +110,7 @@ export const MODEL_TRAINING_DOC: Record<'ar' | 'en', Doc> = {
       {
         title: '6) Continuous improvement and accuracy',
         paragraphs: [
-          'As new ads and images are added, product coverage grows and the model better understands goods listed on Al Ras Smart.',
+          'As new ads and images are added, product coverage grows and the model better understands goods listed on Merge Spice.',
           'Clearer listing photos that represent the real product help the model deliver better results for everyone.',
         ],
       },
