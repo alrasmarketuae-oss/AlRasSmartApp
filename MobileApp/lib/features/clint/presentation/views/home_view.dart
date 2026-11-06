@@ -188,7 +188,7 @@ class _HomeViewState extends State<HomeView> {
                         else
                           BannerSlider(banners: cubit.homeBanners),
                         Padding(
-                          padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 8.h),
+                          padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 8.h),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -219,7 +219,7 @@ class _HomeViewState extends State<HomeView> {
                                     ],
                                   ),
                                 ),
-                                SizedBox(height: 18.h),
+                                SizedBox(height: 20.h),
                               ],
                               if (isPersonalCustomer) SizedBox(height: 2.h),
                               if (!isPersonalCustomer) ...[
@@ -554,8 +554,6 @@ class _HomeSectionHeader extends StatelessWidget {
   final String title;
   final VoidCallback? onViewAll;
 
-  static const Color _viewAllRed = Color(0xFFE53935);
-
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -566,7 +564,7 @@ class _HomeSectionHeader extends StatelessWidget {
             style: TextStyle(
               fontSize: 16.sp,
               fontWeight: FontWeight.w700,
-              color: LightColor.defaultColor,
+              color: AppColors.title(context),
             ),
           ),
         ),
@@ -583,8 +581,8 @@ class _HomeSectionHeader extends StatelessWidget {
                     S.of(context).viewAll,
                     style: TextStyle(
                       fontSize: 13.sp,
-                      fontWeight: FontWeight.w600,
-                      color: _viewAllRed,
+                      fontWeight: FontWeight.w500,
+                      color: LightColor.defaultColor,
                     ),
                   ),
                   SizedBox(width: 2.w),
@@ -593,7 +591,7 @@ class _HomeSectionHeader extends StatelessWidget {
                         ? Icons.chevron_left
                         : Icons.chevron_right,
                     size: 18.sp,
-                    color: _viewAllRed,
+                    color: LightColor.defaultColor,
                   ),
                 ],
               ),
@@ -627,13 +625,14 @@ class _CategoryCard extends StatelessWidget {
             ),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14.r),
+          color: AppColors.card(context),
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(color: AppColors.border(context)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
+              color: Colors.black.withValues(alpha: 0.07),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -647,7 +646,7 @@ class _CategoryCard extends StatelessWidget {
               child: CategoryImage(
                 imageUrl: category?.imageUrl,
                 fit: BoxFit.cover,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(14.r)),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(12.r)),
               ),
             ),
             Padding(
@@ -657,7 +656,7 @@ class _CategoryCard extends StatelessWidget {
                 maxLines: 1,
                 baseFontSize: 12.sp,
                 fontWeight: FontWeight.w600,
-                color: LightColor.defaultColor,
+                color: AppColors.title(context),
                 maxHeight: 18.h,
               ),
             ),
@@ -685,21 +684,22 @@ class _ServiceIconItem extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14.r),
+        borderRadius: BorderRadius.circular(12.r),
         child: Ink(
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14.r),
+            color: AppColors.card(context),
+            borderRadius: BorderRadius.circular(12.r),
+            border: Border.all(color: AppColors.border(context)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.06),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
           child: Padding(
-            padding: EdgeInsets.fromLTRB(4.w, 12.h, 4.w, 10.h),
+            padding: EdgeInsets.fromLTRB(4.w, 10.h, 4.w, 8.h),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -709,10 +709,6 @@ class _ServiceIconItem extends StatelessWidget {
                   child: SvgPicture.asset(
                     iconPath,
                     fit: BoxFit.contain,
-                    colorFilter: const ColorFilter.mode(
-                      LightColor.defaultColor,
-                      BlendMode.srcIn,
-                    ),
                   ),
                 ),
                 SizedBox(height: 6.h),
@@ -726,7 +722,7 @@ class _ServiceIconItem extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 10.sp,
                       height: 1.2,
-                      color: LightColor.defaultColor,
+                      color: AppColors.title(context),
                       fontWeight: FontWeight.w600,
                     ),
                   ),

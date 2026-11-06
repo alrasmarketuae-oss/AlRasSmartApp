@@ -1,5 +1,4 @@
 import 'package:alrasmarket/core/serveses/auth_service.dart';
-import 'package:alrasmarket/core/utils/assets.dart';
 import 'package:alrasmarket/core/utils/profile_image_url.dart';
 import 'package:alrasmarket/core/widgets/cached_app_image.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +12,6 @@ class ProfileAvatar extends StatelessWidget {
     this.fallbackText,
     this.gradient,
     this.revision,
-    this.useBrandLogoFallback = false,
   });
 
   final double size;
@@ -21,7 +19,6 @@ class ProfileAvatar extends StatelessWidget {
   final String? fallbackText;
   final Gradient? gradient;
   final int? revision;
-  final bool useBrandLogoFallback;
 
   @override
   Widget build(BuildContext context) {
@@ -38,23 +35,15 @@ class ProfileAvatar extends StatelessWidget {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: useBrandLogoFallback && url == null
-                ? Colors.white
-                : null,
-            border: useBrandLogoFallback && url == null
-                ? Border.all(color: const Color(0xFFE6E0D6), width: 1)
-                : null,
-            gradient: (useBrandLogoFallback && url == null)
-                ? null
-                : gradient ??
-                    const LinearGradient(
-                      begin: Alignment(0, 1),
-                      end: Alignment(-0.5, 0),
-                      colors: [
-                        Color(0xFF2D5A27),
-                        Color(0xFF4CAF50),
-                      ],
-                    ),
+            gradient: gradient ??
+                const LinearGradient(
+                  begin: Alignment(0, 1),
+                  end: Alignment(-0.5, 0),
+                  colors: [
+                    Color.fromRGBO(34, 145, 237, 1),
+                    Color.fromRGBO(69, 171, 255, 1),
+                  ],
+                ),
           ),
           clipBehavior: Clip.antiAlias,
           child: url != null
@@ -73,17 +62,6 @@ class ProfileAvatar extends StatelessWidget {
   }
 
   Widget _fallback() {
-    if (useBrandLogoFallback) {
-      return Padding(
-        padding: EdgeInsets.all(size * 0.08),
-        child: Image.asset(
-          AppAssets.logo,
-          fit: BoxFit.contain,
-          width: size,
-          height: size,
-        ),
-      );
-    }
     final text = (fallbackText ?? '?').substring(0, 1).toUpperCase();
     return Center(
       child: Text(
@@ -118,10 +96,9 @@ class HeaderProfileAvatar extends StatelessWidget {
     final auth = AuthService.instance;
     return ProfileAvatar(
       key: ValueKey(auth.currentUserID ?? 'guest'),
-      size: 34.w,
+      size: 30.w,
       imagePath: auth.currentUserImagePath,
       fallbackText: _avatarInitial(auth),
-      useBrandLogoFallback: true,
     );
   }
 }

@@ -140,7 +140,7 @@ class BottomNavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = isSelected
         ? LightColor.defaultColor
-        : const Color(0xFF8A7A5C);
+        : const Color(0xff999999);
 
     final iconSize = 24.w;
 

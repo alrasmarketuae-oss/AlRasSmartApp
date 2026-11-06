@@ -1,21 +1,20 @@
 import 'package:alrasmarket/core/theme/app_fonts.dart';
-import 'package:alrasmarket/core/theme/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-// Forest green primary (matches Merge home chrome).
-const Color _defaultAppColor = Color(0xFF2D5A27);
-const MaterialColor _defaultAppSwatch = MaterialColor(0xFF2D5A27, {
-  50: Color(0xFFE8F0E6),
-  100: Color(0xFFC6DBC2),
-  200: Color(0xFFA0C49A),
-  300: Color(0xFF7AAD71),
-  400: Color(0xFF5C9C53),
-  500: Color(0xFF2D5A27),
-  600: Color(0xFF285223),
-  700: Color(0xFF22481D),
-  800: Color(0xFF1C3E18),
-  900: Color(0xFF112E0E),
+// Default app color
+const Color _defaultAppColor = Color(0xff3A7DC5);
+const MaterialColor _defaultAppSwatch = MaterialColor(0xff3A7DC5, {
+  50: Color(0xFFE7F0F9),
+  100: Color(0xFFC3DBF0),
+  200: Color(0xFF9BC4E7),
+  300: Color(0xFF73ADDD),
+  400: Color(0xFF559BD6),
+  500: Color(0xFF3A7DC5),
+  600: Color(0xFF3575BF),
+  700: Color(0xFF2D6AB8),
+  800: Color(0xFF265FB0),
+  900: Color(0xFF194CA3),
 });
 
 ThemeData lightTheme(Locale locale) {
@@ -30,14 +29,14 @@ ThemeData lightTheme(Locale locale) {
       primary: _defaultAppColor,
       secondary: _defaultAppColor,
     ),
-    scaffoldBackgroundColor: LightColor.background,
+    scaffoldBackgroundColor: const Color(0xffF2F7FF),
     progressIndicatorTheme: const ProgressIndicatorThemeData(
       color: _defaultAppColor,
       circularTrackColor: Colors.white,
     ),
     appBarTheme: AppBarTheme(
       titleSpacing: 20.0,
-      backgroundColor: LightColor.background,
+      backgroundColor: Colors.white,
       elevation: 0.0,
       titleTextStyle: TextStyle(
         fontFamily: appFontFamily,
@@ -59,7 +58,7 @@ ThemeData lightTheme(Locale locale) {
       type: BottomNavigationBarType.fixed,
       backgroundColor: Colors.white,
       selectedItemColor: _defaultAppColor,
-      unselectedItemColor: const Color(0xFF8A7A5C),
+      unselectedItemColor: const Color(0xff999999),
       elevation: 20,
       selectedLabelStyle: TextStyle(fontFamily: appFontFamily),
       unselectedLabelStyle: TextStyle(fontFamily: appFontFamily),
