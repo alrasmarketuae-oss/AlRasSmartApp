@@ -774,7 +774,43 @@ class AuthCubit extends Cubit<AuthStates> {
   }
 
   /// Restores navigation after Face ID / fingerprint unlock (no LoginResponse).
-  static void navigateAfterBiometricUnlock(BuildContext context) {
+  ///
+  /// Biometric unlock only restores a stashed JWT — same as cold start we must
+  /// refresh the session + profile before home APIs run, or data comes back empty.
+  ///
+  /// Returns `false` when the stashed session is no longer valid (re-login needed).
+  static Future<bool> navigateAfterBiometricUnlock(BuildContext context) async {
+    final clintCubit = sl<ClintCubit>();
+    if (!clintCubit.isClosed) {
+      clintCubit.clearUserSessionMemory();
+    }
+
+    var sessionOk = true;
+    try {
+      sessionOk = await AuthService.instance
+          .validateSession()
+          .timeout(const Duration(seconds: 12));
+    } catch (_) {
+      // Continue with restored token; home reload will surface auth errors.
+    }
+
+    if (!sessionOk || !AuthService.instance.isAuthenticated) {
+      return false;
+    }
+
+    try {
+      await ProfileService.instance
+          .fetchMyProfile(forceRefresh: true)
+          .timeout(const Duration(seconds: 12));
+    } catch (_) {
+      // Unlock still succeeds; header/profile refresh when data arrives later.
+    }
+
+    unawaited(sl<AuthCubit>().syncPreferredLanguageWithBackend());
+    unawaited(BiometricAuthService.instance.refreshSnapshotIfEnabled());
+
+    if (!context.mounted) return true;
+
     _resetHomeTabs();
     final destination = whereToGo();
     final sid = AuthService.instance.currentUserID ?? 'guest';
@@ -785,14 +821,14 @@ class AuthCubit extends Cubit<AuthStates> {
         destination == AppRoutes.kClientHomeView ||
         destination == AppRoutes.kCompanyHomeView ||
         destination == AppRoutes.kShippingCompanyHomeView;
-    if (!isHome) return;
+    if (!isHome) return true;
 
-    final clintCubit = sl<ClintCubit>();
     if (!clintCubit.isClosed) {
       final isPerson = AuthService.instance.currentUserIsCompanyAccount != true;
       unawaited(clintCubit.reloadHomeAfterAuth(isPerson: isPerson));
     }
     unawaited(_ensureInitialAddressIfMissing());
+    return true;
   }
 
   static Future<void> _ensureInitialAddressIfMissing() async {

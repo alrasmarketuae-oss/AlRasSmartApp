@@ -150,6 +150,7 @@ services:
       - "443:443"
     volumes:
       - ./deploy/nginx/alras.conf:/etc/nginx/conf.d/default.conf:ro
+      - /opt/alrasmarket/dash:/usr/share/nginx/dash:ro
       - ./deploy/ssl:/etc/nginx/ssl:ro
       - ./deploy/certbot/conf:/etc/letsencrypt:ro
       - ./deploy/certbot/www:/var/www/certbot:ro

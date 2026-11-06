@@ -55,19 +55,25 @@ class _BiometricUnlockButtonState extends State<BiometricUnlockButton> {
     if (_busy) return;
     setState(() => _busy = true);
     final s = S.of(context);
-    final ok = await BiometricAuthService.instance.unlockAndRestoreSession(
-      reason: s.biometricAuthReason,
-    );
-    if (!mounted) return;
-    setState(() => _busy = false);
+    try {
+      final ok = await BiometricAuthService.instance.unlockAndRestoreSession(
+        reason: s.biometricAuthReason,
+      );
+      if (!mounted) return;
 
-    if (!ok) {
-      AppToast.showError(context, s.biometricUnlockFailed);
-      return;
+      if (!ok) {
+        AppToast.showError(context, s.biometricUnlockFailed);
+        return;
+      }
+
+      final restored = await AuthCubit.navigateAfterBiometricUnlock(context);
+      if (!mounted) return;
+      if (!restored) {
+        AppToast.showError(context, s.biometricUnlockFailed);
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
-
-    if (!mounted) return;
-    AuthCubit.navigateAfterBiometricUnlock(context);
   }
 
   @override
